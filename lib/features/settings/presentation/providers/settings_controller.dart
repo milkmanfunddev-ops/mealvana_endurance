@@ -13,6 +13,7 @@ import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../../onboarding/domain/dietary_preference.dart';
 import '../../../onboarding/domain/allergy.dart';
 import '../../../coach_mode/data/coach_repository.dart';
+import '../../../nutrition_plan/presentation/providers/macro_targets_controller.dart';
 import '../../domain/settings_state.dart';
 
 part 'settings_controller.g.dart';
@@ -184,9 +185,8 @@ class SettingsController extends _$SettingsController {
       heightInches: displayProfile?.heightInches,
       weightPounds: displayProfile?.weightPounds,
       runsWithWaterBottle: displayProfile?.runsWithWaterBottle ?? false,
-      // Default preferences - TODO: load from user preferences
-      preferredDistanceUnit: DistanceUnit.miles,
-      preferredPaceUnit: PaceUnit.minPerMile,
+      // Unit preferences
+      unitSystem: displayProfile?.unitSystem ?? UnitSystem.imperial,
       gutTrainingLevel: displayProfile?.gutTraining ?? GutTraining.moderate,
       sweatRate: displayProfile?.sweatRate ?? SweatRateCat.medium,
       // Sport preferences
@@ -283,28 +283,22 @@ class SettingsController extends _$SettingsController {
     await _saveProfile();
   }
 
-  /// Update distance unit preference
-  Future<void> updateDistanceUnit(DistanceUnit unit) async {
+  /// Update unit system preference
+  Future<void> updateUnitSystem(UnitSystem system) async {
     final currentState = state.value;
     if (currentState == null) return;
 
     state = AsyncData(
-      currentState.copyWith(preferredDistanceUnit: unit, isSaving: true),
+      currentState.copyWith(
+        unitSystem: system,
+        isSaving: true,
+      ),
     );
 
     await _saveProfile();
-  }
-
-  /// Update pace unit preference
-  Future<void> updatePaceUnit(PaceUnit unit) async {
-    final currentState = state.value;
-    if (currentState == null) return;
-
-    state = AsyncData(
-      currentState.copyWith(preferredPaceUnit: unit, isSaving: true),
-    );
-
-    await _saveProfile();
+    
+    // Invalidate providers that rely on unit settings
+    ref.invalidate(macroTargetsControllerProvider);
   }
 
   /// Update gut training level
@@ -340,8 +334,7 @@ class SettingsController extends _$SettingsController {
     int? heightInches,
     double? weightPounds,
     bool? runsWithWaterBottle,
-    DistanceUnit? preferredDistanceUnit,
-    PaceUnit? preferredPaceUnit,
+    UnitSystem? unitSystem,
     GutTraining? gutTrainingLevel,
     SweatRateCat? sweatRate,
     String? firstName,
@@ -359,8 +352,7 @@ class SettingsController extends _$SettingsController {
         heightInches: heightInches ?? currentState.heightInches,
         weightPounds: weightPounds ?? currentState.weightPounds,
         runsWithWaterBottle: runsWithWaterBottle ?? currentState.runsWithWaterBottle,
-        preferredDistanceUnit: preferredDistanceUnit ?? currentState.preferredDistanceUnit,
-        preferredPaceUnit: preferredPaceUnit ?? currentState.preferredPaceUnit,
+        unitSystem: unitSystem ?? currentState.unitSystem,
         gutTrainingLevel: gutTrainingLevel ?? currentState.gutTrainingLevel,
         sweatRate: sweatRate ?? currentState.sweatRate,
         firstName: firstName,
@@ -371,6 +363,11 @@ class SettingsController extends _$SettingsController {
 
     // Single save and invalidation
     await _saveProfile();
+    
+    // Invalidate providers if unit system changed
+    if (unitSystem != null) {
+      ref.invalidate(macroTargetsControllerProvider);
+    }
   }
 
   /// Update GI sensitivity
@@ -486,6 +483,7 @@ class SettingsController extends _$SettingsController {
         heightInches: currentState.heightInches ?? existingProfile.heightInches,
         weightPounds: currentState.weightPounds ?? existingProfile.weightPounds,
         runsWithWaterBottle: currentState.runsWithWaterBottle,
+        unitSystem: currentState.unitSystem,
         gutTraining: currentState.gutTrainingLevel,
         sweatRate: currentState.sweatRate,
         giSensitivity: currentState.giSensitivity ?? existingProfile.giSensitivity,
@@ -507,9 +505,6 @@ class SettingsController extends _$SettingsController {
 
       // Ensure other providers see the updated profile immediately
       ref.invalidate(currentUserProvider);
-
-      // TODO: Add Supabase sync once implemented
-      // await _userRepository.syncToSupabase();
 
       return currentState.copyWith(
         isSaving: false,
@@ -538,52 +533,43 @@ class SettingsController extends _$SettingsController {
 
   /// Sign out the current user
   /// This triggers the auth state listener which will:
-  /// 1. Sync all local changes to Supabase (to prevent data loss)
-  /// 2. Create a new anonymous session
-  /// 3. Reset local database (preserve food prefs, clear biometric data)
-  /// 4. Invalidate this controller to refresh UI
+  /// 1. Invalidate user-specific providers
+  /// 2. Notify GoRouter to redirect to /welcome
+  /// Note: This controller will be disposed after signOut, so we must not
+  /// access ref or state after the signOut call completes.
   Future<void> signOut() async {
-    state = await AsyncValue.guard(() async {
-      final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
-      final analytics = ref.read(appExternalDepsProvider).analytics;
+    // Capture all dependencies BEFORE signOut (which disposes this controller)
+    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+    final analytics = ref.read(appExternalDepsProvider).analytics;
+    final logger = ref.read(appExternalDepsProvider).logger;
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    final prefs = ref.read(sharedPreferencesProvider);
 
-      // Track sign out event
-      await analytics.track('settings_sign_out_tapped');
+    // Track sign out event
+    await analytics.track('settings_sign_out_tapped');
 
-      // CRITICAL: Sync all local changes to Supabase BEFORE sign-out
-      // This prevents data loss when local database is cleared
-      final currentUser = supabaseClient.auth.currentUser;
-      if (currentUser != null) {
-        try {
-          await ref.read(syncCoordinatorProvider.notifier).sync(
-            userId: currentUser.id,
-            trigger: SyncTrigger.preLogout,
-          );
-        } catch (e) {
-          // Log error but continue with sign-out
-          // User has likely already confirmed they want to sign out
-          final logger = ref.read(appExternalDepsProvider).logger;
-          logger.error('Pre-logout sync failed', context: 'SETTINGS', error: e);
-        }
+    // CRITICAL: Sync all local changes to Supabase BEFORE sign-out
+    // This prevents data loss when local database is cleared
+    final currentUser = supabaseClient.auth.currentUser;
+    if (currentUser != null) {
+      try {
+        await syncCoordinator.sync(
+          userId: currentUser.id,
+          trigger: SyncTrigger.preLogout,
+        );
+      } catch (e) {
+        // Log error but continue with sign-out
+        logger.error('Pre-logout sync failed', context: 'SETTINGS', error: e);
       }
+    }
 
-      // Clear the temp user ID from SharedPreferences
-      // This ensures the next user gets a fresh onboarding experience
-      // without inheriting the previous user's integration state
-      final prefs = ref.read(sharedPreferencesProvider);
-      await prefs.remove(_onboardingTempUserIdKey);
+    // Clear the temp user ID from SharedPreferences
+    await prefs.remove(_onboardingTempUserIdKey);
 
-      // Sign out from Supabase (triggers AuthChangeEvent.signedOut)
-      await supabaseClient.auth.signOut();
-
-      // Wait a moment for auth state listener to complete
-      // The listener will create new anonymous session and invalidate this controller
-      await Future.delayed(const Duration(milliseconds: 1000));
-
-      // Return a new state that will be replaced by invalidation
-      // This is temporary - invalidateSelf will trigger rebuild
-      return state.requireValue;
-    });
+    // Sign out from Supabase (triggers AuthChangeEvent.signedOut)
+    // IMPORTANT: After this call, the auth listener will invalidate this controller
+    // and GoRouter will navigate to /welcome. Do NOT access ref or state after this.
+    await supabaseClient.auth.signOut();
   }
 
   /// Delete the current user account

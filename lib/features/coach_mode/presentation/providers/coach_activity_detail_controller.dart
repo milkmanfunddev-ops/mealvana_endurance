@@ -127,10 +127,59 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     });
   }
 
-  bool _categoryMatchesSection(String category, String sectionTitle) {
-    return (category == 'before_run' && sectionTitle == 'Before Run') ||
-           (category == 'during_run' && sectionTitle == 'During Run') ||
-           (category == 'after_run' && sectionTitle == 'After Run');
+  /// Check if a category matches a section by ID or title using flexible prefix matching
+  ///
+  /// Supports all activity types: running, cycling, swimming, brick
+  /// Categories: 'before_run', 'during_run', 'during_swim', 'during_cycling', 'transition', 'after_run'
+  bool _categoryMatchesSection(String category, String sectionId, String sectionTitle) {
+    final categoryLower = category.toLowerCase();
+    final sectionIdLower = sectionId.toLowerCase();
+    final titleLower = sectionTitle.toLowerCase();
+
+    // Handle transition category (brick-specific)
+    if (categoryLower == 'transition') {
+      return sectionIdLower.startsWith('t') && sectionIdLower.length <= 2; // T1, T2
+    }
+
+    // Handle sport-specific during categories (brick workouts)
+    if (categoryLower.startsWith('during_')) {
+      final sportSuffix = categoryLower.replaceFirst('during_', '');
+
+      // Must be a during section
+      if (!sectionIdLower.contains('during') && !titleLower.startsWith('during')) {
+        return false;
+      }
+
+      // Match sport from title
+      if (sportSuffix == 'swim' || sportSuffix == 'swimming') {
+        return titleLower.contains('swim');
+      }
+      if (sportSuffix == 'cycling' || sportSuffix == 'bike' || sportSuffix == 'ride') {
+        return titleLower.contains('bike') || titleLower.contains('cycle') || titleLower.contains('ride');
+      }
+      if (sportSuffix == 'run' || sportSuffix == 'running') {
+        // For 'during_run', match any during section that contains 'run' OR
+        // any during section that doesn't contain swim/bike/cycle (backward compat)
+        return titleLower.contains('run') ||
+               (!titleLower.contains('swim') && !titleLower.contains('bike') && !titleLower.contains('cycle'));
+      }
+    }
+
+    // Extract phase prefix (e.g., 'before' from 'before_run')
+    final phasePrefix = categoryLower.split('_').first;
+
+    // Flexible prefix matching for before/after
+    if (phasePrefix == 'before') {
+      return sectionIdLower.contains('before') || titleLower.startsWith('before');
+    }
+    if (phasePrefix == 'after') {
+      return sectionIdLower.contains('after') || titleLower.startsWith('after');
+    }
+    if (phasePrefix == 'during') {
+      return sectionIdLower.contains('during') || titleLower.startsWith('during');
+    }
+
+    return false;
   }
 
   FoodItemData _createFoodItemData(dynamic food, {double? customAmount}) {
@@ -169,7 +218,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
     try {
       final updatedSections = currentPlan.sections.map((section) {
-        if (_categoryMatchesSection(category, section.title)) {
+        if (_categoryMatchesSection(category, section.id, section.title)) {
           final updatedItems = transform(section.foodItems);
           return section.copyWith(foodItems: updatedItems);
         }

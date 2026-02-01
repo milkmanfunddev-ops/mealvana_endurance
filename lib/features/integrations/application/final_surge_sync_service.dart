@@ -6,6 +6,7 @@ import '../../activities/domain/activity.dart';
 import '../data/final_surge_api_client.dart';
 import '../data/integrations_repository.dart';
 import '../domain/integration.dart';
+import 'change_detection_service.dart';
 import 'final_surge_transformer.dart';
 
 /// Service for syncing workouts from Final Surge
@@ -20,25 +21,30 @@ import 'final_surge_transformer.dart';
 /// - Automatically retries on 401 with refreshed token
 /// - Marks integration as needing re-auth if refresh fails
 ///
-/// Sync behavior:
-/// - Only imports NEW workouts (doesn't update existing)
-/// - Deleted workouts in Final Surge remain in Mealvana
-/// - User can manually delete unwanted activities
+/// Sync behavior (UPDATED with change detection):
+/// - NEW workouts: Inserted with synced_from_provider metadata
+/// - UPDATED workouts: Updated with schedule change detection
+///   - Significant schedule changes → needsNutritionRefresh = true
+///   - Minor changes → update only
+/// - DELETED workouts: Soft-deleted with providerDeletedAt timestamp
 class FinalSurgeSyncService {
   FinalSurgeSyncService({
     required FinalSurgeApiClient apiClient,
     required IntegrationsRepository integrationsRepository,
     required ActivitiesRepository activitiesRepository,
     required FinalSurgeTransformer transformer,
+    required ChangeDetectionService changeDetectionService,
   })  : _apiClient = apiClient,
         _integrationsRepository = integrationsRepository,
         _activitiesRepository = activitiesRepository,
-        _transformer = transformer;
+        _transformer = transformer,
+        _changeDetectionService = changeDetectionService;
 
   final FinalSurgeApiClient _apiClient;
   final IntegrationsRepository _integrationsRepository;
   final ActivitiesRepository _activitiesRepository;
   final FinalSurgeTransformer _transformer;
+  final ChangeDetectionService _changeDetectionService;
 
   /// Buffer time before token expiration to trigger proactive refresh (5 min)
   static const _tokenExpirationBuffer = Duration(minutes: 5);
@@ -106,45 +112,109 @@ class FinalSurgeSyncService {
         print('   Fetched ${response.workouts.length} workouts from Final Surge');
       }
 
-      // 4. Transform and filter workouts
-      int newCount = 0;
-      int skippedCount = 0;
+      // 4. Transform workouts to Activity objects
+      // For workouts with structured data, fetch and pass it to the transformer
+      final remoteActivities = <Activity>[];
       int filteredCount = 0;
-      final newActivities = <Activity>[];
 
       for (final workoutJson in response.workouts) {
+        // Fetch structured workout data if available
+        Map<String, dynamic>? structuredData;
+        if (workoutJson['HasStructuredWorkout'] == true) {
+          try {
+            final urls = workoutJson['StructuredWorkoutURLs'] as Map<String, dynamic>?;
+            final jsonFsV1Url = urls?['json_fs_v1'] as String?;
+            if (jsonFsV1Url != null && jsonFsV1Url.isNotEmpty) {
+              structuredData = await _apiClient.getStructuredWorkout(
+                integration.accessToken,
+                jsonFsV1Url,
+              );
+              if (kDebugMode) {
+                print('   📋 Fetched structured workout for ${workoutJson['WorkoutTitle']}');
+              }
+            }
+          } catch (e) {
+            // Don't block sync if structured workout fetch fails
+            if (kDebugMode) {
+              print('   ⚠️ Failed to fetch structured workout: $e');
+            }
+          }
+        }
+
         // Transform (returns null for unsupported workout types)
-        final result = _transformer.transform(workoutJson, userId);
+        final result = _transformer.transform(
+          workoutJson,
+          userId,
+          structuredData: structuredData,
+        );
 
         if (result == null) {
           filteredCount++;
           continue;
         }
 
-        // Check if this workout was already imported FOR THIS USER
-        // (allows different users to import the same workout)
-        final existing = await _activitiesRepository.findByProviderWorkoutId(
-          userId,
-          'final_surge',
-          result.providerWorkoutId,
-        );
+        remoteActivities.add(result.activity);
+      }
 
-        if (existing != null) {
-          skippedCount++;
-          continue;
-        }
+      if (kDebugMode) {
+        print('   Transformed ${remoteActivities.length} workouts (filtered: $filteredCount)');
+      }
 
-        // Save the new activity
-        await _activitiesRepository.insertActivity(result.activity);
-        newActivities.add(result.activity);
-        newCount++;
+      // 5. Get existing activities from this provider for change detection
+      final localActivities = await _activitiesRepository.getActivitiesByUserAndProvider(
+        userId,
+        'final_surge',
+      );
 
+      if (kDebugMode) {
+        print('   Found ${localActivities.length} existing Final Surge activities');
+      }
+
+      // 6. Detect changes between local and remote
+      final changes = _changeDetectionService.detectChanges(
+        localActivities: localActivities,
+        remoteWorkouts: remoteActivities,
+        provider: 'final_surge',
+      );
+
+      if (kDebugMode) {
+        print('   Changes detected: $changes');
+      }
+
+      // 7. Apply changes
+      // NEW: Insert new activities
+      for (final activity in changes.newActivities) {
+        await _activitiesRepository.insertActivity(activity);
         if (kDebugMode) {
-          print('   ✓ Imported: ${result.activity.title}');
+          print('   ✓ Inserted: ${activity.title}');
         }
       }
 
-      // 5. Update sync status
+      // UPDATED: Update existing activities (using copyWith to preserve all fields)
+      for (final change in changes.updatedActivities) {
+        final updatedActivity = change.updatedActivity.copyWith(
+          id: change.activityId,
+          needsNutritionRefresh: change.scheduleChanged,
+          lastSyncedAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        await _activitiesRepository.updateActivityFromProvider(updatedActivity);
+
+        if (kDebugMode) {
+          print('   ✓ Updated: ${updatedActivity.title} (scheduleChanged: ${change.scheduleChanged})');
+        }
+      }
+
+      // DELETED: Soft-delete activities removed from provider
+      for (final activityId in changes.deletedActivityIds) {
+        await _activitiesRepository.softDeleteFromProvider(activityId);
+        if (kDebugMode) {
+          print('   ✓ Soft-deleted: $activityId');
+        }
+      }
+
+      // 8. Update sync status
       await _integrationsRepository.updateSyncStatus(
         userId,
         'final_surge',
@@ -152,15 +222,18 @@ class FinalSurgeSyncService {
       );
 
       if (kDebugMode) {
-        print('✅ Sync complete: $newCount new, $skippedCount existing, $filteredCount filtered');
+        print('✅ Sync complete: ${changes.newActivities.length} new, '
+            '${changes.updatedActivities.length} updated, '
+            '${changes.deletedActivityIds.length} deleted, '
+            '$filteredCount filtered');
       }
 
       return SyncResult(
         success: true,
-        newWorkouts: newCount,
-        skipped: skippedCount,
+        newWorkouts: changes.newActivities.length,
+        skipped: changes.unchangedCount,
         filtered: filteredCount,
-        activities: newActivities,
+        activities: changes.newActivities,
       );
     } on TokenRefreshException catch (e) {
       // Token refresh failed - user must re-authenticate
@@ -238,6 +311,7 @@ class FinalSurgeSyncService {
       providerAthleteId: integration.providerAthleteId,
       providerAthleteName: integration.providerAthleteName,
       providerAthleteEmail: integration.providerAthleteEmail,
+      athleteZonesJson: integration.athleteZonesJson,
       isActive: true,
       lastSyncStatus: integration.lastSyncStatus,
       lastSyncAt: integration.lastSyncAt,
@@ -300,34 +374,78 @@ class FinalSurgeSyncService {
         );
       }
 
-      int newCount = 0;
-      int skippedCount = 0;
+      // Transform workouts to Activity objects (with structured data if available)
+      final remoteActivities = <Activity>[];
       int filteredCount = 0;
-      final newActivities = <Activity>[];
 
       for (final workoutJson in response.workouts) {
-        final result = _transformer.transform(workoutJson, userId);
+        // Fetch structured workout data if available
+        Map<String, dynamic>? structuredData;
+        if (workoutJson['HasStructuredWorkout'] == true) {
+          try {
+            final urls = workoutJson['StructuredWorkoutURLs'] as Map<String, dynamic>?;
+            final jsonFsV1Url = urls?['json_fs_v1'] as String?;
+            if (jsonFsV1Url != null && jsonFsV1Url.isNotEmpty) {
+              structuredData = await _apiClient.getStructuredWorkout(
+                integration.accessToken,
+                jsonFsV1Url,
+              );
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('   ⚠️ Failed to fetch structured workout: $e');
+            }
+          }
+        }
+
+        final result = _transformer.transform(
+          workoutJson,
+          userId,
+          structuredData: structuredData,
+        );
 
         if (result == null) {
           filteredCount++;
           continue;
         }
 
-        // Check if this workout was already imported FOR THIS USER
-        final existing = await _activitiesRepository.findByProviderWorkoutId(
-          userId,
-          'final_surge',
-          result.providerWorkoutId,
+        remoteActivities.add(result.activity);
+      }
+
+      // Get existing activities from this provider for change detection
+      final localActivities = await _activitiesRepository.getActivitiesByUserAndProvider(
+        userId,
+        'final_surge',
+      );
+
+      // Detect changes between local and remote
+      final changes = _changeDetectionService.detectChanges(
+        localActivities: localActivities,
+        remoteWorkouts: remoteActivities,
+        provider: 'final_surge',
+      );
+
+      // Apply changes
+      // NEW: Insert new activities
+      for (final activity in changes.newActivities) {
+        await _activitiesRepository.insertActivity(activity);
+      }
+
+      // UPDATED: Update existing activities (using copyWith to preserve all fields)
+      for (final change in changes.updatedActivities) {
+        final updatedActivity = change.updatedActivity.copyWith(
+          id: change.activityId,
+          needsNutritionRefresh: change.scheduleChanged,
+          lastSyncedAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         );
 
-        if (existing != null) {
-          skippedCount++;
-          continue;
-        }
+        await _activitiesRepository.updateActivityFromProvider(updatedActivity);
+      }
 
-        await _activitiesRepository.insertActivity(result.activity);
-        newActivities.add(result.activity);
-        newCount++;
+      // DELETED: Soft-delete activities removed from provider
+      for (final activityId in changes.deletedActivityIds) {
+        await _activitiesRepository.softDeleteFromProvider(activityId);
       }
 
       await _integrationsRepository.updateSyncStatus(
@@ -338,10 +456,10 @@ class FinalSurgeSyncService {
 
       return SyncResult(
         success: true,
-        newWorkouts: newCount,
-        skipped: skippedCount,
+        newWorkouts: changes.newActivities.length,
+        skipped: changes.unchangedCount,
         filtered: filteredCount,
-        activities: newActivities,
+        activities: changes.newActivities,
       );
     } on TokenRefreshException catch (e) {
       if (e.requiresReauth) {

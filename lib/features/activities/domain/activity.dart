@@ -1,4 +1,5 @@
 import '../../../shared/domain/activity_type.dart';
+import '../../nutrition_plan/domain/intensity_distribution.dart';
 import 'brick_metadata.dart';
 
 /// Activity domain model for calendar feature
@@ -31,6 +32,7 @@ class Activity {
 
     // Shared intensity and timing
     this.intensityTarget,
+    this.intensityDistribution,
     this.timeBeforeMinutes,
 
     // Completion data
@@ -68,6 +70,12 @@ class Activity {
     this.paceMinMinutesPerMile,
     this.paceMaxMinutesPerMile,
 
+    // Integration sync change tracking (Phase 1)
+    this.needsNutritionRefresh = false,
+    this.providerDeletedAt,
+    this.providerScheduledAt,
+    this.scheduleChangedAt,
+
     // Brick workout fields
     this.brickMetadata,
     this.brickId,
@@ -100,6 +108,7 @@ class Activity {
 
   // Shared intensity and timing
   final String? intensityTarget; // 'zone_1', 'zone_2', 'rpe_3', etc.
+  final IntensityDistribution? intensityDistribution; // Three-zone percentage distribution
   final int? timeBeforeMinutes; // Pre-activity timing window
   
   // Completion data
@@ -137,6 +146,12 @@ class Activity {
   final double? paceMinMinutesPerMile; // Pace range from provider
   final double? paceMaxMinutesPerMile;
 
+  // Integration sync change tracking (Phase 1)
+  final bool needsNutritionRefresh; // Flag when schedule changes require nutrition refresh
+  final DateTime? providerDeletedAt; // Soft-delete timestamp when provider removes workout
+  final DateTime? providerScheduledAt; // Original provider schedule for change detection
+  final DateTime? scheduleChangedAt; // When change was last detected during sync
+
   // Brick workout fields
   final BrickMetadata? brickMetadata; // Brick segment information (JSON)
   final String? brickId; // Parent brick ID if this is an archived segment
@@ -166,6 +181,7 @@ class Activity {
       'swimmingPoolOrOpenWater': swimmingPoolOrOpenWater,
       'swimmingWaterTempC': swimmingWaterTempC,
       'intensityTarget': intensityTarget,
+      'intensityDistribution': intensityDistribution?.toJson(),
       'timeBeforeMinutes': timeBeforeMinutes,
       'completedAt': completedAt?.toIso8601String(),
       'completionRating': completionRating,
@@ -188,6 +204,10 @@ class Activity {
       'workoutSubtype': workoutSubtype,
       'paceMinMinutesPerMile': paceMinMinutesPerMile,
       'paceMaxMinutesPerMile': paceMaxMinutesPerMile,
+      'needsNutritionRefresh': needsNutritionRefresh,
+      'providerDeletedAt': providerDeletedAt?.toIso8601String(),
+      'providerScheduledAt': providerScheduledAt?.toIso8601String(),
+      'scheduleChangedAt': scheduleChangedAt?.toIso8601String(),
       'brickMetadata': brickMetadata?.toJson(),
       'brickId': brickId,
     };
@@ -213,6 +233,7 @@ class Activity {
     String? swimmingPoolOrOpenWater,
     double? swimmingWaterTempC,
     String? intensityTarget,
+    IntensityDistribution? intensityDistribution,
     int? timeBeforeMinutes,
     DateTime? completedAt,
     int? completionRating,
@@ -237,6 +258,10 @@ class Activity {
     String? workoutSubtype,
     double? paceMinMinutesPerMile,
     double? paceMaxMinutesPerMile,
+    bool? needsNutritionRefresh,
+    DateTime? providerDeletedAt,
+    DateTime? providerScheduledAt,
+    DateTime? scheduleChangedAt,
     BrickMetadata? brickMetadata,
     String? brickId,
   }) {
@@ -260,6 +285,7 @@ class Activity {
       swimmingPoolOrOpenWater: swimmingPoolOrOpenWater ?? this.swimmingPoolOrOpenWater,
       swimmingWaterTempC: swimmingWaterTempC ?? this.swimmingWaterTempC,
       intensityTarget: intensityTarget ?? this.intensityTarget,
+      intensityDistribution: intensityDistribution ?? this.intensityDistribution,
       timeBeforeMinutes: timeBeforeMinutes ?? this.timeBeforeMinutes,
       completedAt: completedAt ?? this.completedAt,
       completionRating: completionRating ?? this.completionRating,
@@ -284,6 +310,10 @@ class Activity {
       workoutSubtype: workoutSubtype ?? this.workoutSubtype,
       paceMinMinutesPerMile: paceMinMinutesPerMile ?? this.paceMinMinutesPerMile,
       paceMaxMinutesPerMile: paceMaxMinutesPerMile ?? this.paceMaxMinutesPerMile,
+      needsNutritionRefresh: needsNutritionRefresh ?? this.needsNutritionRefresh,
+      providerDeletedAt: providerDeletedAt ?? this.providerDeletedAt,
+      providerScheduledAt: providerScheduledAt ?? this.providerScheduledAt,
+      scheduleChangedAt: scheduleChangedAt ?? this.scheduleChangedAt,
       brickMetadata: brickMetadata ?? this.brickMetadata,
       brickId: brickId ?? this.brickId,
     );
@@ -312,6 +342,7 @@ class Activity {
         other.swimmingPoolOrOpenWater == swimmingPoolOrOpenWater &&
         other.swimmingWaterTempC == swimmingWaterTempC &&
         other.intensityTarget == intensityTarget &&
+        other.intensityDistribution == intensityDistribution &&
         other.timeBeforeMinutes == timeBeforeMinutes &&
         other.completedAt == completedAt &&
         other.completionRating == completionRating &&
@@ -360,8 +391,9 @@ class Activity {
       swimmingPoolOrOpenWater,
       swimmingWaterTempC,
       intensityTarget,
-      timeBeforeMinutes,
+      intensityDistribution,
     ) ^ Object.hash(
+      timeBeforeMinutes,
       completedAt,
       completionRating,
       completionNotes,

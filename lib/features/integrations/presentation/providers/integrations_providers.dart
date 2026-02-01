@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_config.dart';
 import '../../../activities/data/activities_repository.dart';
+import '../../application/change_detection_service.dart';
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/final_surge_transformer.dart';
@@ -88,12 +89,14 @@ FinalSurgeSyncService finalSurgeSyncService(Ref ref) {
   final integrationsRepository = ref.watch(integrationsRepositoryProvider);
   final activitiesRepository = ref.watch(activitiesRepositoryProvider);
   final transformer = ref.watch(finalSurgeTransformerProvider);
+  final changeDetectionService = ref.watch(changeDetectionServiceProvider);
 
   return FinalSurgeSyncService(
     apiClient: apiClient,
     integrationsRepository: integrationsRepository,
     activitiesRepository: activitiesRepository,
     transformer: transformer,
+    changeDetectionService: changeDetectionService,
   );
 }
 
@@ -174,17 +177,17 @@ Future<TrainingPeaksOAuthService> trainingPeaksOAuthService(Ref ref) async {
 @Riverpod(keepAlive: true)
 Future<TrainingPeaksSyncService> trainingPeaksSyncService(Ref ref) async {
   final apiClient = await ref.watch(trainingPeaksApiClientProvider.future);
-  final oauthService = await ref.watch(trainingPeaksOAuthServiceProvider.future);
   final integrationsRepository = ref.watch(integrationsRepositoryProvider);
   final activitiesRepository = ref.watch(activitiesRepositoryProvider);
   final transformer = ref.watch(trainingPeaksTransformerProvider);
+  final changeDetectionService = ref.watch(changeDetectionServiceProvider);
 
   return TrainingPeaksSyncService(
     apiClient: apiClient,
-    oauthService: oauthService,
     integrationsRepository: integrationsRepository,
     activitiesRepository: activitiesRepository,
     transformer: transformer,
+    changeDetectionService: changeDetectionService,
   );
 }
 

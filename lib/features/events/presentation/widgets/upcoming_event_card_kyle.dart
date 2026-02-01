@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:mealvana_endurance/features/events/presentation/screens/event_form_screen.dart';
 import '../../domain/event.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
@@ -183,17 +182,17 @@ class UpcomingEventCardKyle extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // Event details
+              // Event details - simplified to show name + countdown only
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      (event.eventName ?? event.formattedEventType).toUpperCase(),
+                      event.eventName ?? event.formattedEventType,
                       style: TextStyle(
-                        fontFamily: 'Compadre',
-                        fontSize: 11,
-                        letterSpacing: 1.0,
+                        fontFamily: 'Sansita',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                         color: isDark ? AppColors.cream : AppColors.blackberry,
                         height: 1.3,
                       ),
@@ -214,36 +213,12 @@ class UpcomingEventCardKyle extends ConsumerWidget {
                   ],
                 ),
               ),
-              // Date display on the right
-              SizedBox(
-                width: 40,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      DateFormat('MMM').format(eventDate).toUpperCase(),
-                      style: TextStyle(
-                        fontFamily: 'Apercu',
-                        fontSize: 8,
-                        color: isDark ? AppColors.cream : AppColors.blackberry,
-                        fontWeight: FontWeight.w600,
-                        height: 0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      DateFormat('d').format(eventDate),
-                      style: TextStyle(
-                        fontFamily: 'Compadre',
-                        fontSize: 17,
-                        color: isDark ? AppColors.cream : AppColors.blackberry,
-                        fontWeight: FontWeight.w400,
-                        height: 0.9,
-                      ),
-                    ),
-                  ],
-                ),
+              // Right chevron
+              Icon(
+                Icons.chevron_right,
+                color: (isDark ? AppColors.cream : AppColors.blackberry)
+                    .withValues(alpha: 0.3),
+                size: 20,
               ),
             ],
           ),

@@ -75,6 +75,35 @@ Future<void> main(List<String> args) async {
     case 'athlete':
       await showCachedAthleteInfo();
       break;
+    case 'workout':
+      final token = await _loadCachedToken();
+      if (token == null) {
+        print('❌ Error: No access token. Run "auth" first.');
+        exit(1);
+      }
+      if (args.length < 2) {
+        print('❌ Error: Workout ID required.');
+        print('   Usage: dart run tool/final_surge_api_test.dart workout <workout_key>');
+        exit(1);
+      }
+      await fetchWorkoutById(token, args[1]);
+      break;
+    case 'daterange':
+      final token = await _loadCachedToken();
+      if (token == null) {
+        print('❌ Error: No access token. Run "auth" first.');
+        exit(1);
+      }
+      await fetchWorkoutsByDateRange(token);
+      break;
+    case 'compare':
+      final token = await _loadCachedToken();
+      if (token == null) {
+        print('❌ Error: No access token. Run "auth" first.');
+        exit(1);
+      }
+      await compareEndpoints(token);
+      break;
     case 'help':
     default:
       printHelp();
@@ -87,7 +116,10 @@ void printHelp() {
   print('Commands:');
   print('  auth      Start OAuth flow to get access token (saves athlete info)');
   print('  test      Run all API tests (uses cached token or provide one)');
-  print('  workouts  Fetch upcoming workouts');
+  print('  workouts  Fetch upcoming workouts (UpcomingWorkouts endpoint)');
+  print('  workout   Fetch single workout by ID (Workout/{id} endpoint)');
+  print('  daterange Fetch workouts by date range (Workouts endpoint)');
+  print('  compare   Compare data from different endpoints for same workout');
   print('  profile   Fetch/save app profile info (NOT athlete profile)');
   print('  athlete   Show cached athlete info from last auth');
   print('  help      Show this help message');
@@ -96,12 +128,16 @@ void printHelp() {
   print('  dart run tool/final_surge_api_test.dart auth');
   print('  dart run tool/final_surge_api_test.dart test');
   print('  dart run tool/final_surge_api_test.dart workouts');
+  print('  dart run tool/final_surge_api_test.dart workout <workout_key>');
+  print('  dart run tool/final_surge_api_test.dart daterange');
+  print('  dart run tool/final_surge_api_test.dart compare');
   print('  dart run tool/final_surge_api_test.dart athlete');
   print('');
   print('Notes:');
   print('  - After running "auth", the token is cached for subsequent commands');
   print('  - Athlete info (id, name) comes from the OAuth token exchange');
   print('  - ProfileInfo endpoint is for YOUR app data, not athlete profile');
+  print('  - Use "compare" to see data differences between API endpoints');
 }
 
 // ============================================================================
@@ -501,6 +537,338 @@ Future<void> fetchUpcomingWorkouts(
   } catch (e) {
     print('❌ Error: $e');
   }
+}
+
+// ============================================================================
+// SINGLE WORKOUT BY ID
+// ============================================================================
+
+Future<Map<String, dynamic>?> fetchWorkoutById(String accessToken, String workoutKey, {bool silent = false}) async {
+  if (!silent) {
+    print('📥 Fetching single workout by ID: $workoutKey');
+    print('');
+  }
+
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/API/v1/Workout/$workoutKey'),
+      headers: {
+        'client-id': clientId,
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    if (!silent) {
+      print('   Status: ${response.statusCode}');
+      print('');
+    }
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (!silent) {
+        print('╔══════════════════════════════════════════════════════════════════╗');
+        print('║ SINGLE WORKOUT RESPONSE (Workout/{id} endpoint)                   ║');
+        print('╚══════════════════════════════════════════════════════════════════╝');
+        printJson(data);
+        print('');
+
+        // Show key fields for nutrition
+        _printWorkoutNutritionFields(data);
+      }
+
+      return data;
+    } else {
+      if (!silent) {
+        print('❌ Request failed');
+        print('   Body: ${response.body}');
+      }
+      return null;
+    }
+  } catch (e) {
+    if (!silent) print('❌ Error: $e');
+    return null;
+  }
+}
+
+// ============================================================================
+// WORKOUTS BY DATE RANGE
+// ============================================================================
+
+Future<List<Map<String, dynamic>>> fetchWorkoutsByDateRange(String accessToken, {bool silent = false}) async {
+  if (!silent) {
+    print('📥 Fetching workouts by date range (today +/- 7 days)...');
+    print('');
+  }
+
+  final now = DateTime.now();
+  final startDate = now.subtract(const Duration(days: 7));
+  final endDate = now.add(const Duration(days: 7));
+
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/API/v1/Workouts').replace(
+        queryParameters: {
+          'StartDate': _formatDate(startDate),
+          'EndDate': _formatDate(endDate),
+        },
+      ),
+      headers: {
+        'client-id': clientId,
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    if (!silent) {
+      print('   Status: ${response.statusCode}');
+      print('   Date Range: ${_formatDate(startDate)} to ${_formatDate(endDate)}');
+      print('');
+    }
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (!silent) {
+        print('╔══════════════════════════════════════════════════════════════════╗');
+        print('║ DATE RANGE WORKOUTS RESPONSE (Workouts endpoint)                  ║');
+        print('╚══════════════════════════════════════════════════════════════════╝');
+        printJson(data);
+        print('');
+      }
+
+      final workouts = (data['Workouts'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+      if (!silent && workouts.isNotEmpty) {
+        print('╔══════════════════════════════════════════════════════════════════╗');
+        print('║ WORKOUT NUTRITION FIELDS ANALYSIS                                 ║');
+        print('╚══════════════════════════════════════════════════════════════════╝');
+        print('');
+
+        for (var i = 0; i < workouts.length; i++) {
+          final w = workouts[i];
+          print('Workout ${i + 1}: ${w['WorkoutTitle'] ?? 'Untitled'} (${w['WorkoutTypeName']})');
+          _printWorkoutNutritionFields(w);
+          print('');
+        }
+      }
+
+      return workouts;
+    } else {
+      if (!silent) {
+        print('❌ Request failed');
+        print('   Body: ${response.body}');
+      }
+      return [];
+    }
+  } catch (e) {
+    if (!silent) print('❌ Error: $e');
+    return [];
+  }
+}
+
+String _formatDate(DateTime date) {
+  return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+}
+
+// ============================================================================
+// COMPARE ENDPOINTS
+// ============================================================================
+
+Future<void> compareEndpoints(String accessToken) async {
+  print('🔬 COMPARING DATA FROM DIFFERENT ENDPOINTS');
+  print('═══════════════════════════════════════════════════════════════════');
+  print('');
+  print('This test fetches the same workout from different endpoints to see');
+  print('which one returns the most complete data for nutrition planning.');
+  print('');
+
+  // First, get workouts from UpcomingWorkouts
+  print('Step 1: Fetching from UpcomingWorkouts endpoint...');
+  print('');
+
+  final upcomingResponse = await http.get(
+    Uri.parse('$baseUrl/API/v1/UpcomingWorkouts').replace(
+      queryParameters: {'NumDays': '7', 'NumWorkouts': '21'},
+    ),
+    headers: {
+      'client-id': clientId,
+      'Authorization': 'Bearer $accessToken',
+    },
+  );
+
+  if (upcomingResponse.statusCode != 200) {
+    print('❌ Failed to fetch upcoming workouts');
+    return;
+  }
+
+  final upcomingData = jsonDecode(upcomingResponse.body) as Map<String, dynamic>;
+  final upcomingWorkouts = (upcomingData['Workouts'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+  if (upcomingWorkouts.isEmpty) {
+    print('❌ No workouts found. Create some workouts in Final Surge first.');
+    return;
+  }
+
+  print('   Found ${upcomingWorkouts.length} workouts from UpcomingWorkouts');
+  print('');
+
+  // Get first workout's key
+  final firstWorkout = upcomingWorkouts.first;
+  final workoutKey = firstWorkout['WorkoutKey'] as String?;
+
+  if (workoutKey == null) {
+    print('❌ First workout has no WorkoutKey');
+    return;
+  }
+
+  print('Step 2: Fetching same workout from Workout/{id} endpoint...');
+  print('   WorkoutKey: $workoutKey');
+  print('');
+
+  final singleWorkout = await fetchWorkoutById(accessToken, workoutKey, silent: true);
+
+  print('Step 3: Fetching from Workouts (date range) endpoint...');
+  print('');
+
+  final dateRangeWorkouts = await fetchWorkoutsByDateRange(accessToken, silent: true);
+  final matchingWorkout = dateRangeWorkouts.firstWhere(
+    (w) => w['WorkoutKey'] == workoutKey,
+    orElse: () => <String, dynamic>{},
+  );
+
+  // Now compare the three
+  print('═══════════════════════════════════════════════════════════════════');
+  print('COMPARISON: "${firstWorkout['WorkoutTitle'] ?? 'Untitled'}"');
+  print('═══════════════════════════════════════════════════════════════════');
+  print('');
+
+  final fieldsToCompare = [
+    'WorkoutKey',
+    'WorkoutDate',
+    'WorkoutTypeName',
+    'WorkoutSubTypeName',
+    'WorkoutCompleted',
+    'PlannedTime',
+    'PlannedDistance',
+    'PlannedDistanceType',
+    'PlannedPace',
+    'PlannedPaceType',
+    'ActualTime',
+    'ActualDistanceMeters',
+    'ActualPace',
+    'WorkoutDescription',
+    'HasStructuredWorkout',
+  ];
+
+  print('Field                    │ UpcomingWorkouts │ Workout/{id}     │ Workouts (range) ');
+  print('─────────────────────────┼──────────────────┼──────────────────┼──────────────────');
+
+  for (final field in fieldsToCompare) {
+    final v1 = _formatValue(firstWorkout[field]);
+    final v2 = _formatValue(singleWorkout?[field]);
+    final v3 = _formatValue(matchingWorkout[field]);
+
+    // Highlight differences
+    final hasDiff = (v1 != v2) || (v2 != v3) || (v1 != v3);
+    final prefix = hasDiff ? '⚠️' : '  ';
+
+    print('$prefix ${field.padRight(21)} │ ${v1.padRight(16)} │ ${v2.padRight(16)} │ $v3');
+  }
+
+  print('');
+  print('═══════════════════════════════════════════════════════════════════');
+  print('ANALYSIS:');
+  print('═══════════════════════════════════════════════════════════════════');
+  print('');
+
+  // Check which endpoint has the most data
+  int countNonNull(Map<String, dynamic>? data) {
+    if (data == null) return 0;
+    return fieldsToCompare.where((f) => data[f] != null).length;
+  }
+
+  final c1 = countNonNull(firstWorkout);
+  final c2 = countNonNull(singleWorkout);
+  final c3 = countNonNull(matchingWorkout.isEmpty ? null : matchingWorkout);
+
+  print('Non-null fields:');
+  print('   UpcomingWorkouts: $c1/${fieldsToCompare.length}');
+  print('   Workout/{id}:     $c2/${fieldsToCompare.length}');
+  print('   Workouts (range): $c3/${fieldsToCompare.length}');
+  print('');
+
+  // Specific checks for nutrition planning
+  print('Key fields for nutrition planning:');
+  print('');
+
+  _checkField('PlannedTime (duration)', firstWorkout['PlannedTime'], singleWorkout?['PlannedTime'], matchingWorkout['PlannedTime']);
+  _checkField('PlannedDistance', firstWorkout['PlannedDistance'], singleWorkout?['PlannedDistance'], matchingWorkout['PlannedDistance']);
+  _checkField('PlannedPace', firstWorkout['PlannedPace'], singleWorkout?['PlannedPace'], matchingWorkout['PlannedPace']);
+  _checkField('ActualTime', firstWorkout['ActualTime'], singleWorkout?['ActualTime'], matchingWorkout['ActualTime']);
+  _checkField('ActualDistanceMeters', firstWorkout['ActualDistanceMeters'], singleWorkout?['ActualDistanceMeters'], matchingWorkout['ActualDistanceMeters']);
+
+  print('');
+  print('═══════════════════════════════════════════════════════════════════');
+  print('RAW DATA DUMPS:');
+  print('═══════════════════════════════════════════════════════════════════');
+  print('');
+  print('--- UpcomingWorkouts endpoint ---');
+  printJson(firstWorkout);
+  print('');
+  print('--- Workout/{id} endpoint ---');
+  if (singleWorkout != null) {
+    printJson(singleWorkout);
+  } else {
+    print('(no data)');
+  }
+  print('');
+  print('--- Workouts (date range) endpoint ---');
+  if (matchingWorkout.isNotEmpty) {
+    printJson(matchingWorkout);
+  } else {
+    print('(no matching workout found)');
+  }
+}
+
+String _formatValue(dynamic value) {
+  if (value == null) return 'null';
+  if (value is String && value.isEmpty) return '(empty)';
+  if (value is String && value.length > 14) return '${value.substring(0, 12)}..';
+  if (value is Map || value is List) return '{...}';
+  return value.toString();
+}
+
+void _checkField(String name, dynamic v1, dynamic v2, dynamic v3) {
+  final hasV1 = v1 != null;
+  final hasV2 = v2 != null;
+  final hasV3 = v3 != null;
+
+  final status = hasV1 || hasV2 || hasV3 ? '✅' : '❌';
+  final sources = <String>[];
+  if (hasV1) sources.add('Upcoming');
+  if (hasV2) sources.add('Single');
+  if (hasV3) sources.add('Range');
+
+  final sourceStr = sources.isEmpty ? 'NONE!' : sources.join(', ');
+  print('   $status $name: $sourceStr');
+
+  if (hasV1) print('      Upcoming: $v1');
+  if (hasV2) print('      Single:   $v2');
+  if (hasV3) print('      Range:    $v3');
+}
+
+void _printWorkoutNutritionFields(Map<String, dynamic> workout) {
+  print('');
+  print('   📊 KEY NUTRITION FIELDS:');
+  print('   ─────────────────────────────────────────');
+  print('   PlannedTime:          ${workout['PlannedTime'] ?? 'NULL'}');
+  print('   PlannedDistance:      ${workout['PlannedDistance'] ?? 'NULL'} ${workout['PlannedDistanceType'] ?? ''}');
+  print('   PlannedPace:          ${workout['PlannedPace'] ?? 'NULL'} ${workout['PlannedPaceType'] ?? ''}');
+  print('   ActualTime:           ${workout['ActualTime'] ?? 'NULL'}');
+  print('   ActualDistanceMeters: ${workout['ActualDistanceMeters'] ?? 'NULL'}');
+  print('   ActualPace:           ${workout['ActualPace'] ?? 'NULL'}');
+  print('   WorkoutCompleted:     ${workout['WorkoutCompleted']}');
+  print('   ─────────────────────────────────────────');
 }
 
 // ============================================================================

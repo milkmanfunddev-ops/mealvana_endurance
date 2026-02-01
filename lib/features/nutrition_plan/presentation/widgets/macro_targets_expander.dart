@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/presentation/utils/unit_formatter.dart';
 import '../../../../theme/app_theme.dart';
 
 /// Expandable macro targets section with + button
@@ -10,10 +11,12 @@ class MacroTargetsExpander extends StatefulWidget {
     super.key,
     required this.macroTargets,
     this.isExpanded = false,
+    this.useMetric = false,
   });
 
   final PlanMacroSummary macroTargets;
   final bool isExpanded;
+  final bool useMetric;
 
   @override
   State<MacroTargetsExpander> createState() => _MacroTargetsExpanderState();
@@ -207,10 +210,11 @@ class _MacroTargetsExpanderState extends State<MacroTargetsExpander>
   }
 
   String _formatFluids() {
+    final unitLabel = UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric);
     if (widget.macroTargets.fluidsMin != null && widget.macroTargets.fluidsMax != null) {
-      return 'Fluids: ${widget.macroTargets.fluidsMin}-${widget.macroTargets.fluidsMax} oz';
+      return 'Fluids: ${widget.macroTargets.fluidsMin}-${widget.macroTargets.fluidsMax} $unitLabel';
     } else if (widget.macroTargets.fluids != null) {
-      return 'Fluids: ${widget.macroTargets.fluids} oz';
+      return 'Fluids: ${widget.macroTargets.fluids} $unitLabel';
     }
     return 'Fluids: Not specified';
   }

@@ -47,10 +47,12 @@ class ActivitiesService {
     try {
       // CRITICAL FIX: Use case-insensitive comparison for userId
       // Supabase returns lowercase UUIDs, but local user profile may have uppercase
+      // Filter out archivedForBrick activities - they are hidden when grouped into a brick
       final query = _database.select(_database.activitiesTable)
             ..where((tbl) => tbl.userId.lower().equals(userId.toLowerCase()) &
                               tbl.scheduledDateTime.isBetweenValues(startDate, endDate) &
-                              tbl.deletedAt.isNull())
+                              tbl.deletedAt.isNull() &
+                              tbl.status.equals('archivedForBrick').not())
             ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]);
 
       final activities = await query.get();
@@ -72,9 +74,11 @@ class ActivitiesService {
   Future<List<domain.Activity>> getAllActivities(String userId) async {
     try {
       // CRITICAL FIX: Use case-insensitive comparison for userId
+      // Filter out archivedForBrick activities - they are hidden when grouped into a brick
       final query = _database.select(_database.activitiesTable)
             ..where((tbl) => tbl.userId.lower().equals(userId.toLowerCase()) &
-                              tbl.deletedAt.isNull())
+                              tbl.deletedAt.isNull() &
+                              tbl.status.equals('archivedForBrick').not())
             ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]);
 
       final activities = await query.get();

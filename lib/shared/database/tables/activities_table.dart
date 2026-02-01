@@ -35,6 +35,11 @@ class ActivitiesTable extends Table {
   TextColumn get intensityTarget => text().nullable().named('intensity_target')(); // 'zone_1', 'zone_2', 'rpe_3', etc.
   IntColumn get timeBeforeMinutes => integer().nullable().named('time_before_minutes')();
 
+  // Intensity distribution (percentage-based zones for new intensity widget)
+  IntColumn get intensityZ1Z2Pct => integer().nullable().named('intensity_z1_z2_pct')(); // Conversational zone (Z1-Z2)
+  IntColumn get intensityZ3Z4Pct => integer().nullable().named('intensity_z3_z4_pct')(); // Tempo zone (Z3-Z4)
+  IntColumn get intensityZ5Pct => integer().nullable().named('intensity_z5_pct')(); // All-out zone (Z5+)
+
   // Reminder settings
   BoolColumn get reminderEnabled => boolean().withDefault(const Constant(false)).named('reminder_enabled')();
   IntColumn get reminderDaysBefore => integer().nullable().named('reminder_days_before')(); // 1-7 days before activity
@@ -50,6 +55,12 @@ class ActivitiesTable extends Table {
   TextColumn get providerWorkoutId => text().nullable().named('provider_workout_id')(); // External workout ID
   TextColumn get providerWorkoutUrl => text().nullable().named('provider_workout_url')(); // Link to view in provider
   DateTimeColumn get lastSyncedAt => dateTime().nullable().named('last_synced_at')();
+
+  // Integration sync update tracking
+  BoolColumn get needsNutritionRefresh => boolean().withDefault(const Constant(false)).named('needs_nutrition_refresh')(); // Flag when schedule changed significantly
+  DateTimeColumn get providerDeletedAt => dateTime().nullable().named('provider_deleted_at')(); // When provider removed this workout (soft delete)
+  DateTimeColumn get providerScheduledAt => dateTime().nullable().named('provider_scheduled_at')(); // Original provider schedule for change detection
+  DateTimeColumn get scheduleChangedAt => dateTime().nullable().named('schedule_changed_at')(); // When we last detected a schedule change
 
   // Workout subtype from external provider (e.g., "Long Run", "Walk", "Recovery", "Tempo", "Intervals")
   TextColumn get workoutSubtype => text().nullable().named('workout_subtype')();

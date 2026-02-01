@@ -263,43 +263,6 @@ extension AnalyticsEvents on AnalyticsTracker {
 
   // 6. Feature Survey Events
 
-  /// Track when a user completes the feature survey
-  /// Uses List Property for selected_features to enable advanced filtering in Mixpanel
-  Future<void> trackFeatureSurveyCompleted({
-    required List<String> selectedFeatures,
-    required int totalVotes,
-    required String deviceId,
-  }) {
-    return track('feature_survey_completed', properties: {
-      'selected_features': selectedFeatures, // List property for advanced analysis
-      'total_votes': totalVotes,
-      'survey_version': 'features_v1',
-      'device_id': deviceId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'platform': Platform.isIOS ? 'iOS' : 'Android',
-    });
-  }
-
-  /// Track individual feature votes for detailed analysis
-  /// Allows tracking vote ranking (1st, 2nd, 3rd choice)
-  Future<void> trackFeatureVoted({
-    required String featureId,
-    required String featureName,
-    required int rank,
-    required String surveySessionId,
-    required String deviceId,
-  }) {
-    return track('feature_voted', properties: {
-      'feature_id': featureId,
-      'feature_name': featureName,
-      'rank': rank, // 1 = top priority, 2 = second, 3 = third
-      'survey_session_id': surveySessionId, // Groups votes from same submission
-      'device_id': deviceId,
-      'timestamp': DateTime.now().toIso8601String(),
-      'platform': Platform.isIOS ? 'iOS' : 'Android',
-    });
-  }
-
   // 7. Integration & Sync Events
 
   /// Track when user starts connecting to a training provider

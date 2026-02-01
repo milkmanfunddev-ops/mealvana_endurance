@@ -26,8 +26,8 @@ class RootAppWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Initialize auth listener ONCE at app startup
     // This is a singleton that lives for the lifetime of the app
-    // It listens for auth state changes and invalidates user-specific providers
-    // but NEVER invalidates appStartupProvider (to avoid infinite loops)
+    // It listens for auth state changes, invalidates user-specific providers,
+    // and notifies GoRouter to re-evaluate redirects (triggering navigation to /welcome)
     ref.read(authListenerServiceProvider).initialize();
 
     // Watch the theme mode from Kyle's theme provider

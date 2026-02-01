@@ -10,6 +10,7 @@ import '../../../../shared/core/screen_mode.dart';
 import '../../../../shared/widgets/selection/figma_toggle_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/constants/bottle_constants.dart';
 
 /// Cycling Details Screen - Unified for both onboarding and settings
 ///
@@ -332,11 +333,31 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
                         const SizedBox(height: 28),
 
                         // Water bottles section
-                        _WaterBottlesSection(
-                          selectedValue: _bikeBottles,
-                          onSelected: (value) => setState(() => _bikeBottles = value),
-                          figmaCream: AppColors.textDark,
-                          figmaElectrolyte: AppColors.electrolyte,
+                        Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: Theme.of(context).colorScheme.copyWith(
+                              onSurface: AppColors.textDark,
+                            ),
+                          ),
+                          child: KylePlusMinusControl(
+                            label: 'What is your bike\'s bottle capacity?',
+                            value: _bikeBottles,
+                            onChanged: (value) => setState(() => _bikeBottles = value),
+                            min: 0,
+                            max: 6,
+                            unit: 'bottles',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '1 bottle = ${kStandardBottleOz.toInt()} oz (${kStandardBottleMl.toInt()} mL)',
+                          style: TextStyle(
+                            fontFamily: 'Apercu',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.textDark.withValues(alpha: 0.6),
+                            height: 1.4,
+                          ),
                         ),
 
                         const SizedBox(height: 16),
@@ -494,132 +515,3 @@ class _FTPSection extends StatelessWidget {
   }
 }
 
-/// Water bottles segmented selector matching Figma design
-class _WaterBottlesSection extends StatelessWidget {
-  const _WaterBottlesSection({
-    required this.selectedValue,
-    required this.onSelected,
-    required this.figmaCream,
-    required this.figmaElectrolyte,
-  });
-
-  final int selectedValue;
-  final void Function(int) onSelected;
-  final Color figmaCream;
-  final Color figmaElectrolyte;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Label
-        Text(
-          'How many water bottles do you use?',
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 20,
-            fontWeight: FontWeight.w500,
-            color: figmaCream,
-            height: 1.2,
-            letterSpacing: 0.24,
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Buttons
-        Row(
-          children: [
-            Expanded(
-              child: _WaterBottleButton(
-                label: '1',
-                value: 1,
-                isSelected: selectedValue == 1,
-                onTap: () => onSelected(1),
-                figmaCream: figmaCream,
-                figmaElectrolyte: figmaElectrolyte,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _WaterBottleButton(
-                label: '2',
-                value: 2,
-                isSelected: selectedValue == 2,
-                onTap: () => onSelected(2),
-                figmaCream: figmaCream,
-                figmaElectrolyte: figmaElectrolyte,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _WaterBottleButton(
-                label: '3+',
-                value: 3,
-                isSelected: selectedValue >= 3,
-                onTap: () => onSelected(3),
-                figmaCream: figmaCream,
-                figmaElectrolyte: figmaElectrolyte,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _WaterBottleButton extends StatelessWidget {
-  const _WaterBottleButton({
-    required this.label,
-    required this.value,
-    required this.isSelected,
-    required this.onTap,
-    required this.figmaCream,
-    required this.figmaElectrolyte,
-  });
-
-  final String label;
-  final int value;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final Color figmaCream;
-  final Color figmaElectrolyte;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? figmaElectrolyte.withValues(alpha: 0.28)
-              : figmaCream.withValues(alpha: 0.1),
-          border: Border.all(
-            color: isSelected
-                ? figmaElectrolyte.withValues(alpha: 0.2)
-                : figmaCream.withValues(alpha: 0.08),
-            width: isSelected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 20,
-              fontWeight: FontWeight.w400,
-              color: figmaCream,
-              height: 1.2,
-              letterSpacing: 0.24,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

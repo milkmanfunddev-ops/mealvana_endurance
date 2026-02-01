@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import '../../auth/application/auth_service.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_events.dart';
@@ -30,6 +31,7 @@ class OnboardingService {
     bool isAnonymous = true, // false when user signs up with email/OAuth
     String? firstName,
     String? lastName,
+    UnitSystem unitSystem = UnitSystem.imperial,
   }) async {
 
     final user = await _authService.createUser(
@@ -43,6 +45,7 @@ class OnboardingService {
       isAnonymous: isAnonymous,
       firstName: firstName,
       lastName: lastName,
+      unitSystem: unitSystem,
     );
 
     // Track user registration

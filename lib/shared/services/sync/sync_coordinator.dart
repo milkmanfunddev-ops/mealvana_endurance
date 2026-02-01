@@ -70,6 +70,9 @@ class SyncCoordinator extends _$SyncCoordinator {
   /// Track last failed sync attempt per repository (for rate limiting)
   final Map<String, DateTime> _lastFailedAttempt = {};
 
+  /// Skip sync for users who just completed onboarding (in-memory, self-clearing)
+  bool _skipSyncForNewUser = false;
+
   /// Track consecutive failure count per repository (for rate limiting)
   final Map<String, int> _failureCount = {};
 
@@ -123,6 +126,18 @@ class SyncCoordinator extends _$SyncCoordinator {
     String userId, {
     SyncableRepository? repository,
   }) async {
+    // 0. Skip sync for users who just completed onboarding
+    // New users have all data locally - nothing to download from Supabase
+    // Their data will be uploaded via background sync later
+    if (_shouldSkipSyncForNewUser()) {
+      _logger.info(
+        'Skipping sync - user just completed onboarding',
+        context: 'SYNC_COORDINATOR',
+        data: {'repoKey': repoKey},
+      );
+      return;
+    }
+
     // 1. Prevent infinite loops - if already syncing this repo, return
     if (_syncingNow.contains(repoKey)) {
       _logger.debug(
@@ -268,6 +283,30 @@ class SyncCoordinator extends _$SyncCoordinator {
   void _clearFailureTracking(String repoKey) {
     _lastFailedAttempt.remove(repoKey);
     _failureCount.remove(repoKey);
+  }
+
+  // ========================================================================
+  // New User (Post-Onboarding) Sync Skip
+  // ========================================================================
+
+  /// Check if sync should be skipped for a user who just completed onboarding.
+  ///
+  /// New users have all data locally - nothing to download from Supabase.
+  /// Their user profile is already uploaded during onboarding completion.
+  /// Skipping sync prevents unnecessary network calls and potential FK errors.
+  ///
+  /// Uses in-memory flag - self-clearing on first check.
+  bool _shouldSkipSyncForNewUser() {
+    if (_skipSyncForNewUser) {
+      _skipSyncForNewUser = false; // Clear immediately (self-clearing)
+      return true;
+    }
+    return false;
+  }
+
+  /// Set flag to skip sync for new users (called from onboarding completion)
+  void setSkipSyncForNewUser() {
+    _skipSyncForNewUser = true;
   }
 
   /// Single entry point for ALL sync operations (LEGACY - kept for backwards compatibility)

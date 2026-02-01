@@ -33,8 +33,11 @@ class SettingsState {
   final int? heightInches;
   final double? weightPounds;
   final bool runsWithWaterBottle;
-  final DistanceUnit preferredDistanceUnit;
-  final PaceUnit preferredPaceUnit;
+  final UnitSystem unitSystem;
+  
+  DistanceUnit get preferredDistanceUnit => unitSystem == UnitSystem.metric ? DistanceUnit.kilometers : DistanceUnit.miles;
+  PaceUnit get preferredPaceUnit => unitSystem == UnitSystem.metric ? PaceUnit.minPerKm : PaceUnit.minPerMile;
+
   final GutTraining gutTrainingLevel;
   final SweatRateCat sweatRate;
 
@@ -113,8 +116,7 @@ class SettingsState {
     this.heightInches,
     this.weightPounds,
     this.runsWithWaterBottle = false,
-    this.preferredDistanceUnit = DistanceUnit.miles,
-    this.preferredPaceUnit = PaceUnit.minPerMile,
+    this.unitSystem = UnitSystem.imperial,
     this.gutTrainingLevel = GutTraining.moderate,
     this.sweatRate = SweatRateCat.medium,
     this.giSensitivity,
@@ -169,8 +171,7 @@ class SettingsState {
     int? heightInches,
     double? weightPounds,
     bool? runsWithWaterBottle,
-    DistanceUnit? preferredDistanceUnit,
-    PaceUnit? preferredPaceUnit,
+    UnitSystem? unitSystem,
     GutTraining? gutTrainingLevel,
     SweatRateCat? sweatRate,
     bool? giSensitivity,
@@ -224,8 +225,7 @@ class SettingsState {
       heightInches: heightInches ?? this.heightInches,
       weightPounds: weightPounds ?? this.weightPounds,
       runsWithWaterBottle: runsWithWaterBottle ?? this.runsWithWaterBottle,
-      preferredDistanceUnit: preferredDistanceUnit ?? this.preferredDistanceUnit,
-      preferredPaceUnit: preferredPaceUnit ?? this.preferredPaceUnit,
+      unitSystem: unitSystem ?? this.unitSystem,
       gutTrainingLevel: gutTrainingLevel ?? this.gutTrainingLevel,
       sweatRate: sweatRate ?? this.sweatRate,
       giSensitivity: giSensitivity ?? this.giSensitivity,

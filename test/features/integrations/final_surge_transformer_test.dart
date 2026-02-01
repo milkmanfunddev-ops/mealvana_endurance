@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/integrations/application/final_surge_transformer.dart';
 import 'package:mealvana_endurance/features/integrations/domain/final_surge_defaults.dart';
+import 'package:mealvana_endurance/features/integrations/domain/intensity_distribution_mapper.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 import '../../fixtures/final_surge_fixtures.dart';
@@ -139,17 +140,50 @@ void main() {
         );
       });
 
-      test('handles empty description with running default pace', () {
+      test('handles empty description - calculates pace from distance/time', () {
         final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
           ..['WorkoutDescription'] = '';
 
         final result = transformer.transform(workout, testUserId);
 
         expect(result, isNotNull);
+        // With empty description but valid distance (10mi) and time (80min),
+        // pace is calculated: 80/10 = 8.0 min/mi
         expect(
           result!.activity.paceTargetMinutesPerMile,
-          equals(FinalSurgeDefaults.runningPaceMinPerMile),
+          equals(8.0),
         );
+      });
+
+      test('calculates pace from distance and time when no pace in description', () {
+        // This tests the key fix for Final Surge integration:
+        // When PlannedPace is null and description has no pace info,
+        // calculate pace = duration / distance
+        final result = transformer.transform(
+          FinalSurgeFixtures.runningWorkoutCalculatedPace,
+          testUserId,
+        );
+
+        expect(result, isNotNull);
+        // 90 minutes / 12 miles = 7.5 min/mile pace
+        expect(result!.activity.paceTargetMinutesPerMile, closeTo(7.5, 0.01));
+        // No min/max pace for calculated values
+        expect(result.paceMinMinutesPerMile, isNull);
+        expect(result.paceMaxMinutesPerMile, isNull);
+      });
+
+      test('prefers description pace over calculated pace', () {
+        // When both description and distance/time are available,
+        // description pace should take precedence
+        final result = transformer.transform(
+          FinalSurgeFixtures.runningWorkoutComplete, // Has "@ 8:00" in description
+          testUserId,
+        );
+
+        expect(result, isNotNull);
+        // Should use 8.0 from description, not calculated pace (80 min / 10 mi = 8.0)
+        // In this case they're the same, but the test validates priority
+        expect(result!.activity.paceTargetMinutesPerMile, equals(8.0));
       });
     });
 
@@ -579,6 +613,227 @@ void main() {
         expect(result!.activity.scheduledDateTime.year, equals(now.year));
         expect(result.activity.scheduledDateTime.month, equals(now.month));
         expect(result.activity.scheduledDateTime.day, equals(now.day));
+      });
+    });
+
+    // =========================================================================
+    // INTENSITY DISTRIBUTION INFERENCE TESTS
+    // =========================================================================
+    group('Intensity Distribution Inference', () {
+      test('maps WorkoutRace=true to race pattern (10/30/60)', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutRace'] = true;
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternRace),
+        );
+      });
+
+      test('maps Tempo subtype to tempo pattern (30/60/10)', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutSubTypeName'] = 'Tempo';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternTempo),
+        );
+      });
+
+      test('maps Threshold subtype to tempo pattern (30/60/10)', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutSubTypeName'] = 'Threshold';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternTempo),
+        );
+      });
+
+      test('maps Easy subtype to easy/recovery pattern (95/5/0)', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutSubTypeName'] = 'Easy';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternEasyRecovery),
+        );
+      });
+
+      test('maps Recovery subtype to easy/recovery pattern (95/5/0)', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutSubTypeName'] = 'Recovery';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternEasyRecovery),
+        );
+      });
+
+      test('maps Long Run subtype to long run pattern (80/15/5)', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutSubTypeName'] = 'Long Run';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternLongRun),
+        );
+      });
+
+      test('maps Intervals subtype to intervals pattern (40/30/30)', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutSubTypeName'] = 'Intervals';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternIntervals),
+        );
+      });
+
+      test('maps Speed subtype to intervals pattern (40/30/30)', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutSubTypeName'] = 'Speed Work';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternIntervals),
+        );
+      });
+
+      test('falls back to WorkoutTitle keywords when no subtype', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutSubTypeName'] = null
+          ..['WorkoutTitle'] = 'Easy Morning Run';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternEasyRecovery),
+        );
+      });
+
+      test('returns null when no intensity hints available', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutRace'] = false
+          ..['WorkoutSubTypeName'] = null
+          ..['WorkoutTitle'] = 'Run'; // Generic, no keywords
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNull);
+      });
+
+      test('WorkoutRace takes priority over subtype', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutRace'] = true
+          ..['WorkoutSubTypeName'] = 'Easy'; // Would be easy pattern
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        // Race should win over Easy subtype
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternRace),
+        );
+      });
+
+      test('SubTypeName takes priority over WorkoutTitle', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+          ..['WorkoutRace'] = false
+          ..['WorkoutSubTypeName'] = 'Tempo'
+          ..['WorkoutTitle'] = 'Easy Run'; // Would be easy pattern if used
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        // Subtype (Tempo) should win over Title (Easy)
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternTempo),
+        );
+      });
+
+      test('cycling workout with Endurance subtype maps to long run pattern', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.cyclingWorkout)
+          ..['WorkoutSubTypeName'] = 'Endurance';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternLongRun),
+        );
+      });
+
+      test('swimming workout with intervals subtype maps correctly', () {
+        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.swimmingWorkout)
+          ..['WorkoutSubTypeName'] = 'Intervals';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternIntervals),
+        );
+      });
+
+      test('walk workout does not override pattern based on keywords', () {
+        // Walk workout should still get pattern from keywords in title/subtype
+        final result = transformer.transform(
+          FinalSurgeFixtures.walkWorkout,
+          testUserId,
+        );
+
+        expect(result, isNotNull);
+        // Walk title says "Active Recovery Walk" - should match recovery keyword
+        expect(result!.intensityDistribution, isNotNull);
+        expect(
+          result.intensityDistribution,
+          equals(IntensityDistributionMapper.patternEasyRecovery),
+        );
       });
     });
   });

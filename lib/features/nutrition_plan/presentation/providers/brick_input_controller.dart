@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../activities/domain/brick_metadata.dart';
 import '../../../../core/utils/debug_logger.dart';
+import '../../domain/intensity_distribution.dart';
+import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 
 part 'brick_input_controller.g.dart';
 
@@ -13,6 +15,40 @@ class BrickSegmentInput {
   // Common fields
   final int durationMinutes;
   final String intensity; // 'easy', 'moderate', 'hard', 'race'
+
+  /// Intensity distribution across three zones (Z1-Z2, Z3-Z4, Z5+)
+  /// Defaults to 70/20/10 split when segment is created
+  final IntensityDistribution? intensityDistribution;
+
+  /// Duration/Pace mode for WorkoutDetailsWidget
+  final DurationPaceMode durationPaceMode;
+
+  /// Pre-activity fueling window in minutes (0-480)
+  final int preActivityMinutes;
+
+  /// Session goal for cycling/swimming
+  final String? sessionGoal;
+
+  /// Environment temperature (running/cycling)
+  final double temperatureC;
+
+  /// Environment humidity percentage (running/cycling)
+  final double humidityPct;
+
+  /// Wind condition for cycling ('still', 'breezy', 'windy')
+  final String windCondition;
+
+  /// Sun exposure for cycling ('full_sun', 'mixed', 'shade')
+  final String sunExposure;
+
+  /// Deck temperature for swimming
+  final double deckTemperature;
+
+  /// Deck humidity for swimming
+  final double deckHumidity;
+
+  /// Whether environment/deck conditions section is expanded
+  final bool showEnvironment;
 
   // Swimming fields
   final double? distanceMeters;
@@ -35,6 +71,17 @@ class BrickSegmentInput {
     required this.order,
     this.durationMinutes = 0,
     this.intensity = 'moderate',
+    this.intensityDistribution,
+    this.durationPaceMode = DurationPaceMode.byDuration,
+    this.preActivityMinutes = 0,
+    this.sessionGoal,
+    this.temperatureC = 20.0,
+    this.humidityPct = 50.0,
+    this.windCondition = 'still',
+    this.sunExposure = 'mixed',
+    this.deckTemperature = 22.0,
+    this.deckHumidity = 50.0,
+    this.showEnvironment = false,
     // Swimming
     this.distanceMeters,
     this.pacePer100mSeconds,
@@ -55,6 +102,17 @@ class BrickSegmentInput {
     int? order,
     int? durationMinutes,
     String? intensity,
+    IntensityDistribution? intensityDistribution,
+    DurationPaceMode? durationPaceMode,
+    int? preActivityMinutes,
+    String? sessionGoal,
+    double? temperatureC,
+    double? humidityPct,
+    String? windCondition,
+    String? sunExposure,
+    double? deckTemperature,
+    double? deckHumidity,
+    bool? showEnvironment,
     double? distanceMeters,
     int? pacePer100mSeconds,
     String? poolOrOpenWater,
@@ -71,6 +129,17 @@ class BrickSegmentInput {
       order: order ?? this.order,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       intensity: intensity ?? this.intensity,
+      intensityDistribution: intensityDistribution ?? this.intensityDistribution,
+      durationPaceMode: durationPaceMode ?? this.durationPaceMode,
+      preActivityMinutes: preActivityMinutes ?? this.preActivityMinutes,
+      sessionGoal: sessionGoal ?? this.sessionGoal,
+      temperatureC: temperatureC ?? this.temperatureC,
+      humidityPct: humidityPct ?? this.humidityPct,
+      windCondition: windCondition ?? this.windCondition,
+      sunExposure: sunExposure ?? this.sunExposure,
+      deckTemperature: deckTemperature ?? this.deckTemperature,
+      deckHumidity: deckHumidity ?? this.deckHumidity,
+      showEnvironment: showEnvironment ?? this.showEnvironment,
       distanceMeters: distanceMeters ?? this.distanceMeters,
       pacePer100mSeconds: pacePer100mSeconds ?? this.pacePer100mSeconds,
       poolOrOpenWater: poolOrOpenWater ?? this.poolOrOpenWater,
@@ -192,23 +261,45 @@ class BrickInputController extends _$BrickInputController {
     final defaultSports = {'swimming', 'running'};
     final defaultOrder = ['swimming', 'running'];
 
+    // Default intensity distribution (70/20/10)
+    final defaultIntensity = IntensityDistribution.defaultDistribution();
+
     // Initialize segment inputs for all possible sports
     final defaultInputs = <String, BrickSegmentInput>{
-      'swimming': const BrickSegmentInput(
+      'swimming': BrickSegmentInput(
         sport: 'swimming',
         order: 1,
+        intensityDistribution: defaultIntensity,
         poolOrOpenWater: 'pool',
         waterTempC: 24.0,
+        distanceMeters: 1500,
+        pacePer100mSeconds: 120,
+        sessionGoal: 'endurance',
+        deckTemperature: 22.0,
+        deckHumidity: 50.0,
       ),
-      'cycling': const BrickSegmentInput(
+      'cycling': BrickSegmentInput(
         sport: 'cycling',
         order: 2,
-        terrain: 'flat',
+        intensityDistribution: defaultIntensity,
+        terrain: 'flat_outdoor',
         indoorOutdoor: 'outdoor',
+        distanceMiles: 20.0,
+        speedMph: 18.0,
+        sessionGoal: 'endurance',
+        temperatureC: 20.0,
+        humidityPct: 50.0,
+        windCondition: 'still',
+        sunExposure: 'mixed',
       ),
-      'running': const BrickSegmentInput(
+      'running': BrickSegmentInput(
         sport: 'running',
         order: 2,
+        intensityDistribution: defaultIntensity,
+        distanceMiles: 3.0,
+        paceMinutesPerMile: 9.0,
+        temperatureC: 20.0,
+        humidityPct: 50.0,
       ),
     };
 
@@ -232,6 +323,7 @@ class BrickInputController extends _$BrickInputController {
   void toggleSport(String sport) {
     final newSelected = Set<String>.from(state.selectedSports);
     final newOrder = List<String>.from(state.sportOrder);
+    final newInputs = Map<String, BrickSegmentInput>.from(state.segmentInputs);
 
     if (newSelected.contains(sport)) {
       // Removing sport - enforce minimum 2
@@ -252,10 +344,78 @@ class BrickInputController extends _$BrickInputController {
 
       newSelected.add(sport);
       newOrder.add(sport);
+
+      // Create default segment input if one doesn't exist
+      if (!newInputs.containsKey(sport)) {
+        newInputs[sport] = _createDefaultSegmentInput(sport, newOrder.length);
+        DebugLogger.info('🧱 BRICK CONTROLLER: Created default segment input for $sport');
+      }
+
       DebugLogger.info('🧱 BRICK CONTROLLER: Added sport: $sport');
     }
 
-    state = state.copyWith(selectedSports: newSelected, sportOrder: newOrder);
+    state = state.copyWith(
+      selectedSports: newSelected,
+      sportOrder: newOrder,
+      segmentInputs: newInputs,
+    );
+  }
+
+  /// Create a default segment input for a sport
+  BrickSegmentInput _createDefaultSegmentInput(String sport, int order) {
+    // All segments start with default 70/20/10 intensity distribution
+    final defaultIntensity = IntensityDistribution.defaultDistribution();
+
+    switch (sport) {
+      case 'swimming':
+        return BrickSegmentInput(
+          sport: sport,
+          order: order,
+          durationMinutes: 30,
+          intensityDistribution: defaultIntensity,
+          poolOrOpenWater: 'pool',
+          waterTempC: 24.0,
+          distanceMeters: 1500,
+          pacePer100mSeconds: 120,
+          sessionGoal: 'endurance',
+          deckTemperature: 22.0,
+          deckHumidity: 50.0,
+        );
+      case 'cycling':
+        return BrickSegmentInput(
+          sport: sport,
+          order: order,
+          durationMinutes: 60,
+          intensityDistribution: defaultIntensity,
+          terrain: 'flat_outdoor',
+          indoorOutdoor: 'outdoor',
+          distanceMiles: 20.0,
+          speedMph: 18.0,
+          sessionGoal: 'endurance',
+          temperatureC: 20.0,
+          humidityPct: 50.0,
+          windCondition: 'still',
+          sunExposure: 'mixed',
+        );
+      case 'running':
+        return BrickSegmentInput(
+          sport: sport,
+          order: order,
+          durationMinutes: 30,
+          intensityDistribution: defaultIntensity,
+          distanceMiles: 3.0,
+          paceMinutesPerMile: 9.0,
+          temperatureC: 20.0,
+          humidityPct: 50.0,
+        );
+      default:
+        return BrickSegmentInput(
+          sport: sport,
+          order: order,
+          durationMinutes: 30,
+          intensityDistribution: defaultIntensity,
+        );
+    }
   }
 
   /// Reorder sports (drag to reorder)
@@ -281,6 +441,19 @@ class BrickInputController extends _$BrickInputController {
 
     state = state.copyWith(segmentInputs: newInputs);
     DebugLogger.info('🧱 BRICK CONTROLLER: Updated $sport segment input');
+  }
+
+  /// Update intensity distribution for a specific segment
+  void updateSegmentIntensity(String sport, IntensityDistribution intensity) {
+    final currentInput = state.segmentInputs[sport];
+    if (currentInput == null) {
+      DebugLogger.warning('🧱 BRICK CONTROLLER: Cannot update intensity - no segment found for $sport');
+      return;
+    }
+
+    final updatedInput = currentInput.copyWith(intensityDistribution: intensity);
+    updateSegmentInput(sport, updatedInput);
+    DebugLogger.info('🧱 BRICK CONTROLLER: Updated $sport intensity distribution - $intensity');
   }
 
   /// Get list of BrickSegment objects in proper order
@@ -359,11 +532,14 @@ class BrickInputController extends _$BrickInputController {
       }
 
       // Convert BrickSegment to BrickSegmentInput
+      // Note: intensityDistribution is nullable to support existing segments without this field
+      // Defaults to 70/20/10 if not present
       segmentInputs[segment.sport] = BrickSegmentInput(
         sport: segment.sport,
         order: segment.order,
         durationMinutes: segment.durationMinutes,
         intensity: segment.intensity,
+        intensityDistribution: IntensityDistribution.defaultDistribution(),
         // Swimming fields
         distanceMeters: segment.distanceMeters,
         pacePer100mSeconds: segment.pacePer100mSeconds,

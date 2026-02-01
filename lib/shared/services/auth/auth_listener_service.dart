@@ -9,6 +9,7 @@ import '../analytics/analytics_tracker.dart';
 import '../sync/sync_coordinator.dart';
 import '../../database/database_provider.dart';
 import '../../providers/user_id_provider.dart';
+import '../../core/app_router.dart';
 import '../../../features/auth/data/user_repository.dart';
 import '../../../features/settings/presentation/providers/settings_controller.dart';
 import '../../../features/activities/presentation/providers/activities_controller.dart';
@@ -29,9 +30,9 @@ import '../../../features/nutrition_plan/presentation/providers/macro_targets_co
 ///
 /// Key design principles:
 /// 1. ONE listener for the lifetime of the app
-/// 2. Only invalidates user-specific providers (userIdProvider, activitiesController, etc.)
-/// 3. NEVER invalidates appStartupProvider
-/// 4. Router handles navigation based on auth state
+/// 2. Invalidates user-specific providers AND appStartupProvider on sign-out
+/// 3. appStartupProvider invalidation triggers router redirect to /welcome
+/// 4. Skips invalidation during onboarding sign-out to preserve cached data
 class AuthListenerService {
   AuthListenerService(this._ref);
 
@@ -144,10 +145,7 @@ class AuthListenerService {
     }
 
     try {
-      // Invalidate user-specific providers
-      // This causes the UI to update and router to redirect to welcome screen
-      // NOTE: We do NOT invalidate appStartupProvider - that would cause infinite loop
-
+      // Invalidate user-specific providers first
       // Core user identity
       _ref.invalidate(userIdProvider);
 
@@ -178,6 +176,11 @@ class AuthListenerService {
 
       // Nutrition plan
       _ref.invalidate(macroTargetsControllerProvider);
+
+      // Notify GoRouter to re-evaluate redirects on the current route.
+      // The redirect function checks Supabase session directly and
+      // redirects to /welcome when no session exists.
+      _ref.read(authChangeNotifierProvider).notify();
 
       _logger.info(
         'User-specific providers invalidated after sign-out',

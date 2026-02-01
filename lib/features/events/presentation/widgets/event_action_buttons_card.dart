@@ -132,7 +132,6 @@ class EventActionButtonsCard extends ConsumerWidget {
   ) async {
     // Capture context-dependent values BEFORE any async gaps
     final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
 
     // Navigate to protocol selection screen
     final selectedProtocol = await navigator.push<int>(
@@ -157,18 +156,7 @@ class EventActionButtonsCard extends ConsumerWidget {
 
       if (userProfile == null) {
         if (context.mounted) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                'Please complete your profile first',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Colors.white,
-                ),
-              ),
-              backgroundColor: AppColors.dragonfruit,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          MealvanaSnackbar.showWarning(context, 'Please complete your profile first');
         }
         return;
       }
@@ -193,18 +181,7 @@ class EventActionButtonsCard extends ConsumerWidget {
         );
 
         if (context.mounted) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                'Updated to $selectedProtocol-day carb loading plan!',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Colors.white,
-                ),
-              ),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          MealvanaSnackbar.showSuccess(context, 'Updated to $selectedProtocol-day carb loading plan!');
           // Refresh the event detail to show updated info
           ref.invalidate(eventDetailProvider(eventId));
         }
@@ -219,18 +196,7 @@ class EventActionButtonsCard extends ConsumerWidget {
         );
 
         if (context.mounted) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                'Created $selectedProtocol-day carb loading plan!',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Colors.white,
-                ),
-              ),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          MealvanaSnackbar.showSuccess(context, 'Created $selectedProtocol-day carb loading plan!');
           // Refresh the event detail to show updated info
           ref.invalidate(eventDetailProvider(eventId));
 
@@ -273,18 +239,7 @@ class EventActionButtonsCard extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error creating plan: $e',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Colors.white,
-              ),
-            ),
-            backgroundColor: AppColors.dragonfruit,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Error creating plan: $e');
       }
     }
   }

@@ -426,6 +426,39 @@ class $UserProfilesTableTable extends UserProfilesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _defaultRunningPaceMinPerMileMeta =
+      const VerificationMeta('defaultRunningPaceMinPerMile');
+  @override
+  late final GeneratedColumn<double> defaultRunningPaceMinPerMile =
+      GeneratedColumn<double>(
+        'default_running_pace_min_per_mile',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _defaultCyclingSpeedMphMeta =
+      const VerificationMeta('defaultCyclingSpeedMph');
+  @override
+  late final GeneratedColumn<double> defaultCyclingSpeedMph =
+      GeneratedColumn<double>(
+        'default_cycling_speed_mph',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _defaultSwimmingPacePer100SecMeta =
+      const VerificationMeta('defaultSwimmingPacePer100Sec');
+  @override
+  late final GeneratedColumn<int> defaultSwimmingPacePer100Sec =
+      GeneratedColumn<int>(
+        'default_swimming_pace_per_100_sec',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _firstNameMeta = const VerificationMeta(
     'firstName',
   );
@@ -471,6 +504,18 @@ class $UserProfilesTableTable extends UserProfilesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _unitSystemMeta = const VerificationMeta(
+    'unitSystem',
+  );
+  @override
+  late final GeneratedColumn<String> unitSystem = GeneratedColumn<String>(
+    'unit_system',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('imperial'),
   );
   static const VerificationMeta _needsUploadMeta = const VerificationMeta(
     'needsUpload',
@@ -523,10 +568,14 @@ class $UserProfilesTableTable extends UserProfilesTable
     autoGenerateNutrition,
     completionReminders,
     senderName,
+    defaultRunningPaceMinPerMile,
+    defaultCyclingSpeedMph,
+    defaultSwimmingPacePer100Sec,
     firstName,
     lastName,
     dietaryPreference,
     allergies,
+    unitSystem,
     needsUpload,
   ];
   @override
@@ -809,6 +858,33 @@ class $UserProfilesTableTable extends UserProfilesTable
         senderName.isAcceptableOrUnknown(data['sender_name']!, _senderNameMeta),
       );
     }
+    if (data.containsKey('default_running_pace_min_per_mile')) {
+      context.handle(
+        _defaultRunningPaceMinPerMileMeta,
+        defaultRunningPaceMinPerMile.isAcceptableOrUnknown(
+          data['default_running_pace_min_per_mile']!,
+          _defaultRunningPaceMinPerMileMeta,
+        ),
+      );
+    }
+    if (data.containsKey('default_cycling_speed_mph')) {
+      context.handle(
+        _defaultCyclingSpeedMphMeta,
+        defaultCyclingSpeedMph.isAcceptableOrUnknown(
+          data['default_cycling_speed_mph']!,
+          _defaultCyclingSpeedMphMeta,
+        ),
+      );
+    }
+    if (data.containsKey('default_swimming_pace_per_100_sec')) {
+      context.handle(
+        _defaultSwimmingPacePer100SecMeta,
+        defaultSwimmingPacePer100Sec.isAcceptableOrUnknown(
+          data['default_swimming_pace_per_100_sec']!,
+          _defaultSwimmingPacePer100SecMeta,
+        ),
+      );
+    }
     if (data.containsKey('first_name')) {
       context.handle(
         _firstNameMeta,
@@ -834,6 +910,12 @@ class $UserProfilesTableTable extends UserProfilesTable
       context.handle(
         _allergiesMeta,
         allergies.isAcceptableOrUnknown(data['allergies']!, _allergiesMeta),
+      );
+    }
+    if (data.containsKey('unit_system')) {
+      context.handle(
+        _unitSystemMeta,
+        unitSystem.isAcceptableOrUnknown(data['unit_system']!, _unitSystemMeta),
       );
     }
     if (data.containsKey('needs_upload')) {
@@ -993,6 +1075,18 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.string,
         data['${effectivePrefix}sender_name'],
       ),
+      defaultRunningPaceMinPerMile: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}default_running_pace_min_per_mile'],
+      ),
+      defaultCyclingSpeedMph: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}default_cycling_speed_mph'],
+      ),
+      defaultSwimmingPacePer100Sec: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}default_swimming_pace_per_100_sec'],
+      ),
       firstName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}first_name'],
@@ -1008,6 +1102,10 @@ class $UserProfilesTableTable extends UserProfilesTable
       allergies: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}allergies'],
+      )!,
+      unitSystem: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit_system'],
       )!,
       needsUpload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
@@ -1113,6 +1211,9 @@ class UserProfileEntry extends DataClass
   final bool autoGenerateNutrition;
   final bool completionReminders;
   final String? senderName;
+  final double? defaultRunningPaceMinPerMile;
+  final double? defaultCyclingSpeedMph;
+  final int? defaultSwimmingPacePer100Sec;
 
   /// User's first name (optional, used for coach mode athlete identification)
   final String? firstName;
@@ -1127,6 +1228,11 @@ class UserProfileEntry extends DataClass
   /// User's allergies stored as PostgreSQL array format (e.g., '{dairy,gluten,peanuts}')
   /// Values: dairy, eggs, fish, gluten, peanuts, sesame, shellfish, soy, tree_nuts
   final String allergies;
+
+  /// User's preferred unit system for display (imperial or metric)
+  /// Values: imperial, metric
+  /// Default: imperial (US-centric app)
+  final String unitSystem;
 
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
@@ -1166,10 +1272,14 @@ class UserProfileEntry extends DataClass
     required this.autoGenerateNutrition,
     required this.completionReminders,
     this.senderName,
+    this.defaultRunningPaceMinPerMile,
+    this.defaultCyclingSpeedMph,
+    this.defaultSwimmingPacePer100Sec,
     this.firstName,
     this.lastName,
     this.dietaryPreference,
     required this.allergies,
+    required this.unitSystem,
     required this.needsUpload,
   });
   @override
@@ -1235,6 +1345,21 @@ class UserProfileEntry extends DataClass
     if (!nullToAbsent || senderName != null) {
       map['sender_name'] = Variable<String>(senderName);
     }
+    if (!nullToAbsent || defaultRunningPaceMinPerMile != null) {
+      map['default_running_pace_min_per_mile'] = Variable<double>(
+        defaultRunningPaceMinPerMile,
+      );
+    }
+    if (!nullToAbsent || defaultCyclingSpeedMph != null) {
+      map['default_cycling_speed_mph'] = Variable<double>(
+        defaultCyclingSpeedMph,
+      );
+    }
+    if (!nullToAbsent || defaultSwimmingPacePer100Sec != null) {
+      map['default_swimming_pace_per_100_sec'] = Variable<int>(
+        defaultSwimmingPacePer100Sec,
+      );
+    }
     if (!nullToAbsent || firstName != null) {
       map['first_name'] = Variable<String>(firstName);
     }
@@ -1245,6 +1370,7 @@ class UserProfileEntry extends DataClass
       map['dietary_preference'] = Variable<String>(dietaryPreference);
     }
     map['allergies'] = Variable<String>(allergies);
+    map['unit_system'] = Variable<String>(unitSystem);
     map['needs_upload'] = Variable<bool>(needsUpload);
     return map;
   }
@@ -1303,6 +1429,17 @@ class UserProfileEntry extends DataClass
       senderName: senderName == null && nullToAbsent
           ? const Value.absent()
           : Value(senderName),
+      defaultRunningPaceMinPerMile:
+          defaultRunningPaceMinPerMile == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultRunningPaceMinPerMile),
+      defaultCyclingSpeedMph: defaultCyclingSpeedMph == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultCyclingSpeedMph),
+      defaultSwimmingPacePer100Sec:
+          defaultSwimmingPacePer100Sec == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultSwimmingPacePer100Sec),
       firstName: firstName == null && nullToAbsent
           ? const Value.absent()
           : Value(firstName),
@@ -1313,6 +1450,7 @@ class UserProfileEntry extends DataClass
           ? const Value.absent()
           : Value(dietaryPreference),
       allergies: Value(allergies),
+      unitSystem: Value(unitSystem),
       needsUpload: Value(needsUpload),
     );
   }
@@ -1381,12 +1519,22 @@ class UserProfileEntry extends DataClass
         json['completionReminders'],
       ),
       senderName: serializer.fromJson<String?>(json['senderName']),
+      defaultRunningPaceMinPerMile: serializer.fromJson<double?>(
+        json['defaultRunningPaceMinPerMile'],
+      ),
+      defaultCyclingSpeedMph: serializer.fromJson<double?>(
+        json['defaultCyclingSpeedMph'],
+      ),
+      defaultSwimmingPacePer100Sec: serializer.fromJson<int?>(
+        json['defaultSwimmingPacePer100Sec'],
+      ),
       firstName: serializer.fromJson<String?>(json['firstName']),
       lastName: serializer.fromJson<String?>(json['lastName']),
       dietaryPreference: serializer.fromJson<String?>(
         json['dietaryPreference'],
       ),
       allergies: serializer.fromJson<String>(json['allergies']),
+      unitSystem: serializer.fromJson<String>(json['unitSystem']),
       needsUpload: serializer.fromJson<bool>(json['needsUpload']),
     );
   }
@@ -1432,10 +1580,20 @@ class UserProfileEntry extends DataClass
       'autoGenerateNutrition': serializer.toJson<bool>(autoGenerateNutrition),
       'completionReminders': serializer.toJson<bool>(completionReminders),
       'senderName': serializer.toJson<String?>(senderName),
+      'defaultRunningPaceMinPerMile': serializer.toJson<double?>(
+        defaultRunningPaceMinPerMile,
+      ),
+      'defaultCyclingSpeedMph': serializer.toJson<double?>(
+        defaultCyclingSpeedMph,
+      ),
+      'defaultSwimmingPacePer100Sec': serializer.toJson<int?>(
+        defaultSwimmingPacePer100Sec,
+      ),
       'firstName': serializer.toJson<String?>(firstName),
       'lastName': serializer.toJson<String?>(lastName),
       'dietaryPreference': serializer.toJson<String?>(dietaryPreference),
       'allergies': serializer.toJson<String>(allergies),
+      'unitSystem': serializer.toJson<String>(unitSystem),
       'needsUpload': serializer.toJson<bool>(needsUpload),
     };
   }
@@ -1475,10 +1633,14 @@ class UserProfileEntry extends DataClass
     bool? autoGenerateNutrition,
     bool? completionReminders,
     Value<String?> senderName = const Value.absent(),
+    Value<double?> defaultRunningPaceMinPerMile = const Value.absent(),
+    Value<double?> defaultCyclingSpeedMph = const Value.absent(),
+    Value<int?> defaultSwimmingPacePer100Sec = const Value.absent(),
     Value<String?> firstName = const Value.absent(),
     Value<String?> lastName = const Value.absent(),
     Value<String?> dietaryPreference = const Value.absent(),
     String? allergies,
+    String? unitSystem,
     bool? needsUpload,
   }) => UserProfileEntry(
     id: id ?? this.id,
@@ -1516,12 +1678,22 @@ class UserProfileEntry extends DataClass
     autoGenerateNutrition: autoGenerateNutrition ?? this.autoGenerateNutrition,
     completionReminders: completionReminders ?? this.completionReminders,
     senderName: senderName.present ? senderName.value : this.senderName,
+    defaultRunningPaceMinPerMile: defaultRunningPaceMinPerMile.present
+        ? defaultRunningPaceMinPerMile.value
+        : this.defaultRunningPaceMinPerMile,
+    defaultCyclingSpeedMph: defaultCyclingSpeedMph.present
+        ? defaultCyclingSpeedMph.value
+        : this.defaultCyclingSpeedMph,
+    defaultSwimmingPacePer100Sec: defaultSwimmingPacePer100Sec.present
+        ? defaultSwimmingPacePer100Sec.value
+        : this.defaultSwimmingPacePer100Sec,
     firstName: firstName.present ? firstName.value : this.firstName,
     lastName: lastName.present ? lastName.value : this.lastName,
     dietaryPreference: dietaryPreference.present
         ? dietaryPreference.value
         : this.dietaryPreference,
     allergies: allergies ?? this.allergies,
+    unitSystem: unitSystem ?? this.unitSystem,
     needsUpload: needsUpload ?? this.needsUpload,
   );
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
@@ -1614,12 +1786,24 @@ class UserProfileEntry extends DataClass
       senderName: data.senderName.present
           ? data.senderName.value
           : this.senderName,
+      defaultRunningPaceMinPerMile: data.defaultRunningPaceMinPerMile.present
+          ? data.defaultRunningPaceMinPerMile.value
+          : this.defaultRunningPaceMinPerMile,
+      defaultCyclingSpeedMph: data.defaultCyclingSpeedMph.present
+          ? data.defaultCyclingSpeedMph.value
+          : this.defaultCyclingSpeedMph,
+      defaultSwimmingPacePer100Sec: data.defaultSwimmingPacePer100Sec.present
+          ? data.defaultSwimmingPacePer100Sec.value
+          : this.defaultSwimmingPacePer100Sec,
       firstName: data.firstName.present ? data.firstName.value : this.firstName,
       lastName: data.lastName.present ? data.lastName.value : this.lastName,
       dietaryPreference: data.dietaryPreference.present
           ? data.dietaryPreference.value
           : this.dietaryPreference,
       allergies: data.allergies.present ? data.allergies.value : this.allergies,
+      unitSystem: data.unitSystem.present
+          ? data.unitSystem.value
+          : this.unitSystem,
       needsUpload: data.needsUpload.present
           ? data.needsUpload.value
           : this.needsUpload,
@@ -1663,10 +1847,18 @@ class UserProfileEntry extends DataClass
           ..write('autoGenerateNutrition: $autoGenerateNutrition, ')
           ..write('completionReminders: $completionReminders, ')
           ..write('senderName: $senderName, ')
+          ..write(
+            'defaultRunningPaceMinPerMile: $defaultRunningPaceMinPerMile, ',
+          )
+          ..write('defaultCyclingSpeedMph: $defaultCyclingSpeedMph, ')
+          ..write(
+            'defaultSwimmingPacePer100Sec: $defaultSwimmingPacePer100Sec, ',
+          )
           ..write('firstName: $firstName, ')
           ..write('lastName: $lastName, ')
           ..write('dietaryPreference: $dietaryPreference, ')
           ..write('allergies: $allergies, ')
+          ..write('unitSystem: $unitSystem, ')
           ..write('needsUpload: $needsUpload')
           ..write(')'))
         .toString();
@@ -1708,10 +1900,14 @@ class UserProfileEntry extends DataClass
     autoGenerateNutrition,
     completionReminders,
     senderName,
+    defaultRunningPaceMinPerMile,
+    defaultCyclingSpeedMph,
+    defaultSwimmingPacePer100Sec,
     firstName,
     lastName,
     dietaryPreference,
     allergies,
+    unitSystem,
     needsUpload,
   ]);
   @override
@@ -1752,10 +1948,16 @@ class UserProfileEntry extends DataClass
           other.autoGenerateNutrition == this.autoGenerateNutrition &&
           other.completionReminders == this.completionReminders &&
           other.senderName == this.senderName &&
+          other.defaultRunningPaceMinPerMile ==
+              this.defaultRunningPaceMinPerMile &&
+          other.defaultCyclingSpeedMph == this.defaultCyclingSpeedMph &&
+          other.defaultSwimmingPacePer100Sec ==
+              this.defaultSwimmingPacePer100Sec &&
           other.firstName == this.firstName &&
           other.lastName == this.lastName &&
           other.dietaryPreference == this.dietaryPreference &&
           other.allergies == this.allergies &&
+          other.unitSystem == this.unitSystem &&
           other.needsUpload == this.needsUpload);
 }
 
@@ -1794,10 +1996,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<bool> autoGenerateNutrition;
   final Value<bool> completionReminders;
   final Value<String?> senderName;
+  final Value<double?> defaultRunningPaceMinPerMile;
+  final Value<double?> defaultCyclingSpeedMph;
+  final Value<int?> defaultSwimmingPacePer100Sec;
   final Value<String?> firstName;
   final Value<String?> lastName;
   final Value<String?> dietaryPreference;
   final Value<String> allergies;
+  final Value<String> unitSystem;
   final Value<bool> needsUpload;
   final Value<int> rowid;
   const UserProfilesTableCompanion({
@@ -1835,10 +2041,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.autoGenerateNutrition = const Value.absent(),
     this.completionReminders = const Value.absent(),
     this.senderName = const Value.absent(),
+    this.defaultRunningPaceMinPerMile = const Value.absent(),
+    this.defaultCyclingSpeedMph = const Value.absent(),
+    this.defaultSwimmingPacePer100Sec = const Value.absent(),
     this.firstName = const Value.absent(),
     this.lastName = const Value.absent(),
     this.dietaryPreference = const Value.absent(),
     this.allergies = const Value.absent(),
+    this.unitSystem = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1877,10 +2087,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.autoGenerateNutrition = const Value.absent(),
     this.completionReminders = const Value.absent(),
     this.senderName = const Value.absent(),
+    this.defaultRunningPaceMinPerMile = const Value.absent(),
+    this.defaultCyclingSpeedMph = const Value.absent(),
+    this.defaultSwimmingPacePer100Sec = const Value.absent(),
     this.firstName = const Value.absent(),
     this.lastName = const Value.absent(),
     this.dietaryPreference = const Value.absent(),
     this.allergies = const Value.absent(),
+    this.unitSystem = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1920,10 +2134,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<bool>? autoGenerateNutrition,
     Expression<bool>? completionReminders,
     Expression<String>? senderName,
+    Expression<double>? defaultRunningPaceMinPerMile,
+    Expression<double>? defaultCyclingSpeedMph,
+    Expression<int>? defaultSwimmingPacePer100Sec,
     Expression<String>? firstName,
     Expression<String>? lastName,
     Expression<String>? dietaryPreference,
     Expression<String>? allergies,
+    Expression<String>? unitSystem,
     Expression<bool>? needsUpload,
     Expression<int>? rowid,
   }) {
@@ -1974,10 +2192,17 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       if (completionReminders != null)
         'completion_reminders': completionReminders,
       if (senderName != null) 'sender_name': senderName,
+      if (defaultRunningPaceMinPerMile != null)
+        'default_running_pace_min_per_mile': defaultRunningPaceMinPerMile,
+      if (defaultCyclingSpeedMph != null)
+        'default_cycling_speed_mph': defaultCyclingSpeedMph,
+      if (defaultSwimmingPacePer100Sec != null)
+        'default_swimming_pace_per_100_sec': defaultSwimmingPacePer100Sec,
       if (firstName != null) 'first_name': firstName,
       if (lastName != null) 'last_name': lastName,
       if (dietaryPreference != null) 'dietary_preference': dietaryPreference,
       if (allergies != null) 'allergies': allergies,
+      if (unitSystem != null) 'unit_system': unitSystem,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2018,10 +2243,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Value<bool>? autoGenerateNutrition,
     Value<bool>? completionReminders,
     Value<String?>? senderName,
+    Value<double?>? defaultRunningPaceMinPerMile,
+    Value<double?>? defaultCyclingSpeedMph,
+    Value<int?>? defaultSwimmingPacePer100Sec,
     Value<String?>? firstName,
     Value<String?>? lastName,
     Value<String?>? dietaryPreference,
     Value<String>? allergies,
+    Value<String>? unitSystem,
     Value<bool>? needsUpload,
     Value<int>? rowid,
   }) {
@@ -2064,10 +2293,17 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           autoGenerateNutrition ?? this.autoGenerateNutrition,
       completionReminders: completionReminders ?? this.completionReminders,
       senderName: senderName ?? this.senderName,
+      defaultRunningPaceMinPerMile:
+          defaultRunningPaceMinPerMile ?? this.defaultRunningPaceMinPerMile,
+      defaultCyclingSpeedMph:
+          defaultCyclingSpeedMph ?? this.defaultCyclingSpeedMph,
+      defaultSwimmingPacePer100Sec:
+          defaultSwimmingPacePer100Sec ?? this.defaultSwimmingPacePer100Sec,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       dietaryPreference: dietaryPreference ?? this.dietaryPreference,
       allergies: allergies ?? this.allergies,
+      unitSystem: unitSystem ?? this.unitSystem,
       needsUpload: needsUpload ?? this.needsUpload,
       rowid: rowid ?? this.rowid,
     );
@@ -2192,6 +2428,21 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     if (senderName.present) {
       map['sender_name'] = Variable<String>(senderName.value);
     }
+    if (defaultRunningPaceMinPerMile.present) {
+      map['default_running_pace_min_per_mile'] = Variable<double>(
+        defaultRunningPaceMinPerMile.value,
+      );
+    }
+    if (defaultCyclingSpeedMph.present) {
+      map['default_cycling_speed_mph'] = Variable<double>(
+        defaultCyclingSpeedMph.value,
+      );
+    }
+    if (defaultSwimmingPacePer100Sec.present) {
+      map['default_swimming_pace_per_100_sec'] = Variable<int>(
+        defaultSwimmingPacePer100Sec.value,
+      );
+    }
     if (firstName.present) {
       map['first_name'] = Variable<String>(firstName.value);
     }
@@ -2203,6 +2454,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     }
     if (allergies.present) {
       map['allergies'] = Variable<String>(allergies.value);
+    }
+    if (unitSystem.present) {
+      map['unit_system'] = Variable<String>(unitSystem.value);
     }
     if (needsUpload.present) {
       map['needs_upload'] = Variable<bool>(needsUpload.value);
@@ -2250,10 +2504,18 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           ..write('autoGenerateNutrition: $autoGenerateNutrition, ')
           ..write('completionReminders: $completionReminders, ')
           ..write('senderName: $senderName, ')
+          ..write(
+            'defaultRunningPaceMinPerMile: $defaultRunningPaceMinPerMile, ',
+          )
+          ..write('defaultCyclingSpeedMph: $defaultCyclingSpeedMph, ')
+          ..write(
+            'defaultSwimmingPacePer100Sec: $defaultSwimmingPacePer100Sec, ',
+          )
           ..write('firstName: $firstName, ')
           ..write('lastName: $lastName, ')
           ..write('dietaryPreference: $dietaryPreference, ')
           ..write('allergies: $allergies, ')
+          ..write('unitSystem: $unitSystem, ')
           ..write('needsUpload: $needsUpload, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -9362,6 +9624,39 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _intensityZ1Z2PctMeta = const VerificationMeta(
+    'intensityZ1Z2Pct',
+  );
+  @override
+  late final GeneratedColumn<int> intensityZ1Z2Pct = GeneratedColumn<int>(
+    'intensity_z1_z2_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _intensityZ3Z4PctMeta = const VerificationMeta(
+    'intensityZ3Z4Pct',
+  );
+  @override
+  late final GeneratedColumn<int> intensityZ3Z4Pct = GeneratedColumn<int>(
+    'intensity_z3_z4_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _intensityZ5PctMeta = const VerificationMeta(
+    'intensityZ5Pct',
+  );
+  @override
+  late final GeneratedColumn<int> intensityZ5Pct = GeneratedColumn<int>(
+    'intensity_z5_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _reminderEnabledMeta = const VerificationMeta(
     'reminderEnabled',
   );
@@ -9485,6 +9780,56 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _needsNutritionRefreshMeta =
+      const VerificationMeta('needsNutritionRefresh');
+  @override
+  late final GeneratedColumn<bool> needsNutritionRefresh =
+      GeneratedColumn<bool>(
+        'needs_nutrition_refresh',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("needs_nutrition_refresh" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _providerDeletedAtMeta = const VerificationMeta(
+    'providerDeletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> providerDeletedAt =
+      GeneratedColumn<DateTime>(
+        'provider_deleted_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _providerScheduledAtMeta =
+      const VerificationMeta('providerScheduledAt');
+  @override
+  late final GeneratedColumn<DateTime> providerScheduledAt =
+      GeneratedColumn<DateTime>(
+        'provider_scheduled_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _scheduleChangedAtMeta = const VerificationMeta(
+    'scheduleChangedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> scheduleChangedAt =
+      GeneratedColumn<DateTime>(
+        'schedule_changed_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _workoutSubtypeMeta = const VerificationMeta(
     'workoutSubtype',
   );
@@ -9681,6 +10026,9 @@ class $ActivitiesTableTable extends ActivitiesTable
     swimmingWaterTempC,
     intensityTarget,
     timeBeforeMinutes,
+    intensityZ1Z2Pct,
+    intensityZ3Z4Pct,
+    intensityZ5Pct,
     reminderEnabled,
     reminderDaysBefore,
     reminderTimeOfDay,
@@ -9691,6 +10039,10 @@ class $ActivitiesTableTable extends ActivitiesTable
     providerWorkoutId,
     providerWorkoutUrl,
     lastSyncedAt,
+    needsNutritionRefresh,
+    providerDeletedAt,
+    providerScheduledAt,
+    scheduleChangedAt,
     workoutSubtype,
     paceMinMinutesPerMile,
     paceMaxMinutesPerMile,
@@ -9893,6 +10245,33 @@ class $ActivitiesTableTable extends ActivitiesTable
         ),
       );
     }
+    if (data.containsKey('intensity_z1_z2_pct')) {
+      context.handle(
+        _intensityZ1Z2PctMeta,
+        intensityZ1Z2Pct.isAcceptableOrUnknown(
+          data['intensity_z1_z2_pct']!,
+          _intensityZ1Z2PctMeta,
+        ),
+      );
+    }
+    if (data.containsKey('intensity_z3_z4_pct')) {
+      context.handle(
+        _intensityZ3Z4PctMeta,
+        intensityZ3Z4Pct.isAcceptableOrUnknown(
+          data['intensity_z3_z4_pct']!,
+          _intensityZ3Z4PctMeta,
+        ),
+      );
+    }
+    if (data.containsKey('intensity_z5_pct')) {
+      context.handle(
+        _intensityZ5PctMeta,
+        intensityZ5Pct.isAcceptableOrUnknown(
+          data['intensity_z5_pct']!,
+          _intensityZ5PctMeta,
+        ),
+      );
+    }
     if (data.containsKey('reminder_enabled')) {
       context.handle(
         _reminderEnabledMeta,
@@ -9980,6 +10359,42 @@ class $ActivitiesTableTable extends ActivitiesTable
         lastSyncedAt.isAcceptableOrUnknown(
           data['last_synced_at']!,
           _lastSyncedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('needs_nutrition_refresh')) {
+      context.handle(
+        _needsNutritionRefreshMeta,
+        needsNutritionRefresh.isAcceptableOrUnknown(
+          data['needs_nutrition_refresh']!,
+          _needsNutritionRefreshMeta,
+        ),
+      );
+    }
+    if (data.containsKey('provider_deleted_at')) {
+      context.handle(
+        _providerDeletedAtMeta,
+        providerDeletedAt.isAcceptableOrUnknown(
+          data['provider_deleted_at']!,
+          _providerDeletedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('provider_scheduled_at')) {
+      context.handle(
+        _providerScheduledAtMeta,
+        providerScheduledAt.isAcceptableOrUnknown(
+          data['provider_scheduled_at']!,
+          _providerScheduledAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('schedule_changed_at')) {
+      context.handle(
+        _scheduleChangedAtMeta,
+        scheduleChangedAt.isAcceptableOrUnknown(
+          data['schedule_changed_at']!,
+          _scheduleChangedAtMeta,
         ),
       );
     }
@@ -10205,6 +10620,18 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.int,
         data['${effectivePrefix}time_before_minutes'],
       ),
+      intensityZ1Z2Pct: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}intensity_z1_z2_pct'],
+      ),
+      intensityZ3Z4Pct: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}intensity_z3_z4_pct'],
+      ),
+      intensityZ5Pct: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}intensity_z5_pct'],
+      ),
       reminderEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}reminder_enabled'],
@@ -10244,6 +10671,22 @@ class $ActivitiesTableTable extends ActivitiesTable
       lastSyncedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_synced_at'],
+      ),
+      needsNutritionRefresh: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_nutrition_refresh'],
+      )!,
+      providerDeletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}provider_deleted_at'],
+      ),
+      providerScheduledAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}provider_scheduled_at'],
+      ),
+      scheduleChangedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}schedule_changed_at'],
       ),
       workoutSubtype: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -10339,6 +10782,9 @@ class Activity extends DataClass implements Insertable<Activity> {
   final double? swimmingWaterTempC;
   final String? intensityTarget;
   final int? timeBeforeMinutes;
+  final int? intensityZ1Z2Pct;
+  final int? intensityZ3Z4Pct;
+  final int? intensityZ5Pct;
   final bool reminderEnabled;
   final int? reminderDaysBefore;
   final String? reminderTimeOfDay;
@@ -10349,6 +10795,10 @@ class Activity extends DataClass implements Insertable<Activity> {
   final String? providerWorkoutId;
   final String? providerWorkoutUrl;
   final DateTime? lastSyncedAt;
+  final bool needsNutritionRefresh;
+  final DateTime? providerDeletedAt;
+  final DateTime? providerScheduledAt;
+  final DateTime? scheduleChangedAt;
   final String? workoutSubtype;
   final double? paceMinMinutesPerMile;
   final double? paceMaxMinutesPerMile;
@@ -10386,6 +10836,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.swimmingWaterTempC,
     this.intensityTarget,
     this.timeBeforeMinutes,
+    this.intensityZ1Z2Pct,
+    this.intensityZ3Z4Pct,
+    this.intensityZ5Pct,
     required this.reminderEnabled,
     this.reminderDaysBefore,
     this.reminderTimeOfDay,
@@ -10396,6 +10849,10 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.providerWorkoutId,
     this.providerWorkoutUrl,
     this.lastSyncedAt,
+    required this.needsNutritionRefresh,
+    this.providerDeletedAt,
+    this.providerScheduledAt,
+    this.scheduleChangedAt,
     this.workoutSubtype,
     this.paceMinMinutesPerMile,
     this.paceMaxMinutesPerMile,
@@ -10470,6 +10927,15 @@ class Activity extends DataClass implements Insertable<Activity> {
     if (!nullToAbsent || timeBeforeMinutes != null) {
       map['time_before_minutes'] = Variable<int>(timeBeforeMinutes);
     }
+    if (!nullToAbsent || intensityZ1Z2Pct != null) {
+      map['intensity_z1_z2_pct'] = Variable<int>(intensityZ1Z2Pct);
+    }
+    if (!nullToAbsent || intensityZ3Z4Pct != null) {
+      map['intensity_z3_z4_pct'] = Variable<int>(intensityZ3Z4Pct);
+    }
+    if (!nullToAbsent || intensityZ5Pct != null) {
+      map['intensity_z5_pct'] = Variable<int>(intensityZ5Pct);
+    }
     map['reminder_enabled'] = Variable<bool>(reminderEnabled);
     if (!nullToAbsent || reminderDaysBefore != null) {
       map['reminder_days_before'] = Variable<int>(reminderDaysBefore);
@@ -10495,6 +10961,16 @@ class Activity extends DataClass implements Insertable<Activity> {
     }
     if (!nullToAbsent || lastSyncedAt != null) {
       map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
+    map['needs_nutrition_refresh'] = Variable<bool>(needsNutritionRefresh);
+    if (!nullToAbsent || providerDeletedAt != null) {
+      map['provider_deleted_at'] = Variable<DateTime>(providerDeletedAt);
+    }
+    if (!nullToAbsent || providerScheduledAt != null) {
+      map['provider_scheduled_at'] = Variable<DateTime>(providerScheduledAt);
+    }
+    if (!nullToAbsent || scheduleChangedAt != null) {
+      map['schedule_changed_at'] = Variable<DateTime>(scheduleChangedAt);
     }
     if (!nullToAbsent || workoutSubtype != null) {
       map['workout_subtype'] = Variable<String>(workoutSubtype);
@@ -10598,6 +11074,15 @@ class Activity extends DataClass implements Insertable<Activity> {
       timeBeforeMinutes: timeBeforeMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(timeBeforeMinutes),
+      intensityZ1Z2Pct: intensityZ1Z2Pct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(intensityZ1Z2Pct),
+      intensityZ3Z4Pct: intensityZ3Z4Pct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(intensityZ3Z4Pct),
+      intensityZ5Pct: intensityZ5Pct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(intensityZ5Pct),
       reminderEnabled: Value(reminderEnabled),
       reminderDaysBefore: reminderDaysBefore == null && nullToAbsent
           ? const Value.absent()
@@ -10624,6 +11109,16 @@ class Activity extends DataClass implements Insertable<Activity> {
       lastSyncedAt: lastSyncedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastSyncedAt),
+      needsNutritionRefresh: Value(needsNutritionRefresh),
+      providerDeletedAt: providerDeletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerDeletedAt),
+      providerScheduledAt: providerScheduledAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerScheduledAt),
+      scheduleChangedAt: scheduleChangedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scheduleChangedAt),
       workoutSubtype: workoutSubtype == null && nullToAbsent
           ? const Value.absent()
           : Value(workoutSubtype),
@@ -10713,6 +11208,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       ),
       intensityTarget: serializer.fromJson<String?>(json['intensityTarget']),
       timeBeforeMinutes: serializer.fromJson<int?>(json['timeBeforeMinutes']),
+      intensityZ1Z2Pct: serializer.fromJson<int?>(json['intensityZ1Z2Pct']),
+      intensityZ3Z4Pct: serializer.fromJson<int?>(json['intensityZ3Z4Pct']),
+      intensityZ5Pct: serializer.fromJson<int?>(json['intensityZ5Pct']),
       reminderEnabled: serializer.fromJson<bool>(json['reminderEnabled']),
       reminderDaysBefore: serializer.fromJson<int?>(json['reminderDaysBefore']),
       reminderTimeOfDay: serializer.fromJson<String?>(
@@ -10731,6 +11229,18 @@ class Activity extends DataClass implements Insertable<Activity> {
         json['providerWorkoutUrl'],
       ),
       lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+      needsNutritionRefresh: serializer.fromJson<bool>(
+        json['needsNutritionRefresh'],
+      ),
+      providerDeletedAt: serializer.fromJson<DateTime?>(
+        json['providerDeletedAt'],
+      ),
+      providerScheduledAt: serializer.fromJson<DateTime?>(
+        json['providerScheduledAt'],
+      ),
+      scheduleChangedAt: serializer.fromJson<DateTime?>(
+        json['scheduleChangedAt'],
+      ),
       workoutSubtype: serializer.fromJson<String?>(json['workoutSubtype']),
       paceMinMinutesPerMile: serializer.fromJson<double?>(
         json['paceMinMinutesPerMile'],
@@ -10789,6 +11299,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       'swimmingWaterTempC': serializer.toJson<double?>(swimmingWaterTempC),
       'intensityTarget': serializer.toJson<String?>(intensityTarget),
       'timeBeforeMinutes': serializer.toJson<int?>(timeBeforeMinutes),
+      'intensityZ1Z2Pct': serializer.toJson<int?>(intensityZ1Z2Pct),
+      'intensityZ3Z4Pct': serializer.toJson<int?>(intensityZ3Z4Pct),
+      'intensityZ5Pct': serializer.toJson<int?>(intensityZ5Pct),
       'reminderEnabled': serializer.toJson<bool>(reminderEnabled),
       'reminderDaysBefore': serializer.toJson<int?>(reminderDaysBefore),
       'reminderTimeOfDay': serializer.toJson<String?>(reminderTimeOfDay),
@@ -10799,6 +11312,10 @@ class Activity extends DataClass implements Insertable<Activity> {
       'providerWorkoutId': serializer.toJson<String?>(providerWorkoutId),
       'providerWorkoutUrl': serializer.toJson<String?>(providerWorkoutUrl),
       'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+      'needsNutritionRefresh': serializer.toJson<bool>(needsNutritionRefresh),
+      'providerDeletedAt': serializer.toJson<DateTime?>(providerDeletedAt),
+      'providerScheduledAt': serializer.toJson<DateTime?>(providerScheduledAt),
+      'scheduleChangedAt': serializer.toJson<DateTime?>(scheduleChangedAt),
       'workoutSubtype': serializer.toJson<String?>(workoutSubtype),
       'paceMinMinutesPerMile': serializer.toJson<double?>(
         paceMinMinutesPerMile,
@@ -10843,6 +11360,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<double?> swimmingWaterTempC = const Value.absent(),
     Value<String?> intensityTarget = const Value.absent(),
     Value<int?> timeBeforeMinutes = const Value.absent(),
+    Value<int?> intensityZ1Z2Pct = const Value.absent(),
+    Value<int?> intensityZ3Z4Pct = const Value.absent(),
+    Value<int?> intensityZ5Pct = const Value.absent(),
     bool? reminderEnabled,
     Value<int?> reminderDaysBefore = const Value.absent(),
     Value<String?> reminderTimeOfDay = const Value.absent(),
@@ -10853,6 +11373,10 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<String?> providerWorkoutId = const Value.absent(),
     Value<String?> providerWorkoutUrl = const Value.absent(),
     Value<DateTime?> lastSyncedAt = const Value.absent(),
+    bool? needsNutritionRefresh,
+    Value<DateTime?> providerDeletedAt = const Value.absent(),
+    Value<DateTime?> providerScheduledAt = const Value.absent(),
+    Value<DateTime?> scheduleChangedAt = const Value.absent(),
     Value<String?> workoutSubtype = const Value.absent(),
     Value<double?> paceMinMinutesPerMile = const Value.absent(),
     Value<double?> paceMaxMinutesPerMile = const Value.absent(),
@@ -10918,6 +11442,15 @@ class Activity extends DataClass implements Insertable<Activity> {
     timeBeforeMinutes: timeBeforeMinutes.present
         ? timeBeforeMinutes.value
         : this.timeBeforeMinutes,
+    intensityZ1Z2Pct: intensityZ1Z2Pct.present
+        ? intensityZ1Z2Pct.value
+        : this.intensityZ1Z2Pct,
+    intensityZ3Z4Pct: intensityZ3Z4Pct.present
+        ? intensityZ3Z4Pct.value
+        : this.intensityZ3Z4Pct,
+    intensityZ5Pct: intensityZ5Pct.present
+        ? intensityZ5Pct.value
+        : this.intensityZ5Pct,
     reminderEnabled: reminderEnabled ?? this.reminderEnabled,
     reminderDaysBefore: reminderDaysBefore.present
         ? reminderDaysBefore.value
@@ -10940,6 +11473,16 @@ class Activity extends DataClass implements Insertable<Activity> {
         ? providerWorkoutUrl.value
         : this.providerWorkoutUrl,
     lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+    needsNutritionRefresh: needsNutritionRefresh ?? this.needsNutritionRefresh,
+    providerDeletedAt: providerDeletedAt.present
+        ? providerDeletedAt.value
+        : this.providerDeletedAt,
+    providerScheduledAt: providerScheduledAt.present
+        ? providerScheduledAt.value
+        : this.providerScheduledAt,
+    scheduleChangedAt: scheduleChangedAt.present
+        ? scheduleChangedAt.value
+        : this.scheduleChangedAt,
     workoutSubtype: workoutSubtype.present
         ? workoutSubtype.value
         : this.workoutSubtype,
@@ -11031,6 +11574,15 @@ class Activity extends DataClass implements Insertable<Activity> {
       timeBeforeMinutes: data.timeBeforeMinutes.present
           ? data.timeBeforeMinutes.value
           : this.timeBeforeMinutes,
+      intensityZ1Z2Pct: data.intensityZ1Z2Pct.present
+          ? data.intensityZ1Z2Pct.value
+          : this.intensityZ1Z2Pct,
+      intensityZ3Z4Pct: data.intensityZ3Z4Pct.present
+          ? data.intensityZ3Z4Pct.value
+          : this.intensityZ3Z4Pct,
+      intensityZ5Pct: data.intensityZ5Pct.present
+          ? data.intensityZ5Pct.value
+          : this.intensityZ5Pct,
       reminderEnabled: data.reminderEnabled.present
           ? data.reminderEnabled.value
           : this.reminderEnabled,
@@ -11061,6 +11613,18 @@ class Activity extends DataClass implements Insertable<Activity> {
       lastSyncedAt: data.lastSyncedAt.present
           ? data.lastSyncedAt.value
           : this.lastSyncedAt,
+      needsNutritionRefresh: data.needsNutritionRefresh.present
+          ? data.needsNutritionRefresh.value
+          : this.needsNutritionRefresh,
+      providerDeletedAt: data.providerDeletedAt.present
+          ? data.providerDeletedAt.value
+          : this.providerDeletedAt,
+      providerScheduledAt: data.providerScheduledAt.present
+          ? data.providerScheduledAt.value
+          : this.providerScheduledAt,
+      scheduleChangedAt: data.scheduleChangedAt.present
+          ? data.scheduleChangedAt.value
+          : this.scheduleChangedAt,
       workoutSubtype: data.workoutSubtype.present
           ? data.workoutSubtype.value
           : this.workoutSubtype,
@@ -11125,6 +11689,9 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('swimmingWaterTempC: $swimmingWaterTempC, ')
           ..write('intensityTarget: $intensityTarget, ')
           ..write('timeBeforeMinutes: $timeBeforeMinutes, ')
+          ..write('intensityZ1Z2Pct: $intensityZ1Z2Pct, ')
+          ..write('intensityZ3Z4Pct: $intensityZ3Z4Pct, ')
+          ..write('intensityZ5Pct: $intensityZ5Pct, ')
           ..write('reminderEnabled: $reminderEnabled, ')
           ..write('reminderDaysBefore: $reminderDaysBefore, ')
           ..write('reminderTimeOfDay: $reminderTimeOfDay, ')
@@ -11135,6 +11702,10 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('providerWorkoutId: $providerWorkoutId, ')
           ..write('providerWorkoutUrl: $providerWorkoutUrl, ')
           ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('needsNutritionRefresh: $needsNutritionRefresh, ')
+          ..write('providerDeletedAt: $providerDeletedAt, ')
+          ..write('providerScheduledAt: $providerScheduledAt, ')
+          ..write('scheduleChangedAt: $scheduleChangedAt, ')
           ..write('workoutSubtype: $workoutSubtype, ')
           ..write('paceMinMinutesPerMile: $paceMinMinutesPerMile, ')
           ..write('paceMaxMinutesPerMile: $paceMaxMinutesPerMile, ')
@@ -11177,6 +11748,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     swimmingWaterTempC,
     intensityTarget,
     timeBeforeMinutes,
+    intensityZ1Z2Pct,
+    intensityZ3Z4Pct,
+    intensityZ5Pct,
     reminderEnabled,
     reminderDaysBefore,
     reminderTimeOfDay,
@@ -11187,6 +11761,10 @@ class Activity extends DataClass implements Insertable<Activity> {
     providerWorkoutId,
     providerWorkoutUrl,
     lastSyncedAt,
+    needsNutritionRefresh,
+    providerDeletedAt,
+    providerScheduledAt,
+    scheduleChangedAt,
     workoutSubtype,
     paceMinMinutesPerMile,
     paceMaxMinutesPerMile,
@@ -11228,6 +11806,9 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.swimmingWaterTempC == this.swimmingWaterTempC &&
           other.intensityTarget == this.intensityTarget &&
           other.timeBeforeMinutes == this.timeBeforeMinutes &&
+          other.intensityZ1Z2Pct == this.intensityZ1Z2Pct &&
+          other.intensityZ3Z4Pct == this.intensityZ3Z4Pct &&
+          other.intensityZ5Pct == this.intensityZ5Pct &&
           other.reminderEnabled == this.reminderEnabled &&
           other.reminderDaysBefore == this.reminderDaysBefore &&
           other.reminderTimeOfDay == this.reminderTimeOfDay &&
@@ -11238,6 +11819,10 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.providerWorkoutId == this.providerWorkoutId &&
           other.providerWorkoutUrl == this.providerWorkoutUrl &&
           other.lastSyncedAt == this.lastSyncedAt &&
+          other.needsNutritionRefresh == this.needsNutritionRefresh &&
+          other.providerDeletedAt == this.providerDeletedAt &&
+          other.providerScheduledAt == this.providerScheduledAt &&
+          other.scheduleChangedAt == this.scheduleChangedAt &&
           other.workoutSubtype == this.workoutSubtype &&
           other.paceMinMinutesPerMile == this.paceMinMinutesPerMile &&
           other.paceMaxMinutesPerMile == this.paceMaxMinutesPerMile &&
@@ -11277,6 +11862,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<double?> swimmingWaterTempC;
   final Value<String?> intensityTarget;
   final Value<int?> timeBeforeMinutes;
+  final Value<int?> intensityZ1Z2Pct;
+  final Value<int?> intensityZ3Z4Pct;
+  final Value<int?> intensityZ5Pct;
   final Value<bool> reminderEnabled;
   final Value<int?> reminderDaysBefore;
   final Value<String?> reminderTimeOfDay;
@@ -11287,6 +11875,10 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<String?> providerWorkoutId;
   final Value<String?> providerWorkoutUrl;
   final Value<DateTime?> lastSyncedAt;
+  final Value<bool> needsNutritionRefresh;
+  final Value<DateTime?> providerDeletedAt;
+  final Value<DateTime?> providerScheduledAt;
+  final Value<DateTime?> scheduleChangedAt;
   final Value<String?> workoutSubtype;
   final Value<double?> paceMinMinutesPerMile;
   final Value<double?> paceMaxMinutesPerMile;
@@ -11325,6 +11917,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.swimmingWaterTempC = const Value.absent(),
     this.intensityTarget = const Value.absent(),
     this.timeBeforeMinutes = const Value.absent(),
+    this.intensityZ1Z2Pct = const Value.absent(),
+    this.intensityZ3Z4Pct = const Value.absent(),
+    this.intensityZ5Pct = const Value.absent(),
     this.reminderEnabled = const Value.absent(),
     this.reminderDaysBefore = const Value.absent(),
     this.reminderTimeOfDay = const Value.absent(),
@@ -11335,6 +11930,10 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.providerWorkoutId = const Value.absent(),
     this.providerWorkoutUrl = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
+    this.needsNutritionRefresh = const Value.absent(),
+    this.providerDeletedAt = const Value.absent(),
+    this.providerScheduledAt = const Value.absent(),
+    this.scheduleChangedAt = const Value.absent(),
     this.workoutSubtype = const Value.absent(),
     this.paceMinMinutesPerMile = const Value.absent(),
     this.paceMaxMinutesPerMile = const Value.absent(),
@@ -11374,6 +11973,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.swimmingWaterTempC = const Value.absent(),
     this.intensityTarget = const Value.absent(),
     this.timeBeforeMinutes = const Value.absent(),
+    this.intensityZ1Z2Pct = const Value.absent(),
+    this.intensityZ3Z4Pct = const Value.absent(),
+    this.intensityZ5Pct = const Value.absent(),
     this.reminderEnabled = const Value.absent(),
     this.reminderDaysBefore = const Value.absent(),
     this.reminderTimeOfDay = const Value.absent(),
@@ -11384,6 +11986,10 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.providerWorkoutId = const Value.absent(),
     this.providerWorkoutUrl = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
+    this.needsNutritionRefresh = const Value.absent(),
+    this.providerDeletedAt = const Value.absent(),
+    this.providerScheduledAt = const Value.absent(),
+    this.scheduleChangedAt = const Value.absent(),
     this.workoutSubtype = const Value.absent(),
     this.paceMinMinutesPerMile = const Value.absent(),
     this.paceMaxMinutesPerMile = const Value.absent(),
@@ -11428,6 +12034,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<double>? swimmingWaterTempC,
     Expression<String>? intensityTarget,
     Expression<int>? timeBeforeMinutes,
+    Expression<int>? intensityZ1Z2Pct,
+    Expression<int>? intensityZ3Z4Pct,
+    Expression<int>? intensityZ5Pct,
     Expression<bool>? reminderEnabled,
     Expression<int>? reminderDaysBefore,
     Expression<String>? reminderTimeOfDay,
@@ -11438,6 +12047,10 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<String>? providerWorkoutId,
     Expression<String>? providerWorkoutUrl,
     Expression<DateTime>? lastSyncedAt,
+    Expression<bool>? needsNutritionRefresh,
+    Expression<DateTime>? providerDeletedAt,
+    Expression<DateTime>? providerScheduledAt,
+    Expression<DateTime>? scheduleChangedAt,
     Expression<String>? workoutSubtype,
     Expression<double>? paceMinMinutesPerMile,
     Expression<double>? paceMaxMinutesPerMile,
@@ -11484,6 +12097,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
         'swimming_water_temp_c': swimmingWaterTempC,
       if (intensityTarget != null) 'intensity_target': intensityTarget,
       if (timeBeforeMinutes != null) 'time_before_minutes': timeBeforeMinutes,
+      if (intensityZ1Z2Pct != null) 'intensity_z1_z2_pct': intensityZ1Z2Pct,
+      if (intensityZ3Z4Pct != null) 'intensity_z3_z4_pct': intensityZ3Z4Pct,
+      if (intensityZ5Pct != null) 'intensity_z5_pct': intensityZ5Pct,
       if (reminderEnabled != null) 'reminder_enabled': reminderEnabled,
       if (reminderDaysBefore != null)
         'reminder_days_before': reminderDaysBefore,
@@ -11497,6 +12113,12 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (providerWorkoutUrl != null)
         'provider_workout_url': providerWorkoutUrl,
       if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+      if (needsNutritionRefresh != null)
+        'needs_nutrition_refresh': needsNutritionRefresh,
+      if (providerDeletedAt != null) 'provider_deleted_at': providerDeletedAt,
+      if (providerScheduledAt != null)
+        'provider_scheduled_at': providerScheduledAt,
+      if (scheduleChangedAt != null) 'schedule_changed_at': scheduleChangedAt,
       if (workoutSubtype != null) 'workout_subtype': workoutSubtype,
       if (paceMinMinutesPerMile != null)
         'pace_min_minutes_per_mile': paceMinMinutesPerMile,
@@ -11542,6 +12164,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<double?>? swimmingWaterTempC,
     Value<String?>? intensityTarget,
     Value<int?>? timeBeforeMinutes,
+    Value<int?>? intensityZ1Z2Pct,
+    Value<int?>? intensityZ3Z4Pct,
+    Value<int?>? intensityZ5Pct,
     Value<bool>? reminderEnabled,
     Value<int?>? reminderDaysBefore,
     Value<String?>? reminderTimeOfDay,
@@ -11552,6 +12177,10 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<String?>? providerWorkoutId,
     Value<String?>? providerWorkoutUrl,
     Value<DateTime?>? lastSyncedAt,
+    Value<bool>? needsNutritionRefresh,
+    Value<DateTime?>? providerDeletedAt,
+    Value<DateTime?>? providerScheduledAt,
+    Value<DateTime?>? scheduleChangedAt,
     Value<String?>? workoutSubtype,
     Value<double?>? paceMinMinutesPerMile,
     Value<double?>? paceMaxMinutesPerMile,
@@ -11595,6 +12224,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       swimmingWaterTempC: swimmingWaterTempC ?? this.swimmingWaterTempC,
       intensityTarget: intensityTarget ?? this.intensityTarget,
       timeBeforeMinutes: timeBeforeMinutes ?? this.timeBeforeMinutes,
+      intensityZ1Z2Pct: intensityZ1Z2Pct ?? this.intensityZ1Z2Pct,
+      intensityZ3Z4Pct: intensityZ3Z4Pct ?? this.intensityZ3Z4Pct,
+      intensityZ5Pct: intensityZ5Pct ?? this.intensityZ5Pct,
       reminderEnabled: reminderEnabled ?? this.reminderEnabled,
       reminderDaysBefore: reminderDaysBefore ?? this.reminderDaysBefore,
       reminderTimeOfDay: reminderTimeOfDay ?? this.reminderTimeOfDay,
@@ -11605,6 +12237,11 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       providerWorkoutId: providerWorkoutId ?? this.providerWorkoutId,
       providerWorkoutUrl: providerWorkoutUrl ?? this.providerWorkoutUrl,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      needsNutritionRefresh:
+          needsNutritionRefresh ?? this.needsNutritionRefresh,
+      providerDeletedAt: providerDeletedAt ?? this.providerDeletedAt,
+      providerScheduledAt: providerScheduledAt ?? this.providerScheduledAt,
+      scheduleChangedAt: scheduleChangedAt ?? this.scheduleChangedAt,
       workoutSubtype: workoutSubtype ?? this.workoutSubtype,
       paceMinMinutesPerMile:
           paceMinMinutesPerMile ?? this.paceMinMinutesPerMile,
@@ -11701,6 +12338,15 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     if (timeBeforeMinutes.present) {
       map['time_before_minutes'] = Variable<int>(timeBeforeMinutes.value);
     }
+    if (intensityZ1Z2Pct.present) {
+      map['intensity_z1_z2_pct'] = Variable<int>(intensityZ1Z2Pct.value);
+    }
+    if (intensityZ3Z4Pct.present) {
+      map['intensity_z3_z4_pct'] = Variable<int>(intensityZ3Z4Pct.value);
+    }
+    if (intensityZ5Pct.present) {
+      map['intensity_z5_pct'] = Variable<int>(intensityZ5Pct.value);
+    }
     if (reminderEnabled.present) {
       map['reminder_enabled'] = Variable<bool>(reminderEnabled.value);
     }
@@ -11730,6 +12376,22 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     }
     if (lastSyncedAt.present) {
       map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
+    if (needsNutritionRefresh.present) {
+      map['needs_nutrition_refresh'] = Variable<bool>(
+        needsNutritionRefresh.value,
+      );
+    }
+    if (providerDeletedAt.present) {
+      map['provider_deleted_at'] = Variable<DateTime>(providerDeletedAt.value);
+    }
+    if (providerScheduledAt.present) {
+      map['provider_scheduled_at'] = Variable<DateTime>(
+        providerScheduledAt.value,
+      );
+    }
+    if (scheduleChangedAt.present) {
+      map['schedule_changed_at'] = Variable<DateTime>(scheduleChangedAt.value);
     }
     if (workoutSubtype.present) {
       map['workout_subtype'] = Variable<String>(workoutSubtype.value);
@@ -11816,6 +12478,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('swimmingWaterTempC: $swimmingWaterTempC, ')
           ..write('intensityTarget: $intensityTarget, ')
           ..write('timeBeforeMinutes: $timeBeforeMinutes, ')
+          ..write('intensityZ1Z2Pct: $intensityZ1Z2Pct, ')
+          ..write('intensityZ3Z4Pct: $intensityZ3Z4Pct, ')
+          ..write('intensityZ5Pct: $intensityZ5Pct, ')
           ..write('reminderEnabled: $reminderEnabled, ')
           ..write('reminderDaysBefore: $reminderDaysBefore, ')
           ..write('reminderTimeOfDay: $reminderTimeOfDay, ')
@@ -11826,6 +12491,10 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('providerWorkoutId: $providerWorkoutId, ')
           ..write('providerWorkoutUrl: $providerWorkoutUrl, ')
           ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('needsNutritionRefresh: $needsNutritionRefresh, ')
+          ..write('providerDeletedAt: $providerDeletedAt, ')
+          ..write('providerScheduledAt: $providerScheduledAt, ')
+          ..write('scheduleChangedAt: $scheduleChangedAt, ')
           ..write('workoutSubtype: $workoutSubtype, ')
           ..write('paceMinMinutesPerMile: $paceMinMinutesPerMile, ')
           ..write('paceMaxMinutesPerMile: $paceMaxMinutesPerMile, ')
@@ -18365,461 +19034,6 @@ class WeatherForecastsTableCompanion
   }
 }
 
-class $FeatureSurveyResponsesTableTable extends FeatureSurveyResponsesTable
-    with
-        TableInfo<
-          $FeatureSurveyResponsesTableTable,
-          FeatureSurveyResponseEntry
-        > {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $FeatureSurveyResponsesTableTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    clientDefault: () => Random().nextInt(2147483647),
-  );
-  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
-    'deviceId',
-  );
-  @override
-  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
-    'device_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _selectedFeaturesMeta = const VerificationMeta(
-    'selectedFeatures',
-  );
-  @override
-  late final GeneratedColumn<String> selectedFeatures = GeneratedColumn<String>(
-    'selected_features',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _votedAtMeta = const VerificationMeta(
-    'votedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> votedAt = GeneratedColumn<DateTime>(
-    'voted_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
-    'needsUpload',
-  );
-  @override
-  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
-    'needs_upload',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("needs_upload" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
-    'localUpdatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> localUpdatedAt =
-      GeneratedColumn<DateTime>(
-        'local_updated_at',
-        aliasedName,
-        true,
-        type: DriftSqlType.dateTime,
-        requiredDuringInsert: false,
-      );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    deviceId,
-    selectedFeatures,
-    votedAt,
-    needsUpload,
-    localUpdatedAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'feature_survey_responses';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<FeatureSurveyResponseEntry> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('device_id')) {
-      context.handle(
-        _deviceIdMeta,
-        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_deviceIdMeta);
-    }
-    if (data.containsKey('selected_features')) {
-      context.handle(
-        _selectedFeaturesMeta,
-        selectedFeatures.isAcceptableOrUnknown(
-          data['selected_features']!,
-          _selectedFeaturesMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_selectedFeaturesMeta);
-    }
-    if (data.containsKey('voted_at')) {
-      context.handle(
-        _votedAtMeta,
-        votedAt.isAcceptableOrUnknown(data['voted_at']!, _votedAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_votedAtMeta);
-    }
-    if (data.containsKey('needs_upload')) {
-      context.handle(
-        _needsUploadMeta,
-        needsUpload.isAcceptableOrUnknown(
-          data['needs_upload']!,
-          _needsUploadMeta,
-        ),
-      );
-    }
-    if (data.containsKey('local_updated_at')) {
-      context.handle(
-        _localUpdatedAtMeta,
-        localUpdatedAt.isAcceptableOrUnknown(
-          data['local_updated_at']!,
-          _localUpdatedAtMeta,
-        ),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => const {};
-  @override
-  FeatureSurveyResponseEntry map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return FeatureSurveyResponseEntry(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      deviceId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}device_id'],
-      )!,
-      selectedFeatures: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}selected_features'],
-      )!,
-      votedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}voted_at'],
-      )!,
-      needsUpload: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}needs_upload'],
-      )!,
-      localUpdatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}local_updated_at'],
-      ),
-    );
-  }
-
-  @override
-  $FeatureSurveyResponsesTableTable createAlias(String alias) {
-    return $FeatureSurveyResponsesTableTable(attachedDatabase, alias);
-  }
-}
-
-class FeatureSurveyResponseEntry extends DataClass
-    implements Insertable<FeatureSurveyResponseEntry> {
-  /// Primary key - random integer
-  final int id;
-
-  /// Device ID - references users.id (unified with user_id)
-  final String deviceId;
-
-  /// JSON array of selected feature IDs (exactly 3)
-  /// Example: ["shopping_list", "coach_sharing", "recipes"]
-  final String selectedFeatures;
-
-  /// Timestamp of when the vote was cast
-  final DateTime votedAt;
-
-  /// Sync tracking columns
-  final bool needsUpload;
-  final DateTime? localUpdatedAt;
-  const FeatureSurveyResponseEntry({
-    required this.id,
-    required this.deviceId,
-    required this.selectedFeatures,
-    required this.votedAt,
-    required this.needsUpload,
-    this.localUpdatedAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['device_id'] = Variable<String>(deviceId);
-    map['selected_features'] = Variable<String>(selectedFeatures);
-    map['voted_at'] = Variable<DateTime>(votedAt);
-    map['needs_upload'] = Variable<bool>(needsUpload);
-    if (!nullToAbsent || localUpdatedAt != null) {
-      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
-    }
-    return map;
-  }
-
-  FeatureSurveyResponsesTableCompanion toCompanion(bool nullToAbsent) {
-    return FeatureSurveyResponsesTableCompanion(
-      id: Value(id),
-      deviceId: Value(deviceId),
-      selectedFeatures: Value(selectedFeatures),
-      votedAt: Value(votedAt),
-      needsUpload: Value(needsUpload),
-      localUpdatedAt: localUpdatedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(localUpdatedAt),
-    );
-  }
-
-  factory FeatureSurveyResponseEntry.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return FeatureSurveyResponseEntry(
-      id: serializer.fromJson<int>(json['id']),
-      deviceId: serializer.fromJson<String>(json['deviceId']),
-      selectedFeatures: serializer.fromJson<String>(json['selectedFeatures']),
-      votedAt: serializer.fromJson<DateTime>(json['votedAt']),
-      needsUpload: serializer.fromJson<bool>(json['needsUpload']),
-      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'deviceId': serializer.toJson<String>(deviceId),
-      'selectedFeatures': serializer.toJson<String>(selectedFeatures),
-      'votedAt': serializer.toJson<DateTime>(votedAt),
-      'needsUpload': serializer.toJson<bool>(needsUpload),
-      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
-    };
-  }
-
-  FeatureSurveyResponseEntry copyWith({
-    int? id,
-    String? deviceId,
-    String? selectedFeatures,
-    DateTime? votedAt,
-    bool? needsUpload,
-    Value<DateTime?> localUpdatedAt = const Value.absent(),
-  }) => FeatureSurveyResponseEntry(
-    id: id ?? this.id,
-    deviceId: deviceId ?? this.deviceId,
-    selectedFeatures: selectedFeatures ?? this.selectedFeatures,
-    votedAt: votedAt ?? this.votedAt,
-    needsUpload: needsUpload ?? this.needsUpload,
-    localUpdatedAt: localUpdatedAt.present
-        ? localUpdatedAt.value
-        : this.localUpdatedAt,
-  );
-  FeatureSurveyResponseEntry copyWithCompanion(
-    FeatureSurveyResponsesTableCompanion data,
-  ) {
-    return FeatureSurveyResponseEntry(
-      id: data.id.present ? data.id.value : this.id,
-      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
-      selectedFeatures: data.selectedFeatures.present
-          ? data.selectedFeatures.value
-          : this.selectedFeatures,
-      votedAt: data.votedAt.present ? data.votedAt.value : this.votedAt,
-      needsUpload: data.needsUpload.present
-          ? data.needsUpload.value
-          : this.needsUpload,
-      localUpdatedAt: data.localUpdatedAt.present
-          ? data.localUpdatedAt.value
-          : this.localUpdatedAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('FeatureSurveyResponseEntry(')
-          ..write('id: $id, ')
-          ..write('deviceId: $deviceId, ')
-          ..write('selectedFeatures: $selectedFeatures, ')
-          ..write('votedAt: $votedAt, ')
-          ..write('needsUpload: $needsUpload, ')
-          ..write('localUpdatedAt: $localUpdatedAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    deviceId,
-    selectedFeatures,
-    votedAt,
-    needsUpload,
-    localUpdatedAt,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is FeatureSurveyResponseEntry &&
-          other.id == this.id &&
-          other.deviceId == this.deviceId &&
-          other.selectedFeatures == this.selectedFeatures &&
-          other.votedAt == this.votedAt &&
-          other.needsUpload == this.needsUpload &&
-          other.localUpdatedAt == this.localUpdatedAt);
-}
-
-class FeatureSurveyResponsesTableCompanion
-    extends UpdateCompanion<FeatureSurveyResponseEntry> {
-  final Value<int> id;
-  final Value<String> deviceId;
-  final Value<String> selectedFeatures;
-  final Value<DateTime> votedAt;
-  final Value<bool> needsUpload;
-  final Value<DateTime?> localUpdatedAt;
-  final Value<int> rowid;
-  const FeatureSurveyResponsesTableCompanion({
-    this.id = const Value.absent(),
-    this.deviceId = const Value.absent(),
-    this.selectedFeatures = const Value.absent(),
-    this.votedAt = const Value.absent(),
-    this.needsUpload = const Value.absent(),
-    this.localUpdatedAt = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  FeatureSurveyResponsesTableCompanion.insert({
-    this.id = const Value.absent(),
-    required String deviceId,
-    required String selectedFeatures,
-    required DateTime votedAt,
-    this.needsUpload = const Value.absent(),
-    this.localUpdatedAt = const Value.absent(),
-    this.rowid = const Value.absent(),
-  }) : deviceId = Value(deviceId),
-       selectedFeatures = Value(selectedFeatures),
-       votedAt = Value(votedAt);
-  static Insertable<FeatureSurveyResponseEntry> custom({
-    Expression<int>? id,
-    Expression<String>? deviceId,
-    Expression<String>? selectedFeatures,
-    Expression<DateTime>? votedAt,
-    Expression<bool>? needsUpload,
-    Expression<DateTime>? localUpdatedAt,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (deviceId != null) 'device_id': deviceId,
-      if (selectedFeatures != null) 'selected_features': selectedFeatures,
-      if (votedAt != null) 'voted_at': votedAt,
-      if (needsUpload != null) 'needs_upload': needsUpload,
-      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  FeatureSurveyResponsesTableCompanion copyWith({
-    Value<int>? id,
-    Value<String>? deviceId,
-    Value<String>? selectedFeatures,
-    Value<DateTime>? votedAt,
-    Value<bool>? needsUpload,
-    Value<DateTime?>? localUpdatedAt,
-    Value<int>? rowid,
-  }) {
-    return FeatureSurveyResponsesTableCompanion(
-      id: id ?? this.id,
-      deviceId: deviceId ?? this.deviceId,
-      selectedFeatures: selectedFeatures ?? this.selectedFeatures,
-      votedAt: votedAt ?? this.votedAt,
-      needsUpload: needsUpload ?? this.needsUpload,
-      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (deviceId.present) {
-      map['device_id'] = Variable<String>(deviceId.value);
-    }
-    if (selectedFeatures.present) {
-      map['selected_features'] = Variable<String>(selectedFeatures.value);
-    }
-    if (votedAt.present) {
-      map['voted_at'] = Variable<DateTime>(votedAt.value);
-    }
-    if (needsUpload.present) {
-      map['needs_upload'] = Variable<bool>(needsUpload.value);
-    }
-    if (localUpdatedAt.present) {
-      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('FeatureSurveyResponsesTableCompanion(')
-          ..write('id: $id, ')
-          ..write('deviceId: $deviceId, ')
-          ..write('selectedFeatures: $selectedFeatures, ')
-          ..write('votedAt: $votedAt, ')
-          ..write('needsUpload: $needsUpload, ')
-          ..write('localUpdatedAt: $localUpdatedAt, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $IntegrationsTableTable extends IntegrationsTable
     with TableInfo<$IntegrationsTableTable, Integration> {
   @override
@@ -18924,6 +19138,50 @@ class $IntegrationsTableTable extends IntegrationsTable
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _providerAthleteWeightKgMeta =
+      const VerificationMeta('providerAthleteWeightKg');
+  @override
+  late final GeneratedColumn<double> providerAthleteWeightKg =
+      GeneratedColumn<double>(
+        'provider_athlete_weight_kg',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _providerAthleteBirthMonthMeta =
+      const VerificationMeta('providerAthleteBirthMonth');
+  @override
+  late final GeneratedColumn<String> providerAthleteBirthMonth =
+      GeneratedColumn<String>(
+        'provider_athlete_birth_month',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _providerAthleteGenderMeta =
+      const VerificationMeta('providerAthleteGender');
+  @override
+  late final GeneratedColumn<String> providerAthleteGender =
+      GeneratedColumn<String>(
+        'provider_athlete_gender',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _athleteZonesJsonMeta = const VerificationMeta(
+    'athleteZonesJson',
+  );
+  @override
+  late final GeneratedColumn<String> athleteZonesJson = GeneratedColumn<String>(
+    'athlete_zones_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -19005,6 +19263,10 @@ class $IntegrationsTableTable extends IntegrationsTable
     providerAthleteId,
     providerAthleteName,
     providerAthleteEmail,
+    providerAthleteWeightKg,
+    providerAthleteBirthMonth,
+    providerAthleteGender,
+    athleteZonesJson,
     isActive,
     lastSyncAt,
     lastSyncStatus,
@@ -19098,6 +19360,42 @@ class $IntegrationsTableTable extends IntegrationsTable
         providerAthleteEmail.isAcceptableOrUnknown(
           data['provider_athlete_email']!,
           _providerAthleteEmailMeta,
+        ),
+      );
+    }
+    if (data.containsKey('provider_athlete_weight_kg')) {
+      context.handle(
+        _providerAthleteWeightKgMeta,
+        providerAthleteWeightKg.isAcceptableOrUnknown(
+          data['provider_athlete_weight_kg']!,
+          _providerAthleteWeightKgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('provider_athlete_birth_month')) {
+      context.handle(
+        _providerAthleteBirthMonthMeta,
+        providerAthleteBirthMonth.isAcceptableOrUnknown(
+          data['provider_athlete_birth_month']!,
+          _providerAthleteBirthMonthMeta,
+        ),
+      );
+    }
+    if (data.containsKey('provider_athlete_gender')) {
+      context.handle(
+        _providerAthleteGenderMeta,
+        providerAthleteGender.isAcceptableOrUnknown(
+          data['provider_athlete_gender']!,
+          _providerAthleteGenderMeta,
+        ),
+      );
+    }
+    if (data.containsKey('athlete_zones_json')) {
+      context.handle(
+        _athleteZonesJsonMeta,
+        athleteZonesJson.isAcceptableOrUnknown(
+          data['athlete_zones_json']!,
+          _athleteZonesJsonMeta,
         ),
       );
     }
@@ -19195,6 +19493,22 @@ class $IntegrationsTableTable extends IntegrationsTable
         DriftSqlType.string,
         data['${effectivePrefix}provider_athlete_email'],
       ),
+      providerAthleteWeightKg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}provider_athlete_weight_kg'],
+      ),
+      providerAthleteBirthMonth: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_athlete_birth_month'],
+      ),
+      providerAthleteGender: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_athlete_gender'],
+      ),
+      athleteZonesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}athlete_zones_json'],
+      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -19240,6 +19554,10 @@ class Integration extends DataClass implements Insertable<Integration> {
   final String providerAthleteId;
   final String? providerAthleteName;
   final String? providerAthleteEmail;
+  final double? providerAthleteWeightKg;
+  final String? providerAthleteBirthMonth;
+  final String? providerAthleteGender;
+  final String? athleteZonesJson;
   final bool isActive;
   final DateTime? lastSyncAt;
   final String? lastSyncStatus;
@@ -19256,6 +19574,10 @@ class Integration extends DataClass implements Insertable<Integration> {
     required this.providerAthleteId,
     this.providerAthleteName,
     this.providerAthleteEmail,
+    this.providerAthleteWeightKg,
+    this.providerAthleteBirthMonth,
+    this.providerAthleteGender,
+    this.athleteZonesJson,
     required this.isActive,
     this.lastSyncAt,
     this.lastSyncStatus,
@@ -19282,6 +19604,22 @@ class Integration extends DataClass implements Insertable<Integration> {
     }
     if (!nullToAbsent || providerAthleteEmail != null) {
       map['provider_athlete_email'] = Variable<String>(providerAthleteEmail);
+    }
+    if (!nullToAbsent || providerAthleteWeightKg != null) {
+      map['provider_athlete_weight_kg'] = Variable<double>(
+        providerAthleteWeightKg,
+      );
+    }
+    if (!nullToAbsent || providerAthleteBirthMonth != null) {
+      map['provider_athlete_birth_month'] = Variable<String>(
+        providerAthleteBirthMonth,
+      );
+    }
+    if (!nullToAbsent || providerAthleteGender != null) {
+      map['provider_athlete_gender'] = Variable<String>(providerAthleteGender);
+    }
+    if (!nullToAbsent || athleteZonesJson != null) {
+      map['athlete_zones_json'] = Variable<String>(athleteZonesJson);
     }
     map['is_active'] = Variable<bool>(isActive);
     if (!nullToAbsent || lastSyncAt != null) {
@@ -19317,6 +19655,19 @@ class Integration extends DataClass implements Insertable<Integration> {
       providerAthleteEmail: providerAthleteEmail == null && nullToAbsent
           ? const Value.absent()
           : Value(providerAthleteEmail),
+      providerAthleteWeightKg: providerAthleteWeightKg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerAthleteWeightKg),
+      providerAthleteBirthMonth:
+          providerAthleteBirthMonth == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerAthleteBirthMonth),
+      providerAthleteGender: providerAthleteGender == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerAthleteGender),
+      athleteZonesJson: athleteZonesJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(athleteZonesJson),
       isActive: Value(isActive),
       lastSyncAt: lastSyncAt == null && nullToAbsent
           ? const Value.absent()
@@ -19351,6 +19702,16 @@ class Integration extends DataClass implements Insertable<Integration> {
       providerAthleteEmail: serializer.fromJson<String?>(
         json['providerAthleteEmail'],
       ),
+      providerAthleteWeightKg: serializer.fromJson<double?>(
+        json['providerAthleteWeightKg'],
+      ),
+      providerAthleteBirthMonth: serializer.fromJson<String?>(
+        json['providerAthleteBirthMonth'],
+      ),
+      providerAthleteGender: serializer.fromJson<String?>(
+        json['providerAthleteGender'],
+      ),
+      athleteZonesJson: serializer.fromJson<String?>(json['athleteZonesJson']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       lastSyncAt: serializer.fromJson<DateTime?>(json['lastSyncAt']),
       lastSyncStatus: serializer.fromJson<String?>(json['lastSyncStatus']),
@@ -19372,6 +19733,16 @@ class Integration extends DataClass implements Insertable<Integration> {
       'providerAthleteId': serializer.toJson<String>(providerAthleteId),
       'providerAthleteName': serializer.toJson<String?>(providerAthleteName),
       'providerAthleteEmail': serializer.toJson<String?>(providerAthleteEmail),
+      'providerAthleteWeightKg': serializer.toJson<double?>(
+        providerAthleteWeightKg,
+      ),
+      'providerAthleteBirthMonth': serializer.toJson<String?>(
+        providerAthleteBirthMonth,
+      ),
+      'providerAthleteGender': serializer.toJson<String?>(
+        providerAthleteGender,
+      ),
+      'athleteZonesJson': serializer.toJson<String?>(athleteZonesJson),
       'isActive': serializer.toJson<bool>(isActive),
       'lastSyncAt': serializer.toJson<DateTime?>(lastSyncAt),
       'lastSyncStatus': serializer.toJson<String?>(lastSyncStatus),
@@ -19391,6 +19762,10 @@ class Integration extends DataClass implements Insertable<Integration> {
     String? providerAthleteId,
     Value<String?> providerAthleteName = const Value.absent(),
     Value<String?> providerAthleteEmail = const Value.absent(),
+    Value<double?> providerAthleteWeightKg = const Value.absent(),
+    Value<String?> providerAthleteBirthMonth = const Value.absent(),
+    Value<String?> providerAthleteGender = const Value.absent(),
+    Value<String?> athleteZonesJson = const Value.absent(),
     bool? isActive,
     Value<DateTime?> lastSyncAt = const Value.absent(),
     Value<String?> lastSyncStatus = const Value.absent(),
@@ -19413,6 +19788,18 @@ class Integration extends DataClass implements Insertable<Integration> {
     providerAthleteEmail: providerAthleteEmail.present
         ? providerAthleteEmail.value
         : this.providerAthleteEmail,
+    providerAthleteWeightKg: providerAthleteWeightKg.present
+        ? providerAthleteWeightKg.value
+        : this.providerAthleteWeightKg,
+    providerAthleteBirthMonth: providerAthleteBirthMonth.present
+        ? providerAthleteBirthMonth.value
+        : this.providerAthleteBirthMonth,
+    providerAthleteGender: providerAthleteGender.present
+        ? providerAthleteGender.value
+        : this.providerAthleteGender,
+    athleteZonesJson: athleteZonesJson.present
+        ? athleteZonesJson.value
+        : this.athleteZonesJson,
     isActive: isActive ?? this.isActive,
     lastSyncAt: lastSyncAt.present ? lastSyncAt.value : this.lastSyncAt,
     lastSyncStatus: lastSyncStatus.present
@@ -19447,6 +19834,18 @@ class Integration extends DataClass implements Insertable<Integration> {
       providerAthleteEmail: data.providerAthleteEmail.present
           ? data.providerAthleteEmail.value
           : this.providerAthleteEmail,
+      providerAthleteWeightKg: data.providerAthleteWeightKg.present
+          ? data.providerAthleteWeightKg.value
+          : this.providerAthleteWeightKg,
+      providerAthleteBirthMonth: data.providerAthleteBirthMonth.present
+          ? data.providerAthleteBirthMonth.value
+          : this.providerAthleteBirthMonth,
+      providerAthleteGender: data.providerAthleteGender.present
+          ? data.providerAthleteGender.value
+          : this.providerAthleteGender,
+      athleteZonesJson: data.athleteZonesJson.present
+          ? data.athleteZonesJson.value
+          : this.athleteZonesJson,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       lastSyncAt: data.lastSyncAt.present
           ? data.lastSyncAt.value
@@ -19474,6 +19873,10 @@ class Integration extends DataClass implements Insertable<Integration> {
           ..write('providerAthleteId: $providerAthleteId, ')
           ..write('providerAthleteName: $providerAthleteName, ')
           ..write('providerAthleteEmail: $providerAthleteEmail, ')
+          ..write('providerAthleteWeightKg: $providerAthleteWeightKg, ')
+          ..write('providerAthleteBirthMonth: $providerAthleteBirthMonth, ')
+          ..write('providerAthleteGender: $providerAthleteGender, ')
+          ..write('athleteZonesJson: $athleteZonesJson, ')
           ..write('isActive: $isActive, ')
           ..write('lastSyncAt: $lastSyncAt, ')
           ..write('lastSyncStatus: $lastSyncStatus, ')
@@ -19495,6 +19898,10 @@ class Integration extends DataClass implements Insertable<Integration> {
     providerAthleteId,
     providerAthleteName,
     providerAthleteEmail,
+    providerAthleteWeightKg,
+    providerAthleteBirthMonth,
+    providerAthleteGender,
+    athleteZonesJson,
     isActive,
     lastSyncAt,
     lastSyncStatus,
@@ -19515,6 +19922,10 @@ class Integration extends DataClass implements Insertable<Integration> {
           other.providerAthleteId == this.providerAthleteId &&
           other.providerAthleteName == this.providerAthleteName &&
           other.providerAthleteEmail == this.providerAthleteEmail &&
+          other.providerAthleteWeightKg == this.providerAthleteWeightKg &&
+          other.providerAthleteBirthMonth == this.providerAthleteBirthMonth &&
+          other.providerAthleteGender == this.providerAthleteGender &&
+          other.athleteZonesJson == this.athleteZonesJson &&
           other.isActive == this.isActive &&
           other.lastSyncAt == this.lastSyncAt &&
           other.lastSyncStatus == this.lastSyncStatus &&
@@ -19533,6 +19944,10 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
   final Value<String> providerAthleteId;
   final Value<String?> providerAthleteName;
   final Value<String?> providerAthleteEmail;
+  final Value<double?> providerAthleteWeightKg;
+  final Value<String?> providerAthleteBirthMonth;
+  final Value<String?> providerAthleteGender;
+  final Value<String?> athleteZonesJson;
   final Value<bool> isActive;
   final Value<DateTime?> lastSyncAt;
   final Value<String?> lastSyncStatus;
@@ -19550,6 +19965,10 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     this.providerAthleteId = const Value.absent(),
     this.providerAthleteName = const Value.absent(),
     this.providerAthleteEmail = const Value.absent(),
+    this.providerAthleteWeightKg = const Value.absent(),
+    this.providerAthleteBirthMonth = const Value.absent(),
+    this.providerAthleteGender = const Value.absent(),
+    this.athleteZonesJson = const Value.absent(),
     this.isActive = const Value.absent(),
     this.lastSyncAt = const Value.absent(),
     this.lastSyncStatus = const Value.absent(),
@@ -19568,6 +19987,10 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     required String providerAthleteId,
     this.providerAthleteName = const Value.absent(),
     this.providerAthleteEmail = const Value.absent(),
+    this.providerAthleteWeightKg = const Value.absent(),
+    this.providerAthleteBirthMonth = const Value.absent(),
+    this.providerAthleteGender = const Value.absent(),
+    this.athleteZonesJson = const Value.absent(),
     this.isActive = const Value.absent(),
     this.lastSyncAt = const Value.absent(),
     this.lastSyncStatus = const Value.absent(),
@@ -19591,6 +20014,10 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     Expression<String>? providerAthleteId,
     Expression<String>? providerAthleteName,
     Expression<String>? providerAthleteEmail,
+    Expression<double>? providerAthleteWeightKg,
+    Expression<String>? providerAthleteBirthMonth,
+    Expression<String>? providerAthleteGender,
+    Expression<String>? athleteZonesJson,
     Expression<bool>? isActive,
     Expression<DateTime>? lastSyncAt,
     Expression<String>? lastSyncStatus,
@@ -19611,6 +20038,13 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
         'provider_athlete_name': providerAthleteName,
       if (providerAthleteEmail != null)
         'provider_athlete_email': providerAthleteEmail,
+      if (providerAthleteWeightKg != null)
+        'provider_athlete_weight_kg': providerAthleteWeightKg,
+      if (providerAthleteBirthMonth != null)
+        'provider_athlete_birth_month': providerAthleteBirthMonth,
+      if (providerAthleteGender != null)
+        'provider_athlete_gender': providerAthleteGender,
+      if (athleteZonesJson != null) 'athlete_zones_json': athleteZonesJson,
       if (isActive != null) 'is_active': isActive,
       if (lastSyncAt != null) 'last_sync_at': lastSyncAt,
       if (lastSyncStatus != null) 'last_sync_status': lastSyncStatus,
@@ -19631,6 +20065,10 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     Value<String>? providerAthleteId,
     Value<String?>? providerAthleteName,
     Value<String?>? providerAthleteEmail,
+    Value<double?>? providerAthleteWeightKg,
+    Value<String?>? providerAthleteBirthMonth,
+    Value<String?>? providerAthleteGender,
+    Value<String?>? athleteZonesJson,
     Value<bool>? isActive,
     Value<DateTime?>? lastSyncAt,
     Value<String?>? lastSyncStatus,
@@ -19649,6 +20087,13 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
       providerAthleteId: providerAthleteId ?? this.providerAthleteId,
       providerAthleteName: providerAthleteName ?? this.providerAthleteName,
       providerAthleteEmail: providerAthleteEmail ?? this.providerAthleteEmail,
+      providerAthleteWeightKg:
+          providerAthleteWeightKg ?? this.providerAthleteWeightKg,
+      providerAthleteBirthMonth:
+          providerAthleteBirthMonth ?? this.providerAthleteBirthMonth,
+      providerAthleteGender:
+          providerAthleteGender ?? this.providerAthleteGender,
+      athleteZonesJson: athleteZonesJson ?? this.athleteZonesJson,
       isActive: isActive ?? this.isActive,
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
       lastSyncStatus: lastSyncStatus ?? this.lastSyncStatus,
@@ -19693,6 +20138,24 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
         providerAthleteEmail.value,
       );
     }
+    if (providerAthleteWeightKg.present) {
+      map['provider_athlete_weight_kg'] = Variable<double>(
+        providerAthleteWeightKg.value,
+      );
+    }
+    if (providerAthleteBirthMonth.present) {
+      map['provider_athlete_birth_month'] = Variable<String>(
+        providerAthleteBirthMonth.value,
+      );
+    }
+    if (providerAthleteGender.present) {
+      map['provider_athlete_gender'] = Variable<String>(
+        providerAthleteGender.value,
+      );
+    }
+    if (athleteZonesJson.present) {
+      map['athlete_zones_json'] = Variable<String>(athleteZonesJson.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -19729,6 +20192,10 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
           ..write('providerAthleteId: $providerAthleteId, ')
           ..write('providerAthleteName: $providerAthleteName, ')
           ..write('providerAthleteEmail: $providerAthleteEmail, ')
+          ..write('providerAthleteWeightKg: $providerAthleteWeightKg, ')
+          ..write('providerAthleteBirthMonth: $providerAthleteBirthMonth, ')
+          ..write('providerAthleteGender: $providerAthleteGender, ')
+          ..write('athleteZonesJson: $athleteZonesJson, ')
           ..write('isActive: $isActive, ')
           ..write('lastSyncAt: $lastSyncAt, ')
           ..write('lastSyncStatus: $lastSyncStatus, ')
@@ -21868,8 +22335,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $CarbLoadingDayMealsTableTable(this);
   late final $WeatherForecastsTableTable weatherForecastsTable =
       $WeatherForecastsTableTable(this);
-  late final $FeatureSurveyResponsesTableTable featureSurveyResponsesTable =
-      $FeatureSurveyResponsesTableTable(this);
   late final $IntegrationsTableTable integrationsTable =
       $IntegrationsTableTable(this);
   late final $CoachesTableTable coachesTable = $CoachesTableTable(this);
@@ -21905,7 +22370,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     carbLoadingUserFoodsTable,
     carbLoadingDayMealsTable,
     weatherForecastsTable,
-    featureSurveyResponsesTable,
     integrationsTable,
     coachesTable,
     coachAthleteRelationshipsTable,
@@ -21949,10 +22413,14 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
       Value<bool> autoGenerateNutrition,
       Value<bool> completionReminders,
       Value<String?> senderName,
+      Value<double?> defaultRunningPaceMinPerMile,
+      Value<double?> defaultCyclingSpeedMph,
+      Value<int?> defaultSwimmingPacePer100Sec,
       Value<String?> firstName,
       Value<String?> lastName,
       Value<String?> dietaryPreference,
       Value<String> allergies,
+      Value<String> unitSystem,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -21992,10 +22460,14 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
       Value<bool> autoGenerateNutrition,
       Value<bool> completionReminders,
       Value<String?> senderName,
+      Value<double?> defaultRunningPaceMinPerMile,
+      Value<double?> defaultCyclingSpeedMph,
+      Value<int?> defaultSwimmingPacePer100Sec,
       Value<String?> firstName,
       Value<String?> lastName,
       Value<String?> dietaryPreference,
       Value<String> allergies,
+      Value<String> unitSystem,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -22184,6 +22656,21 @@ class $$UserProfilesTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get defaultRunningPaceMinPerMile => $composableBuilder(
+    column: $table.defaultRunningPaceMinPerMile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get defaultCyclingSpeedMph => $composableBuilder(
+    column: $table.defaultCyclingSpeedMph,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get defaultSwimmingPacePer100Sec => $composableBuilder(
+    column: $table.defaultSwimmingPacePer100Sec,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get firstName => $composableBuilder(
     column: $table.firstName,
     builder: (column) => ColumnFilters(column),
@@ -22201,6 +22688,11 @@ class $$UserProfilesTableTableFilterComposer
 
   ColumnFilters<String> get allergies => $composableBuilder(
     column: $table.allergies,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unitSystem => $composableBuilder(
+    column: $table.unitSystem,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22389,6 +22881,22 @@ class $$UserProfilesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get defaultRunningPaceMinPerMile =>
+      $composableBuilder(
+        column: $table.defaultRunningPaceMinPerMile,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<double> get defaultCyclingSpeedMph => $composableBuilder(
+    column: $table.defaultCyclingSpeedMph,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get defaultSwimmingPacePer100Sec => $composableBuilder(
+    column: $table.defaultSwimmingPacePer100Sec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get firstName => $composableBuilder(
     column: $table.firstName,
     builder: (column) => ColumnOrderings(column),
@@ -22406,6 +22914,11 @@ class $$UserProfilesTableTableOrderingComposer
 
   ColumnOrderings<String> get allergies => $composableBuilder(
     column: $table.allergies,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unitSystem => $composableBuilder(
+    column: $table.unitSystem,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -22581,6 +23094,22 @@ class $$UserProfilesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get defaultRunningPaceMinPerMile =>
+      $composableBuilder(
+        column: $table.defaultRunningPaceMinPerMile,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<double> get defaultCyclingSpeedMph => $composableBuilder(
+    column: $table.defaultCyclingSpeedMph,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get defaultSwimmingPacePer100Sec => $composableBuilder(
+    column: $table.defaultSwimmingPacePer100Sec,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get firstName =>
       $composableBuilder(column: $table.firstName, builder: (column) => column);
 
@@ -22594,6 +23123,11 @@ class $$UserProfilesTableTableAnnotationComposer
 
   GeneratedColumn<String> get allergies =>
       $composableBuilder(column: $table.allergies, builder: (column) => column);
+
+  GeneratedColumn<String> get unitSystem => $composableBuilder(
+    column: $table.unitSystem,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
@@ -22676,10 +23210,15 @@ class $$UserProfilesTableTableTableManager
                 Value<bool> autoGenerateNutrition = const Value.absent(),
                 Value<bool> completionReminders = const Value.absent(),
                 Value<String?> senderName = const Value.absent(),
+                Value<double?> defaultRunningPaceMinPerMile =
+                    const Value.absent(),
+                Value<double?> defaultCyclingSpeedMph = const Value.absent(),
+                Value<int?> defaultSwimmingPacePer100Sec = const Value.absent(),
                 Value<String?> firstName = const Value.absent(),
                 Value<String?> lastName = const Value.absent(),
                 Value<String?> dietaryPreference = const Value.absent(),
                 Value<String> allergies = const Value.absent(),
+                Value<String> unitSystem = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion(
@@ -22717,10 +23256,14 @@ class $$UserProfilesTableTableTableManager
                 autoGenerateNutrition: autoGenerateNutrition,
                 completionReminders: completionReminders,
                 senderName: senderName,
+                defaultRunningPaceMinPerMile: defaultRunningPaceMinPerMile,
+                defaultCyclingSpeedMph: defaultCyclingSpeedMph,
+                defaultSwimmingPacePer100Sec: defaultSwimmingPacePer100Sec,
                 firstName: firstName,
                 lastName: lastName,
                 dietaryPreference: dietaryPreference,
                 allergies: allergies,
+                unitSystem: unitSystem,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),
@@ -22761,10 +23304,15 @@ class $$UserProfilesTableTableTableManager
                 Value<bool> autoGenerateNutrition = const Value.absent(),
                 Value<bool> completionReminders = const Value.absent(),
                 Value<String?> senderName = const Value.absent(),
+                Value<double?> defaultRunningPaceMinPerMile =
+                    const Value.absent(),
+                Value<double?> defaultCyclingSpeedMph = const Value.absent(),
+                Value<int?> defaultSwimmingPacePer100Sec = const Value.absent(),
                 Value<String?> firstName = const Value.absent(),
                 Value<String?> lastName = const Value.absent(),
                 Value<String?> dietaryPreference = const Value.absent(),
                 Value<String> allergies = const Value.absent(),
+                Value<String> unitSystem = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion.insert(
@@ -22802,10 +23350,14 @@ class $$UserProfilesTableTableTableManager
                 autoGenerateNutrition: autoGenerateNutrition,
                 completionReminders: completionReminders,
                 senderName: senderName,
+                defaultRunningPaceMinPerMile: defaultRunningPaceMinPerMile,
+                defaultCyclingSpeedMph: defaultCyclingSpeedMph,
+                defaultSwimmingPacePer100Sec: defaultSwimmingPacePer100Sec,
                 firstName: firstName,
                 lastName: lastName,
                 dietaryPreference: dietaryPreference,
                 allergies: allergies,
+                unitSystem: unitSystem,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),
@@ -25856,6 +26408,9 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<double?> swimmingWaterTempC,
       Value<String?> intensityTarget,
       Value<int?> timeBeforeMinutes,
+      Value<int?> intensityZ1Z2Pct,
+      Value<int?> intensityZ3Z4Pct,
+      Value<int?> intensityZ5Pct,
       Value<bool> reminderEnabled,
       Value<int?> reminderDaysBefore,
       Value<String?> reminderTimeOfDay,
@@ -25866,6 +26421,10 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<String?> providerWorkoutId,
       Value<String?> providerWorkoutUrl,
       Value<DateTime?> lastSyncedAt,
+      Value<bool> needsNutritionRefresh,
+      Value<DateTime?> providerDeletedAt,
+      Value<DateTime?> providerScheduledAt,
+      Value<DateTime?> scheduleChangedAt,
       Value<String?> workoutSubtype,
       Value<double?> paceMinMinutesPerMile,
       Value<double?> paceMaxMinutesPerMile,
@@ -25906,6 +26465,9 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<double?> swimmingWaterTempC,
       Value<String?> intensityTarget,
       Value<int?> timeBeforeMinutes,
+      Value<int?> intensityZ1Z2Pct,
+      Value<int?> intensityZ3Z4Pct,
+      Value<int?> intensityZ5Pct,
       Value<bool> reminderEnabled,
       Value<int?> reminderDaysBefore,
       Value<String?> reminderTimeOfDay,
@@ -25916,6 +26478,10 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<String?> providerWorkoutId,
       Value<String?> providerWorkoutUrl,
       Value<DateTime?> lastSyncedAt,
+      Value<bool> needsNutritionRefresh,
+      Value<DateTime?> providerDeletedAt,
+      Value<DateTime?> providerScheduledAt,
+      Value<DateTime?> scheduleChangedAt,
       Value<String?> workoutSubtype,
       Value<double?> paceMinMinutesPerMile,
       Value<double?> paceMaxMinutesPerMile,
@@ -26044,6 +26610,21 @@ class $$ActivitiesTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get intensityZ1Z2Pct => $composableBuilder(
+    column: $table.intensityZ1Z2Pct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get intensityZ3Z4Pct => $composableBuilder(
+    column: $table.intensityZ3Z4Pct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get intensityZ5Pct => $composableBuilder(
+    column: $table.intensityZ5Pct,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<bool> get reminderEnabled => $composableBuilder(
     column: $table.reminderEnabled,
     builder: (column) => ColumnFilters(column),
@@ -26091,6 +26672,26 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
     column: $table.lastSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsNutritionRefresh => $composableBuilder(
+    column: $table.needsNutritionRefresh,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get providerDeletedAt => $composableBuilder(
+    column: $table.providerDeletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get providerScheduledAt => $composableBuilder(
+    column: $table.providerScheduledAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get scheduleChangedAt => $composableBuilder(
+    column: $table.scheduleChangedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -26284,6 +26885,21 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get intensityZ1Z2Pct => $composableBuilder(
+    column: $table.intensityZ1Z2Pct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get intensityZ3Z4Pct => $composableBuilder(
+    column: $table.intensityZ3Z4Pct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get intensityZ5Pct => $composableBuilder(
+    column: $table.intensityZ5Pct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get reminderEnabled => $composableBuilder(
     column: $table.reminderEnabled,
     builder: (column) => ColumnOrderings(column),
@@ -26331,6 +26947,26 @@ class $$ActivitiesTableTableOrderingComposer
 
   ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
     column: $table.lastSyncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsNutritionRefresh => $composableBuilder(
+    column: $table.needsNutritionRefresh,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get providerDeletedAt => $composableBuilder(
+    column: $table.providerDeletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get providerScheduledAt => $composableBuilder(
+    column: $table.providerScheduledAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get scheduleChangedAt => $composableBuilder(
+    column: $table.scheduleChangedAt,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -26516,6 +27152,21 @@ class $$ActivitiesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get intensityZ1Z2Pct => $composableBuilder(
+    column: $table.intensityZ1Z2Pct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get intensityZ3Z4Pct => $composableBuilder(
+    column: $table.intensityZ3Z4Pct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get intensityZ5Pct => $composableBuilder(
+    column: $table.intensityZ5Pct,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get reminderEnabled => $composableBuilder(
     column: $table.reminderEnabled,
     builder: (column) => column,
@@ -26563,6 +27214,26 @@ class $$ActivitiesTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
     column: $table.lastSyncedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get needsNutritionRefresh => $composableBuilder(
+    column: $table.needsNutritionRefresh,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get providerDeletedAt => $composableBuilder(
+    column: $table.providerDeletedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get providerScheduledAt => $composableBuilder(
+    column: $table.providerScheduledAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get scheduleChangedAt => $composableBuilder(
+    column: $table.scheduleChangedAt,
     builder: (column) => column,
   );
 
@@ -26690,6 +27361,9 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> swimmingWaterTempC = const Value.absent(),
                 Value<String?> intensityTarget = const Value.absent(),
                 Value<int?> timeBeforeMinutes = const Value.absent(),
+                Value<int?> intensityZ1Z2Pct = const Value.absent(),
+                Value<int?> intensityZ3Z4Pct = const Value.absent(),
+                Value<int?> intensityZ5Pct = const Value.absent(),
                 Value<bool> reminderEnabled = const Value.absent(),
                 Value<int?> reminderDaysBefore = const Value.absent(),
                 Value<String?> reminderTimeOfDay = const Value.absent(),
@@ -26700,6 +27374,10 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> providerWorkoutId = const Value.absent(),
                 Value<String?> providerWorkoutUrl = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<bool> needsNutritionRefresh = const Value.absent(),
+                Value<DateTime?> providerDeletedAt = const Value.absent(),
+                Value<DateTime?> providerScheduledAt = const Value.absent(),
+                Value<DateTime?> scheduleChangedAt = const Value.absent(),
                 Value<String?> workoutSubtype = const Value.absent(),
                 Value<double?> paceMinMinutesPerMile = const Value.absent(),
                 Value<double?> paceMaxMinutesPerMile = const Value.absent(),
@@ -26738,6 +27416,9 @@ class $$ActivitiesTableTableTableManager
                 swimmingWaterTempC: swimmingWaterTempC,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
+                intensityZ1Z2Pct: intensityZ1Z2Pct,
+                intensityZ3Z4Pct: intensityZ3Z4Pct,
+                intensityZ5Pct: intensityZ5Pct,
                 reminderEnabled: reminderEnabled,
                 reminderDaysBefore: reminderDaysBefore,
                 reminderTimeOfDay: reminderTimeOfDay,
@@ -26748,6 +27429,10 @@ class $$ActivitiesTableTableTableManager
                 providerWorkoutId: providerWorkoutId,
                 providerWorkoutUrl: providerWorkoutUrl,
                 lastSyncedAt: lastSyncedAt,
+                needsNutritionRefresh: needsNutritionRefresh,
+                providerDeletedAt: providerDeletedAt,
+                providerScheduledAt: providerScheduledAt,
+                scheduleChangedAt: scheduleChangedAt,
                 workoutSubtype: workoutSubtype,
                 paceMinMinutesPerMile: paceMinMinutesPerMile,
                 paceMaxMinutesPerMile: paceMaxMinutesPerMile,
@@ -26788,6 +27473,9 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> swimmingWaterTempC = const Value.absent(),
                 Value<String?> intensityTarget = const Value.absent(),
                 Value<int?> timeBeforeMinutes = const Value.absent(),
+                Value<int?> intensityZ1Z2Pct = const Value.absent(),
+                Value<int?> intensityZ3Z4Pct = const Value.absent(),
+                Value<int?> intensityZ5Pct = const Value.absent(),
                 Value<bool> reminderEnabled = const Value.absent(),
                 Value<int?> reminderDaysBefore = const Value.absent(),
                 Value<String?> reminderTimeOfDay = const Value.absent(),
@@ -26798,6 +27486,10 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> providerWorkoutId = const Value.absent(),
                 Value<String?> providerWorkoutUrl = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<bool> needsNutritionRefresh = const Value.absent(),
+                Value<DateTime?> providerDeletedAt = const Value.absent(),
+                Value<DateTime?> providerScheduledAt = const Value.absent(),
+                Value<DateTime?> scheduleChangedAt = const Value.absent(),
                 Value<String?> workoutSubtype = const Value.absent(),
                 Value<double?> paceMinMinutesPerMile = const Value.absent(),
                 Value<double?> paceMaxMinutesPerMile = const Value.absent(),
@@ -26836,6 +27528,9 @@ class $$ActivitiesTableTableTableManager
                 swimmingWaterTempC: swimmingWaterTempC,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
+                intensityZ1Z2Pct: intensityZ1Z2Pct,
+                intensityZ3Z4Pct: intensityZ3Z4Pct,
+                intensityZ5Pct: intensityZ5Pct,
                 reminderEnabled: reminderEnabled,
                 reminderDaysBefore: reminderDaysBefore,
                 reminderTimeOfDay: reminderTimeOfDay,
@@ -26846,6 +27541,10 @@ class $$ActivitiesTableTableTableManager
                 providerWorkoutId: providerWorkoutId,
                 providerWorkoutUrl: providerWorkoutUrl,
                 lastSyncedAt: lastSyncedAt,
+                needsNutritionRefresh: needsNutritionRefresh,
+                providerDeletedAt: providerDeletedAt,
+                providerScheduledAt: providerScheduledAt,
+                scheduleChangedAt: scheduleChangedAt,
                 workoutSubtype: workoutSubtype,
                 paceMinMinutesPerMile: paceMinMinutesPerMile,
                 paceMaxMinutesPerMile: paceMaxMinutesPerMile,
@@ -29901,250 +30600,6 @@ typedef $$WeatherForecastsTableTableProcessedTableManager =
       WeatherForecastData,
       PrefetchHooks Function()
     >;
-typedef $$FeatureSurveyResponsesTableTableCreateCompanionBuilder =
-    FeatureSurveyResponsesTableCompanion Function({
-      Value<int> id,
-      required String deviceId,
-      required String selectedFeatures,
-      required DateTime votedAt,
-      Value<bool> needsUpload,
-      Value<DateTime?> localUpdatedAt,
-      Value<int> rowid,
-    });
-typedef $$FeatureSurveyResponsesTableTableUpdateCompanionBuilder =
-    FeatureSurveyResponsesTableCompanion Function({
-      Value<int> id,
-      Value<String> deviceId,
-      Value<String> selectedFeatures,
-      Value<DateTime> votedAt,
-      Value<bool> needsUpload,
-      Value<DateTime?> localUpdatedAt,
-      Value<int> rowid,
-    });
-
-class $$FeatureSurveyResponsesTableTableFilterComposer
-    extends Composer<_$AppDatabase, $FeatureSurveyResponsesTableTable> {
-  $$FeatureSurveyResponsesTableTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get deviceId => $composableBuilder(
-    column: $table.deviceId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get selectedFeatures => $composableBuilder(
-    column: $table.selectedFeatures,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get votedAt => $composableBuilder(
-    column: $table.votedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get needsUpload => $composableBuilder(
-    column: $table.needsUpload,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
-    column: $table.localUpdatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-}
-
-class $$FeatureSurveyResponsesTableTableOrderingComposer
-    extends Composer<_$AppDatabase, $FeatureSurveyResponsesTableTable> {
-  $$FeatureSurveyResponsesTableTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get deviceId => $composableBuilder(
-    column: $table.deviceId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get selectedFeatures => $composableBuilder(
-    column: $table.selectedFeatures,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get votedAt => $composableBuilder(
-    column: $table.votedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get needsUpload => $composableBuilder(
-    column: $table.needsUpload,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
-    column: $table.localUpdatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$FeatureSurveyResponsesTableTableAnnotationComposer
-    extends Composer<_$AppDatabase, $FeatureSurveyResponsesTableTable> {
-  $$FeatureSurveyResponsesTableTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get deviceId =>
-      $composableBuilder(column: $table.deviceId, builder: (column) => column);
-
-  GeneratedColumn<String> get selectedFeatures => $composableBuilder(
-    column: $table.selectedFeatures,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get votedAt =>
-      $composableBuilder(column: $table.votedAt, builder: (column) => column);
-
-  GeneratedColumn<bool> get needsUpload => $composableBuilder(
-    column: $table.needsUpload,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
-    column: $table.localUpdatedAt,
-    builder: (column) => column,
-  );
-}
-
-class $$FeatureSurveyResponsesTableTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $FeatureSurveyResponsesTableTable,
-          FeatureSurveyResponseEntry,
-          $$FeatureSurveyResponsesTableTableFilterComposer,
-          $$FeatureSurveyResponsesTableTableOrderingComposer,
-          $$FeatureSurveyResponsesTableTableAnnotationComposer,
-          $$FeatureSurveyResponsesTableTableCreateCompanionBuilder,
-          $$FeatureSurveyResponsesTableTableUpdateCompanionBuilder,
-          (
-            FeatureSurveyResponseEntry,
-            BaseReferences<
-              _$AppDatabase,
-              $FeatureSurveyResponsesTableTable,
-              FeatureSurveyResponseEntry
-            >,
-          ),
-          FeatureSurveyResponseEntry,
-          PrefetchHooks Function()
-        > {
-  $$FeatureSurveyResponsesTableTableTableManager(
-    _$AppDatabase db,
-    $FeatureSurveyResponsesTableTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$FeatureSurveyResponsesTableTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
-          createOrderingComposer: () =>
-              $$FeatureSurveyResponsesTableTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
-          createComputedFieldComposer: () =>
-              $$FeatureSurveyResponsesTableTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> deviceId = const Value.absent(),
-                Value<String> selectedFeatures = const Value.absent(),
-                Value<DateTime> votedAt = const Value.absent(),
-                Value<bool> needsUpload = const Value.absent(),
-                Value<DateTime?> localUpdatedAt = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => FeatureSurveyResponsesTableCompanion(
-                id: id,
-                deviceId: deviceId,
-                selectedFeatures: selectedFeatures,
-                votedAt: votedAt,
-                needsUpload: needsUpload,
-                localUpdatedAt: localUpdatedAt,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String deviceId,
-                required String selectedFeatures,
-                required DateTime votedAt,
-                Value<bool> needsUpload = const Value.absent(),
-                Value<DateTime?> localUpdatedAt = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => FeatureSurveyResponsesTableCompanion.insert(
-                id: id,
-                deviceId: deviceId,
-                selectedFeatures: selectedFeatures,
-                votedAt: votedAt,
-                needsUpload: needsUpload,
-                localUpdatedAt: localUpdatedAt,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ),
-      );
-}
-
-typedef $$FeatureSurveyResponsesTableTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $FeatureSurveyResponsesTableTable,
-      FeatureSurveyResponseEntry,
-      $$FeatureSurveyResponsesTableTableFilterComposer,
-      $$FeatureSurveyResponsesTableTableOrderingComposer,
-      $$FeatureSurveyResponsesTableTableAnnotationComposer,
-      $$FeatureSurveyResponsesTableTableCreateCompanionBuilder,
-      $$FeatureSurveyResponsesTableTableUpdateCompanionBuilder,
-      (
-        FeatureSurveyResponseEntry,
-        BaseReferences<
-          _$AppDatabase,
-          $FeatureSurveyResponsesTableTable,
-          FeatureSurveyResponseEntry
-        >,
-      ),
-      FeatureSurveyResponseEntry,
-      PrefetchHooks Function()
-    >;
 typedef $$IntegrationsTableTableCreateCompanionBuilder =
     IntegrationsTableCompanion Function({
       Value<String> id,
@@ -30156,6 +30611,10 @@ typedef $$IntegrationsTableTableCreateCompanionBuilder =
       required String providerAthleteId,
       Value<String?> providerAthleteName,
       Value<String?> providerAthleteEmail,
+      Value<double?> providerAthleteWeightKg,
+      Value<String?> providerAthleteBirthMonth,
+      Value<String?> providerAthleteGender,
+      Value<String?> athleteZonesJson,
       Value<bool> isActive,
       Value<DateTime?> lastSyncAt,
       Value<String?> lastSyncStatus,
@@ -30175,6 +30634,10 @@ typedef $$IntegrationsTableTableUpdateCompanionBuilder =
       Value<String> providerAthleteId,
       Value<String?> providerAthleteName,
       Value<String?> providerAthleteEmail,
+      Value<double?> providerAthleteWeightKg,
+      Value<String?> providerAthleteBirthMonth,
+      Value<String?> providerAthleteGender,
+      Value<String?> athleteZonesJson,
       Value<bool> isActive,
       Value<DateTime?> lastSyncAt,
       Value<String?> lastSyncStatus,
@@ -30235,6 +30698,26 @@ class $$IntegrationsTableTableFilterComposer
 
   ColumnFilters<String> get providerAthleteEmail => $composableBuilder(
     column: $table.providerAthleteEmail,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get providerAthleteWeightKg => $composableBuilder(
+    column: $table.providerAthleteWeightKg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerAthleteBirthMonth => $composableBuilder(
+    column: $table.providerAthleteBirthMonth,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerAthleteGender => $composableBuilder(
+    column: $table.providerAthleteGender,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get athleteZonesJson => $composableBuilder(
+    column: $table.athleteZonesJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30323,6 +30806,26 @@ class $$IntegrationsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get providerAthleteWeightKg => $composableBuilder(
+    column: $table.providerAthleteWeightKg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerAthleteBirthMonth => $composableBuilder(
+    column: $table.providerAthleteBirthMonth,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerAthleteGender => $composableBuilder(
+    column: $table.providerAthleteGender,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get athleteZonesJson => $composableBuilder(
+    column: $table.athleteZonesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -30402,6 +30905,26 @@ class $$IntegrationsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get providerAthleteWeightKg => $composableBuilder(
+    column: $table.providerAthleteWeightKg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get providerAthleteBirthMonth => $composableBuilder(
+    column: $table.providerAthleteBirthMonth,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get providerAthleteGender => $composableBuilder(
+    column: $table.providerAthleteGender,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get athleteZonesJson => $composableBuilder(
+    column: $table.athleteZonesJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
@@ -30472,6 +30995,10 @@ class $$IntegrationsTableTableTableManager
                 Value<String> providerAthleteId = const Value.absent(),
                 Value<String?> providerAthleteName = const Value.absent(),
                 Value<String?> providerAthleteEmail = const Value.absent(),
+                Value<double?> providerAthleteWeightKg = const Value.absent(),
+                Value<String?> providerAthleteBirthMonth = const Value.absent(),
+                Value<String?> providerAthleteGender = const Value.absent(),
+                Value<String?> athleteZonesJson = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime?> lastSyncAt = const Value.absent(),
                 Value<String?> lastSyncStatus = const Value.absent(),
@@ -30489,6 +31016,10 @@ class $$IntegrationsTableTableTableManager
                 providerAthleteId: providerAthleteId,
                 providerAthleteName: providerAthleteName,
                 providerAthleteEmail: providerAthleteEmail,
+                providerAthleteWeightKg: providerAthleteWeightKg,
+                providerAthleteBirthMonth: providerAthleteBirthMonth,
+                providerAthleteGender: providerAthleteGender,
+                athleteZonesJson: athleteZonesJson,
                 isActive: isActive,
                 lastSyncAt: lastSyncAt,
                 lastSyncStatus: lastSyncStatus,
@@ -30508,6 +31039,10 @@ class $$IntegrationsTableTableTableManager
                 required String providerAthleteId,
                 Value<String?> providerAthleteName = const Value.absent(),
                 Value<String?> providerAthleteEmail = const Value.absent(),
+                Value<double?> providerAthleteWeightKg = const Value.absent(),
+                Value<String?> providerAthleteBirthMonth = const Value.absent(),
+                Value<String?> providerAthleteGender = const Value.absent(),
+                Value<String?> athleteZonesJson = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime?> lastSyncAt = const Value.absent(),
                 Value<String?> lastSyncStatus = const Value.absent(),
@@ -30525,6 +31060,10 @@ class $$IntegrationsTableTableTableManager
                 providerAthleteId: providerAthleteId,
                 providerAthleteName: providerAthleteName,
                 providerAthleteEmail: providerAthleteEmail,
+                providerAthleteWeightKg: providerAthleteWeightKg,
+                providerAthleteBirthMonth: providerAthleteBirthMonth,
+                providerAthleteGender: providerAthleteGender,
+                athleteZonesJson: athleteZonesJson,
                 isActive: isActive,
                 lastSyncAt: lastSyncAt,
                 lastSyncStatus: lastSyncStatus,
@@ -31606,12 +32145,6 @@ class $AppDatabaseManager {
       );
   $$WeatherForecastsTableTableTableManager get weatherForecastsTable =>
       $$WeatherForecastsTableTableTableManager(_db, _db.weatherForecastsTable);
-  $$FeatureSurveyResponsesTableTableTableManager
-  get featureSurveyResponsesTable =>
-      $$FeatureSurveyResponsesTableTableTableManager(
-        _db,
-        _db.featureSurveyResponsesTable,
-      );
   $$IntegrationsTableTableTableManager get integrationsTable =>
       $$IntegrationsTableTableTableManager(_db, _db.integrationsTable);
   $$CoachesTableTableTableManager get coachesTable =>

@@ -315,7 +315,7 @@ final class FinalSurgeSyncServiceProvider
 }
 
 String _$finalSurgeSyncServiceHash() =>
-    r'5777e7c9be73cd48d5094da30971b420104c8755';
+    r'f49896992377053541a17a5dc89cdecd7594288f';
 
 /// Provider to get Final Surge integration for a user
 
@@ -761,7 +761,7 @@ final class TrainingPeaksSyncServiceProvider
 }
 
 String _$trainingPeaksSyncServiceHash() =>
-    r'952bb7f47f5283d8ec30b91898f107261bf83740';
+    r'b52b93f4c6b35c7a3d5c879adfec78add94d6d44';
 
 /// Provider to get TrainingPeaks integration for a user
 

@@ -137,7 +137,7 @@ class TrainingPeaksOAuthService {
       print('   Premium: ${profile.isPremium}');
     }
 
-    // 7. Create and store integration
+    // 7. Create and store integration (including profile data for auto-population)
     final now = DateTime.now();
     final integration = IntegrationModel(
       userId: userId,
@@ -148,11 +148,21 @@ class TrainingPeaksOAuthService {
       providerAthleteId: profile.id,
       providerAthleteName: profile.fullName,
       providerAthleteEmail: profile.email,
+      // Store profile data for auto-populating user profile during onboarding
+      providerAthleteWeightKg: profile.weight,
+      providerAthleteBirthMonth: profile.birthMonth,
+      providerAthleteGender: profile.sex,
       isActive: true,
       lastSyncStatus: 'pending',
       createdAt: now,
       updatedAt: now,
     );
+
+    if (kDebugMode) {
+      print('   Weight (kg): ${profile.weight}');
+      print('   Birth month: ${profile.birthMonth}');
+      print('   Gender: ${profile.sex}');
+    }
 
     // 8. Save to database (upsert - replaces existing if present)
     final savedIntegration = await _repository.upsertIntegration(integration);
@@ -198,6 +208,11 @@ class TrainingPeaksOAuthService {
 
     if (kDebugMode) {
       print('🔄 Refreshing TrainingPeaks token...');
+      print('   Token expires at: ${integration.tokenExpiresAt}');
+      print('   Current time: ${DateTime.now()}');
+      print('   Refresh token exists: ${refreshToken.isNotEmpty}');
+      print('   Refresh token length: ${refreshToken.length}');
+      print('   Refresh token preview: ${refreshToken.length > 10 ? '${refreshToken.substring(0, 5)}...${refreshToken.substring(refreshToken.length - 5)}' : '[too short]'}');
     }
 
     try {
@@ -221,7 +236,9 @@ class TrainingPeaksOAuthService {
       return savedIntegration;
     } on TrainingPeaksApiException catch (e) {
       if (kDebugMode) {
-        print('❌ Token refresh failed: ${e.message}');
+        print('❌ Token refresh failed: ${e.toString()}');
+        print('   Status code: ${e.statusCode}');
+        print('   Response body: ${e.body}');
       }
       // Mark integration as needing re-auth
       await _repository.updateSyncStatus(

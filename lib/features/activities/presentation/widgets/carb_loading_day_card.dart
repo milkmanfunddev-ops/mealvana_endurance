@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/database/app_database.dart' as db;
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../../../carb_loading/presentation/screens/carb_loading_day_detail_page.dart';
 
@@ -203,23 +204,12 @@ class CarbLoadingDayCard extends ConsumerWidget {
   }
 
   void _handleDelete(BuildContext context, WidgetRef ref, int dayNumber) {
-    final messenger = ScaffoldMessenger.of(context);
     final carbDayId = carbDay.id;
 
     final carbLoadingController = ref.read(carbLoadingControllerProvider.notifier);
     carbLoadingController.deleteCarbLoadingDay(carbDayId);
 
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text('Deleted "Carb Loading Day $dayNumber"'),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () {
-            // TODO: Implement undo functionality if needed
-          },
-        ),
-      ),
-    );
+    MealvanaSnackbar.showSuccess(context, 'Deleted "Carb Loading Day $dayNumber"');
   }
 
   void _handleTap(BuildContext context) {

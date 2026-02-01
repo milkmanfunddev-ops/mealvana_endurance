@@ -193,6 +193,9 @@ function addFoodToResult(
     display_name_plural: food.display_name_plural ?? food.display_name ?? food.name,
     description: food.description,
     image_address: food.image_address,
+    serving_size: food.serving_size,
+    serving_unit: food.serving_unit,
+    serving_qualifier: food.serving_qualifier,
   });
 
   totals.sodium_mg += food.per_serving.sodium_mg * servings;
@@ -284,7 +287,7 @@ async function handleBrickNutritionPlan(
   supabase: ReturnType<typeof createServiceClient>,
   body: any
 ): Promise<Response> {
-  console.log('[BRICK-PLAN] Starting brick nutrition plan generation');
+  console.log('[BRICK-PLAN] Starting brick nutrition plan generation (v2-running-fix)');
 
   const userId = body.device_id;
   const { phases } = body.macro_targets;
@@ -307,8 +310,10 @@ async function handleBrickNutritionPlan(
     disliked: Array.from(dislikedFoods).slice(0, 5),
   });
 
-  // Get electrolyte foods for all phases (using brick activity type)
-  const electrolyteFoods = await getElectrolyteFoods(supabase, userId, likedFoods, willTryFoods, 'brick', 'during');
+  // Get electrolyte foods for all phases
+  // Note: Use 'running' as activity type since foods table doesn't have 'brick' in activity_types
+  // Before/after foods are universal across sports, and electrolytes aren't sport-specific
+  const electrolyteFoods = await getElectrolyteFoods(supabase, userId, likedFoods, willTryFoods, 'running', 'during');
   console.log(`[BRICK-PLAN] Found ${electrolyteFoods.length} electrolyte options for brick`);
 
   // 1. Optimize BEFORE phase (standard)
@@ -320,6 +325,8 @@ async function handleBrickNutritionPlan(
     water_ml: safe(phases.before.water_ml),
   };
 
+  // Note: Use 'running' as activity type for before phase since foods table
+  // doesn't have 'brick' in activity_types. Before foods are universal across sports.
   const beforeResult = await optimizePhase(
     supabase,
     'before',
@@ -329,7 +336,7 @@ async function handleBrickNutritionPlan(
     willTryFoods,
     dislikedFoods,
     electrolyteFoods,
-    'brick'
+    'running'
   );
 
   // 2. Optimize DURING SEGMENTS (sport-specific)
@@ -411,6 +418,8 @@ async function handleBrickNutritionPlan(
     water_ml: safe(phases.after.water_ml),
   };
 
+  // Note: Use 'running' as activity type for after phase since foods table
+  // doesn't have 'brick' in activity_types. After/recovery foods are universal across sports.
   const afterResult = await optimizePhase(
     supabase,
     'after',
@@ -420,7 +429,7 @@ async function handleBrickNutritionPlan(
     willTryFoods,
     dislikedFoods,
     electrolyteFoods,
-    'brick'
+    'running'
   );
 
   // Generate response
@@ -538,7 +547,7 @@ async function getTransitionFoods(
       id, name, display_name, display_name_plural, image_address, description,
       calories_per_serving, carbs_per_serving, protein_per_serving,
       fat_per_serving, sodium_mg, fluid_ml_per_serving,
-      serving_amount, product_type,
+      serving_amount, product_type, serving_size, serving_unit, serving_qualifier,
       max_servings_during,
       is_electrolyte, to_exclude_from_solver, is_essential,
       categories
@@ -707,8 +716,7 @@ serve(async (req) => {
       disliked: Array.from(dislikedFoods).slice(0, 5),
     });
 
-    // Get activity type with sport config
-    const activityType = (body.activity_type || 'running') as ActivityType;
+    // Get sport config for this activity type (activityType already defined above)
     const sportConfig = getSportConfig(activityType);
     console.log(`[NUTRITION-PLAN] Using ${sportConfig.name} configuration`);
 

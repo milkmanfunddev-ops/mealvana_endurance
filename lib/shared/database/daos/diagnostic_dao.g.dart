@@ -22,8 +22,6 @@ mixin _$DiagnosticDaoMixin on DatabaseAccessor<AppDatabase> {
       attachedDatabase.carbLoadingUserFoodsTable;
   $CarbLoadingDayMealsTableTable get carbLoadingDayMealsTable =>
       attachedDatabase.carbLoadingDayMealsTable;
-  $FeatureSurveyResponsesTableTable get featureSurveyResponsesTable =>
-      attachedDatabase.featureSurveyResponsesTable;
   $IntegrationsTableTable get integrationsTable =>
       attachedDatabase.integrationsTable;
 }

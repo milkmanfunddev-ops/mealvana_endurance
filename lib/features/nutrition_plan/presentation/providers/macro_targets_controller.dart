@@ -68,6 +68,7 @@ class MacroTargetsState {
   final String? errorMessage;
   final String? activityId; // Calendar activity ID (links nutrition plan to activity) - ALWAYS exists after macro generation
   final String? eventId; // Calendar event ID (for provider invalidation after plan creation)
+  final UnitSystem unitSystem;
 
   const MacroTargetsState({
     // Distance page fields
@@ -110,6 +111,7 @@ class MacroTargetsState {
     this.errorMessage,
     this.activityId,
     this.eventId,
+    this.unitSystem = UnitSystem.imperial,
   });
 
   MacroTargetsState copyWith({
@@ -155,6 +157,7 @@ class MacroTargetsState {
     String? eventId,
     bool overrideActivityId = false,
     bool overrideEventId = false,
+    UnitSystem? unitSystem,
   }) {
     return MacroTargetsState(
       title: title ?? this.title,
@@ -196,6 +199,7 @@ class MacroTargetsState {
       errorMessage: errorMessage ?? this.errorMessage,
       activityId: overrideActivityId ? activityId : activityId ?? this.activityId,
       eventId: overrideEventId ? eventId : eventId ?? this.eventId,
+      unitSystem: unitSystem ?? this.unitSystem,
     );
   }
 }
@@ -255,6 +259,10 @@ class MacroTargetsController extends _$MacroTargetsController {
     final repository = ref.read(macroRepositoryProvider);
     final cachedTargets = await repository.getCachedMacroTargets();
 
+    // Load user preferences for unit system
+    final user = await _authService.getCurrentUser();
+    final unitSystem = user?.unitSystem ?? UnitSystem.imperial;
+
     return MacroTargetsState(
       title: title,
       distanceLabel: distanceLabel,
@@ -288,6 +296,7 @@ class MacroTargetsController extends _$MacroTargetsController {
       helpValidation: helpValidation,
       isCreatingPlan: false,
       macroTargets: cachedTargets,
+      unitSystem: unitSystem,
     );
   }
 

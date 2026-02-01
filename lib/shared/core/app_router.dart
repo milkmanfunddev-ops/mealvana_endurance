@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
+import '../services/app_external_deps.dart';
 import '../../main.dart' show sentryNavigatorKey;
 
 // Import all screens
@@ -56,26 +57,57 @@ import '../../features/coach_mode/presentation/screens/coach_registration_screen
 import '../../features/coach_mode/presentation/screens/coach_directory_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
 
+/// Notifier that triggers GoRouter redirect re-evaluation on auth state changes.
+/// Used by AuthListenerService to signal sign-out/sign-in events.
+class AuthChangeNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
+}
+
+/// Singleton provider for the auth change notifier
+final authChangeNotifierProvider = Provider<AuthChangeNotifier>((ref) {
+  return AuthChangeNotifier();
+});
+
 /// Central router configuration for the Mealvana Endurance app
 /// Following Andrea Bizzotto's deep link pattern
 class AppRouter {
   // Router provider with ref access for redirect logic
   static final routerProvider = Provider<GoRouter>((ref) {
+    final authChangeNotifier = ref.read(authChangeNotifierProvider);
     return GoRouter(
       initialLocation: '/',
+      refreshListenable: authChangeNotifier,
       // Use Sentry navigator key for screenshot capture in feedback widget
       navigatorKey: sentryNavigatorKey,
       // Redirect logic based on app startup state
       redirect: (context, state) {
+        final currentPath = state.uri.path;
+
         // Allow navigation to force-upgrade route always
-        if (state.uri.path == '/force-upgrade') {
+        if (currentPath == '/force-upgrade') {
           return null;
         }
 
-        // Allow navigation to any other route - don't block
-        // The initial '/' will be redirected based on app state
-        if (state.uri.path != '/') {
-          return null; // Allow navigation to specific routes
+        // Public routes that don't require auth (welcome, onboarding, auth screens)
+        final isPublicRoute = currentPath == '/welcome' ||
+            currentPath.startsWith('/onboarding') ||
+            currentPath.startsWith('/auth');
+
+        // For non-root, non-public routes: check Supabase auth directly
+        // This ensures sign-out navigates back to welcome from ANY screen
+        // We check Supabase session directly (not appStartupProvider) because
+        // appStartupProvider may be in loading state during the redirect
+        if (currentPath != '/' && !isPublicRoute) {
+          final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+          if (supabase.auth.currentSession == null) {
+            return '/welcome';
+          }
+          return null; // Allow navigation to protected routes when authenticated
+        }
+
+        // For public routes, don't redirect (user is already where they should be)
+        if (isPublicRoute) {
+          return null;
         }
 
         // For root path, check app startup state and redirect appropriately
@@ -87,10 +119,10 @@ class AppRouter {
             if (appStartupData.forceUpgradeRequired) {
               return '/force-upgrade';
             }
-            // CRITICAL: Schema resync required - block all other navigation
-            // TODO: Replace with resync screen in Phase 4
+            // Schema resync failed - send to welcome to re-authenticate
+            // (Successful resync continues with normal startup in app_startup_provider)
             if (appStartupData.resyncRequired) {
-              return '/welcome'; // Temporary: go to welcome until resync implemented
+              return '/welcome';
             }
             // User not created yet - go to welcome
             if (appStartupData.user == null) {

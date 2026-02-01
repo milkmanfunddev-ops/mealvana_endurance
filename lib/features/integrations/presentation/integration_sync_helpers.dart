@@ -13,21 +13,29 @@ import 'providers/connect_training_controller.dart';
 Future<void> syncFinalSurge(BuildContext context, WidgetRef ref) async {
   debugPrint('🔄 Starting Final Surge sync...');
 
-  // Show immediate "syncing" feedback
-  final loadingController = MealvanaSnackbar.showLoading(
+  // Show immediate "syncing" feedback - capture controller to dismiss later
+  final snackbarController = MealvanaSnackbar.showLoading(
     context,
     'Syncing Final Surge workouts...',
   );
 
-  final controller = ref.read(connectTrainingControllerProvider.notifier);
-  final count = await controller.importFinalSurgeWorkouts();
+  int count = 0;
+  try {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    count = await controller.importFinalSurgeWorkouts();
+    debugPrint('✅ Final Surge sync complete: $count workouts imported');
+  } finally {
+    // Always dismiss the loading snackbar, even if sync throws
+    try {
+      snackbarController.close();
+      debugPrint('✅ Loading snackbar dismissed');
+    } catch (e) {
+      debugPrint('⚠️ Could not dismiss loading snackbar: $e');
+    }
+  }
 
-  debugPrint('✅ Final Surge sync complete: $count workouts imported');
-
-  // Dismiss the syncing snackbar and show result
+  // Show result if context is still valid
   if (context.mounted) {
-    loadingController.close();
-
     final state = ref.read(connectTrainingControllerProvider).value;
 
     if (count > 0) {
@@ -49,6 +57,8 @@ Future<void> syncFinalSurge(BuildContext context, WidgetRef ref) async {
         duration: const Duration(seconds: 4),
       );
     }
+  } else {
+    debugPrint('⚠️ Context unmounted after Final Surge sync - cannot show result snackbar');
   }
 }
 
@@ -56,26 +66,38 @@ Future<void> syncFinalSurge(BuildContext context, WidgetRef ref) async {
 Future<void> syncTrainingPeaks(BuildContext context, WidgetRef ref) async {
   debugPrint('🔄 Starting TrainingPeaks sync...');
 
-  // Show immediate "syncing" feedback
-  final loadingController = MealvanaSnackbar.showLoading(
+  // Show immediate "syncing" feedback - capture controller to dismiss later
+  final snackbarController = MealvanaSnackbar.showLoading(
     context,
     'Syncing TrainingPeaks workouts...',
   );
 
-  // Run sync (this updates state which shows progress in UI)
-  final controller = ref.read(connectTrainingControllerProvider.notifier);
-  final count = await controller.importTrainingPeaksWorkouts();
+  int count = 0;
+  try {
+    // Run sync (this updates state which shows progress in UI)
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    count = await controller.importTrainingPeaksWorkouts();
+    debugPrint('✅ TrainingPeaks sync complete: $count workouts imported');
+  } finally {
+    // Always dismiss the loading snackbar, even if sync throws
+    try {
+      snackbarController.close();
+      debugPrint('✅ Loading snackbar dismissed');
+    } catch (e) {
+      debugPrint('⚠️ Could not dismiss loading snackbar: $e');
+    }
+  }
 
-  debugPrint('✅ TrainingPeaks sync complete: $count workouts imported');
+  debugPrint('🔍 Checking context.mounted: ${context.mounted}');
 
-  // Dismiss the syncing snackbar and show result
+  // Show result if context is still valid
   if (context.mounted) {
-    loadingController.close();
-
     final state = ref.read(connectTrainingControllerProvider).value;
     final eventInfo = state?.hasNextEvent == true && state?.nextEventName != null
         ? '\nNext event: ${state!.nextEventName}'
         : '';
+
+    debugPrint('📊 State after sync - errorMessage: ${state?.errorMessage}, count: $count');
 
     if (count > 0) {
       MealvanaSnackbar.showSuccess(
@@ -96,5 +118,7 @@ Future<void> syncTrainingPeaks(BuildContext context, WidgetRef ref) async {
         duration: const Duration(seconds: 4),
       );
     }
+  } else {
+    debugPrint('⚠️ Context unmounted after TrainingPeaks sync - cannot show result snackbar');
   }
 }

@@ -18,6 +18,7 @@ class IntegrationProviderCard extends StatelessWidget {
     this.iconPath,
     this.logoHeight = 24,
     this.athleteName,
+    this.lastSyncAt,
     this.comingSoonText,
     this.onConnect,
     this.onDisconnect,
@@ -47,6 +48,9 @@ class IntegrationProviderCard extends StatelessWidget {
 
   /// Athlete name from provider (shown when connected)
   final String? athleteName;
+
+  /// Last sync timestamp from provider (shown when connected)
+  final DateTime? lastSyncAt;
 
   /// Text to show if not available (e.g., "Coming Soon")
   final String? comingSoonText;
@@ -82,25 +86,37 @@ class IntegrationProviderCard extends StatelessWidget {
             : null,
       ),
       padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Provider logo with wordmark (no separate text label)
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: _buildLogo(),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
+          // Top row: Logo and action button
+          Row(
+            children: [
+              // Provider logo with wordmark (no separate text label)
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _buildLogo(),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
 
-          // Action button - fixed width to prevent logo shifting during state changes
-          SizedBox(
-            width: 200,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: _buildAction(),
-            ),
+              // Action button - fixed width to prevent logo shifting during state changes
+              SizedBox(
+                width: 200,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _buildAction(),
+                ),
+              ),
+            ],
           ),
+
+          // Bottom row: Athlete name and last sync timestamp (when connected)
+          if (isConnected && (athleteName != null || lastSyncAt != null)) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _buildConnectionInfo(),
+          ],
         ],
       ),
     );
@@ -193,6 +209,65 @@ class IntegrationProviderCard extends StatelessWidget {
 
     // Not connected - show connect button
     return _ConnectButton(onConnect: onConnect);
+  }
+
+  /// Build the connection info section showing athlete name and last sync timestamp
+  Widget _buildConnectionInfo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Athlete name
+        if (athleteName != null)
+          Text(
+            athleteName!,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textDarkSecondary,
+            ),
+          ),
+
+        // Last sync timestamp
+        if (lastSyncAt != null) ...[
+          if (athleteName != null) const SizedBox(height: 2),
+          Text(
+            _formatLastSync(lastSyncAt!),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textDarkSecondary.withValues(alpha: 0.8),
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Format the last sync timestamp
+  /// Example: "Last synced: Jan 16 at 3:42 PM"
+  String _formatLastSync(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    // If synced today, show relative time
+    if (difference.inMinutes < 1) {
+      return 'Last synced: Just now';
+    } else if (difference.inHours < 1) {
+      final minutes = difference.inMinutes;
+      return 'Last synced: $minutes ${minutes == 1 ? 'minute' : 'minutes'} ago';
+    } else if (difference.inHours < 24 && timestamp.day == now.day) {
+      final hours = difference.inHours;
+      return 'Last synced: $hours ${hours == 1 ? 'hour' : 'hours'} ago';
+    }
+
+    // For older syncs, show formatted date
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final month = months[timestamp.month - 1];
+    final day = timestamp.day;
+
+    // Format time as 12-hour with AM/PM
+    final hour = timestamp.hour > 12 ? timestamp.hour - 12 : (timestamp.hour == 0 ? 12 : timestamp.hour);
+    final minute = timestamp.minute.toString().padLeft(2, '0');
+    final period = timestamp.hour >= 12 ? 'PM' : 'AM';
+
+    return 'Last synced: $month $day at $hour:$minute $period';
   }
 }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
 import '../../../shared/services/device_info_service.dart';
 import '../data/auth_repository_edge.dart';
@@ -41,6 +42,7 @@ class AuthService {
     required double weightPounds,
     required bool runsWithWaterBottle,
     GutTraining? gutTraining,
+    UnitSystem unitSystem = UnitSystem.imperial,
     Map<String, FoodPreference>? foodPreferences,
     String authProvider = 'anonymous', // 'anonymous', 'email', 'google', 'apple'
     bool isAnonymous = true, // false when user signs up with email/OAuth
@@ -99,6 +101,7 @@ class AuthService {
         weightPounds: weightPounds,
         runsWithWaterBottle: runsWithWaterBottle,
         gutTraining: gutTraining ?? GutTraining.high,
+        unitSystem: unitSystem,
         onboardingCompleted: true, // Set true immediately so user can proceed even if later steps fail
         appVersion: appVersion,
         createdAt: now,

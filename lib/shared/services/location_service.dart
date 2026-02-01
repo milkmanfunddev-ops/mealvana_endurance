@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:location_iq/location_iq.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -6,6 +7,15 @@ import '../data/repositories/location_repository.dart';
 import '../../features/weather/domain/location.dart' as domain;
 
 part 'location_service.g.dart';
+
+enum LocationFailureReason {
+  servicesDisabled,
+  permissionDenied,
+  permissionDeniedForever,
+  timeout,
+  recentFailure,
+  unknown,
+}
 
 /// Location service using geolocator and LocationIQ
 /// Handles GPS location fetching with proper permission handling
@@ -21,52 +31,141 @@ LocationService locationService(Ref ref) {
 class LocationService {
   final AppLogger logger;
   final LocationRepository locationRepository;
+  static const Duration _failureCooldown = Duration(minutes: 2);
+  static DateTime? _lastFailureAt;
+  static LocationFailureReason? _lastFailureReason;
+  final String _instanceId = DateTime.now().microsecondsSinceEpoch.toString();
 
   LocationService({
     required this.logger,
     required this.locationRepository,
   });
 
+  LocationFailureReason? getLastFailureReason() => _lastFailureReason;
+
+  bool _isInFailureCooldown() {
+    if (_lastFailureAt == null) {
+      return false;
+    }
+    return DateTime.now().difference(_lastFailureAt!) < _failureCooldown;
+  }
+
+  Future<domain.Location?> _getLastKnownLocation() async {
+    try {
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown == null) {
+        return null;
+      }
+      return domain.Location(
+        latitude: lastKnown.latitude,
+        longitude: lastKnown.longitude,
+      );
+    } catch (e, stackTrace) {
+      logger.error('Error getting last known location', error: e, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
   /// Get current device location
   /// Returns null if permission denied or location unavailable
   Future<domain.Location?> getCurrentLocation() async {
     try {
+      logger.debug(
+        'Starting location fetch',
+        context: 'LocationService',
+        data: {
+          'instance_id': _instanceId,
+          'cooldown_active': _isInFailureCooldown(),
+          'last_failure_reason': _lastFailureReason?.name,
+        },
+      );
+      if (_isInFailureCooldown()) {
+        final lastKnown = await _getLastKnownLocation();
+        if (lastKnown != null) {
+          logger.info('Using last known location during cooldown', context: 'LocationService');
+          _lastFailureReason = null;
+          return lastKnown;
+        }
+        logger.warning('Skipping location fetch due to recent failure', context: 'LocationService');
+        _lastFailureReason = LocationFailureReason.recentFailure;
+        return null;
+      }
+
       // Check if location services are enabled
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      logger.debug(
+        'Location services enabled',
+        context: 'LocationService',
+        data: {'enabled': serviceEnabled},
+      );
       if (!serviceEnabled) {
         logger.warning('Location services are disabled', context: 'LocationService');
+        _lastFailureReason = LocationFailureReason.servicesDisabled;
         return null;
       }
 
       // Check permission status
       LocationPermission permission = await Geolocator.checkPermission();
+      logger.debug(
+        'Location permission status',
+        context: 'LocationService',
+        data: {'permission': permission.name},
+      );
 
       if (permission == LocationPermission.denied) {
         // Request permission
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           logger.warning('Location permission denied by user');
+          _lastFailureReason = LocationFailureReason.permissionDenied;
           return null;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
         logger.warning('Location permission permanently denied');
+        _lastFailureReason = LocationFailureReason.permissionDeniedForever;
         return null;
       }
 
       // Get current position
+      logger.debug(
+        'Requesting current position',
+        context: 'LocationService',
+        data: {'accuracy': 'low', 'timeout_seconds': 20},
+      );
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium,
-        timeLimit: const Duration(seconds: 10),
+        desiredAccuracy: LocationAccuracy.low,
+        timeLimit: const Duration(seconds: 20),
       );
 
+      _lastFailureAt = null;
+      _lastFailureReason = null;
+      logger.debug(
+        'Location acquired',
+        context: 'LocationService',
+        data: {'lat': position.latitude, 'lng': position.longitude},
+      );
       return domain.Location(
         latitude: position.latitude,
         longitude: position.longitude,
       );
     } catch (e, stackTrace) {
-      logger.error('Error getting current location', error: e, stackTrace: stackTrace);
+      if (e is TimeoutException) {
+        logger.warning('Location request timed out', context: 'LocationService');
+        _lastFailureReason = LocationFailureReason.timeout;
+      } else {
+        logger.error('Error getting current location', error: e, stackTrace: stackTrace);
+        _lastFailureReason = LocationFailureReason.unknown;
+      }
+
+      final lastKnown = await _getLastKnownLocation();
+      if (lastKnown != null) {
+        logger.warning('Using last known location after failure', context: 'LocationService');
+        return lastKnown;
+      }
+
+      _lastFailureAt = DateTime.now();
       return null;
     }
   }
@@ -101,6 +200,16 @@ class LocationService {
       return await Geolocator.openLocationSettings();
     } catch (e) {
       logger.error('Error opening location settings', error: e);
+      return false;
+    }
+  }
+
+  /// Open app settings
+  Future<bool> openAppSettings() async {
+    try {
+      return await Geolocator.openAppSettings();
+    } catch (e) {
+      logger.error('Error opening app settings', error: e);
       return false;
     }
   }

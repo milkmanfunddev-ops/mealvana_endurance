@@ -164,6 +164,17 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
+                        if (widget.food.servingSize != null && widget.food.servingSize!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.food.servingSize!,
+                            style: AppTextStyles.smallLabel.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                              fontSize: 10,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

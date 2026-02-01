@@ -4,16 +4,18 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../widgets/adjust_macros/edit_macros_dialog_widget.dart';
 import '../widgets/adjust_macros/help_bottom_sheet_widget.dart';
-import '../widgets/adjust_macros/brick_macro_summary.dart';
-import '../widgets/adjust_macros/brick_phase_breakdown.dart';
 import '../utils/macro_helpers.dart';
 import '../../../../shared/widgets/generating_plan_overlay.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../providers/macro_targets_controller.dart';
+import '../providers/brick_input_controller.dart';
 import '../../domain/macro_targets.dart' as domain;
 import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/domain/activity_type.dart';
+import '../../../../features/auth/domain/user_preferences.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
+import '../utils/unit_formatter.dart';
 
 /// Adjust Macros Screen - Refactored with extracted widgets
 /// Simplified from 1,005 lines using extracted components
@@ -110,13 +112,18 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     }
 
     final macros = state.macroTargets!;
+    final isBrick = macros.activityType == ActivityType.brick;
 
     return SingleChildScrollView(
       child: Column(
         children: [
           const SizedBox(height: 12),
           _buildActivityHeader(context, state),
-          _buildPaceBurnStats(context, state, macros),
+          // Show per-segment pace/burn for bricks, single pace/burn for other sports
+          if (isBrick)
+            _buildBrickPaceBurnStats(context, ref, macros)
+          else
+            _buildPaceBurnStats(context, state, macros),
           _buildMacroTargetsSection(context, ref, state, macros),
           const SizedBox(height: 12),
           _buildActionButtons(context, ref, state, macros),
@@ -181,6 +188,91 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     );
   }
 
+  /// Build pace/burn stats for brick workouts - shows one widget per segment in a row
+  Widget _buildBrickPaceBurnStats(
+    BuildContext context,
+    WidgetRef ref,
+    domain.MacroTargets macros,
+  ) {
+    final brickFormState = ref.watch(brickInputControllerProvider);
+    final segmentInputs = brickFormState.segmentInputs;
+    final sportOrder = brickFormState.sportOrder;
+
+    // Filter to only selected sports in order
+    final orderedSelectedSports = sportOrder
+        .where((sport) => brickFormState.selectedSports.contains(sport))
+        .toList();
+
+    // If no segments, show total burn only
+    if (orderedSelectedSports.isEmpty) {
+      final totalBurn = '${macros.metrics.caloriesNetKcal.round()} kcal';
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 17),
+        child: Center(
+          child: Text(
+            'Total: $totalBurn',
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: orderedSelectedSports.map((sport) {
+          final input = segmentInputs[sport];
+          if (input == null) {
+            return const SizedBox.shrink();
+          }
+
+          // Format pace based on sport type
+          String pace;
+          String sportLabel;
+
+          switch (sport) {
+            case 'swimming':
+              final paceSec = input.pacePer100mSeconds ?? 120;
+              final minutes = paceSec ~/ 60;
+              final seconds = paceSec % 60;
+              pace = '$minutes:${seconds.toString().padLeft(2, '0')}/100m';
+              sportLabel = 'SWIM';
+              break;
+            case 'cycling':
+              final speed = input.speedMph ?? 15.0;
+              pace = '${speed.toStringAsFixed(1)} mph';
+              sportLabel = 'BIKE';
+              break;
+            case 'running':
+              final paceMin = input.paceMinutesPerMile ?? 9.0;
+              final minutes = paceMin.floor();
+              final seconds = ((paceMin - minutes) * 60).round();
+              pace = '$minutes:${seconds.toString().padLeft(2, '0')}/mi';
+              sportLabel = 'RUN';
+              break;
+            default:
+              pace = '--';
+              sportLabel = sport.toUpperCase();
+          }
+
+          // Calculate segment duration for display
+          final duration = input.durationMinutes;
+
+          return Expanded(
+            child: _BrickSegmentPaceCard(
+              sportLabel: sportLabel,
+              pace: pace,
+              duration: '$duration min',
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   Widget _buildMacroTargetsSection(
     BuildContext context,
     WidgetRef ref,
@@ -196,8 +288,56 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     }
 
     // Default single-sport UI
+    final useMetric = state.unitSystem == UnitSystem.metric;
+    
+    // Calculate fluid values based on unit preference
+    final preFluids = useMetric 
+        ? macros.preRun.fluidsMl.round() 
+        : (macros.preRun.fluidsMl * UnitFormatter.kFlOzPerMl).round();
+    
+    final duringFluids = useMetric 
+        ? macros.duringRun.fluidTotalMl.round() 
+        : (macros.duringRun.fluidTotalMl * UnitFormatter.kFlOzPerMl).round();
+    
+    final postFluids = useMetric 
+        ? macros.postRun.fluidsMl.round() 
+        : (macros.postRun.fluidsMl * UnitFormatter.kFlOzPerMl).round();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: MacroTargetsTable(
+        title: 'Your Nutritional Targets',
+        useMetric: useMetric,
+        macroData: MacroTableData(
+          preCarbs: macros.preRun.carbsG.round(),
+          duringCarbs: macros.duringRun.carbTotalG.round(),
+          postCarbs: macros.postRun.carbsG.round(),
+          preProtein: macros.preRun.proteinG.round(),
+          duringProtein: 0,
+          postProtein: macros.postRun.proteinG.round(),
+          preFluids: preFluids,
+          duringFluids: duringFluids,
+          postFluids: postFluids,
+          preSodium: macros.preRun.sodiumMg.round(),
+          duringSodium: macros.duringRun.sodiumTotalMg.round(),
+          postSodium: macros.postRun.sodiumMg.round(),
+        ),
+        onInfoPressed: () => _showHelpBottomSheet(context, ref, state),
+        backgroundColor: Colors.transparent,
+      ),
+    );
+  }
+
+  Widget _buildBrickMacroSection(
+    BuildContext context,
+    WidgetRef ref,
+    MacroTargetsState state,
+    domain.MacroTargets macros,
+  ) {
+    // Use the standard MacroTargetsTable for brick workouts
+    // Shows same layout as running/cycling/swimming tabs
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: MacroTargetsTable(
         title: 'Your Nutritional Targets',
         macroData: MacroTableData(
@@ -217,78 +357,6 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         onInfoPressed: () => _showHelpBottomSheet(context, ref, state),
         backgroundColor: Colors.transparent,
       ),
-    );
-  }
-
-  Widget _buildBrickMacroSection(
-    BuildContext context,
-    WidgetRef ref,
-    MacroTargetsState state,
-    domain.MacroTargets macros,
-  ) {
-    // Calculate combined totals across all phases
-    final totalCarbs = (macros.preRun.carbsG +
-                       macros.duringRun.carbTotalG +
-                       macros.postRun.carbsG).round();
-    final totalProtein = (macros.preRun.proteinG +
-                         macros.postRun.proteinG).round();
-    final totalFat = macros.preRun.fatCapG.round();
-    final totalSodium = (macros.preRun.sodiumMg +
-                        macros.duringRun.sodiumTotalMg +
-                        macros.postRun.sodiumMg).round();
-    final totalHydration = (macros.preRun.fluidsMl +
-                           macros.duringRun.fluidTotalMl +
-                           macros.postRun.fluidsMl).round();
-
-    // Build phase breakdown data
-    // TODO: In a future enhancement, retrieve detailed phase breakdown from edge function response
-    // For now, show simplified before/during/after breakdown
-    final phaseData = {
-      'before': BrickPhaseData(
-        carbsG: macros.preRun.carbsG.round(),
-        proteinG: macros.preRun.proteinG.round(),
-        sodiumMg: macros.preRun.sodiumMg.round(),
-        waterMl: macros.preRun.fluidsMl.round(),
-      ),
-      'during': BrickPhaseData(
-        carbsG: macros.duringRun.carbTotalG.round(),
-        sodiumMg: macros.duringRun.sodiumTotalMg.round(),
-        waterMl: macros.duringRun.fluidTotalMl.round(),
-      ),
-      'after': BrickPhaseData(
-        carbsG: macros.postRun.carbsG.round(),
-        proteinG: macros.postRun.proteinG.round(),
-        sodiumMg: macros.postRun.sodiumMg.round(),
-        waterMl: macros.postRun.fluidsMl.round(),
-      ),
-    };
-
-    return Column(
-      children: [
-        // Combined totals
-        BrickMacroSummary(
-          totalCarbsG: totalCarbs,
-          totalProteinG: totalProtein,
-          totalFatG: totalFat,
-          totalSodiumMg: totalSodium,
-          totalHydrationMl: totalHydration,
-          onInfoPressed: () => _showHelpBottomSheet(context, ref, state),
-          // TODO: Implement per-macro edit functionality for bricks
-          onEditCarbs: null,
-          onEditProtein: null,
-          onEditFat: null,
-          onEditSodium: null,
-          onEditHydration: null,
-        ),
-        const SizedBox(height: 12),
-
-        // Phase breakdown
-        BrickPhaseBreakdown(
-          phases: phaseData,
-          // TODO: Implement per-phase edit functionality
-          onEditPhase: null,
-        ),
-      ],
     );
   }
 
@@ -523,6 +591,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       builder: (context) => EditMacrosDialogWidget(
         macros: macros,
         activityId: state.activityId,
+        useMetric: state.unitSystem == UnitSystem.metric,
       ),
     );
   }
@@ -547,6 +616,69 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
       ),
       builder: (context) => HelpBottomSheetWidget(state: state),
+    );
+  }
+}
+
+/// Compact card showing pace info for a single brick segment
+class _BrickSegmentPaceCard extends StatelessWidget {
+  const _BrickSegmentPaceCard({
+    required this.sportLabel,
+    required this.pace,
+    required this.duration,
+  });
+
+  final String sportLabel;
+  final String pace;
+  final String duration;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      decoration: BoxDecoration(
+        color: (isDark ? AppColors.blackberry : AppColors.cream)
+            .withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.orange.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            sportLabel,
+            style: AppTextStyles.descriptor.copyWith(
+              color: AppColors.orange,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            pace,
+            style: AppTextStyles.dataNumber.copyWith(
+              color: isDark ? AppColors.cream : AppColors.blackberry,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            duration,
+            style: AppTextStyles.descriptor.copyWith(
+              color: (isDark ? AppColors.cream : AppColors.blackberry)
+                  .withValues(alpha: 0.7),
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

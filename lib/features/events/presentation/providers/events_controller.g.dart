@@ -241,4 +241,4 @@ final class NextUpcomingEventProvider
   }
 }
 
-String _$nextUpcomingEventHash() => r'd3cb001c9c4a00ac920b8cd2e22a1bdba926e488';
+String _$nextUpcomingEventHash() => r'd919590566743935f92a0938778470b7f34b47fe';

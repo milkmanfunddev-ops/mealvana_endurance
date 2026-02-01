@@ -53,3 +53,12 @@ enum PaceUnit {
   final String abbreviation;
   final String displayName;
 }
+
+enum UnitSystem {
+  imperial('Imperial', 'US'),
+  metric('Metric', 'International');
+
+  final String displayName;
+  final String description;
+  const UnitSystem(this.displayName, this.description);
+}

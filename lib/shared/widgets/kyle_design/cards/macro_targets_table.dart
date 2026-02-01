@@ -15,12 +15,14 @@ class MacroTargetsTable extends ConsumerWidget {
     required this.macroData,
     this.onInfoPressed,
     this.backgroundColor,
+    this.useMetric = false,
   });
 
   final String title;
   final MacroTableData macroData;
   final VoidCallback? onInfoPressed;
   final Color? backgroundColor;
+  final bool useMetric;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -80,6 +82,8 @@ class MacroTargetsTable extends ConsumerWidget {
   }
 
   Widget _buildTable(BuildContext context) {
+    final fluidUnit = useMetric ? 'mL' : 'oz';
+
     return Column(
       children: [
         // Header row
@@ -114,9 +118,9 @@ class MacroTargetsTable extends ConsumerWidget {
           context,
           cells: [
             'FLUIDS',
-            '${macroData.preFluids}mL',
-            '${macroData.duringFluids}mL',
-            '${macroData.postFluids}mL',
+            '${macroData.preFluids}$fluidUnit',
+            '${macroData.duringFluids}$fluidUnit',
+            '${macroData.postFluids}$fluidUnit',
           ],
         ),
         

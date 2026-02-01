@@ -1,5 +1,6 @@
 import 'package:mealvana_endurance/features/onboarding/domain/dietary_preference.dart';
 import 'package:mealvana_endurance/features/onboarding/domain/allergy.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 
 /// Domain models for user authentication and preferences
 /// Removed Hive dependencies as part of migration to Drift database
@@ -44,6 +45,12 @@ class UserProfile {
   final String appVersion;
   final bool swipeHintShown;
 
+  // Unit preferences
+  final UnitSystem unitSystem;
+
+  DistanceUnit get preferredDistanceUnit => unitSystem == UnitSystem.metric ? DistanceUnit.kilometers : DistanceUnit.miles;
+  PaceUnit get preferredPaceUnit => unitSystem == UnitSystem.metric ? PaceUnit.minPerKm : PaceUnit.minPerMile;
+
   // Sport-specific preferences
   final bool? giSensitivity;
   final int? ftpWatts;
@@ -53,6 +60,11 @@ class UserProfile {
   final int? cssPacePer100mSeconds;
   final bool? typicalWetsuit;
   final String? typicalSwimCapType;
+
+  // Default pace/speed for workout estimation
+  final double? defaultRunningPaceMinPerMile;
+  final double? defaultCyclingSpeedMph;
+  final int? defaultSwimmingPacePer100Sec;
 
   // Dietary preference and allergies (for onboarding revamp)
   final DietaryPreference? dietaryPreference;
@@ -88,6 +100,8 @@ class UserProfile {
     this.onboardingCompleted = false,
     required this.appVersion,
     this.swipeHintShown = false,
+    // Unit preferences
+    this.unitSystem = UnitSystem.imperial,
     // Sport preferences
     this.giSensitivity,
     this.ftpWatts,
@@ -97,6 +111,10 @@ class UserProfile {
     this.cssPacePer100mSeconds,
     this.typicalWetsuit,
     this.typicalSwimCapType,
+    // Default pace/speed for workout estimation
+    this.defaultRunningPaceMinPerMile,
+    this.defaultCyclingSpeedMph,
+    this.defaultSwimmingPacePer100Sec,
     // Dietary preference and allergies
     this.dietaryPreference,
     this.allergies = const [],
@@ -238,6 +256,11 @@ class UserProfile {
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       appVersion: json['app_version'] as String? ?? '1.0.0',
       swipeHintShown: false, // Drift-only field, always default to false from Supabase
+      // Unit preferences
+      unitSystem: UnitSystem.values.firstWhere(
+        (u) => u.name == json['unit_system'],
+        orElse: () => UnitSystem.imperial,
+      ),
       // Sport preferences (use correct production Supabase column names)
       ftpWatts: json['cycling_ftp_watts'] as int?,
       cssPacePer100mSeconds: json['swimming_css_seconds_per_100m'] as int?,
@@ -281,6 +304,7 @@ class UserProfile {
       'app_version': appVersion,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'unit_system': unitSystem.name,
       // Sport preferences (only include fields that exist in production Supabase)
       'cycling_ftp_watts': ftpWatts,
       'swimming_css_seconds_per_100m': cssPacePer100mSeconds,
@@ -319,6 +343,9 @@ class UserProfile {
     bool? onboardingCompleted,
     String? appVersion,
     bool? swipeHintShown,
+    // Unit preferences
+    UnitSystem? unitSystem,
+    // Sport preferences
     bool? giSensitivity,
     int? ftpWatts,
     int? typicalBikeBottles,
@@ -355,6 +382,8 @@ class UserProfile {
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       appVersion: appVersion ?? this.appVersion,
       swipeHintShown: swipeHintShown ?? this.swipeHintShown,
+      // Unit preferences
+      unitSystem: unitSystem ?? this.unitSystem,
       // Sport preferences
       giSensitivity: giSensitivity ?? this.giSensitivity,
       ftpWatts: ftpWatts ?? this.ftpWatts,

@@ -8,6 +8,7 @@ import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../auth/application/supabase_auth_service.dart';
+import '../../../integrations/application/integration_sync_coordinator.dart';
 
 part 'activities_controller.g.dart';
 
@@ -48,6 +49,19 @@ class ActivitiesController extends _$ActivitiesController {
       // Don't rethrow - continue with cached data
       // User sees cached data, error is logged for debugging
     }
+
+    // Background integration sync (non-blocking, fire-and-forget)
+    // Only invalidates if sync actually ran (not skipped due to freshness)
+    unawaited(
+      ref
+          .read(integrationSyncCoordinatorProvider.notifier)
+          .ensureIntegrationsSynced(userId)
+          .then((anySynced) {
+        if (anySynced) {
+          ref.invalidateSelf();
+        }
+      }).catchError((_) {}), // Silent failure, already logged in coordinator
+    );
 
     // Load from local database (now guaranteed to be synced or using cached data)
     return _service.getAllActivities(userId);
@@ -185,26 +199,32 @@ class ActivitiesController extends _$ActivitiesController {
     ref.invalidateSelf();
   }
 
-  /// Force refresh activities from Supabase (bypasses staleness check).
+  /// Force refresh activities from Supabase and integrations (bypasses staleness).
   ///
   /// Use this for pull-to-refresh when user explicitly wants fresh data,
   /// or when athlete needs to see coach-made changes immediately.
+  /// Runs Supabase sync and integration sync in parallel with a 20s timeout.
   Future<void> forceRefresh() async {
     try {
       final userId = await ref.read(userIdProvider.future);
 
-      // Force sync from Supabase (bypasses 24h staleness check)
-      await ref.read(syncCoordinatorProvider.notifier).forceSyncRepository(
-            'activities',
-            userId,
-            repository: ref.read(activitiesRepositoryProvider),
-          );
+      await Future.wait([
+        ref.read(syncCoordinatorProvider.notifier).forceSyncRepository(
+              'activities',
+              userId,
+              repository: ref.read(activitiesRepositoryProvider),
+            ),
+        ref
+            .read(integrationSyncCoordinatorProvider.notifier)
+            .forceSyncIntegrations(userId),
+      ]).timeout(
+        const Duration(seconds: 20),
+        onTimeout: () => [null, null],
+      );
 
-      // Invalidate to reload with fresh data
       ref.invalidateSelf();
     } catch (e) {
       _logger.error('Error during force refresh', error: e);
-      // Still invalidate to show whatever data we have
       ref.invalidateSelf();
     }
   }

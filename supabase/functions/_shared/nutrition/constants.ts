@@ -142,42 +142,40 @@ export const PHASE_TIMING_LABELS: Record<Phase, string> = {
 // Category Mappings
 // ============================================================================
 
-// Legacy mapping (for backward compatibility during migration)
+// Phase to category mapping
+// Database category_enum values: 'before_run', 'during_run', 'after_run', 'transition'
 export const PHASE_TO_CATEGORY: Record<Phase, string> = {
-  before: 'before',
+  before: 'before_run',
   during: 'during_run',
-  after: 'after',
+  after: 'after_run',
 };
 
 // Sport-specific category mapping for "during" phase
+// Currently all sports use 'during_run' as that's the only during category in the database
+// TODO: Add 'during_bike', 'during_swim' to category_enum when ready to differentiate
 export const SPORT_DURING_CATEGORY: Record<string, string> = {
   running: 'during_run',
-  cycling: 'during_bike',
-  swimming: 'during_swim',
-  triathlon: 'during_run', // Most restrictive for safety
+  cycling: 'during_run', // Use during_run until during_bike is added to enum
+  swimming: 'during_run', // Use during_run until during_swim is added to enum
+  triathlon: 'during_run',
   duathlon: 'during_run',
   multisport: 'during_run',
+  brick: 'during_run',
 };
 
 /**
  * Get the appropriate category for a phase and activity type
- * Handles both legacy (before_run, during_run, after_run) and new expanded categories
+ * Uses valid category_enum values: 'before_run', 'during_run', 'after_run', 'transition'
  */
 export function getCategoryForPhase(phase: Phase, activityType: string = 'running'): string[] {
   switch (phase) {
     case 'before':
-      // Include both old and new for compatibility during migration
-      return ['before', 'before_run'];
+      return ['before_run'];
     case 'during':
-      // Get sport-specific during category
+      // Get sport-specific during category (currently all map to during_run)
       const sportCategory = SPORT_DURING_CATEGORY[activityType] || 'during_run';
-      // For cycling, also include foods marked for running (they're safe for cycling too)
-      if (activityType === 'cycling') {
-        return [sportCategory, 'during_run'];
-      }
       return [sportCategory];
     case 'after':
-      // Include both old and new for compatibility during migration
-      return ['after', 'after_run'];
+      return ['after_run'];
   }
 }

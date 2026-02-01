@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../domain/intensity_distribution.dart';
 import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
 import '../../../weather/domain/weather_forecast.dart';
 import '../../../weather/application/weather_service.dart';
+import '../../../../shared/services/location_service.dart';
+import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 
 part 'swimming_input_controller.g.dart';
 
@@ -23,13 +26,20 @@ class SwimmingFormState {
   final DateTime selectedDate;
   final TimeOfDay selectedTime;
 
+  // Intensity distribution fields
+  final IntensityDistribution intensity;
+  final DurationPaceMode durationPaceMode;
+  final Duration? estimatedDuration;
+
   // Weather integration fields
   final weather_domain.Location? location;
   final WeatherForecast? weatherForecast;
   final bool isLoadingLocation;
   final bool isLoadingWeather;
+  final bool hasAttemptedWeatherFetch;
+  final LocationFailureReason? locationFailureReason;
 
-  const SwimmingFormState({
+  SwimmingFormState({
     this.distanceMeters = 2000,
     this.pacePer100mSeconds = 120,
     this.preSwimMinutes = 120,
@@ -42,11 +52,20 @@ class SwimmingFormState {
     this.deckHumidity = 70.0,
     required this.selectedDate,
     required this.selectedTime,
+    IntensityDistribution? intensity,
+    this.durationPaceMode = DurationPaceMode.byDuration,
+    this.estimatedDuration,
     this.location,
     this.weatherForecast,
     this.isLoadingLocation = false,
     this.isLoadingWeather = false,
-  });
+    this.hasAttemptedWeatherFetch = false,
+    this.locationFailureReason,
+  }) : intensity = intensity ?? IntensityDistribution(
+         conversationalPct: 70,
+         tempoPct: 20,
+         allOutPct: 10,
+       );
 
   SwimmingFormState copyWith({
     int? distanceMeters,
@@ -61,10 +80,15 @@ class SwimmingFormState {
     double? deckHumidity,
     DateTime? selectedDate,
     TimeOfDay? selectedTime,
+    IntensityDistribution? intensity,
+    DurationPaceMode? durationPaceMode,
+    Duration? estimatedDuration,
     weather_domain.Location? location,
     WeatherForecast? weatherForecast,
     bool? isLoadingLocation,
     bool? isLoadingWeather,
+    bool? hasAttemptedWeatherFetch,
+    LocationFailureReason? locationFailureReason,
   }) {
     return SwimmingFormState(
       distanceMeters: distanceMeters ?? this.distanceMeters,
@@ -79,10 +103,15 @@ class SwimmingFormState {
       deckHumidity: deckHumidity ?? this.deckHumidity,
       selectedDate: selectedDate ?? this.selectedDate,
       selectedTime: selectedTime ?? this.selectedTime,
+      intensity: intensity ?? this.intensity,
+      durationPaceMode: durationPaceMode ?? this.durationPaceMode,
+      estimatedDuration: estimatedDuration ?? this.estimatedDuration,
       location: location ?? this.location,
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
       isLoadingWeather: isLoadingWeather ?? this.isLoadingWeather,
+      hasAttemptedWeatherFetch: hasAttemptedWeatherFetch ?? this.hasAttemptedWeatherFetch,
+      locationFailureReason: locationFailureReason ?? this.locationFailureReason,
     );
   }
 }
@@ -97,9 +126,14 @@ class SwimmingInputController extends _$SwimmingInputController {
   SwimmingFormState build() {
     final now = DateTime.now();
 
+    // Calculate initial estimated duration using default values
+    // Default: 2000 meters at 120 seconds per 100m = 20 * 120 seconds = 2400 seconds = 40 minutes
+    final initialDurationMinutes = ((2000 / 100) * 120 / 60).round();
+
     final initialState = SwimmingFormState(
       selectedDate: now,
       selectedTime: const TimeOfDay(hour: 6, minute: 0),
+      estimatedDuration: Duration(minutes: initialDurationMinutes),
     );
 
     // NOTE: Location fetching is now triggered explicitly when this tab becomes active
@@ -115,6 +149,9 @@ class SwimmingInputController extends _$SwimmingInputController {
   Future<void> fetchLocationIfNeeded() async {
     if (!state.isLoadingLocation && !state.isLoadingWeather && state.location == null) {
       await fetchCurrentLocation();
+      if (state.location == null && state.weatherForecast == null) {
+        await fetchWeatherForecast();
+      }
     } else if (state.location != null && state.weatherForecast == null) {
       await fetchWeatherForecast();
     }
@@ -134,10 +171,18 @@ class SwimmingInputController extends _$SwimmingInputController {
   /// Update form field values
   void updateDistance(int distanceMeters) {
     state = state.copyWith(distanceMeters: distanceMeters);
+    // Recalculate estimated duration if in byDuration mode
+    if (state.durationPaceMode == DurationPaceMode.byDuration) {
+      _estimateDuration();
+    }
   }
 
   void updatePace(int pacePer100mSeconds) {
     state = state.copyWith(pacePer100mSeconds: pacePer100mSeconds);
+    // Recalculate estimated duration if in byDuration mode
+    if (state.durationPaceMode == DurationPaceMode.byDuration) {
+      _estimateDuration();
+    }
   }
 
   void updatePreSwimMinutes(int minutes) {
@@ -184,6 +229,39 @@ class SwimmingInputController extends _$SwimmingInputController {
     }
   }
 
+  /// Update intensity distribution
+  void updateIntensityDistribution(IntensityDistribution intensity) {
+    state = state.copyWith(intensity: intensity);
+  }
+
+  void updateDuration(Duration duration) {
+    state = state.copyWith(estimatedDuration: duration);
+  }
+
+  /// Update duration/pace mode
+  void updateDurationPaceMode(DurationPaceMode mode) {
+    state = state.copyWith(durationPaceMode: mode);
+    // Recalculate estimated duration when switching to byDuration mode
+    if (mode == DurationPaceMode.byDuration) {
+      _estimateDuration();
+    }
+  }
+
+  /// Calculate estimated duration from distance and pace per 100m
+  /// For swimming: estimatedDuration = (distance / 100) * pacePer100mSeconds
+  void _estimateDuration() {
+    if (state.distanceMeters > 0 && state.pacePer100mSeconds > 0) {
+      // Calculate number of 100m segments
+      final segments = state.distanceMeters / 100;
+      // Total seconds = segments * pace per 100m
+      final totalSeconds = (segments * state.pacePer100mSeconds).round();
+
+      state = state.copyWith(
+        estimatedDuration: Duration(seconds: totalSeconds),
+      );
+    }
+  }
+
   /// Fetch current GPS location
   Future<void> fetchCurrentLocation() async {
     state = state.copyWith(isLoadingLocation: true);
@@ -193,6 +271,7 @@ class SwimmingInputController extends _$SwimmingInputController {
       state = state.copyWith(
         location: location,
         isLoadingLocation: false,
+        locationFailureReason: location != null ? null : state.locationFailureReason,
       );
 
       // Auto-fetch weather after getting location
@@ -206,7 +285,10 @@ class SwimmingInputController extends _$SwimmingInputController {
 
   /// Fetch weather forecast for the selected date/time
   Future<void> fetchWeatherForecast() async {
-    state = state.copyWith(isLoadingWeather: true);
+    state = state.copyWith(
+      isLoadingWeather: true,
+      hasAttemptedWeatherFetch: true,
+    );
 
     try {
       // Get activity date/time
@@ -231,16 +313,49 @@ class SwimmingInputController extends _$SwimmingInputController {
           deckTemperature: forecast.temperatureC,
           deckHumidity: forecast.humidityPct.toDouble(),
           isLoadingWeather: false,
+          locationFailureReason: null,
         );
       } else {
+        LocationFailureReason? failureReason;
+        if (state.location == null) {
+          failureReason = _weatherService.getLastLocationFailureReason();
+          if (failureReason == null) {
+            final hasPermission = await _weatherService.hasLocationPermission();
+            if (!hasPermission) {
+              failureReason = LocationFailureReason.permissionDenied;
+            }
+          }
+        }
         state = state.copyWith(
           weatherForecast: forecast,
           isLoadingWeather: false,
+          locationFailureReason: failureReason,
         );
       }
     } catch (e) {
       state = state.copyWith(isLoadingWeather: false);
     }
+  }
+
+  /// Request location permission and retry weather fetch
+  Future<void> requestLocationPermissionAndFetch() async {
+    final granted = await _weatherService.requestLocationPermission();
+    if (granted) {
+      state = state.copyWith(locationFailureReason: null);
+      await fetchCurrentLocation();
+    } else {
+      state = state.copyWith(locationFailureReason: LocationFailureReason.permissionDenied);
+    }
+  }
+
+  /// Open OS location settings
+  Future<void> openLocationSettings() async {
+    await _weatherService.openLocationSettings();
+  }
+
+  /// Open OS app settings
+  Future<void> openAppSettings() async {
+    await _weatherService.openAppSettings();
   }
 
   /// Clear location (allows manual entry)

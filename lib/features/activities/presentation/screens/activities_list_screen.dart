@@ -25,9 +25,12 @@ import '../widgets/brick_ungroup_dialog.dart';
 import '../widgets/brick_minimum_warning_dialog.dart';
 import '../widgets/brick_validation_error_dialog.dart';
 import '../widgets/brick_group_card.dart';
+import '../widgets/no_fueling_plans_widget.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../domain/activity.dart';
 import '../../domain/brick_exceptions.dart';
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../events/presentation/screens/event_form_screen.dart';
 
 /// Main screen showing calendar date picker and daily activity list.
 ///
@@ -106,7 +109,6 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           ),
         ],
       ),
-      // FloatingActionButton removed - now in FloatingActionButtonsBar
     );
   }
 
@@ -168,9 +170,6 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     AsyncValue<List<dynamic>> carbLoadingState,
     DateTime selectedDate,
   ) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return activitiesState.when(
       data: (activitiesData) {
         // Cast to proper type since AsyncValue loses generic type info
@@ -201,26 +200,6 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           },
           child: CustomScrollView(
             slivers: [
-              // Upcoming Events Section Header
-              const SliverToBoxAdapter(
-                child: SectionHeaderText(text: "Upcoming Events"),
-              ),
-              // Upcoming Event Card
-              SliverToBoxAdapter(
-                child: upcomingEvent.when(
-                  data: (event) => UpcomingEventCardKyle(upcomingEventData: event),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
-              ),
-              // Divider between Upcoming Events and Today's Activities
-              SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  height: 1,
-                  color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.2),
-                ),
-              ),
               // Carb Loading Days Section (separate from activities)
               if (selectedDateCarbDays.isNotEmpty) ...[
                 const SliverToBoxAdapter(
@@ -236,6 +215,27 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                   ),
                 ),
               ],
+              // Upcoming Races Section - show above activities/empty state
+              ...upcomingEvent.when(
+                data: (eventData) {
+                  if (eventData != null) {
+                    return [
+                      SliverToBoxAdapter(
+                        child: Container(
+                          margin: const EdgeInsets.only(top: 24, bottom: 8),
+                          child: _buildUpcomingRacesHeader(),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: UpcomingEventCardKyle(upcomingEventData: eventData),
+                      ),
+                    ];
+                  }
+                  return <Widget>[];
+                },
+                loading: () => <Widget>[],
+                error: (_, __) => <Widget>[],
+              ),
               // Activities Section Header with Create Brick button
               if (selectedDateActivities.isNotEmpty)
                 SliverToBoxAdapter(
@@ -246,10 +246,13 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                 ),
               // Activities List (only activities, not carb days)
               if (selectedDateActivities.isEmpty && selectedDateCarbDays.isEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 24, left: 16, right: 16),
-                    child: _buildEmptyState(selectedDate),
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildEmptyState(),
+                    ),
                   ),
                 )
               else if (selectedDateActivities.isNotEmpty)
@@ -304,31 +307,8 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     );
   }
 
-  Widget _buildEmptyState(DateTime selectedDate) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.calendar_today,
-          size: 64,
-          color: Colors.grey[400],
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'No activities scheduled',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Colors.grey[600],
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          selectedDate.toString().split(' ')[0],
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[500],
-              ),
-        ),
-      ],
-    );
+  Widget _buildEmptyState() {
+    return const NoFuelingPlansWidget();
   }
 
   Widget _buildErrorState(Object error) {
@@ -355,6 +335,47 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
 
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  /// Build the "Upcoming Races" header with "Add race >" link
+  Widget _buildUpcomingRacesHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const SectionHeaderText(
+            text: "Upcoming Races",
+            topPadding: 0,
+            bottomPadding: 0,
+          ),
+          GestureDetector(
+            onTap: () async {
+              final result = await Navigator.of(context).push<Map<String, dynamic>>(
+                MaterialPageRoute(
+                  builder: (context) => const EventFormScreen(),
+                ),
+              );
+
+              // Refresh events if a new event was created
+              if (result != null && result['success'] == true && mounted) {
+                ref.invalidate(nextUpcomingEventProvider);
+              }
+            },
+            child: Text(
+              'Add race >',
+              style: TextStyle(
+                fontFamily: 'Apercu',
+                fontSize: 14,
+                color: AppColors.orange,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Build the "Today's Activities" header with optional Create Brick button
@@ -427,8 +448,6 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     List<Activity> activities,
     DateTime selectedDate,
   ) async {
-    final messenger = ScaffoldMessenger.of(context);
-
     // Get selected activity IDs in order (read notifier fresh each time)
     final selectedIds = ref.read(brickSelectionControllerProvider.notifier).getSelectedOrder();
 
@@ -452,15 +471,10 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     // Check if widget is still mounted after async gap
     if (!mounted) return;
 
-    try {
-      // Show loading indicator
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Creating brick workout...'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+    // Show loading indicator before try block so catch blocks can access it
+    final loadingController = MealvanaSnackbar.showLoading(context, 'Creating brick workout...');
 
+    try {
       // Read controllers fresh after async gap to avoid disposal issues
       final actionsController = ref.read(brickActionsControllerProvider.notifier);
 
@@ -479,18 +493,14 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       // Refresh activities list
       ref.invalidate(activitiesControllerProvider);
 
-      // Show success message
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Brick workout created successfully!'),
-          backgroundColor: AppColors.success,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      // Show success message using MealvanaSnackbar
+      loadingController.close();
+      if (context.mounted) {
+        MealvanaSnackbar.showSuccess(context, 'Brick workout created successfully!');
+      }
     } on BrickValidationException catch (e) {
       // Validation error - show specific dialog
-      messenger.clearSnackBars();
+      loadingController.close();
       if (!context.mounted) return;
       await showDialog<bool>(
         context: context,
@@ -503,7 +513,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       );
     } on BrickCreationException catch (e) {
       // Creation error - show specific dialog with retry option
-      messenger.clearSnackBars();
+      loadingController.close();
       if (!context.mounted) return;
       final shouldRetry = await showDialog<bool>(
         context: context,
@@ -521,22 +531,16 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       }
     } catch (e) {
       // Unknown error - show generic error message
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('Unexpected error creating brick: ${e.toString()}'),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 4),
-        ),
-      );
+      loadingController.close();
+      if (context.mounted) {
+        MealvanaSnackbar.showError(context, 'Unexpected error creating brick: ${e.toString()}');
+      }
     }
   }
 
   /// Handle Ungroup button press on brick group card
   /// Shows confirmation dialog and ungroups brick back to standalone activities
   Future<void> _handleUngroupBrick(String brickId) async {
-    final messenger = ScaffoldMessenger.of(context);
-
     // Get segment count for dialog message
     final activitiesState = ref.read(activitiesControllerProvider);
 
@@ -568,15 +572,10 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     // Check if widget is still mounted after async gap
     if (!mounted) return;
 
-    try {
-      // Show loading indicator
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Ungrouping brick...'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+    // Show loading indicator before try block so catch blocks can access it
+    final loadingController = MealvanaSnackbar.showLoading(context, 'Ungrouping brick...');
 
+    try {
       // Read controller FRESH after async gap to avoid disposal issues
       final actionsController = ref.read(brickActionsControllerProvider.notifier);
 
@@ -586,18 +585,14 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       // Refresh activities list
       ref.invalidate(activitiesControllerProvider);
 
-      // Show success message
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Brick ungrouped successfully!'),
-          backgroundColor: AppColors.success,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      // Show success message using MealvanaSnackbar
+      loadingController.close();
+      if (context.mounted) {
+        MealvanaSnackbar.showSuccess(context, 'Brick ungrouped successfully!');
+      }
     } on BrickUngroupException catch (e) {
       // Ungroup error - show specific dialog with retry option
-      messenger.clearSnackBars();
+      loadingController.close();
       if (!context.mounted) return;
       final shouldRetry = await showDialog<bool>(
         context: context,
@@ -615,14 +610,10 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       }
     } catch (e) {
       // Unknown error - show generic error message
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('Unexpected error ungrouping brick: ${e.toString()}'),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 4),
-        ),
-      );
+      loadingController.close();
+      if (context.mounted) {
+        MealvanaSnackbar.showError(context, 'Unexpected error ungrouping brick: ${e.toString()}');
+      }
     }
   }
 
@@ -652,8 +643,6 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   /// Handle Remove Segment button press on brick segment card
   /// Shows warning dialog if this would leave only 1 sport
   Future<void> _handleRemoveSegment(String brickId, int segmentIndex) async {
-    final messenger = ScaffoldMessenger.of(context);
-
     // Get brick activity
     final activitiesState = ref.read(activitiesControllerProvider);
 
@@ -685,19 +674,12 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     }
 
     // If 3+ segments, remove segment is not yet implemented
-    messenger.showSnackBar(
-      const SnackBar(
-        content: Text('Remove segment feature not yet implemented'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    MealvanaSnackbar.showInfo(context, 'Remove segment feature not yet implemented');
   }
 
   /// Handle Delete Brick button press
   /// Shows confirmation dialog and deletes brick workout and nutrition plan
   Future<void> _handleDeleteBrick(String brickId) async {
-    final messenger = ScaffoldMessenger.of(context);
-
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
@@ -726,15 +708,10 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     // Check if widget is still mounted after async gap
     if (!mounted) return;
 
-    try {
-      // Show loading indicator
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Deleting brick...'),
-          duration: Duration(seconds: 2),
-        ),
-      );
+    // Show loading indicator before try block so catch blocks can access it
+    final loadingController = MealvanaSnackbar.showLoading(context, 'Deleting brick...');
 
+    try {
       // Read controller FRESH after async gap to avoid disposal issues
       final activitiesController = ref.read(activitiesControllerProvider.notifier);
 
@@ -748,24 +725,16 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       ref.invalidate(activitiesControllerProvider);
 
       // Show success message
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Brick deleted successfully'),
-          backgroundColor: AppColors.success,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      loadingController.close();
+      if (context.mounted) {
+        MealvanaSnackbar.showSuccess(context, 'Brick deleted successfully');
+      }
     } catch (e) {
       // Unknown error - show generic error message
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('Error deleting brick: ${e.toString()}'),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 4),
-        ),
-      );
+      loadingController.close();
+      if (context.mounted) {
+        MealvanaSnackbar.showError(context, 'Error deleting brick: ${e.toString()}');
+      }
     }
   }
 }

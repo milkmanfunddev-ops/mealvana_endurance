@@ -82,15 +82,41 @@ class AppStartup extends _$AppStartup {
           'Schema resync required: local=${resyncResult.localSchemaVersion}, remote=${resyncResult.remoteSchemaVersion}',
           context: 'VERSION_CHECK',
         );
-        // TODO: Trigger schema resync in Phase 4
-        // For now, log and continue - resync will be implemented later
-        return AppStartupData(
-          user: null,
-          hasCompletedOnboarding: false,
-          resyncRequired: true,
-          localSchemaVersion: resyncResult.localSchemaVersion,
-          remoteSchemaVersion: resyncResult.remoteSchemaVersion,
+
+        // Get user ID for dirty record upload (if logged in)
+        final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+        final userId = supabaseClient.auth.currentUser?.id;
+
+        // Perform schema resync: upload dirty records, delete database
+        final resyncSuccess = await versionCheckService.performSchemaResync(
+          userId ?? 'anonymous',
         );
+
+        if (!resyncSuccess) {
+          _logger.error(
+            'Schema resync failed - app may be in inconsistent state',
+            context: 'VERSION_CHECK',
+          );
+          // Return resyncRequired to show error state
+          return AppStartupData(
+            user: null,
+            hasCompletedOnboarding: false,
+            resyncRequired: true,
+            localSchemaVersion: resyncResult.localSchemaVersion,
+            remoteSchemaVersion: resyncResult.remoteSchemaVersion,
+          );
+        }
+
+        _logger.info(
+          'Schema resync completed - reinitializing database',
+          context: 'VERSION_CHECK',
+        );
+
+        // Invalidate database provider to create fresh instance with new schema
+        ref.invalidate(appDatabaseProvider);
+
+        // Continue with normal startup - database will be fresh and empty
+        // User will need to sign in again to sync their data
       }
 
       // Version check passed - continue with normal startup

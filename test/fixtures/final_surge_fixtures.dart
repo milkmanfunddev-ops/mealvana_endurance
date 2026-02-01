@@ -75,6 +75,26 @@ class FinalSurgeFixtures {
     'PlannedDistanceType': 'mi',
   };
 
+  /// Running workout with distance and time but NO pace in description
+  /// Tests the calculated pace feature: pace = duration / distance
+  /// 5400 seconds (90 min) / 12 miles = 7.5 min/mi pace
+  static const Map<String, dynamic> runningWorkoutCalculatedPace = {
+    'WorkoutKey': 'calculated-pace-workout',
+    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=calculated',
+    'WorkoutDate': '2025-12-26T00:00:00',
+    'WorkoutTitle': 'Long Run',
+    'WorkoutDescription': 'Easy effort, no specific pace target', // NO pace info
+    'WorkoutTypeName': 'Run',
+    'WorkoutSubTypeName': 'Long Run',
+    'WorkoutCompleted': false,
+    'WorkoutIcon': 1,
+    'PlannedTime': 5400, // 90 minutes in SECONDS
+    'PlannedDistance': 12.0,
+    'PlannedDistanceType': 'mi',
+    'PlannedPace': null, // Final Surge often doesn't populate this
+    'PlannedPaceType': null,
+  };
+
   // ===========================================================================
   // WALK WORKOUTS - should map to running/easy
   // ===========================================================================
@@ -164,6 +184,104 @@ class FinalSurgeFixtures {
     'PlannedTime': 3600, // 60 minutes
     'PlannedDistance': 40.0,
     'PlannedDistanceType': 'km',
+  };
+
+  // ===========================================================================
+  // STRUCTURED WORKOUTS
+  // ===========================================================================
+
+  /// Running workout with HasStructuredWorkout=true and StructuredWorkoutURLs
+  static const Map<String, dynamic> structuredWorkout = {
+    'WorkoutKey': 'structured-workout-001',
+    'WorkoutURL': 'https://log.finalsurge.com/WorkoutDetails?s=test&id=structured-001',
+    'WorkoutDate': '2026-02-01T00:00:00',
+    'WorkoutTitle': 'Interval Session',
+    'WorkoutDescription': 'Warmup, 4x1000m, Cooldown',
+    'WorkoutTypeName': 'Run',
+    'WorkoutSubTypeName': 'Intervals',
+    'WorkoutCompleted': false,
+    'WorkoutRace': false,
+    'WorkoutIcon': 1,
+    'PlannedTime': 3600, // 60 minutes
+    'PlannedDistance': 8.0,
+    'PlannedDistanceType': 'mi',
+    'HasStructuredWorkout': true,
+    'StructuredWorkoutURLs': {
+      'json_fs_v1': 'https://log.finalsurge.com/API/v1/StructuredWorkout/structured-workout-001?format=json_fs_v1',
+    },
+  };
+
+  /// Structured workout response body (json_fs_v1 format)
+  /// 10 min warmup @ 65% FTP, 4x(4 min @ 105% FTP + 2 min @ 55% FTP), 10 min cooldown @ 60% FTP
+  static const Map<String, dynamic> structuredWorkoutResponse = {
+    'Steps': [
+      // Warmup: 10 min at easy effort
+      {
+        'Type': 'WorkoutStep',
+        'Duration': {'Unit': 'Minute', 'Value': 10},
+        'IntensityTarget': {'Unit': 'PercentFTP', 'Value': 0.65},
+      },
+      // 4 x (4 min hard + 2 min recovery)
+      {
+        'Type': 'WorkoutRepeatStep',
+        'RepeatCount': 4,
+        'Steps': [
+          {
+            'Type': 'WorkoutStep',
+            'Duration': {'Unit': 'Minute', 'Value': 4},
+            'IntensityTarget': {'Unit': 'PercentFTP', 'Value': 1.05},
+          },
+          {
+            'Type': 'WorkoutStep',
+            'Duration': {'Unit': 'Minute', 'Value': 2},
+            'IntensityTarget': {'Unit': 'PercentFTP', 'Value': 0.55},
+          },
+        ],
+      },
+      // Cooldown: 10 min at easy effort
+      {
+        'Type': 'WorkoutStep',
+        'Duration': {'Unit': 'Minute', 'Value': 10},
+        'IntensityTarget': {'Unit': 'PercentFTP', 'Value': 0.60},
+      },
+    ],
+  };
+
+  /// Expected distribution from structuredWorkoutResponse:
+  /// - Warmup: 10 min @ 65% FTP → conversational
+  /// - Intervals: 4 x (4 min @ 105% + 2 min @ 55%) = 16 min all-out + 8 min conversational
+  /// - Cooldown: 10 min @ 60% FTP → conversational
+  /// Total: 44 min
+  /// - Conversational: 10 + 8 + 10 = 28 min → 64%
+  /// - Tempo: 0 min → 0%
+  /// - All-Out: 16 min → 36%
+  static const Map<String, int> expectedStructuredDistribution = {
+    'conversational': 64,
+    'tempo': 0,
+    'allOut': 36,
+  };
+
+  /// Structured workout with ramp step
+  static const Map<String, dynamic> structuredWorkoutWithRamp = {
+    'Steps': [
+      {
+        'Type': 'WorkoutRampStep',
+        'Duration': {'Unit': 'Minute', 'Value': 10},
+        'IntensityTargetStart': {'Unit': 'PercentFTP', 'Value': 0.50},
+        'IntensityTargetEnd': {'Unit': 'PercentFTP', 'Value': 0.75},
+      },
+      {
+        'Type': 'WorkoutStep',
+        'Duration': {'Unit': 'Minute', 'Value': 20},
+        'IntensityTarget': {'Unit': 'PercentFTP', 'Value': 0.88},
+      },
+      {
+        'Type': 'WorkoutRampStep',
+        'Duration': {'Unit': 'Minute', 'Value': 10},
+        'IntensityTargetStart': {'Unit': 'PercentFTP', 'Value': 0.75},
+        'IntensityTargetEnd': {'Unit': 'PercentFTP', 'Value': 0.50},
+      },
+    ],
   };
 
   // ===========================================================================

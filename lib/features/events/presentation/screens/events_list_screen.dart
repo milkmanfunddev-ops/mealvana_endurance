@@ -49,14 +49,14 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            FontAwesomeIcons.chevronLeft,
-            size: AppIconSizes.sm,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        // leading: IconButton(
+        //   icon: Icon(
+        //     FontAwesomeIcons.chevronLeft,
+        //     size: AppIconSizes.sm,
+        //     color: Theme.of(context).colorScheme.onSurface,
+        //   ),
+        //   onPressed: () => Navigator.of(context).pop(),
+        // ),
         title: Text(
           'My Events',
           style: AppTextStyles.sectionTitle.copyWith(

@@ -1440,12 +1440,33 @@ serve(async (req)=>{
       // Calculate brick macros
       const brickMacros = calculateBrickMacros(brickInput);
 
-      // Return brick-specific response (no normalization needed)
-      macros = brickMacros;
+      // Calculate total distance across all segments
+      let totalDistanceMiles = 0;
+      for (const segment of requestData.brick_segments) {
+        if (segment.distance_miles) {
+          totalDistanceMiles += segment.distance_miles;
+        } else if (segment.distance_meters) {
+          totalDistanceMiles += segment.distance_meters * 0.000621371;
+        }
+      }
+
+      // Normalize brick response to match expected field names
+      macros = {
+        ...brickMacros,
+        // Add normalized time/distance fields for BrickMacroService
+        duration_h: brickMacros.total_duration_minutes / 60,
+        duration_min: brickMacros.total_duration_minutes,
+        distance_mi: Math.round(totalDistanceMiles * 100) / 100,
+        distance_km: Math.round(totalDistanceMiles * 1.60934 * 100) / 100,
+        calories_net_kcal: brickMacros.energy_expenditure_kcal,
+        calories_gross_kcal: brickMacros.energy_expenditure_kcal * 1.1, // Approximate gross
+      };
 
       console.log('✅ DEBUG: Calculated brick macros successfully:', {
         brick_type: macros.brick_type,
-        total_duration_minutes: macros.total_duration_minutes,
+        duration_h: macros.duration_h,
+        duration_min: macros.duration_min,
+        distance_mi: macros.distance_mi,
         carb_rate_g_per_hour: macros.carb_rate_g_per_hour,
         total_carbs_g: macros.total_carbs_g,
         phases_count: macros.phases.before ? 1 : 0 + macros.phases.during_segments.length + macros.phases.transitions.length + (macros.phases.after ? 1 : 0)

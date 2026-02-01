@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/activities/presentation/screens/activities_list_screen.dart';
 import '../../features/calendar/presentation/providers/calendar_view_provider.dart';
 import '../../features/calendar/presentation/providers/calendar_selected_date_provider.dart';
-import '../../features/feature_survey/presentation/screens/feature_survey_screen.dart';
+import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/providers/settings_controller.dart';
 import '../../theme/kyle_design/app_colors.dart';
@@ -60,7 +60,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         isCoach
           ? const CoachDashboardScreen()  // Coach sees dashboard
           : const MyCoachesScreen(),       // Athlete sees their coaches
-      const FeatureSurveyScreen(), // 1 or 2: Survey
+      const EventsListScreen(), // 1 or 2: Events
       const SettingsScreen(), // 2 or 3: Settings
     ];
 
@@ -109,9 +109,9 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                 _currentIndex = 1; // Coach tab is always at index 1 if visible
               });
             },
-            onSurveyTap: () {
+            onEventsTap: () {
               setState(() {
-                // If coach tab is visible, Survey is at index 2, otherwise 1
+                // If coach tab is visible, Events is at index 2, otherwise 1
                 _currentIndex = showCoachTab ? 2 : 1;
               });
             },
@@ -121,8 +121,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                 _currentIndex = showCoachTab ? 3 : 2;
               });
             },
-            onAddTap: () {
-              // Navigate to New Activity Screen (Kyle's unified tabbed design)
+            onPlusTap: () {
               final selectedDate = ref.read(calendarSelectedDateProvider);
               context.pushNamed('distancepacegut', extra: {'initialDate': selectedDate});
             },

@@ -295,25 +295,30 @@ Future<({Event event, DateTime eventDate})?> nextUpcomingEvent(Ref ref) async {
   // Get all events
   final events = await eventsService.getAllEvents(userId);
 
-  // Find the next upcoming event by checking the event's startTime field
+  // Find the next upcoming event by checking startTime or eventDate
   Event? nextEvent;
   DateTime? nextEventDate;
 
   for (final event in events) {
-    // Parse the event's startTime field directly (no activityId required)
+    DateTime? eventDateTime;
+
+    // Try parsing startTime first (precise time with timezone)
     if (event.startTime != null && event.startTime!.isNotEmpty) {
       try {
-        final eventDateTime = DateTime.parse(event.startTime!);
-        if (eventDateTime.isAfter(now)) {
-          // Check if this is the closest upcoming event
-          if (nextEventDate == null || eventDateTime.isBefore(nextEventDate)) {
-            nextEvent = event;
-            nextEventDate = eventDateTime;
-          }
-        }
-      } catch (e) {
-        // Skip events with invalid startTime format
-        continue;
+        eventDateTime = DateTime.parse(event.startTime!);
+      } catch (_) {
+        // Invalid startTime format, fall through to eventDate
+      }
+    }
+
+    // Fall back to eventDate (primary date for calendar)
+    eventDateTime ??= event.eventDate;
+
+    if (eventDateTime != null && eventDateTime.isAfter(now)) {
+      // Check if this is the closest upcoming event
+      if (nextEventDate == null || eventDateTime.isBefore(nextEventDate)) {
+        nextEvent = event;
+        nextEventDate = eventDateTime;
       }
     }
   }

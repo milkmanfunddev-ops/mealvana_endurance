@@ -37,7 +37,7 @@ final class CalendarControllerProvider
 }
 
 String _$calendarControllerHash() =>
-    r'57c467499924a6c9b7b46d5838f0912f2d15d213';
+    r'119ffead5df245ce969af36c3b499c0edfa95d0c';
 
 /// Calendar controller for managing activities and events
 

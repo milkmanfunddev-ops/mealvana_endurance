@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/macro_targets.dart' as targets_model;
 import '../../domain/nutrition_plan.dart';
+import '../utils/unit_formatter.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 /// Macro targets display widget with progress bars matching original design
@@ -12,10 +13,12 @@ class MacroTargetsWidget extends StatelessWidget {
     super.key,
     this.plan,
     this.targets,
+    this.useMetric = false,
   });
 
   final NutritionPlan? plan;
   final targets_model.MacroTargets? targets;
+  final bool useMetric;
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +132,7 @@ class MacroTargetsWidget extends StatelessWidget {
             'Fluids',
             currentFluids.round(),
             targetFluids,
-            'ml',
+            UnitFormatter.fluidUnitLabel(useMetric: useMetric),
             AppTheme.primary600,
           ),
         ],

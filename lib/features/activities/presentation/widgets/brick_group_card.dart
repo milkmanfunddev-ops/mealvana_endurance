@@ -66,7 +66,7 @@ class BrickGroupCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildHeader(context, isDark),
-              _buildSubtitle(isDark),
+              // _buildSubtitle(isDark),
               _buildSegments(),
             ],
           ),
@@ -79,7 +79,7 @@ class BrickGroupCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.blackberryDark,
+        // color: AppColors.blackberryDark,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(15),
           topRight: Radius.circular(15),
@@ -148,22 +148,6 @@ class BrickGroupCard extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSubtitle(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Text(
-        'Consecutive activities share nutrition',
-        style: TextStyle(
-          fontFamily: 'Apercu',
-          fontSize: 12,
-          color: (isDark ? AppColors.cream : AppColors.blackberry)
-              .withValues(alpha: 0.6),
-          height: 1.3,
-        ),
       ),
     );
   }

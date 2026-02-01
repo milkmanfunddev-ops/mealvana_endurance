@@ -2,20 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../domain/activity.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../providers/activities_controller.dart';
-import 'activity_action_buttons.dart';
 
 /// Reusable activity card widget matching Kyle's design.
 ///
 /// Displays activity information in a card with:
 /// - Activity icon (36px circle with Electrolyte background)
-/// - Activity title and details (Compadre + Apercu fonts)
-/// - Action buttons (check mark and X)
+/// - Activity title and details with scheduled time (Compadre + Apercu fonts)
+/// - Right chevron icon
+/// - Swipe-to-delete gesture (swipe left)
 ///
 /// Selection Mode Support:
 /// - When isSelectionMode is true, shows checkbox on left side
@@ -28,7 +30,7 @@ import 'activity_action_buttons.dart';
 /// - Icon: 36px circle, Electrolyte background, Blackberry icon
 /// - Title: Compadre, 16px
 /// - Details: Apercu Mono, 12px
-/// - Action buttons: 36px circles on the right
+/// - Chevron: 20px, theme-aware with 0.5 opacity
 class ActivityCard extends ConsumerWidget {
   const ActivityCard({
     super.key,
@@ -50,6 +52,24 @@ class ActivityCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    // Wrap in Dismissible for swipe-to-delete (only when NOT in selection mode)
+    if (!isSelectionMode) {
+      return Dismissible(
+        key: Key(activity.id),
+        direction: DismissDirection.endToStart,
+        background: _buildDismissBackground(isDark),
+        confirmDismiss: (direction) async {
+          return await _handleDelete(context, ref);
+        },
+        child: _buildCard(context, ref, isDark),
+      );
+    }
+
+    // Selection mode - no dismissible
+    return _buildCard(context, ref, isDark);
+  }
+
+  Widget _buildCard(BuildContext context, WidgetRef ref, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -78,16 +98,34 @@ class ActivityCard extends ConsumerWidget {
               Expanded(
                 child: _buildActivityDetails(context, isDark),
               ),
-              // Only show action buttons when NOT in selection mode
+              // Show chevron when NOT in selection mode
               if (!isSelectionMode)
-                ActivityActionButtons(
-                  isCompleted: activity.status == ActivityStatus.completed,
-                  onComplete: () => _handleComplete(context, ref),
-                  onDelete: () => _handleDelete(context, ref),
+                Icon(
+                  Icons.chevron_right,
+                  color: (isDark ? AppColors.cream : AppColors.blackberry)
+                      .withValues(alpha: 0.5),
+                  size: 20,
                 ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDismissBackground(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.error,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.only(right: 20),
+      child: const Icon(
+        Icons.delete,
+        color: Colors.white,
+        size: 24,
       ),
     );
   }
@@ -156,8 +194,9 @@ class ActivityCard extends ConsumerWidget {
         Text(
           activity.title,
           style: TextStyle(
-            fontFamily: 'Compadre',
-            fontSize: 14,
+            fontFamily: 'Sansita',
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
             color: isDark ? AppColors.cream : AppColors.blackberry,
             height: 1.3,
           ),
@@ -181,46 +220,7 @@ class ActivityCard extends ConsumerWidget {
     );
   }
 
-  Future<void> _handleComplete(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final activitiesController = ref.read(activitiesControllerProvider.notifier);
-
-    // Toggle completion status
-    final newStatus = activity.status == ActivityStatus.completed
-        ? ActivityStatus.planned
-        : ActivityStatus.completed;
-
-    try {
-      final updatedActivity = activity.copyWith(
-        status: newStatus,
-        completedAt: newStatus == ActivityStatus.completed ? DateTime.now() : null,
-      );
-
-      await activitiesController.updateActivity(updatedActivity);
-
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            newStatus == ActivityStatus.completed
-                ? 'Activity marked as completed'
-                : 'Activity marked as incomplete',
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('Error updating activity: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
-  }
-
-  Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
-    // Capture messenger before async gap
-    final messenger = ScaffoldMessenger.of(context);
+  Future<bool> _handleDelete(BuildContext context, WidgetRef ref) async {
     final activityTitle = activity.title;
 
     // Show confirmation dialog
@@ -245,25 +245,17 @@ class ActivityCard extends ConsumerWidget {
       },
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true) return false;
 
     try {
       final activitiesController = ref.read(activitiesControllerProvider.notifier);
       await activitiesController.deleteActivity(activity.id);
 
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('Deleted "$activityTitle"'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      MealvanaSnackbar.showSuccess(context, 'Deleted "$activityTitle"');
+      return true;
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text('Error deleting activity: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      MealvanaSnackbar.showError(context, 'Error deleting activity: $e');
+      return false;
     }
   }
 
@@ -316,6 +308,10 @@ class ActivityCard extends ConsumerWidget {
 
   String _formatActivityDetails() {
     final parts = <String>[];
+
+    // Add scheduled time first
+    final timeFormat = DateFormat('h:mm a');
+    parts.add(timeFormat.format(activity.scheduledDateTime));
 
     switch (activity.activityType) {
       case ActivityType.running:

@@ -6,20 +6,26 @@ import '../../providers/running_input_controller.dart';
 import '../../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../../theme/kyle_design/app_colors.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import '../../../../weather/presentation/screens/weather_detail_screen.dart';
+import '../../../../weather/domain/weather_forecast.dart';
+import '../../../../../shared/services/location_service.dart';
+import '../../../../../shared/domain/activity_type.dart';
+import 'shared/workout_details_widget.dart';
+import '../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
 
 /// Running Tab Content
 ///
 /// Sport-specific form fields for running activities:
-/// - Distance (miles)
-/// - Average Pace (min/mile)
-/// - Time before Run
-/// - Temperature with weather forecast link
-/// - Humidity
+/// 1. WORKOUT DETAILS - Distance + Duration/Pace toggle + Estimated field
+/// 2. INTENSITY DISTRIBUTION - Three-zone slider (Conversational/Tempo/All-Out)
+/// 3. PRE-RUN FUELING WINDOW - Time before run
+/// 4. WEATHER - Temperature with forecast link
+/// 5. HUMIDITY - Humidity percentage
 ///
 /// Note: Gut Training Level and Sweat Rate are managed in Settings > Profile & Preferences
 ///
-/// Status: Phase 2 - Full implementation with Kyle design components
+/// Status: Phase 6.1 - Integrated new intensity distribution widgets
 class RunningTabContent extends ConsumerWidget {
   const RunningTabContent({super.key});
 
@@ -29,35 +35,110 @@ class RunningTabContent extends ConsumerWidget {
     final controller = ref.read(runningInputControllerProvider.notifier);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final weatherForecast = formState.weatherForecast;
+    final isAutoFilled = weatherForecast != null &&
+        weatherForecast.forecastAvailable &&
+        weatherForecast.source != WeatherSource.defaultValue;
+    final showWeatherPrompt = formState.hasAttemptedWeatherFetch && !isAutoFilled;
+    final locationFailureReason = formState.locationFailureReason;
+    final showLocationPrompt = showWeatherPrompt && locationFailureReason != null;
+    final isServicesDisabled = locationFailureReason == LocationFailureReason.servicesDisabled;
+    final isPermissionDenied = locationFailureReason == LocationFailureReason.permissionDenied;
+    final isPermissionBlocked = locationFailureReason == LocationFailureReason.permissionDeniedForever;
+    final canOpenForecast = isAutoFilled && weatherForecast != null;
+    final forecastActionLabel = formState.isLoadingWeather
+        ? 'Loading...'
+        : (canOpenForecast ? 'View Forecast' : 'Get Forecast');
+
+    Widget buildAutoBadge() {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppColors.electrolyte.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: AppColors.electrolyte),
+        ),
+        child: Text(
+          'AUTO',
+          style: AppTextStyles.smallLabel.copyWith(
+            color: AppColors.electrolyteDark,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // WORKOUT DETAILS - Distance + Duration/Pace Toggle + Estimated Field
+        WorkoutDetailsWidget(
+          sport: ActivityType.running,
+          distance: formState.distance,
+          distanceUnit: formState.distanceUnit == DistanceUnit.kilometers ? 'km' : 'mi',
+          mode: formState.durationPaceMode,
+          estimatedDuration: formState.estimatedDuration,
+          pace: formState.paceMinutes,
+          paceUnit: formState.paceUnit == PaceUnit.minPerKm ? 'min/km' : 'min/mi',
+          onDistanceChanged: controller.updateDistance,
+          onModeChanged: controller.updateDurationPaceMode,
+          onPaceChanged: controller.updatePace,
+          onDurationChanged: controller.updateDuration,
+          enabled: true,
+        ),
 
-          // Distance
-          KylePlusMinusDecimalControl(
-            label: 'Distance',
-            value: formState.distance,
-            onChanged: controller.updateDistance,
-            min: 0.1,
-            max: 200.0,
-            step: 1.0,
-            decimalPlaces: 1,
-            unit: 'miles', // Will be displayed as "MILES" in uppercase
-            tappable: true,
+        // Zone-based pace hint
+        if (formState.zoneSuggestedPace != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.electrolyte.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppColors.electrolyte.withOpacity(0.4),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      FontAwesomeIcons.heartPulse,
+                      size: 10,
+                      color: AppColors.electrolyteDark,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Pace from Training Peaks zones',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: AppColors.electrolyteDark,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
+        ],
 
-          const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.xl),
 
-          // Average Pace
-          _PaceControl(
-            paceMinutes: formState.paceMinutes,
-            onChanged: controller.updatePace,
-          ),
+        // INTENSITY DISTRIBUTION
+        IntensityDistributionWidget(
+          value: formState.intensity,
+          onChanged: controller.updateIntensityDistribution,
+          sportType: ActivityType.running,
+          enabled: true,
+        ),
 
-          const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.xl),
 
-          // Time before Run with helper text
+          // PRE-RUN FUELING WINDOW
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -88,29 +169,39 @@ class RunningTabContent extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Temperature',
-                    style: AppTextStyles.descriptor.copyWith(
-                      color: isDark ? AppColors.cream : AppColors.blackberry,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        'Temperature',
+                        style: AppTextStyles.descriptor.copyWith(
+                          color: isDark ? AppColors.cream : AppColors.blackberry,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (isAutoFilled) ...[
+                        const SizedBox(width: 8),
+                        buildAutoBadge(),
+                      ],
+                    ],
                   ),
                   GestureDetector(
-                    onTap: formState.isLoadingWeather || formState.weatherForecast == null
-                        ? (formState.isLoadingWeather ? null : controller.fetchWeatherForecast)
-                        : () {
-                            final forecast = formState.weatherForecast;
-                            if (forecast != null) {
-                              // Navigate to weather detail screen
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => WeatherDetailScreen(
-                                    forecast: forecast,
-                                  ),
-                                ),
-                              );
-                            }
-                          },
+                    onTap: formState.isLoadingWeather
+                        ? null
+                        : (canOpenForecast
+                            ? () {
+                                final forecast = formState.weatherForecast;
+                                if (forecast != null) {
+                                  // Navigate to weather detail screen
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => WeatherDetailScreen(
+                                        forecast: forecast,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            : controller.fetchWeatherForecast),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -123,7 +214,7 @@ class RunningTabContent extends ConsumerWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          formState.isLoadingWeather ? 'Loading...' : 'Forecast',
+                          forecastActionLabel,
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: formState.isLoadingWeather
                                 ? AppColors.dragonfruit.withValues(alpha: 0.4)
@@ -136,6 +227,123 @@ class RunningTabContent extends ConsumerWidget {
                   ),
                 ],
               ),
+              if (isAutoFilled) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Auto-filled from location',
+                  style: AppTextStyles.smallLabel.copyWith(
+                    color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+              if (showWeatherPrompt) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  children: [
+                    if (showLocationPrompt && isServicesDisabled) ...[
+                      Text(
+                        'Location services are off.',
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
+                          fontSize: 11,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: controller.openLocationSettings,
+                        child: Text(
+                          'Open settings',
+                          style: AppTextStyles.smallLabel.copyWith(
+                            color: AppColors.dragonfruit,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ] else if (showLocationPrompt && isPermissionBlocked) ...[
+                      Text(
+                        'Location permission blocked.',
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
+                          fontSize: 11,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: controller.openAppSettings,
+                        child: Text(
+                          'Open app settings',
+                          style: AppTextStyles.smallLabel.copyWith(
+                            color: AppColors.dragonfruit,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ] else if (showLocationPrompt && isPermissionDenied) ...[
+                      Text(
+                        'Allow location to auto-fill.',
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
+                          fontSize: 11,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: formState.isLoadingWeather ? null : controller.requestLocationPermissionAndFetch,
+                        child: Text(
+                          'Enable location',
+                          style: AppTextStyles.smallLabel.copyWith(
+                            color: formState.isLoadingWeather
+                                ? AppColors.dragonfruit.withValues(alpha: 0.4)
+                                : AppColors.dragonfruit,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: controller.openAppSettings,
+                        child: Text(
+                          'Open app settings',
+                          style: AppTextStyles.smallLabel.copyWith(
+                            color: AppColors.dragonfruit,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      Text(
+                        "Couldn't fetch weather. Enter manually or",
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
+                          fontSize: 11,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: formState.isLoadingWeather ? null : controller.fetchWeatherForecast,
+                        child: Text(
+                          'try again',
+                          style: AppTextStyles.smallLabel.copyWith(
+                            color: formState.isLoadingWeather
+                                ? AppColors.dragonfruit.withValues(alpha: 0.4)
+                                : AppColors.dragonfruit,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
               const SizedBox(height: AppSpacing.sm),
               // Temperature control
               Row(
@@ -215,15 +423,35 @@ class RunningTabContent extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xl),
 
           // Humidity
-          KylePlusMinusDecimalControl(
-            label: 'Humidity',
-            value: formState.humidityPct,
-            onChanged: controller.updateHumidity,
-            min: 20.0,
-            max: 95.0,
-            step: 5.0,
-            decimalPlaces: 0,
-            unit: '% humidity', // Will be displayed as "% HUMIDITY"
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Humidity',
+                    style: AppTextStyles.descriptor.copyWith(
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (isAutoFilled) ...[
+                    const SizedBox(width: 8),
+                    buildAutoBadge(),
+                  ],
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              KylePlusMinusDecimalControl(
+                value: formState.humidityPct,
+                onChanged: controller.updateHumidity,
+                min: 20.0,
+                max: 95.0,
+                step: 5.0,
+                decimalPlaces: 0,
+                unit: '% humidity', // Will be displayed as "% HUMIDITY"
+              ),
+            ],
           ),
 
           const SizedBox(height: AppSpacing.xxl),
@@ -359,74 +587,6 @@ class _TimeBeforeRunControl extends StatelessWidget {
               icon: FontAwesomeIcons.plus,
               onPressed: canIncrement ? () => onChanged(value + 15) : null,
               enabled: canIncrement,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// Custom pace control that displays M:SS format
-class _PaceControl extends StatelessWidget {
-  const _PaceControl({
-    required this.paceMinutes,
-    required this.onChanged,
-  });
-
-  final double paceMinutes;
-  final ValueChanged<double> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    // Format as M:SS (e.g., 9:00)
-    final minutes = paceMinutes.floor();
-    final seconds = ((paceMinutes - minutes) * 60).round();
-    final formattedPace = '$minutes:${seconds.toString().padLeft(2, '0')}';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Average Pace',
-          style: AppTextStyles.descriptor.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Minus button
-            _ControlButton(
-              icon: FontAwesomeIcons.minus,
-              onPressed: paceMinutes > 4.0
-                  ? () => onChanged((paceMinutes - 0.08333).clamp(4.0, 20.0))
-                  : null,
-              enabled: paceMinutes > 4.0,
-            ),
-            const SizedBox(width: AppSpacing.xl),
-            // Value display
-            Expanded(
-              child: Text(
-                '$formattedPace MIN / MILE',
-                style: AppTextStyles.dataNumber.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xl),
-            // Plus button
-            _ControlButton(
-              icon: FontAwesomeIcons.plus,
-              onPressed: paceMinutes < 20.0
-                  ? () => onChanged((paceMinutes + 0.08333).clamp(4.0, 20.0))
-                  : null,
-              enabled: paceMinutes < 20.0,
             ),
           ],
         ),

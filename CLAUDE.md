@@ -19,7 +19,7 @@ Mealvana Endurance is a personalized nutrition planning app for endurance athlet
 ### Tech Stack
 - **Framework**: Flutter 3.8+ with Dart
 - **State Management**: Riverpod 2.x with code generation
-- **Local Storage**: Drift (SQLite with type-safe migrations and code generation)
+- **Local Storage**: Drift (SQLite with type-safe queries and code generation)
 - **Backend**: Supabase (PostgreSQL + Auth + Realtime)
 - **Architecture**: Feature-Oriented Architecture (FOA) based on Andrea Bizzotto's patterns
 - **Code Push**: Shorebird for OTA updates
@@ -138,8 +138,7 @@ mealvana_endurance/
 │   ├── brick/              # Brick workout feature documentation
 │   ├── technical/          # Technical documentation
 │   ├── business_logic/     # Algorithm documentation
-│   ├── database/           # Database schema and sync documentation
-│   └── roadmap.md          # Project roadmap
+│   └── database/           # Database schema and sync documentation
 ├── supabase/
 │   ├── functions/          # Edge functions for nutrition calculations
 │   └── migrations/         # Database migrations
@@ -219,14 +218,16 @@ Unified dual database architecture with local-first design and cloud synchroniza
 - Row Level Security based on device_id and user_id
 - `app_config` table for version control (min_app_version, current_schema_version)
 
-**Schema Management**:
-- **Current Version**: v2 (migrated from v1 with proper Drift migrations)
-- **Migration Strategy**: Using Drift's built-in migration system with version bumps
-- **Schema Location**: `/database_schemas/v2/` (v1 baseline preserved in `/database_schemas/v1/`)
-- **Snapshot Command**: `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v2/`
-- **V2 Migration**: Consolidates preference_level, dietary_preference, and allergies columns with idempotent checks
-- **Rollback Strategy**: If migration fails, delete local DB and resync from Supabase
-- **Future Changes**: Always use proper Drift migrations with schema version bumps
+**Schema Management (Server-Side Versioning)**:
+- **Current Version**: v3 (controlled via `current_schema_version` in Supabase `app_config` table)
+- **Migration Strategy**: Delete-and-resync (no step-by-step Drift migrations)
+- **How It Works**: When `app_config.current_schema_version` differs from local `AppDatabase.schemaVersion`:
+  1. App uploads dirty records to preserve user data
+  2. Local database is deleted
+  3. Fresh database is created with new schema
+  4. Data is resynced from Supabase
+- **Version Control**: Bump both `AppDatabase.schemaVersion` in code AND `current_schema_version` in Supabase
+- **Force Updates**: Set `min_app_version` in `app_config` to require app store updates for breaking changes
 
 **Development Environments**:
 - **Dev**: Automated deployment on `develop` branch push (tests run first)
@@ -253,6 +254,7 @@ Unified dual database architecture with local-first design and cloud synchroniza
 - **Dirty Record Protection**: Local changes are uploaded first, with JSON backup on failure
 - **Schema Migration**: Delete and resync strategy (no complex step-by-step migrations)
 - **Direct Supabase Queries**: Repositories query Supabase directly (no edge functions needed for sync)
+- **Integration Change Detection**: External provider sync (Final Surge, Training Peaks) includes change detection for schedule updates, with automatic nutrition plan staleness flagging when significant changes occur (see `/docs/update_integration/` for details)
 
 **SyncableRepository Mixin:**
 ```dart
@@ -485,7 +487,6 @@ Compare schema version:
 The project uses build_runner for:
 - Riverpod providers (`@riverpod` annotation)
 - Drift database classes (`@DriftDatabase` annotation)
-- Schema migration code generation
 - JSON serialization (when needed)
 
 **Commands**:
@@ -496,6 +497,41 @@ flutter pub run build_runner watch --delete-conflicting-outputs
 # One-time generation
 flutter pub run build_runner build --delete-conflicting-outputs
 ```
+
+### UI Feedback Components (Snackbars)
+
+**🎯 CRITICAL: Always use `MealvanaSnackbar` for user feedback messages.**
+
+The project has a centralized snackbar system at `lib/shared/widgets/kyle_design/feedback/mealvana_snackbar.dart`. **Never use basic Flutter `SnackBar` directly.**
+
+**Usage:**
+```dart
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+
+// Success messages (teal background with checkmark)
+MealvanaSnackbar.showSuccess(context, 'Operation completed successfully!');
+
+// Error messages (pink background with error icon)
+MealvanaSnackbar.showError(context, 'Something went wrong');
+
+// Warning messages (orange background with warning icon)
+MealvanaSnackbar.showWarning(context, 'Please check your input');
+
+// Info messages (cream background with info icon)
+MealvanaSnackbar.showInfo(context, 'Here is some information');
+
+// Loading (cream background with spinner - stays until dismissed)
+final controller = MealvanaSnackbar.showLoading(context, 'Saving...');
+// ... do work ...
+controller.close();
+```
+
+**Why MealvanaSnackbar:**
+- Consistent branding (proper colors, icons, typography)
+- Floating behavior with proper margins
+- Automatic icon display per type
+- Proper duration handling
+- Clears previous snackbars automatically
 
 ### State Management with Riverpod (Andrea Bizzotto FOA Patterns)
 
@@ -611,9 +647,7 @@ Before implementing web repositories, complete these setup steps:
 - **Error Tracking**: Sentry for crash reporting
 - **Performance**: Custom metrics via OpenTelemetry
 
-📚 **Full Documentation**: 
-- [/docs/technical/analytics.md](/docs/technical/analytics.md)
-- [/docs/technical/error-tracking.md](/docs/technical/error-tracking.md)
+📚 **Full Documentation**: [/docs/technical/sentry-integration.md](/docs/technical/sentry-integration.md)
 
 ## Documentation Index
 
@@ -627,7 +661,7 @@ Before implementing web repositories, complete these setup steps:
 - [Fat Backend Architecture](/docs/technical/fat-backend-architecture.md) - Content management strategy with Drift SQLite caching
 - [Content Management System](/docs/technical/content-management.md) - Dynamic content management with Drift SQLite storage
 - [Drift Database Implementation](/docs/technical/drift-implementation.md) - Type-safe SQLite database with v1 schema
-- [Drift Migration Guide](/docs/technical/drift-migration-guide.md) - Database migration management for future versions
+- [Sync Architecture](/docs/technical/sync-architecture.md) - Delete-and-resync migration strategy
 - [Logging Service](/docs/technical/logging-service.md) - Structured logging implementation
 - [Sentry Integration](/docs/technical/sentry-integration.md) - Error tracking and performance monitoring
 - [Shorebird Code Push](/docs/technical/shorebird-code-push.md) - Over-the-air updates
@@ -702,8 +736,7 @@ flutter build web --release --wasm --pwa-strategy=none
 - [Phase 4 Checklist](/docs/features/onboarding-revamp/phase-4-checklist.md) - Wiring & integration tasks
 
 ### Project Management
-- [Roadmap](/docs/roadmap.md) - Current status and future plans
-- [Features List](/docs/features.md) - Complete feature documentation
+- [Server-Side Versioning Plan](/docs/database/server-side-versioning-plan.md) - Schema migration strategy
 
 ## Important Notes for AI Assistants
 
@@ -713,13 +746,12 @@ flutter build web --release --wasm --pwa-strategy=none
 3. **Use Content Service**: Never hardcode UI text or algorithm parameters
 4. **Maintain Offline-First**: Always write to local storage first with `needs_upload = true` flag
 5. **Run Code Generation**: After adding `@riverpod` or `@DriftDatabase` annotations
-6. **Use Proper Drift Migrations**: Always bump schema version and use Drift's migration system for database changes
-7. **Generate Schema Snapshots**: After database changes: `dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/v<version>/`
-8. **Follow ContentService Integration**: All controllers must access ContentService for UI text
-9. **Implement SyncableRepository**: New repositories must implement the mixin with proper dependencies
-10. **Update Dependency Graph**: Add new repository key to SyncCoordinator._dependencies map
-11. **Test on Both Platforms**: iOS and Android have different requirements
-12. **Environment Deployments**: Use GitHub Actions workflows for automated dev/staging deployment
+6. **Schema Changes**: Update `AppDatabase.schemaVersion` in code AND `current_schema_version` in Supabase `app_config` table (users will auto-resync)
+7. **Follow ContentService Integration**: All controllers must access ContentService for UI text
+8. **Implement SyncableRepository**: New repositories must implement the mixin with proper dependencies
+9. **Update Dependency Graph**: Add new repository key to SyncCoordinator._dependencies map
+10. **Test on Both Platforms**: iOS and Android have different requirements
+11. **Environment Deployments**: Use GitHub Actions workflows for automated dev/staging deployment
 
 ### Key Design Decisions
 - **No Static Methods**: Use dependency injection via Riverpod

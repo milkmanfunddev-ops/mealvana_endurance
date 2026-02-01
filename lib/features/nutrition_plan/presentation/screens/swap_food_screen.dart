@@ -202,7 +202,6 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     debugPrint('🔵 _handleConfirm: food selected = ${food.name}, isSwapping = $_isSwapping');
 
     // IMPORTANT: Capture references BEFORE async operation to avoid context issues
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
     // Capture the navigator with rootNavigator to ensure we pop from correct level
     final navigator = Navigator.of(context, rootNavigator: true);
 
@@ -226,12 +225,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       debugPrint('🔵 _handleConfirm: operation complete, mounted = $mounted');
       if (mounted) {
         debugPrint('🔵 _handleConfirm: showing snackbar');
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text(_isSwapping ? 'Food swapped successfully!' : 'Food added successfully!'),
-            backgroundColor: AppColors.electrolyte,
-          ),
-        );
+        MealvanaSnackbar.showSuccess(context, _isSwapping ? 'Food swapped successfully!' : 'Food added successfully!');
 
         // Use Navigator.pop with rootNavigator to bypass go_router and pop directly
         debugPrint('🔵 _handleConfirm: navigator.canPop() = ${navigator.canPop()}');
@@ -248,12 +242,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         setState(() {
           _isProcessing = false;
         });
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text('Failed to ${_isSwapping ? 'swap' : 'add'} food: $e'),
-            backgroundColor: AppColors.dragonfruit,
-          ),
-        );
+        MealvanaSnackbar.showError(context, 'Failed to ${_isSwapping ? 'swap' : 'add'} food: $e');
       }
     }
     debugPrint('🔵 _handleConfirm END');

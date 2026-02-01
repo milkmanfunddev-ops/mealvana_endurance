@@ -92,7 +92,9 @@ class CalendarController extends _$CalendarController {
 
       // Fetch ALL carb loading days (not just for this week)
       // Carb loading days can be far in the future for upcoming events
+      // IMPORTANT: Pass userId to ensure only current user's days are returned
       final carbLoadingDays = await _calendarService.getCarbLoadingDaysForRange(
+        userId: userId,
         startDate: DateTime.now().subtract(const Duration(days: 365)), // 1 year ago
         endDate: DateTime.now().add(const Duration(days: 730)), // 2 years in future
       );

@@ -5,28 +5,29 @@ import '../buttons/circular_action_button.dart';
 
 /// Floating action buttons bar for bottom navigation
 ///
-/// A pill-shaped container with four circular action buttons:
+/// A pill-shaped container with circular action buttons:
 /// - Calendar (left): Toggle calendar view
-/// - Survey (center-left): Navigate to feature survey
+/// - Coach (optional): Navigate to coach dashboard or my coaches
+/// - Events (center-left): Navigate to events list
 /// - Menu (center-right): Navigate to settings
-/// - Plus (right): Create new activity
 ///
 /// Replaces the traditional bottom navigation bar with a more compact,
 /// modern floating design matching Kyle's UI specifications.
 ///
 /// The `activeButton` parameter indicates which button should be highlighted:
 /// - 0: Calendar button (Activities screen)
-/// - 1: Survey button (Feature Survey screen)
-/// - 2: Menu button (Settings screen)
+/// - 1: Coach button (Coach/My Coaches screen, if visible)
+/// - 1 or 2: Events button (Events screen)
+/// - 2 or 3: Menu button (Settings screen)
 ///
 /// Example:
 /// ```dart
 /// FloatingActionButtonsBar(
 ///   activeButton: 0, // Calendar button active
 ///   onCalendarTap: () => toggleCalendarView(),
-///   onSurveyTap: () => navigateToSurvey(),
+///   onCoachTap: () => navigateToCoach(),
+///   onEventsTap: () => navigateToEvents(),
 ///   onMenuTap: () => navigateToSettings(),
-///   onAddTap: () => createNewActivity(),
 /// )
 /// ```
 class FloatingActionButtonsBar extends StatelessWidget {
@@ -34,18 +35,18 @@ class FloatingActionButtonsBar extends StatelessWidget {
     super.key,
     required this.onCalendarTap,
     required this.onCoachTap,
-    required this.onSurveyTap,
+    required this.onEventsTap,
     required this.onMenuTap,
-    required this.onAddTap,
+    required this.onPlusTap,
     this.activeButton,
     this.showCoachTab = false,
   });
 
   final VoidCallback onCalendarTap;
   final VoidCallback onCoachTap;
-  final VoidCallback onSurveyTap;
+  final VoidCallback onEventsTap;
   final VoidCallback onMenuTap;
-  final VoidCallback onAddTap;
+  final VoidCallback onPlusTap;
   final int? activeButton;
   final bool showCoachTab;
 
@@ -64,7 +65,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Pill container with calendar, coach (optional), survey, and menu buttons
+            // Navigation pill container
             Container(
               height: 43,
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -103,8 +104,8 @@ class FloatingActionButtonsBar extends StatelessWidget {
                     const SizedBox(width: 8),
                   ],
                   CircularActionButton(
-                    icon: FontAwesomeIcons.clipboardList,
-                    onPressed: onSurveyTap,
+                    icon: FontAwesomeIcons.calendarCheck,
+                    onPressed: onEventsTap,
                     backgroundColor: activeButton == (showCoachTab ? 2 : 1)
                         ? activeBackground
                         : inactiveBackground,
@@ -126,14 +127,30 @@ class FloatingActionButtonsBar extends StatelessWidget {
                 ],
               ),
             ),
-            // Spacing between pill and plus button
             const SizedBox(width: 12),
-            // Plus button outside the pill
-            CircularActionButton(
-              icon: FontAwesomeIcons.plus,
-              onPressed: onAddTap,
-              backgroundColor: AppColors.orange,
-              iconColor: AppColors.cream,
+            // Orange plus button
+            GestureDetector(
+              onTap: onPlusTap,
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AppColors.orange,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.add,
+                  color: AppColors.cream,
+                  size: 28,
+                ),
+              ),
             ),
           ],
         ),

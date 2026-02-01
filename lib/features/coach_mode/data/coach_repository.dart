@@ -888,18 +888,18 @@ class CoachRepository with SyncableRepository {
         final id = r['id'] as String?;
         if (id == null) continue;
 
-        // Upsert into local user_profiles table (only name fields)
-        final companion = UserProfilesTableCompanion(
-          id: Value(id),
+        // Update existing local user_profiles (only name fields)
+        // We use UPDATE instead of INSERT because athlete profiles belong to
+        // other users/devices and don't have a deviceId relevant to this device.
+        // If the profile doesn't exist locally, we skip it (no error).
+        await (_database.update(_database.userProfilesTable)
+              ..where((t) => t.id.equals(id)))
+            .write(UserProfilesTableCompanion(
           firstName: Value(r['first_name'] as String?),
           lastName: Value(r['last_name'] as String?),
           senderName: Value(r['sender_name'] as String?),
           updatedAt: Value(DateTime.now()),
-        );
-
-        await _database
-            .into(_database.userProfilesTable)
-            .insertOnConflictUpdate(companion);
+        ));
       }
 
       _logger.info(

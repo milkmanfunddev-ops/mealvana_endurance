@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../domain/macro_targets.dart' as targets_model;
+import '../utils/unit_formatter.dart';
 
 /// Separate widget for section subtitles that can be updated independently
 /// Takes the plan as a parameter to calculate totals without watching controller
@@ -12,11 +13,13 @@ class SectionSubtitleWidget extends StatelessWidget {
     required this.section,
     required this.plan,
     this.macroTargets,
+    this.useMetric = false,
   });
 
   final PlanSection section;
   final NutritionPlan plan;
   final targets_model.MacroTargets? macroTargets;
+  final bool useMetric;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +41,8 @@ class SectionSubtitleWidget extends StatelessWidget {
       return _buildLegacyBadgeSubtitle(carbs, protein, fluids, sodium);
     }
 
+    final fluidUnit = UnitFormatter.fluidUnitLabel(useMetric: useMetric);
+
     // Match on section.id (before_run, during_run, after_run) not title for sport-agnostic matching
     if (section.id.contains('before')) {
       final carbsTarget = macroTargets!.preRun.carbsG.round();
@@ -46,7 +51,7 @@ class SectionSubtitleWidget extends StatelessWidget {
 
       badges = [
         _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
         _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
       ];
     } else if (section.id.contains('during')) {
@@ -56,7 +61,7 @@ class SectionSubtitleWidget extends StatelessWidget {
 
       badges = [
         _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
         _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
       ];
     } else if (section.id.contains('after')) {
@@ -66,7 +71,7 @@ class SectionSubtitleWidget extends StatelessWidget {
 
       badges = [
         _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
         _buildMacroBadge('Protein', protein, proteinTarget, 'g', _getColorForProgress(protein, proteinTarget)),
       ];
     } else {
@@ -130,6 +135,8 @@ class SectionSubtitleWidget extends StatelessWidget {
   Widget _buildLegacyBadgeSubtitle(int carbs, int protein, int fluids, int sodium) {
     List<Widget> badges = [];
 
+    final fluidUnit = UnitFormatter.fluidUnitLabel(useMetric: useMetric);
+
     // Match on section.id (before_run, during_run, after_run) not title for sport-agnostic matching
     if (section.id.contains('before')) {
       final carbsTarget = plan.sections[0].carbsTarget?.toInt() ?? 0;
@@ -138,7 +145,7 @@ class SectionSubtitleWidget extends StatelessWidget {
 
       badges = [
         _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
         _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
       ];
     } else if (section.id.contains('during')) {
@@ -148,7 +155,7 @@ class SectionSubtitleWidget extends StatelessWidget {
 
       badges = [
         _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
         _buildMacroBadge('Sodium', sodium, sodiumTarget, 'mg', _getColorForProgress(sodium, sodiumTarget)),
       ];
     } else if (section.id.contains('after')) {
@@ -158,7 +165,7 @@ class SectionSubtitleWidget extends StatelessWidget {
 
       badges = [
         _buildMacroBadge('Carbs', carbs, carbsTarget, 'g', _getColorForProgress(carbs, carbsTarget)),
-        _buildMacroBadge('Fluids', fluids, fluidsTarget, 'ml', _getColorForProgress(fluids, fluidsTarget)),
+        _buildMacroBadge('Fluids', fluids, fluidsTarget, fluidUnit, _getColorForProgress(fluids, fluidsTarget)),
         _buildMacroBadge('Protein', protein, proteinTarget, 'g', _getColorForProgress(protein, proteinTarget)),
       ];
     } else {

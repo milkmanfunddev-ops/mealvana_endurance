@@ -11,6 +11,9 @@ class AppColors {
   static const Color blackberry = Color(0xFF3D1F47);
   static const Color blackberryLight = Color(0xFF4A2854);
   static const Color blackberryDark = Color(0xFF2D1535);
+
+  // Input field background - brighter than blackberryLight for better contrast
+  static const Color inputBackground = Color(0xFF5A3366);
   
   // Cream (Light theme background)
   static const Color cream = Color(0xFFF5F3ED);

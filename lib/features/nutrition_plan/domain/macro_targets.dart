@@ -1,4 +1,5 @@
 import '../../../shared/domain/activity_type.dart';
+import '../../activities/domain/brick_metadata.dart';
 
 /// Complete macro targets for a running session
 class MacroTargets {
@@ -13,6 +14,7 @@ class MacroTargets {
     required this.timestamp,
     required this.isUserModified,
     this.modifiedFields = const [],
+    this.brickSegments,
   });
 
   final String id;
@@ -26,6 +28,10 @@ class MacroTargets {
   final bool isUserModified;
   final List<String> modifiedFields;
 
+  /// Brick segment data (only populated for brick workouts)
+  /// Contains sport type, order, duration, and other segment-specific data
+  final List<BrickSegment>? brickSegments;
+
   MacroTargets copyWith({
     String? id,
     ActivityType? activityType,
@@ -37,6 +43,7 @@ class MacroTargets {
     DateTime? timestamp,
     bool? isUserModified,
     List<String>? modifiedFields,
+    List<BrickSegment>? brickSegments,
   }) {
     return MacroTargets(
       id: id ?? this.id,
@@ -49,6 +56,7 @@ class MacroTargets {
       timestamp: timestamp ?? this.timestamp,
       isUserModified: isUserModified ?? this.isUserModified,
       modifiedFields: modifiedFields ?? this.modifiedFields,
+      brickSegments: brickSegments ?? this.brickSegments,
     );
   }
 
@@ -64,6 +72,8 @@ class MacroTargets {
       'timestamp': timestamp.toIso8601String(),
       'isUserModified': isUserModified,
       'modifiedFields': modifiedFields,
+      if (brickSegments != null)
+        'brickSegments': brickSegments!.map((s) => s.toJson()).toList(),
     };
   }
 
@@ -79,6 +89,11 @@ class MacroTargets {
       timestamp: DateTime.parse(json['timestamp'] as String),
       isUserModified: json['isUserModified'] as bool,
       modifiedFields: List<String>.from(json['modifiedFields'] as List? ?? []),
+      brickSegments: json['brickSegments'] != null
+          ? (json['brickSegments'] as List<dynamic>)
+              .map((s) => BrickSegment.fromJson(s as Map<String, dynamic>))
+              .toList()
+          : null,
     );
   }
 
@@ -95,7 +110,8 @@ class MacroTargets {
         other.calculationRule == calculationRule &&
         other.timestamp == timestamp &&
         other.isUserModified == isUserModified &&
-        _listEquals(other.modifiedFields, modifiedFields);
+        _listEquals(other.modifiedFields, modifiedFields) &&
+        _nullableListEquals(other.brickSegments, brickSegments);
   }
 
   @override
@@ -111,12 +127,13 @@ class MacroTargets {
       timestamp,
       isUserModified,
       Object.hashAll(modifiedFields),
+      Object.hashAll(brickSegments ?? []),
     );
   }
 
   @override
   String toString() {
-    return 'MacroTargets(id: $id, activityType: $activityType, preRun: $preRun, duringRun: $duringRun, postRun: $postRun, metrics: $metrics, calculationRule: $calculationRule, timestamp: $timestamp, isUserModified: $isUserModified, modifiedFields: $modifiedFields)';
+    return 'MacroTargets(id: $id, activityType: $activityType, preRun: $preRun, duringRun: $duringRun, postRun: $postRun, metrics: $metrics, calculationRule: $calculationRule, timestamp: $timestamp, isUserModified: $isUserModified, modifiedFields: $modifiedFields, brickSegments: ${brickSegments?.length ?? 0})';
   }
 }
 
@@ -637,4 +654,11 @@ bool _listEquals<T>(List<T> a, List<T> b) {
     if (a[i] != b[i]) return false;
   }
   return true;
+}
+
+/// Helper function to compare nullable lists for equality
+bool _nullableListEquals<T>(List<T>? a, List<T>? b) {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  return _listEquals(a, b);
 }

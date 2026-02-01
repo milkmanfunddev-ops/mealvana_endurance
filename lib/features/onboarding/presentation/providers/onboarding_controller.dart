@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/sync/entity_sync/user_sync_handler.dart';
+import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../auth/application/auth_service.dart';
@@ -54,6 +57,7 @@ class OnboardingController extends _$OnboardingController {
     required bool runsWithWaterBottle,
     String authProvider = 'anonymous', // 'anonymous', 'email', 'google', 'apple'
     bool isAnonymous = true, // false when user signs up with email/OAuth
+    UnitSystem unitSystem = UnitSystem.imperial,
   }) async {
     state = const AsyncLoading();
 
@@ -67,6 +71,7 @@ class OnboardingController extends _$OnboardingController {
         runsWithWaterBottle: runsWithWaterBottle,
         authProvider: authProvider,
         isAnonymous: isAnonymous,
+        unitSystem: unitSystem,
       );
     });
 
@@ -405,6 +410,7 @@ class OnboardingController extends _$OnboardingController {
     required bool runsWithWaterBottle,
     String? firstName,
     String? lastName,
+    UnitSystem unitSystem = UnitSystem.imperial,
   }) {
     _cachedUserProfileData = {
       'gender': gender,
@@ -415,6 +421,7 @@ class OnboardingController extends _$OnboardingController {
       'runsWithWaterBottle': runsWithWaterBottle,
       'firstName': firstName,
       'lastName': lastName,
+      'unitSystem': unitSystem,
     };
     DebugLogger.debug('📝 Cached user profile data');
   }
@@ -504,6 +511,7 @@ class OnboardingController extends _$OnboardingController {
           isAnonymous: isAnonymous,
           firstName: data['firstName'] as String?,
           lastName: data['lastName'] as String?,
+          unitSystem: data['unitSystem'] as UnitSystem? ?? UnitSystem.imperial,
         );
         DebugLogger.info('✅ User profile created: ${_currentUser!.id}');
       } else {
@@ -516,6 +524,11 @@ class OnboardingController extends _$OnboardingController {
       // This handles the case where TrainingPeaks was connected before the
       // user profile was finalized, resulting in activities under a different user_id
       await _migrateOnboardingDataToNewUser(userId);
+
+      // 1.6. Upload user profile to Supabase IMMEDIATELY
+      // This ensures user exists in Supabase before any sync can occur
+      // Prevents FK violations when activities are uploaded later
+      await _uploadUserProfileToSupabase(userId);
 
       // 2. Save sport preferences
       if (_cachedSportPreferences != null) {
@@ -592,6 +605,11 @@ class OnboardingController extends _$OnboardingController {
       _cachedDietaryPreference = null;
       _cachedAllergies = null;
       ref.read(foodSelectionsCacheProvider.notifier).clear();
+
+      // Set flag to skip sync on first navigation to main
+      // New users have all data locally - nothing to download from Supabase
+      ref.read(syncCoordinatorProvider.notifier).setSkipSyncForNewUser();
+      DebugLogger.info('🚫 Set skip sync flag - sync will be skipped for new user');
 
       DebugLogger.info('🎉 All onboarding data saved successfully');
     });
@@ -676,6 +694,37 @@ class OnboardingController extends _$OnboardingController {
     } catch (e) {
       // Don't fail onboarding if migration fails - log and continue
       DebugLogger.error('⚠️ Failed to migrate onboarding data: $e');
+    }
+  }
+
+  /// Upload user profile to Supabase immediately after creation
+  ///
+  /// This ensures the user exists in Supabase BEFORE navigating to main screen.
+  /// Prevents FK violations when activities/integrations are uploaded later.
+  Future<void> _uploadUserProfileToSupabase(String userId) async {
+    try {
+      final userSyncHandler = ref.read(userSyncHandlerProvider);
+      final database = ref.read(appDatabaseProvider);
+
+      // Get the user profile entry from the database using direct query
+      final userProfiles = await (database.select(database.userProfilesTable)
+            ..where((t) => t.id.equals(userId)))
+          .get();
+
+      if (userProfiles.isEmpty) {
+        DebugLogger.warning('⚠️ No user profile found to upload');
+        return;
+      }
+
+      final userProfile = userProfiles.first;
+      DebugLogger.info('📤 Uploading user profile to Supabase...');
+      await userSyncHandler.uploadUserProfile(userProfile);
+      DebugLogger.info('✅ User profile uploaded to Supabase successfully');
+    } catch (e) {
+      // Don't fail onboarding if upload fails - sync will handle it later
+      // But log it as this may cause FK violations
+      DebugLogger.error('⚠️ Failed to upload user profile to Supabase: $e');
+      DebugLogger.warning('⚠️ This may cause FK violations when syncing activities');
     }
   }
 }

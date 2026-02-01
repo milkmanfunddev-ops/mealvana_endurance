@@ -52,7 +52,7 @@ export async function getFoodsForPhase(
       id, name, display_name, display_name_plural, image_address, description,
       calories_per_serving, carbs_per_serving, protein_per_serving,
       fat_per_serving, sodium_mg, fluid_ml_per_serving,
-      serving_amount, product_type,
+      serving_amount, product_type, serving_size, serving_unit, serving_qualifier,
       max_servings_before, max_servings_during, max_servings_after,
       is_electrolyte, to_exclude_from_solver, is_essential,
       categories, activity_types
@@ -77,7 +77,7 @@ export async function getFoodsForPhase(
       id, name, display_name, display_name_plural, image_address, description,
       calories_per_serving, carbs_per_serving, protein_per_serving,
       fat_per_serving, sodium_mg, fluid_ml_per_serving,
-      serving_amount, product_type,
+      serving_amount, product_type, serving_unit,
       is_electrolyte, to_exclude_from_solver, is_deleted,
       categories, activity_types
     `)
@@ -99,7 +99,7 @@ export async function getFoodsForPhase(
       id, name, display_name, display_name_plural, image_address, description,
       calories_per_serving, carbs_per_serving, protein_per_serving,
       fat_per_serving, sodium_mg, fluid_ml_per_serving,
-      serving_amount, product_type,
+      serving_amount, product_type, serving_unit,
       is_electrolyte, to_exclude_from_solver, is_deleted,
       categories, activity_types
     `)
@@ -181,6 +181,9 @@ export async function getFoodsForPhase(
         display_name_plural: f.display_name_plural,
         description: f.description,
         image_address: f.image_address,
+        serving_size: f.serving_size,
+        serving_unit: f.serving_unit,
+        serving_qualifier: f.serving_qualifier,
         per_serving: {
           carbs_g: safe(f.carbs_per_serving),
           protein_g: safe(f.protein_per_serving),
@@ -232,6 +235,7 @@ export async function getElectrolyteFoods(
       id, name, display_name, display_name_plural, description, image_address,
       sodium_mg, fluid_ml_per_serving,
       serving_amount,
+      serving_size, serving_unit, serving_qualifier,
       is_electrolyte, to_exclude_from_solver, is_essential
     `)
     .eq('is_electrolyte', true);
@@ -247,7 +251,7 @@ export async function getElectrolyteFoods(
     .select(`
       id, name, display_name, display_name_plural, description, image_address,
       sodium_mg, fluid_ml_per_serving,
-      serving_amount,
+      serving_amount, serving_unit,
       is_electrolyte, to_exclude_from_solver, is_deleted
     `)
     .eq('user_id', userId)
@@ -291,6 +295,9 @@ export async function getElectrolyteFoods(
         display_name_plural: e.display_name_plural,
         description: e.description,
         image_address: e.image_address,
+        serving_size: e.serving_size,
+        serving_unit: e.serving_unit,
+        serving_qualifier: e.serving_qualifier,
         per_serving: {
           carbs_g: 0,
           protein_g: 0,
@@ -323,7 +330,7 @@ export async function getEssentialFoods(
       id, name, display_name, display_name_plural, image_address, description,
       calories_per_serving, carbs_per_serving, protein_per_serving,
       fat_per_serving, sodium_mg, fluid_ml_per_serving,
-      serving_amount, is_electrolyte, is_essential
+      serving_amount, serving_size, serving_unit, serving_qualifier, is_electrolyte, is_essential
     `)
     .eq('is_essential', true);
 
@@ -341,6 +348,9 @@ export async function getEssentialFoods(
       display_name_plural: f.display_name_plural,
       description: f.description,
       image_address: f.image_address,
+      serving_size: f.serving_size,
+      serving_unit: f.serving_unit,
+      serving_qualifier: f.serving_qualifier,
       per_serving: {
         calories: f.calories_per_serving || 0,
         carbs_g: f.carbs_per_serving || 0,

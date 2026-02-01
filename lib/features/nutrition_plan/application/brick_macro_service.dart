@@ -95,8 +95,8 @@ class BrickMacroService {
         throw BrickMacroGenerationException.edgeFunctionError(errorMessage);
       }
 
-      // Parse brick-specific response
-      final macroTargets = _parseBrickMacroTargets(data);
+      // Parse brick-specific response (pass segments to store in MacroTargets)
+      final macroTargets = _parseBrickMacroTargets(data, segments);
 
       // Cache the macro targets
       await macroRepository.saveMacroTargets(macroTargets);
@@ -178,7 +178,7 @@ class BrickMacroService {
       'weight_unit': 'kg',
       'height': userMetrics['heightCm'],
       'height_unit': 'cm',
-      'segments': segmentsJson,
+      'brick_segments': segmentsJson, // Edge function expects 'brick_segments', not 'segments'
       'segment_order': segmentOrder,
       'gut_training': userProfile?.gutTraining.name ?? 'moderate',
     };
@@ -196,7 +196,9 @@ class BrickMacroService {
   /// - preRun = before phase
   /// - duringRun = sum of all during_segments + transitions
   /// - postRun = after phase
-  MacroTargets _parseBrickMacroTargets(Map<String, dynamic> data) {
+  ///
+  /// [segments] - Original brick segments to store for nutrition plan generation
+  MacroTargets _parseBrickMacroTargets(Map<String, dynamic> data, List<BrickSegment> segments) {
     final macrosData = data['macros'] as Map<String, dynamic>;
     final phasesData = macrosData['phases'] as Map<String, dynamic>?;
 
@@ -225,9 +227,9 @@ class BrickMacroService {
     double duringFluidsTotal = 0.0;
     double duringSodiumTotal = 0.0;
 
-    // Sum during segments
-    final duringSegments = phasesData['during_segments'] as Map<String, dynamic>? ?? {};
-    for (final segmentData in duringSegments.values) {
+    // Sum during segments (edge function returns as List, not Map)
+    final duringSegments = phasesData['during_segments'] as List<dynamic>? ?? [];
+    for (final segmentData in duringSegments) {
       if (segmentData is Map<String, dynamic>) {
         duringCarbsTotal += _toDouble(segmentData['carbs_g'], 'during_segment.carbs_g');
         duringFluidsTotal += _toDouble(segmentData['water_ml'], 'during_segment.water_ml');
@@ -235,9 +237,9 @@ class BrickMacroService {
       }
     }
 
-    // Sum transitions
-    final transitions = phasesData['transitions'] as Map<String, dynamic>? ?? {};
-    for (final transitionData in transitions.values) {
+    // Sum transitions (edge function returns as List, not Map)
+    final transitions = phasesData['transitions'] as List<dynamic>? ?? [];
+    for (final transitionData in transitions) {
       if (transitionData is Map<String, dynamic>) {
         duringCarbsTotal += _toDouble(transitionData['carbs_g'], 'transition.carbs_g');
         duringFluidsTotal += _toDouble(transitionData['water_ml'], 'transition.water_ml');
@@ -299,6 +301,7 @@ class BrickMacroService {
       calculationRule: 'Brick workout - multi-segment calculation',
       timestamp: DateTime.now(),
       isUserModified: false,
+      brickSegments: segments, // Store segments for nutrition plan generation
     );
   }
 

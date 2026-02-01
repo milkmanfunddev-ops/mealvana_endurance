@@ -16,7 +16,6 @@ interface UploadRequest {
     carb_loading_day_meals?: any[];
     user_foods?: any[];
     feedback?: any[];
-    feature_survey_responses?: any[];
     food_preferences?: any[];
   };
 }
@@ -247,31 +246,6 @@ serve(async (req) => {
       } catch (error) {
         console.error(`✗ Failed to upload feedback: ${error.message}`);
         results.feedback = {
-          success: false,
-          uploaded: 0,
-          error: error.message,
-        };
-      }
-    }
-
-    // Upload feature_survey_responses
-    if (dirty_records?.feature_survey_responses && dirty_records.feature_survey_responses.length > 0) {
-      try {
-        console.log(`Uploading ${dirty_records.feature_survey_responses.length} feature_survey_responses...`);
-        const { error } = await supabaseClient
-          .from('feature_survey_responses')
-          .upsert(dirty_records.feature_survey_responses, { onConflict: 'id' });
-
-        if (error) throw error;
-
-        results.feature_survey_responses = {
-          success: true,
-          uploaded: dirty_records.feature_survey_responses.length,
-        };
-        console.log(`✓ Uploaded ${dirty_records.feature_survey_responses.length} feature_survey_responses`);
-      } catch (error) {
-        console.error(`✗ Failed to upload feature_survey_responses: ${error.message}`);
-        results.feature_survey_responses = {
           success: false,
           uploaded: 0,
           error: error.message,

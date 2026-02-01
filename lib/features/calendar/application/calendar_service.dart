@@ -520,19 +520,35 @@ class CalendarService {
     }
   }
 
-  /// Get all carb loading days for a date range
+  /// Get all carb loading days for a date range, scoped to a specific user
+  ///
+  /// IMPORTANT: This method joins through carb_loading_plans to ensure
+  /// only days belonging to the specified user are returned.
   Future<List<CarbLoadingDay>> getCarbLoadingDaysForRange({
+    required String userId,
     required DateTime startDate,
     required DateTime endDate,
   }) async {
     try {
-      final query = _database.select(_database.carbLoadingDaysTable)
-            ..where((tbl) =>
-                tbl.planDate.isBiggerOrEqualValue(startDate) &
-                tbl.planDate.isSmallerOrEqualValue(endDate))
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.planDate)]);
+      // Join carb_loading_days with carb_loading_plans to filter by user_id
+      final query = _database.select(_database.carbLoadingDaysTable).join([
+        innerJoin(
+          _database.carbLoadingPlansTable,
+          _database.carbLoadingPlansTable.id
+              .equalsExp(_database.carbLoadingDaysTable.carbLoadingPlanId),
+        ),
+      ])
+        ..where(_database.carbLoadingPlansTable.userId.equals(userId) &
+            _database.carbLoadingDaysTable.planDate
+                .isBiggerOrEqualValue(startDate) &
+            _database.carbLoadingDaysTable.planDate
+                .isSmallerOrEqualValue(endDate))
+        ..orderBy([OrderingTerm.asc(_database.carbLoadingDaysTable.planDate)]);
 
-      return await query.get();
+      final results = await query.get();
+      return results
+          .map((row) => row.readTable(_database.carbLoadingDaysTable))
+          .toList();
     } catch (e) {
       _logger.error('Error getting carb loading days for range', error: e);
       rethrow;

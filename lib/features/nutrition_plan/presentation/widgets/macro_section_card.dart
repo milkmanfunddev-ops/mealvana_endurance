@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../domain/macro_targets.dart';
+import '../utils/unit_formatter.dart';
 
 /// A collapsible card displaying macro adjustment fields for a specific section
 /// (Pre-Run, During-Run, or Post-Run) with editable input fields
@@ -12,6 +13,7 @@ class MacroSectionCard extends StatefulWidget {
     required this.macroTargets,
     required this.isExpanded,
     required this.onValueChanged,
+    this.useMetric = false,
   });
 
   final String title;
@@ -19,6 +21,7 @@ class MacroSectionCard extends StatefulWidget {
   final MacroTargets macroTargets;
   final bool isExpanded;
   final void Function(MacroField field, double newValue) onValueChanged;
+  final bool useMetric;
 
   @override
   State<MacroSectionCard> createState() => _MacroSectionCardState();
@@ -170,8 +173,8 @@ class _MacroSectionCardState extends State<MacroSectionCard>
         SizedBox(height: 12.h),
         _buildMacroField(
           context,
-          'Fluids (fl oz)',
-          'fl oz',
+          'Fluids (${UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric)})',
+          UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric),
           widget.macroTargets.preRun.fluidsFlOz,
           MacroField.preRunFluids,
         ),
@@ -200,8 +203,8 @@ class _MacroSectionCardState extends State<MacroSectionCard>
         SizedBox(height: 12.h),
         _buildMacroField(
           context,
-          'Fluids Total (fl oz)',
-          'fl oz',
+          'Fluids Total (${UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric)})',
+          UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric),
           widget.macroTargets.duringRun.fluidTotalFlOz,
           MacroField.duringRunFluidTotal,
         ),
@@ -238,8 +241,8 @@ class _MacroSectionCardState extends State<MacroSectionCard>
         SizedBox(height: 12.h),
         _buildMacroField(
           context,
-          'Fluids (fl oz)',
-          'fl oz',
+          'Fluids (${UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric)})',
+          UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric),
           widget.macroTargets.postRun.fluidsFlOz,
           MacroField.postRunFluids,
         ),

@@ -26,7 +26,6 @@ import 'tables/carb_loading_foods_table.dart';
 import 'tables/carb_loading_user_foods_table.dart';
 import 'tables/carb_loading_day_meals_table.dart';
 import 'tables/weather_forecasts_table.dart';
-import 'tables/feature_survey_responses_table.dart';
 import 'tables/integrations_table.dart';
 import 'tables/coaches_table.dart';
 import 'tables/coach_athlete_relationships_table.dart';
@@ -91,9 +90,6 @@ part 'app_database.g.dart';
     // Weather feature tables
     WeatherForecastsTable,
 
-    // Feature survey tables
-    FeatureSurveyResponsesTable,
-
     // External integrations (Final Surge, TrainingPeaks, Strava, etc.)
     IntegrationsTable,
 
@@ -129,6 +125,8 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
+  /// Schema version 4: Adds athlete_zones_json column to integrations table
+  /// v3 added intensity distribution and default pace columns.
   int get schemaVersion => 3;
 
   /// Ensure sync tracking columns exist for user-authored tables.
@@ -138,11 +136,28 @@ class AppDatabase extends _$AppDatabase {
     return;
   }
 
-  /// V3 database setup with simplified migration strategy.
-  /// Schema changes trigger delete & resync via VersionCheckService (Phase 4.3).
+  /// Database setup with delete-and-resync migration strategy.
+  ///
+  /// Schema changes are handled by VersionCheckService at app startup:
+  /// 1. App checks `current_schema_version` in Supabase `app_config` table
+  /// 2. If local schemaVersion != remote, dirty records are uploaded
+  /// 3. Local database is deleted and recreated fresh
+  /// 4. Data is resynced from Supabase
+  ///
+  /// This eliminates complex step-by-step migrations in favor of a simpler
+  /// delete-and-resync approach controlled by the server.
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
+      // No step-by-step migrations - schema mismatches trigger delete & resync
+      // via VersionCheckService before the database is even opened.
+      // If we somehow get here with a version mismatch, recreate all tables.
+      onUpgrade: (Migrator m, int from, int to) async {
+        // This should rarely run since VersionCheckService handles mismatches.
+        // If it does run, just recreate the database.
+        await m.createAll();
+      },
+
       // Called when database is first created (version 0 -> current)
       onCreate: (Migrator m) async {
         // Check which tables already exist (from seed DB)

@@ -99,8 +99,14 @@ class TrainingPeaksApiClient {
   /// CRITICAL: TrainingPeaks tokens expire in 1 hour!
   /// Call this before making API requests when token is expired or near expiry.
   Future<TrainingPeaksTokenResponse> refreshToken(String refreshToken) async {
+    final tokenUrl = '$_oauthBaseUrl/oauth/token';
+    if (kDebugMode) {
+      print('🔑 Token refresh URL: $tokenUrl');
+      print('   Client ID: $_clientId');
+    }
+
     final response = await _httpClient.post(
-      Uri.parse('$_oauthBaseUrl/oauth/token'),
+      Uri.parse(tokenUrl),
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': _userAgent,
@@ -215,6 +221,35 @@ class TrainingPeaksApiClient {
       startDate: now,
       endDate: endDate,
       includeDescription: includeDescription,
+    );
+  }
+
+  /// Fetch a single workout by its ID
+  ///
+  /// Used for single-activity refresh button feature.
+  /// [workoutId] - The unique workout ID (Int64) from TrainingPeaks
+  ///
+  /// Throws:
+  /// - [TokenExpiredException] if access token is invalid (401)
+  /// - [RateLimitException] if rate limited (429)
+  /// - [NetworkException] for connection issues
+  /// - [IntegrationApiException] for other API errors (including 404 if workout not found)
+  Future<Map<String, dynamic>> getWorkoutById(
+    String accessToken,
+    String workoutId,
+  ) async {
+    return HttpRetryClient.executeWithRetry(
+      request: () => _httpClient.get(
+        Uri.parse('$_apiBaseUrl/v1/workouts/$workoutId'),
+        headers: _authHeaders(accessToken),
+      ),
+      onResponse: (response) {
+        _handleErrorResponse(response, 'Failed to fetch workout by ID');
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        return json;
+      },
+      provider: _provider,
+      config: _retryConfig,
     );
   }
 
@@ -362,6 +397,29 @@ class TrainingPeaksApiClient {
           _handleErrorResponse(response, 'Failed to create nutrition entry');
         }
         return jsonDecode(response.body) as Map<String, dynamic>;
+      },
+      provider: _provider,
+      config: _retryConfig,
+    );
+  }
+
+  /// Get all athlete training zones (Heart Rate, Speed, Power)
+  ///
+  /// Returns the full zone configuration including per-sport speed zones.
+  /// Requires `athlete:profile` OAuth scope (already requested).
+  ///
+  /// Zone data is relatively stable - callers should cache and only
+  /// re-fetch every 24h or on manual refresh.
+  Future<Map<String, dynamic>> getAthleteZones(String accessToken) async {
+    return HttpRetryClient.executeWithRetry(
+      request: () => _httpClient.get(
+        Uri.parse('$_apiBaseUrl/v1/athlete/profile/zones'),
+        headers: _authHeaders(accessToken),
+      ),
+      onResponse: (response) {
+        _handleErrorResponse(response, 'Failed to fetch athlete zones');
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        return json;
       },
       provider: _provider,
       config: _retryConfig,

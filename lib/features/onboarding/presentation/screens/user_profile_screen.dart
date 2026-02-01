@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -9,6 +11,8 @@ import '../providers/onboarding_controller.dart';
 import '../widgets/onboarding_widgets.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
+import '../../../integrations/presentation/providers/connect_training_controller.dart';
+import '../../../integrations/presentation/providers/integrations_providers.dart';
 
 /// User Profile Screen - Design System
 /// User setup screen during onboarding - RESTORED with database integration
@@ -39,10 +43,14 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   Gender _selectedGender = Gender.male;
   DateTime? _selectedBirthday;
   bool _runsWithWaterBottle = false;
+  UnitSystem _unitSystem = UnitSystem.imperial;
 
   // Optional name fields (for coach mode athlete identification)
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
+
+  // Track whether we've attempted to load integration data
+  bool _hasLoadedIntegrationData = false;
 
   @override
   void initState() {
@@ -58,6 +66,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       _heightInchesController.text = cachedData['heightInches'].toString();
       _weightController.text = cachedData['weightPounds'].toString();
       _runsWithWaterBottle = cachedData['runsWithWaterBottle'] as bool;
+      _unitSystem = cachedData['unitSystem'] as UnitSystem? ?? UnitSystem.imperial;
       // Optional name fields
       if (cachedData['firstName'] != null) {
         _firstNameController.text = cachedData['firstName'] as String;
@@ -65,11 +74,84 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       if (cachedData['lastName'] != null) {
         _lastNameController.text = cachedData['lastName'] as String;
       }
+    } else {
+      // No cached data - try to load from connected integrations
+      // Use post-frame callback since we can't do async in initState
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadIntegrationProfileData();
+      });
     }
 
     ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
       'screen_name': 'User Profile Onboarding',
     });
+  }
+
+  /// Load profile data from connected integrations (Training Peaks takes precedence)
+  ///
+  /// Training Peaks provides: weight (kg), birthMonth (YYYY-MM), sex (m/f)
+  /// Final Surge provides: name only (no biometric data)
+  Future<void> _loadIntegrationProfileData() async {
+    if (_hasLoadedIntegrationData) return;
+    _hasLoadedIntegrationData = true;
+
+    try {
+      final connectController = ref.read(connectTrainingControllerProvider.notifier);
+      final userId = connectController.currentUserId;
+      if (userId == null) return;
+
+      final integrationsRepo = ref.read(integrationsRepositoryProvider);
+
+      // Try Training Peaks first (has profile data), fall back to Final Surge
+      var integration = await integrationsRepo.getIntegration(userId, 'training_peaks');
+      integration ??= await integrationsRepo.getIntegration(userId, 'final_surge');
+
+      if (integration == null || !integration.isActive) return;
+      final data = integration; // Capture for closure
+
+      if (kDebugMode) {
+        print('🔄 Auto-populating profile from ${data.provider}');
+        print('   Weight (kg): ${data.providerAthleteWeightKg}');
+        print('   Birth month: ${data.providerAthleteBirthMonth}');
+        print('   Gender: ${data.providerAthleteGender}');
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        // Name
+        if (data.providerAthleteName != null && _firstNameController.text.isEmpty) {
+          final nameParts = data.providerAthleteName!.split(' ');
+          if (nameParts.isNotEmpty) {
+            _firstNameController.text = nameParts.first;
+            if (nameParts.length > 1) {
+              _lastNameController.text = nameParts.sublist(1).join(' ');
+            }
+          }
+        }
+
+        // Weight (kg → lbs)
+        if (data.providerAthleteWeightLbs != null && _weightController.text.isEmpty) {
+          _weightController.text = data.providerAthleteWeightLbs!.toStringAsFixed(1);
+        }
+
+        // Birthday (default to 1st of month)
+        if (data.providerAthleteBirthday != null && _selectedBirthday == null) {
+          _selectedBirthday = data.providerAthleteBirthday;
+        }
+
+        // Gender
+        if (data.providerAthleteGender == 'm') {
+          _selectedGender = Gender.male;
+        } else if (data.providerAthleteGender == 'f') {
+          _selectedGender = Gender.female;
+        }
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Failed to load integration profile data: $e');
+      }
+    }
   }
 
   @override
@@ -163,6 +245,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
             // Physical information section
             _buildPhysicalInfoSection(context),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // Unit Preferences section
+            _buildUnitPreferencesSection(context),
 
             // const SizedBox(height: AppSpacing.lg),
 
@@ -372,6 +459,48 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     );
   }
 
+  Widget _buildUnitPreferencesSection(BuildContext context) {
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Unit Preferences',
+            style: AppTextStyles.subtitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          Text(
+            'Unit System',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Controls display of distance, pace, fluids, and measurements',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          KyleSegmentedControl<UnitSystem>(
+            segments: UnitSystem.values,
+            selected: _unitSystem,
+            onChanged: (value) {
+              setState(() => _unitSystem = value);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   // Widget _buildRunningHabitsSection(BuildContext context) {
   //   return BaseCard(
   //     child: Column(
@@ -383,9 +512,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   //             color: Theme.of(context).colorScheme.onSurface,
   //           ),
   //         ),
-
+  //
   //         const SizedBox(height: AppSpacing.md),
-
+  //
   //         // Water bottle toggle
   //         InkWell(
   //           onTap: () => setState(() => _runsWithWaterBottle = !_runsWithWaterBottle),
@@ -430,9 +559,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   //                         )
   //                       : null,
   //                 ),
-
+  //
   //                 const SizedBox(width: AppSpacing.md),
-
+  //
   //                 // Text content
   //                 Expanded(
   //                   child: Column(
@@ -752,6 +881,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       'height_feet': _heightFeetController.text,
       'height_inches': _heightInchesController.text,
       'weight': _weightController.text,
+      'unit_system': _unitSystem.name,
     });
 
     // Cache the data instead of saving to database
@@ -765,6 +895,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       runsWithWaterBottle: _runsWithWaterBottle,
       firstName: _firstNameController.text.trim().isNotEmpty ? _firstNameController.text.trim() : null,
       lastName: _lastNameController.text.trim().isNotEmpty ? _lastNameController.text.trim() : null,
+      unitSystem: _unitSystem,
     );
 
     if (mounted) {

@@ -11,6 +11,7 @@ import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/application/calendar_service.dart';
 import '../../../calendar/presentation/providers/calendar_controller.dart';
 import '../../../events/data/events_repository.dart';
+import '../../../events/presentation/providers/events_controller.dart' hide nextUpcomingEventProvider;
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/training_peaks_oauth_service.dart';
@@ -28,12 +29,15 @@ class ConnectTrainingState {
   const ConnectTrainingState({
     this.isFinalSurgeConnected = false,
     this.finalSurgeAthleteName,
+    this.finalSurgeLastSyncAt,
     this.isTrainingPeaksConnected = false,
     this.trainingPeaksAthleteName,
+    this.trainingPeaksLastSyncAt,
     this.isConnecting = false,
     this.connectingProvider,
     this.importedWorkoutsCount = 0,
     this.isImporting = false,
+    this.syncingProvider,
     this.importProgress = 0.0,
     this.errorMessage,
     this.hasNextEvent = false,
@@ -45,12 +49,18 @@ class ConnectTrainingState {
 
   final bool isFinalSurgeConnected;
   final String? finalSurgeAthleteName;
+  final DateTime? finalSurgeLastSyncAt;
   final bool isTrainingPeaksConnected;
   final String? trainingPeaksAthleteName;
+  final DateTime? trainingPeaksLastSyncAt;
   final bool isConnecting;
   final String? connectingProvider;
   final int importedWorkoutsCount;
   final bool isImporting;
+
+  /// Which provider is currently syncing ('final_surge' or 'training_peaks')
+  final String? syncingProvider;
+
   final double importProgress;
   final String? errorMessage;
   final bool hasNextEvent;
@@ -65,17 +75,27 @@ class ConnectTrainingState {
   /// True if the last error was a network error (transient, can retry)
   final bool isNetworkError;
 
+  /// Creates a copy of this state with specified fields replaced.
+  ///
+  /// Note: For nullable fields that need to be explicitly cleared to null,
+  /// use the corresponding `clear*` parameter (e.g., `clearSyncingProvider: true`).
   ConnectTrainingState copyWith({
     bool? isFinalSurgeConnected,
     String? finalSurgeAthleteName,
+    DateTime? finalSurgeLastSyncAt,
     bool? isTrainingPeaksConnected,
     String? trainingPeaksAthleteName,
+    DateTime? trainingPeaksLastSyncAt,
     bool? isConnecting,
     String? connectingProvider,
+    bool clearConnectingProvider = false,
     int? importedWorkoutsCount,
     bool? isImporting,
+    String? syncingProvider,
+    bool clearSyncingProvider = false,
     double? importProgress,
     String? errorMessage,
+    bool clearErrorMessage = false,
     bool? hasNextEvent,
     String? nextEventName,
     bool? finalSurgeNeedsReauth,
@@ -85,14 +105,17 @@ class ConnectTrainingState {
     return ConnectTrainingState(
       isFinalSurgeConnected: isFinalSurgeConnected ?? this.isFinalSurgeConnected,
       finalSurgeAthleteName: finalSurgeAthleteName ?? this.finalSurgeAthleteName,
+      finalSurgeLastSyncAt: finalSurgeLastSyncAt ?? this.finalSurgeLastSyncAt,
       isTrainingPeaksConnected: isTrainingPeaksConnected ?? this.isTrainingPeaksConnected,
       trainingPeaksAthleteName: trainingPeaksAthleteName ?? this.trainingPeaksAthleteName,
+      trainingPeaksLastSyncAt: trainingPeaksLastSyncAt ?? this.trainingPeaksLastSyncAt,
       isConnecting: isConnecting ?? this.isConnecting,
-      connectingProvider: connectingProvider ?? this.connectingProvider,
+      connectingProvider: clearConnectingProvider ? null : (connectingProvider ?? this.connectingProvider),
       importedWorkoutsCount: importedWorkoutsCount ?? this.importedWorkoutsCount,
       isImporting: isImporting ?? this.isImporting,
+      syncingProvider: clearSyncingProvider ? null : (syncingProvider ?? this.syncingProvider),
       importProgress: importProgress ?? this.importProgress,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
       hasNextEvent: hasNextEvent ?? this.hasNextEvent,
       nextEventName: nextEventName ?? this.nextEventName,
       finalSurgeNeedsReauth: finalSurgeNeedsReauth ?? this.finalSurgeNeedsReauth,
@@ -112,6 +135,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   CalendarService get _calendarService => ref.read(calendarServiceProvider);
 
   static const _uuid = Uuid();
+
+  /// Prevents concurrent sync operations from causing duplicate inserts.
+  /// Shared across both manual and automatic sync paths.
+  final Set<String> _syncingProviders = {};
 
   String? _currentUserId;
 
@@ -160,8 +187,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     return ConnectTrainingState(
       isFinalSurgeConnected: finalSurgeIntegration?.isActive ?? false,
       finalSurgeAthleteName: finalSurgeIntegration?.providerAthleteName,
+      finalSurgeLastSyncAt: finalSurgeIntegration?.lastSyncAt,
       isTrainingPeaksConnected: trainingPeaksIntegration?.isActive ?? false,
       trainingPeaksAthleteName: trainingPeaksIntegration?.providerAthleteName,
+      trainingPeaksLastSyncAt: trainingPeaksIntegration?.lastSyncAt,
     );
   }
 
@@ -195,6 +224,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Whether we're using a temporary user ID
   bool get isUsingTempUserId => _isUsingTempUserId;
 
+  /// Whether a sync is currently in progress for the given provider.
+  /// Used by IntegrationSyncCoordinator to avoid concurrent syncs.
+  bool isSyncingProvider(String provider) => _syncingProviders.contains(provider);
+
   /// Clear the temporary user ID after successful migration
   Future<void> clearTempUserId() async {
     final prefs = ref.read(sharedPreferencesProvider);
@@ -220,7 +253,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     state = AsyncData(state.value!.copyWith(
       isConnecting: true,
       connectingProvider: 'final_surge',
-      errorMessage: null,
+      clearErrorMessage: true,
     ));
 
     try {
@@ -235,7 +268,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
       state = AsyncData(state.value!.copyWith(
         isConnecting: false,
-        connectingProvider: null,
+        clearConnectingProvider: true,
         isFinalSurgeConnected: true,
         finalSurgeAthleteName: integration.providerAthleteName,
       ));
@@ -254,7 +287,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       }
       state = AsyncData(state.value!.copyWith(
         isConnecting: false,
-        connectingProvider: null,
+        clearConnectingProvider: true,
         errorMessage: e.toString(),
       ));
       _trackIntegrationConnectFailed('final_surge', 'authentication_error', errorMessage: e.toString());
@@ -279,10 +312,20 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   Future<int> importFinalSurgeWorkouts() async {
     if (_currentUserId == null) return 0;
 
+    // Prevent concurrent syncs that could cause duplicate inserts
+    if (_syncingProviders.contains('final_surge')) {
+      if (kDebugMode) {
+        print('⚠️ Final Surge sync already in progress, skipping');
+      }
+      return 0;
+    }
+    _syncingProviders.add('final_surge');
+
     state = AsyncData(state.value!.copyWith(
       isImporting: true,
+      syncingProvider: 'final_surge',
       importProgress: 0.0,
-      errorMessage: null,
+      clearErrorMessage: true,
       isNetworkError: false,
     ));
 
@@ -299,6 +342,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           // Token expired - user must reconnect
           state = AsyncData(state.value!.copyWith(
             isImporting: false,
+            clearSyncingProvider: true,
             finalSurgeNeedsReauth: true,
             isFinalSurgeConnected: false,
             errorMessage: result.summary,
@@ -311,6 +355,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           // Network error - user can retry
           state = AsyncData(state.value!.copyWith(
             isImporting: false,
+            clearSyncingProvider: true,
             isNetworkError: true,
             errorMessage: result.summary,
           ));
@@ -321,6 +366,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         // Other error
         state = AsyncData(state.value!.copyWith(
           isImporting: false,
+          clearSyncingProvider: true,
           errorMessage: result.error ?? 'Failed to import workouts',
         ));
         _trackIntegrationSyncFailed('final_surge', result.errorType.name, errorMessage: result.error);
@@ -339,11 +385,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
       state = AsyncData(state.value!.copyWith(
         isImporting: false,
+        clearSyncingProvider: true,
         importProgress: 1.0,
         importedWorkoutsCount: result.newWorkouts,
         finalSurgeNeedsReauth: false,
         isNetworkError: false,
-        errorMessage: null,
+        clearErrorMessage: true,
       ));
 
       _trackIntegrationSyncSuccess('final_surge', result.newWorkouts, skippedCount: result.skipped);
@@ -352,11 +399,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       if (ref.mounted) {
         state = AsyncData(state.value!.copyWith(
           isImporting: false,
+          clearSyncingProvider: true,
           errorMessage: 'Failed to import workouts: $e',
         ));
       }
       _trackIntegrationSyncFailed('final_surge', 'exception', errorMessage: e.toString());
       return 0;
+    } finally {
+      _syncingProviders.remove('final_surge');
     }
   }
 
@@ -366,7 +416,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     state = AsyncData(state.value!.copyWith(
       isConnecting: true,
       connectingProvider: 'training_peaks',
-      errorMessage: null,
+      clearErrorMessage: true,
     ));
 
     try {
@@ -376,7 +426,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
       state = AsyncData(state.value!.copyWith(
         isConnecting: false,
-        connectingProvider: null,
+        clearConnectingProvider: true,
         isTrainingPeaksConnected: true,
         trainingPeaksAthleteName: integration.providerAthleteName,
       ));
@@ -386,7 +436,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     } catch (e) {
       state = AsyncData(state.value!.copyWith(
         isConnecting: false,
-        connectingProvider: null,
+        clearConnectingProvider: true,
         errorMessage: e.toString(),
       ));
       _trackIntegrationConnectFailed('training_peaks', 'authentication_error', errorMessage: e.toString());
@@ -414,10 +464,20 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   Future<int> importTrainingPeaksWorkouts() async {
     if (_currentUserId == null) return 0;
 
+    // Prevent concurrent syncs that could cause duplicate inserts
+    if (_syncingProviders.contains('training_peaks')) {
+      if (kDebugMode) {
+        print('⚠️ TrainingPeaks sync already in progress, skipping');
+      }
+      return 0;
+    }
+    _syncingProviders.add('training_peaks');
+
     state = AsyncData(state.value!.copyWith(
       isImporting: true,
+      syncingProvider: 'training_peaks',
       importProgress: 0.0,
-      errorMessage: null,
+      clearErrorMessage: true,
     ));
 
     try {
@@ -427,6 +487,31 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
       // Check if still mounted after async operation
       if (!ref.mounted) return 0;
+
+      // Handle sync failure (token expired, not connected, etc.)
+      if (!result.workoutResult.success) {
+        if (result.workoutResult.tokenExpired) {
+          // Token expired - user must reconnect
+          state = AsyncData(state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            trainingPeaksNeedsReauth: true,
+            isTrainingPeaksConnected: false,
+            errorMessage: result.workoutResult.summary,
+          ));
+          _trackIntegrationSyncFailed('training_peaks', 'token_expired', errorMessage: 'Token expired');
+          return 0;
+        }
+
+        // Other sync error (not connected, API error, etc.)
+        state = AsyncData(state.value!.copyWith(
+          isImporting: false,
+          clearSyncingProvider: true,
+          errorMessage: result.workoutResult.error ?? 'Failed to sync workouts',
+        ));
+        _trackIntegrationSyncFailed('training_peaks', 'sync_error', errorMessage: result.workoutResult.error);
+        return 0;
+      }
 
       // Activities are saved during sync - users will generate nutrition plans manually
       // by tapping activities in the calendar
@@ -505,18 +590,19 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
         state = AsyncData(state.value!.copyWith(
           isImporting: false,
+          clearSyncingProvider: true,
           importProgress: 1.0,
           importedWorkoutsCount: result.workoutResult.newWorkouts,
           hasNextEvent: result.eventResult?.hasEvent ?? false,
           nextEventName: firstEventName,
-          errorMessage: null,
+          clearErrorMessage: true,
         ));
       }
 
       _trackIntegrationSyncSuccess(
         'training_peaks',
         result.workoutResult.newWorkouts,
-        skippedCount: result.workoutResult.skipped,
+        skippedCount: result.workoutResult.unchanged,
         eventsCount: savedEventsCount,
       );
       return result.workoutResult.newWorkouts;
@@ -524,11 +610,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       if (ref.mounted) {
         state = AsyncData(state.value!.copyWith(
           isImporting: false,
+          clearSyncingProvider: true,
           errorMessage: 'Failed to import workouts: $e',
         ));
       }
       _trackIntegrationSyncFailed('training_peaks', 'exception', errorMessage: e.toString());
       return 0;
+    } finally {
+      _syncingProviders.remove('training_peaks');
     }
   }
 
@@ -543,8 +632,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       ref.invalidate(calendarControllerProvider);
       ref.invalidate(allEventsControllerProvider);
       ref.invalidate(nextUpcomingEventProvider);
+      // Invalidate events providers (events list screen watches these)
+      ref.invalidate(eventsControllerProvider);
+      ref.invalidate(allEventsProvider);
       if (kDebugMode) {
-        print('🔄 Activities and calendar providers invalidated');
+        print('🔄 Activities, calendar, and events providers invalidated');
       }
     } catch (e) {
       if (kDebugMode) {

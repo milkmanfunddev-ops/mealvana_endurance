@@ -130,6 +130,20 @@ class IntegrationsRepository {
     ));
   }
 
+  /// Update athlete zones JSON for an integration
+  Future<void> updateAthleteZones(
+    String userId,
+    String provider, {
+    required String zonesJson,
+  }) async {
+    await (_db.update(_db.integrationsTable)
+          ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
+        .write(IntegrationsTableCompanion(
+      athleteZonesJson: Value(zonesJson),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
   /// Convert Drift entity to domain model
   IntegrationModel _toModel(Integration entity) {
     return IntegrationModel(
@@ -142,6 +156,10 @@ class IntegrationsRepository {
       providerAthleteId: entity.providerAthleteId,
       providerAthleteName: entity.providerAthleteName,
       providerAthleteEmail: entity.providerAthleteEmail,
+      providerAthleteWeightKg: entity.providerAthleteWeightKg,
+      providerAthleteBirthMonth: entity.providerAthleteBirthMonth,
+      providerAthleteGender: entity.providerAthleteGender,
+      athleteZonesJson: entity.athleteZonesJson,
       isActive: entity.isActive,
       lastSyncAt: entity.lastSyncAt,
       lastSyncStatus: entity.lastSyncStatus,
@@ -163,6 +181,10 @@ class IntegrationsRepository {
       providerAthleteId: Value(model.providerAthleteId),
       providerAthleteName: Value(model.providerAthleteName),
       providerAthleteEmail: Value(model.providerAthleteEmail),
+      providerAthleteWeightKg: Value(model.providerAthleteWeightKg),
+      providerAthleteBirthMonth: Value(model.providerAthleteBirthMonth),
+      providerAthleteGender: Value(model.providerAthleteGender),
+      athleteZonesJson: Value(model.athleteZonesJson),
       isActive: Value(model.isActive),
       lastSyncAt: Value(model.lastSyncAt),
       lastSyncStatus: Value(model.lastSyncStatus),

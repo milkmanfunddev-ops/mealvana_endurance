@@ -552,25 +552,42 @@ class CarbLoadingRepository with SyncableRepository {
     }
   }
 
-  /// Get carb loading days for a date range
-  Future<List<CarbLoadingDay>> getCarbLoadingDaysForDateRange(
-    DateTime startDate,
-    DateTime endDate,
-  ) async {
+  /// Get carb loading days for a date range, scoped to a specific user
+  ///
+  /// IMPORTANT: This method joins through carb_loading_plans to ensure
+  /// only days belonging to the specified user are returned.
+  Future<List<CarbLoadingDay>> getCarbLoadingDaysForDateRange({
+    required String userId,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
     try {
-      final query = _database.select(_database.carbLoadingDaysTable)
-        ..where((tbl) =>
-            tbl.planDate.isBiggerOrEqualValue(startDate) &
-            tbl.planDate.isSmallerOrEqualValue(endDate))
-        ..orderBy([(tbl) => OrderingTerm.asc(tbl.planDate)]);
+      // Join carb_loading_days with carb_loading_plans to filter by user_id
+      final query = _database.select(_database.carbLoadingDaysTable).join([
+        innerJoin(
+          _database.carbLoadingPlansTable,
+          _database.carbLoadingPlansTable.id
+              .equalsExp(_database.carbLoadingDaysTable.carbLoadingPlanId),
+        ),
+      ])
+        ..where(_database.carbLoadingPlansTable.userId.equals(userId) &
+            _database.carbLoadingDaysTable.planDate
+                .isBiggerOrEqualValue(startDate) &
+            _database.carbLoadingDaysTable.planDate
+                .isSmallerOrEqualValue(endDate))
+        ..orderBy([OrderingTerm.asc(_database.carbLoadingDaysTable.planDate)]);
 
-      return await query.get();
+      final results = await query.get();
+      return results
+          .map((row) => row.readTable(_database.carbLoadingDaysTable))
+          .toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get carb loading days for date range',
         context: 'CARB_LOADING_REPOSITORY',
         error: e,
         stackTrace: stackTrace,
+        data: {'userId': userId},
       );
       rethrow;
     }

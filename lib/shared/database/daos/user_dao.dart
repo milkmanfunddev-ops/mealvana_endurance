@@ -1,7 +1,8 @@
 import 'package:drift/drift.dart';
 import '../app_database.dart';
 import '../tables/user_profiles.dart';
-import '../../../features/auth/domain/user_preferences.dart' as domain;
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart' as run_params;
+import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart' as domain;
 import '../../../features/onboarding/domain/dietary_preference.dart';
 import '../../../features/onboarding/domain/allergy.dart';
 
@@ -100,12 +101,19 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         heightInches: Value(profile.heightInches),
         weightPounds: Value(profile.weightPounds),
         runsWithWaterBottle: Value(profile.runsWithWaterBottle),
+        unitSystem: Value(profile.unitSystem.name),
+        preferredDistanceUnit: Value(profile.preferredDistanceUnit.name),
+        preferredPaceUnit: Value(profile.preferredPaceUnit.name),
         gutTrainingLevel: Value(profile.gutTraining.name),
         sweatRate: Value(profile.sweatRate.name),
         onboardingCompleted: Value(profile.onboardingCompleted),
         createdAt: Value(profile.createdAt),
         updatedAt: Value(profile.updatedAt),
         appVersion: Value(profile.appVersion),
+        // Default pace/speed for workout estimation
+        defaultRunningPaceMinPerMile: Value(profile.defaultRunningPaceMinPerMile),
+        defaultCyclingSpeedMph: Value(profile.defaultCyclingSpeedMph),
+        defaultSwimmingPacePer100Sec: Value(profile.defaultSwimmingPacePer100Sec),
         // Dietary preference and allergies
         // Convert DietaryPreference.none to null for database (constraint doesn't allow 'none')
         dietaryPreference: Value(
@@ -145,11 +153,18 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         heightInches: Value(profile.heightInches),
         weightPounds: Value(profile.weightPounds),
         runsWithWaterBottle: Value(profile.runsWithWaterBottle),
+        unitSystem: Value(profile.unitSystem.name),
+        preferredDistanceUnit: Value(profile.preferredDistanceUnit.name),
+        preferredPaceUnit: Value(profile.preferredPaceUnit.name),
         gutTrainingLevel: Value(profile.gutTraining.name),
         sweatRate: Value(profile.sweatRate.name),
         onboardingCompleted: Value(profile.onboardingCompleted),
         updatedAt: Value(DateTime.now()),
         appVersion: Value(profile.appVersion),
+        // Default pace/speed for workout estimation
+        defaultRunningPaceMinPerMile: Value(profile.defaultRunningPaceMinPerMile),
+        defaultCyclingSpeedMph: Value(profile.defaultCyclingSpeedMph),
+        defaultSwimmingPacePer100Sec: Value(profile.defaultSwimmingPacePer100Sec),
         // Dietary preference and allergies
         // Convert DietaryPreference.none to null for database (constraint doesn't allow 'none')
         dietaryPreference: Value(
@@ -248,6 +263,10 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       heightInches: dbUser.heightInches ?? 0,
       weightPounds: dbUser.weightPounds ?? 0.0,
       runsWithWaterBottle: dbUser.runsWithWaterBottle,
+      unitSystem: run_params.UnitSystem.values.firstWhere(
+        (u) => u.name == dbUser.unitSystem,
+        orElse: () => run_params.UnitSystem.imperial,
+      ),
       gutTraining: domain.GutTraining.values.firstWhere(
         (g) => g.name == dbUser.gutTrainingLevel,
         orElse: () => domain.GutTraining.moderate,
@@ -261,6 +280,10 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       updatedAt: dbUser.updatedAt,
       appVersion: dbUser.appVersion ?? '',
       swipeHintShown: dbUser.swipeHintShown,
+      // Default pace/speed for workout estimation
+      defaultRunningPaceMinPerMile: dbUser.defaultRunningPaceMinPerMile,
+      defaultCyclingSpeedMph: dbUser.defaultCyclingSpeedMph,
+      defaultSwimmingPacePer100Sec: dbUser.defaultSwimmingPacePer100Sec,
       // Dietary preference and allergies (onboarding revamp)
       // Convert null to DietaryPreference.none for UI
       dietaryPreference:

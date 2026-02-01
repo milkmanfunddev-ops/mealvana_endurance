@@ -309,15 +309,18 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: NewActivityAppBar(isDark: isDark),
-      body: Column(
+      body: Stack(
         children: [
           // Main scrollable content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              behavior: HitTestBehavior.opaque,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                   const SizedBox(height: 20),
 
                   // Sport Selector Buttons (center these)
@@ -326,8 +329,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
                   const SizedBox(height: 24),
 
                   // Hero Image Section (center this)
+                  // For brick workouts, shows composite image of all three sports
                   NewActivityHeroSection(
                     heroImagePath: coordinator.getHeroImagePath(),
+                    isBrick: coordinatorState.selectedTab == SportTab.brick,
                   ),
 
                   const SizedBox(height: 24),
@@ -345,16 +350,23 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
                   // Sport-specific form fields (full width)
                   _buildFormFields(coordinatorState),
 
-                  const SizedBox(height: 48),
+                  // Add padding at bottom for the sticky button
+                  const SizedBox(height: 120),
                 ],
+                ),
               ),
             ),
           ),
 
           // Generate Button (fixed at bottom)
-          NewActivityGenerateButton(
-            isGenerating: coordinatorState.isGenerating,
-            onPressed: () => _handleGeneratePlan(coordinator),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: NewActivityGenerateButton(
+              isGenerating: coordinatorState.isGenerating,
+              onPressed: () => _handleGeneratePlan(coordinator),
+            ),
           ),
         ],
       ),

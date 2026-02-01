@@ -37,12 +37,13 @@ Mealvana Endurance uses a unified database architecture with local-first design:
 ## Architecture
 
 ### Local Database (Drift)
-- **Schema Version**: 2 (migrated from v1 using Drift's migration system)
+- **Schema Version**: 4 (migrated from v3 with integration sync tracking columns)
 - **Tables**: 27 total
 - **Location**: `/lib/shared/database/`
 - **Purpose**: Offline functionality, fast local access
 - **Multi-Sport**: Full support - cycling/swimming columns in activities, users, foods tables
 - **Weather Caching**: weather_forecasts_table for API response caching
+- **Integration Sync**: Change detection and staleness tracking for external providers (Final Surge, Training Peaks)
 - **Migration Strategy**: Proper Drift migrations with version bumps and idempotent checks
 
 ### Cloud Database (Supabase)
@@ -374,6 +375,45 @@ Added sport suitability filtering:
 
 **Migration:** `/supabase/migrations/20251015000000_add_cycling_swimming_support.sql`
 
+## Integration Sync Tracking (v4 - January 2026)
+
+### Activities Table Changes
+
+Added support for tracking schedule changes from external providers (Final Surge, Training Peaks):
+
+**New Columns:**
+- `needs_nutrition_refresh` BOOLEAN (default false) - Flags when nutrition plan is stale due to schedule changes
+- `provider_deleted_at` TIMESTAMP - Soft-delete timestamp when provider removes workout
+- `provider_scheduled_at` TIMESTAMP - Original provider schedule for change detection
+- `schedule_changed_at` TIMESTAMP - When change was last detected during sync
+
+**Significant Schedule Change Criteria:**
+A schedule change triggers `needs_nutrition_refresh = true` when:
+- Time changed by more than 30 minutes
+- Date changed (different day)
+- Duration changed by more than 15 minutes
+- Distance changed by more than 10%
+
+**Database Indexes:**
+- `idx_activities_needs_nutrition_refresh` - Partial index for efficient queries on stale plans (WHERE needs_nutrition_refresh = TRUE)
+- `idx_activities_provider_deleted_at` - Partial index for soft-deleted workouts (WHERE provider_deleted_at IS NOT NULL)
+
+**Key Behaviors:**
+- When sync detects schedule change, activity is updated and `needs_nutrition_refresh` flag is set
+- User sees warning banner in Activity Detail screen prompting to regenerate nutrition plan
+- Provider-deleted workouts are soft-deleted (remain visible with indicator) rather than hard-deleted
+- Single-activity refresh button allows fetching latest data for specific workout
+- On-demand sync pattern via `ensureSynced()` checks for changes when user views activities
+
+**Migration:** `/supabase/migrations/20260125000000_add_integration_sync_tracking.sql`
+
+**Documentation:**
+- Feature implementation: `/docs/update_integration/notes.md`
+- Design decisions: `/docs/update_integration/design-decisions.md`
+- Implementation checklist: `/docs/update_integration/checklist.md`
+
+---
+
 ## Brick Workout Support (v3 - January 2026)
 
 ### Activities Table Changes
@@ -435,15 +475,29 @@ Added support for brick workouts (multi-sport training sessions):
 
 ## Schema Version History
 
-### V3 (In Development - January 2026)
+### V4 (Current - January 2026)
+- **Migration Approach**: Proper Drift migrations with version bumps
+- **Key Changes**:
+  - Added integration sync tracking columns to activities table:
+    - `needsNutritionRefresh` (boolean) - flags stale nutrition plans when schedule changes from external providers
+    - `providerDeletedAt` (datetime) - soft-delete timestamp when provider removes workout
+    - `providerScheduledAt` (datetime) - original provider schedule for change detection
+    - `scheduleChangedAt` (datetime) - when change was last detected during sync
+  - Added partial indexes for performance on sync queries
+  - Enables schedule change detection for Final Surge and Training Peaks integrations
+- **Schema Location**: `/database_schemas/v4/`
+- **Supabase Migration**: `/supabase/migrations/20260125000000_add_integration_sync_tracking.sql`
+- **Status**: Development and production - full integration sync support
+
+### V3 (January 2026)
 - **Migration Approach**: Proper Drift migrations with version bumps
 - **Key Changes**:
   - Added brick workout support (brick_metadata and brick_id columns)
   - Added 'brick' to activity_type_enum and 'archived_for_brick' to activity_status_enum
   - Added indexes for brick queries
   - Transition food category support
-- **Schema Location**: `/database_schemas/v3/` (when finalized)
-- **Status**: Development only - not yet released to production
+- **Schema Location**: `/database_schemas/v3/`
+- **Status**: Released to production
 
 ### V2 (Current - December 2025)
 - **Migration Approach**: Proper Drift migrations with version bumps
@@ -459,4 +513,4 @@ Added support for brick workouts (multi-sport training sessions):
 - **Schema Location**: `/database_schemas/v1/` (preserved for reference)
 
 ---
-*Last updated: January 2026 - Schema Version 2 with Repository-Level Sync*
+*Last updated: January 2026 - Schema Version 4 with Integration Sync Tracking*

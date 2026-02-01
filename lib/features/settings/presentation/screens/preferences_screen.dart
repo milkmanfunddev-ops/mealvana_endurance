@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
@@ -26,6 +27,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   final _heightInchesController = TextEditingController();
   final _weightController = TextEditingController();
   bool? _runsWithWaterBottle;
+  UnitSystem? _unitSystem;
   GutTraining? _gutTraining;
   SweatRateCat? _sweatRate;
 
@@ -47,6 +49,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           _gender = settingsState.gender;
           _birthday = settingsState.birthday;
           _runsWithWaterBottle = settingsState.runsWithWaterBottle;
+          _unitSystem = settingsState.unitSystem;
           _gutTraining = settingsState.gutTrainingLevel;
           _sweatRate = settingsState.sweatRate;
         });
@@ -122,6 +125,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         heightInches: heightInches,
         weightPounds: weightPounds,
         runsWithWaterBottle: _runsWithWaterBottle,
+        unitSystem: _unitSystem,
         gutTrainingLevel: _gutTraining,
         sweatRate: _sweatRate,
         firstName: _firstNameController.text.trim().isNotEmpty ? _firstNameController.text.trim() : null,
@@ -277,6 +281,11 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
               const SizedBox(height: AppSpacing.lg),
 
+              // Unit preferences section
+              _buildUnitPreferencesSection(context),
+
+              const SizedBox(height: AppSpacing.lg),
+
               // Nutrition settings section (gut training and sweat rate)
               _buildNutritionSettingsSection(context),
 
@@ -338,6 +347,52 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
           // Birthday selector
           _buildBirthdaySelector(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnitPreferencesSection(BuildContext context) {
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Unit Preferences',
+            style: AppTextStyles.subtitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Unit System (Imperial/Metric)
+          Text(
+            'Unit System',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Controls display of distance, pace, fluids, and measurements',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          KyleSegmentedControl<UnitSystem>(
+            segments: UnitSystem.values,
+            selected: _unitSystem ?? UnitSystem.imperial,
+            onChanged: (value) {
+              setState(() {
+                _unitSystem = value;
+              });
+              _markChanged();
+            },
+          ),
         ],
       ),
     );
@@ -725,9 +780,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   }
 
   Widget _buildNutritionSettingsSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

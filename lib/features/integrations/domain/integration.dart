@@ -13,6 +13,10 @@ class IntegrationModel {
     required this.providerAthleteId,
     this.providerAthleteName,
     this.providerAthleteEmail,
+    this.providerAthleteWeightKg,
+    this.providerAthleteBirthMonth,
+    this.providerAthleteGender,
+    this.athleteZonesJson,
     this.isActive = true,
     this.lastSyncAt,
     this.lastSyncStatus,
@@ -30,6 +34,14 @@ class IntegrationModel {
   final String providerAthleteId;
   final String? providerAthleteName;
   final String? providerAthleteEmail;
+  /// Athlete weight in kilograms (from Training Peaks profile)
+  final double? providerAthleteWeightKg;
+  /// Birth month in "YYYY-MM" format (from Training Peaks profile)
+  final String? providerAthleteBirthMonth;
+  /// Gender: 'm' for male, 'f' for female (from Training Peaks profile)
+  final String? providerAthleteGender;
+  /// Serialized athlete zone data (HR, Speed, Power zones from Training Peaks)
+  final String? athleteZonesJson;
   final bool isActive;
   final DateTime? lastSyncAt;
   final String? lastSyncStatus; // 'success', 'error', 'pending'
@@ -71,6 +83,28 @@ class IntegrationModel {
     }
   }
 
+  /// Weight in pounds (converted from kg)
+  double? get providerAthleteWeightLbs =>
+      providerAthleteWeightKg != null ? providerAthleteWeightKg! * 2.20462 : null;
+
+  /// Birthday as DateTime (defaults to 1st of the month since Training Peaks only provides YYYY-MM)
+  DateTime? get providerAthleteBirthday {
+    if (providerAthleteBirthMonth == null || providerAthleteBirthMonth!.isEmpty) {
+      return null;
+    }
+    try {
+      final parts = providerAthleteBirthMonth!.split('-');
+      if (parts.length >= 2) {
+        final year = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+        return DateTime(year, month, 1); // Default to 1st of month
+      }
+    } catch (_) {
+      // Invalid format
+    }
+    return null;
+  }
+
   /// Create a copy with updated fields
   IntegrationModel copyWith({
     String? id,
@@ -82,6 +116,10 @@ class IntegrationModel {
     String? providerAthleteId,
     String? providerAthleteName,
     String? providerAthleteEmail,
+    double? providerAthleteWeightKg,
+    String? providerAthleteBirthMonth,
+    String? providerAthleteGender,
+    String? athleteZonesJson,
     bool? isActive,
     DateTime? lastSyncAt,
     String? lastSyncStatus,
@@ -99,6 +137,10 @@ class IntegrationModel {
       providerAthleteId: providerAthleteId ?? this.providerAthleteId,
       providerAthleteName: providerAthleteName ?? this.providerAthleteName,
       providerAthleteEmail: providerAthleteEmail ?? this.providerAthleteEmail,
+      providerAthleteWeightKg: providerAthleteWeightKg ?? this.providerAthleteWeightKg,
+      providerAthleteBirthMonth: providerAthleteBirthMonth ?? this.providerAthleteBirthMonth,
+      providerAthleteGender: providerAthleteGender ?? this.providerAthleteGender,
+      athleteZonesJson: athleteZonesJson ?? this.athleteZonesJson,
       isActive: isActive ?? this.isActive,
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
       lastSyncStatus: lastSyncStatus ?? this.lastSyncStatus,

@@ -96,6 +96,11 @@ class UserProfilesTable extends Table {
   // Sharing preferences
   TextColumn get senderName => text().nullable().named('sender_name')(); // Name used when sharing plans
 
+  // Default pace/speed for workout estimation
+  RealColumn get defaultRunningPaceMinPerMile => real().nullable().named('default_running_pace_min_per_mile')(); // Minutes per mile
+  RealColumn get defaultCyclingSpeedMph => real().nullable().named('default_cycling_speed_mph')(); // Miles per hour
+  IntColumn get defaultSwimmingPacePer100Sec => integer().nullable().named('default_swimming_pace_per_100_sec')(); // Seconds per 100 yards/meters
+
   // User identity - optional first and last name for coach mode identification
   /// User's first name (optional, used for coach mode athlete identification)
   TextColumn get firstName => text().nullable().named('first_name')();
@@ -110,6 +115,13 @@ class UserProfilesTable extends Table {
   /// User's allergies stored as PostgreSQL array format (e.g., '{dairy,gluten,peanuts}')
   /// Values: dairy, eggs, fish, gluten, peanuts, sesame, shellfish, soy, tree_nuts
   TextColumn get allergies => text().withDefault(const Constant('{}')).named('allergies')();
+
+  /// User's preferred unit system for display (imperial or metric)
+  /// Values: imperial, metric
+  /// Default: imperial (US-centric app)
+  TextColumn get unitSystem => text()
+      .withDefault(const Constant('imperial'))
+      .named('unit_system')();
 
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
@@ -132,11 +144,12 @@ class UserProfilesTable extends Table {
     "CHECK (gut_training_level IN ('low', 'moderate', 'high'))",
     "CHECK (sweat_rate IN ('light', 'medium', 'heavy'))",
     "CHECK (preferred_distance_unit IN ('miles', 'kilometers'))",
-    "CHECK (preferred_pace_unit IN ('min_per_mile', 'min_per_km'))",
+    "CHECK (preferred_pace_unit IN ('minPerMile', 'minPerKm'))",
     "CHECK (calendar_week_start IN ('sunday', 'monday'))",
     "CHECK (default_activity_day IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'))",
     "CHECK (auth_provider IN ('anonymous', 'email', 'google', 'apple'))",
     "CHECK (dietary_preference IN ('omnivore', 'vegetarian', 'pescatarian', 'vegan', 'mediterranean', 'paleo', 'keto', 'low_carb') OR dietary_preference IS NULL)",
+    "CHECK (unit_system IN ('imperial', 'metric'))",
   ];
 }
 

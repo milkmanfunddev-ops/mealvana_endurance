@@ -22,6 +22,9 @@ export interface Food {
   display_name_plural: string | null;
   description: string | null;
   image_address: string | null;
+  serving_size?: string | null;
+  serving_unit?: string | null;
+  serving_qualifier?: string | null;
   per_serving: FoodNutrition;
   serving_amount: number | null;
   max_servings: number;
@@ -45,6 +48,9 @@ export interface FoodResult {
   display_name_plural?: string;
   description?: string;
   image_address?: string;
+  serving_size?: string | null;
+  serving_unit?: string | null;
+  serving_qualifier?: string | null;
 }
 
 // ============================================================================

@@ -186,6 +186,7 @@ Future<List<dynamic>> carbLoadingDaysForPlan(Ref ref, String planId) async {
 
 /// Provider for getting carb loading days in a date range
 /// Returns List<CarbLoadingDay> from the database
+/// IMPORTANT: Scopes query to current user to prevent cross-user data leakage
 @riverpod
 Future<List<dynamic>> carbLoadingDaysForRange(
   Ref ref,
@@ -193,7 +194,9 @@ Future<List<dynamic>> carbLoadingDaysForRange(
   DateTime endDate,
 ) async {
   final service = ref.read(carbLoadingServiceProvider);
+  final userId = await ref.read(userIdProvider.future);
   final days = await service.getCarbLoadingDaysForRange(
+    userId: userId,
     startDate: startDate,
     endDate: endDate,
   );

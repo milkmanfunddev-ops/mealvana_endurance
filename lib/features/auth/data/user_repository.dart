@@ -1323,12 +1323,6 @@ class UserRepository with SyncableRepository {
     // Note: feedback table uses device_id, NOT user_id
     // Feedback stays with the device, not migrated with user account
     // No migration needed here
-
-    // ============ FEATURE SURVEY RESPONSES ============
-    // Note: feature_survey_responses table uses device_id, NOT user_id
-    // Survey responses stay with the device (like feedback), not migrated with user account
-    // The device_id is inherited from anonymous user to OAuth user via users.device_id
-    // No migration needed here
   }
 
   /// Migrate local Drift database data
@@ -1419,17 +1413,6 @@ class UserRepository with SyncableRepository {
         'DELETE FROM carb_loading_user_foods WHERE user_id = ?',
         [anonymousUserId],
       );
-
-      // Note: feature_survey_responses uses device_id, not user_id
-      // Since we're deleting the user profile which has the device_id,
-      // we need to get the device_id first to delete survey responses
-      final anonymousProfile = await getUserProfileById(anonymousUserId);
-      if (anonymousProfile != null) {
-        await database.customStatement(
-          'DELETE FROM feature_survey_responses WHERE device_id = ?',
-          [anonymousProfile.deviceId],
-        );
-      }
 
       // Delete anonymous user profile
       await database.customStatement(

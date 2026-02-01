@@ -36,15 +36,27 @@ class FinalSurgeApiClient {
   /// Exchange authorization code for access token
   ///
   /// Called after user completes OAuth flow in browser.
-  Future<FinalSurgeTokenResponse> exchangeCodeForToken(String code) async {
+  /// [redirectUri] must match the redirect-uri used in the authorization request.
+  Future<FinalSurgeTokenResponse> exchangeCodeForToken(
+    String code, {
+    String? redirectUri,
+  }) async {
     if (kDebugMode) {
       print('🔄 Exchanging authorization code for token...');
-      print('   Code: ${code.substring(0, code.length > 20 ? 20 : code.length)}...');
+      print('   Code: ${code.substring(0, code.length > 8 ? 8 : code.length)}...');
       print('   Client ID: $_clientId');
+      print('   Secret length: ${_clientSecret.length} (expected: 64)');
+      if (_clientSecret.length >= 10) {
+        print('   Secret first 5 chars: ${_clientSecret.substring(0, 5)}');
+        print('   Secret last 5 chars: ${_clientSecret.substring(_clientSecret.length - 5)}');
+      } else {
+        print('   ❌ SECRET TOO SHORT! Got: "$_clientSecret"');
+        print('   ⚠️  The \$ characters in .env must be escaped as \\\$');
+      }
     }
 
-    // Build form-encoded body manually to ensure correct encoding
-    // Note: Final Surge does NOT expect redirect-uri in token exchange (per test script)
+    // Build form-encoded body
+    // NOTE: Final Surge uses hyphens (client-id) not underscores (client_id)
     final bodyParams = {
       'client-id': _clientId,
       'client-secret': _clientSecret,
@@ -219,6 +231,80 @@ class FinalSurgeApiClient {
         _handleErrorResponse(response, 'Failed to fetch workouts by date range');
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         return FinalSurgeWorkoutsResponse.fromJson(json);
+      },
+      provider: _provider,
+      config: _retryConfig,
+    );
+  }
+
+  /// Fetch a single workout by its WorkoutKey
+  ///
+  /// Used for single-activity refresh button feature.
+  /// [workoutKey] - The unique WorkoutKey identifier from Final Surge
+  ///
+  /// Throws:
+  /// - [TokenExpiredException] if access token is invalid (401)
+  /// - [RateLimitException] if rate limited (429)
+  /// - [NetworkException] for connection issues
+  /// - [FinalSurgeApiException] for other API errors (including 404 if workout not found)
+  Future<Map<String, dynamic>> getWorkoutById(
+    String accessToken,
+    String workoutKey,
+  ) async {
+    return HttpRetryClient.executeWithRetry(
+      request: () => _httpClient.get(
+        Uri.parse('$_baseUrl/API/v1/Workout/$workoutKey'),
+        headers: {
+          'client-id': _clientId,
+          'Authorization': 'Bearer $accessToken',
+        },
+      ),
+      onResponse: (response) {
+        _handleErrorResponse(response, 'Failed to fetch workout by ID');
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+
+        // Final Surge may return an error in the response body even with 200 status
+        final errorMessage = json['ErrorMessage'] as String?;
+        if (errorMessage != null && errorMessage.isNotEmpty) {
+          throw FinalSurgeApiException(
+            'Failed to fetch workout: $errorMessage',
+            statusCode: response.statusCode,
+            body: response.body,
+          );
+        }
+
+        return json;
+      },
+      provider: _provider,
+      config: _retryConfig,
+    );
+  }
+
+  /// Fetch structured workout data for a workout
+  ///
+  /// The URL comes from `workout['StructuredWorkoutURLs']['json_fs_v1']`.
+  /// Returns the structured workout steps in Final Surge JSON format.
+  ///
+  /// Throws:
+  /// - [TokenExpiredException] if access token is invalid (401)
+  /// - [NetworkException] for connection issues
+  /// - [FinalSurgeApiException] for other API errors
+  Future<Map<String, dynamic>> getStructuredWorkout(
+    String accessToken,
+    String jsonFsV1Url,
+  ) async {
+    return HttpRetryClient.executeWithRetry(
+      request: () => _httpClient.get(
+        Uri.parse(jsonFsV1Url),
+        headers: {
+          'client-id': _clientId,
+          'Authorization': 'Bearer $accessToken',
+        },
+      ),
+      onResponse: (response) {
+        _handleErrorResponse(response, 'Failed to fetch structured workout');
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        return json;
       },
       provider: _provider,
       config: _retryConfig,

@@ -60,12 +60,25 @@ class WeatherService {
     domain.Location? location,
     required DateTime activityDate,
   }) async {
+    logger.debug(
+      'Weather fetch requested',
+      context: 'WeatherService',
+      data: {
+        'has_location': location != null,
+        'activity_date': activityDate.toIso8601String(),
+      },
+    );
     try {
       // Get location (use provided or fetch current)
       domain.Location? targetLocation = location;
       if (targetLocation == null) {
         targetLocation = await locationService.getCurrentLocation();
         if (targetLocation == null) {
+          logger.warning(
+            'No location available for weather',
+            context: 'WeatherService',
+            data: {'failure_reason': locationService.getLastFailureReason()?.name},
+          );
           logger.warning('Could not get location, using default weather');
           return WeatherForecast.defaultForecast(activityDate);
         }
@@ -82,6 +95,11 @@ class WeatherService {
         final cached = _memoryCache[cacheKey]!;
         // Verify it's still fresh (same expiry rules as database)
         if (cached.isFresh()) {
+          logger.debug(
+            'Weather cache hit (memory)',
+            context: 'WeatherService',
+            data: {'cache_key': cacheKey, 'source': cached.source.value},
+          );
           return cached;
         }
       }
@@ -94,11 +112,21 @@ class WeatherService {
       );
 
       if (dbCached != null) {
+        logger.debug(
+          'Weather cache hit (db)',
+          context: 'WeatherService',
+          data: {'cache_key': cacheKey, 'source': dbCached.source.value},
+        );
         _memoryCache[cacheKey] = dbCached;
         return dbCached;
       }
 
       // Fetch from API (third level)
+      logger.debug(
+        'Weather cache miss, calling API',
+        context: 'WeatherService',
+        data: {'cache_key': cacheKey},
+      );
       final forecast = await _fetchWeatherFromAPI(
         latitude: targetLocation.latitude,
         longitude: targetLocation.longitude,
@@ -116,6 +144,12 @@ class WeatherService {
 
         // Clear expired forecasts (background cleanup)
         weatherRepository.clearExpiredForecasts().ignore();
+      } else {
+        logger.warning(
+          'Weather API returned default forecast',
+          context: 'WeatherService',
+          data: {'source': forecast.source.value},
+        );
       }
 
       return forecast;
@@ -132,9 +166,22 @@ class WeatherService {
     required DateTime activityDate,
   }) async {
     try {
+      final startTime = DateTime.now();
       final response = await supabase.functions.invoke(
         'get-weather-forecast',
         body: {
+          'latitude': latitude,
+          'longitude': longitude,
+          'activity_date': activityDate.toIso8601String(),
+        },
+      );
+
+      logger.api(
+        'Weather edge function response',
+        endpoint: 'get-weather-forecast',
+        statusCode: response.status,
+        duration: DateTime.now().difference(startTime),
+        requestData: {
           'latitude': latitude,
           'longitude': longitude,
           'activity_date': activityDate.toIso8601String(),
@@ -153,6 +200,16 @@ class WeatherService {
       }
 
       final forecast = WeatherForecast.fromJson(data['data']);
+      logger.debug(
+        'Weather API parsed forecast',
+        context: 'WeatherService',
+        data: {
+          'source': forecast.source.value,
+          'forecast_available': forecast.forecastAvailable,
+          'temp_c': forecast.temperatureC,
+          'humidity_pct': forecast.humidityPct,
+        },
+      );
       return forecast;
     } catch (e, stackTrace) {
       logger.error('Error fetching weather from API', error: e, stackTrace: stackTrace);
@@ -173,5 +230,20 @@ class WeatherService {
   /// Request location permission
   Future<bool> requestLocationPermission() async {
     return await locationService.requestLocationPermission();
+  }
+
+  /// Open location settings
+  Future<bool> openLocationSettings() async {
+    return await locationService.openLocationSettings();
+  }
+
+  /// Open app settings
+  Future<bool> openAppSettings() async {
+    return await locationService.openAppSettings();
+  }
+
+  /// Get last location failure reason (if any)
+  LocationFailureReason? getLastLocationFailureReason() {
+    return locationService.getLastFailureReason();
   }
 }

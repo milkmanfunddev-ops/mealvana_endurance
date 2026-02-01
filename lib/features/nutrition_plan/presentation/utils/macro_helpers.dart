@@ -19,6 +19,8 @@ class MacroHelpers {
         return 'During this Ride';
       case ActivityType.swimming:
         return 'During this Swim';
+      case ActivityType.brick:
+        return 'During this Brick';
       default:
         return 'During this Activity';
     }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../providers/macro_targets_controller.dart';
 import '../../../domain/macro_targets.dart' as domain;
+import '../../utils/unit_formatter.dart';
 
 /// Edit Macros Dialog
 /// Allows user to manually edit all macro targets
@@ -11,10 +12,12 @@ class EditMacrosDialogWidget extends ConsumerStatefulWidget {
     super.key,
     required this.macros,
     this.activityId,
+    this.useMetric = false,
   });
 
   final domain.MacroTargets macros;
   final String? activityId;
+  final bool useMetric;
 
   @override
   ConsumerState<EditMacrosDialogWidget> createState() => _EditMacrosDialogWidgetState();
@@ -52,6 +55,8 @@ class _EditMacrosDialogWidgetState extends ConsumerState<EditMacrosDialogWidget>
 
   @override
   Widget build(BuildContext context) {
+    final fluidLabel = 'FLUIDS (${UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric)})';
+
     return AlertDialog(
       title: Text(
         'Edit Macro Targets',
@@ -67,7 +72,7 @@ class _EditMacrosDialogWidgetState extends ConsumerState<EditMacrosDialogWidget>
             const SizedBox(height: AppSpacing.md),
             _buildMacroSection('PROTEIN (g)', 'preProtein', 'duringProtein', 'postProtein'),
             const SizedBox(height: AppSpacing.md),
-            _buildMacroSection('FLUIDS (mL)', 'preFluids', 'duringFluids', 'postFluids'),
+            _buildMacroSection(fluidLabel, 'preFluids', 'duringFluids', 'postFluids'),
             const SizedBox(height: AppSpacing.md),
             _buildMacroSection('SODIUM (mg)', 'preSodium', 'duringSodium', 'postSodium'),
           ],

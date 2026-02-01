@@ -22,12 +22,6 @@ create type gut_training_enum as enum ('low', 'moderate', 'high');
 
 alter type gut_training_enum owner to postgres;
 
-create type activity_status_enum as enum ('planned', 'in_progress', 'completed', 'skipped', 'archived_for_brick');
-
-comment on type activity_status_enum is 'Activity workflow states. archived_for_brick indicates an activity was combined into a brick workout and should not appear in normal queries.';
-
-alter type activity_status_enum owner to postgres;
-
 create type intensity_enum as enum ('easy', 'moderate', 'hard', 'race');
 
 alter type intensity_enum owner to postgres;
@@ -62,7 +56,7 @@ create type event_subtype_enum as enum ('5k', '10k', '15k', '10_mile', 'half_mar
 
 alter type event_subtype_enum owner to postgres;
 
-create type activity_type_enum as enum ('running', 'cycling', 'swimming', 'triathlon', 'duathlon', 'multisport', 'brick');
+create type activity_type_enum as enum ('running', 'cycling', 'swimming', 'triathlon', 'duathlon', 'multisport', 'brick', 'transition');
 
 comment on type activity_type_enum is 'Supported activity types: running, cycling, swimming, triathlon, duathlon, multisport, brick. Brick is a multi-sport workout with 2-3 sequential segments.';
 
@@ -93,6 +87,10 @@ create type phase_enum as enum ('before', 'during', 'after');
 comment on type phase_enum is 'Nutrition timing phases: before, during, or after activity';
 
 alter type phase_enum owner to postgres;
+
+create type activity_status_enum as enum ('draft', 'planned', 'inProgress', 'completed', 'skipped', 'archivedForBrick');
+
+alter type activity_status_enum owner to postgres;
 
 create table users
 (
@@ -463,7 +461,6 @@ create table activities
 (
     title                          text               not null,
     scheduled_date_time            timestamp          not null,
-    status                         activity_status_enum default 'planned'::activity_status_enum,
     distance_miles                 real,
     duration_minutes               integer,
     pace_target_minutes_per_mile   real,
@@ -532,12 +529,11 @@ create table activities
     brick_id                       text
         constraint fk_activities_brick_id
             references activities
-            on delete set null
+            on delete set null,
+    status                         activity_status_enum default 'planned'::activity_status_enum
 );
 
 comment on table activities is 'User activities including single-sport (run/bike/swim) and multi-sport (brick/triathlon/duathlon). Brick activities store segment details in brick_metadata and link to archived originals via brick_id.';
-
-comment on column activities.status is 'Current status: planned, in_progress, completed, skipped';
 
 comment on column activities.cycling_power_watts is 'Average power output in watts for cycling activities';
 
@@ -588,9 +584,6 @@ create index idx_activities_cycling_power
 create index idx_activities_swimming_pace
     on activities (swimming_speed_per_100m)
     where (swimming_speed_per_100m IS NOT NULL);
-
-create index idx_activities_status
-    on activities (status);
 
 create index idx_activities_provider_sync
     on activities (synced_from_provider, provider_workout_id)

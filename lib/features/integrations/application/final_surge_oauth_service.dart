@@ -37,8 +37,8 @@ class FinalSurgeOAuthService {
     final state = _generateState();
 
     // 2. Build OAuth authorization URL
-    // Try scheme:// format (without path)
-    final redirectUri = '$_callbackUrlScheme://';
+    // Use scheme://callback format (matching Training Peaks pattern)
+    final redirectUri = '$_callbackUrlScheme://callback';
     final authUrl = Uri.https('log.finalsurge.com', '/oauth/authorize', {
       'client-id': _clientId,
       'redirect-uri': redirectUri,
@@ -90,8 +90,11 @@ class FinalSurgeOAuthService {
     }
 
     // 5. Exchange code for access token
-    // Note: Final Surge does NOT require redirect-uri in token exchange
-    final tokenResponse = await _apiClient.exchangeCodeForToken(code);
+    // Final Surge requires redirect-uri to match the authorization request
+    final tokenResponse = await _apiClient.exchangeCodeForToken(
+      code,
+      redirectUri: redirectUri,
+    );
 
     if (kDebugMode) {
       print('✅ Token exchange successful');

@@ -91,6 +91,7 @@ class FoodItemData {
       nutritionalInfo: nutritionalInfo,
       displayName: json['display_name'] as String?,
       displayNamePlural: json['display_name_plural'] as String?,
+      servingSize: json['serving_size'] as String?,
     );
   }
 

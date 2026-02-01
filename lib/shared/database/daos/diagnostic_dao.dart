@@ -12,7 +12,6 @@ import '../tables/carb_loading_plans_table.dart';
 import '../tables/carb_loading_days_table.dart';
 import '../tables/carb_loading_user_foods_table.dart';
 import '../tables/carb_loading_day_meals_table.dart';
-import '../tables/feature_survey_responses_table.dart';
 import '../tables/integrations_table.dart';
 
 part 'diagnostic_dao.g.dart';
@@ -38,7 +37,6 @@ part 'diagnostic_dao.g.dart';
   CarbLoadingDaysTable,
   CarbLoadingUserFoodsTable,
   CarbLoadingDayMealsTable,
-  FeatureSurveyResponsesTable,
   IntegrationsTable,
 ])
 class DiagnosticDao extends DatabaseAccessor<AppDatabase>
@@ -118,9 +116,6 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
           .go();
       await (delete(userFoodsTable)..where((t) => t.userId.equals(userId)))
           .go();
-      await (delete(featureSurveyResponsesTable)
-            ..where((t) => t.deviceId.equals(userId)))
-          .go();
 
       // feedback uses device_id, need to join with users table
       await db.customStatement('''
@@ -156,7 +151,6 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
       await delete(activitiesTable).go();
       await delete(carbLoadingUserFoodsTable).go();
       await delete(userFoodsTable).go();
-      await delete(featureSurveyResponsesTable).go();
       await delete(feedbackTable).go();
       await delete(integrationsTable).go();
       await delete(userProfilesTable).go();
@@ -272,16 +266,6 @@ class DiagnosticDao extends DatabaseAccessor<AppDatabase>
       );
       await db.customStatement(
         'UPDATE carb_loading_user_foods SET user_id = ? WHERE user_id = ?',
-        [toUserId, fromUserId],
-      );
-
-      // ============ FEATURE SURVEY RESPONSES ============
-      await db.customStatement(
-        'DELETE FROM feature_survey_responses WHERE user_id = ?',
-        [toUserId],
-      );
-      await db.customStatement(
-        'UPDATE feature_survey_responses SET user_id = ? WHERE user_id = ?',
         [toUserId, fromUserId],
       );
 
