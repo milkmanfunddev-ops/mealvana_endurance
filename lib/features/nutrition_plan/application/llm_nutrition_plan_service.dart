@@ -68,26 +68,64 @@ class LLMNutritionPlanService {
       final weightKg = user.weightPounds * 0.453592;
       final heightCm = user.totalHeightInches * 2.54;
 
-      // Calculate macro targets using the same logic as the algorithm would
-      // These are estimates based on standard sports nutrition guidelines
+      // Calculate macro targets aligned with v3/v4 edge function algorithm
+      // (Rachel-corrected formulas)
       final durationHours = (distanceMiles * paceMinutesPerMile) / 60.0;
-      
-      // Pre-run: 1-4g carbs/kg body weight (depending on timing)
-      final preRunCarbs = (weightKg * 2.0).round(); // 2g/kg as baseline
-      final preRunProtein = (weightKg * 0.25).round(); // ~0.25g/kg
-      final preRunFat = (preRunCarbs * 0.1).round(); // ~10% of carb calories as fat
-      final preRunWater = (weightKg * 5).round(); // 5ml/kg
-      final preRunSodium = 300; // baseline sodium
-      
-      // During-run: 30-60g carbs/hour
-      final duringRunCarbsPerHour = user.gutTraining.value == 'high' ? 60 : 
-                                    user.gutTraining.value == 'low' ? 30 : 45;
+      final durationMin = durationHours * 60.0;
+
+      // Pre-run: Linear 1 g/kg per hour before, capped at 0.5-4.0 g/kg
+      final carbPerKg = timeBeforeRunHours.clamp(0.5, 4.0);
+      final preRunCarbs = (weightKg * carbPerKg).round();
+      // Protein/fat/hydration/sodium based on meal type (matching edge function)
+      final int preRunProtein;
+      final int preRunFat;
+      final int preRunWater;
+      final int preRunSodium;
+      if (timeBeforeRunHours >= 2.5) {
+        // Full meal
+        preRunProtein = (weightKg * 0.25).round();
+        preRunFat = (weightKg * 0.4).round();
+        preRunWater = (weightKg * 6.5).round();
+        preRunSodium = 400;
+      } else if (timeBeforeRunHours >= 1.0) {
+        // Snack
+        preRunProtein = (weightKg * 0.15).round();
+        preRunFat = 5;
+        preRunWater = (weightKg * 5.5).round();
+        preRunSodium = 200;
+      } else {
+        // Top-up
+        preRunProtein = 0;
+        preRunFat = 0;
+        preRunWater = (weightKg * 3.5).round();
+        preRunSodium = 100;
+      }
+
+      // During-run: Duration-based bands with gut training multipliers (v3)
+      final List<double> band;
+      if (durationMin < 60) {
+        band = [0, 30];
+      } else if (durationMin < 90) {
+        band = [30, 60];
+      } else if (durationMin < 150) {
+        band = [45, 60];
+      } else if (durationMin < 240) {
+        band = [60, 90];
+      } else {
+        band = [80, 100];
+      }
+      final gutMult = user.gutTraining.value == 'high' ? 1.2 :
+                       user.gutTraining.value == 'low' ? 0.7 : 1.0;
+      final scaledLow = band[0] * gutMult;
+      final scaledHigh = band[1] * gutMult;
+      // Use midpoint of scaled band as estimate (no intensity distribution available)
+      final duringRunCarbsPerHour = ((scaledLow + scaledHigh) / 2).clamp(0, 70).round(); // 70 = run ceiling
       final duringRunCarbs = (duringRunCarbsPerHour * durationHours).round();
       final duringRunWater = (600 * durationHours).round(); // ~600ml/hour
       final duringRunSodium = (400 * durationHours).round(); // ~400mg/hour
-      
-      // Post-run: 1.0-1.2g carbs/kg, 0.3g protein/kg
-      final postRunCarbs = (weightKg * 1.0).round();
+
+      // Post-run: 1.0-1.2g carbs/kg (duration-dependent), 0.3g protein/kg
+      final postRunCarbs = (weightKg * (durationHours > 2 ? 1.2 : 1.0)).round();
       final postRunProtein = (weightKg * 0.3).round();
       final postRunWater = (duringRunWater * 1.25).round(); // 125% of sweat loss
       final postRunSodium = 500; // baseline recovery sodium
@@ -767,6 +805,36 @@ class LLMNutritionPlanService {
 
     final sections = <PlanSection>[];
 
+    // Parse per-segment and per-transition macro targets from the edge function response
+    // The edge function passes through macro_targets.phases which contains:
+    // - during_segments: [{segment_order, carbs_g, sodium_mg, water_ml}, ...]
+    // - transitions: [{transition_name, carbs_g, sodium_mg, water_ml}, ...]
+    final macroTargetsData = data['macro_targets'] as Map<String, dynamic>?;
+    final phasesTargets = macroTargetsData?['phases'] as Map<String, dynamic>?;
+    final segmentTargetsList = phasesTargets?['during_segments'] as List<dynamic>? ?? [];
+    final transitionTargetsList = phasesTargets?['transitions'] as List<dynamic>? ?? [];
+
+    // Build lookup maps for quick access by segment order / transition name
+    final segmentTargetsMap = <int, Map<String, dynamic>>{};
+    for (final seg in segmentTargetsList) {
+      if (seg is Map<String, dynamic>) {
+        final order = seg['segment_order'] as int?;
+        if (order != null) {
+          segmentTargetsMap[order] = seg;
+        }
+      }
+    }
+
+    final transitionTargetsMap = <String, Map<String, dynamic>>{};
+    for (final trans in transitionTargetsList) {
+      if (trans is Map<String, dynamic>) {
+        final name = trans['transition_name'] as String?;
+        if (name != null) {
+          transitionTargetsMap[name] = trans;
+        }
+      }
+    }
+
     // 1. Before section
     final beforeItems = <FoodItemData>[];
     final beforeList = planData['before'] as List<dynamic>? ?? [];
@@ -818,15 +886,18 @@ class LLMNutritionPlanService {
       // Use actual sport name from segments, or fallback to generic name
       final orderInt = int.tryParse(segmentOrder) ?? (segmentIndex + 1);
       final sportName = sportNameMap[orderInt] ?? 'Segment $segmentOrder';
+
+      // Look up per-segment macro targets from the edge function response
+      final segTargets = segmentTargetsMap[orderInt];
+
       sections.add(PlanSection(
         id: 'during_segment_$segmentOrder',
         title: 'During $sportName',
         subtitle: null,
         foodItems: foodItems,
-        // During segments don't have protein target
-        carbsTarget: null, // These would need to be passed per-segment
-        sodiumTarget: null,
-        fluidsTarget: null,
+        carbsTarget: segTargets != null ? (segTargets['carbs_g'] as num?)?.toDouble() : null,
+        sodiumTarget: segTargets != null ? (segTargets['sodium_mg'] as num?)?.toDouble() : null,
+        fluidsTarget: segTargets != null ? (segTargets['water_ml'] as num?)?.toDouble() : null,
       ));
 
       // Add transition after each segment (except the last)
@@ -841,11 +912,17 @@ class LLMNutritionPlanService {
           transitionFoodItems.add(transformedFoodItem);
         }
 
+        // Look up per-transition macro targets from the edge function response
+        final transTargets = transitionTargetsMap[transitionKey];
+
         sections.add(PlanSection(
           id: transitionKey,
           title: 'Transition ($transitionKey)',
           subtitle: 'Quick refuel between segments',
           foodItems: transitionFoodItems,
+          carbsTarget: transTargets != null ? (transTargets['carbs_g'] as num?)?.toDouble() : null,
+          sodiumTarget: transTargets != null ? (transTargets['sodium_mg'] as num?)?.toDouble() : null,
+          fluidsTarget: transTargets != null ? (transTargets['water_ml'] as num?)?.toDouble() : null,
         ));
       }
 

@@ -69,7 +69,7 @@ class BrickMacroService {
 
       // Call edge function with timeout
       final response = await supabaseClient.functions.invoke(
-        'generate-macros',
+        'generate-macros-v3',
         body: requestData,
       );
 
@@ -153,21 +153,23 @@ class BrickMacroService {
     final userMetrics = _getUserMetrics(userProfile);
 
     // Convert BrickSegment objects to JSON payload format
-    final segmentsJson = segments.map((segment) => {
-      'sport': segment.sport,
-      'order': segment.order,
-      'duration_minutes': segment.durationMinutes,
-      'intensity': segment.intensity,
-      if (segment.distanceMeters != null) 'distance_meters': segment.distanceMeters,
-      if (segment.pacePer100mSeconds != null) 'pace_per_100m_seconds': segment.pacePer100mSeconds,
-      if (segment.poolOrOpenWater != null) 'pool_or_open_water': segment.poolOrOpenWater,
-      if (segment.waterTempC != null) 'water_temp_c': segment.waterTempC,
-      if (segment.distanceMiles != null) 'distance_miles': segment.distanceMiles,
-      if (segment.speedMph != null) 'speed_mph': segment.speedMph,
-      if (segment.terrain != null) 'terrain': segment.terrain,
-      if (segment.indoorOutdoor != null) 'indoor_outdoor': segment.indoorOutdoor,
-      if (segment.elevationGainFt != null) 'elevation_gain_ft': segment.elevationGainFt,
-      if (segment.paceMinutesPerMile != null) 'pace_minutes_per_mile': segment.paceMinutesPerMile,
+    final segmentsJson = segments.map((segment) {
+      return <String, dynamic>{
+        'sport': segment.sport,
+        'order': segment.order,
+        'duration_minutes': segment.durationMinutes,
+        'intensity': segment.intensity,
+        if (segment.distanceMeters != null) 'distance_meters': segment.distanceMeters,
+        if (segment.pacePer100mSeconds != null) 'pace_per_100m_seconds': segment.pacePer100mSeconds,
+        if (segment.poolOrOpenWater != null) 'pool_or_open_water': segment.poolOrOpenWater,
+        if (segment.waterTempC != null) 'water_temp_c': segment.waterTempC,
+        if (segment.distanceMiles != null) 'distance_miles': segment.distanceMiles,
+        if (segment.speedMph != null) 'speed_mph': segment.speedMph,
+        if (segment.terrain != null) 'terrain': segment.terrain,
+        if (segment.indoorOutdoor != null) 'indoor_outdoor': segment.indoorOutdoor,
+        if (segment.elevationGainFt != null) 'elevation_gain_ft': segment.elevationGainFt,
+        if (segment.paceMinutesPerMile != null) 'pace_minutes_per_mile': segment.paceMinutesPerMile,
+      };
     }).toList();
 
     return {
@@ -178,9 +180,21 @@ class BrickMacroService {
       'weight_unit': 'kg',
       'height': userMetrics['heightCm'],
       'height_unit': 'cm',
-      'brick_segments': segmentsJson, // Edge function expects 'brick_segments', not 'segments'
+      'brick_segments': segmentsJson,
       'segment_order': segmentOrder,
       'gut_training': userProfile?.gutTraining.name ?? 'moderate',
+      'sweat_rate_category': userProfile?.sweatRate.name ?? 'medium',
+      'sweat_sodium': 'medium',
+      'drink_sodium_mg_per_l': 500,
+      'optional_sweat_rate_lph': null,
+      // V3 params - brick uses default values
+      'hours_before': 2.5,
+      'is_fasted': false,
+      'intensity_distribution': {
+        'zone_low': 0.7,
+        'zone_mid': 0.2,
+        'zone_high': 0.1,
+      },
     };
   }
 

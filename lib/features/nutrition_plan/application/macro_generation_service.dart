@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/macro_targets.dart';
+import '../domain/intensity_distribution.dart';
 import '../data/macro_repository.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
@@ -41,6 +42,8 @@ class MacroGenerationService {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
+    bool isFasted = false,
+    IntensityDistribution? intensity,
   }) async {
     final requestData = await _buildRunningRequestData(
       distanceMiles: distanceMiles,
@@ -50,6 +53,8 @@ class MacroGenerationService {
       sweatRateCat: sweatRateCat,
       temperatureC: temperatureC,
       humidityPct: humidityPct,
+      isFasted: isFasted,
+      intensity: intensity,
     );
 
     final macroTargets = await _callGenerateMacrosEdgeFunction(
@@ -90,6 +95,8 @@ class MacroGenerationService {
     String? sessionGoal,
     double? temperatureC,
     double? humidityPct,
+    bool isFasted = false,
+    IntensityDistribution? intensity,
   }) async {
     DebugLogger.info('🚴 MACRO SERVICE: generateCyclingMacros called - distance: ${distanceMiles}mi, speed: ${speedMph}mph');
 
@@ -105,6 +112,8 @@ class MacroGenerationService {
       sessionGoal: sessionGoal,
       temperatureC: temperatureC,
       humidityPct: humidityPct,
+      isFasted: isFasted,
+      intensity: intensity,
     );
     DebugLogger.info('🚴 MACRO SERVICE: Request data built, calling edge function...');
 
@@ -146,6 +155,7 @@ class MacroGenerationService {
     String? intensityTarget,
     String? sessionGoal,
     double? waterTempC,
+    IntensityDistribution? intensity,
   }) async {
     DebugLogger.info('🏊 MACRO SERVICE: generateSwimmingMacros called - distance: ${distanceMeters}m, pace: ${paceSecondsper100m}s/100m');
 
@@ -158,6 +168,7 @@ class MacroGenerationService {
       intensityTarget: intensityTarget,
       sessionGoal: sessionGoal,
       waterTempC: waterTempC,
+      intensity: intensity,
     );
     DebugLogger.info('🏊 MACRO SERVICE: Request data built, calling edge function...');
 
@@ -200,9 +211,16 @@ class MacroGenerationService {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
+    bool isFasted = false,
+    IntensityDistribution? intensity,
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
+
+    // V3: Normalize intensity distribution to fractions (0-1)
+    final zoneLow = (intensity?.conversationalPct ?? 70) / 100.0;
+    final zoneMid = (intensity?.tempoPct ?? 20) / 100.0;
+    final zoneHigh = (intensity?.allOutPct ?? 10) / 100.0;
 
     return {
       'age': userMetrics['age'],
@@ -215,8 +233,17 @@ class MacroGenerationService {
       'run_distance': distanceMiles,
       'run_pace_unit': 'min_per_mile',
       'run_distance_unit': 'mi',
+      // V3 params
+      'hours_before': timeBeforeRunMinutes / 60.0,
+      'is_fasted': isFasted,
+      'intensity_distribution': {
+        'zone_low': zoneLow,
+        'zone_mid': zoneMid,
+        'zone_high': zoneHigh,
+      },
+      // Legacy param kept for backward compat
       'time_before_run_min': timeBeforeRunMinutes,
-      'gut_training': gutTraining.name, // Use the gut training level selected on the UI
+      'gut_training': gutTraining.name,
       'carb_source': 'dual',
       'sweat_sodium': 'medium',
       'drink_sodium_mg_per_l': 500,
@@ -238,9 +265,16 @@ class MacroGenerationService {
     String? sessionGoal,
     double? temperatureC,
     double? humidityPct,
+    bool isFasted = false,
+    IntensityDistribution? intensity,
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
+
+    // V3: Normalize intensity distribution to fractions (0-1)
+    final zoneLow = (intensity?.conversationalPct ?? 70) / 100.0;
+    final zoneMid = (intensity?.tempoPct ?? 20) / 100.0;
+    final zoneHigh = (intensity?.allOutPct ?? 10) / 100.0;
 
     return {
       'activity_type': 'cycling',
@@ -254,6 +288,15 @@ class MacroGenerationService {
       'speed_mph': speedMph,
       'terrain': terrain,
       'indoor_outdoor': indoorOutdoor,
+      // V3 params
+      'hours_before': timeBeforeMinutes / 60.0,
+      'is_fasted': isFasted,
+      'intensity_distribution': {
+        'zone_low': zoneLow,
+        'zone_mid': zoneMid,
+        'zone_high': zoneHigh,
+      },
+      // Legacy param
       'time_before_min': timeBeforeMinutes,
       'gut_training': userProfile?.gutTraining.name ?? 'moderate',
       if (elevationGainFt != null) 'elevation_gain_ft': elevationGainFt,
@@ -272,9 +315,15 @@ class MacroGenerationService {
     String? intensityTarget,
     String? sessionGoal,
     double? waterTempC,
+    IntensityDistribution? intensity,
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
+
+    // V3: Normalize intensity distribution to fractions (0-1)
+    final zoneLow = (intensity?.conversationalPct ?? 70) / 100.0;
+    final zoneMid = (intensity?.tempoPct ?? 20) / 100.0;
+    final zoneHigh = (intensity?.allOutPct ?? 10) / 100.0;
 
     return {
       'activity_type': 'swimming',
@@ -287,6 +336,15 @@ class MacroGenerationService {
       'distance_meters': distanceMeters,
       'pace_per_100m_seconds': paceSecondsper100m,
       'pool_or_open_water': poolOrOpenWater,
+      // V3 params
+      'hours_before': timeBeforeMinutes / 60.0,
+      'is_fasted': false, // Swimming doesn't support fasted
+      'intensity_distribution': {
+        'zone_low': zoneLow,
+        'zone_mid': zoneMid,
+        'zone_high': zoneHigh,
+      },
+      // Legacy param
       'time_before_min': timeBeforeMinutes,
       if (intensityTarget != null) 'intensity_target': intensityTarget,
       if (sessionGoal != null) 'session_goal': sessionGoal,
@@ -316,11 +374,11 @@ class MacroGenerationService {
     required Map<String, dynamic> requestData,
     required ActivityType expectedActivityType,
   }) async {
-    DebugLogger.info('🌐 EDGE FUNCTION: Calling generate-macros for ${expectedActivityType.name}...');
+    DebugLogger.info('🌐 EDGE FUNCTION: Calling generate-macros-v3 for ${expectedActivityType.name}...');
     DebugLogger.info('📤 EDGE FUNCTION: Request payload: ${requestData.toString().substring(0, 200)}...');
 
     final response = await supabaseClient.functions.invoke(
-      'generate-macros',
+      'generate-macros-v3',
       body: requestData,
     );
 
@@ -366,8 +424,8 @@ class MacroGenerationService {
       activityType: activityType,
       preRun: PreRunMacros(
         carbsG: _toDouble(macrosData['pre_run_carbs_g'], 'pre_run_carbs_g'),
-        proteinG: _toDouble(macrosData['pre_run_protein_g_optional'], 'pre_run_protein_g_optional'),
-        fatCapG: _toDouble(macrosData['pre_run_fat_g_cap'], 'pre_run_fat_g_cap'),
+        proteinG: _toDouble(macrosData['pre_run_protein_g'], 'pre_run_protein_g'),
+        fatCapG: _toDouble(macrosData['pre_run_fat_g'], 'pre_run_fat_g'),
         fluidsMl: _toDouble(macrosData['pre_run_water_ml'], 'pre_run_water_ml'),
         sodiumMg: _toDouble(macrosData['pre_run_sodium_mg'], 'pre_run_sodium_mg'),
       ),
@@ -387,20 +445,28 @@ class MacroGenerationService {
         fluidsMl: _toDouble(macrosData['post_run_water_ml'], 'post_run_water_ml'),
         sodiumMg: _toDouble(macrosData['post_run_sodium_mg'], 'post_run_sodium_mg'),
       ),
-      metrics: RunMetrics(
-        distanceMi: _toDouble(macrosData['distance_mi'], 'distance_mi'),
-        distanceKm: _toDouble(macrosData['distance_km'], 'distance_km'),
-        durationH: _toDouble(macrosData['duration_h'], 'duration_h'),
-        durationMin: _toDouble(macrosData['duration_min'], 'duration_min'),
-        paceMinPerMile: macrosData['pace_min_per_mile'] != null &&
-                _toDouble(macrosData['pace_min_per_mile'], 'pace_min_per_mile') > 0
-            ? _toDouble(macrosData['pace_min_per_mile'], 'pace_min_per_mile')
-            : null,
-        speedMph: _toDouble(macrosData['speed_mph'], 'speed_mph'),
-        caloriesNetKcal: _toDouble(macrosData['calories_net_kcal'], 'calories_net_kcal'),
-        caloriesGrossKcal: _toDouble(macrosData['calories_gross_kcal'], 'calories_gross_kcal'),
-        met: _toDouble(macrosData['MET'], 'MET'),
-      ),
+      metrics: () {
+        // Compute derived metrics client-side since the edge function
+        // only returns distance_km, duration_h, and duration_min
+        final distanceKm = _toDouble(macrosData['distance_km'], 'distance_km');
+        final durationH = _toDouble(macrosData['duration_h'], 'duration_h');
+        final durationMin = _toDouble(macrosData['duration_min'], 'duration_min');
+        final distanceMi = distanceKm > 0 ? distanceKm / 1.60934 : 0.0;
+        final speedMph = (distanceMi > 0 && durationH > 0) ? distanceMi / durationH : 0.0;
+        final paceMinPerMile = (distanceMi > 0 && durationMin > 0) ? durationMin / distanceMi : null;
+
+        return RunMetrics(
+          distanceMi: distanceMi,
+          distanceKm: distanceKm,
+          durationH: durationH,
+          durationMin: durationMin,
+          paceMinPerMile: paceMinPerMile,
+          speedMph: speedMph,
+          caloriesNetKcal: _toDouble(macrosData['calories_net_kcal'], 'calories_net_kcal'),
+          caloriesGrossKcal: _toDouble(macrosData['calories_gross_kcal'], 'calories_gross_kcal'),
+          met: _toDouble(macrosData['MET'], 'MET'),
+        );
+      }(),
       calculationRule: macrosData['pre_run_carbs_rule'] ?? 'Generated from edge function',
       timestamp: DateTime.now(),
       isUserModified: false,
