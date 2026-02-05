@@ -181,95 +181,6 @@ class AuthRepositoryEdge {
     }
   }
 
-  /// Save food preferences via Edge Function (preferred for onboarding)
-  /// Edge function handles user check, preferences upsert, and onboarding flag update
-  Future<SaveFoodPreferencesResult> saveFoodPreferences(
-    String userId,
-    Map<String, FoodPreference> preferences, {
-    Map<String, int>? preferenceLevels,
-  }) async {
-    try {
-      // Prepare request payload - use user_id (Supabase auth UUID)
-      final requestBody = {
-        'user_id': userId, // Changed from device_id to match new edge function
-        'food_preferences': preferences.map(
-          (key, value) => MapEntry(key, value.value),
-        ),
-        if (preferenceLevels != null && preferenceLevels.isNotEmpty)
-          'preference_levels': preferenceLevels,
-      };
-
-      // Call Edge Function
-      final response = await _supabase.functions.invoke(
-        'save-food-preferences',
-        body: requestBody,
-      );
-
-      // Handle response
-      if (response.status >= 200 && response.status < 300) {
-        final data = response.data as Map<String, dynamic>;
-
-        if (data['success'] == true) {
-          return SaveFoodPreferencesResult(
-            success: true,
-            message: data['message'],
-            preferencesCount: data['preferences_count'],
-            savedPreferences: data['saved_preferences'],
-          );
-        } else {
-          _logger.warning(
-            'Edge function returned failure',
-            context: 'AUTH_EDGE',
-            data: {'userId': userId, 'message': data['message']},
-          );
-
-          return SaveFoodPreferencesResult(
-            success: false,
-            message: data['message'] ?? 'Unknown error occurred',
-          );
-        }
-      } else {
-        _logger.error(
-          'Edge function HTTP error',
-          context: 'AUTH_EDGE',
-          data: {'userId': userId, 'status': response.status},
-        );
-
-        return SaveFoodPreferencesResult(
-          success: false,
-          message: 'Edge Function call failed with status ${response.status}',
-        );
-      }
-    } catch (e) {
-      _logger.error(
-        'Error invoking save-food-preferences edge function',
-        context: 'AUTH_EDGE',
-        error: e,
-        data: {'userId': userId},
-      );
-      return SaveFoodPreferencesResult(
-        success: false,
-        message: 'Failed to save food preferences: $e',
-      );
-    }
-  }
-
-  /// Update food preferences (direct database call - NO RPC)
-  /// This method is DEPRECATED - use user_repository.saveFoodPreferences instead
-  Future<bool> updateFoodPreferences(
-    String userId,
-    Map<String, FoodPreference> preferences, {
-    Map<String, int>? preferenceLevels,
-  }) async {
-    // Route through edge function to avoid direct client writes
-    final result = await saveFoodPreferences(
-      userId,
-      preferences,
-      preferenceLevels: preferenceLevels,
-    );
-    return result.success;
-  }
-
   /// Upsert user profile via consolidated Edge Function
   /// This is the NEW consolidated method that handles ALL profile updates in one call:
   /// - Basic profile data (gender, birthday, height, weight, etc.)
@@ -478,21 +389,6 @@ class CreateUserResult {
     required this.success,
     this.user,
     this.message,
-  });
-}
-
-/// Result class for saving food preferences
-class SaveFoodPreferencesResult {
-  final bool success;
-  final String? message;
-  final int? preferencesCount;
-  final List<dynamic>? savedPreferences;
-
-  SaveFoodPreferencesResult({
-    required this.success,
-    this.message,
-    this.preferencesCount,
-    this.savedPreferences,
   });
 }
 
