@@ -5,13 +5,16 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../shared/database/database_provider.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../activities/data/activities_repository.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/application/calendar_service.dart';
 import '../../../calendar/presentation/providers/calendar_controller.dart';
 import '../../../events/data/events_repository.dart';
-import '../../../events/presentation/providers/events_controller.dart' hide nextUpcomingEventProvider;
+import '../../../events/presentation/providers/events_controller.dart'
+    hide nextUpcomingEventProvider;
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/training_peaks_oauth_service.dart';
@@ -103,23 +106,37 @@ class ConnectTrainingState {
     bool? isNetworkError,
   }) {
     return ConnectTrainingState(
-      isFinalSurgeConnected: isFinalSurgeConnected ?? this.isFinalSurgeConnected,
-      finalSurgeAthleteName: finalSurgeAthleteName ?? this.finalSurgeAthleteName,
+      isFinalSurgeConnected:
+          isFinalSurgeConnected ?? this.isFinalSurgeConnected,
+      finalSurgeAthleteName:
+          finalSurgeAthleteName ?? this.finalSurgeAthleteName,
       finalSurgeLastSyncAt: finalSurgeLastSyncAt ?? this.finalSurgeLastSyncAt,
-      isTrainingPeaksConnected: isTrainingPeaksConnected ?? this.isTrainingPeaksConnected,
-      trainingPeaksAthleteName: trainingPeaksAthleteName ?? this.trainingPeaksAthleteName,
-      trainingPeaksLastSyncAt: trainingPeaksLastSyncAt ?? this.trainingPeaksLastSyncAt,
+      isTrainingPeaksConnected:
+          isTrainingPeaksConnected ?? this.isTrainingPeaksConnected,
+      trainingPeaksAthleteName:
+          trainingPeaksAthleteName ?? this.trainingPeaksAthleteName,
+      trainingPeaksLastSyncAt:
+          trainingPeaksLastSyncAt ?? this.trainingPeaksLastSyncAt,
       isConnecting: isConnecting ?? this.isConnecting,
-      connectingProvider: clearConnectingProvider ? null : (connectingProvider ?? this.connectingProvider),
-      importedWorkoutsCount: importedWorkoutsCount ?? this.importedWorkoutsCount,
+      connectingProvider: clearConnectingProvider
+          ? null
+          : (connectingProvider ?? this.connectingProvider),
+      importedWorkoutsCount:
+          importedWorkoutsCount ?? this.importedWorkoutsCount,
       isImporting: isImporting ?? this.isImporting,
-      syncingProvider: clearSyncingProvider ? null : (syncingProvider ?? this.syncingProvider),
+      syncingProvider: clearSyncingProvider
+          ? null
+          : (syncingProvider ?? this.syncingProvider),
       importProgress: importProgress ?? this.importProgress,
-      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
       hasNextEvent: hasNextEvent ?? this.hasNextEvent,
       nextEventName: nextEventName ?? this.nextEventName,
-      finalSurgeNeedsReauth: finalSurgeNeedsReauth ?? this.finalSurgeNeedsReauth,
-      trainingPeaksNeedsReauth: trainingPeaksNeedsReauth ?? this.trainingPeaksNeedsReauth,
+      finalSurgeNeedsReauth:
+          finalSurgeNeedsReauth ?? this.finalSurgeNeedsReauth,
+      trainingPeaksNeedsReauth:
+          trainingPeaksNeedsReauth ?? this.trainingPeaksNeedsReauth,
       isNetworkError: isNetworkError ?? this.isNetworkError,
     );
   }
@@ -127,11 +144,18 @@ class ConnectTrainingState {
 
 @riverpod
 class ConnectTrainingController extends _$ConnectTrainingController {
-  FinalSurgeOAuthService get _finalSurgeOAuth => ref.read(finalSurgeOAuthServiceProvider);
-  FinalSurgeSyncService get _finalSurgeSync => ref.read(finalSurgeSyncServiceProvider);
-  Future<TrainingPeaksOAuthService> get _trainingPeaksOAuth => ref.read(trainingPeaksOAuthServiceProvider.future);
-  Future<TrainingPeaksSyncService> get _trainingPeaksSync => ref.read(trainingPeaksSyncServiceProvider.future);
-  IntegrationsRepository get _integrationsRepo => ref.read(integrationsRepositoryProvider);
+  FinalSurgeOAuthService get _finalSurgeOAuth =>
+      ref.read(finalSurgeOAuthServiceProvider);
+  FinalSurgeSyncService get _finalSurgeSync =>
+      ref.read(finalSurgeSyncServiceProvider);
+  Future<TrainingPeaksOAuthService> get _trainingPeaksOAuth =>
+      ref.read(trainingPeaksOAuthServiceProvider.future);
+  Future<TrainingPeaksSyncService> get _trainingPeaksSync =>
+      ref.read(trainingPeaksSyncServiceProvider.future);
+  IntegrationsRepository get _integrationsRepo =>
+      ref.read(integrationsRepositoryProvider);
+  ActivitiesRepository get _activitiesRepo =>
+      ref.read(activitiesRepositoryProvider);
   CalendarService get _calendarService => ref.read(calendarServiceProvider);
 
   static const _uuid = Uuid();
@@ -157,32 +181,58 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       currentAuthUserId: currentAuthUserId,
     );
 
-    // Use temp ID if:
-    // 1. No user profile exists for current auth session, OR
-    // 2. User profile exists but onboarding is NOT completed
-    final shouldUseTempId = user == null || !user.onboardingCompleted;
-
-    if (shouldUseTempId) {
-      _currentUserId = await _getOrCreateTempUserId();
-      _isUsingTempUserId = true;
-
-      if (kDebugMode) {
-        print('🔑 ConnectTrainingController: Using temp user ID: $_currentUserId');
-        print('   (user profile exists: ${user != null}, onboardingCompleted: ${user?.onboardingCompleted})');
-        print('   (current auth: $currentAuthUserId)');
-      }
-    } else {
-      _currentUserId = user.id;
-      _isUsingTempUserId = false;
-
-      if (kDebugMode) {
-        print('🔑 ConnectTrainingController: Using real user ID: $_currentUserId');
+    // Resolve canonical user ID from auth session when possible.
+    // This avoids false "Connect" states after relogin when local profile
+    // hydration lags behind auth restoration.
+    String? resolvedUserIdFromAuth;
+    if (currentAuthUserId != null) {
+      try {
+        resolvedUserIdFromAuth = await ref.read(userIdProvider.future);
+      } catch (_) {
+        // Fall back to temp ID logic below.
       }
     }
 
+    final candidateRealUserId = user?.id ?? resolvedUserIdFromAuth;
+    var useRealUserId = user?.onboardingCompleted == true;
+
+    // If onboarding flag is false/missing but integrations already exist for this
+    // user, prefer real ID so connection state remains stable across sessions.
+    if (!useRealUserId && candidateRealUserId != null) {
+      final existingIntegrations = await _integrationsRepo
+          .getIntegrationsForUser(candidateRealUserId);
+      useRealUserId = existingIntegrations.isNotEmpty;
+    }
+
+    if (useRealUserId && candidateRealUserId != null) {
+      _currentUserId = candidateRealUserId;
+      _isUsingTempUserId = false;
+    } else {
+      _currentUserId = await _getOrCreateTempUserId();
+      _isUsingTempUserId = true;
+    }
+
+    if (kDebugMode) {
+      print(
+        '🔑 ConnectTrainingController: Using ${_isUsingTempUserId ? 'temp' : 'real'} user ID: $_currentUserId',
+      );
+      print(
+        '   (user profile exists: ${user != null}, onboardingCompleted: ${user?.onboardingCompleted})',
+      );
+      print(
+        '   (auth user: $currentAuthUserId, resolved user: $resolvedUserIdFromAuth)',
+      );
+    }
+
     // Check for existing integrations (may exist from previous onboarding attempt)
-    final finalSurgeIntegration = await _integrationsRepo.getIntegration(_currentUserId!, 'final_surge');
-    final trainingPeaksIntegration = await _integrationsRepo.getIntegration(_currentUserId!, 'training_peaks');
+    final finalSurgeIntegration = await _integrationsRepo.getIntegration(
+      _currentUserId!,
+      'final_surge',
+    );
+    final trainingPeaksIntegration = await _integrationsRepo.getIntegration(
+      _currentUserId!,
+      'training_peaks',
+    );
 
     return ConnectTrainingState(
       isFinalSurgeConnected: finalSurgeIntegration?.isActive ?? false,
@@ -226,7 +276,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
   /// Whether a sync is currently in progress for the given provider.
   /// Used by IntegrationSyncCoordinator to avoid concurrent syncs.
-  bool isSyncingProvider(String provider) => _syncingProviders.contains(provider);
+  bool isSyncingProvider(String provider) =>
+      _syncingProviders.contains(provider);
 
   /// Clear the temporary user ID after successful migration
   Future<void> clearTempUserId() async {
@@ -247,14 +298,18 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     }
 
     if (kDebugMode) {
-      print('🔌 connectFinalSurge: Starting connection for user $_currentUserId');
+      print(
+        '🔌 connectFinalSurge: Starting connection for user $_currentUserId',
+      );
     }
 
-    state = AsyncData(state.value!.copyWith(
-      isConnecting: true,
-      connectingProvider: 'final_surge',
-      clearErrorMessage: true,
-    ));
+    state = AsyncData(
+      state.value!.copyWith(
+        isConnecting: true,
+        connectingProvider: 'final_surge',
+        clearErrorMessage: true,
+      ),
+    );
 
     try {
       _trackIntegrationConnectStarted('final_surge');
@@ -266,18 +321,25 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         print('   Is Active: ${integration.isActive}');
       }
 
-      state = AsyncData(state.value!.copyWith(
-        isConnecting: false,
-        clearConnectingProvider: true,
-        isFinalSurgeConnected: true,
-        finalSurgeAthleteName: integration.providerAthleteName,
-      ));
+      state = AsyncData(
+        state.value!.copyWith(
+          isConnecting: false,
+          clearConnectingProvider: true,
+          isFinalSurgeConnected: true,
+          finalSurgeAthleteName: integration.providerAthleteName,
+        ),
+      );
 
       if (kDebugMode) {
-        print('✅ connectFinalSurge: State updated - isFinalSurgeConnected=true');
+        print(
+          '✅ connectFinalSurge: State updated - isFinalSurgeConnected=true',
+        );
       }
 
-      _trackIntegrationConnectSuccess('final_surge', athleteName: integration.providerAthleteName);
+      _trackIntegrationConnectSuccess(
+        'final_surge',
+        athleteName: integration.providerAthleteName,
+      );
       return true;
     } catch (e, stackTrace) {
       if (kDebugMode) {
@@ -285,12 +347,18 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         print('   Error: $e');
         print('   Stack: $stackTrace');
       }
-      state = AsyncData(state.value!.copyWith(
-        isConnecting: false,
-        clearConnectingProvider: true,
+      state = AsyncData(
+        state.value!.copyWith(
+          isConnecting: false,
+          clearConnectingProvider: true,
+          errorMessage: e.toString(),
+        ),
+      );
+      _trackIntegrationConnectFailed(
+        'final_surge',
+        'authentication_error',
         errorMessage: e.toString(),
-      ));
-      _trackIntegrationConnectFailed('final_surge', 'authentication_error', errorMessage: e.toString());
+      );
       return false;
     }
   }
@@ -299,112 +367,219 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     if (_currentUserId == null) return;
     try {
       await _finalSurgeOAuth.disconnect(_currentUserId!);
-      state = AsyncData(state.value!.copyWith(
-        isFinalSurgeConnected: false,
-        finalSurgeAthleteName: null,
-      ));
+      state = AsyncData(
+        state.value!.copyWith(
+          isFinalSurgeConnected: false,
+          finalSurgeAthleteName: null,
+        ),
+      );
       _trackIntegrationDisconnected('final_surge', reason: 'user_initiated');
     } catch (e) {
-      state = AsyncData(state.value!.copyWith(errorMessage: 'Failed to disconnect: $e'));
+      state = AsyncData(
+        state.value!.copyWith(errorMessage: 'Failed to disconnect: $e'),
+      );
     }
   }
 
-  Future<int> importFinalSurgeWorkouts() async {
-    if (_currentUserId == null) return 0;
+  Future<SyncResult> importFinalSurgeWorkouts() async {
+    if (_currentUserId == null) {
+      return SyncResult.error('Missing user ID');
+    }
 
     // Prevent concurrent syncs that could cause duplicate inserts
     if (_syncingProviders.contains('final_surge')) {
       if (kDebugMode) {
         print('⚠️ Final Surge sync already in progress, skipping');
       }
-      return 0;
+      return const SyncResult(success: true);
     }
     _syncingProviders.add('final_surge');
 
-    state = AsyncData(state.value!.copyWith(
-      isImporting: true,
-      syncingProvider: 'final_surge',
-      importProgress: 0.0,
-      clearErrorMessage: true,
-      isNetworkError: false,
-    ));
+    state = AsyncData(
+      state.value!.copyWith(
+        isImporting: true,
+        syncingProvider: 'final_surge',
+        importProgress: 0.0,
+        clearErrorMessage: true,
+        isNetworkError: false,
+      ),
+    );
 
     try {
       _trackIntegrationConnectStarted('final_surge'); // Sync started
       final result = await _finalSurgeSync.syncWorkouts(_currentUserId!);
 
       // Check if still mounted after async operation
-      if (!ref.mounted) return 0;
+      if (!ref.mounted) return result;
 
       // Handle different error types
       if (!result.success) {
         if (result.needsReauth) {
           // Token expired - user must reconnect
-          state = AsyncData(state.value!.copyWith(
-            isImporting: false,
-            clearSyncingProvider: true,
-            finalSurgeNeedsReauth: true,
-            isFinalSurgeConnected: false,
-            errorMessage: result.summary,
-          ));
-          _trackIntegrationSyncFailed('final_surge', 'token_expired', errorMessage: 'Requires re-authentication');
-          return 0;
+          state = AsyncData(
+            state.value!.copyWith(
+              isImporting: false,
+              clearSyncingProvider: true,
+              finalSurgeNeedsReauth: true,
+              isFinalSurgeConnected: false,
+              errorMessage: result.summary,
+            ),
+          );
+          _trackIntegrationSyncFailed(
+            'final_surge',
+            'token_expired',
+            errorMessage: 'Requires re-authentication',
+          );
+          return result;
         }
 
         if (result.isNetworkError) {
           // Network error - user can retry
-          state = AsyncData(state.value!.copyWith(
-            isImporting: false,
-            clearSyncingProvider: true,
-            isNetworkError: true,
-            errorMessage: result.summary,
-          ));
-          _trackIntegrationSyncFailed('final_surge', 'network_error', errorMessage: result.error);
-          return 0;
+          state = AsyncData(
+            state.value!.copyWith(
+              isImporting: false,
+              clearSyncingProvider: true,
+              isNetworkError: true,
+              errorMessage: result.summary,
+            ),
+          );
+          _trackIntegrationSyncFailed(
+            'final_surge',
+            'network_error',
+            errorMessage: result.error,
+          );
+          return result;
         }
 
         // Other error
-        state = AsyncData(state.value!.copyWith(
-          isImporting: false,
-          clearSyncingProvider: true,
-          errorMessage: result.error ?? 'Failed to import workouts',
-        ));
-        _trackIntegrationSyncFailed('final_surge', result.errorType.name, errorMessage: result.error);
-        return 0;
+        state = AsyncData(
+          state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            errorMessage: result.error ?? 'Failed to import workouts',
+          ),
+        );
+        _trackIntegrationSyncFailed(
+          'final_surge',
+          result.errorType.name,
+          errorMessage: result.error,
+        );
+        return result;
       }
 
       // Activities are saved during sync - users will generate nutrition plans manually
       // by tapping activities in the calendar
       if (kDebugMode && result.hasNewWorkouts) {
-        print('📋 Synced ${result.activities.length} activities (nutrition plans will be created manually)');
+        print(
+          '📋 Synced ${result.activities.length} activities (nutrition plans will be created manually)',
+        );
+      }
+
+      // CRITICAL: Upload dirty activities to Supabase immediately after sync.
+      // This prevents duplicates on logout→login→re-sync because remote
+      // hydration will find the activities in Supabase.
+      if (result.hasNewWorkouts || result.updated > 0) {
+        try {
+          await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+          if (kDebugMode) {
+            print('☁️ Uploaded synced activities to Supabase');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('⚠️ Failed to upload synced activities: $e');
+          }
+        }
+      }
+
+      // Create events for explicitly marked races (WorkoutRace=true)
+      int savedEventsCount = 0;
+      if (result.raceCandidates.isNotEmpty) {
+        final eventsRepository = ref.read(eventsRepositoryProvider);
+
+        for (final candidate in result.raceCandidates) {
+          final activityId = candidate.activityId;
+          if (activityId == null || activityId.isEmpty) {
+            continue;
+          }
+
+          // Skip if an event already exists for this activity
+          final existingByActivity = await eventsRepository.getEventForActivity(
+            activityId,
+          );
+          if (existingByActivity != null) {
+            continue;
+          }
+
+          final eventName = candidate.eventName.trim().isNotEmpty
+              ? candidate.eventName
+              : 'Race';
+          final existingByName = await eventsRepository.findExistingEvent(
+            userId: _currentUserId!,
+            eventName: eventName,
+            eventDate: candidate.scheduledAt,
+          );
+          if (existingByName != null) {
+            continue;
+          }
+
+          try {
+            await _calendarService.createEvent(
+              userId: _currentUserId!,
+              activityId: activityId,
+              eventType: candidate.eventType,
+              eventName: eventName,
+              startTime: candidate.scheduledAt.toIso8601String(),
+              goalTimeMinutes: candidate.goalTimeMinutes,
+              goalPaceMinutesPerMile: candidate.goalPaceMinutesPerMile,
+            );
+            savedEventsCount++;
+          } catch (e) {
+            if (kDebugMode) {
+              print('⚠️ Failed to save Final Surge race event: $e');
+            }
+          }
+        }
       }
 
       // Invalidate calendar to refresh UI
       state = AsyncData(state.value!.copyWith(importProgress: 0.8));
       _invalidateCalendar();
 
-      state = AsyncData(state.value!.copyWith(
-        isImporting: false,
-        clearSyncingProvider: true,
-        importProgress: 1.0,
-        importedWorkoutsCount: result.newWorkouts,
-        finalSurgeNeedsReauth: false,
-        isNetworkError: false,
-        clearErrorMessage: true,
-      ));
-
-      _trackIntegrationSyncSuccess('final_surge', result.newWorkouts, skippedCount: result.skipped);
-      return result.newWorkouts;
-    } catch (e) {
-      if (ref.mounted) {
-        state = AsyncData(state.value!.copyWith(
+      state = AsyncData(
+        state.value!.copyWith(
           isImporting: false,
           clearSyncingProvider: true,
-          errorMessage: 'Failed to import workouts: $e',
-        ));
+          importProgress: 1.0,
+          importedWorkoutsCount: result.newWorkouts,
+          finalSurgeNeedsReauth: false,
+          isNetworkError: false,
+          clearErrorMessage: true,
+        ),
+      );
+
+      _trackIntegrationSyncSuccess(
+        'final_surge',
+        result.newWorkouts,
+        skippedCount: result.skipped,
+        eventsCount: savedEventsCount,
+      );
+      return result;
+    } catch (e) {
+      if (ref.mounted) {
+        state = AsyncData(
+          state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            errorMessage: 'Failed to import workouts: $e',
+          ),
+        );
       }
-      _trackIntegrationSyncFailed('final_surge', 'exception', errorMessage: e.toString());
-      return 0;
+      _trackIntegrationSyncFailed(
+        'final_surge',
+        'exception',
+        errorMessage: e.toString(),
+      );
+      return SyncResult.error(e.toString());
     } finally {
       _syncingProviders.remove('final_surge');
     }
@@ -413,33 +588,46 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   Future<bool> connectTrainingPeaks() async {
     if (_currentUserId == null) return false;
 
-    state = AsyncData(state.value!.copyWith(
-      isConnecting: true,
-      connectingProvider: 'training_peaks',
-      clearErrorMessage: true,
-    ));
+    state = AsyncData(
+      state.value!.copyWith(
+        isConnecting: true,
+        connectingProvider: 'training_peaks',
+        clearErrorMessage: true,
+      ),
+    );
 
     try {
       _trackIntegrationConnectStarted('training_peaks');
       final oauthService = await _trainingPeaksOAuth;
       final integration = await oauthService.authenticate(_currentUserId!);
 
-      state = AsyncData(state.value!.copyWith(
-        isConnecting: false,
-        clearConnectingProvider: true,
-        isTrainingPeaksConnected: true,
-        trainingPeaksAthleteName: integration.providerAthleteName,
-      ));
+      state = AsyncData(
+        state.value!.copyWith(
+          isConnecting: false,
+          clearConnectingProvider: true,
+          isTrainingPeaksConnected: true,
+          trainingPeaksAthleteName: integration.providerAthleteName,
+        ),
+      );
 
-      _trackIntegrationConnectSuccess('training_peaks', athleteName: integration.providerAthleteName);
+      _trackIntegrationConnectSuccess(
+        'training_peaks',
+        athleteName: integration.providerAthleteName,
+      );
       return true;
     } catch (e) {
-      state = AsyncData(state.value!.copyWith(
-        isConnecting: false,
-        clearConnectingProvider: true,
+      state = AsyncData(
+        state.value!.copyWith(
+          isConnecting: false,
+          clearConnectingProvider: true,
+          errorMessage: e.toString(),
+        ),
+      );
+      _trackIntegrationConnectFailed(
+        'training_peaks',
+        'authentication_error',
         errorMessage: e.toString(),
-      ));
-      _trackIntegrationConnectFailed('training_peaks', 'authentication_error', errorMessage: e.toString());
+      );
       return false;
     }
   }
@@ -449,36 +637,44 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     try {
       final oauthService = await _trainingPeaksOAuth;
       await oauthService.disconnect(_currentUserId!);
-      state = AsyncData(state.value!.copyWith(
-        isTrainingPeaksConnected: false,
-        trainingPeaksAthleteName: null,
-        hasNextEvent: false,
-        nextEventName: null,
-      ));
+      state = AsyncData(
+        state.value!.copyWith(
+          isTrainingPeaksConnected: false,
+          trainingPeaksAthleteName: null,
+          hasNextEvent: false,
+          nextEventName: null,
+        ),
+      );
       _trackIntegrationDisconnected('training_peaks', reason: 'user_initiated');
     } catch (e) {
-      state = AsyncData(state.value!.copyWith(errorMessage: 'Failed to disconnect: $e'));
+      state = AsyncData(
+        state.value!.copyWith(errorMessage: 'Failed to disconnect: $e'),
+      );
     }
   }
 
-  Future<int> importTrainingPeaksWorkouts() async {
-    if (_currentUserId == null) return 0;
+  Future<TrainingPeaksSyncResult> importTrainingPeaksWorkouts() async {
+    if (_currentUserId == null) {
+      return TrainingPeaksSyncResult.error('Missing user ID');
+    }
 
     // Prevent concurrent syncs that could cause duplicate inserts
     if (_syncingProviders.contains('training_peaks')) {
       if (kDebugMode) {
         print('⚠️ TrainingPeaks sync already in progress, skipping');
       }
-      return 0;
+      return const TrainingPeaksSyncResult(success: true);
     }
     _syncingProviders.add('training_peaks');
 
-    state = AsyncData(state.value!.copyWith(
-      isImporting: true,
-      syncingProvider: 'training_peaks',
-      importProgress: 0.0,
-      clearErrorMessage: true,
-    ));
+    state = AsyncData(
+      state.value!.copyWith(
+        isImporting: true,
+        syncingProvider: 'training_peaks',
+        importProgress: 0.0,
+        clearErrorMessage: true,
+      ),
+    );
 
     try {
       _trackIntegrationConnectStarted('training_peaks'); // Sync started
@@ -486,37 +682,69 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       final result = await syncService.syncAll(_currentUserId!);
 
       // Check if still mounted after async operation
-      if (!ref.mounted) return 0;
+      if (!ref.mounted) return result.workoutResult;
 
       // Handle sync failure (token expired, not connected, etc.)
       if (!result.workoutResult.success) {
         if (result.workoutResult.tokenExpired) {
           // Token expired - user must reconnect
-          state = AsyncData(state.value!.copyWith(
-            isImporting: false,
-            clearSyncingProvider: true,
-            trainingPeaksNeedsReauth: true,
-            isTrainingPeaksConnected: false,
-            errorMessage: result.workoutResult.summary,
-          ));
-          _trackIntegrationSyncFailed('training_peaks', 'token_expired', errorMessage: 'Token expired');
-          return 0;
+          state = AsyncData(
+            state.value!.copyWith(
+              isImporting: false,
+              clearSyncingProvider: true,
+              trainingPeaksNeedsReauth: true,
+              isTrainingPeaksConnected: false,
+              errorMessage: result.workoutResult.summary,
+            ),
+          );
+          _trackIntegrationSyncFailed(
+            'training_peaks',
+            'token_expired',
+            errorMessage: 'Token expired',
+          );
+          return result.workoutResult;
         }
 
         // Other sync error (not connected, API error, etc.)
-        state = AsyncData(state.value!.copyWith(
-          isImporting: false,
-          clearSyncingProvider: true,
-          errorMessage: result.workoutResult.error ?? 'Failed to sync workouts',
-        ));
-        _trackIntegrationSyncFailed('training_peaks', 'sync_error', errorMessage: result.workoutResult.error);
-        return 0;
+        state = AsyncData(
+          state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            errorMessage:
+                result.workoutResult.error ?? 'Failed to sync workouts',
+          ),
+        );
+        _trackIntegrationSyncFailed(
+          'training_peaks',
+          'sync_error',
+          errorMessage: result.workoutResult.error,
+        );
+        return result.workoutResult;
       }
 
       // Activities are saved during sync - users will generate nutrition plans manually
       // by tapping activities in the calendar
       if (kDebugMode && result.workoutResult.hasNewWorkouts) {
-        print('📋 Synced ${result.workoutResult.activities.length} activities (nutrition plans will be created manually)');
+        print(
+          '📋 Synced ${result.workoutResult.activities.length} activities (nutrition plans will be created manually)',
+        );
+      }
+
+      // CRITICAL: Upload dirty activities to Supabase immediately after sync.
+      // This prevents duplicates on logout→login→re-sync because remote
+      // hydration will find the activities in Supabase.
+      if (result.workoutResult.hasNewWorkouts ||
+          result.workoutResult.updated > 0) {
+        try {
+          await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+          if (kDebugMode) {
+            print('☁️ Uploaded synced activities to Supabase');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('⚠️ Failed to upload synced activities: $e');
+          }
+        }
       }
 
       // Update progress
@@ -545,7 +773,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           if (existingEvent != null) {
             skippedEventsCount++;
             if (kDebugMode) {
-              print('   ⏭️ Event already exists, skipping: ${eventData.eventName}');
+              print(
+                '   ⏭️ Event already exists, skipping: ${eventData.eventName}',
+              );
             }
             continue;
           }
@@ -554,7 +784,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             final savedEvent = await _calendarService.createEvent(
               userId: _currentUserId!,
               eventType: eventData.activityType,
-              eventSubtype: eventData.eventType, // Store TP event type as subtype
+              eventSubtype:
+                  eventData.eventType, // Store TP event type as subtype
               eventName: eventData.eventName,
               startTime: eventData.eventDate.toIso8601String(),
               goalTimeMinutes: eventData.goalTimeHours != null
@@ -573,9 +804,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         }
 
         if (kDebugMode) {
-          print('✅ Event sync complete: $savedEventsCount new, $skippedEventsCount existing');
+          print(
+            '✅ Event sync complete: $savedEventsCount new, $skippedEventsCount existing',
+          );
         }
-        if (!ref.mounted) return 0;
+        if (!ref.mounted) return result.workoutResult;
       }
 
       // Phase 4: Invalidate calendar to refresh UI
@@ -588,15 +821,17 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             ? result.eventResult!.events.first.eventName
             : null;
 
-        state = AsyncData(state.value!.copyWith(
-          isImporting: false,
-          clearSyncingProvider: true,
-          importProgress: 1.0,
-          importedWorkoutsCount: result.workoutResult.newWorkouts,
-          hasNextEvent: result.eventResult?.hasEvent ?? false,
-          nextEventName: firstEventName,
-          clearErrorMessage: true,
-        ));
+        state = AsyncData(
+          state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            importProgress: 1.0,
+            importedWorkoutsCount: result.workoutResult.newWorkouts,
+            hasNextEvent: result.eventResult?.hasEvent ?? false,
+            nextEventName: firstEventName,
+            clearErrorMessage: true,
+          ),
+        );
       }
 
       _trackIntegrationSyncSuccess(
@@ -605,17 +840,23 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         skippedCount: result.workoutResult.unchanged,
         eventsCount: savedEventsCount,
       );
-      return result.workoutResult.newWorkouts;
+      return result.workoutResult;
     } catch (e) {
       if (ref.mounted) {
-        state = AsyncData(state.value!.copyWith(
-          isImporting: false,
-          clearSyncingProvider: true,
-          errorMessage: 'Failed to import workouts: $e',
-        ));
+        state = AsyncData(
+          state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            errorMessage: 'Failed to import workouts: $e',
+          ),
+        );
       }
-      _trackIntegrationSyncFailed('training_peaks', 'exception', errorMessage: e.toString());
-      return 0;
+      _trackIntegrationSyncFailed(
+        'training_peaks',
+        'exception',
+        errorMessage: e.toString(),
+      );
+      return TrainingPeaksSyncResult.error(e.toString());
     } finally {
       _syncingProviders.remove('training_peaks');
     }
@@ -646,19 +887,44 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<int> importWorkouts() async {
-    if (state.value?.isFinalSurgeConnected == true) return importFinalSurgeWorkouts();
-    if (state.value?.isTrainingPeaksConnected == true) return importTrainingPeaksWorkouts();
+    if (state.value?.isFinalSurgeConnected == true) {
+      final result = await importFinalSurgeWorkouts();
+      return result.newWorkouts;
+    }
+    if (state.value?.isTrainingPeaksConnected == true) {
+      final result = await importTrainingPeaksWorkouts();
+      return result.newWorkouts;
+    }
     return 0;
+  }
+
+  void trackNotifyMe({required String provider, required String source}) {
+    if (!ref.mounted) return;
+    try {
+      final deps = ref.read(appExternalDepsProvider);
+      deps.analytics.track(
+        'integration_notify_requested',
+        properties: {
+          'provider': provider,
+          'source': source,
+          'device_id': _currentUserId ?? 'unknown',
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+    } catch (_) {}
   }
 
   void trackSkip() {
     if (!ref.mounted) return;
     try {
       final deps = ref.read(appExternalDepsProvider);
-      deps.analytics.track('integration_connect_skipped', properties: {
-        'device_id': _currentUserId ?? 'unknown',
-        'timestamp': DateTime.now().toIso8601String(),
-      });
+      deps.analytics.track(
+        'integration_connect_skipped',
+        properties: {
+          'device_id': _currentUserId ?? 'unknown',
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
     } catch (_) {}
   }
 
@@ -687,7 +953,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     } catch (_) {}
   }
 
-  void _trackIntegrationConnectFailed(String provider, String errorType, {String? errorMessage}) {
+  void _trackIntegrationConnectFailed(
+    String provider,
+    String errorType, {
+    String? errorMessage,
+  }) {
     if (!ref.mounted) return;
     try {
       final deps = ref.read(appExternalDepsProvider);
@@ -712,7 +982,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     } catch (_) {}
   }
 
-  void _trackIntegrationSyncSuccess(String provider, int workoutsSynced, {int? skippedCount, int? eventsCount}) {
+  void _trackIntegrationSyncSuccess(
+    String provider,
+    int workoutsSynced, {
+    int? skippedCount,
+    int? eventsCount,
+  }) {
     if (!ref.mounted) return;
     try {
       final deps = ref.read(appExternalDepsProvider);
@@ -726,7 +1001,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     } catch (_) {}
   }
 
-  void _trackIntegrationSyncFailed(String provider, String errorType, {String? errorMessage}) {
+  void _trackIntegrationSyncFailed(
+    String provider,
+    String errorType, {
+    String? errorMessage,
+  }) {
     if (!ref.mounted) return;
     try {
       final deps = ref.read(appExternalDepsProvider);
