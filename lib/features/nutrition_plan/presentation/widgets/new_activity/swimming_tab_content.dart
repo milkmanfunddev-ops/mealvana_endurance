@@ -9,7 +9,6 @@ import '../../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import 'shared/workout_details_widget.dart';
-import 'shared/deck_conditions_section.dart';
 
 /// Swimming Tab Content
 ///
@@ -54,6 +53,44 @@ class SwimmingTabContent extends ConsumerWidget {
             onDurationChanged: controller.updateDuration,
           ),
 
+          // Zone-based pace hint
+          if (formState.zoneSuggestedPacePer100mSeconds != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.electrolyte.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: AppColors.electrolyte.withOpacity(0.4),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.water,
+                        size: 10,
+                        color: AppColors.electrolyteDark,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Pace from Training Peaks zones',
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: AppColors.electrolyteDark,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+
           const SizedBox(height: AppSpacing.xl),
 
           // INTENSITY DISTRIBUTION
@@ -67,12 +104,12 @@ class SwimmingTabContent extends ConsumerWidget {
 
           // Time before Swim
           KylePlusMinusControl(
-            label: 'Time Before Swim',
+            label: 'Pre-Swim Fueling Window',
             value: formState.preSwimMinutes,
             onChanged: controller.updatePreSwimMinutes,
             min: 0,
             max: 480,
-            step: 15,
+            step: 30,
             unit: 'minutes',
           ),
 
@@ -105,24 +142,6 @@ class SwimmingTabContent extends ConsumerWidget {
           ),
 
           const SizedBox(height: AppSpacing.xl),
-
-          // Collapsible Deck Conditions Section
-          DeckConditionsSection(
-            isExpanded: formState.showEnvironment,
-            onToggle: controller.toggleEnvironmentSection,
-            deckTemperature: formState.deckTemperature,
-            onTemperatureChanged: controller.updateDeckTemperature,
-            deckHumidity: formState.deckHumidity,
-            onHumidityChanged: controller.updateDeckHumidity,
-            isLoadingWeather: formState.isLoadingWeather,
-            onFetchWeather: controller.fetchWeatherForecast,
-            weatherSource: formState.weatherForecast?.source,
-            hasAttemptedWeatherFetch: formState.hasAttemptedWeatherFetch,
-            locationFailureReason: formState.locationFailureReason,
-            onRequestPermission: controller.requestLocationPermissionAndFetch,
-            onOpenSettings: controller.openLocationSettings,
-            onOpenAppSettings: controller.openAppSettings,
-          ),
 
           const SizedBox(height: AppSpacing.xxl),
         ],

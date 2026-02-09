@@ -59,6 +59,7 @@ serve(async (req)=>{
       image_address: requestData.image_address,
       serving_amount: requestData.serving_amount,
       serving_unit: requestData.serving_unit,
+      serving_size: requestData.serving_size,
       calories_per_serving: requestData.calories_per_serving,
       carbs_per_serving: requestData.carbs_per_serving,
       protein_per_serving: requestData.protein_per_serving,

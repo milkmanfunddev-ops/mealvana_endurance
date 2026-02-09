@@ -34,11 +34,11 @@ class TrainingPeaksSyncService {
     required ActivitiesRepository activitiesRepository,
     required TrainingPeaksTransformer transformer,
     required ChangeDetectionService changeDetectionService,
-  })  : _apiClient = apiClient,
-        _integrationsRepository = integrationsRepository,
-        _activitiesRepository = activitiesRepository,
-        _transformer = transformer,
-        _changeDetectionService = changeDetectionService;
+  }) : _apiClient = apiClient,
+       _integrationsRepository = integrationsRepository,
+       _activitiesRepository = activitiesRepository,
+       _transformer = transformer,
+       _changeDetectionService = changeDetectionService;
 
   final TrainingPeaksApiClient _apiClient;
   final IntegrationsRepository _integrationsRepository;
@@ -52,18 +52,24 @@ class TrainingPeaksSyncService {
   /// How often to re-fetch athlete zones (24 hours)
   static const _zonesStalenessThreshold = Duration(hours: 24);
 
+  /// Max upcoming workout range (TrainingPeaks API limit)
+  static const _maxWorkoutDays = 45;
+
   /// Sync upcoming workouts from TrainingPeaks with change detection
   ///
   /// [userId] - The user to sync workouts for
-  /// [numDays] - How many days ahead to fetch (default: 14, max: 45)
+  /// [numDays] - How many days ahead to fetch (default: 45, max: 45)
   ///
   /// Returns a [TrainingPeaksSyncResult] with sync statistics.
   Future<TrainingPeaksSyncResult> syncWorkouts(
     String userId, {
-    int numDays = 14,
+    int numDays = 45,
   }) async {
     // 1. First check if integration exists and is active
-    var integration = await _integrationsRepository.getIntegration(userId, 'training_peaks');
+    var integration = await _integrationsRepository.getIntegration(
+      userId,
+      'training_peaks',
+    );
     if (integration == null || !integration.isActive) {
       return TrainingPeaksSyncResult.notConnected();
     }
@@ -94,10 +100,14 @@ class TrainingPeaksSyncService {
     }
 
     try {
+      final effectiveDays = numDays < 1
+          ? 1
+          : (numDays > _maxWorkoutDays ? _maxWorkoutDays : numDays);
+
       // 4. Fetch workouts from TrainingPeaks API
       final workoutsJson = await _apiClient.getUpcomingWorkouts(
         accessToken,
-        days: numDays,
+        days: effectiveDays,
         includeDescription: true,
       );
 
@@ -111,7 +121,11 @@ class TrainingPeaksSyncService {
 
       for (final workoutJson in workoutsJson) {
         // Transform (returns null for unsupported workout types)
-        final result = _transformer.transform(workoutJson, userId, zones: athleteZones);
+        final result = _transformer.transform(
+          workoutJson,
+          userId,
+          zones: athleteZones,
+        );
 
         if (result == null) {
           filteredCount++;
@@ -122,23 +136,49 @@ class TrainingPeaksSyncService {
       }
 
       if (kDebugMode) {
-        print('   Transformed ${remoteActivities.length} workouts (filtered $filteredCount)');
+        print(
+          '   Transformed ${remoteActivities.length} workouts (filtered $filteredCount)',
+        );
       }
 
-      // 4. Get existing activities synced from TrainingPeaks
-      final localActivities = await _activitiesRepository.getActivitiesByUserAndProvider(
-        userId,
-        'training_peaks',
-      );
+      final dedupedRemoteActivities = _dedupeRemoteActivities(remoteActivities);
+      final remoteDuplicateCount =
+          remoteActivities.length - dedupedRemoteActivities.length;
+      if (remoteDuplicateCount > 0) {
+        filteredCount += remoteDuplicateCount;
+        if (kDebugMode) {
+          print(
+            '   ⚠️ Removed $remoteDuplicateCount duplicate TrainingPeaks workouts from payload',
+          );
+        }
+      }
+
+      // 4. Clean any existing local duplicates from prior buggy syncs.
+      final localDuplicatesRemoved = await _activitiesRepository
+          .cleanupDuplicateProviderActivities(
+            userId: userId,
+            provider: 'training_peaks',
+          );
+      if (localDuplicatesRemoved > 0 && kDebugMode) {
+        print(
+          '   🧹 Removed $localDuplicatesRemoved duplicate local TrainingPeaks activities',
+        );
+      }
+
+      // 5. Get existing activities synced from TrainingPeaks
+      final localActivities = await _activitiesRepository
+          .getActivitiesByUserAndProvider(userId, 'training_peaks');
 
       if (kDebugMode) {
-        print('   Found ${localActivities.length} local TrainingPeaks activities');
+        print(
+          '   Found ${localActivities.length} local TrainingPeaks activities',
+        );
       }
 
       // 5. Detect changes using ChangeDetectionService
       final changeResult = _changeDetectionService.detectChanges(
         localActivities: localActivities,
-        remoteWorkouts: remoteActivities,
+        remoteWorkouts: dedupedRemoteActivities,
         provider: 'training_peaks',
       );
 
@@ -173,7 +213,9 @@ class TrainingPeaksSyncService {
         updatedActivities.add(updatedActivity);
 
         if (kDebugMode) {
-          print('   ↻ Updated: ${updatedActivity.title} (needsRefresh: ${change.scheduleChanged})');
+          print(
+            '   ↻ Updated: ${updatedActivity.title} (needsRefresh: ${change.scheduleChanged})',
+          );
         }
       }
 
@@ -195,12 +237,14 @@ class TrainingPeaksSyncService {
       );
 
       if (kDebugMode) {
-        print('✅ Workout sync complete: '
-            '${insertedActivities.length} new, '
-            '${updatedActivities.length} updated, '
-            '${deletedActivityIds.length} deleted, '
-            '${changeResult.unchangedCount} unchanged, '
-            '$filteredCount filtered');
+        print(
+          '✅ Workout sync complete: '
+          '${insertedActivities.length} new, '
+          '${updatedActivities.length} updated, '
+          '${deletedActivityIds.length} deleted, '
+          '${changeResult.unchangedCount} unchanged, '
+          '$filteredCount filtered',
+        );
       }
 
       return TrainingPeaksSyncResult(
@@ -256,7 +300,10 @@ class TrainingPeaksSyncService {
     }
 
     // First check if integration exists and is active
-    var integration = await _integrationsRepository.getIntegration(userId, 'training_peaks');
+    var integration = await _integrationsRepository.getIntegration(
+      userId,
+      'training_peaks',
+    );
     if (integration == null || !integration.isActive) {
       return TrainingPeaksSyncResult.notConnected();
     }
@@ -295,7 +342,11 @@ class TrainingPeaksSyncService {
       int filteredCount = 0;
 
       for (final workoutJson in workoutsJson) {
-        final result = _transformer.transform(workoutJson, userId, zones: athleteZones);
+        final result = _transformer.transform(
+          workoutJson,
+          userId,
+          zones: athleteZones,
+        );
 
         if (result == null) {
           filteredCount++;
@@ -305,16 +356,27 @@ class TrainingPeaksSyncService {
         remoteActivities.add(result.activity);
       }
 
-      // Get existing activities synced from TrainingPeaks
-      final localActivities = await _activitiesRepository.getActivitiesByUserAndProvider(
-        userId,
-        'training_peaks',
+      final dedupedRemoteActivities = _dedupeRemoteActivities(remoteActivities);
+      final remoteDuplicateCount =
+          remoteActivities.length - dedupedRemoteActivities.length;
+      if (remoteDuplicateCount > 0) {
+        filteredCount += remoteDuplicateCount;
+      }
+
+      // Clean any existing local duplicates from prior buggy syncs.
+      await _activitiesRepository.cleanupDuplicateProviderActivities(
+        userId: userId,
+        provider: 'training_peaks',
       );
+
+      // Get existing activities synced from TrainingPeaks
+      final localActivities = await _activitiesRepository
+          .getActivitiesByUserAndProvider(userId, 'training_peaks');
 
       // Detect changes
       final changeResult = _changeDetectionService.detectChanges(
         localActivities: localActivities,
-        remoteWorkouts: remoteActivities,
+        remoteWorkouts: dedupedRemoteActivities,
         provider: 'training_peaks',
       );
 
@@ -395,7 +457,10 @@ class TrainingPeaksSyncService {
     int days = 90,
   }) async {
     // First check if integration exists and is active
-    var integration = await _integrationsRepository.getIntegration(userId, 'training_peaks');
+    var integration = await _integrationsRepository.getIntegration(
+      userId,
+      'training_peaks',
+    );
     if (integration == null || !integration.isActive) {
       return TrainingPeaksEventSyncResult.notConnected();
     }
@@ -445,10 +510,7 @@ class TrainingPeaksSyncService {
         print('✅ Total events found: ${events.length}');
       }
 
-      return TrainingPeaksEventSyncResult(
-        success: true,
-        events: events,
-      );
+      return TrainingPeaksEventSyncResult(success: true, events: events);
     } on TrainingPeaksTokenExpiredException {
       return TrainingPeaksEventSyncResult.tokenExpired();
     } catch (e) {
@@ -464,7 +526,10 @@ class TrainingPeaksSyncService {
   /// Use this for quick checks. For full sync, use [syncEvents].
   Future<TrainingPeaksEventSyncResult> syncNextEvent(String userId) async {
     // First check if integration exists and is active
-    var integration = await _integrationsRepository.getIntegration(userId, 'training_peaks');
+    var integration = await _integrationsRepository.getIntegration(
+      userId,
+      'training_peaks',
+    );
     if (integration == null || !integration.isActive) {
       return TrainingPeaksEventSyncResult.notConnected();
     }
@@ -507,10 +572,7 @@ class TrainingPeaksSyncService {
         }
       }
 
-      return TrainingPeaksEventSyncResult(
-        success: true,
-        events: [event],
-      );
+      return TrainingPeaksEventSyncResult(success: true, events: [event]);
     } on TrainingPeaksTokenExpiredException {
       return TrainingPeaksEventSyncResult.tokenExpired();
     } catch (e) {
@@ -527,7 +589,7 @@ class TrainingPeaksSyncService {
   /// [eventDays] - How many days ahead to search for events (default: 90 = ~3 months)
   Future<TrainingPeaksFullSyncResult> syncAll(
     String userId, {
-    int workoutDays = 14,
+    int workoutDays = 45,
     int eventDays = 90,
   }) async {
     if (kDebugMode) {
@@ -561,7 +623,9 @@ class TrainingPeaksSyncService {
   Future<AthleteZones?> _fetchZonesIfStale(IntegrationModel integration) async {
     // Check if we already have zones and they're fresh
     if (integration.athleteZonesJson != null) {
-      final existingZones = AthleteZones.fromJsonString(integration.athleteZonesJson);
+      final existingZones = AthleteZones.fromJsonString(
+        integration.athleteZonesJson,
+      );
       if (existingZones != null) {
         // Consider zones fresh if integration was updated within threshold
         if (integration.updatedAt != null) {
@@ -603,7 +667,9 @@ class TrainingPeaksSyncService {
   /// IMPORTANT: This method works with the integration object directly,
   /// avoiding race conditions during onboarding when the DB write may not
   /// be fully committed yet. This mirrors the FinalSurgeSyncService pattern.
-  Future<IntegrationModel> _ensureValidToken(IntegrationModel integration) async {
+  Future<IntegrationModel> _ensureValidToken(
+    IntegrationModel integration,
+  ) async {
     // Check if token is about to expire
     if (integration.tokenExpiresAt != null) {
       final expiresAt = integration.tokenExpiresAt!;
@@ -612,7 +678,9 @@ class TrainingPeaksSyncService {
 
       if (expiresAt.isBefore(bufferTime)) {
         if (kDebugMode) {
-          print('⚠️ TrainingPeaks token expires soon, proactively refreshing...');
+          print(
+            '⚠️ TrainingPeaks token expires soon, proactively refreshing...',
+          );
         }
         return _refreshToken(integration);
       }
@@ -634,7 +702,9 @@ class TrainingPeaksSyncService {
     }
 
     try {
-      final tokenResponse = await _apiClient.refreshToken(integration.refreshToken!);
+      final tokenResponse = await _apiClient.refreshToken(
+        integration.refreshToken!,
+      );
 
       // Update the integration with new tokens
       final updatedIntegration = IntegrationModel(
@@ -672,6 +742,28 @@ class TrainingPeaksSyncService {
       throw const TrainingPeaksTokenExpiredException();
     }
   }
+
+  /// Dedupe remote workouts so sync remains idempotent even when provider APIs
+  /// return repeated records in a single payload.
+  List<Activity> _dedupeRemoteActivities(List<Activity> activities) {
+    final deduped = <Activity>[];
+    final seenKeys = <String>{};
+
+    for (final activity in activities) {
+      final providerId = activity.providerWorkoutId?.trim();
+      final key = (providerId != null && providerId.isNotEmpty)
+          ? 'id:$providerId'
+          : 'fp:${activity.activityType.name}|${activity.title.trim().toLowerCase()}|'
+                '${activity.scheduledDateTime.toUtc().toIso8601String()}|'
+                '${activity.durationMinutes ?? -1}|${activity.distanceMiles?.toStringAsFixed(3) ?? 'na'}';
+
+      if (seenKeys.add(key)) {
+        deduped.add(activity);
+      }
+    }
+
+    return deduped;
+  }
 }
 
 /// Result of a workout sync operation with change detection
@@ -708,10 +800,7 @@ class TrainingPeaksSyncResult {
 
   /// Create an error result
   factory TrainingPeaksSyncResult.error(String message) {
-    return TrainingPeaksSyncResult(
-      success: false,
-      error: message,
-    );
+    return TrainingPeaksSyncResult(success: false, error: message);
   }
 
   final bool success;
@@ -732,7 +821,8 @@ class TrainingPeaksSyncResult {
   bool get hasChanges => (newWorkouts + updated + deleted) > 0;
 
   /// Total workouts processed (new + updated + deleted + unchanged + filtered)
-  int get totalProcessed => newWorkouts + updated + deleted + unchanged + filtered;
+  int get totalProcessed =>
+      newWorkouts + updated + deleted + unchanged + filtered;
 
   /// Human-readable summary
   String get summary {
@@ -801,17 +891,11 @@ class TrainingPeaksEventSyncResult {
   }
 
   factory TrainingPeaksEventSyncResult.noEvents() {
-    return const TrainingPeaksEventSyncResult(
-      success: true,
-      events: [],
-    );
+    return const TrainingPeaksEventSyncResult(success: true, events: []);
   }
 
   factory TrainingPeaksEventSyncResult.error(String message) {
-    return TrainingPeaksEventSyncResult(
-      success: false,
-      error: message,
-    );
+    return TrainingPeaksEventSyncResult(success: false, error: message);
   }
 
   final bool success;

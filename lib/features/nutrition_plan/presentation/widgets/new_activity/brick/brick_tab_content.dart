@@ -15,7 +15,7 @@ import '../../../../../../theme/kyle_design/app_colors.dart';
 import '../shared/workout_details_widget.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/indoor_outdoor_toggle.dart';
 import '../shared/environment_section.dart';
-import '../shared/deck_conditions_section.dart';
+import '../shared/fasted_toggle.dart';
 
 /// Brick Tab Content
 ///
@@ -37,6 +37,7 @@ class BrickTabContent extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final totalDuration = controller.getTotalDuration();
+    final showFastedWarning = _shouldWarnFasted(formState, controller);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -47,6 +48,29 @@ class BrickTabContent extends ConsumerWidget {
           onToggle: (sport) {
             controller.toggleSport(sport);
           },
+        ),
+
+        const SizedBox(height: AppSpacing.xl),
+
+        // Brick-level Pre-Activity Fueling Window (applies to whole brick)
+        KylePlusMinusControl(
+          label: 'Pre-Activity Fueling Window',
+          value: formState.preActivityMinutes,
+          onChanged: controller.updatePreActivityMinutes,
+          min: 0,
+          max: 480,
+          step: 30,
+          unit: 'minutes',
+        ),
+
+        const SizedBox(height: AppSpacing.xl),
+
+        // Brick-level Fasted Toggle (applies to pre-activity fueling only)
+        FastedToggle(
+          isFasted: formState.isFasted,
+          onChanged: controller.updateFasted,
+          showWarning: showFastedWarning,
+          warningText: 'Fasted training is not recommended for longer or harder bricks. Consider fueling before.',
         ),
 
         const SizedBox(height: AppSpacing.xl),
@@ -72,6 +96,24 @@ class BrickTabContent extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
       ],
     );
+  }
+
+  bool _shouldWarnFasted(BrickFormState formState, BrickInputController controller) {
+    // Warn if any segment is swimming, any segment is hard (conversational < 70),
+    // or the total brick duration is long.
+    if (formState.selectedSports.contains('swimming')) return true;
+
+    for (final sport in formState.selectedSports) {
+      final input = formState.segmentInputs[sport];
+      if (input == null) continue;
+      final intensity = input.intensityDistribution ?? IntensityDistribution.defaultDistribution();
+      if (intensity.conversationalPct < 70) return true;
+    }
+
+    final totalDuration = controller.getTotalDuration();
+    if (totalDuration > 75) return true;
+
+    return false;
   }
 
   Widget _buildSegmentList(
@@ -314,9 +356,8 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
 /// Running segment inputs matching the standalone running tab:
 /// 1. WorkoutDetailsWidget
 /// 2. IntensityDistribution
-/// 3. Pre-Run Fueling Window
-/// 4. Temperature
-/// 5. Humidity
+/// 3. Temperature
+/// 4. Humidity
 class _BrickRunningInputs extends StatelessWidget {
   final BrickSegmentInput input;
   final bool isDark;
@@ -328,12 +369,59 @@ class _BrickRunningInputs extends StatelessWidget {
     required this.onUpdate,
   });
 
+  int _computeEstimatedDurationMinutesFor(BrickSegmentInput data) {
+    final distance = data.distanceMiles ?? 3.0;
+    final pace = data.paceMinutesPerMile ?? 9.0;
+    if (distance <= 0 || pace <= 0) return 0;
+    return (distance * pace).round();
+  }
+
   Duration? _computeEstimatedDuration() {
-    final distance = input.distanceMiles ?? 3.0;
-    final pace = input.paceMinutesPerMile ?? 9.0;
-    if (distance <= 0 || pace <= 0) return null;
-    final totalMinutes = distance * pace;
-    return Duration(minutes: totalMinutes.floor());
+    final minutes = _computeEstimatedDurationMinutesFor(input);
+    if (minutes <= 0) return null;
+    return Duration(minutes: minutes);
+  }
+
+  Duration? _getDisplayedDuration() {
+    if (input.durationPaceMode == DurationPaceMode.byDuration) {
+      if (input.durationMinutes > 0) {
+        return Duration(minutes: input.durationMinutes);
+      }
+      return _computeEstimatedDuration();
+    }
+    return _computeEstimatedDuration();
+  }
+
+  double? _computePaceFromDuration(BrickSegmentInput data, Duration duration) {
+    final distance = data.distanceMiles ?? 0;
+    if (distance <= 0) return null;
+    final totalMinutes = duration.inSeconds / 60.0;
+    if (totalMinutes <= 0) return null;
+    return totalMinutes / distance;
+  }
+
+  void _updateDerivedFields(BrickSegmentInput updated) {
+    if (updated.durationPaceMode == DurationPaceMode.byDuration) {
+      if (updated.durationMinutes > 0) {
+        final pace = _computePaceFromDuration(
+          updated,
+          Duration(minutes: updated.durationMinutes),
+        );
+        if (pace != null) {
+          onUpdate(updated.copyWith(paceMinutesPerMile: pace));
+          return;
+        }
+        onUpdate(updated);
+        return;
+      }
+    }
+
+    final autoMinutes = _computeEstimatedDurationMinutesFor(updated);
+    if (autoMinutes > 0) {
+      onUpdate(updated.copyWith(durationMinutes: autoMinutes));
+      return;
+    }
+    onUpdate(updated);
   }
 
   @override
@@ -347,16 +435,22 @@ class _BrickRunningInputs extends StatelessWidget {
           distance: input.distanceMiles ?? 3.0,
           distanceUnit: 'mi',
           mode: input.durationPaceMode,
-          estimatedDuration: input.durationPaceMode == DurationPaceMode.byDuration
-              ? Duration(minutes: input.durationMinutes)
-              : _computeEstimatedDuration(),
+          estimatedDuration: _getDisplayedDuration(),
           pace: input.paceMinutesPerMile ?? 9.0,
           paceUnit: 'min/mi',
-          onDistanceChanged: (v) => onUpdate(input.copyWith(distanceMiles: v)),
-          onModeChanged: (mode) => onUpdate(input.copyWith(durationPaceMode: mode)),
-          onPaceChanged: (v) => onUpdate(input.copyWith(paceMinutesPerMile: v)),
-          onDurationChanged: (duration) =>
-              onUpdate(input.copyWith(durationMinutes: duration.inMinutes)),
+          onDistanceChanged: (v) => _updateDerivedFields(input.copyWith(distanceMiles: v)),
+          onModeChanged: (mode) {
+            final updated = input.copyWith(durationPaceMode: mode);
+            _updateDerivedFields(updated);
+          },
+          onPaceChanged: (v) => _updateDerivedFields(input.copyWith(paceMinutesPerMile: v)),
+          onDurationChanged: (duration) {
+            final pace = _computePaceFromDuration(input, duration);
+            onUpdate(input.copyWith(
+              durationMinutes: duration.inMinutes,
+              paceMinutesPerMile: pace ?? input.paceMinutesPerMile,
+            ));
+          },
           enabled: true,
         ),
 
@@ -375,20 +469,7 @@ class _BrickRunningInputs extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-        // 3. PRE-RUN FUELING WINDOW
-        KylePlusMinusControl(
-          label: 'Pre-Run Fueling Window',
-          value: input.preActivityMinutes,
-          onChanged: (v) => onUpdate(input.copyWith(preActivityMinutes: v)),
-          min: 0,
-          max: 480,
-          step: 15,
-          unit: 'minutes',
-        ),
-
-        const SizedBox(height: AppSpacing.xl),
-
-        // 4. TEMPERATURE
+        // 3. TEMPERATURE
         KylePlusMinusDecimalControl(
           label: 'Temperature',
           value: input.temperatureC,
@@ -402,7 +483,7 @@ class _BrickRunningInputs extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-        // 5. HUMIDITY
+        // 4. HUMIDITY
         KylePlusMinusDecimalControl(
           label: 'Humidity',
           value: input.humidityPct,
@@ -425,9 +506,8 @@ class _BrickRunningInputs extends StatelessWidget {
 /// Cycling segment inputs matching the standalone cycling tab:
 /// 1. WorkoutDetailsWidget
 /// 2. IntensityDistribution
-/// 3. Time Before Ride
-/// 4. Indoor/Outdoor Toggle
-/// 5. Environment Section (collapsible)
+/// 3. Indoor/Outdoor Toggle
+/// 4. Environment Section (collapsible)
 class _BrickCyclingInputs extends StatelessWidget {
   final BrickSegmentInput input;
   final bool isDark;
@@ -442,12 +522,59 @@ class _BrickCyclingInputs extends StatelessWidget {
   bool get _isIndoor => (input.indoorOutdoor ?? 'outdoor') == 'indoor' ||
       (input.terrain ?? '').contains('indoor');
 
+  int _computeEstimatedDurationMinutesFor(BrickSegmentInput data) {
+    final distance = data.distanceMiles ?? 20.0;
+    final speed = data.speedMph ?? 18.0;
+    if (distance <= 0 || speed <= 0) return 0;
+    return ((distance / speed) * 60).round();
+  }
+
   Duration? _computeEstimatedDuration() {
-    final distance = input.distanceMiles ?? 20.0;
-    final speed = input.speedMph ?? 18.0;
-    if (distance <= 0 || speed <= 0) return null;
-    final totalMinutes = (distance / speed) * 60;
-    return Duration(minutes: totalMinutes.floor());
+    final minutes = _computeEstimatedDurationMinutesFor(input);
+    if (minutes <= 0) return null;
+    return Duration(minutes: minutes);
+  }
+
+  Duration? _getDisplayedDuration() {
+    if (input.durationPaceMode == DurationPaceMode.byDuration) {
+      if (input.durationMinutes > 0) {
+        return Duration(minutes: input.durationMinutes);
+      }
+      return _computeEstimatedDuration();
+    }
+    return _computeEstimatedDuration();
+  }
+
+  double? _computeSpeedFromDuration(BrickSegmentInput data, Duration duration) {
+    final distance = data.distanceMiles ?? 0;
+    if (distance <= 0) return null;
+    final hours = duration.inSeconds / 3600.0;
+    if (hours <= 0) return null;
+    return distance / hours;
+  }
+
+  void _updateDerivedFields(BrickSegmentInput updated) {
+    if (updated.durationPaceMode == DurationPaceMode.byDuration) {
+      if (updated.durationMinutes > 0) {
+        final speed = _computeSpeedFromDuration(
+          updated,
+          Duration(minutes: updated.durationMinutes),
+        );
+        if (speed != null) {
+          onUpdate(updated.copyWith(speedMph: speed));
+          return;
+        }
+        onUpdate(updated);
+        return;
+      }
+    }
+
+    final autoMinutes = _computeEstimatedDurationMinutesFor(updated);
+    if (autoMinutes > 0) {
+      onUpdate(updated.copyWith(durationMinutes: autoMinutes));
+      return;
+    }
+    onUpdate(updated);
   }
 
   @override
@@ -463,16 +590,22 @@ class _BrickCyclingInputs extends StatelessWidget {
           distance: input.distanceMiles ?? 20.0,
           distanceUnit: 'mi',
           mode: input.durationPaceMode,
-          estimatedDuration: input.durationPaceMode == DurationPaceMode.byDuration
-              ? Duration(minutes: input.durationMinutes)
-              : _computeEstimatedDuration(),
+          estimatedDuration: _getDisplayedDuration(),
           pace: input.speedMph ?? 18.0,
           paceUnit: 'mph',
-          onDistanceChanged: (v) => onUpdate(input.copyWith(distanceMiles: v)),
-          onModeChanged: (mode) => onUpdate(input.copyWith(durationPaceMode: mode)),
-          onPaceChanged: (v) => onUpdate(input.copyWith(speedMph: v)),
-          onDurationChanged: (duration) =>
-              onUpdate(input.copyWith(durationMinutes: duration.inMinutes)),
+          onDistanceChanged: (v) => _updateDerivedFields(input.copyWith(distanceMiles: v)),
+          onModeChanged: (mode) {
+            final updated = input.copyWith(durationPaceMode: mode);
+            _updateDerivedFields(updated);
+          },
+          onPaceChanged: (v) => _updateDerivedFields(input.copyWith(speedMph: v)),
+          onDurationChanged: (duration) {
+            final speed = _computeSpeedFromDuration(input, duration);
+            onUpdate(input.copyWith(
+              durationMinutes: duration.inMinutes,
+              speedMph: speed ?? input.speedMph,
+            ));
+          },
         ),
 
         const SizedBox(height: AppSpacing.xl),
@@ -489,20 +622,7 @@ class _BrickCyclingInputs extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-        // 3. TIME BEFORE RIDE
-        KylePlusMinusControl(
-          label: 'Time Before Ride',
-          value: input.preActivityMinutes,
-          onChanged: (v) => onUpdate(input.copyWith(preActivityMinutes: v)),
-          min: 0,
-          max: 480,
-          step: 15,
-          unit: 'minutes',
-        ),
-
-        const SizedBox(height: AppSpacing.xl),
-
-        // 4. INDOOR/OUTDOOR TOGGLE
+        // 3. INDOOR/OUTDOOR TOGGLE
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -530,7 +650,7 @@ class _BrickCyclingInputs extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-        // 5. ENVIRONMENT SECTION (collapsible, no weather params)
+        // 4. ENVIRONMENT SECTION (collapsible, no weather params)
         EnvironmentSection(
           isExpanded: input.showEnvironment,
           onToggle: () => onUpdate(input.copyWith(showEnvironment: !input.showEnvironment)),
@@ -543,6 +663,7 @@ class _BrickCyclingInputs extends StatelessWidget {
           sunExposure: input.sunExposure,
           onSunChanged: (v) => onUpdate(input.copyWith(sunExposure: v)),
           isIndoor: isIndoor,
+          showWindAndSun: false,
         ),
       ],
     );
@@ -562,9 +683,7 @@ enum _BrickWaterType {
 /// Swimming segment inputs matching the standalone swimming tab:
 /// 1. WorkoutDetailsWidget
 /// 2. IntensityDistribution
-/// 3. Time Before Swim
-/// 4. Pool/Open Water toggle
-/// 5. Deck Conditions (collapsible)
+/// 3. Pool/Open Water toggle
 class _BrickSwimmingInputs extends StatelessWidget {
   final BrickSegmentInput input;
   final bool isDark;
@@ -576,12 +695,62 @@ class _BrickSwimmingInputs extends StatelessWidget {
     required this.onUpdate,
   });
 
-  Duration? _computeEstimatedDuration() {
-    final distance = input.distanceMeters ?? 1500.0;
-    final pacePer100m = (input.pacePer100mSeconds ?? 120).toDouble();
-    if (distance <= 0 || pacePer100m <= 0) return null;
+  int _computeEstimatedDurationMinutesFor(BrickSegmentInput data) {
+    final distance = data.distanceMeters ?? 1500.0;
+    final pacePer100m = (data.pacePer100mSeconds ?? 120).toDouble();
+    if (distance <= 0 || pacePer100m <= 0) return 0;
     final totalSeconds = (distance / 100) * pacePer100m;
-    return Duration(seconds: totalSeconds.floor());
+    return (totalSeconds / 60).round();
+  }
+
+  Duration? _computeEstimatedDuration() {
+    final minutes = _computeEstimatedDurationMinutesFor(input);
+    if (minutes <= 0) return null;
+    return Duration(minutes: minutes);
+  }
+
+  Duration? _getDisplayedDuration() {
+    if (input.durationPaceMode == DurationPaceMode.byDuration) {
+      if (input.durationMinutes > 0) {
+        return Duration(minutes: input.durationMinutes);
+      }
+      return _computeEstimatedDuration();
+    }
+    return _computeEstimatedDuration();
+  }
+
+  int? _computePaceFromDuration(BrickSegmentInput data, Duration duration) {
+    final distance = data.distanceMeters ?? 0;
+    if (distance <= 0) return null;
+    final segments = distance / 100.0;
+    if (segments <= 0) return null;
+    final totalSeconds = duration.inSeconds;
+    if (totalSeconds <= 0) return null;
+    return (totalSeconds / segments).round();
+  }
+
+  void _updateDerivedFields(BrickSegmentInput updated) {
+    if (updated.durationPaceMode == DurationPaceMode.byDuration) {
+      if (updated.durationMinutes > 0) {
+        final pace = _computePaceFromDuration(
+          updated,
+          Duration(minutes: updated.durationMinutes),
+        );
+        if (pace != null) {
+          onUpdate(updated.copyWith(pacePer100mSeconds: pace));
+          return;
+        }
+        onUpdate(updated);
+        return;
+      }
+    }
+
+    final autoMinutes = _computeEstimatedDurationMinutesFor(updated);
+    if (autoMinutes > 0) {
+      onUpdate(updated.copyWith(durationMinutes: autoMinutes));
+      return;
+    }
+    onUpdate(updated);
   }
 
   @override
@@ -595,18 +764,24 @@ class _BrickSwimmingInputs extends StatelessWidget {
           distance: (input.distanceMeters ?? 1500).toDouble(),
           distanceUnit: 'meters',
           mode: input.durationPaceMode,
-          estimatedDuration: input.durationPaceMode == DurationPaceMode.byDuration
-              ? Duration(minutes: input.durationMinutes)
-              : _computeEstimatedDuration(),
+          estimatedDuration: _getDisplayedDuration(),
           pace: (input.pacePer100mSeconds ?? 120).toDouble() / 60, // Convert seconds to minutes
           paceUnit: 'min/100m',
           onDistanceChanged: (distance) =>
-              onUpdate(input.copyWith(distanceMeters: distance)),
-          onModeChanged: (mode) => onUpdate(input.copyWith(durationPaceMode: mode)),
+              _updateDerivedFields(input.copyWith(distanceMeters: distance)),
+          onModeChanged: (mode) {
+            final updated = input.copyWith(durationPaceMode: mode);
+            _updateDerivedFields(updated);
+          },
           onPaceChanged: (paceMinutes) =>
-              onUpdate(input.copyWith(pacePer100mSeconds: (paceMinutes * 60).round())),
-          onDurationChanged: (duration) =>
-              onUpdate(input.copyWith(durationMinutes: duration.inMinutes)),
+              _updateDerivedFields(input.copyWith(pacePer100mSeconds: (paceMinutes * 60).round())),
+          onDurationChanged: (duration) {
+            final pace = _computePaceFromDuration(input, duration);
+            onUpdate(input.copyWith(
+              durationMinutes: duration.inMinutes,
+              pacePer100mSeconds: pace ?? input.pacePer100mSeconds,
+            ));
+          },
         ),
 
         const SizedBox(height: AppSpacing.xl),
@@ -623,20 +798,7 @@ class _BrickSwimmingInputs extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-        // 3. TIME BEFORE SWIM
-        KylePlusMinusControl(
-          label: 'Time Before Swim',
-          value: input.preActivityMinutes,
-          onChanged: (v) => onUpdate(input.copyWith(preActivityMinutes: v)),
-          min: 0,
-          max: 480,
-          step: 15,
-          unit: 'minutes',
-        ),
-
-        const SizedBox(height: AppSpacing.xl),
-
-        // 4. POOL/OPEN WATER TOGGLE
+        // 3. POOL/OPEN WATER TOGGLE
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -662,19 +824,8 @@ class _BrickSwimmingInputs extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(height: AppSpacing.xl),
-
-        // 5. DECK CONDITIONS (collapsible, no weather params)
-        DeckConditionsSection(
-          isExpanded: input.showEnvironment,
-          onToggle: () => onUpdate(input.copyWith(showEnvironment: !input.showEnvironment)),
-          deckTemperature: input.deckTemperature,
-          onTemperatureChanged: (v) => onUpdate(input.copyWith(deckTemperature: v)),
-          deckHumidity: input.deckHumidity,
-          onHumidityChanged: (v) => onUpdate(input.copyWith(deckHumidity: v)),
-        ),
+        const SizedBox(height: AppSpacing.xxl),
       ],
     );
   }
 }
-

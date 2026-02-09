@@ -155,6 +155,7 @@ Add these variables one by one:
 |---------------|-------|---------|
 | `TRAININGPEAKS_CLIENT_ID` | `mealvana` | No |
 | `TRAININGPEAKS_CLIENT_SECRET` | `CSBPmjgHFFTjGNUfBlPTqcx1bm9ilR6laqHO31Ms` | **YES** |
+| `TRAININGPEAKS_USE_SANDBOX` | `true` | No |
 | `TRAININGPEAKS_OAUTH_URL` | `https://oauth.sandbox.trainingpeaks.com` | No |
 | `TRAININGPEAKS_API_URL` | `https://api.sandbox.trainingpeaks.com` | No |
 | `TRAININGPEAKS_SCOPES` | `athlete:profile events:read events:write file:write metrics:read metrics:write nutrition:write nutrition:read webhook:write-subscriptions webhook:read-subscriptions workouts:read workouts:details workouts:wod workouts:plan` | No |
@@ -226,6 +227,7 @@ These are identical to dev environment:
 |---------------|-------|---------|
 | `TRAININGPEAKS_CLIENT_ID` | `mealvana` | No |
 | `TRAININGPEAKS_CLIENT_SECRET` | `CSBPmjgHFFTjGNUfBlPTqcx1bm9ilR6laqHO31Ms` | **YES** |
+| `TRAININGPEAKS_USE_SANDBOX` | `false` | No |
 | `TRAININGPEAKS_OAUTH_URL` | `https://oauth.trainingpeaks.com` | No |
 | `TRAININGPEAKS_API_URL` | `https://api.trainingpeaks.com` | No |
 | `TRAININGPEAKS_SCOPES` | `athlete:profile events:read events:write file:write metrics:read metrics:write nutrition:write nutrition:read webhook:write-subscriptions webhook:read-subscriptions workouts:read workouts:details workouts:wod workouts:plan` | No |

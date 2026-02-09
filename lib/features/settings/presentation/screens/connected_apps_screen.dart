@@ -13,13 +13,13 @@ import '../../../integrations/presentation/widgets/integration_provider_card.dar
 /// Settings Mode (default):
 /// - Has AppBar with back button
 /// - No skip option
-/// - Shows "Coming Soon" for Final Surge
+/// - Shows "Notify Me" for coming soon providers
 ///
 /// Onboarding Mode (when onContinue is provided):
 /// - Has header text and onboarding footer
 /// - Shows "Skip for now" option
 /// - Auto-imports workouts after connecting
-/// - Final Surge is available
+/// - Shows "Notify Me" for coming soon providers
 class ConnectedAppsScreen extends ConsumerStatefulWidget {
   const ConnectedAppsScreen({
     super.key,
@@ -46,6 +46,19 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   /// Resets when navigating away and back
   bool _finalSurgeSynced = false;
   bool _trainingPeaksSynced = false;
+  final Set<String> _notifiedProviders = {};
+
+  static const List<_ComingSoonProviderConfig> _comingSoonProviders = [
+    _ComingSoonProviderConfig(name: 'TriDot', key: 'tridot'),
+    _ComingSoonProviderConfig(name: 'Runna', key: 'runna'),
+    _ComingSoonProviderConfig(name: 'VDOT', key: 'vdot'),
+    _ComingSoonProviderConfig(
+      name: 'Strava',
+      key: 'strava',
+      iconPath: 'assets/images/integrations/strava_compatible_white.svg',
+      logoHeight: 18,
+    ),
+  ];
 
   @override
   void initState() {
@@ -279,16 +292,14 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
         const SizedBox(height: AppSpacing.lg),
 
-        // Strava - Using "Compatible with Strava" logo per API Guidelines
-        IntegrationProviderCard(
-          name: 'Strava',
-          iconPath: 'assets/images/integrations/strava_compatible_white.svg',
-          logoHeight: 18,
-          isAvailable: false,
-          isConnected: false,
-          isConnecting: false,
-          comingSoonText: 'Coming Soon',
+        ..._buildComingSoonProviders(
+          context,
+          ref,
+          isOnboardingMode: false,
+          spacing: AppSpacing.md,
         ),
+
+        const SizedBox(height: AppSpacing.lg),
 
         // Error message if any
         if (data.errorMessage != null) ...[
@@ -326,8 +337,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   }
 
   /// Content for onboarding mode
-  /// - Final Surge shows "Coming Soon"
-  /// - Connected providers show "Connected" badge (no Sync Now button)
+  /// - Coming soon providers show "Notify Me"
   /// - Workouts are automatically synced after connecting
   Widget _buildOnboardingProvidersList(
     BuildContext context,
@@ -379,15 +389,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
         const SizedBox(height: AppSpacing.md),
 
-        // Strava - Using "Compatible with Strava" logo per API Guidelines
-        IntegrationProviderCard(
-          name: 'Strava',
-          iconPath: 'assets/images/integrations/strava_compatible_white.svg',
-          logoHeight: 18,
-          isAvailable: false,
-          isConnected: false,
-          isConnecting: false,
-          comingSoonText: 'Coming Soon',
+        ..._buildComingSoonProviders(
+          context,
+          ref,
+          isOnboardingMode: true,
+          spacing: AppSpacing.md,
         ),
       ],
     );
@@ -439,6 +445,64 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     );
   }
 
+  List<Widget> _buildComingSoonProviders(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isOnboardingMode,
+    required double spacing,
+  }) {
+    final widgets = <Widget>[];
+    for (var i = 0; i < _comingSoonProviders.length; i++) {
+      final provider = _comingSoonProviders[i];
+      widgets.add(
+        IntegrationProviderCard(
+          name: provider.name,
+          iconPath: provider.iconPath,
+          logoHeight: provider.logoHeight,
+          isAvailable: false,
+          isConnected: false,
+          isConnecting: false,
+          statusText: 'Coming soon',
+          onNotify: () => _notifyProvider(
+            context,
+            ref,
+            provider.key,
+            isOnboardingMode: isOnboardingMode,
+          ),
+          isNotified: _notifiedProviders.contains(provider.key),
+        ),
+      );
+
+      if (i < _comingSoonProviders.length - 1) {
+        widgets.add(SizedBox(height: spacing));
+      }
+    }
+    return widgets;
+  }
+
+  void _notifyProvider(
+    BuildContext context,
+    WidgetRef ref,
+    String provider, {
+    required bool isOnboardingMode,
+  }) {
+    if (!mounted) return;
+    if (_notifiedProviders.contains(provider)) return;
+
+    setState(() {
+      _notifiedProviders.add(provider);
+    });
+
+    ref.read(connectTrainingControllerProvider.notifier).trackNotifyMe(
+          provider: provider,
+          source: isOnboardingMode ? 'onboarding' : 'settings',
+        );
+
+    if (context.mounted) {
+      MealvanaSnackbar.showSuccess(context, 'Notified!');
+    }
+  }
+
   // ============================================================
   // Settings Mode Connection Methods (no auto-import)
   // ============================================================
@@ -476,17 +540,38 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       );
 
       // Auto-import workouts in onboarding mode
-      await controller.importFinalSurgeWorkouts();
+      final result = await controller.importFinalSurgeWorkouts();
 
       if (context.mounted) {
-        MealvanaSnackbar.showSuccess(
-          context,
-          'Workouts imported successfully!',
+        final state = ref.read(connectTrainingControllerProvider).value;
+        final message = buildWorkoutSyncMessage(
+          newCount: result.newWorkouts,
+          updatedCount: result.updated,
+          deletedCount: result.deleted,
+          unchangedCount: result.skipped,
         );
+
+        if (result.success && result.hasChanges) {
+          MealvanaSnackbar.showSuccess(
+            context,
+            message,
+          );
+        } else if (!result.success || state?.errorMessage != null) {
+          MealvanaSnackbar.showError(
+            context,
+            'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+          );
+        } else {
+          MealvanaSnackbar.showInfo(
+            context,
+            message,
+          );
+        }
       }
 
-      // Mark as synced after auto-import
-      if (mounted) {
+      // Mark as synced after successful auto-import
+      final latestState = ref.read(connectTrainingControllerProvider).value;
+      if (mounted && result.success && latestState?.errorMessage == null) {
         setState(() {
           _finalSurgeSynced = true;
         });
@@ -505,17 +590,41 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       );
 
       // Auto-import workouts in onboarding mode
-      await controller.importWorkouts();
+      final result = await controller.importTrainingPeaksWorkouts();
 
       if (context.mounted) {
-        MealvanaSnackbar.showSuccess(
-          context,
-          'Workouts imported successfully!',
+        final state = ref.read(connectTrainingControllerProvider).value;
+        final eventInfo = state?.hasNextEvent == true && state?.nextEventName != null
+            ? '\nNext event: ${state!.nextEventName}'
+            : '';
+        final message = buildWorkoutSyncMessage(
+          newCount: result.newWorkouts,
+          updatedCount: result.updated,
+          deletedCount: result.deleted,
+          unchangedCount: result.unchanged,
         );
+
+        if (result.success && result.hasChanges) {
+          MealvanaSnackbar.showSuccess(
+            context,
+            '$message$eventInfo',
+          );
+        } else if (!result.success || state?.errorMessage != null) {
+          MealvanaSnackbar.showError(
+            context,
+            'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+          );
+        } else {
+          MealvanaSnackbar.showInfo(
+            context,
+            '$message$eventInfo',
+          );
+        }
       }
 
-      // Mark as synced after auto-import
-      if (mounted) {
+      // Mark as synced after successful auto-import
+      final latestState = ref.read(connectTrainingControllerProvider).value;
+      if (mounted && result.success && latestState?.errorMessage == null) {
         setState(() {
           _trainingPeaksSynced = true;
         });
@@ -584,4 +693,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     ref.read(connectTrainingControllerProvider.notifier).trackSkip();
     widget.onContinue?.call();
   }
+}
+
+class _ComingSoonProviderConfig {
+  const _ComingSoonProviderConfig({
+    required this.name,
+    required this.key,
+    this.iconPath,
+    this.logoHeight = 24,
+  });
+
+  final String name;
+  final String key;
+  final String? iconPath;
+  final double logoHeight;
 }

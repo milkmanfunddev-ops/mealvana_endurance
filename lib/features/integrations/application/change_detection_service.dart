@@ -50,9 +50,13 @@ class ChangeDetectionService {
 
     // Create lookup map for local activities by provider_workout_id
     final localByProviderId = <String, Activity>{};
+    final archivedBrickByFingerprint = <String, Activity>{};
     for (final activity in localActivities) {
       if (activity.providerWorkoutId != null) {
         localByProviderId[activity.providerWorkoutId!] = activity;
+      }
+      if (activity.status == ActivityStatus.archivedForBrick) {
+        archivedBrickByFingerprint[_fingerprint(activity)] = activity;
       }
     }
 
@@ -72,10 +76,58 @@ class ChangeDetectionService {
       final localActivity = localByProviderId[providerId];
 
       if (localActivity == null) {
+        // BRICK FALLBACK: Keep provider workouts grouped in brick state.
+        // If an archived brick segment matches this remote workout by fingerprint,
+        // treat it as an update/unchanged rather than re-inserting a new workout.
+        final brickMatch =
+            archivedBrickByFingerprint[_fingerprint(remoteWorkout)];
+        if (brickMatch != null) {
+          final scheduleChanged = _isScheduleChangeSignificant(
+            brickMatch,
+            remoteWorkout,
+          );
+          final hasMinorChanges = _hasMinorChanges(brickMatch, remoteWorkout);
+          final needsProviderLinkUpdate =
+              brickMatch.providerWorkoutId != providerId;
+
+          if (scheduleChanged || hasMinorChanges || needsProviderLinkUpdate) {
+            updatedActivities.add(
+              ActivityChange(
+                activityId: brickMatch.id,
+                updatedActivity: remoteWorkout,
+                scheduleChanged: scheduleChanged,
+                oldScheduledAt: brickMatch.scheduledDateTime,
+                newScheduledAt: remoteWorkout.scheduledDateTime,
+                oldDurationMinutes: brickMatch.durationMinutes,
+                newDurationMinutes: remoteWorkout.durationMinutes,
+                oldDistanceMiles: brickMatch.distanceMiles,
+                newDistanceMiles: remoteWorkout.distanceMiles,
+              ),
+            );
+            if (kDebugMode) {
+              debugPrint(
+                '   🔗 BRICK MATCH UPDATED: ${remoteWorkout.title} '
+                '(provider_id: $providerId -> activity_id: ${brickMatch.id})',
+              );
+            }
+          } else {
+            unchangedCount++;
+            if (kDebugMode) {
+              debugPrint(
+                '   🧱 BRICK MATCH UNCHANGED: ${remoteWorkout.title} '
+                '(provider_id: $providerId)',
+              );
+            }
+          }
+          continue;
+        }
+
         // NEW: Workout exists in remote but not in local
         newActivities.add(remoteWorkout);
         if (kDebugMode) {
-          debugPrint('   📥 NEW: ${remoteWorkout.title} (provider_id: $providerId)');
+          debugPrint(
+            '   📥 NEW: ${remoteWorkout.title} (provider_id: $providerId)',
+          );
         }
       } else {
         // EXISTS: Check if schedule changed
@@ -101,12 +153,19 @@ class ChangeDetectionService {
           );
           if (kDebugMode) {
             debugPrint('   🔄 UPDATED (schedule): ${remoteWorkout.title}');
-            debugPrint('      Old: ${localActivity.scheduledDateTime}, duration: ${localActivity.durationMinutes}, distance: ${localActivity.distanceMiles}');
-            debugPrint('      New: ${remoteWorkout.scheduledDateTime}, duration: ${remoteWorkout.durationMinutes}, distance: ${remoteWorkout.distanceMiles}');
+            debugPrint(
+              '      Old: ${localActivity.scheduledDateTime}, duration: ${localActivity.durationMinutes}, distance: ${localActivity.distanceMiles}',
+            );
+            debugPrint(
+              '      New: ${remoteWorkout.scheduledDateTime}, duration: ${remoteWorkout.durationMinutes}, distance: ${remoteWorkout.distanceMiles}',
+            );
           }
         } else {
           // Check if any other fields changed (minor updates don't trigger nutrition refresh)
-          final hasMinorChanges = _hasMinorChanges(localActivity, remoteWorkout);
+          final hasMinorChanges = _hasMinorChanges(
+            localActivity,
+            remoteWorkout,
+          );
 
           if (hasMinorChanges) {
             // UPDATED: Minor changes (title, notes, etc.) but no schedule change
@@ -198,8 +257,8 @@ class ChangeDetectionService {
         oldActivity.distanceMiles! > 0) {
       final distanceChangePercent =
           ((newActivity.distanceMiles! - oldActivity.distanceMiles!).abs() /
-                  oldActivity.distanceMiles!) *
-              100;
+              oldActivity.distanceMiles!) *
+          100;
 
       if (distanceChangePercent > significantDistanceChangePercentage) {
         return true;
@@ -215,7 +274,9 @@ class ChangeDetectionService {
     if (oldActivity.title != newActivity.title) return true;
     if (oldActivity.notes != newActivity.notes) return true;
     if (oldActivity.paceTargetMinutesPerMile !=
-        newActivity.paceTargetMinutesPerMile) return true;
+        newActivity.paceTargetMinutesPerMile) {
+      return true;
+    }
     if (oldActivity.intensityLevel != newActivity.intensityLevel) return true;
     if (oldActivity.workoutSubtype != newActivity.workoutSubtype) return true;
 
@@ -226,14 +287,28 @@ class ChangeDetectionService {
       return true;
     }
     if (oldActivity.cyclingElevationGainFt !=
-        newActivity.cyclingElevationGainFt) return true;
+        newActivity.cyclingElevationGainFt) {
+      return true;
+    }
 
     // Swimming-specific fields
     if (oldActivity.swimmingPacePer100mSeconds !=
-        newActivity.swimmingPacePer100mSeconds) return true;
+        newActivity.swimmingPacePer100mSeconds) {
+      return true;
+    }
     if (oldActivity.swimmingPoolOrOpenWater !=
-        newActivity.swimmingPoolOrOpenWater) return true;
+        newActivity.swimmingPoolOrOpenWater) {
+      return true;
+    }
 
     return false;
+  }
+
+  String _fingerprint(Activity activity) {
+    final title = activity.title.trim().toLowerCase();
+    final scheduledAt = activity.scheduledDateTime.toUtc().toIso8601String();
+    final duration = activity.durationMinutes ?? -1;
+    final distance = activity.distanceMiles?.toStringAsFixed(3) ?? 'na';
+    return '${activity.activityType.name}|$title|$scheduledAt|$duration|$distance';
   }
 }

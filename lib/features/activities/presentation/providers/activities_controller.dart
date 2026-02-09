@@ -9,6 +9,7 @@ import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../integrations/application/integration_sync_coordinator.dart';
+import '../../domain/brick_metadata.dart';
 
 part 'activities_controller.g.dart';
 
@@ -94,6 +95,9 @@ class ActivitiesController extends _$ActivitiesController {
     int? timeBeforeMinutes,
     // Nutrition plan data (embedded JSON)
     Map<String, dynamic>? nutritionPlanData,
+    // Brick-specific parameters
+    BrickMetadata? brickMetadata,
+    String? brickId,
   }) async {
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
@@ -121,6 +125,8 @@ class ActivitiesController extends _$ActivitiesController {
         intensityTarget: intensityTarget,
         timeBeforeMinutes: timeBeforeMinutes,
         nutritionPlanData: nutritionPlanData,
+        brickMetadata: brickMetadata,
+        brickId: brickId,
       );
 
       // Refresh activities list

@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/cards/base_card.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/intensity_composite_bar.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/intensity_preset_chips.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/two_option_pill_slider.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/intensity_zone_slider.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
@@ -97,8 +98,7 @@ class _IntensityDistributionWidgetState
             if (_mode == _IntensityInputMode.estimate)
               IntensityPresetChips(
                 sportType: widget.sportType,
-                selectedPreset:
-                    WorkoutPresetData.matchingPreset(widget.value),
+                selectedPreset: WorkoutPresetData.matchingPreset(widget.value),
                 onSelected: (preset) {
                   final distribution =
                       WorkoutPresetData.presetDistributions[preset]!;
@@ -184,55 +184,24 @@ class _EstimatePreciseToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? AppColors.cream : AppColors.blackberry;
 
-    return Row(
-      children: _IntensityInputMode.values.map((segment) {
-        final isSelected = segment == mode;
-        return Expanded(
-          child: GestureDetector(
-            onTap: enabled ? () => onChanged(segment) : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.symmetric(horizontal: 1),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? (isDark ? AppColors.cream : AppColors.blackberry)
-                    : Colors.transparent,
-                borderRadius: AppRadius.segmentedControlRadius,
-                border: Border.all(
-                  color: _borderColor(isDark),
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  segment.name.toUpperCase(),
-                  style: AppTextStyles.segmentedControl.copyWith(
-                    color: isSelected
-                        ? (isDark ? AppColors.blackberry : AppColors.cream)
-                        : (isDark ? AppColors.cream : AppColors.blackberry),
-                    fontWeight: FontWeight.w700,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
+    return TwoOptionPillSlider(
+      leftLabel: _IntensityInputMode.estimate.name.toUpperCase(),
+      rightLabel: _IntensityInputMode.precise.name.toUpperCase(),
+      isLeftSelected: mode == _IntensityInputMode.estimate,
+      onLeftTap: () => onChanged(_IntensityInputMode.estimate),
+      onRightTap: () => onChanged(_IntensityInputMode.precise),
+      textStyle: AppTextStyles.segmentedControl,
+      selectedTextColor: isDark ? AppColors.blackberry : AppColors.cream,
+      unselectedTextColor: isDark ? AppColors.cream : AppColors.blackberry,
+      trackColor: Colors.transparent,
+      thumbColor: isDark ? AppColors.cream : AppColors.blackberry,
+      borderColor: enabled ? borderColor : borderColor.withValues(alpha: 0.3),
+      borderWidth: 2,
+      enabled: enabled,
+      thumbInset: 2,
+      height: 48,
     );
-  }
-
-  Color _borderColor(bool isDark) {
-    if (!enabled) {
-      return isDark
-          ? AppColors.cream.withValues(alpha: 0.3)
-          : AppColors.blackberry.withValues(alpha: 0.3);
-    }
-    return isDark ? AppColors.cream : AppColors.blackberry;
   }
 }

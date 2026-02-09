@@ -95,6 +95,11 @@ class KyleSecondaryButton extends ConsumerWidget {
           foreground: AppColors.textLight,
           border: AppColors.textLight,
         );
+      case SecondaryButtonVariant.light:
+        return _ButtonColors(
+          foreground: AppColors.textDark,
+          border: AppColors.textDark,
+        );
     }
   }
 }
@@ -124,7 +129,7 @@ class KyleSecondaryButtonSmall extends ConsumerWidget {
       isLoading: isLoading,
       isFullWidth: false,
       icon: icon,
-      height: 40,
+      height: 44,
       variant: variant,
     );
   }
@@ -196,6 +201,11 @@ class KyleSecondaryIconButton extends ConsumerWidget {
           foreground: AppColors.textLight,
           border: AppColors.textLight,
         );
+      case SecondaryButtonVariant.light:
+        return _ButtonColors(
+          foreground: AppColors.textDark,
+          border: AppColors.textDark,
+        );
     }
   }
 }
@@ -207,6 +217,9 @@ enum SecondaryButtonVariant {
   
   /// Blackberry outline for neutral actions
   blackberry,
+
+  /// Light outline for dark backgrounds
+  light,
 }
 
 /// Helper class for button colors

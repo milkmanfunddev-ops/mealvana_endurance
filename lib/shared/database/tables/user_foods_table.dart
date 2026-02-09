@@ -34,6 +34,7 @@ class UserFoodsTable extends Table {
   /// Serving information (matches Supabase user_foods.serving_amount and serving_unit)
   RealColumn get servingAmount => real().nullable().named('serving_amount')();
   TextColumn get servingUnit => text().nullable().named('serving_unit')();
+  TextColumn get servingSize => text().nullable().named('serving_size')();
 
   /// Nutritional values per serving (matches Supabase user_foods)
   IntColumn get caloriesPerServing => integer().nullable().named('calories_per_serving')();

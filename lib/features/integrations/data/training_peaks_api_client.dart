@@ -208,17 +208,19 @@ class TrainingPeaksApiClient {
 
   /// Fetch upcoming workouts (convenience method)
   ///
-  /// Fetches workouts for the next [days] days.
+  /// Fetches workouts from the start of today for the next [days] days (max 45).
+  /// Using start-of-day ensures we include workouts earlier today as well.
   Future<List<Map<String, dynamic>>> getUpcomingWorkouts(
     String accessToken, {
     int days = 14,
     bool includeDescription = false,
   }) async {
     final now = DateTime.now();
-    final endDate = now.add(Duration(days: days));
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    final endDate = startOfToday.add(Duration(days: days));
     return getWorkouts(
       accessToken,
-      startDate: now,
+      startDate: startOfToday,
       endDate: endDate,
       includeDescription: includeDescription,
     );

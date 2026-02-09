@@ -32,12 +32,15 @@ void main() {
   late String accessToken;
   late Map<String, dynamic> cachedTokenData;
 
-  // Environment toggle - match the tool script
-  const bool useSandbox = true;
-  const String apiBaseUrl = useSandbox
+  // Environment toggle - set TRAININGPEAKS_USE_SANDBOX=false for production
+  final bool useSandbox = _readBoolEnv(
+    'TRAININGPEAKS_USE_SANDBOX',
+    defaultValue: true,
+  );
+  final String apiBaseUrl = useSandbox
       ? 'https://api.sandbox.trainingpeaks.com'
       : 'https://api.trainingpeaks.com';
-  const String oauthBaseUrl = useSandbox
+  final String oauthBaseUrl = useSandbox
       ? 'https://oauth.sandbox.trainingpeaks.com'
       : 'https://oauth.trainingpeaks.com';
 
@@ -146,10 +149,10 @@ void main() {
       });
 
       final clientSecret =
-          const String.fromEnvironment('TRAINING_PEAKS_CLIENT_SECRET');
+          Platform.environment['TRAININGPEAKS_CLIENT_SECRET'] ?? '';
       if (clientSecret.isEmpty) {
         print(
-            '⚠️  TRAINING_PEAKS_CLIENT_SECRET not set - skipping refresh test');
+            '⚠️  TRAININGPEAKS_CLIENT_SECRET not set - skipping refresh test');
         return;
       }
 
@@ -763,6 +766,16 @@ void main() {
       logTestPass('Differences documented for transformer implementation');
     });
   });
+}
+
+bool _readBoolEnv(String key, {required bool defaultValue}) {
+  final raw = Platform.environment[key];
+  if (raw == null || raw.isEmpty) return defaultValue;
+  final normalized = raw.toLowerCase().trim();
+  return normalized == 'true' ||
+      normalized == '1' ||
+      normalized == 'yes' ||
+      normalized == 'y';
 }
 
 String _formatDate(DateTime date) {

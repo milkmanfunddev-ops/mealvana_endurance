@@ -13,7 +13,8 @@ import '../../core/app_router.dart';
 import '../../../features/auth/data/user_repository.dart';
 import '../../../features/settings/presentation/providers/settings_controller.dart';
 import '../../../features/activities/presentation/providers/activities_controller.dart';
-import '../../../features/events/presentation/providers/events_controller.dart' as events;
+import '../../../features/events/presentation/providers/events_controller.dart'
+    as events;
 import '../../../features/carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../../../features/carb_loading/presentation/providers/carb_loading_day_detail_controller.dart';
 import '../../../features/carb_loading/presentation/providers/carb_loading_food_selection_controller.dart';
@@ -45,10 +46,12 @@ class AuthListenerService {
   bool _isOnboardingSignOut = false;
 
   // Accessors for dependencies
-  SupabaseClient get _supabase => _ref.read(appExternalDepsProvider).supabaseClient;
+  SupabaseClient get _supabase =>
+      _ref.read(appExternalDepsProvider).supabaseClient;
   AppLogger get _logger => _ref.read(appExternalDepsProvider).logger;
   SentryReporter get _sentry => _ref.read(appExternalDepsProvider).sentry;
-  AnalyticsTracker get _analytics => _ref.read(appExternalDepsProvider).analytics;
+  AnalyticsTracker get _analytics =>
+      _ref.read(appExternalDepsProvider).analytics;
 
   /// Initialize the auth listener. Should only be called ONCE at app startup.
   void initialize() {
@@ -79,7 +82,9 @@ class AuthListenerService {
   void _setupAuthStateListener() {
     _authStateSubscription?.cancel();
 
-    _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) async {
+    _authStateSubscription = _supabase.auth.onAuthStateChange.listen((
+      data,
+    ) async {
       final event = data.event;
       final session = data.session;
 
@@ -95,10 +100,13 @@ class AuthListenerService {
 
       // Handle token refresh events
       if (event == AuthChangeEvent.tokenRefreshed) {
-        await _analytics.track('auth_token_refreshed', properties: {
-          'user_id': session?.user.id,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
+        await _analytics.track(
+          'auth_token_refreshed',
+          properties: {
+            'user_id': session?.user.id,
+            'timestamp': DateTime.now().toIso8601String(),
+          },
+        );
       }
 
       // Handle sign-out events
@@ -118,10 +126,13 @@ class AuthListenerService {
     final wasOnboardingSignOut = _isOnboardingSignOut;
     _isOnboardingSignOut = false; // Reset flag
 
-    await _analytics.track('user_signed_out', properties: {
-      'timestamp': DateTime.now().toIso8601String(),
-      'was_onboarding_signout': wasOnboardingSignOut,
-    });
+    await _analytics.track(
+      'user_signed_out',
+      properties: {
+        'timestamp': DateTime.now().toIso8601String(),
+        'was_onboarding_signout': wasOnboardingSignOut,
+      },
+    );
 
     _sentry.addBreadcrumb(
       message: wasOnboardingSignOut
@@ -145,6 +156,11 @@ class AuthListenerService {
     }
 
     try {
+      // Reset sync freshness state so next sign-in performs a full repo sync.
+      await _ref
+          .read(syncCoordinatorProvider.notifier)
+          .resetRepositorySyncState();
+
       // Invalidate user-specific providers first
       // Core user identity
       _ref.invalidate(userIdProvider);
@@ -159,10 +175,12 @@ class AuthListenerService {
 
       // Carb Loading (CRITICAL: was missing, caused data leak between users)
       _ref.invalidate(carbLoadingControllerProvider);
-      _ref.invalidate(carbLoadingPlanProvider);           // Family provider
-      _ref.invalidate(carbLoadingDaysForPlanProvider);    // Family provider
-      _ref.invalidate(carbLoadingDaysForRangeProvider);   // Family provider
-      _ref.invalidate(carbLoadingDayDetailControllerProvider); // Family provider
+      _ref.invalidate(carbLoadingPlanProvider); // Family provider
+      _ref.invalidate(carbLoadingDaysForPlanProvider); // Family provider
+      _ref.invalidate(carbLoadingDaysForRangeProvider); // Family provider
+      _ref.invalidate(
+        carbLoadingDayDetailControllerProvider,
+      ); // Family provider
       _ref.invalidate(carbLoadingFoodSelectionControllerProvider);
 
       // Calendar
@@ -211,10 +229,7 @@ class AuthListenerService {
     _sentry.addBreadcrumb(
       message: 'User signed in',
       category: 'auth',
-      data: {
-        'user_id': userId,
-        'timestamp': DateTime.now().toIso8601String(),
-      },
+      data: {'user_id': userId, 'timestamp': DateTime.now().toIso8601String()},
     );
 
     // Invalidate userIdProvider immediately so router can react
@@ -278,10 +293,7 @@ class AuthListenerService {
     // Trigger full sync for device-based users
     try {
       final syncCoordinator = _ref.read(syncCoordinatorProvider.notifier);
-      await syncCoordinator.sync(
-        userId: userId,
-        trigger: SyncTrigger.manual,
-      );
+      await syncCoordinator.sync(userId: userId, trigger: SyncTrigger.manual);
     } catch (e) {
       _logger.error(
         'Full sync failed after auth',

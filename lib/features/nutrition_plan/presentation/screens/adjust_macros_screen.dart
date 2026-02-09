@@ -259,7 +259,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           }
 
           // Calculate segment duration for display
-          final duration = input.durationMinutes;
+          final duration = input.effectiveDurationMinutes;
 
           return Expanded(
             child: _BrickSegmentPaceCard(

@@ -100,7 +100,7 @@ class AuthService {
         heightInches: heightInches,
         weightPounds: weightPounds,
         runsWithWaterBottle: runsWithWaterBottle,
-        gutTraining: gutTraining ?? GutTraining.high,
+        gutTraining: gutTraining ?? GutTraining.moderate,
         unitSystem: unitSystem,
         onboardingCompleted: true, // Set true immediately so user can proceed even if later steps fail
         appVersion: appVersion,
@@ -139,7 +139,7 @@ class AuthService {
         deviceId: effectiveUserId, // Use effective user ID for Sentry
         appVersion: appVersion,
         onboardingCompleted: true,
-        gutTrainingLevel: (gutTraining ?? GutTraining.high).name,
+        gutTrainingLevel: (gutTraining ?? GutTraining.moderate).name,
       );
 
       _sentry.addBreadcrumb(
@@ -150,7 +150,7 @@ class AuthService {
           'auth_user_id': authUser.id,
           'auth_provider': authProvider,
           'gender': gender.name,
-          'gut_training': (gutTraining ?? GutTraining.high).name,
+          'gut_training': (gutTraining ?? GutTraining.moderate).name,
         },
       );
 

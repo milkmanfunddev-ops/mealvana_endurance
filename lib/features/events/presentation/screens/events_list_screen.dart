@@ -25,7 +25,7 @@ import 'event_detail_screen.dart';
 /// - All events sorted by date
 /// - Past events grayed out
 /// - Upcoming events highlighted
-/// - FAB to create new events
+/// - Button below list to create new events
 class EventsListScreen extends ConsumerStatefulWidget {
   const EventsListScreen({super.key});
 
@@ -64,15 +64,15 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              FontAwesomeIcons.house,
-              size: AppIconSizes.sm,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            tooltip: 'Home',
-            onPressed: () => context.go('/main'),
-          ),
+        //   IconButton(
+        //     icon: Icon(
+        //       FontAwesomeIcons.house,
+        //       size: AppIconSizes.sm,
+        //       color: Theme.of(context).colorScheme.onSurface,
+        //     ),
+        //     tooltip: 'Home',
+        //     onPressed: () => context.go('/main'),
+        //   ),
         ],
       ),
       body: eventsState.when(
@@ -81,7 +81,9 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
           final visibleEvents = events.where((e) => !_dismissedEventIds.contains(e.id)).toList();
 
           if (visibleEvents.isEmpty) {
-            return const EventsEmptyState();
+            return EventsEmptyState(
+              onCreateEvent: _openCreateEvent,
+            );
           }
 
           // Get activities from activities controller
@@ -182,6 +184,15 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                       )),
                 ],
 
+                const SizedBox(height: AppSpacing.xl),
+                Center(
+                  child: KylePrimaryButton(
+                    text: 'New Event',
+                    icon: FontAwesomeIcons.plus,
+                    isFullWidth: false,
+                    onPressed: _openCreateEvent,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.xxxl),
               ],
             ),
@@ -232,49 +243,40 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.of(context).push<Map<String, dynamic>>(
-            MaterialPageRoute(
-              builder: (context) => const EventFormScreen(), // Create mode (event = null)
-            ),
-          );
+    );
+  }
 
-          // Invalidate the providers to refresh the list
-          if (result != null && result['success'] == true) {
-            ref.invalidate(eventsControllerProvider);
-            ref.invalidate(activitiesControllerProvider);
-
-            if (context.mounted) {
-              MealvanaSnackbar.showSuccess(
-                context,
-                'Event "${result['eventName']}" created successfully!',
-              );
-            }
-
-            final createdEventId = result['eventId'];
-            if (createdEventId is String && context.mounted) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => EventDetailScreen(
-                    eventId: createdEventId,
-                  ),
-                ),
-              );
-            }
-          }
-        },
-        icon: const Icon(FontAwesomeIcons.plus, size: AppIconSizes.sm),
-        label: Text(
-          'New Event',
-          style: AppTextStyles.buttonPrimary.copyWith(
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: AppColors.orange,
-        foregroundColor: Colors.white,
+  Future<void> _openCreateEvent() async {
+    if (!mounted) return;
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (context) => const EventFormScreen(), // Create mode (event = null)
       ),
     );
+
+    // Invalidate the providers to refresh the list
+    if (result != null && result['success'] == true) {
+      ref.invalidate(eventsControllerProvider);
+      ref.invalidate(activitiesControllerProvider);
+
+      if (context.mounted) {
+        MealvanaSnackbar.showSuccess(
+          context,
+          'Event "${result['eventName']}" created successfully!',
+        );
+      }
+
+      final createdEventId = result['eventId'];
+      if (createdEventId is String && context.mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => EventDetailScreen(
+              eventId: createdEventId,
+            ),
+          ),
+        );
+      }
+    }
   }
 
   /// Handle event dismissal with optimistic UI update

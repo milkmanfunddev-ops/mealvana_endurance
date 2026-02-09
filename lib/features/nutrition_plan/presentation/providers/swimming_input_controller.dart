@@ -2,12 +2,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/intensity_distribution.dart';
+import '../../domain/meal_type.dart';
+import '../../../../shared/domain/activity_type.dart';
 import 'macro_targets_controller.dart';
+import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
 import '../../../weather/domain/weather_forecast.dart';
 import '../../../weather/application/weather_service.dart';
 import '../../../../shared/services/location_service.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
+import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
 part 'swimming_input_controller.g.dart';
 
@@ -30,6 +34,13 @@ class SwimmingFormState {
   final IntensityDistribution intensity;
   final DurationPaceMode durationPaceMode;
   final Duration? estimatedDuration;
+
+  // Zone-based pace suggestion
+  final bool zonePaceApplied;
+  final int? zoneSuggestedPacePer100mSeconds;
+
+  // V3: Track if user manually changed the pre-swim timing
+  final bool preSwimMinutesManuallySet;
 
   // Weather integration fields
   final weather_domain.Location? location;
@@ -55,6 +66,9 @@ class SwimmingFormState {
     IntensityDistribution? intensity,
     this.durationPaceMode = DurationPaceMode.byDuration,
     this.estimatedDuration,
+    this.zonePaceApplied = false,
+    this.zoneSuggestedPacePer100mSeconds,
+    this.preSwimMinutesManuallySet = false,
     this.location,
     this.weatherForecast,
     this.isLoadingLocation = false,
@@ -83,6 +97,9 @@ class SwimmingFormState {
     IntensityDistribution? intensity,
     DurationPaceMode? durationPaceMode,
     Duration? estimatedDuration,
+    bool? zonePaceApplied,
+    int? zoneSuggestedPacePer100mSeconds,
+    bool? preSwimMinutesManuallySet,
     weather_domain.Location? location,
     WeatherForecast? weatherForecast,
     bool? isLoadingLocation,
@@ -106,6 +123,10 @@ class SwimmingFormState {
       intensity: intensity ?? this.intensity,
       durationPaceMode: durationPaceMode ?? this.durationPaceMode,
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
+      zonePaceApplied: zonePaceApplied ?? this.zonePaceApplied,
+      zoneSuggestedPacePer100mSeconds:
+          zoneSuggestedPacePer100mSeconds ?? this.zoneSuggestedPacePer100mSeconds,
+      preSwimMinutesManuallySet: preSwimMinutesManuallySet ?? this.preSwimMinutesManuallySet,
       location: location ?? this.location,
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
@@ -130,9 +151,14 @@ class SwimmingInputController extends _$SwimmingInputController {
     // Default: 2000 meters at 120 seconds per 100m = 20 * 120 seconds = 2400 seconds = 40 minutes
     final initialDurationMinutes = ((2000 / 100) * 120 / 60).round();
 
+    // V3: Pre-fill timing from recommendation based on default intensity
+    final defaultIntensity = IntensityDistribution(conversationalPct: 70, tempoPct: 20, allOutPct: 10);
+    final recommendedMinutes = (recommendedHoursBefore(ActivityType.swimming, defaultIntensity) * 60).round();
+
     final initialState = SwimmingFormState(
       selectedDate: now,
       selectedTime: const TimeOfDay(hour: 6, minute: 0),
+      preSwimMinutes: recommendedMinutes,
       estimatedDuration: Duration(minutes: initialDurationMinutes),
     );
 
@@ -142,6 +168,35 @@ class SwimmingInputController extends _$SwimmingInputController {
     // See: fetchLocationIfNeeded() method
 
     return initialState;
+  }
+
+  /// Try to load zone-based swim pace suggestion from Training Peaks zones.
+  ///
+  /// Fetches the athlete's Zone 2 swim pace (sec/100m) and applies it as the default pace
+  /// if available. This is called once when the tab becomes active.
+  Future<void> applyZonePaceIfAvailable(String userId) async {
+    if (state.zonePaceApplied) return; // Only apply once
+    // Avoid overriding an existing pace (e.g., from event data or manual edits)
+    if (state.pacePer100mSeconds != 120) return;
+
+    try {
+      final zones = await ref.read(athleteZonesProvider(userId).future);
+      final zone2PaceSeconds = zones?.zone2SwimPaceSecondsPer100m;
+      if (zone2PaceSeconds != null && zone2PaceSeconds > 30 && zone2PaceSeconds < 300) {
+        final paceSeconds = zone2PaceSeconds.round();
+        final estimatedSeconds = ((state.distanceMeters / 100) * paceSeconds).round();
+        state = state.copyWith(
+          pacePer100mSeconds: paceSeconds,
+          zonePaceApplied: true,
+          zoneSuggestedPacePer100mSeconds: paceSeconds,
+          estimatedDuration: Duration(seconds: estimatedSeconds),
+        );
+        DebugLogger.info('🏊 SWIMMING CONTROLLER: Applied zone-based pace: ${paceSeconds}s/100m');
+      }
+    } catch (e) {
+      // Non-blocking - keep default pace if zone fetch fails
+      DebugLogger.error('🏊 SWIMMING CONTROLLER: Zone pace unavailable', error: e);
+    }
   }
 
   /// Fetch location if this controller needs it and doesn't already have it.
@@ -170,23 +225,33 @@ class SwimmingInputController extends _$SwimmingInputController {
 
   /// Update form field values
   void updateDistance(int distanceMeters) {
-    state = state.copyWith(distanceMeters: distanceMeters);
-    // Recalculate estimated duration if in byDuration mode
-    if (state.durationPaceMode == DurationPaceMode.byDuration) {
-      _estimateDuration();
+    final hasDuration =
+        state.estimatedDuration != null && state.estimatedDuration!.inSeconds > 0;
+
+    if (state.durationPaceMode == DurationPaceMode.byDuration && hasDuration) {
+      final newPace =
+          _estimatePaceFromDuration(distanceMeters: distanceMeters, duration: state.estimatedDuration);
+      state = state.copyWith(
+        distanceMeters: distanceMeters,
+        pacePer100mSeconds: newPace ?? state.pacePer100mSeconds,
+      );
+      return;
     }
+
+    state = state.copyWith(distanceMeters: distanceMeters);
+    _estimateDuration(distanceMeters: distanceMeters, pacePer100mSeconds: state.pacePer100mSeconds);
   }
 
   void updatePace(int pacePer100mSeconds) {
     state = state.copyWith(pacePer100mSeconds: pacePer100mSeconds);
-    // Recalculate estimated duration if in byDuration mode
-    if (state.durationPaceMode == DurationPaceMode.byDuration) {
-      _estimateDuration();
-    }
+    _estimateDuration(distanceMeters: state.distanceMeters, pacePer100mSeconds: pacePer100mSeconds);
   }
 
   void updatePreSwimMinutes(int minutes) {
-    state = state.copyWith(preSwimMinutes: minutes);
+    state = state.copyWith(
+      preSwimMinutes: minutes,
+      preSwimMinutesManuallySet: true,
+    );
   }
 
   void updateIntensityTarget(String intensityTarget) {
@@ -232,34 +297,80 @@ class SwimmingInputController extends _$SwimmingInputController {
   /// Update intensity distribution
   void updateIntensityDistribution(IntensityDistribution intensity) {
     state = state.copyWith(intensity: intensity);
+
+    // V3: Auto-update timing to recommendation if user hasn't manually overridden
+    if (!state.preSwimMinutesManuallySet) {
+      final recommended = recommendedHoursBefore(ActivityType.swimming, intensity);
+      state = state.copyWith(preSwimMinutes: (recommended * 60).round());
+    }
   }
 
   void updateDuration(Duration duration) {
-    state = state.copyWith(estimatedDuration: duration);
+    final newPace = _estimatePaceFromDuration(duration: duration);
+    state = state.copyWith(
+      estimatedDuration: duration,
+      pacePer100mSeconds: newPace ?? state.pacePer100mSeconds,
+    );
   }
 
   /// Update duration/pace mode
   void updateDurationPaceMode(DurationPaceMode mode) {
-    state = state.copyWith(durationPaceMode: mode);
-    // Recalculate estimated duration when switching to byDuration mode
     if (mode == DurationPaceMode.byDuration) {
-      _estimateDuration();
+      state = state.copyWith(durationPaceMode: mode);
+      _estimateDuration(
+        distanceMeters: state.distanceMeters,
+        pacePer100mSeconds: state.pacePer100mSeconds,
+      );
+      return;
     }
+
+    final newPace = _estimatePaceFromDuration();
+    state = state.copyWith(
+      durationPaceMode: mode,
+      pacePer100mSeconds: newPace ?? state.pacePer100mSeconds,
+    );
   }
 
   /// Calculate estimated duration from distance and pace per 100m
   /// For swimming: estimatedDuration = (distance / 100) * pacePer100mSeconds
-  void _estimateDuration() {
-    if (state.distanceMeters > 0 && state.pacePer100mSeconds > 0) {
+  void _estimateDuration({int? distanceMeters, int? pacePer100mSeconds}) {
+    final currentDistance = distanceMeters ?? state.distanceMeters;
+    final currentPace = pacePer100mSeconds ?? state.pacePer100mSeconds;
+
+    if (currentDistance > 0 && currentPace > 0) {
       // Calculate number of 100m segments
-      final segments = state.distanceMeters / 100;
+      final segments = currentDistance / 100;
       // Total seconds = segments * pace per 100m
-      final totalSeconds = (segments * state.pacePer100mSeconds).round();
+      final totalSeconds = (segments * currentPace).round();
 
       state = state.copyWith(
         estimatedDuration: Duration(seconds: totalSeconds),
       );
     }
+  }
+
+  int? _estimatePaceFromDuration({
+    int? distanceMeters,
+    Duration? duration,
+  }) {
+    final currentDistance = distanceMeters ?? state.distanceMeters;
+    final currentDuration = duration ?? state.estimatedDuration;
+
+    if (currentDuration == null || currentDistance <= 0) {
+      return null;
+    }
+
+    final segments = currentDistance / 100;
+    if (segments <= 0) {
+      return null;
+    }
+
+    final totalSeconds = currentDuration.inSeconds;
+    if (totalSeconds <= 0) {
+      return null;
+    }
+
+    return (totalSeconds / segments).round();
   }
 
   /// Fetch current GPS location
@@ -383,6 +494,7 @@ class SwimmingInputController extends _$SwimmingInputController {
       intensityTarget: currentState.intensityTarget,
       sessionGoal: currentState.sessionGoal,
       timeBeforeMinutes: currentState.preSwimMinutes,
+      intensity: currentState.intensity,
       scheduledDate: currentState.selectedDate,
       scheduledTime: currentState.selectedTime,
       activityId: activityId,

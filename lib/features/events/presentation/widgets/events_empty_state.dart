@@ -9,7 +9,12 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 /// - "No Events Yet" title
 /// - Helpful message about creating first event
 class EventsEmptyState extends StatelessWidget {
-  const EventsEmptyState({super.key});
+  const EventsEmptyState({
+    super.key,
+    this.onCreateEvent,
+  });
+
+  final VoidCallback? onCreateEvent;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +44,15 @@ class EventsEmptyState extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
+            if (onCreateEvent != null) ...[
+              const SizedBox(height: AppSpacing.xl),
+              KylePrimaryButton(
+                text: 'New Event',
+                icon: FontAwesomeIcons.plus,
+                isFullWidth: false,
+                onPressed: onCreateEvent,
+              ),
+            ],
           ],
         ),
       ),

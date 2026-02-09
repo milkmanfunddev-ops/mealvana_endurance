@@ -26,6 +26,7 @@ class EnvironmentSection extends StatelessWidget {
     required this.sunExposure,
     required this.onSunChanged,
     required this.isIndoor,
+    this.showWindAndSun = true,
     // Optional weather params (null = no weather UI)
     this.isLoadingWeather = false,
     this.onFetchWeather,
@@ -48,6 +49,7 @@ class EnvironmentSection extends StatelessWidget {
   final String sunExposure;
   final ValueChanged<String> onSunChanged;
   final bool isIndoor;
+  final bool showWindAndSun;
 
   // Optional weather integration
   final bool isLoadingWeather;
@@ -223,7 +225,7 @@ class EnvironmentSection extends StatelessWidget {
             unit: '%',
           ),
 
-          if (!isIndoor) ...[
+          if (!isIndoor && showWindAndSun) ...[
             const SizedBox(height: AppSpacing.lg),
 
             // Wind Condition

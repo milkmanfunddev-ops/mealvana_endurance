@@ -5,6 +5,7 @@ import '../domain/food_item_data.dart';
 import '../domain/macro_targets.dart' as targets;
 import 'food_data_transformation_service.dart';
 import '../../auth/application/auth_service.dart';
+import '../../auth/data/user_repository.dart';
 import '../../auth/domain/user_preferences.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/app_external_deps.dart';
@@ -528,10 +529,15 @@ class LLMNutritionPlanService {
     required targets.MacroTargets macroTargets,
     String? activityId,
     BrickMetadata? brickMetadata,
+    String? userId,
   }) async {
     try {
-      // Get current user
-      final user = await _authService.getCurrentUser();
+      // Get current user: prefer explicit userId lookup (auth-session-independent),
+      // fall back to auth service for backward compatibility
+      var user = userId != null
+          ? await (await ref.read(userRepositoryProvider.future)).getUserProfileById(userId)
+          : null;
+      user ??= await _authService.getCurrentUser();
       if (user == null) {
         throw Exception('No user found. Please complete onboarding first.');
       }

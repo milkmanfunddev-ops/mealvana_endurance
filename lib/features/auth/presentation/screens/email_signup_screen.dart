@@ -346,58 +346,6 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                   },
                 ),
 
-                const SizedBox(height: AppSpacing.lg),
-
-                // Email verification notice
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.electrolyte.withOpacity(0.1),
-                    borderRadius: AppRadius.cardRadius,
-                    border: Border.all(
-                      color: AppColors.electrolyte.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        FontAwesomeIcons.circleInfo,
-                        size: AppIconSizes.sm,
-                        color: AppColors.electrolyte,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              contentService.getValue(
-                                'auth.email_signup.email_verification_notice',
-                                defaultValue: 'We\'ll send a confirmation email to verify your address',
-                              ),
-                              style: AppTextStyles.smallLabel.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xxs),
-                            Text(
-                              contentService.getValue(
-                                'auth.email_signup.email_verification_optional',
-                                defaultValue: '(Optional - you can use the app immediately)',
-                              ),
-                              style: AppTextStyles.smallLabel.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
                 const SizedBox(height: AppSpacing.xxxl),
 
                 // Create account button

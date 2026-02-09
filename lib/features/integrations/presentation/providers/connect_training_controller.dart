@@ -480,9 +480,16 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // hydration will find the activities in Supabase.
       if (result.hasNewWorkouts || result.updated > 0) {
         try {
-          await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+          final uploadResult =
+              await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
           if (kDebugMode) {
-            print('☁️ Uploaded synced activities to Supabase');
+            if (uploadResult.success) {
+              print(
+                  '☁️ Uploaded ${uploadResult.count} synced activities to Supabase');
+            } else {
+              print(
+                  '⚠️ Upload to Supabase failed: ${uploadResult.error}');
+            }
           }
         } catch (e) {
           if (kDebugMode) {
@@ -736,9 +743,16 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       if (result.workoutResult.hasNewWorkouts ||
           result.workoutResult.updated > 0) {
         try {
-          await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+          final uploadResult =
+              await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
           if (kDebugMode) {
-            print('☁️ Uploaded synced activities to Supabase');
+            if (uploadResult.success) {
+              print(
+                  '☁️ Uploaded ${uploadResult.count} synced activities to Supabase');
+            } else {
+              print(
+                  '⚠️ Upload to Supabase failed: ${uploadResult.error}');
+            }
           }
         } catch (e) {
           if (kDebugMode) {

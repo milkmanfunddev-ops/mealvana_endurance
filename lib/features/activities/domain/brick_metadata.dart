@@ -45,16 +45,31 @@ class BrickMetadata {
 
   /// Deserialize from JSON
   factory BrickMetadata.fromJson(Map<String, dynamic> json) {
+    final segmentOrderRaw = json['segment_order'] ?? json['segmentOrder'];
+    final segmentsRaw = json['segments'];
+    final originalActivityIdsRaw =
+        json['original_activity_ids'] ?? json['originalActivityIds'];
+    final createdFromExistingRaw =
+        json['created_from_existing'] ?? json['createdFromExisting'];
+    final totalDurationMinutesRaw =
+        json['total_duration_minutes'] ?? json['totalDurationMinutes'];
+
+    final parsedSegments = _asMapList(segmentsRaw)
+        .map(BrickSegment.fromJson)
+        .toList();
+
     return BrickMetadata(
-      segmentOrder: (json['segment_order'] as List<dynamic>).cast<String>(),
-      segments: (json['segments'] as List<dynamic>)
-          .map((s) => BrickSegment.fromJson(s as Map<String, dynamic>))
-          .toList(),
-      originalActivityIds: json['original_activity_ids'] != null
-          ? (json['original_activity_ids'] as List<dynamic>).cast<String>()
+      segmentOrder: _asStringList(segmentOrderRaw),
+      segments: parsedSegments,
+      originalActivityIds: originalActivityIdsRaw != null
+          ? _asStringList(originalActivityIdsRaw)
           : null,
-      createdFromExisting: json['created_from_existing'] as bool,
-      totalDurationMinutes: json['total_duration_minutes'] as int,
+      createdFromExisting: _asBool(createdFromExistingRaw) ?? false,
+      totalDurationMinutes: _asInt(totalDurationMinutesRaw) ??
+          parsedSegments.fold<int>(
+            0,
+            (sum, segment) => sum + segment.durationMinutes,
+          ),
     );
   }
 
@@ -196,20 +211,33 @@ class BrickSegment {
   /// Deserialize from JSON
   factory BrickSegment.fromJson(Map<String, dynamic> json) {
     return BrickSegment(
-      sport: json['sport'] as String,
-      order: json['order'] as int,
-      durationMinutes: json['duration_minutes'] as int,
-      intensity: json['intensity'] as String,
-      distanceMeters: json['distance_meters'] as double?,
-      pacePer100mSeconds: json['pace_per_100m_seconds'] as int?,
-      poolOrOpenWater: json['pool_or_open_water'] as String?,
-      waterTempC: json['water_temp_c'] as double?,
-      distanceMiles: json['distance_miles'] as double?,
-      speedMph: json['speed_mph'] as double?,
-      terrain: json['terrain'] as String?,
-      indoorOutdoor: json['indoor_outdoor'] as String?,
-      elevationGainFt: json['elevation_gain_ft'] as int?,
-      paceMinutesPerMile: json['pace_minutes_per_mile'] as double?,
+      sport: _requireString(json['sport'], 'sport'),
+      order: _requireInt(json['order'], 'order'),
+      durationMinutes: _requireInt(
+        json['duration_minutes'] ?? json['durationMinutes'],
+        'duration_minutes',
+      ),
+      intensity: _requireString(json['intensity'], 'intensity'),
+      distanceMeters:
+          _asDouble(json['distance_meters'] ?? json['distanceMeters']),
+      pacePer100mSeconds: _asInt(
+        json['pace_per_100m_seconds'] ?? json['pacePer100mSeconds'],
+      ),
+      poolOrOpenWater: _asString(
+        json['pool_or_open_water'] ?? json['poolOrOpenWater'],
+      ),
+      waterTempC: _asDouble(json['water_temp_c'] ?? json['waterTempC']),
+      distanceMiles: _asDouble(json['distance_miles'] ?? json['distanceMiles']),
+      speedMph: _asDouble(json['speed_mph'] ?? json['speedMph']),
+      terrain: _asString(json['terrain']),
+      indoorOutdoor:
+          _asString(json['indoor_outdoor'] ?? json['indoorOutdoor']),
+      elevationGainFt: _asInt(
+        json['elevation_gain_ft'] ?? json['elevationGainFt'],
+      ),
+      paceMinutesPerMile: _asDouble(
+        json['pace_minutes_per_mile'] ?? json['paceMinutesPerMile'],
+      ),
     );
   }
 
@@ -302,4 +330,77 @@ bool _listEquals<T>(List<T>? a, List<T>? b) {
     if (a[i] != b[i]) return false;
   }
   return true;
+}
+
+List<Map<String, dynamic>> _asMapList(dynamic value) {
+  if (value is! List) return const [];
+  return value
+      .whereType<Object?>()
+      .map(_asStringKeyedMap)
+      .toList(growable: false);
+}
+
+Map<String, dynamic> _asStringKeyedMap(dynamic value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) {
+    return value.map((key, val) => MapEntry(key.toString(), val));
+  }
+  throw const FormatException('Expected JSON object');
+}
+
+List<String> _asStringList(dynamic value) {
+  if (value is! List) return const [];
+  return value
+      .where((item) => item != null)
+      .map((item) => item.toString())
+      .toList(growable: false);
+}
+
+String? _asString(dynamic value) {
+  if (value == null) return null;
+  if (value is String) return value;
+  return value.toString();
+}
+
+String _requireString(dynamic value, String fieldName) {
+  final parsed = _asString(value);
+  if (parsed == null || parsed.isEmpty) {
+    throw FormatException('Missing required field: $fieldName');
+  }
+  return parsed;
+}
+
+int? _asInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+int _requireInt(dynamic value, String fieldName) {
+  final parsed = _asInt(value);
+  if (parsed == null) {
+    throw FormatException('Invalid required field: $fieldName');
+  }
+  return parsed;
+}
+
+double? _asDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
+}
+
+bool? _asBool(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is String) {
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'true') return true;
+    if (normalized == 'false') return false;
+  }
+  return null;
 }

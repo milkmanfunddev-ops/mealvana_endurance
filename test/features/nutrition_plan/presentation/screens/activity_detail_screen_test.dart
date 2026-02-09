@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,13 +27,12 @@ void main() {
       final activity = Activity(
         id: 'test-activity-1',
         userId: 'test-user',
-        deviceId: 'test-device',
         activityType: ActivityType.running,
+        title: 'Test Run',
         scheduledDateTime: DateTime.now(),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ActivityStatus.scheduled,
-        isCompleted: false,
+        status: ActivityStatus.planned,
       );
 
       final state = ActivityDetailState(
@@ -45,11 +46,11 @@ void main() {
             activityDetailControllerProvider(
               activityId: 'test-activity-1',
               isNewActivity: false,
-            ).overrideWith((ref) {
+            ).overrideWith(() {
               return MockActivityDetailController(state);
             }),
           ],
-          child: MaterialApp(
+          child: const MaterialApp(
             home: ActivityDetailScreen(
               activityId: 'test-activity-1',
               isNewActivity: false,
@@ -69,13 +70,12 @@ void main() {
       final activity = Activity(
         id: 'test-activity-1',
         userId: 'test-user',
-        deviceId: 'test-device',
         activityType: ActivityType.running,
+        title: 'Test Run',
         scheduledDateTime: DateTime.now(),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ActivityStatus.scheduled,
-        isCompleted: false,
+        status: ActivityStatus.planned,
       );
 
       final state = ActivityDetailState(
@@ -90,11 +90,11 @@ void main() {
             activityDetailControllerProvider(
               activityId: 'test-activity-1',
               isNewActivity: true,
-            ).overrideWith((ref) {
+            ).overrideWith(() {
               return MockActivityDetailController(state);
             }),
           ],
-          child: MaterialApp(
+          child: const MaterialApp(
             home: ActivityDetailScreen(
               activityId: 'test-activity-1',
               isNewActivity: true,
@@ -114,13 +114,12 @@ void main() {
       final activity = Activity(
         id: 'test-activity-1',
         userId: 'test-user',
-        deviceId: 'test-device',
         activityType: ActivityType.running,
+        title: 'Test Run',
         scheduledDateTime: DateTime.now(),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ActivityStatus.scheduled,
-        isCompleted: false,
+        status: ActivityStatus.planned,
       );
 
       final state = ActivityDetailState(
@@ -134,11 +133,11 @@ void main() {
             activityDetailControllerProvider(
               activityId: 'test-activity-1',
               isNewActivity: false,
-            ).overrideWith((ref) {
+            ).overrideWith(() {
               return MockActivityDetailController(state);
             }),
           ],
-          child: MaterialApp(
+          child: const MaterialApp(
             home: ActivityDetailScreen(
               activityId: 'test-activity-1',
               isNewActivity: false,
@@ -160,13 +159,12 @@ void main() {
       final activity = Activity(
         id: 'test-activity-1',
         userId: 'test-user',
-        deviceId: 'test-device',
         activityType: ActivityType.running,
+        title: 'Test Run',
         scheduledDateTime: DateTime.now(),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        status: ActivityStatus.scheduled,
-        isCompleted: false,
+        status: ActivityStatus.planned,
       );
 
       final state = ActivityDetailState(
@@ -180,11 +178,11 @@ void main() {
             activityDetailControllerProvider(
               activityId: 'test-activity-1',
               isNewActivity: false,
-            ).overrideWith((ref) {
+            ).overrideWith(() {
               return MockActivityDetailController(state);
             }),
           ],
-          child: MaterialApp(
+          child: const MaterialApp(
             home: ActivityDetailScreen(
               activityId: 'test-activity-1',
               isNewActivity: false,
@@ -205,13 +203,12 @@ void main() {
       final activity = Activity(
         id: 'test-activity-1',
         userId: 'test-user',
-        deviceId: 'test-device',
         activityType: ActivityType.running,
+        title: 'Test Run',
         scheduledDateTime: DateTime.now(),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         status: ActivityStatus.completed,
-        isCompleted: true,
         completedAt: completedAt,
       );
 
@@ -226,11 +223,11 @@ void main() {
             activityDetailControllerProvider(
               activityId: 'test-activity-1',
               isNewActivity: false,
-            ).overrideWith((ref) {
+            ).overrideWith(() {
               return MockActivityDetailController(state);
             }),
           ],
-          child: MaterialApp(
+          child: const MaterialApp(
             home: ActivityDetailScreen(
               activityId: 'test-activity-1',
               isNewActivity: false,
@@ -253,13 +250,13 @@ void main() {
 }
 
 /// Mock controller for testing
-class MockActivityDetailController extends AsyncNotifier<ActivityDetailState> {
+class MockActivityDetailController extends ActivityDetailController {
   final ActivityDetailState _state;
 
   MockActivityDetailController(this._state);
 
   @override
-  Future<ActivityDetailState> build({
+  FutureOr<ActivityDetailState> build({
     required String activityId,
     bool isNewActivity = false,
   }) async {

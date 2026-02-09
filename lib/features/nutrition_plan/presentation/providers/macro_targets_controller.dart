@@ -8,6 +8,7 @@ import '../../../activities/domain/activity.dart' as domain;
 import '../../../activities/application/activities_service.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../domain/run_parameters.dart';
+import '../../domain/intensity_distribution.dart';
 import '../../domain/macro_targets.dart';
 import '../../data/macro_repository.dart';
 import '../../application/macro_generation_service.dart';
@@ -212,9 +213,19 @@ class MacroTargetsController extends _$MacroTargetsController {
   AnalyticsTracker get _analytics => ref.read(appExternalDepsProvider).analytics;
   AuthService get _authService => ref.read(authServiceProvider);
 
+  /// Tracks the current activityId outside of state so onDispose can access it
+  /// without reading `state` (which is forbidden inside Riverpod lifecycle callbacks).
+  String? _lastKnownActivityId;
+
   @override
   FutureOr<MacroTargetsState> build() async {
     // Screen views not tracked per README spec
+
+    // Track activityId changes so onDispose can access it safely
+    // (accessing state inside onDispose is forbidden by Riverpod)
+    listenSelf((previous, next) {
+      _lastKnownActivityId = next.value?.activityId;
+    });
 
     // ✨ DRAFT ACTIVITY CLEANUP (Andrea Bizzotto FOA Pattern)
     // Register cleanup when provider is disposed to handle abandoned drafts
@@ -339,6 +350,8 @@ class MacroTargetsController extends _$MacroTargetsController {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
+    bool isFasted = false,
+    IntensityDistribution? intensity,
     String? activityId, // Link to calendar activity/event
     String? eventId, // Link to calendar event (for provider invalidation)
     String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
@@ -363,9 +376,11 @@ class MacroTargetsController extends _$MacroTargetsController {
         sweatRateCat: sweatRateCat,
         temperatureC: temperatureC,
         humidityPct: humidityPct,
+        isFasted: isFasted,
+        intensity: intensity,
         activityId: activityId,
         eventId: eventId,
-        forUserId: forUserId, // NEW: Pass through forUserId in recursive call
+        forUserId: forUserId,
       );
     }
 
@@ -428,7 +443,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           );
         }
 
-        // Call generate-macros edge function directly
+        // Call generate-macros-v3 edge function directly
         await _generateMacroTargets(
           activityId: activityId,
           deviceId: deviceId,
@@ -439,6 +454,8 @@ class MacroTargetsController extends _$MacroTargetsController {
           sweatRateCat: sweatRateCat,
           temperatureC: temperatureC,
           humidityPct: humidityPct,
+          isFasted: isFasted,
+          intensity: intensity,
         );
 
         // Get the generated macro targets from cache to track analytics
@@ -496,9 +513,11 @@ class MacroTargetsController extends _$MacroTargetsController {
     required TimeOfDay scheduledTime,
     required double temperatureC,
     required double humidityPct,
+    bool isFasted = false,
+    IntensityDistribution? intensity,
     String? activityId,
     String? eventId,
-    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
+    String? forUserId,
   }) async {
     final currentState = state.value;
     if (currentState == null) return;
@@ -579,6 +598,8 @@ class MacroTargetsController extends _$MacroTargetsController {
           sessionGoal: sessionGoal,
           temperatureC: temperatureC,
           humidityPct: humidityPct,
+          isFasted: isFasted,
+          intensity: intensity,
         );
 
         return currentState.copyWith(
@@ -616,7 +637,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     });
   }
 
-  /// Generate macro targets by calling the generate-macros edge function
+  /// Generate macro targets by calling the generate-macros-v3 edge function
   Future<void> _generateMacroTargets({
     String? activityId,
     required String deviceId,
@@ -627,22 +648,32 @@ class MacroTargetsController extends _$MacroTargetsController {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
+    bool isFasted = false,
+    IntensityDistribution? intensity,
   }) async {
     // Get user profile data
     final userProfile = await _authService.getCurrentUser();
-    
+
     // Calculate user metrics with fallbacks to reasonable defaults
     final age = userProfile?.age ?? 30;
     final gender = userProfile?.gender.name ?? 'other';
-    final weightKg = userProfile != null 
+    final weightKg = userProfile != null
         ? userProfile.weightPounds * 0.453592  // Convert lbs to kg
         : 70.0; // Default 70kg if no profile
     final heightCm = userProfile != null
         ? userProfile.totalHeightInches * 2.54  // Convert inches to cm
         : 170.0; // Default 170cm if no profile
 
+    // V3: Convert minutes to hours for the new edge function
+    final hoursBefore = timeBeforeRunMinutes / 60.0;
+
+    // V3: Normalize intensity distribution to fractions (0-1)
+    final zoneLow = (intensity?.conversationalPct ?? 70) / 100.0;
+    final zoneMid = (intensity?.tempoPct ?? 20) / 100.0;
+    final zoneHigh = (intensity?.allOutPct ?? 10) / 100.0;
+
     final requestData = {
-      'activity_type': 'running', // Explicitly set activity type
+      'activity_type': 'running',
       'age': age,
       'gender': gender,
       'weight': weightKg,
@@ -653,21 +684,30 @@ class MacroTargetsController extends _$MacroTargetsController {
       'run_distance': distanceMiles,
       'run_pace_unit': 'min_per_mile',
       'run_distance_unit': 'mi',
+      // V3 params
+      'hours_before': hoursBefore,
+      'is_fasted': isFasted,
+      'intensity_distribution': {
+        'zone_low': zoneLow,
+        'zone_mid': zoneMid,
+        'zone_high': zoneHigh,
+      },
+      // Legacy param kept for backward compat
       'time_before_run_min': timeBeforeRunMinutes,
-      'gut_training': gutTraining.name, // Use the gut training level selected on the UI
-      'carb_source': 'dual', // Default to dual-source carbs
-      'sweat_sodium': 'medium', // Default sweat sodium
-      'drink_sodium_mg_per_l': 500, // Default sports drink sodium
-      'optional_sweat_rate_lph': null, // Use category-based approach
+      'gut_training': gutTraining.name,
+      'carb_source': 'dual',
+      'sweat_sodium': 'medium',
+      'drink_sodium_mg_per_l': 500,
+      'optional_sweat_rate_lph': null,
       'sweat_rate_category': sweatRateCat?.name ?? 'medium',
       'temp_c': temperatureC,
       'humidity_pct': humidityPct,
     };
 
-    // Call the generate-macros edge function
+    // Call the generate-macros-v3 edge function
     final supabase = ref.read(appExternalDepsProvider).supabaseClient;
     final response = await supabase.functions.invoke(
-      'generate-macros',
+      'generate-macros-v3',
       body: requestData,
     );
 
@@ -735,17 +775,28 @@ class MacroTargetsController extends _$MacroTargetsController {
         fluidsMl: toDouble(macrosData['post_run_water_ml'], 'post_run_water_ml'),
         sodiumMg: toDouble(macrosData['post_run_sodium_mg'], 'post_run_sodium_mg'),
       ),
-      metrics: RunMetrics(
-        distanceMi: toDouble(macrosData['distance_mi'], 'distance_mi'),
-        distanceKm: toDouble(macrosData['distance_km'], 'distance_km'),
-        durationH: toDouble(macrosData['duration_h'], 'duration_h'),
-        durationMin: toDouble(macrosData['duration_min'], 'duration_min'),
-        paceMinPerMile: toDouble(macrosData['pace_min_per_mile'], 'pace_min_per_mile'),
-        speedMph: toDouble(macrosData['speed_mph'], 'speed_mph'),
-        caloriesNetKcal: toDouble(macrosData['calories_net_kcal'], 'calories_net_kcal'),
-        caloriesGrossKcal: toDouble(macrosData['calories_gross_kcal'], 'calories_gross_kcal'),
-        met: toDouble(macrosData['MET'], 'MET'),
-      ),
+      metrics: () {
+        // Compute derived metrics client-side since the edge function
+        // only returns distance_km, duration_h, and duration_min
+        final distanceKm = toDouble(macrosData['distance_km'], 'distance_km');
+        final durationH = toDouble(macrosData['duration_h'], 'duration_h');
+        final durationMin = toDouble(macrosData['duration_min'], 'duration_min');
+        final distanceMi = distanceKm > 0 ? distanceKm / 1.60934 : 0.0;
+        final speedMph = (distanceMi > 0 && durationH > 0) ? distanceMi / durationH : 0.0;
+        final paceMinPerMile = (distanceMi > 0 && durationMin > 0) ? durationMin / distanceMi : null;
+
+        return RunMetrics(
+          distanceMi: distanceMi,
+          distanceKm: distanceKm,
+          durationH: durationH,
+          durationMin: durationMin,
+          paceMinPerMile: paceMinPerMile,
+          speedMph: speedMph,
+          caloriesNetKcal: toDouble(macrosData['calories_net_kcal'], 'calories_net_kcal'),
+          caloriesGrossKcal: toDouble(macrosData['calories_gross_kcal'], 'calories_gross_kcal'),
+          met: toDouble(macrosData['MET'], 'MET'),
+        );
+      }(),
       calculationRule: macrosData['pre_run_carbs_rule'] ?? 'Generated from edge function',
       timestamp: DateTime.now(),
       isUserModified: false,
@@ -786,6 +837,8 @@ class MacroTargetsController extends _$MacroTargetsController {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
+    bool isFasted = false,
+    IntensityDistribution? intensity,
     String? activityId,
     String? eventId,
     String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
@@ -803,6 +856,8 @@ class MacroTargetsController extends _$MacroTargetsController {
       sweatRateCat: sweatRateCat,
       temperatureC: temperatureC,
       humidityPct: humidityPct,
+      isFasted: isFasted,
+      intensity: intensity,
       activityId: activityId,
       eventId: eventId,
       forUserId: forUserId, // NEW: Pass through forUserId
@@ -818,11 +873,12 @@ class MacroTargetsController extends _$MacroTargetsController {
     required String intensityTarget,
     required String sessionGoal,
     required int timeBeforeMinutes,
+    IntensityDistribution? intensity,
     required DateTime scheduledDate,
     required TimeOfDay scheduledTime,
     String? activityId,
     String? eventId,
-    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
+    String? forUserId,
   }) async{
     final currentState = state.value;
     if (currentState == null) return;
@@ -903,6 +959,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           intensityTarget: intensityTarget,
           sessionGoal: sessionGoal,
           waterTempC: waterTempC,
+          intensity: intensity,
         );
 
         return currentState.copyWith(
@@ -946,6 +1003,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     required List<String> segmentOrder,
     required DateTime scheduledDate,
     required TimeOfDay scheduledTime,
+    required bool isFasted,
     String? activityId,
     String? eventId,
     String? forUserId, // If provided, create activity for this user (coach creating for athlete)
@@ -992,6 +1050,19 @@ class MacroTargetsController extends _$MacroTargetsController {
           scheduledTime.minute,
         );
 
+        final totalDurationMinutes = segments.fold<int>(
+          0,
+          (total, segment) => total + segment.durationMinutes,
+        );
+
+        final brickMetadata = BrickMetadata(
+          segmentOrder: segmentOrder,
+          segments: segments,
+          originalActivityIds: null,
+          createdFromExisting: false,
+          totalDurationMinutes: totalDurationMinutes,
+        );
+
         String finalActivityId = activityId ?? '';
 
         if (finalActivityId.isEmpty) {
@@ -1001,14 +1072,38 @@ class MacroTargetsController extends _$MacroTargetsController {
           final sportNames = segmentOrder.map((s) => s.toUpperCase()).join('/');
           final brickTitle = '$sportNames BRICK';
 
+          DebugLogger.info(
+            '🧱 DEBUG: Creating draft brick activity',
+          );
+          DebugLogger.info(
+            '🧱 DEBUG: segmentOrder=$segmentOrder, totalDurationMinutes=$totalDurationMinutes',
+          );
+
           finalActivityId = await activitiesController.createActivity(
             title: brickTitle,
             scheduledDateTime: scheduledDateTime,
             forUserId: forUserId,
             activityType: ActivityType.brick,
             intensityLevel: domain.IntensityLevel.moderate, // Default
+            durationMinutes: totalDurationMinutes,
+            brickMetadata: brickMetadata,
             notes: 'Draft brick activity - nutrition plan being generated',
           );
+        } else {
+          final activitiesController = ref.read(activitiesControllerProvider.notifier);
+          final existingActivity = await activitiesController.getActivityById(finalActivityId);
+          final hasSegments = existingActivity?.brickMetadata?.segments.isNotEmpty ?? false;
+          if (existingActivity != null && !hasSegments) {
+            DebugLogger.info(
+              '🧱 DEBUG: Backfilling brick metadata for activityId=$finalActivityId',
+            );
+            await activitiesController.updateActivity(
+              existingActivity.copyWith(
+                brickMetadata: brickMetadata,
+                durationMinutes: existingActivity.durationMinutes ?? totalDurationMinutes,
+              ),
+            );
+          }
         }
 
         // Create the service instance
@@ -1025,6 +1120,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           deviceId: deviceId,
           segments: segments,
           segmentOrder: segmentOrder,
+          isFasted: isFasted,
         );
 
         return currentState.copyWith(
@@ -1311,10 +1407,12 @@ class MacroTargetsController extends _$MacroTargetsController {
         // Use the service method that handles fallback automatically
         final nutritionPlanService = ref.read(nutritionPlanServiceProvider);
         final currentStateValue = state.value;
+        final userId = await ref.read(userIdProvider.future);
 
         final nutritionPlan = await nutritionPlanService.generatePlanFromMacrosWithFallback(
           macroTargets: macroTargets,
           activityId: currentStateValue?.activityId, // Link to calendar activity/event if provided
+          userId: userId,
         );
 
         // Track successful plan creation (the service handles whether it's LLM or algorithmic)
@@ -1412,9 +1510,11 @@ class MacroTargetsController extends _$MacroTargetsController {
 
   /// Schedule cleanup of draft activity if provider is being disposed
   /// This handles the case where user navigates away before finalizing the plan
+  ///
+  /// NOTE: Uses [_lastKnownActivityId] instead of [state.value] because this
+  /// is called from ref.onDispose(), where accessing state is forbidden by Riverpod.
   void _scheduleCleanupIfNeeded() {
-    final currentState = state.value;
-    final activityId = currentState?.activityId;
+    final activityId = _lastKnownActivityId;
 
     // Only cleanup if we have a draft activity ID
     if (activityId != null && activityId.isNotEmpty) {

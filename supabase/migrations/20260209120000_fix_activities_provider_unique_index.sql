@@ -1,13 +1,19 @@
--- Fix: Convert partial unique index to non-partial for PostgREST upsert compatibility
+-- Fix: Convert partial unique index to non-partial for data integrity
 --
--- Problem: PostgREST's upsert(onConflict:) cannot specify WHERE predicates,
--- which means the partial unique index may not be correctly inferred as the
--- arbiter index during ON CONFLICT resolution. This can silently cause
--- INSERT instead of UPDATE, creating duplicate activities.
+-- Problem: The original partial unique index with WHERE clause was not
+-- compatible with PostgREST's upsert(onConflict:) which caused error 42P10:
+-- "there is no unique or exclusion constraint matching the ON CONFLICT specification"
+-- This prevented activities from being uploaded to Supabase, causing duplicates
+-- on logout→login→re-sync cycles.
 --
--- Solution: Replace with a non-partial unique index. In PostgreSQL, NULLs are
--- always treated as distinct in unique indexes, so manual activities (where
--- synced_from_provider or provider_workout_id is NULL) are unaffected.
+-- Solution: Two-pronged fix:
+-- 1. Dart code now uses onConflict: 'id' (primary key) for all upserts
+-- 2. This migration replaces the partial index with a non-partial one as
+--    a safety net for data integrity
+--
+-- In PostgreSQL, NULLs are always treated as distinct in unique indexes,
+-- so manual activities (where synced_from_provider or provider_workout_id
+-- is NULL) are unaffected by the non-partial index.
 --
 -- Before applying: Verify no duplicate (user_id, synced_from_provider, provider_workout_id)
 -- rows exist, or remove them first:
@@ -31,12 +37,9 @@ WHERE a.user_id = b.user_id
   AND a.provider_workout_id IS NOT NULL
   AND a.updated_at < b.updated_at;
 
--- Step 3: Create non-partial unique index (compatible with PostgREST upsert)
+-- Step 3: Create NON-partial unique index (no WHERE clause)
+-- NULLs are always distinct in PostgreSQL unique indexes, so rows with
+-- NULL synced_from_provider or provider_workout_id (manual activities)
+-- will never conflict with each other.
 CREATE UNIQUE INDEX uq_activities_provider_workout
-    ON activities (user_id, synced_from_provider, provider_workout_id)
-    WHERE (synced_from_provider IS NOT NULL AND provider_workout_id IS NOT NULL);
-
--- Note: We keep the WHERE clause but PostgreSQL 15+ (used by Supabase) correctly
--- infers this partial index when all indexed columns are non-NULL in the inserted row.
--- The critical fix is the immediate upload in the Dart code (connect_training_controller.dart).
--- This migration also cleans up any existing duplicates as a safety measure.
+    ON activities (user_id, synced_from_provider, provider_workout_id);

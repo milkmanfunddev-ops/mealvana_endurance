@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../providers/running_input_controller.dart';
 import '../../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../../theme/kyle_design/app_colors.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import '../../../../weather/presentation/screens/weather_detail_screen.dart';
 import '../../../../weather/domain/weather_forecast.dart';
 import '../../../../../shared/services/location_service.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import 'shared/workout_details_widget.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
+import 'shared/fasted_toggle.dart';
 
 /// Running Tab Content
 ///
@@ -146,17 +147,19 @@ class RunningTabContent extends ConsumerWidget {
                 value: formState.preRunMinutes,
                 onChanged: controller.updatePreRunMinutes,
               ),
-              // const SizedBox(height: AppSpacing.xs),
-              // Text(
-              //   'Optimal timing: Balanced meal with carbs and protein',
-              //   style: AppTextStyles.smallLabel.copyWith(
-              //     color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
-              //     fontSize: 11,
-              //     fontStyle: FontStyle.italic,
-              //   ),
-              //   textAlign: TextAlign.left,
-              // ),
             ],
+          ),
+
+          // FASTED TOGGLE
+          FastedToggle(
+            isFasted: formState.isFasted,
+            onChanged: controller.updateFasted,
+            showWarning: !FastedToggle.isSuitable(
+              conversationalPct: formState.intensity.conversationalPct,
+              estimatedDurationMinutes: formState.estimatedDuration?.inMinutes ?? 0,
+              isSwimming: false,
+            ),
+            warningText: 'Fasted training is not recommended for longer or harder runs. Consider fueling before.',
           ),
 
           const SizedBox(height: AppSpacing.xl),
@@ -545,8 +548,8 @@ class _TimeBeforeRunControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canIncrement = value + 15 <= 480;
-    final canDecrement = value - 15 >= 0;
+    final canIncrement = value + 30 <= 480;
+    final canDecrement = value - 30 >= 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -565,7 +568,7 @@ class _TimeBeforeRunControl extends StatelessWidget {
             // Minus button
             _ControlButton(
               icon: FontAwesomeIcons.minus,
-              onPressed: canDecrement ? () => onChanged(value - 15) : null,
+              onPressed: canDecrement ? () => onChanged(value - 30) : null,
               enabled: canDecrement,
             ),
             const SizedBox(width: AppSpacing.xl),
@@ -585,7 +588,7 @@ class _TimeBeforeRunControl extends StatelessWidget {
             // Plus button
             _ControlButton(
               icon: FontAwesomeIcons.plus,
-              onPressed: canIncrement ? () => onChanged(value + 15) : null,
+              onPressed: canIncrement ? () => onChanged(value + 30) : null,
               enabled: canIncrement,
             ),
           ],
@@ -594,4 +597,3 @@ class _TimeBeforeRunControl extends StatelessWidget {
     );
   }
 }
-

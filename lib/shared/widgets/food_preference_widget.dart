@@ -73,6 +73,16 @@ class FoodPreferenceChipItem extends StatelessWidget {
                 ),
             ],
           ),
+          if (food.servingSize != null && food.servingSize!.isNotEmpty) ...[
+            SizedBox(height: 6.h),
+            Text(
+              'Serving: ${food.servingSize}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
           SizedBox(height: 12.h),
           // Icons above the slider
           Row(

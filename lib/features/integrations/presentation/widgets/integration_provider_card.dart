@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/secondary_button.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
@@ -20,12 +21,15 @@ class IntegrationProviderCard extends StatelessWidget {
     this.athleteName,
     this.lastSyncAt,
     this.comingSoonText,
+    this.statusText,
     this.onConnect,
     this.onDisconnect,
     this.onSync,
+    this.onNotify,
     this.isSyncing = false,
     this.showSyncButton = true,
     this.hasSynced = false,
+    this.isNotified = false,
   });
 
   /// Provider name (used for placeholder if no logo, not displayed as text)
@@ -55,6 +59,9 @@ class IntegrationProviderCard extends StatelessWidget {
   /// Text to show if not available (e.g., "Coming Soon")
   final String? comingSoonText;
 
+  /// Optional status text displayed below the logo (e.g., "Coming soon")
+  final String? statusText;
+
   /// Callback when user taps Connect
   final VoidCallback? onConnect;
 
@@ -63,6 +70,9 @@ class IntegrationProviderCard extends StatelessWidget {
 
   /// Callback when user taps Sync Now (when connected)
   final VoidCallback? onSync;
+
+  /// Callback when user taps Notify Me (for coming soon integrations)
+  final VoidCallback? onNotify;
 
   /// Whether sync is in progress
   final bool isSyncing;
@@ -74,6 +84,9 @@ class IntegrationProviderCard extends StatelessWidget {
   /// Whether sync has completed successfully (shows "Synced!" instead of "Sync Now").
   /// This is in-memory only and resets when navigating away.
   final bool hasSynced;
+
+  /// Whether user has requested notification (shows "Notified!" state).
+  final bool isNotified;
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +124,17 @@ class IntegrationProviderCard extends StatelessWidget {
               ),
             ],
           ),
+
+          if (statusText != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              statusText!,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textDarkSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
 
           // Bottom row: Athlete name and last sync timestamp (when connected)
           if (isConnected && (athleteName != null || lastSyncAt != null)) ...[
@@ -158,6 +182,12 @@ class IntegrationProviderCard extends StatelessWidget {
   Widget _buildAction() {
     // Coming soon badge
     if (!isAvailable) {
+      if (onNotify != null) {
+        return _NotifyButton(
+          onNotify: onNotify,
+          isNotified: isNotified,
+        );
+      }
       return Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xs,
@@ -361,8 +391,13 @@ class _ConnectButton extends StatelessWidget {
     return GestureDetector(
       onTap: onConnect,
       child: Container(
+        alignment: Alignment.center,
+        constraints: const BoxConstraints(
+          minHeight: 36,
+          minWidth: 96,
+        ),
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xs,
+          horizontal: AppSpacing.sm,
           vertical: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
@@ -372,6 +407,7 @@ class _ConnectButton extends StatelessWidget {
         child: Text(
           'Connect',
           style: AppTextStyles.buttonPrimary.copyWith(color: AppColors.textDark),
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -408,6 +444,27 @@ class _ConnectedBadge extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Notify Me button for coming soon providers
+class _NotifyButton extends StatelessWidget {
+  const _NotifyButton({
+    this.onNotify,
+    this.isNotified = false,
+  });
+
+  final VoidCallback? onNotify;
+  final bool isNotified;
+
+  @override
+  Widget build(BuildContext context) {
+    return KyleSecondaryButtonSmall(
+      text: isNotified ? 'Notified!' : 'Notify Me',
+      onPressed: isNotified ? null : onNotify,
+      icon: isNotified ? Icons.check_circle : null,
+      variant: SecondaryButtonVariant.light,
     );
   }
 }

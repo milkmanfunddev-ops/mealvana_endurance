@@ -11,6 +11,7 @@ This document specifies the **implemented** nutrition algorithm as of v4, reflec
 | **Pre-workout carbs** | Cumulative 3-window with intensity-weighted g/kg | Linear: 1 g/kg per hour before, single calculation |
 | **Pre-workout intensity** | Direct multiplier in carb formulas | Intensity does NOT affect pre-workout carbs |
 | **During gut training** | Hard absorption caps (40/60/100 g/hr) | Multipliers (0.7×/1.0×/1.2×) on entire band |
+| **During-workout intensity** | Positions within band using intensity | Midpoint of scaled band (intensity not used) |
 | **Transitions** | Weight-based (0.3 g/kg / 0.35 g/kg) | Fixed values (T1: 20g, T2: 25g) |
 | **Brick duration bands** | Cumulative duration for band lookup | Per-segment duration for band lookup |
 | **Brick bike/run bonuses** | +20% bike front-load, -25% run penalty | Not implemented (future consideration) |
@@ -63,7 +64,7 @@ This document specifies the **implemented** nutrition algorithm as of v4, reflec
 | `hours_before` | number | Hours between last meal and workout start | Yes |
 | `is_fasted` | bool | Whether athlete is training fasted | Yes |
 | `activity_type` | enum | `running`, `cycling`, `swimming`, or `brick` | Yes |
-| `intensity_distribution` | object | `{zone_low, zone_mid, zone_high}` (0-1 fractions, sum=1) | Optional (estimated from MET if absent) |
+| `intensity_distribution` | object | `{zone_low, zone_mid, zone_high}` (0-1 fractions, sum=1) | Optional (estimated from MET if absent). Not used for during-carb targeting. |
 | `gut_training` | enum | `low`, `moderate`, or `high` | Yes |
 | `sweat_rate_category` | enum | `light`, `medium`, or `heavy` | Yes |
 | `sweat_sodium` | enum | `low`, `medium`, or `high` | Yes |
@@ -129,7 +130,7 @@ Applied AFTER gut training scaling.
 
 **Why multipliers, not caps (Rachel correction #4):**
 - v3 spec used hard caps (low=40, moderate=60, high=100 g/hr) that flattened the band to a single ceiling
-- Multipliers preserve the range structure, allowing intensity to still position within the band
+- Multipliers preserve the range structure so the midpoint still scales up or down with gut training
 - Research supports that gut training affects absorption proportionally, not as a binary cutoff
 
 **Implementation:** `getGutTrainingMultiplier()` in edge function, lines 222-227.
@@ -179,19 +180,8 @@ actual_sweat_rate = base_rate × temp_adjustment
 ```
 duration_hours = duration / 60
 
-intensity_position = (zone_mid × 0.5) + (zone_high × 1.0)
-    # Range: 0.0 (all Z1-2) to 1.0 (all Z4-5)
-
 actual_sweat_rate = base_sweat_rate × (1.0 + max(0, (temp_c - 20) × 0.04))
 ```
-
-**Derived values for example workouts:**
-
-| Workout | duration_hours | intensity_position |
-|---------|----------------|-------------------|
-| A (2hr run) | 2.0 | 0.45 |
-| B (45min easy) | 0.75 | 0.05 |
-| C (4hr bike) | 4.0 | 0.375 |
 
 **Actual sweat rates by persona and workout:**
 
@@ -394,9 +384,8 @@ else:
     scaled_low = band_low × gut_mult
     scaled_high = band_high × gut_mult
 
-    # Step 3: Intensity positions WITHIN the scaled band
-    intensity_position = (zone_mid × 0.5) + (zone_high × 1.0)
-    carb_rate = scaled_low + intensity_position × (scaled_high - scaled_low)
+    # Step 3: Use midpoint of scaled band
+    carb_rate = (scaled_low + scaled_high) / 2
 
     # Step 4: Apply sport ceiling (TABLE 2)
     final_rate = min(carb_rate, sport_ceiling)
@@ -404,7 +393,7 @@ else:
 during_carb_total = final_rate × duration_hours
 ```
 
-**Key difference from v3 spec:** v3 used `min(carb_in_band, carb_ceiling, absorption_cap)` where absorption_cap was a hard number. v4 applies gut training as a multiplier to the band BEFORE intensity positioning, then only applies the sport ceiling.
+**Key difference from v3 spec:** v3 used `min(carb_in_band, carb_ceiling, absorption_cap)` where absorption_cap was a hard number. v4 applies gut training as a multiplier to the band, uses the midpoint of the scaled band, then applies the sport ceiling.
 
 **Worked Example — Workout A (2hr run, 120 min):**
 
@@ -412,19 +401,19 @@ during_carb_total = final_rate × duration_hours
 |------|-----------------|-----------------|-----------------|
 | 1. Band (90-150min) | 45-60 | 45-60 | 45-60 |
 | 2. Gut multiplier | ×1.2 → 54-72 | ×1.0 → 45-60 | ×0.7 → 31.5-42 |
-| 3. Intensity (0.45) | 54 + 0.45×18 = **62.1** | 45 + 0.45×15 = **51.8** | 31.5 + 0.45×10.5 = **36.2** |
-| 4. Sport ceiling (70) | min(62.1, 70) = **62.1 g/hr** | min(51.8, 70) = **51.8 g/hr** | min(36.2, 70) = **36.2 g/hr** |
-| **Total (2hr)** | **124g** | **104g** | **72g** |
+| 3. Midpoint | (54 + 72) / 2 = **63.0** | (45 + 60) / 2 = **52.5** | (31.5 + 42) / 2 = **36.8** |
+| 4. Sport ceiling (70) | min(63.0, 70) = **63.0 g/hr** | min(52.5, 70) = **52.5 g/hr** | min(36.8, 70) = **36.8 g/hr** |
+| **Total (2hr)** | **126g** | **105g** | **74g** |
 
 **All examples (g/hr rate, total in parentheses):**
 
 | Persona | Workout A (2hr run) | Workout B (45min run) | Workout C (4hr bike) |
 |---------|--------------------|-----------------------|---------------------|
-| Elena (high gut) | **62.1 g/hr** (124g) | **1.8 g/hr** (1g) | **88.5 g/hr** (354g) |
-| Marcus (mod gut) | **51.8 g/hr** (104g) | **1.5 g/hr** (1g) | **73.8 g/hr** (295g) |
-| Sarah (low gut) | **36.2 g/hr** (72g) | **1.1 g/hr** (1g) | **51.6 g/hr** (207g) |
+| Elena (high gut) | **63.0 g/hr** (126g) | **18.0 g/hr** (14g) | **108.0 g/hr** (432g) |
+| Marcus (mod gut) | **52.5 g/hr** (105g) | **15.0 g/hr** (11g) | **90.0 g/hr** (360g) |
+| Sarah (low gut) | **36.8 g/hr** (74g) | **10.5 g/hr** (8g) | **63.0 g/hr** (252g) |
 
-*Workout B: <60min band (0-30), intensity 0.05 → ~1.5 g/hr. Mouth rinse sufficient.*
+*Workout B: <60min band (0-30). Midpoint applied after gut multiplier (18/15/10.5 g/hr). Mouth rinse still acceptable.*
 *Workout C: >4hr band (80-100), bike ceiling 120 → gut training is the limiting factor.*
 
 **Implementation:** `calculateDuringWorkoutCarbRate()` in edge function, lines 248-285.
@@ -696,8 +685,8 @@ Swimming: net = round(3.5 × weight_kg × distance_km)
     "pre_run_water_ml": 488,
     "pre_run_meal_type": "full_meal",
 
-    "during_rate_g_per_h": 51.8,
-    "during_total_g": 104,
+    "during_rate_g_per_h": 52.5,
+    "during_total_g": 105,
     "during_band_low_g_per_h": 45,
     "during_band_high_g_per_h": 60,
     "during_gut_multiplier": 1.0,
@@ -815,7 +804,7 @@ When `generateLLMNutritionPlan()` is called without pre-calculated MacroTargets,
 | Phase | Elena (52kg, high gut) | Marcus (75kg, mod gut) | Sarah (82kg, low gut) |
 |-------|----------------------|----------------------|---------------------|
 | **Pre** | 156g carb, 13g pro, 21g fat, 450mg Na, 338mL | 225g carb, 19g pro, 30g fat, 450mg Na, 488mL | 246g carb, 21g pro, 33g fat, 300mg Na, 533mL |
-| **During** | 62.1g/hr (124g total) | 51.8g/hr (104g total) | 36.2g/hr (72g total) |
+| **During** | 63.0g/hr (126g total) | 52.5g/hr (105g total) | 36.8g/hr (74g total) |
 | **During Na** | 749mg/hr (1498mg) | 749mg/hr (1498mg) | 267mg/hr (534mg) |
 | **During H2O** | 1013mL/hr (2025mL) | 1013mL/hr (2025mL) | 608mL/hr (1215mL) |
 | **Post** | 52g carb, 16g pro, 10g fat | 75g carb, 23g pro, 15g fat | 82g carb, 25g pro, 16g fat |
@@ -825,7 +814,7 @@ When `generateLLMNutritionPlan()` is called without pre-calculated MacroTargets,
 | Phase | Elena (52kg) | Marcus (75kg) | Sarah (82kg) |
 |-------|-------------|--------------|--------------|
 | **Pre** | 78g carb, 8g pro, 5g fat | 113g carb, 11g pro, 5g fat | 123g carb, 12g pro, 5g fat |
-| **During** | ~1.8g/hr (1g total) | ~1.5g/hr (1g total) | ~1.1g/hr (1g total) |
+| **During** | 18.0g/hr (14g total) | 15.0g/hr (11g total) | 10.5g/hr (8g total) |
 | **Post** | 52g carb, 16g pro, 10g fat | 75g carb, 23g pro, 15g fat | 82g carb, 25g pro, 16g fat |
 
 *Pre-workout is "snack" type (1.5h before): 0.15 g/kg protein, 5g flat fat.*
@@ -836,7 +825,7 @@ When `generateLLMNutritionPlan()` is called without pre-calculated MacroTargets,
 | Phase | Elena (52kg, high gut) | Marcus (75kg, mod gut) | Sarah (82kg, low gut) |
 |-------|----------------------|----------------------|---------------------|
 | **Pre** | 182g carb, 13g pro, 21g fat, 550mg Na, 338mL | 263g carb, 19g pro, 30g fat, 550mg Na, 488mL | 287g carb, 21g pro, 33g fat, 400mg Na, 533mL |
-| **During** | 88.5g/hr (354g total) | 73.8g/hr (295g total) | 51.6g/hr (207g total) |
+| **During** | 108.0g/hr (432g total) | 90.0g/hr (360g total) | 63.0g/hr (252g total) |
 | **During Na** | 916mg/hr (3663mg) | 916mg/hr (3663mg) | 327mg/hr (1307mg) |
 | **During H2O** | 1238mL/hr (4950mL) | 1238mL/hr (4950mL) | 743mL/hr (2970mL) |
 | **Post** | 62g carb, 16g pro, 10g fat | 90g carb, 23g pro, 15g fat | 98g carb, 25g pro, 16g fat |

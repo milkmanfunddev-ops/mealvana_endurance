@@ -55,13 +55,13 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
     if (success && mounted) {
       // Show success message
-      MealvanaSnackbar.showSuccess(
-        context,
-        contentService.getValue(
-          'auth.login.success',
-          defaultValue: 'Logged in successfully!',
-        ),
-      );
+      // MealvanaSnackbar.showSuccess(
+      //   context,
+      //   contentService.getValue(
+      //     'auth.login.success',
+      //     defaultValue: 'Logged in successfully!',
+      //   ),
+      // );
 
       // Return to post-onboarding auth screen which will navigate to main
       context.pop(true);

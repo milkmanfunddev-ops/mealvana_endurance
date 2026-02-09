@@ -288,6 +288,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         imageAddress: foodItem.imageAddress,
         servingAmount: foodItem.servingAmount,
         servingUnit: foodItem.servingUnit,
+        servingSize: foodItem.servingSize,
         caloriesPerServing: foodItem.caloriesPerServing,
         carbsPerServing: carbsPerServing ?? foodItem.carbsPerServing,
         proteinPerServing: proteinPerServing ?? foodItem.proteinPerServing,

@@ -9,11 +9,21 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
-import '../../nutrition_plan/domain/intensity_distribution.dart';
 import '../domain/activity.dart' as domain;
 import '../domain/brick_metadata.dart';
+import 'activity_mapper.dart';
 
 part 'activities_repository.g.dart';
+
+class _BatchUploadResult {
+  const _BatchUploadResult({
+    required this.uploadedIds,
+    required this.failedIds,
+  });
+
+  final Set<String> uploadedIds;
+  final Set<String> failedIds;
+}
 
 @riverpod
 ActivitiesRepository activitiesRepository(Ref ref) {
@@ -27,17 +37,22 @@ ActivitiesRepository activitiesRepository(Ref ref) {
 /// Repository for managing activities following FOA pattern
 /// Implements SyncableRepository for new sync architecture
 class ActivitiesRepository with SyncableRepository {
-  const ActivitiesRepository({
+  ActivitiesRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
   })  : _supabase = supabase,
         _database = database,
-        _logger = logger;
+        _logger = logger,
+        _mapper = ActivityMapper(logger: logger);
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+  final ActivityMapper _mapper;
+
+  /// Expose mapper for use by ActivitiesService and other consumers.
+  ActivityMapper get mapper => _mapper;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -69,10 +84,10 @@ class ActivitiesRepository with SyncableRepository {
       // Save to Drift using batch operations
       await _database.batch((batch) {
         for (final activityJson in response as List) {
-          final activity = _mapJsonToActivityDomain(activityJson);
+          final activity = _mapper.fromJson(activityJson);
           batch.insert(
             _database.activitiesTable,
-            _mapDomainToCompanion(activity),
+            _mapper.toCompanion(activity),
             mode: InsertMode.insertOrReplace,
           );
         }
@@ -104,11 +119,13 @@ class ActivitiesRepository with SyncableRepository {
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
       // Query Drift for records with needsUpload = true
-      final dirtyRecords = await (_database.select(_database.activitiesTable)
-            ..where((t) =>
-                t.userId.lower().equals(userId.toLowerCase()) &
-                t.needsUpload.equals(true)))
-          .get();
+      final dirtyRecords =
+          await (_database.select(_database.activitiesTable)..where(
+                (t) =>
+                    t.userId.lower().equals(userId.toLowerCase()) &
+                    t.needsUpload.equals(true),
+              ))
+              .get();
 
       if (dirtyRecords.isEmpty) {
         return UploadResult.nothingToUpload();
@@ -120,78 +137,84 @@ class ActivitiesRepository with SyncableRepository {
         data: {'userId': userId, 'count': dirtyRecords.length},
       );
 
-      // Convert to JSON for Supabase upsert
-      final recordsToUpload = dirtyRecords.map((record) {
-        return {
-          'id': record.id,
-          'user_id': record.userId,
-          'activity_type': record.activityType,
-          'title': record.title,
-          'scheduled_date_time': record.scheduledDateTime.toIso8601String(),
-          'status': record.status,
-          'distance_miles': record.distanceMiles,
-          'duration_minutes': record.durationMinutes,
-          'pace_target_minutes_per_mile': record.paceTargetMinutesPerMile,
-          'intensity_level': record.intensityLevel,
-          'intensity_target': record.intensityTarget,
-          'intensity_z1_z2_pct': record.intensityZ1Z2Pct,
-          'intensity_z3_z4_pct': record.intensityZ3Z4Pct,
-          'intensity_z5_pct': record.intensityZ5Pct,
-          'time_before_minutes': record.timeBeforeMinutes,
-          'notes': record.notes,
-          'cycling_speed_mph': record.cyclingSpeedMph,
-          'cycling_terrain': record.cyclingTerrain,
-          'cycling_indoor_outdoor': record.cyclingIndoorOutdoor,
-          'cycling_elevation_gain_ft': record.cyclingElevationGainFt,
-          'cycling_session_goal': record.cyclingSessionGoal,
-          'swimming_pace_per_100m_seconds': record.swimmingPacePer100mSeconds,
-          'swimming_pool_or_open_water': record.swimmingPoolOrOpenWater,
-          'swimming_water_temp_c': record.swimmingWaterTempC,
-          'completed_at': record.completedAt?.toIso8601String(),
-          'actual_distance_miles': record.actualDistanceMiles,
-          'actual_duration_minutes': record.actualDurationMinutes,
-          'completion_rating': record.completionRating,
-          'completion_notes': record.completionNotes,
-          'nutrition_plan_data': record.nutritionPlanData,
-          // NOTE: reminder_* columns exist in local Drift but NOT in Supabase
-          // They are stored locally only and not synced to the server
-          'synced_from_provider': record.syncedFromProvider,
-          'provider_workout_id': record.providerWorkoutId,
-          'provider_workout_url': record.providerWorkoutUrl,
-          'last_synced_at': record.lastSyncedAt?.toIso8601String(),
-          'workout_subtype': record.workoutSubtype,
-          'pace_min_minutes_per_mile': record.paceMinMinutesPerMile,
-          'pace_max_minutes_per_mile': record.paceMaxMinutesPerMile,
-          'brick_metadata': record.brickMetadata,
-          'brick_id': record.brickId,
-          'created_at': record.createdAt.toIso8601String(),
-          'updated_at': record.updatedAt.toIso8601String(),
-        };
-      }).toList();
+      // Separate records into batches to respect brick_id foreign key constraint.
+      // Parent brick activities must be uploaded before sub-activities that
+      // reference them via brick_id.
+      final parentBricks = <Activity>[];
+      final subActivities = <Activity>[];
+      final regularActivities = <Activity>[];
 
-      // Upload to Supabase with upsert
-      await _supabase
-          .from('activities')
-          .upsert(recordsToUpload);
-
-      // Clear dirty flags on success
-      await _database.batch((batch) {
-        for (final record in dirtyRecords) {
-          batch.update(
-            _database.activitiesTable,
-            const ActivitiesTableCompanion(needsUpload: Value(false)),
-            where: (t) => t.id.equals(record.id),
-          );
+      for (final record in dirtyRecords) {
+        if (record.brickId != null) {
+          subActivities.add(record);
+        } else if (record.activityType == 'brick') {
+          parentBricks.add(record);
+        } else {
+          regularActivities.add(record);
         }
-      });
+      }
+
+      final uploadedIds = <String>{};
+      final failedIds = <String>{};
+
+      // Upload in order: parent bricks first, then regular, then sub-activities
+      final batch1 = [...parentBricks, ...regularActivities];
+      if (batch1.isNotEmpty) {
+        final batchResult = await _uploadBatchWithRecordRetry(
+          batch1,
+          batchLabel: 'parent_and_regular',
+        );
+        uploadedIds.addAll(batchResult.uploadedIds);
+        failedIds.addAll(batchResult.failedIds);
+      }
+
+      if (subActivities.isNotEmpty) {
+        final subBatchResult = await _uploadBatchWithRecordRetry(
+          subActivities,
+          batchLabel: 'sub_activities',
+        );
+        uploadedIds.addAll(subBatchResult.uploadedIds);
+        failedIds.addAll(subBatchResult.failedIds);
+      }
+
+      // Clear dirty flags for successful uploads even if some records failed.
+      if (uploadedIds.isNotEmpty) {
+        await _database.batch((batch) {
+          for (final activityId in uploadedIds) {
+            batch.update(
+              _database.activitiesTable,
+              const ActivitiesTableCompanion(needsUpload: Value(false)),
+              where: (t) => t.id.equals(activityId),
+            );
+          }
+        });
+      }
+
+      if (failedIds.isNotEmpty) {
+        _logger.warning(
+          'Dirty activities upload partially failed',
+          context: 'ACTIVITIES_REPOSITORY',
+          data: {
+            'userId': userId,
+            'total': dirtyRecords.length,
+            'uploaded': uploadedIds.length,
+            'failed': failedIds.length,
+            'failedIds': failedIds.take(10).toList(),
+          },
+        );
+        return UploadResult.failed(
+          'Uploaded ${uploadedIds.length}/${dirtyRecords.length} activities; '
+          '${failedIds.length} failed and remain dirty for retry.',
+        );
+      }
 
       _logger.info(
         'Dirty activities uploaded successfully',
         context: 'ACTIVITIES_REPOSITORY',
-        data: {'userId': userId, 'count': dirtyRecords.length},
+        data: {'userId': userId, 'count': uploadedIds.length},
       );
 
-      return UploadResult.successful(dirtyRecords.length);
+      return UploadResult.successful(uploadedIds.length);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to upload dirty activities',
@@ -204,36 +227,188 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
+  Future<_BatchUploadResult> _uploadBatchWithRecordRetry(
+    List<Activity> records, {
+    required String batchLabel,
+  }) async {
+    if (records.isEmpty) {
+      return const _BatchUploadResult(
+        uploadedIds: <String>{},
+        failedIds: <String>{},
+      );
+    }
+
+    final uploadedIds = <String>{};
+    final failedIds = <String>{};
+
+    try {
+      await _uploadDirtyBatch(records);
+      uploadedIds.addAll(records.map((record) => record.id));
+      return _BatchUploadResult(uploadedIds: uploadedIds, failedIds: failedIds);
+    } catch (e, stackTrace) {
+      _logger.warning(
+        'Dirty activity batch failed, retrying one-by-one',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {
+          'batchLabel': batchLabel,
+          'count': records.length,
+          'code': _postgrestErrorCode(e),
+        },
+      );
+    }
+
+    for (final record in records) {
+      try {
+        await _uploadDirtyBatch([record]);
+        uploadedIds.add(record.id);
+      } catch (recordError, recordStackTrace) {
+        failedIds.add(record.id);
+        _logger.error(
+          'Dirty activity record failed upload',
+          context: 'ACTIVITIES_REPOSITORY',
+          error: recordError,
+          stackTrace: recordStackTrace,
+          data: {
+            ..._dirtyRecordLogData(record),
+            'batchLabel': batchLabel,
+            'code': _postgrestErrorCode(recordError),
+          },
+        );
+      }
+    }
+
+    return _BatchUploadResult(uploadedIds: uploadedIds, failedIds: failedIds);
+  }
+
+  String? _postgrestErrorCode(Object error) {
+    if (error is PostgrestException) {
+      return error.code;
+    }
+    return null;
+  }
+
+  Map<String, dynamic> _dirtyRecordLogData(Activity record) {
+    return {
+      'activityId': record.id,
+      'activityType': record.activityType,
+      'status': record.status,
+      'brickId': record.brickId,
+      'syncedFromProvider': record.syncedFromProvider,
+      'providerWorkoutId': record.providerWorkoutId,
+      'title': record.title,
+    };
+  }
+
+  /// Upload a dirty batch using provider conflict keys when available.
+  Future<void> _uploadDirtyBatch(List<Activity> records) async {
+    final providerBacked = <Activity>[];
+    final idBacked = <Activity>[];
+
+    for (final record in records) {
+      if (_hasProviderConflictKey(
+        syncedFromProvider: record.syncedFromProvider,
+        providerWorkoutId: record.providerWorkoutId,
+      )) {
+        providerBacked.add(record);
+      } else {
+        idBacked.add(record);
+      }
+    }
+
+    if (idBacked.isNotEmpty) {
+      await _upsertWithConflictFallback(
+        idBacked.map(_mapper.buildUploadPayloadFromRow).toList(),
+        onConflict: 'id',
+      );
+    }
+
+    if (providerBacked.isNotEmpty) {
+      await _upsertWithConflictFallback(
+        providerBacked.map(_mapper.buildUploadPayloadFromRow).toList(),
+        onConflict: 'user_id,synced_from_provider,provider_workout_id',
+        fallbackOnConflict: 'id',
+      );
+    }
+  }
+
+  Future<void> _upsertWithConflictFallback(
+    Object payload, {
+    required String onConflict,
+    String? fallbackOnConflict,
+  }) async {
+    try {
+      await _supabase
+          .from('activities')
+          .upsert(payload, onConflict: onConflict);
+    } catch (e) {
+      if (!_isMissingConflictConstraintError(e) ||
+          fallbackOnConflict == null ||
+          fallbackOnConflict == onConflict) {
+        rethrow;
+      }
+
+      _logger.warning(
+        'Supabase missing ON CONFLICT target, retrying with fallback target',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        data: {
+          'onConflict': onConflict,
+          'fallbackOnConflict': fallbackOnConflict,
+        },
+      );
+
+      await _supabase
+          .from('activities')
+          .upsert(payload, onConflict: fallbackOnConflict);
+    }
+  }
+
+  bool _hasProviderConflictKey({
+    required String? syncedFromProvider,
+    required String? providerWorkoutId,
+  }) {
+    return syncedFromProvider != null &&
+        syncedFromProvider.trim().isNotEmpty &&
+        providerWorkoutId != null &&
+        providerWorkoutId.trim().isNotEmpty;
+  }
+
+  bool _isMissingConflictConstraintError(Object error) {
+    if (error is PostgrestException && error.code == '42P10') {
+      return true;
+    }
+
+    final message = error.toString().toLowerCase();
+    return message.contains(
+      'no unique or exclusion constraint matching the on conflict specification',
+    );
+  }
+
   // ========================================================================
   // Existing Repository Methods (Backwards Compatibility)
   // ========================================================================
 
   /// Create a new activity (save to Drift first, then sync to Supabase for final ID)
-  ///
-  /// IMPORTANT: This method now waits for Supabase upload to complete before returning,
-  /// ensuring the returned activity has the server-assigned ID. This prevents race
-  /// conditions where the UI navigates with the local ID but the database gets rekeyed.
   Future<domain.Activity> createActivity({
     required String deviceId,
     required domain.Activity activity,
   }) async {
     try {
       // STEP 1: Save to Drift IMMEDIATELY with dirty flag
-      // Note: ID will be auto-generated by database if not provided
-      final generatedId = await _saveToDrift(activity.copyWith(
-        needsUpload: true,
-        localUpdatedAt: DateTime.now(),
-      ));
+      final generatedId = await _saveToDrift(
+        activity.copyWith(needsUpload: true, localUpdatedAt: DateTime.now()),
+      );
 
       // Get the activity back from the database with the generated ID
-      final savedActivity = await (_database.select(_database.activitiesTable)
-            ..where((tbl) => tbl.id.equals(generatedId)))
-          .getSingle();
+      final savedActivity = await (_database.select(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(generatedId))).getSingle();
 
-      var activityWithId = _mapToActivityDomain(savedActivity);
+      var activityWithId = _mapper.fromDriftRow(savedActivity);
 
       // STEP 2: Upload to Supabase SYNCHRONOUSLY
-      // This ensures sync completes before returning, preventing race conditions
       _logger.info(
         'Uploading new activity to Supabase (sync)',
         context: 'ACTIVITIES_REPOSITORY',
@@ -243,7 +418,6 @@ class ActivitiesRepository with SyncableRepository {
         },
       );
 
-      // Upload to Supabase - errors are logged but don't block the operation
       await _uploadActivityToSupabase(
         activityWithId,
         operation: 'create',
@@ -299,13 +473,15 @@ class ActivitiesRepository with SyncableRepository {
   }) async {
     try {
       // OFFLINE-FIRST: Mark as deleted in Drift IMMEDIATELY with dirty flag
-      await (_database.update(_database.activitiesTable)
-            ..where((tbl) => tbl.id.equals(activityId)))
-          .write(ActivitiesTableCompanion(
-        deletedAt: Value(DateTime.now()),
-        needsUpload: const Value(true),
-        localUpdatedAt: Value(DateTime.now()),
-      ));
+      await (_database.update(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(activityId))).write(
+        ActivitiesTableCompanion(
+          deletedAt: Value(DateTime.now()),
+          needsUpload: const Value(true),
+          localUpdatedAt: Value(DateTime.now()),
+        ),
+      );
 
       // Attempt background upload (non-blocking)
       unawaited(_uploadActivityDeletion(deviceId, activityId));
@@ -324,12 +500,12 @@ class ActivitiesRepository with SyncableRepository {
   /// Used by coaches to edit athlete activities
   Future<void> updateRemoteActivity(domain.Activity activity) async {
     try {
-      final payload = _buildSupabasePayload(activity);
+      final payload = _mapper.buildSupabasePayload(activity);
 
       await _supabase
           .from('activities')
           .update(payload)
-          .eq('id', activity.id); // Security: RLS will check if current user (coach) has access
+          .eq('id', activity.id);
 
       _logger.info(
         'Remote activity updated',
@@ -360,10 +536,7 @@ class ActivitiesRepository with SyncableRepository {
 
       if (response == null) return null;
 
-      // Convert Supabase response (Map) to Activity domain model
-      // We can use the same mapping logic, but need to construct a database-like object first
-      // OR simpler: manually map from JSON to domain
-      return _mapJsonToActivityDomain(response);
+      return _mapper.fromJson(response);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get remote activity by ID',
@@ -376,107 +549,25 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
-  /// Map JSON from Supabase to domain Activity
-  domain.Activity _mapJsonToActivityDomain(Map<String, dynamic> json) {
-    // Parse intensity distribution if all three fields are present
-    IntensityDistribution? intensityDistribution;
-    final z1z2 = json['intensity_z1_z2_pct'] as int?;
-    final z3z4 = json['intensity_z3_z4_pct'] as int?;
-    final z5 = json['intensity_z5_pct'] as int?;
-
-    if (z1z2 != null && z3z4 != null && z5 != null) {
-      try {
-        intensityDistribution = IntensityDistribution(
-          conversationalPct: z1z2,
-          tempoPct: z3z4,
-          allOutPct: z5,
-        );
-      } catch (e) {
-        _logger.warning(
-          'Failed to parse intensity distribution from Supabase',
-          context: 'ACTIVITIES_REPOSITORY',
-          error: e,
-          data: {'z1z2': z1z2, 'z3z4': z3z4, 'z5': z5},
-        );
-      }
-    }
-
-    return domain.Activity(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      activityType: ActivityType.values.firstWhere(
-        (type) => type.name == json['activity_type'],
-        orElse: () => ActivityType.running,
-      ),
-      title: json['title'] as String,
-      scheduledDateTime: DateTime.parse(json['scheduled_date_time'] as String),
-      status: domain.ActivityStatus.values.firstWhere(
-        (s) => s.name == (json['status'] as String? ?? 'planned'),
-        orElse: () => domain.ActivityStatus.planned,
-      ),
-      distanceMiles: (json['distance_miles'] as num?)?.toDouble(),
-      durationMinutes: (json['duration_minutes'] as num?)?.toInt(),
-      paceTargetMinutesPerMile: (json['pace_target_minutes_per_mile'] as num?)?.toDouble(),
-      intensityLevel: json['intensity_level'] != null
-          ? domain.IntensityLevel.values.firstWhere(
-              (level) => level.name == json['intensity_level'],
-              orElse: () => domain.IntensityLevel.moderate,
-            )
-          : null,
-      intensityDistribution: intensityDistribution,
-      // Cycling-specific fields
-      cyclingSpeedMph: (json['cycling_speed_mph'] as num?)?.toDouble(),
-      cyclingTerrain: json['cycling_terrain'] as String?,
-      cyclingIndoorOutdoor: json['cycling_indoor_outdoor'] as String?,
-      cyclingElevationGainFt: (json['cycling_elevation_gain_ft'] as num?)?.toInt(),
-      cyclingSessionGoal: json['cycling_session_goal'] as String?,
-      // Swimming-specific fields
-      swimmingPacePer100mSeconds: (json['swimming_pace_per_100m_seconds'] as num?)?.toInt(),
-      swimmingPoolOrOpenWater: json['swimming_pool_or_open_water'] as String?,
-      swimmingWaterTempC: (json['swimming_water_temp_c'] as num?)?.toDouble(),
-      // Shared fields
-      intensityTarget: json['intensity_target'] as String?,
-      timeBeforeMinutes: (json['time_before_minutes'] as num?)?.toInt(),
-      // Completion data
-      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at'] as String) : null,
-      completionRating: (json['completion_rating'] as num?)?.toInt(),
-      completionNotes: json['completion_notes'] as String?,
-      actualDistanceMiles: (json['actual_distance_miles'] as num?)?.toDouble(),
-      actualDurationMinutes: (json['actual_duration_minutes'] as num?)?.toInt(),
-      // Nutrition plan data (embedded JSON)
-      nutritionPlanData: json['nutrition_plan_data'] != null
-          ? _parseNutritionPlanData(json['nutrition_plan_data'] as String)
-          : null,
-      notes: json['notes'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
-      deletedAt: json['deleted_at'] != null ? DateTime.parse(json['deleted_at'] as String) : null,
-      // Brick fields
-      brickMetadata: json['brick_metadata'] != null
-          ? _parseBrickMetadata(json['brick_metadata'] as String)
-          : null,
-      brickId: json['brick_id'] as String?,
-      // Reminder fields (default to false/null since these might not be relevant for coach view)
-      reminderEnabled: false,
-      needsUpload: false,
-      localUpdatedAt: DateTime.now(),
-    );
-  }
-
   /// Get a specific activity by ID
-  Future<domain.Activity?> getActivityById(String userId, String activityId) async {
+  Future<domain.Activity?> getActivityById(
+    String userId,
+    String activityId,
+  ) async {
     try {
-      // CRITICAL FIX: Use case-insensitive comparison for userId
-      // Exclude deleted activities and archived brick originals
       final query = _database.select(_database.activitiesTable)
-        ..where((tbl) =>
-            tbl.userId.lower().equals(userId.toLowerCase()) &
-            tbl.id.equals(activityId) &
-            tbl.deletedAt.isNull() &
-            tbl.status.equals('archivedForBrick').not());
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.id.equals(activityId) &
+              tbl.deletedAt.isNull() &
+              (tbl.status.equals('archivedForBrick') |
+                      tbl.status.equals('archived_for_brick'))
+                  .not(),
+        );
 
       final activity = await query.getSingleOrNull();
-      return activity != null ? _mapToActivityDomain(activity) : null;
+      return activity != null ? _mapper.fromDriftRow(activity) : null;
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get activity by ID',
@@ -495,18 +586,20 @@ class ActivitiesRepository with SyncableRepository {
     DateTime endDate,
   ) async {
     try {
-      // CRITICAL FIX: Use case-insensitive comparison for userId
-      // Exclude deleted activities and archived brick originals
       final query = _database.select(_database.activitiesTable)
-        ..where((tbl) =>
-            tbl.userId.lower().equals(userId.toLowerCase()) &
-            tbl.scheduledDateTime.isBetweenValues(startDate, endDate) &
-            tbl.deletedAt.isNull() &
-            tbl.status.equals('archivedForBrick').not())
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.scheduledDateTime.isBetweenValues(startDate, endDate) &
+              tbl.deletedAt.isNull() &
+              (tbl.status.equals('archivedForBrick') |
+                      tbl.status.equals('archived_for_brick'))
+                  .not(),
+        )
         ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]);
 
       final activities = await query.get();
-      return activities.map(_mapToActivityDomain).toList();
+      return activities.map(_mapper.fromDriftRow).toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get activities for date range',
@@ -522,14 +615,26 @@ class ActivitiesRepository with SyncableRepository {
   ///
   /// Unlike createActivity, this method doesn't immediately upload to Supabase.
   /// Used for batch imports from external providers.
-  ///
-  /// IMPORTANT: Always clears the activity ID to ensure a new row is created.
-  /// The transformer may provide a pre-generated UUID, but we want the database
-  /// to generate the actual ID to ensure proper INSERT behavior.
   Future<domain.Activity> insertActivity(domain.Activity activity) async {
     try {
-      // Clear the ID to force INSERT path in _saveToDrift
-      // This ensures we always create a new row, not update a non-existent one
+      // If this is a provider-synced activity, check for an existing row
+      final provider = activity.syncedFromProvider;
+      final providerWorkoutId = activity.providerWorkoutId;
+      if (provider != null &&
+          providerWorkoutId != null &&
+          providerWorkoutId.isNotEmpty) {
+        final existing = await _findActivityByProviderKey(
+          userId: activity.userId,
+          provider: provider,
+          providerWorkoutId: providerWorkoutId,
+        );
+        if (existing != null) {
+          final merged = _mergeProviderUpdate(existing, activity);
+          return await updateActivityFromProvider(merged);
+        }
+      }
+
+      // No existing provider workout found: create a new row
       final activityWithFlags = activity.copyWith(
         id: '', // Force INSERT by clearing ID
         needsUpload: true,
@@ -538,9 +643,9 @@ class ActivitiesRepository with SyncableRepository {
 
       final generatedId = await _saveToDrift(activityWithFlags);
 
-      final savedActivity = await (_database.select(_database.activitiesTable)
-            ..where((tbl) => tbl.id.equals(generatedId)))
-          .getSingle();
+      final savedActivity = await (_database.select(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(generatedId))).getSingle();
 
       _logger.info(
         'Inserted activity from sync',
@@ -552,8 +657,29 @@ class ActivitiesRepository with SyncableRepository {
         },
       );
 
-      return _mapToActivityDomain(savedActivity);
+      return _mapper.fromDriftRow(savedActivity);
     } catch (e, stackTrace) {
+      // If insert failed due to a unique constraint, try to resolve by updating
+      final provider = activity.syncedFromProvider;
+      final providerWorkoutId = activity.providerWorkoutId;
+      if (provider != null &&
+          providerWorkoutId != null &&
+          providerWorkoutId.isNotEmpty) {
+        try {
+          final existing = await _findActivityByProviderKey(
+            userId: activity.userId,
+            provider: provider,
+            providerWorkoutId: providerWorkoutId,
+          );
+          if (existing != null) {
+            final merged = _mergeProviderUpdate(existing, activity);
+            return await updateActivityFromProvider(merged);
+          }
+        } catch (_) {
+          // Fall through to logging/rethrow below
+        }
+      }
+
       _logger.error(
         'Failed to insert activity',
         context: 'ACTIVITIES_REPOSITORY',
@@ -562,6 +688,79 @@ class ActivitiesRepository with SyncableRepository {
       );
       rethrow;
     }
+  }
+
+  /// Find an existing activity by provider workout key
+  Future<domain.Activity?> _findActivityByProviderKey({
+    required String userId,
+    required String provider,
+    required String providerWorkoutId,
+  }) async {
+    final providerVariants = _providerLookupVariants(provider);
+    Activity? bestMatch;
+
+    for (final variant in providerVariants) {
+      final query = _database.select(_database.activitiesTable)
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.syncedFromProvider.lower().equals(variant) &
+              tbl.providerWorkoutId.equals(providerWorkoutId),
+        )
+        ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)])
+        ..limit(1);
+
+      final match = await query.getSingleOrNull();
+      if (match == null) {
+        continue;
+      }
+
+      if (bestMatch == null || match.updatedAt.isAfter(bestMatch.updatedAt)) {
+        bestMatch = match;
+      }
+    }
+
+    return bestMatch != null ? _mapper.fromDriftRow(bestMatch) : null;
+  }
+
+  /// Merge latest provider data into an existing activity while preserving
+  /// local-only fields (nutrition plan, completion, reminders, brick metadata).
+  domain.Activity _mergeProviderUpdate(
+    domain.Activity existing,
+    domain.Activity incoming,
+  ) {
+    return existing.copyWith(
+      activityType: incoming.activityType,
+      title: incoming.title,
+      scheduledDateTime: incoming.scheduledDateTime,
+      distanceMiles: incoming.distanceMiles,
+      durationMinutes: incoming.durationMinutes,
+      paceTargetMinutesPerMile: incoming.paceTargetMinutesPerMile,
+      intensityLevel: incoming.intensityLevel,
+      cyclingSpeedMph: incoming.cyclingSpeedMph,
+      cyclingTerrain: incoming.cyclingTerrain,
+      cyclingIndoorOutdoor: incoming.cyclingIndoorOutdoor,
+      cyclingElevationGainFt: incoming.cyclingElevationGainFt,
+      cyclingSessionGoal: incoming.cyclingSessionGoal,
+      swimmingPacePer100mSeconds: incoming.swimmingPacePer100mSeconds,
+      swimmingPoolOrOpenWater: incoming.swimmingPoolOrOpenWater,
+      swimmingWaterTempC: incoming.swimmingWaterTempC,
+      intensityTarget: incoming.intensityTarget,
+      intensityDistribution: incoming.intensityDistribution,
+      timeBeforeMinutes: incoming.timeBeforeMinutes,
+      notes: incoming.notes,
+      syncedFromProvider: incoming.syncedFromProvider,
+      providerWorkoutId: incoming.providerWorkoutId,
+      providerWorkoutUrl: incoming.providerWorkoutUrl,
+      lastSyncedAt: incoming.lastSyncedAt,
+      workoutSubtype: incoming.workoutSubtype,
+      paceMinMinutesPerMile: incoming.paceMinMinutesPerMile,
+      paceMaxMinutesPerMile: incoming.paceMaxMinutesPerMile,
+      needsNutritionRefresh: incoming.needsNutritionRefresh,
+      providerDeletedAt: incoming.providerDeletedAt,
+      providerScheduledAt: incoming.providerScheduledAt,
+      scheduleChangedAt: incoming.scheduleChangedAt,
+    );
   }
 
   /// Save activity to Drift database (offline-first pattern)
@@ -588,7 +787,7 @@ class ActivitiesRepository with SyncableRepository {
     }
 
     final isInsert = activity.id.isEmpty;
-    final companion = _mapDomainToCompanion(activity, forInsert: isInsert);
+    final companion = _mapper.toCompanion(activity, forInsert: isInsert);
 
     if (isInsert) {
       // CREATE: New activity - let database generate UUID
@@ -605,9 +804,9 @@ class ActivitiesRepository with SyncableRepository {
       return insertedRow.id;
     } else {
       // UPDATE: Existing activity - update by ID
-      await (_database.update(_database.activitiesTable)
-            ..where((tbl) => tbl.id.equals(activity.id)))
-          .write(companion);
+      await (_database.update(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(activity.id))).write(companion);
 
       _logger.debug(
         'Updated existing activity',
@@ -620,27 +819,32 @@ class ActivitiesRepository with SyncableRepository {
   }
 
   /// Upload activity to Supabase
-  ///
-  /// Unified upload method for all Supabase operations.
-  /// - [operation]: 'create' for insert, 'update' for upsert
-  /// - [throwOnError]: if true, rethrows exceptions; if false, logs warning and continues
-  ///
-  /// For background (non-blocking) uploads, call with throwOnError: false
-  /// For synchronous uploads that must succeed, call with throwOnError: true
   Future<void> _uploadActivityToSupabase(
     domain.Activity activity, {
     required String operation,
     bool throwOnError = false,
   }) async {
     try {
-      final payload = _buildSupabasePayload(activity, includeCreatedAt: true);
+      final payload = _mapper.buildSupabasePayload(
+        activity,
+        includeCreatedAt: true,
+      );
 
       if (operation == 'create') {
-        // Insert with explicit UUID from Drift
         await _supabase.from('activities').insert(payload);
       } else {
-        // Update existing record by UUID
-        await _supabase.from('activities').upsert(payload);
+        final hasProviderKey = _hasProviderConflictKey(
+          syncedFromProvider: activity.syncedFromProvider,
+          providerWorkoutId: activity.providerWorkoutId,
+        );
+
+        await _upsertWithConflictFallback(
+          payload,
+          onConflict: hasProviderKey
+              ? 'user_id,synced_from_provider,provider_workout_id'
+              : 'id',
+          fallbackOnConflict: hasProviderKey ? 'id' : null,
+        );
       }
 
       _logger.info(
@@ -658,22 +862,17 @@ class ActivitiesRepository with SyncableRepository {
         data: {'activityId': activity.id},
       );
       if (throwOnError) rethrow;
-      // Otherwise keep dirty flag, will retry on next sync
     }
   }
 
   /// Upload activity deletion to Supabase in background (non-blocking)
-  /// Uses direct Supabase delete instead of edge function for better reliability
   Future<void> _uploadActivityDeletion(
-    String deviceId, // acts as userId in new architecture
+    String deviceId,
     String activityId,
   ) async {
     try {
-      // DIRECT FIX: Use deviceId as userId directly
-      // The app architecture has unified deviceId and userId
       final userId = deviceId;
 
-      // Use direct Supabase delete
       await _supabase
           .from('activities')
           .delete()
@@ -681,9 +880,9 @@ class ActivitiesRepository with SyncableRepository {
           .eq('user_id', userId);
 
       // Upload successful - hard delete from local database
-      await (_database.delete(_database.activitiesTable)
-            ..where((tbl) => tbl.id.equals(activityId)))
-          .go();
+      await (_database.delete(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(activityId))).go();
     } catch (e) {
       _logger.warning(
         'Failed to upload activity deletion (will retry on next sync)',
@@ -691,7 +890,6 @@ class ActivitiesRepository with SyncableRepository {
         error: e,
         data: {'activityId': activityId},
       );
-      // Don't rethrow - keep dirty flag, will retry on next sync
     }
   }
 
@@ -702,278 +900,62 @@ class ActivitiesRepository with SyncableRepository {
         .write(const ActivitiesTableCompanion(needsUpload: Value(false)));
   }
 
-  /// Build Supabase payload from domain Activity
-  ///
-  /// Consolidates payload construction for all Supabase upload operations.
-  /// Set [includeCreatedAt] to true for insert operations, false for updates.
-  Map<String, dynamic> _buildSupabasePayload(
-    domain.Activity activity, {
-    bool includeCreatedAt = false,
-  }) {
-    return {
-      'id': activity.id,
-      'user_id': activity.userId,
-      'activity_type': activity.activityType.name,
-      'title': activity.title,
-      'scheduled_date_time': activity.scheduledDateTime.toIso8601String(),
-      'status': activity.status.name,
-      'distance_miles': activity.distanceMiles,
-      'duration_minutes': activity.durationMinutes,
-      'pace_target_minutes_per_mile': activity.paceTargetMinutesPerMile,
-      'intensity_level': activity.intensityLevel?.name,
-      'intensity_target': activity.intensityTarget,
-      'intensity_z1_z2_pct': activity.intensityDistribution?.conversationalPct,
-      'intensity_z3_z4_pct': activity.intensityDistribution?.tempoPct,
-      'intensity_z5_pct': activity.intensityDistribution?.allOutPct,
-      'time_before_minutes': activity.timeBeforeMinutes,
-      'notes': activity.notes,
-      // Cycling fields
-      'cycling_speed_mph': activity.cyclingSpeedMph,
-      'cycling_terrain': activity.cyclingTerrain,
-      'cycling_indoor_outdoor': activity.cyclingIndoorOutdoor,
-      'cycling_elevation_gain_ft': activity.cyclingElevationGainFt,
-      'cycling_session_goal': activity.cyclingSessionGoal,
-      // Swimming fields
-      'swimming_pace_per_100m_seconds': activity.swimmingPacePer100mSeconds,
-      'swimming_pool_or_open_water': activity.swimmingPoolOrOpenWater,
-      'swimming_water_temp_c': activity.swimmingWaterTempC,
-      // Completion data
-      'completed_at': activity.completedAt?.toIso8601String(),
-      'actual_distance_miles': activity.actualDistanceMiles,
-      'actual_duration_minutes': activity.actualDurationMinutes,
-      'completion_rating': activity.completionRating,
-      'completion_notes': activity.completionNotes,
-      // Nutrition plan data (embedded JSON)
-      'nutrition_plan_data': activity.nutritionPlanData != null
-          ? jsonEncode(activity.nutritionPlanData)
-          : null,
-      // Brick fields
-      'brick_metadata': activity.brickMetadata != null
-          ? jsonEncode(activity.brickMetadata!.toJson())
-          : null,
-      'brick_id': activity.brickId,
-      // Timestamps
-      if (includeCreatedAt) 'created_at': activity.createdAt.toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
-    };
-  }
-
-  /// Map database Activity to domain Activity
-  domain.Activity _mapToActivityDomain(Activity activity) {
-    // Parse intensity distribution if all three fields are present
-    IntensityDistribution? intensityDistribution;
-    if (activity.intensityZ1Z2Pct != null &&
-        activity.intensityZ3Z4Pct != null &&
-        activity.intensityZ5Pct != null) {
-      try {
-        intensityDistribution = IntensityDistribution(
-          conversationalPct: activity.intensityZ1Z2Pct!,
-          tempoPct: activity.intensityZ3Z4Pct!,
-          allOutPct: activity.intensityZ5Pct!,
-        );
-      } catch (e) {
-        _logger.warning(
-          'Failed to parse intensity distribution from Drift',
-          context: 'ACTIVITIES_REPOSITORY',
-          error: e,
-          data: {
-            'activityId': activity.id,
-            'z1z2': activity.intensityZ1Z2Pct,
-            'z3z4': activity.intensityZ3Z4Pct,
-            'z5': activity.intensityZ5Pct,
-          },
-        );
-      }
-    }
-
-    return domain.Activity(
-      id: activity.id,
-      userId: activity.userId,
-      activityType: ActivityType.values.firstWhere(
-        (type) => type.name == activity.activityType,
-        orElse: () => ActivityType.running,
-      ),
-      title: activity.title,
-      scheduledDateTime: activity.scheduledDateTime,
-      status: domain.ActivityStatus.values.firstWhere(
-        (s) => s.name == activity.status,
-        orElse: () => domain.ActivityStatus.planned,
-      ),
-      distanceMiles: activity.distanceMiles,
-      durationMinutes: activity.durationMinutes,
-      paceTargetMinutesPerMile: activity.paceTargetMinutesPerMile,
-      intensityLevel: activity.intensityLevel != null
-          ? domain.IntensityLevel.values.firstWhere(
-              (level) => level.name == activity.intensityLevel,
-              orElse: () => domain.IntensityLevel.moderate,
-            )
-          : null,
-      intensityDistribution: intensityDistribution,
-      // Cycling-specific fields
-      cyclingSpeedMph: activity.cyclingSpeedMph,
-      cyclingTerrain: activity.cyclingTerrain,
-      cyclingIndoorOutdoor: activity.cyclingIndoorOutdoor,
-      cyclingElevationGainFt: activity.cyclingElevationGainFt,
-      cyclingSessionGoal: activity.cyclingSessionGoal,
-      // Swimming-specific fields
-      swimmingPacePer100mSeconds: activity.swimmingPacePer100mSeconds,
-      swimmingPoolOrOpenWater: activity.swimmingPoolOrOpenWater,
-      swimmingWaterTempC: activity.swimmingWaterTempC,
-      // Shared fields
-      intensityTarget: activity.intensityTarget,
-      timeBeforeMinutes: activity.timeBeforeMinutes,
-      // Completion data
-      completedAt: activity.completedAt,
-      completionRating: activity.completionRating,
-      completionNotes: activity.completionNotes,
-      actualDistanceMiles: activity.actualDistanceMiles,
-      actualDurationMinutes: activity.actualDurationMinutes,
-      // Nutrition plan data (parse JSON string from database)
-      nutritionPlanData: activity.nutritionPlanData != null
-          ? _parseNutritionPlanData(activity.nutritionPlanData!)
-          : null,
-      notes: activity.notes,
-      createdAt: activity.createdAt,
-      updatedAt: activity.updatedAt,
-      deletedAt: activity.deletedAt,
-      // Reminder fields
-      reminderEnabled: activity.reminderEnabled,
-      reminderDaysBefore: activity.reminderDaysBefore,
-      reminderTimeOfDay: activity.reminderTimeOfDay,
-      reminderRecurring: activity.reminderRecurring,
-      // Brick fields
-      brickMetadata: activity.brickMetadata != null
-          ? _parseBrickMetadata(activity.brickMetadata!)
-          : null,
-      brickId: activity.brickId,
-      // Sync fields
-      needsUpload: activity.needsUpload,
-      localUpdatedAt: activity.localUpdatedAt,
-      // External provider sync fields
-      syncedFromProvider: activity.syncedFromProvider,
-      providerWorkoutId: activity.providerWorkoutId,
-      providerWorkoutUrl: activity.providerWorkoutUrl,
-      lastSyncedAt: activity.lastSyncedAt,
-      workoutSubtype: activity.workoutSubtype,
-      paceMinMinutesPerMile: activity.paceMinMinutesPerMile,
-      paceMaxMinutesPerMile: activity.paceMaxMinutesPerMile,
-    );
-  }
-
-  /// Parse nutrition plan data JSON string from database
-  Map<String, dynamic>? _parseNutritionPlanData(String jsonString) {
-    try {
-      return jsonDecode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      _logger.error(
-        'Failed to parse nutrition plan data',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
-      );
-      return null;
-    }
-  }
-
-  /// Parse brick metadata JSON string from database
-  BrickMetadata? _parseBrickMetadata(String jsonString) {
-    try {
-      final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      return BrickMetadata.fromJson(json);
-    } catch (e) {
-      _logger.error(
-        'Failed to parse brick metadata',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
-      );
-      return null;
-    }
-  }
-
-  /// Map domain Activity to ActivitiesTableCompanion for database operations
-  ///
-  /// Set [forInsert] to true when creating a new activity to use Value.absent()
-  /// for id and deletedAt, which triggers auto-generation and proper defaults.
-  ActivitiesTableCompanion _mapDomainToCompanion(
-    domain.Activity activity, {
-    bool forInsert = false,
-  }) {
-    return ActivitiesTableCompanion(
-      id: forInsert ? const Value.absent() : Value(activity.id),
-      userId: Value(activity.userId),
-      activityType: Value(activity.activityType.name),
-      title: Value(activity.title),
-      scheduledDateTime: Value(activity.scheduledDateTime),
-      status: Value(activity.status.name),
-      distanceMiles: Value(activity.distanceMiles),
-      durationMinutes: Value(activity.durationMinutes),
-      paceTargetMinutesPerMile: Value(activity.paceTargetMinutesPerMile),
-      intensityLevel: Value(activity.intensityLevel?.name),
-      intensityTarget: Value(activity.intensityTarget),
-      intensityZ1Z2Pct: Value(activity.intensityDistribution?.conversationalPct),
-      intensityZ3Z4Pct: Value(activity.intensityDistribution?.tempoPct),
-      intensityZ5Pct: Value(activity.intensityDistribution?.allOutPct),
-      timeBeforeMinutes: Value(activity.timeBeforeMinutes),
-      notes: Value(activity.notes),
-      cyclingSpeedMph: Value(activity.cyclingSpeedMph),
-      cyclingTerrain: Value(activity.cyclingTerrain),
-      cyclingIndoorOutdoor: Value(activity.cyclingIndoorOutdoor),
-      cyclingElevationGainFt: Value(activity.cyclingElevationGainFt),
-      cyclingSessionGoal: Value(activity.cyclingSessionGoal),
-      swimmingPacePer100mSeconds: Value(activity.swimmingPacePer100mSeconds),
-      swimmingPoolOrOpenWater: Value(activity.swimmingPoolOrOpenWater),
-      swimmingWaterTempC: Value(activity.swimmingWaterTempC),
-      completedAt: Value(activity.completedAt),
-      actualDistanceMiles: Value(activity.actualDistanceMiles),
-      actualDurationMinutes: Value(activity.actualDurationMinutes),
-      completionRating: Value(activity.completionRating),
-      completionNotes: Value(activity.completionNotes),
-      nutritionPlanData: Value(
-        activity.nutritionPlanData != null
-            ? jsonEncode(activity.nutritionPlanData)
-            : null,
-      ),
-      reminderEnabled: Value(activity.reminderEnabled),
-      reminderDaysBefore: Value(activity.reminderDaysBefore),
-      reminderTimeOfDay: Value(activity.reminderTimeOfDay),
-      reminderRecurring: Value(activity.reminderRecurring),
-      brickMetadata: Value(
-        activity.brickMetadata != null
-            ? jsonEncode(activity.brickMetadata!.toJson())
-            : null,
-      ),
-      brickId: Value(activity.brickId),
-      syncedFromProvider: Value(activity.syncedFromProvider),
-      providerWorkoutId: Value(activity.providerWorkoutId),
-      providerWorkoutUrl: Value(activity.providerWorkoutUrl),
-      lastSyncedAt: Value(activity.lastSyncedAt),
-      workoutSubtype: Value(activity.workoutSubtype),
-      paceMinMinutesPerMile: Value(activity.paceMinMinutesPerMile),
-      paceMaxMinutesPerMile: Value(activity.paceMaxMinutesPerMile),
-      createdAt: Value(activity.createdAt),
-      updatedAt: Value(activity.updatedAt),
-      deletedAt: forInsert ? const Value.absent() : Value(activity.deletedAt),
-      needsUpload: Value(activity.needsUpload ?? false),
-      localUpdatedAt: Value(activity.localUpdatedAt ?? DateTime.now()),
-    );
-  }
+  // ========================================================================
+  // Provider Integration Methods
+  // ========================================================================
 
   /// Get all activities from a specific provider for a user
-  ///
-  /// Used during sync to compare local activities with provider workouts.
-  /// Only returns non-deleted activities that were synced from the specified provider.
-  Future<List<domain.Activity>> getActivitiesByUserAndProvider(String userId, String provider) async {
+  Future<List<domain.Activity>> getActivitiesByUserAndProvider(
+    String userId,
+    String provider,
+  ) async {
     try {
-      // Query activities synced from the specified provider
-      // Exclude deleted activities and archived brick originals
-      final query = _database.select(_database.activitiesTable)
-        ..where((tbl) =>
-            tbl.userId.lower().equals(userId.toLowerCase()) &
-            tbl.syncedFromProvider.equals(provider) &
-            tbl.deletedAt.isNull() &
-            tbl.status.equals('archivedForBrick').not())
-        ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]);
+      final providerVariants = _providerLookupVariants(provider);
+      var activities = await _loadLocalProviderActivities(
+        userId: userId,
+        providerVariants: providerVariants,
+      );
 
-      final activities = await query.get();
+      if (activities.isEmpty) {
+        _logger.warning(
+          'No local provider activities found - attempting remote hydration',
+          context: 'ACTIVITIES_REPOSITORY',
+          data: {
+            'userId': userId,
+            'provider': provider,
+            'providerVariants': providerVariants,
+          },
+        );
+
+        try {
+          activities = await _hydrateProviderActivitiesFromRemote(
+            userId: userId,
+            providerVariants: providerVariants,
+          );
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Remote hydration for provider activities failed',
+            context: 'ACTIVITIES_REPOSITORY',
+            error: e,
+            stackTrace: stackTrace,
+            data: {'userId': userId, 'provider': provider},
+          );
+        }
+      }
+
+      final removedDuplicates = activities.length > 1
+          ? await cleanupDuplicateProviderActivities(
+              userId: userId,
+              provider: provider,
+            )
+          : 0;
+
+      if (removedDuplicates > 0) {
+        activities = await _loadLocalProviderActivities(
+          userId: userId,
+          providerVariants: providerVariants,
+        );
+      }
 
       _logger.info(
         'Retrieved activities by provider',
@@ -985,7 +967,7 @@ class ActivitiesRepository with SyncableRepository {
         },
       );
 
-      return activities.map(_mapToActivityDomain).toList();
+      return activities.map(_mapper.fromDriftRow).toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get activities by provider',
@@ -998,18 +980,246 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
+  /// Remove duplicate provider-synced activities for a user/provider pair.
+  Future<int> cleanupDuplicateProviderActivities({
+    required String userId,
+    required String provider,
+  }) async {
+    try {
+      final rows = await _loadLocalProviderActivities(
+        userId: userId,
+        providerVariants: _providerLookupVariants(provider),
+      );
+      if (rows.length < 2) return 0;
+
+      final keeperByKey = <String, Activity>{};
+      final duplicates = <Activity>[];
+
+      for (final row in rows) {
+        final key = _providerDuplicateKey(row);
+        final existing = keeperByKey[key];
+
+        if (existing == null) {
+          keeperByKey[key] = row;
+          continue;
+        }
+
+        final preferred = _selectPreferredDuplicate(existing, row);
+        if (preferred.id == row.id) {
+          duplicates.add(existing);
+          keeperByKey[key] = row;
+        } else {
+          duplicates.add(row);
+        }
+      }
+
+      if (duplicates.isEmpty) return 0;
+
+      await _database.batch((batch) {
+        for (final duplicate in duplicates) {
+          batch.deleteWhere(
+            _database.activitiesTable,
+            (tbl) => tbl.id.equals(duplicate.id),
+          );
+        }
+      });
+
+      // Best-effort remote cleanup so deleted duplicates don't rehydrate.
+      for (final duplicate in duplicates) {
+        try {
+          await _supabase
+              .from('activities')
+              .delete()
+              .eq('id', duplicate.id)
+              .eq('user_id', duplicate.userId);
+        } catch (e) {
+          _logger.warning(
+            'Failed to delete duplicate activity from Supabase',
+            context: 'ACTIVITIES_REPOSITORY',
+            error: e,
+            data: {
+              'activityId': duplicate.id,
+              'userId': duplicate.userId,
+              'provider': provider,
+            },
+          );
+        }
+      }
+
+      _logger.warning(
+        'Removed duplicate provider activities',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {
+          'userId': userId,
+          'provider': provider,
+          'removedCount': duplicates.length,
+        },
+      );
+
+      return duplicates.length;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to cleanup duplicate provider activities',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId, 'provider': provider},
+      );
+      return 0;
+    }
+  }
+
+  String _providerDuplicateKey(Activity activity) {
+    final providerWorkoutId = activity.providerWorkoutId?.trim();
+    if (providerWorkoutId != null && providerWorkoutId.isNotEmpty) {
+      return 'id:$providerWorkoutId';
+    }
+
+    final normalizedTitle = activity.title.trim().toLowerCase();
+    final scheduledAt = activity.scheduledDateTime.toUtc().toIso8601String();
+    final duration = activity.durationMinutes ?? -1;
+    final distance = activity.distanceMiles?.toStringAsFixed(3) ?? 'na';
+    return 'fp:${activity.activityType}|$normalizedTitle|$scheduledAt|$duration|$distance';
+  }
+
+  Activity _selectPreferredDuplicate(Activity a, Activity b) {
+    final scoreA = _duplicateRecordScore(a);
+    final scoreB = _duplicateRecordScore(b);
+
+    if (scoreA != scoreB) {
+      return scoreA > scoreB ? a : b;
+    }
+
+    return b.updatedAt.isAfter(a.updatedAt) ? b : a;
+  }
+
+  int _duplicateRecordScore(Activity activity) {
+    var score = 0;
+
+    if (activity.nutritionPlanData != null &&
+        activity.nutritionPlanData!.isNotEmpty) {
+      score += 100;
+    }
+    if (activity.completedAt != null ||
+        activity.actualDistanceMiles != null ||
+        activity.actualDurationMinutes != null) {
+      score += 50;
+    }
+    if ((activity.notes ?? '').trim().isNotEmpty) {
+      score += 10;
+    }
+    if (activity.providerDeletedAt == null) {
+      score += 5;
+    }
+
+    return score;
+  }
+
+  List<String> _providerLookupVariants(String provider) {
+    final normalized = provider.trim().toLowerCase();
+    final variants = <String>{normalized};
+
+    switch (normalized) {
+      case 'training_peaks':
+        variants.addAll(const ['trainingpeaks', 'training peaks']);
+        break;
+      case 'final_surge':
+        variants.addAll(const ['finalsurge', 'final surge']);
+        break;
+      default:
+        break;
+    }
+
+    return variants.toList(growable: false);
+  }
+
+  Future<List<Activity>> _loadLocalProviderActivities({
+    required String userId,
+    required List<String> providerVariants,
+  }) async {
+    final byId = <String, Activity>{};
+
+    for (final providerVariant in providerVariants) {
+      final query = _database.select(_database.activitiesTable)
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.syncedFromProvider.lower().equals(providerVariant) &
+              tbl.deletedAt.isNull(),
+        );
+
+      final rows = await query.get();
+      for (final row in rows) {
+        byId[row.id] = row;
+      }
+    }
+
+    final activities = byId.values.toList();
+    activities.sort(
+      (a, b) => b.scheduledDateTime.compareTo(a.scheduledDateTime),
+    );
+    return activities;
+  }
+
+  Future<List<Activity>> _hydrateProviderActivitiesFromRemote({
+    required String userId,
+    required List<String> providerVariants,
+  }) async {
+    final remoteById = <String, Map<String, dynamic>>{};
+
+    for (final providerVariant in providerVariants) {
+      final response = await _supabase
+          .from('activities')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('synced_from_provider', providerVariant)
+          .isFilter('deleted_at', null)
+          .order('updated_at', ascending: false);
+
+      for (final item in response as List) {
+        if (item is! Map) continue;
+        final json = Map<String, dynamic>.from(item);
+        final id = json['id']?.toString();
+        if (id == null || id.isEmpty) continue;
+        remoteById[id] = json;
+      }
+    }
+
+    if (remoteById.isEmpty) {
+      return const [];
+    }
+
+    await _database.batch((batch) {
+      for (final activityJson in remoteById.values) {
+        final activity = _mapper.fromJson(activityJson);
+        batch.insert(
+          _database.activitiesTable,
+          _mapper.toCompanion(activity),
+          mode: InsertMode.insertOrReplace,
+        );
+      }
+    });
+
+    _logger.info(
+      'Hydrated provider activities from Supabase',
+      context: 'ACTIVITIES_REPOSITORY',
+      data: {
+        'userId': userId,
+        'providerVariants': providerVariants,
+        'count': remoteById.length,
+      },
+    );
+
+    return _loadLocalProviderActivities(
+      userId: userId,
+      providerVariants: providerVariants,
+    );
+  }
+
   /// Update an activity from provider sync (preserves nutrition data)
-  ///
-  /// Used when a schedule change is detected from an external provider.
-  /// Updates schedule fields (scheduledDateTime, duration, distance, etc.)
-  /// while preserving local nutrition plan and user modifications.
-  ///
-  /// Sets needsUpload flag for eventual sync back to Supabase.
-  ///
-  /// Note: This method expects the Activity domain model to include the new
-  /// sync tracking fields (needsNutritionRefresh, providerScheduledAt, scheduleChangedAt).
-  /// It will be fully functional once Phase 1 (database schema changes) is complete.
-  Future<domain.Activity> updateActivityFromProvider(domain.Activity activity) async {
+  Future<domain.Activity> updateActivityFromProvider(
+    domain.Activity activity,
+  ) async {
     try {
       _logger.info(
         'Updating activity from provider sync',
@@ -1021,10 +1231,31 @@ class ActivitiesRepository with SyncableRepository {
         },
       );
 
-      // Prepare update with schedule fields only
-      // Preserve nutrition_plan_data by not including it in the update
+      // Merge incoming provider fields with existing local data
+      final existingRow = await (_database.select(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(activity.id))).getSingleOrNull();
+      final existing = existingRow != null
+          ? _mapper.fromDriftRow(existingRow)
+          : null;
+      final merged = existing != null
+          ? _mergeProviderUpdate(existing, activity)
+          : activity;
+
+      // Preserve existing stale flag unless new update explicitly sets it
+      final keepRefreshFlag = existing?.needsNutritionRefresh == true;
+
       final now = DateTime.now();
-      final activityWithFlags = activity.copyWith(
+      final activityWithFlags = merged.copyWith(
+        needsNutritionRefresh: keepRefreshFlag
+            ? true
+            : activity.needsNutritionRefresh,
+        providerDeletedAt:
+            activity.providerDeletedAt ?? existing?.providerDeletedAt,
+        providerScheduledAt:
+            activity.providerScheduledAt ?? existing?.providerScheduledAt,
+        scheduleChangedAt:
+            activity.scheduleChangedAt ?? existing?.scheduleChangedAt,
         needsUpload: true,
         localUpdatedAt: now,
         updatedAt: now,
@@ -1052,12 +1283,6 @@ class ActivitiesRepository with SyncableRepository {
   }
 
   /// Soft-delete an activity that was removed from provider
-  ///
-  /// Sets providerDeletedAt timestamp to mark that the workout was deleted
-  /// in the external provider (Training Peaks, Final Surge, etc.).
-  ///
-  /// The activity remains visible locally with a visual indicator,
-  /// allowing the user to decide whether to delete or convert to manual activity.
   Future<void> softDeleteFromProvider(String activityId) async {
     try {
       _logger.info(
@@ -1068,13 +1293,15 @@ class ActivitiesRepository with SyncableRepository {
 
       final now = DateTime.now();
 
-      await (_database.update(_database.activitiesTable)
-            ..where((tbl) => tbl.id.equals(activityId)))
-          .write(ActivitiesTableCompanion(
-        providerDeletedAt: Value(now),
-        needsUpload: const Value(true),
-        localUpdatedAt: Value(now),
-      ));
+      await (_database.update(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(activityId))).write(
+        ActivitiesTableCompanion(
+          providerDeletedAt: Value(now),
+          needsUpload: const Value(true),
+          localUpdatedAt: Value(now),
+        ),
+      );
 
       _logger.info(
         'Activity soft-deleted from provider',
@@ -1094,9 +1321,6 @@ class ActivitiesRepository with SyncableRepository {
   }
 
   /// Clear nutrition refresh flag after regeneration
-  ///
-  /// Called after the user successfully regenerates their nutrition plan
-  /// following a schedule change from the provider.
   Future<void> clearNutritionRefreshFlag(String activityId) async {
     try {
       _logger.info(
@@ -1107,13 +1331,15 @@ class ActivitiesRepository with SyncableRepository {
 
       final now = DateTime.now();
 
-      await (_database.update(_database.activitiesTable)
-            ..where((tbl) => tbl.id.equals(activityId)))
-          .write(ActivitiesTableCompanion(
-        needsNutritionRefresh: const Value(false),
-        needsUpload: const Value(true),
-        localUpdatedAt: Value(now),
-      ));
+      await (_database.update(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(activityId))).write(
+        ActivitiesTableCompanion(
+          needsNutritionRefresh: const Value(false),
+          needsUpload: const Value(true),
+          localUpdatedAt: Value(now),
+        ),
+      );
 
       _logger.info(
         'Nutrition refresh flag cleared',
@@ -1137,21 +1363,22 @@ class ActivitiesRepository with SyncableRepository {
   // ========================================================================
 
   /// Get archived activities for a specific brick
-  ///
-  /// Returns all activities that were archived when creating the specified brick.
-  /// These activities have status='archivedForBrick' and brick_id pointing to
-  /// the parent brick activity.
-  Future<List<domain.Activity>> getArchivedActivitiesForBrick(String brickId) async {
+  Future<List<domain.Activity>> getArchivedActivitiesForBrick(
+    String brickId,
+  ) async {
     try {
       final query = _database.select(_database.activitiesTable)
-        ..where((tbl) =>
-            tbl.brickId.equals(brickId) &
-            tbl.status.equals('archivedForBrick') &
-            tbl.deletedAt.isNull())
+        ..where(
+          (tbl) =>
+              tbl.brickId.equals(brickId) &
+              (tbl.status.equals('archivedForBrick') |
+                  tbl.status.equals('archived_for_brick')) &
+              tbl.deletedAt.isNull(),
+        )
         ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]);
 
       final results = await query.get();
-      return results.map(_mapToActivityDomain).toList();
+      return results.map(_mapper.fromDriftRow).toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get archived activities for brick',
@@ -1165,15 +1392,6 @@ class ActivitiesRepository with SyncableRepository {
   }
 
   /// Create a brick activity from existing activities
-  ///
-  /// This method:
-  /// 1. Creates a new brick activity with type='brick' and brick_metadata JSON
-  /// 2. Marks the original activities as archived (status='archivedForBrick')
-  /// 3. Links archived activities to the brick via brick_id
-  /// 4. Saves all changes to Drift with needsUpload=true for sync
-  ///
-  /// The segment order list determines the order of sports in the brick (e.g., ['swimming', 'running']).
-  /// This must match the order of activities in the activities list.
   Future<domain.Activity> createBrickFromActivities({
     required List<domain.Activity> activities,
     required List<String> segmentOrder,
@@ -1206,21 +1424,70 @@ class ActivitiesRepository with SyncableRepository {
                 activity.distanceMiles != null &&
                 activity.cyclingSpeedMph != null &&
                 activity.cyclingSpeedMph! > 0) {
-              durationMinutes = ((activity.distanceMiles! / activity.cyclingSpeedMph!) * 60).round();
+              durationMinutes =
+                  ((activity.distanceMiles! / activity.cyclingSpeedMph!) * 60)
+                      .round();
             }
             // Swimming: duration = (distance / 100) * pace / 60
             else if (activity.activityType == ActivityType.swimming &&
                 activity.distanceMiles != null &&
                 activity.swimmingPacePer100mSeconds != null &&
                 activity.swimmingPacePer100mSeconds! > 0) {
-              // Convert miles to meters for calculation
               final distanceMeters = activity.distanceMiles! * 1609.34;
               final numberOfHundredMeters = distanceMeters / 100;
-              durationMinutes = ((numberOfHundredMeters * activity.swimmingPacePer100mSeconds!) / 60).round();
+              durationMinutes =
+                  ((numberOfHundredMeters *
+                              activity.swimmingPacePer100mSeconds!) /
+                          60)
+                      .round();
+            }
+            // Running: duration = distance * pace
+            else if (activity.activityType == ActivityType.running &&
+                activity.distanceMiles != null &&
+                activity.paceTargetMinutesPerMile != null &&
+                activity.paceTargetMinutesPerMile! > 0) {
+              durationMinutes =
+                  (activity.distanceMiles! * activity.paceTargetMinutesPerMile!)
+                      .round();
             }
           }
 
           totalDurationMinutes += durationMinutes;
+
+          double? speedMph = activity.cyclingSpeedMph;
+          if ((speedMph == null || speedMph <= 0) &&
+              activity.activityType == ActivityType.cycling &&
+              activity.distanceMiles != null &&
+              activity.distanceMiles! > 0 &&
+              durationMinutes > 0) {
+            final hours = durationMinutes / 60.0;
+            if (hours > 0) {
+              speedMph = activity.distanceMiles! / hours;
+            }
+          }
+
+          int? pacePer100mSeconds = activity.swimmingPacePer100mSeconds;
+          if ((pacePer100mSeconds == null || pacePer100mSeconds <= 0) &&
+              activity.activityType == ActivityType.swimming &&
+              activity.distanceMiles != null &&
+              activity.distanceMiles! > 0 &&
+              durationMinutes > 0) {
+            final distanceMeters = activity.distanceMiles! * 1609.34;
+            final numberOfHundredMeters = distanceMeters / 100;
+            if (numberOfHundredMeters > 0) {
+              pacePer100mSeconds =
+                  ((durationMinutes * 60) / numberOfHundredMeters).round();
+            }
+          }
+
+          double? paceMinutesPerMile = activity.paceTargetMinutesPerMile;
+          if ((paceMinutesPerMile == null || paceMinutesPerMile <= 0) &&
+              activity.activityType == ActivityType.running &&
+              activity.distanceMiles != null &&
+              activity.distanceMiles! > 0 &&
+              durationMinutes > 0) {
+            paceMinutesPerMile = durationMinutes / activity.distanceMiles!;
+          }
 
           final segment = BrickSegment(
             sport: sport,
@@ -1229,21 +1496,25 @@ class ActivitiesRepository with SyncableRepository {
             intensity: activity.intensityLevel?.name ?? 'moderate',
             // Swimming fields
             distanceMeters: activity.activityType == ActivityType.swimming
-                ? (activity.distanceMiles != null ? activity.distanceMiles! * 1609.34 : null)
+                ? (activity.distanceMiles != null
+                      ? activity.distanceMiles! * 1609.34
+                      : null)
                 : null,
-            pacePer100mSeconds: activity.swimmingPacePer100mSeconds,
+            pacePer100mSeconds: pacePer100mSeconds,
             poolOrOpenWater: activity.swimmingPoolOrOpenWater,
             waterTempC: activity.swimmingWaterTempC,
             // Cycling fields
-            distanceMiles: activity.activityType == ActivityType.cycling || activity.activityType == ActivityType.running
+            distanceMiles:
+                activity.activityType == ActivityType.cycling ||
+                    activity.activityType == ActivityType.running
                 ? activity.distanceMiles
                 : null,
-            speedMph: activity.cyclingSpeedMph,
+            speedMph: speedMph,
             terrain: activity.cyclingTerrain,
             indoorOutdoor: activity.cyclingIndoorOutdoor,
             elevationGainFt: activity.cyclingElevationGainFt,
             // Running fields
-            paceMinutesPerMile: activity.paceTargetMinutesPerMile,
+            paceMinutesPerMile: paceMinutesPerMile,
           );
 
           segments.add(segment);
@@ -1313,18 +1584,15 @@ class ActivitiesRepository with SyncableRepository {
         _logger.info(
           'Archived original activities for brick',
           context: 'ACTIVITIES_REPOSITORY',
-          data: {
-            'brickId': brickId,
-            'archivedCount': activities.length,
-          },
+          data: {'brickId': brickId, 'archivedCount': activities.length},
         );
 
         // Return the created brick activity (fetch from DB to get full object)
-        final savedBrick = await (_database.select(_database.activitiesTable)
-              ..where((tbl) => tbl.id.equals(brickId)))
-            .getSingle();
+        final savedBrick = await (_database.select(
+          _database.activitiesTable,
+        )..where((tbl) => tbl.id.equals(brickId))).getSingle();
 
-        return _mapToActivityDomain(savedBrick);
+        return _mapper.fromDriftRow(savedBrick);
       });
     } catch (e, stackTrace) {
       _logger.error(
@@ -1352,12 +1620,6 @@ class ActivitiesRepository with SyncableRepository {
   }
 
   /// Ungroup a brick workout
-  ///
-  /// This method:
-  /// 1. Gets the brick activity and its archived original activities
-  /// 2. Restores original activities (status='planned', brick_id=null)
-  /// 3. Deletes the brick activity (soft delete)
-  /// 4. Saves all changes to Drift with needsUpload=true for sync
   Future<void> ungroupBrick(String brickId) async {
     String? userIdForSupabaseDelete;
 
@@ -1411,10 +1673,9 @@ class ActivitiesRepository with SyncableRepository {
         );
 
         // Step 4: Hard delete the brick activity from Drift
-        // (bricks don't need to be restored, only the underlying activities do)
-        await (_database.delete(_database.activitiesTable)
-              ..where((tbl) => tbl.id.equals(brickId)))
-            .go();
+        await (_database.delete(
+          _database.activitiesTable,
+        )..where((tbl) => tbl.id.equals(brickId))).go();
 
         _logger.info(
           'Hard deleted brick activity from Drift',

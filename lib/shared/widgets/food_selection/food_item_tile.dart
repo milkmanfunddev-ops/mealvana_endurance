@@ -110,6 +110,17 @@ class FoodItemTile extends StatelessWidget {
                         ),
                       ),
                     ],
+                    if (food.servingSize != null && food.servingSize!.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        'Serving: ${food.servingSize}',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                     if (isAvoided) ...[
                       const SizedBox(height: AppSpacing.xxs),
                       Text(

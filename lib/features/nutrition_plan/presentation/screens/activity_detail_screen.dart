@@ -383,7 +383,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final activity = state.activity;
 
     // Check if this is a brick workout
-    if (activity != null && activity.isBrick && activity.brickMetadata != null) {
+    if (activity != null && activity.isBrick) {
       return BrickNutritionSections(
         brick: activity,
         planData: plan,

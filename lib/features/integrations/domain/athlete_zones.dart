@@ -128,6 +128,21 @@ class AthleteZones {
   /// Get swim speed zone config
   SpeedZoneConfig? get swimSpeedZones => speedZones?['Swim'];
 
+  /// Get Zone 2 swim pace in seconds per 100m from speed zones
+  ///
+  /// Speed zones are in m/s. Conversion:
+  /// pace (sec/100m) = 100 / speed_m_s
+  double? get zone2SwimPaceSecondsPer100m {
+    final config = swimSpeedZones;
+    if (config == null || config.zones.length < 2) return null;
+
+    final zone2 = config.zones[1];
+    final midSpeedMs = (zone2.minimum + zone2.maximum) / 2;
+    if (midSpeedMs <= 0) return null;
+
+    return 100 / midSpeedMs;
+  }
+
   /// Estimate pace in min/mile for a given zone name from speed zones
   ///
   /// Speed zones are in m/s. Conversion:

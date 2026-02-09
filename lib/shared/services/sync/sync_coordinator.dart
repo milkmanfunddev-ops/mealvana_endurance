@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../logging_service.dart';
 import 'data_sync_service.dart';
 import '../../data/syncable_repository.dart';
+import '../app_external_deps.dart';
 
 // Provider imports for invalidation
 import '../../../features/activities/presentation/providers/activities_controller.dart';
@@ -15,18 +16,10 @@ import '../../providers/user_id_provider.dart';
 part 'sync_coordinator.g.dart';
 
 /// Tracks why sync was triggered (for logging/debugging)
-enum SyncTrigger {
-  oauthSignIn,
-  pullToRefresh,
-  manual,
-  preLogout,
-}
+enum SyncTrigger { oauthSignIn, pullToRefresh, manual, preLogout }
 
 /// Internal sync status (no UI exposure)
-enum SyncState {
-  idle,
-  syncing,
-}
+enum SyncState { idle, syncing }
 
 /// Centralized sync coordinator - SINGLE entry point for ALL sync operations
 ///
@@ -399,6 +392,27 @@ class SyncCoordinator extends _$SyncCoordinator {
   /// Get last successful sync time (for debugging)
   DateTime? get lastSyncTime => _lastSyncTime;
 
+  /// Reset in-memory and persisted repository sync state.
+  ///
+  /// Called on sign-out so the next sign-in performs a full repository sync
+  /// instead of incorrectly reusing stale freshness timestamps.
+  Future<void> resetRepositorySyncState() async {
+    _syncingNow.clear();
+    _lastSyncTimes.clear();
+    _lastFailedAttempt.clear();
+    _failureCount.clear();
+    _lastSyncTime = null;
+    _syncInProgress = false;
+    state = SyncState.idle;
+
+    final prefs = ref.read(sharedPreferencesProvider);
+    for (final repoKey in _dependencies.keys) {
+      await prefs.remove('${repoKey}_last_sync');
+    }
+
+    _logger.info('Repository sync state reset', context: 'SYNC_COORDINATOR');
+  }
+
   /// Force sync a repository, bypassing the staleness check.
   ///
   /// Use this for pull-to-refresh when user explicitly wants fresh data,
@@ -488,7 +502,8 @@ class SyncCoordinator extends _$SyncCoordinator {
   ///
   /// Use this when athlete needs to see all coach changes.
   /// Syncs in dependency order: activities → events → carb_loading_plans
-  Future<void> forceFullSync(String userId, {
+  Future<void> forceFullSync(
+    String userId, {
     SyncableRepository? activitiesRepo,
     SyncableRepository? eventsRepo,
     SyncableRepository? carbLoadingPlansRepo,
@@ -501,13 +516,21 @@ class SyncCoordinator extends _$SyncCoordinator {
 
     // Sync in dependency order
     if (activitiesRepo != null) {
-      await forceSyncRepository('activities', userId, repository: activitiesRepo);
+      await forceSyncRepository(
+        'activities',
+        userId,
+        repository: activitiesRepo,
+      );
     }
     if (eventsRepo != null) {
       await forceSyncRepository('events', userId, repository: eventsRepo);
     }
     if (carbLoadingPlansRepo != null) {
-      await forceSyncRepository('carb_loading_plans', userId, repository: carbLoadingPlansRepo);
+      await forceSyncRepository(
+        'carb_loading_plans',
+        userId,
+        repository: carbLoadingPlansRepo,
+      );
     }
 
     // Invalidate all related providers

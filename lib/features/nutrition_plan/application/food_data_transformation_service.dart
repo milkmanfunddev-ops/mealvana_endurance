@@ -70,6 +70,7 @@ class FoodDataTransformationService {
         name: foodName,
         quantity: _formatQuantity(quantity, '', foodName),
         description: description.isNotEmpty ? description : 'Food details not available',
+        servingSize: item['serving_size'] as String?,
         nutritionalInfo: NutritionalInfo(
           calories: item['calories'] as int?,
           carbs: item['carbs_grams'] != null ? (item['carbs_grams'] as num).round() : null,
@@ -102,6 +103,7 @@ class FoodDataTransformationService {
       instructions: foodDetails.instructions,
       displayName: foodDetails.displayName,
       displayNamePlural: foodDetails.displayNamePlural,
+      servingSize: foodDetails.servingSize,
       nutritionalInfo: NutritionalInfo(
         calories: calculatedCalories.round(),
         carbs: calculatedCarbs.round(),

@@ -474,7 +474,8 @@ class FoodRepository with SyncableRepository {
     const String? servingUnit = null;
     const String? servingUnitPlural = null;
     const String? servingQualifier = null;
-    const String? servingSize = null; // Deprecated
+    final String? servingSize =
+        json['serving_size'] as String? ?? json['serving_description'] as String?;
 
     // Since the Supabase schema doesn't have these columns, set sensible defaults
     const bool beforeRunSuitable = true; // Default to true
@@ -558,7 +559,8 @@ class FoodRepository with SyncableRepository {
     const String? servingUnit = null;
     const String? servingUnitPlural = null;
     const String? servingQualifier = null;
-    const String? servingSize = null; // Deprecated
+    final String? servingSize =
+        json['serving_size'] as String? ?? json['serving_description'] as String?;
 
     // Extract suitability flags from Edge Function response
     final beforeRunSuitable = json['before_run_suitable'] as bool? ?? true;
@@ -644,6 +646,8 @@ class FoodRepository with SyncableRepository {
         .map((value) => FoodCategory.fromDbValue(value))
         .toList();
 
+    final servingSize = entry.servingSize ?? entry.servingDescription;
+
     return FoodItem(
       id: entry.id,
       name: entry.name ?? '',
@@ -654,6 +658,7 @@ class FoodRepository with SyncableRepository {
       servingUnit: null, // Deprecated - use displayName instead
       servingUnitPlural: null, // Deprecated - use displayNamePlural instead
       servingQualifier: null, // Deprecated - included in displayName
+      servingSize: servingSize,
       beforeRunSuitable: beforeRunSuitable,
       duringRunSuitable: duringRunSuitable,
       runPortable: true, // Default to true (no longer stored in schema)
@@ -709,6 +714,7 @@ class FoodRepository with SyncableRepository {
       servingUnit: entry.servingUnit,
       servingUnitPlural: null, // Not stored in user foods
       servingQualifier: null, // Not stored in user foods
+      servingSize: entry.servingSize,
       beforeRunSuitable: true, // Default to true for user-added foods
       duringRunSuitable: false, // Default to false for safety
       runPortable: true, // Default to true
@@ -773,6 +779,7 @@ class FoodRepository with SyncableRepository {
           servingUnit: userFoodEntry.servingUnit,
           servingUnitPlural: null,
           servingQualifier: null,
+          servingSize: userFoodEntry.servingSize,
           // Use categories to determine suitability
           beforeRunSuitable: categories.contains('before_run'),
           duringRunSuitable: categories.contains('during_run'),

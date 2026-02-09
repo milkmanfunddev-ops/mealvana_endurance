@@ -41,7 +41,11 @@ void main() {
             final tokenData = json.decode(tokenFile.readAsStringSync());
             accessToken = tokenData['access_token'] as String?;
             if (accessToken != null) {
-              apiClient = TrainingPeaksApiClient(accessToken: accessToken!);
+              apiClient = TrainingPeaksApiClient(
+                clientId: tokenData['client_id'] as String? ?? 'mealvana',
+                clientSecret: tokenData['client_secret'] as String? ?? '',
+                appVersion: '1.0.0-test',
+              );
             }
           } catch (e) {
             print('Warning: Could not load Training Peaks token: $e');
@@ -61,6 +65,7 @@ void main() {
 
         try {
           final workouts = await apiClient.getWorkouts(
+            accessToken!,
             startDate: startDate,
             endDate: endDate,
           );
@@ -126,6 +131,7 @@ void main() {
 
         try {
           final workouts = await apiClient.getWorkouts(
+            accessToken!,
             startDate: startDate,
             endDate: endDate,
           );
@@ -175,7 +181,6 @@ void main() {
     group('Final Surge', () {
       late FinalSurgeApiClient apiClient;
       late FinalSurgeTransformer transformer;
-      String? userKey;
       String? accessToken;
 
       setUpAll(() {
@@ -186,12 +191,11 @@ void main() {
         if (tokenFile.existsSync()) {
           try {
             final tokenData = json.decode(tokenFile.readAsStringSync());
-            userKey = tokenData['user_key'] as String?;
             accessToken = tokenData['token'] as String?;
-            if (userKey != null && accessToken != null) {
+            if (accessToken != null) {
               apiClient = FinalSurgeApiClient(
-                userKey: userKey!,
-                token: accessToken!,
+                clientId: tokenData['client_id'] as String? ?? 'BD5D0C2B-7507-405B-8A3F-DB161288E6FC',
+                clientSecret: tokenData['client_secret'] as String? ?? '',
               );
             }
           } catch (e) {
@@ -201,7 +205,7 @@ void main() {
       });
 
       test('fetches real workouts and infers intensity distribution', () async {
-        if (userKey == null || accessToken == null) {
+        if (accessToken == null) {
           markTestSkipped('No Final Surge credentials available');
           return;
         }
@@ -211,11 +215,13 @@ void main() {
         final endDate = DateTime.now().add(const Duration(days: 30));
 
         try {
-          final workouts = await apiClient.getWorkouts(
+          final response = await apiClient.getWorkoutsByDateRange(
+            accessToken!,
             startDate: startDate,
             endDate: endDate,
           );
 
+          final workouts = response.workouts;
           print('Fetched ${workouts.length} workouts from Final Surge');
 
           var workoutsWithDistribution = 0;
@@ -264,7 +270,7 @@ void main() {
       });
 
       test('maps various workout subtypes correctly', () async {
-        if (userKey == null || accessToken == null) {
+        if (accessToken == null) {
           markTestSkipped('No Final Surge credentials available');
           return;
         }
@@ -274,10 +280,13 @@ void main() {
         final endDate = DateTime.now().add(const Duration(days: 30));
 
         try {
-          final workouts = await apiClient.getWorkouts(
+          final response = await apiClient.getWorkoutsByDateRange(
+            accessToken!,
             startDate: startDate,
             endDate: endDate,
           );
+
+          final workouts = response.workouts;
 
           // Group by subtype
           final subtypeDistributions = <String, List<String>>{};

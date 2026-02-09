@@ -269,7 +269,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
 
                   // Nutritional Facts
                   Text(
-                    'Nutritional Fact',
+                    'Nutrition Facts',
                     style: AppTextStyles.smallLabel.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.bold,

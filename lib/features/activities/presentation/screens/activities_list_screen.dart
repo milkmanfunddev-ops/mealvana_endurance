@@ -30,7 +30,6 @@ import '../../../../shared/database/app_database.dart' as db;
 import '../../domain/activity.dart';
 import '../../domain/brick_exceptions.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
-import '../../../events/presentation/screens/event_form_screen.dart';
 
 /// Main screen showing calendar date picker and daily activity list.
 ///
@@ -43,13 +42,18 @@ class ActivitiesListScreen extends ConsumerStatefulWidget {
   const ActivitiesListScreen({super.key});
 
   @override
-  ConsumerState<ActivitiesListScreen> createState() => _ActivitiesListScreenState();
+  ConsumerState<ActivitiesListScreen> createState() =>
+      _ActivitiesListScreenState();
 }
 
 class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   // Cache the date range to avoid creating new provider instances on every rebuild
-  late final DateTime _queryStartDate = DateTime.now().subtract(const Duration(days: 365));
-  late final DateTime _queryEndDate = DateTime.now().add(const Duration(days: 730));
+  late final DateTime _queryStartDate = DateTime.now().subtract(
+    const Duration(days: 365),
+  );
+  late final DateTime _queryEndDate = DateTime.now().add(
+    const Duration(days: 730),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -57,10 +61,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     final activitiesState = ref.watch(activitiesControllerProvider);
     final upcomingEvent = ref.watch(nextUpcomingEventProvider);
     final allEventsState = ref.watch(allEventsProvider);
-    final carbLoadingState = ref.watch(carbLoadingDaysForRangeProvider(
-      _queryStartDate,
-      _queryEndDate,
-    ));
+    final carbLoadingState = ref.watch(
+      carbLoadingDaysForRangeProvider(_queryStartDate, _queryEndDate),
+    );
     final calendarMode = ref.watch(calendarViewProvider);
 
     // Build comprehensive indicator map for calendar dots
@@ -105,7 +108,12 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
               dayIndicators: dayIndicators,
             ),
           Expanded(
-            child: _buildContent(activitiesState, upcomingEvent, carbLoadingState, selectedDate),
+            child: _buildContent(
+              activitiesState,
+              upcomingEvent,
+              carbLoadingState,
+              selectedDate,
+            ),
           ),
         ],
       ),
@@ -184,7 +192,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           return _isSameDay(activity.scheduledDateTime, selectedDate);
         }).toList();
         // Sort by time (ascending) so morning activities appear before afternoon
-        selectedDateActivities.sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
+        selectedDateActivities.sort(
+          (a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime),
+        );
 
         final selectedDateCarbDays = carbLoadingDays.where((carbDay) {
           return _isSameDay(carbDay.planDate, selectedDate);
@@ -193,7 +203,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
         return RefreshIndicator(
           onRefresh: () async {
             // Force sync from Supabase to get coach changes
-            await ref.read(activitiesControllerProvider.notifier).forceRefresh();
+            await ref
+                .read(activitiesControllerProvider.notifier)
+                .forceRefresh();
             // Also refresh related providers
             ref.invalidate(carbLoadingControllerProvider);
             ref.invalidate(nextUpcomingEventProvider);
@@ -209,7 +221,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => CarbLoadingDayCard(carbDay: selectedDateCarbDays[index]),
+                      (context, index) => CarbLoadingDayCard(
+                        carbDay: selectedDateCarbDays[index],
+                      ),
                       childCount: selectedDateCarbDays.length,
                     ),
                   ),
@@ -227,7 +241,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                         ),
                       ),
                       SliverToBoxAdapter(
-                        child: UpcomingEventCardKyle(upcomingEventData: eventData),
+                        child: UpcomingEventCardKyle(
+                          upcomingEventData: eventData,
+                        ),
                       ),
                     ];
                   }
@@ -239,13 +255,11 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
               // Activities Section Header with Create Brick button
               if (selectedDateActivities.isNotEmpty)
                 SliverToBoxAdapter(
-                  child: _buildTodaysActivitiesHeader(
-                    activities,
-                    selectedDate,
-                  ),
+                  child: _buildTodaysActivitiesHeader(activities, selectedDate),
                 ),
               // Activities List (only activities, not carb days)
-              if (selectedDateActivities.isEmpty && selectedDateCarbDays.isEmpty)
+              if (selectedDateActivities.isEmpty &&
+                  selectedDateCarbDays.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
@@ -259,43 +273,47 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final activity = selectedDateActivities[index];
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final activity = selectedDateActivities[index];
 
-                        // Get selection mode state
-                        final selectionState = ref.watch(brickSelectionControllerProvider);
-                        final isSelectionMode = selectionState.isSelectionMode;
-                        final isSelected = ref.read(brickSelectionControllerProvider.notifier)
-                            .isActivitySelected(activity.id);
-                        final selectionOrder = ref.read(brickSelectionControllerProvider.notifier)
-                            .getSelectionOrder(activity.id);
+                      // Get selection mode state
+                      final selectionState = ref.watch(
+                        brickSelectionControllerProvider,
+                      );
+                      final isSelectionMode = selectionState.isSelectionMode;
+                      final isSelected = ref
+                          .read(brickSelectionControllerProvider.notifier)
+                          .isActivitySelected(activity.id);
+                      final selectionOrder = ref
+                          .read(brickSelectionControllerProvider.notifier)
+                          .getSelectionOrder(activity.id);
 
-                        // Render brick group card for brick activities (but not in selection mode)
-                        if (activity.isBrick && !isSelectionMode) {
-                          return BrickGroupCard(
-                            brick: activity,
-                            onUngroup: () => _handleUngroupBrick(activity.id),
-                            onViewCombined: () => _handleViewCombinedBrick(activity),
-                            onRemoveSegment: (segmentIndex) => _handleRemoveSegment(activity.id, segmentIndex),
-                            onDelete: () => _handleDeleteBrick(activity.id),
-                          );
-                        }
-
-                        // Render regular activity card
-                        return ActivityCard(
-                          activity: activity,
-                          isSelectionMode: isSelectionMode,
-                          isSelected: isSelected,
-                          selectionOrder: selectionOrder,
-                          onSelectionToggle: () {
-                            ref.read(brickSelectionControllerProvider.notifier)
-                                .toggleActivity(activity);
-                          },
+                      // Render brick group card for brick activities (but not in selection mode)
+                      if (activity.isBrick && !isSelectionMode) {
+                        return BrickGroupCard(
+                          brick: activity,
+                          onUngroup: () => _handleUngroupBrick(activity.id),
+                          onViewCombined: () =>
+                              _handleViewCombinedBrick(activity),
+                          onRemoveSegment: (segmentIndex) =>
+                              _handleRemoveSegment(activity.id, segmentIndex),
+                          onDelete: () => _handleDeleteBrick(activity.id),
                         );
-                      },
-                      childCount: selectedDateActivities.length,
-                    ),
+                      }
+
+                      // Render regular activity card
+                      return ActivityCard(
+                        activity: activity,
+                        isSelectionMode: isSelectionMode,
+                        isSelected: isSelected,
+                        selectionOrder: selectionOrder,
+                        onSelectionToggle: () {
+                          ref
+                              .read(brickSelectionControllerProvider.notifier)
+                              .toggleActivity(activity);
+                        },
+                      );
+                    }, childCount: selectedDateActivities.length),
                   ),
                 ),
             ],
@@ -337,41 +355,17 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  /// Build the "Upcoming Races" header with "Add race >" link
+  /// Build the "Upcoming Races" header
   Widget _buildUpcomingRacesHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           const SectionHeaderText(
             text: "Upcoming Races",
             topPadding: 0,
             bottomPadding: 0,
-          ),
-          GestureDetector(
-            onTap: () async {
-              final result = await Navigator.of(context).push<Map<String, dynamic>>(
-                MaterialPageRoute(
-                  builder: (context) => const EventFormScreen(),
-                ),
-              );
-
-              // Refresh events if a new event was created
-              if (result != null && result['success'] == true && mounted) {
-                ref.invalidate(nextUpcomingEventProvider);
-              }
-            },
-            child: Text(
-              'Add race >',
-              style: TextStyle(
-                fontFamily: 'Apercu',
-                fontSize: 14,
-                color: AppColors.orange,
-                fontWeight: FontWeight.w600,
-                height: 1.3,
-              ),
-            ),
           ),
         ],
       ),
@@ -394,7 +388,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     final isSelectionMode = selectionState.isSelectionMode;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -404,21 +398,23 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
             bottomPadding: 0,
           ),
           if (!isSelectionMode && isBrickAvailable)
-            CreateBrickButton(
-              onPressed: _handleCreateBrickPressed,
-            ),
+            CreateBrickButton(onPressed: _handleCreateBrickPressed),
           if (isSelectionMode)
             Row(
               children: [
                 KyleSecondaryButtonSmall(
                   text: "Cancel",
                   onPressed: _handleCancelSelection,
-                  variant: SecondaryButtonVariant.blackberry,
+                  variant: SecondaryButtonVariant.light,
                 ),
                 const SizedBox(width: 8),
                 KyleSecondaryButtonSmall(
-                  text: "Confirm (${selectionState.selectedActivityIds.length})",
-                  onPressed: ref.read(brickSelectionControllerProvider.notifier).canCreateBrick()
+                  text:
+                      "Confirm (${selectionState.selectedActivityIds.length})",
+                  onPressed:
+                      ref
+                          .read(brickSelectionControllerProvider.notifier)
+                          .canCreateBrick()
                       ? () => _handleConfirmSelection(activities, selectedDate)
                       : null,
                   variant: SecondaryButtonVariant.orange,
@@ -449,7 +445,9 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     DateTime selectedDate,
   ) async {
     // Get selected activity IDs in order (read notifier fresh each time)
-    final selectedIds = ref.read(brickSelectionControllerProvider.notifier).getSelectedOrder();
+    final selectedIds = ref
+        .read(brickSelectionControllerProvider.notifier)
+        .getSelectedOrder();
 
     // Get full Activity objects in the same order
     final selectedActivities = selectedIds
@@ -459,9 +457,8 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => BrickConfirmationDialog(
-        selectedActivities: selectedActivities,
-      ),
+      builder: (context) =>
+          BrickConfirmationDialog(selectedActivities: selectedActivities),
     );
 
     if (confirmed != true) {
@@ -472,16 +469,29 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     if (!mounted) return;
 
     // Show loading indicator before try block so catch blocks can access it
-    final loadingController = MealvanaSnackbar.showLoading(context, 'Creating brick workout...');
+    final loadingSnackbarController = MealvanaSnackbar.showLoading(
+      context,
+      'Creating brick workout...',
+    );
+    var loadingDismissed = false;
+    void dismissLoadingSnackbar() {
+      if (loadingDismissed) return;
+      loadingDismissed = true;
+      loadingSnackbarController.close();
+    }
 
     try {
       // Read controllers fresh after async gap to avoid disposal issues
-      final actionsController = ref.read(brickActionsControllerProvider.notifier);
+      final actionsController = ref.read(
+        brickActionsControllerProvider.notifier,
+      );
 
       // Call controller to create brick (follows FOA pattern - business logic in controller)
       await actionsController.createBrickFromSelection(
         activities: selectedActivities,
-        segmentOrder: selectedIds,
+        segmentOrder: selectedActivities
+            .map((activity) => activity.activityType.name)
+            .toList(),
       );
 
       // Check if still mounted after async operation
@@ -494,13 +504,16 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       ref.invalidate(activitiesControllerProvider);
 
       // Show success message using MealvanaSnackbar
-      loadingController.close();
       if (context.mounted) {
-        MealvanaSnackbar.showSuccess(context, 'Brick workout created successfully!');
+        dismissLoadingSnackbar();
+        MealvanaSnackbar.showSuccess(
+          context,
+          'Brick workout created successfully!',
+        );
       }
     } on BrickValidationException catch (e) {
       // Validation error - show specific dialog
-      loadingController.close();
+      dismissLoadingSnackbar();
       if (!context.mounted) return;
       await showDialog<bool>(
         context: context,
@@ -513,7 +526,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       );
     } on BrickCreationException catch (e) {
       // Creation error - show specific dialog with retry option
-      loadingController.close();
+      dismissLoadingSnackbar();
       if (!context.mounted) return;
       final shouldRetry = await showDialog<bool>(
         context: context,
@@ -531,10 +544,15 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       }
     } catch (e) {
       // Unknown error - show generic error message
-      loadingController.close();
+      dismissLoadingSnackbar();
       if (context.mounted) {
-        MealvanaSnackbar.showError(context, 'Unexpected error creating brick: ${e.toString()}');
+        MealvanaSnackbar.showError(
+          context,
+          'Unexpected error creating brick: ${e.toString()}',
+        );
       }
+    } finally {
+      dismissLoadingSnackbar();
     }
   }
 
@@ -560,9 +578,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => BrickUngroupDialog(
-        segmentCount: segmentCount,
-      ),
+      builder: (context) => BrickUngroupDialog(segmentCount: segmentCount),
     );
 
     if (confirmed != true) {
@@ -573,11 +589,22 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     if (!mounted) return;
 
     // Show loading indicator before try block so catch blocks can access it
-    final loadingController = MealvanaSnackbar.showLoading(context, 'Ungrouping brick...');
+    final loadingSnackbarController = MealvanaSnackbar.showLoading(
+      context,
+      'Ungrouping brick...',
+    );
+    var loadingDismissed = false;
+    void dismissLoadingSnackbar() {
+      if (loadingDismissed) return;
+      loadingDismissed = true;
+      loadingSnackbarController.close();
+    }
 
     try {
       // Read controller FRESH after async gap to avoid disposal issues
-      final actionsController = ref.read(brickActionsControllerProvider.notifier);
+      final actionsController = ref.read(
+        brickActionsControllerProvider.notifier,
+      );
 
       // Call controller to ungroup brick
       await actionsController.ungroupBrick(brickId);
@@ -586,13 +613,13 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       ref.invalidate(activitiesControllerProvider);
 
       // Show success message using MealvanaSnackbar
-      loadingController.close();
       if (context.mounted) {
+        dismissLoadingSnackbar();
         MealvanaSnackbar.showSuccess(context, 'Brick ungrouped successfully!');
       }
     } on BrickUngroupException catch (e) {
       // Ungroup error - show specific dialog with retry option
-      loadingController.close();
+      dismissLoadingSnackbar();
       if (!context.mounted) return;
       final shouldRetry = await showDialog<bool>(
         context: context,
@@ -610,10 +637,15 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       }
     } catch (e) {
       // Unknown error - show generic error message
-      loadingController.close();
+      dismissLoadingSnackbar();
       if (context.mounted) {
-        MealvanaSnackbar.showError(context, 'Unexpected error ungrouping brick: ${e.toString()}');
+        MealvanaSnackbar.showError(
+          context,
+          'Unexpected error ungrouping brick: ${e.toString()}',
+        );
       }
+    } finally {
+      dismissLoadingSnackbar();
     }
   }
 
@@ -624,19 +656,19 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
   void _handleViewCombinedBrick(Activity brick) {
     if (brick.nutritionPlanData != null) {
       // Has nutrition plan - go to activity detail screen
-      context.push('/plan', extra: {
-        'mode': 'view',
-        'activityId': brick.id,
-      });
+      context.push('/plan', extra: {'mode': 'view', 'activityId': brick.id});
     } else {
       // No nutrition plan - go to new activity screen with brick tab
       // Pass brick metadata to pre-populate the form
-      context.push('/distancepacegut', extra: {
-        'activityId': brick.id,
-        'initialDate': brick.scheduledDateTime,
-        'activityType': 'brick',
-        // Brick metadata will be loaded from the activity by the screen
-      });
+      context.push(
+        '/distancepacegut',
+        extra: {
+          'activityId': brick.id,
+          'initialDate': brick.scheduledDateTime,
+          'activityType': 'brick',
+          // Brick metadata will be loaded from the activity by the screen
+        },
+      );
     }
   }
 
@@ -674,7 +706,10 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     }
 
     // If 3+ segments, remove segment is not yet implemented
-    MealvanaSnackbar.showInfo(context, 'Remove segment feature not yet implemented');
+    MealvanaSnackbar.showInfo(
+      context,
+      'Remove segment feature not yet implemented',
+    );
   }
 
   /// Handle Delete Brick button press
@@ -709,11 +744,22 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
     if (!mounted) return;
 
     // Show loading indicator before try block so catch blocks can access it
-    final loadingController = MealvanaSnackbar.showLoading(context, 'Deleting brick...');
+    final loadingSnackbarController = MealvanaSnackbar.showLoading(
+      context,
+      'Deleting brick...',
+    );
+    var loadingDismissed = false;
+    void dismissLoadingSnackbar() {
+      if (loadingDismissed) return;
+      loadingDismissed = true;
+      loadingSnackbarController.close();
+    }
 
     try {
       // Read controller FRESH after async gap to avoid disposal issues
-      final activitiesController = ref.read(activitiesControllerProvider.notifier);
+      final activitiesController = ref.read(
+        activitiesControllerProvider.notifier,
+      );
 
       // Call controller to delete brick
       await activitiesController.deleteActivity(brickId);
@@ -725,16 +771,21 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
       ref.invalidate(activitiesControllerProvider);
 
       // Show success message
-      loadingController.close();
       if (context.mounted) {
+        dismissLoadingSnackbar();
         MealvanaSnackbar.showSuccess(context, 'Brick deleted successfully');
       }
     } catch (e) {
       // Unknown error - show generic error message
-      loadingController.close();
+      dismissLoadingSnackbar();
       if (context.mounted) {
-        MealvanaSnackbar.showError(context, 'Error deleting brick: ${e.toString()}');
+        MealvanaSnackbar.showError(
+          context,
+          'Error deleting brick: ${e.toString()}',
+        );
       }
+    } finally {
+      dismissLoadingSnackbar();
     }
   }
 }

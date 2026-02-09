@@ -6,6 +6,7 @@ import 'swimming_input_controller.dart';
 import 'brick_input_controller.dart';
 import 'macro_targets_controller.dart';
 import '../../../../core/utils/debug_logger.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 
 part 'new_activity_coordinator.g.dart';
 
@@ -61,17 +62,39 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
     switch (state.selectedTab) {
       case SportTab.running:
         await ref.read(runningInputControllerProvider.notifier).fetchLocationIfNeeded();
+        await _applyZonePaceIfAvailableForRunning();
         break;
       case SportTab.cycling:
         await ref.read(cyclingInputControllerProvider.notifier).fetchLocationIfNeeded();
         break;
       case SportTab.swimming:
         await ref.read(swimmingInputControllerProvider.notifier).fetchLocationIfNeeded();
+        await _applyZonePaceIfAvailableForSwimming();
         break;
       case SportTab.brick:
         // Brick workouts don't need location for macro generation
         // Location will be handled per-segment if needed
         break;
+    }
+  }
+
+  Future<void> _applyZonePaceIfAvailableForRunning() async {
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      await ref.read(runningInputControllerProvider.notifier).applyZonePaceIfAvailable(userId);
+    } catch (e) {
+      // Non-blocking - skip if userId isn't available
+      DebugLogger.warning('🏃 COORDINATOR: Unable to apply running zone pace -> $e');
+    }
+  }
+
+  Future<void> _applyZonePaceIfAvailableForSwimming() async {
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      await ref.read(swimmingInputControllerProvider.notifier).applyZonePaceIfAvailable(userId);
+    } catch (e) {
+      // Non-blocking - skip if userId isn't available
+      DebugLogger.warning('🏊 COORDINATOR: Unable to apply swimming zone pace -> $e');
     }
   }
 
@@ -136,10 +159,18 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
         case SportTab.brick:
           DebugLogger.info('🎮 COORDINATOR: Calling brickInputController to get segments...');
           final brickController = ref.read(brickInputControllerProvider.notifier);
+
+          // Validate before calling edge function
+          if (!brickController.isValid()) {
+            DebugLogger.error('❌ COORDINATOR: Brick form is not valid - missing required fields');
+            throw Exception('Please fill in all required fields for each sport segment before generating a plan.');
+          }
+
           final segments = brickController.getSegments();
           final segmentOrder = brickController.state.sportOrder;
           final selectedDate = brickController.state.selectedDate;
           final selectedTime = brickController.state.selectedTime;
+          final isFasted = brickController.state.isFasted;
 
           DebugLogger.info('🎮 COORDINATOR: Got ${segments.length} brick segments, calling macroTargetsController...');
           await ref.read(macroTargetsControllerProvider.notifier).generateBrickMacros(
@@ -147,6 +178,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
             segmentOrder: segmentOrder,
             scheduledDate: selectedDate,
             scheduledTime: selectedTime,
+            isFasted: isFasted,
             activityId: activityId,
             eventId: eventId,
             forUserId: forUserId,

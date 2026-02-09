@@ -50,6 +50,7 @@ class BrickMacroService {
     required String deviceId,
     required List<BrickSegment> segments,
     required List<String> segmentOrder,
+    required bool isFasted,
   }) async {
     DebugLogger.info('🧱 BRICK MACRO SERVICE: generateBrickMacros called - ${segments.length} segments');
 
@@ -63,6 +64,7 @@ class BrickMacroService {
       final requestData = await _buildBrickRequestData(
         segments: segments,
         segmentOrder: segmentOrder,
+        isFasted: isFasted,
       );
 
       DebugLogger.info('🧱 BRICK MACRO SERVICE: Calling generate-macros edge function...');
@@ -148,6 +150,7 @@ class BrickMacroService {
   Future<Map<String, dynamic>> _buildBrickRequestData({
     required List<BrickSegment> segments,
     required List<String> segmentOrder,
+    required bool isFasted,
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
@@ -189,7 +192,7 @@ class BrickMacroService {
       'optional_sweat_rate_lph': null,
       // V3 params - brick uses default values
       'hours_before': 2.5,
-      'is_fasted': false,
+      'is_fasted': isFasted,
       'intensity_distribution': {
         'zone_low': 0.7,
         'zone_mid': 0.2,

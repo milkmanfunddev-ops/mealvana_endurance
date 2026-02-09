@@ -7,6 +7,7 @@ import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/constants/bottle_constants.dart';
 import '../../auth/application/auth_service.dart';
+import '../../auth/data/user_repository.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../activities/domain/activity.dart' as domain;
 import '../../activities/domain/brick_metadata.dart';
@@ -149,8 +150,14 @@ class NutritionPlanService {
     String? activityId,
     bool debug = false,
     MacroTargets? macroTargets, // Optional: use adjusted macro targets if available
+    String? userId,
   }) async {
-    final user = await _authService.getCurrentUser();
+    // Try to get user profile: prefer explicit userId lookup (auth-session-independent),
+    // fall back to auth service for backward compatibility
+    var user = userId != null
+        ? await (await ref.read(userRepositoryProvider.future)).getUserProfileById(userId)
+        : null;
+    user ??= await _authService.getCurrentUser();
     if (user == null) {
       throw Exception('No user found. Please complete onboarding first.');
     }
@@ -394,6 +401,7 @@ class NutritionPlanService {
     required MacroTargets macroTargets,
     String? activityId,
     BrickMetadata? brickMetadata,
+    String? userId,
   }) async {
     try {
       // FIRST: Try LLM-based generation using the adjusted macros
@@ -401,6 +409,7 @@ class NutritionPlanService {
         macroTargets: macroTargets,
         activityId: activityId,
         brickMetadata: brickMetadata,
+        userId: userId,
       );
 
       if (llmPlan != null) {
@@ -410,17 +419,18 @@ class NutritionPlanService {
       // FALLBACK: If LLM returns null (fallback requested), use offline builder
       // passing the adjusted macro targets to respect user's edits
       _logger.info('LLM generation failed/requested fallback, using offline generation with adjusted macros');
-      
+
       return await _generateFallbackPlan(
         distanceMiles: macroTargets.metrics.distanceMi,
         paceMinutesPerMile: macroTargets.metrics.paceMinPerMile ?? 8.0, // Default to 8 min/mi if null
         timeBeforeRunHours: 2.0, // Default or extract if stored
         activityId: activityId,
         macroTargets: macroTargets, // Pass the adjusted targets!
+        userId: userId,
       );
     } catch (e) {
       _logger.error('Error generating plan from macros, attempting fallback', error: e);
-      
+
       // Last resort fallback
       return await _generateFallbackPlan(
         distanceMiles: macroTargets.metrics.distanceMi,
@@ -428,6 +438,7 @@ class NutritionPlanService {
         timeBeforeRunHours: 2.0,
         activityId: activityId,
         macroTargets: macroTargets,
+        userId: userId,
       );
     }
   }

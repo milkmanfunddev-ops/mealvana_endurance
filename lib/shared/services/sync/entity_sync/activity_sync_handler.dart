@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -21,8 +23,8 @@ class ActivitySyncHandler {
   const ActivitySyncHandler({
     required AppDatabase database,
     required AppLogger logger,
-  })  : _database = database,
-        _logger = logger;
+  }) : _database = database,
+       _logger = logger;
 
   final AppDatabase _database;
   final AppLogger _logger;
@@ -30,12 +32,18 @@ class ActivitySyncHandler {
   /// Upsert an activity from remote data.
   Future<void> upsertActivity(Map<String, dynamic> data) async {
     try {
-      final activityId = SyncTypeConverters.toRequiredStringId(data['id'], 'activity.id');
-      final userId = SyncTypeConverters.toRequiredStringId(data['user_id'], 'activity.user_id');
+      final activityId = SyncTypeConverters.toRequiredStringId(
+        data['id'],
+        'activity.id',
+      );
+      final userId = SyncTypeConverters.toRequiredStringId(
+        data['user_id'],
+        'activity.user_id',
+      );
 
-      final existingActivity = await (_database.select(_database.activitiesTable)
-            ..where((tbl) => tbl.id.equals(activityId)))
-          .getSingleOrNull();
+      final existingActivity = await (_database.select(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
 
       final supabaseUpdatedAt = DateTime.parse(data['updated_at'] as String);
 
@@ -45,36 +53,61 @@ class ActivitySyncHandler {
         return; // Keep local version with pending changes
       }
 
-      if (existingActivity == null || existingActivity.updatedAt.isBefore(supabaseUpdatedAt)) {
+      if (existingActivity == null ||
+          existingActivity.updatedAt.isBefore(supabaseUpdatedAt)) {
         final companion = ActivitiesTableCompanion.insert(
           id: Value(activityId),
           userId: userId,
           activityType: data['activity_type'] as String,
           title: data['title'] as String,
-          scheduledDateTime: DateTime.parse(data['scheduled_date_time'] as String),
+          scheduledDateTime: DateTime.parse(
+            data['scheduled_date_time'] as String,
+          ),
           status: Value(data['status'] as String? ?? 'planned'),
           distanceMiles: Value((data['distance_miles'] as num?)?.toDouble()),
           durationMinutes: Value(data['duration_minutes'] as int?),
-          paceTargetMinutesPerMile: Value((data['pace_target_minutes_per_mile'] as num?)?.toDouble()),
+          paceTargetMinutesPerMile: Value(
+            (data['pace_target_minutes_per_mile'] as num?)?.toDouble(),
+          ),
           intensityLevel: Value(data['intensity_level'] as String?),
-          cyclingSpeedMph: Value((data['cycling_speed_mph'] as num?)?.toDouble()),
+          cyclingSpeedMph: Value(
+            (data['cycling_speed_mph'] as num?)?.toDouble(),
+          ),
           cyclingTerrain: Value(data['cycling_terrain'] as String?),
-          cyclingIndoorOutdoor: Value(data['cycling_indoor_outdoor'] as String?),
-          cyclingElevationGainFt: Value(data['cycling_elevation_gain_ft'] as int?),
+          cyclingIndoorOutdoor: Value(
+            data['cycling_indoor_outdoor'] as String?,
+          ),
+          cyclingElevationGainFt: Value(
+            data['cycling_elevation_gain_ft'] as int?,
+          ),
           cyclingSessionGoal: Value(data['cycling_session_goal'] as String?),
-          swimmingPacePer100mSeconds: Value(data['swimming_pace_per_100m_seconds'] as int?),
-          swimmingPoolOrOpenWater: Value(data['swimming_pool_or_open_water'] as String?),
-          swimmingWaterTempC: Value((data['swimming_water_temp_c'] as num?)?.toDouble()),
+          swimmingPacePer100mSeconds: Value(
+            data['swimming_pace_per_100m_seconds'] as int?,
+          ),
+          swimmingPoolOrOpenWater: Value(
+            data['swimming_pool_or_open_water'] as String?,
+          ),
+          swimmingWaterTempC: Value(
+            (data['swimming_water_temp_c'] as num?)?.toDouble(),
+          ),
           intensityTarget: Value(data['intensity_target'] as String?),
           timeBeforeMinutes: Value(data['time_before_minutes'] as int?),
           completedAt: Value(
-            data['completed_at'] != null ? DateTime.parse(data['completed_at'] as String) : null,
+            data['completed_at'] != null
+                ? DateTime.parse(data['completed_at'] as String)
+                : null,
           ),
           completionRating: Value(data['completion_rating'] as int?),
           completionNotes: Value(data['completion_notes'] as String?),
-          actualDistanceMiles: Value((data['actual_distance_miles'] as num?)?.toDouble()),
+          actualDistanceMiles: Value(
+            (data['actual_distance_miles'] as num?)?.toDouble(),
+          ),
           actualDurationMinutes: Value(data['actual_duration_minutes'] as int?),
-          nutritionPlanData: Value(data['nutrition_plan_data'] as String?),
+          nutritionPlanData: Value(
+            _encodeJsonIfNeeded(data['nutrition_plan_data']),
+          ),
+          brickMetadata: Value(_encodeJsonIfNeeded(data['brick_metadata'])),
+          brickId: Value(data['brick_id'] as String?),
           notes: Value(data['notes'] as String?),
           createdAt: DateTime.parse(data['created_at'] as String),
           updatedAt: supabaseUpdatedAt,
@@ -125,12 +158,15 @@ class ActivitySyncHandler {
       'activity_type': activity.activityType,
       'title': activity.title,
       'scheduled_date_time': activity.scheduledDateTime.toIso8601String(),
-      'status': activity.status,
+      'status': _activityStatusToDbValue(activity.status),
       'distance_miles': activity.distanceMiles,
       'duration_minutes': activity.durationMinutes,
       'pace_target_minutes_per_mile': activity.paceTargetMinutesPerMile,
       'intensity_level': activity.intensityLevel,
       'intensity_target': activity.intensityTarget,
+      'intensity_z1_z2_pct': activity.intensityZ1Z2Pct,
+      'intensity_z3_z4_pct': activity.intensityZ3Z4Pct,
+      'intensity_z5_pct': activity.intensityZ5Pct,
       'time_before_minutes': activity.timeBeforeMinutes,
       'notes': activity.notes,
       'cycling_speed_mph': activity.cyclingSpeedMph,
@@ -146,9 +182,54 @@ class ActivitySyncHandler {
       'actual_duration_minutes': activity.actualDurationMinutes,
       'completion_rating': activity.completionRating,
       'completion_notes': activity.completionNotes,
-      'nutrition_plan_data': activity.nutritionPlanData,
+      'nutrition_plan_data': _decodeJsonIfNeeded(activity.nutritionPlanData),
+      'synced_from_provider': activity.syncedFromProvider,
+      'provider_workout_id': activity.providerWorkoutId,
+      'provider_workout_url': activity.providerWorkoutUrl,
+      'last_synced_at': activity.lastSyncedAt?.toIso8601String(),
+      'workout_subtype': activity.workoutSubtype,
+      'pace_min_minutes_per_mile': activity.paceMinMinutesPerMile,
+      'pace_max_minutes_per_mile': activity.paceMaxMinutesPerMile,
+      'provider_deleted_at': activity.providerDeletedAt?.toIso8601String(),
+      'provider_scheduled_at': activity.providerScheduledAt?.toIso8601String(),
+      'schedule_changed_at': activity.scheduleChangedAt?.toIso8601String(),
+      'brick_metadata': _decodeJsonIfNeeded(activity.brickMetadata),
+      'brick_id': activity.brickId,
       'created_at': activity.createdAt.toIso8601String(),
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': activity.updatedAt.toIso8601String(),
     };
+  }
+
+  /// Convert remote JSON/JSONB values to the local TEXT storage format.
+  String? _encodeJsonIfNeeded(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return value;
+    try {
+      return jsonEncode(value);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Convert local TEXT JSON payloads to JSON objects for upload when possible.
+  dynamic _decodeJsonIfNeeded(String? value) {
+    if (value == null || value.isEmpty) return null;
+    try {
+      return jsonDecode(value);
+    } catch (_) {
+      return value;
+    }
+  }
+
+  /// Convert local status values to Supabase enum-compatible values.
+  String _activityStatusToDbValue(String status) {
+    switch (status) {
+      case 'inProgress':
+        return 'in_progress';
+      case 'archivedForBrick':
+        return 'archived_for_brick';
+      default:
+        return status;
+    }
   }
 }

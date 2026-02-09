@@ -20,8 +20,11 @@ import 'package:http/http.dart' as http;
 // CONFIGURATION
 // ============================================================================
 
-// Environment toggle - set to false for production
-const bool useSandbox = true;
+// Environment toggle - set TRAININGPEAKS_USE_SANDBOX=false for production
+final bool useSandbox = _readBoolEnv(
+  'TRAININGPEAKS_USE_SANDBOX',
+  defaultValue: true,
+);
 
 // OAuth endpoints
 const String sandboxOAuthUrl = 'https://oauth.sandbox.trainingpeaks.com';
@@ -36,15 +39,16 @@ String get oauthBaseUrl => useSandbox ? sandboxOAuthUrl : productionOAuthUrl;
 String get apiBaseUrl => useSandbox ? sandboxApiUrl : productionApiUrl;
 
 // Your TrainingPeaks Partner API credentials
-// Loaded from .env.dev.local file at runtime
+// Loaded from .env.dev.local or .env.prod.local based on TRAININGPEAKS_USE_SANDBOX
 late final String clientId;
 late final String clientSecret;
 
-/// Load credentials from .env.dev.local file
+/// Load credentials from env file
 void loadEnvCredentials() {
-  final envFile = File('.env.dev.local');
+  final envPath = _resolveEnvFile();
+  final envFile = File(envPath);
   if (!envFile.existsSync()) {
-    print('❌ Error: .env.dev.local file not found');
+    print('❌ Error: $envPath file not found');
     print('   Make sure you are running from the project root directory');
     exit(1);
   }
@@ -68,10 +72,11 @@ void loadEnvCredentials() {
   clientSecret = env['TRAININGPEAKS_CLIENT_SECRET'] ?? '';
 
   if (clientSecret.isEmpty) {
-    print('❌ Error: TRAININGPEAKS_CLIENT_SECRET not found in .env.dev.local');
+    print('❌ Error: TRAININGPEAKS_CLIENT_SECRET not found in $envPath');
     exit(1);
   }
 
+  print('   Env File: $envPath');
   print('   Client ID: $clientId');
   print('   Client Secret: ${clientSecret.substring(0, 8)}...');
 }
@@ -180,12 +185,33 @@ void printHelp() {
   print('  dart run tool/training_peaks_api_test.dart events');
   print('');
   print('Environment Variable:');
-  print('  TRAINING_PEAKS_CLIENT_SECRET - Your TrainingPeaks client secret');
+  print('  TRAININGPEAKS_USE_SANDBOX - true (default) or false for production');
+  print('  TRAININGPEAKS_ENV_FILE - override env file path');
   print('');
   print('Notes:');
   print('  - TrainingPeaks tokens expire in 1 HOUR (vs Final Surge never expires)');
   print('  - Token refresh is automatically tested and performed');
   print('  - Sandbox database refreshes every Saturday 6PM MST');
+}
+
+// ============================================================================ 
+// ENV HELPERS
+// ============================================================================
+
+bool _readBoolEnv(String key, {required bool defaultValue}) {
+  final raw = Platform.environment[key];
+  if (raw == null || raw.isEmpty) return defaultValue;
+  final normalized = raw.toLowerCase().trim();
+  return normalized == 'true' ||
+      normalized == '1' ||
+      normalized == 'yes' ||
+      normalized == 'y';
+}
+
+String _resolveEnvFile() {
+  final override = Platform.environment['TRAININGPEAKS_ENV_FILE'];
+  if (override != null && override.isNotEmpty) return override;
+  return useSandbox ? '.env.dev.local' : '.env.prod.local';
 }
 
 // ============================================================================

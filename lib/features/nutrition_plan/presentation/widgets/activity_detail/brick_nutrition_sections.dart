@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../../../core/utils/debug_logger.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../activities/domain/activity.dart';
 import '../../../domain/nutrition_plan.dart';
@@ -37,13 +39,35 @@ class BrickNutritionSections extends StatelessWidget {
   Widget build(BuildContext context) {
     // Sort sections by phase order (before, during segments, transitions, after)
     final sortedSections = _sortSectionsByPhaseOrder(planData.sections);
+    final fallbackSegmentOrder = _inferSegmentOrder(sortedSections);
+    var duringIndex = 0;
+
+    if (kDebugMode) {
+      DebugLogger.info(
+        '[BRICK_NUTRITION] build: sections=${sortedSections.length}, '
+        'brickMetadata=${brick.brickMetadata}, '
+        'segmentOrder=${brick.brickMetadata?.segmentOrder ?? fallbackSegmentOrder}',
+      );
+      for (final section in sortedSections) {
+        DebugLogger.info(
+          '[BRICK_NUTRITION] raw section: id=${section.id}, title=${section.title}',
+        );
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: sortedSections.map((section) {
+        final isDuring = _isDuringSection(section);
+        final currentDuringIndex = isDuring ? duringIndex++ : null;
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-          child: _buildSection(context, section),
+          child: _buildSection(
+            context,
+            section,
+            duringIndex: currentDuringIndex,
+            fallbackSegmentOrder: fallbackSegmentOrder,
+          ),
         );
       }).toList(),
     );
@@ -51,46 +75,77 @@ class BrickNutritionSections extends StatelessWidget {
 
   /// Sort sections by brick phase order
   List<PlanSection> _sortSectionsByPhaseOrder(List<PlanSection> sections) {
-    final sectionMap = <String, PlanSection>{};
+    final sectionMap = <String, List<PlanSection>>{};
     for (final section in sections) {
-      sectionMap[section.id] = section;
+      sectionMap.putIfAbsent(section.id, () => <PlanSection>[]).add(section);
     }
 
     final sortedSections = <PlanSection>[];
+    final usedSections = <PlanSection>{};
+
+    void addSectionsForId(String id) {
+      final list = sectionMap[id];
+      if (list == null) return;
+      for (final section in list) {
+        if (usedSections.add(section)) {
+          sortedSections.add(section);
+        }
+      }
+    }
 
     // Add before section
-    if (sectionMap.containsKey('before')) {
-      sortedSections.add(sectionMap['before']!);
-    }
+    addSectionsForId('before');
 
     // Add during segments and transitions in order
     // Expected IDs: during_segment_1, T1, during_segment_2, T2, during_segment_3
     for (int i = 1; i <= 3; i++) {
-      final segmentKey = 'during_segment_$i';
-      if (sectionMap.containsKey(segmentKey)) {
-        sortedSections.add(sectionMap[segmentKey]!);
-      }
-
-      final transitionKey = 'T$i';
-      if (sectionMap.containsKey(transitionKey)) {
-        sortedSections.add(sectionMap[transitionKey]!);
-      }
+      addSectionsForId('during_segment_$i');
+      addSectionsForId('T$i');
     }
 
     // Add after section
-    if (sectionMap.containsKey('after')) {
-      sortedSections.add(sectionMap['after']!);
+    addSectionsForId('after');
+
+    // Append any remaining sections in original order
+    for (final section in sections) {
+      if (usedSections.add(section)) {
+        sortedSections.add(section);
+      }
     }
 
     return sortedSections;
   }
 
   /// Build individual section
-  Widget _buildSection(BuildContext context, PlanSection section) {
+  Widget _buildSection(
+    BuildContext context,
+    PlanSection section, {
+    required int? duringIndex,
+    required List<String>? fallbackSegmentOrder,
+  }) {
     final isTransition = section.id.startsWith('T');
-    final isSwimming = section.title.toLowerCase().contains('swim');
-    final category = _getCategoryFromSection(section.id, section.title);
-    final sectionColor = _getSectionColor(section.id);
+    final isDuring = _isDuringSection(section);
+    final sportType = _resolveSportType(
+      section,
+      duringIndex,
+      fallbackSegmentOrder: fallbackSegmentOrder,
+    );
+    final displayTitle = _resolveDisplayTitle(section, sportType);
+    final isSwimming = sportType == 'swimming';
+    final category = _getCategoryFromSection(
+      section,
+      sportType,
+      isDuring: isDuring,
+    );
+    final sectionColor = _getSectionColor(section);
+
+    if (kDebugMode) {
+      DebugLogger.info(
+        '[BRICK_NUTRITION] render: id=${section.id}, title=${section.title}, '
+        'displayTitle=$displayTitle, sportType=$sportType, '
+        'isDuring=$isDuring, duringIndex=$duringIndex, category=$category',
+      );
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -104,7 +159,7 @@ class BrickNutritionSections extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(context, section, isTransition, sectionColor),
+          _buildSectionHeader(context, displayTitle, sportType, isTransition, sectionColor, section.id),
           if (section.subtitle != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
@@ -154,7 +209,14 @@ class BrickNutritionSections extends StatelessWidget {
   }
 
   /// Build section header with appropriate icon and styling
-  Widget _buildSectionHeader(BuildContext context, PlanSection section, bool isTransition, Color sectionColor) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String displayTitle,
+    String? sportType,
+    bool isTransition,
+    Color sectionColor,
+    String sectionId,
+  ) {
     return Row(
       children: [
         if (isTransition) ...[
@@ -165,12 +227,12 @@ class BrickNutritionSections extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
         ] else ...[
-          _getSportIcon(section),
+          _getSportIcon(sportType, sectionId),
           const SizedBox(width: AppSpacing.sm),
         ],
         Expanded(
           child: Text(
-            section.title.toUpperCase(),
+            displayTitle.toUpperCase(),
             style: AppTextStyles.sectionTitle.copyWith(
               color: sectionColor,
               fontSize: 18,
@@ -182,23 +244,23 @@ class BrickNutritionSections extends StatelessWidget {
   }
 
   /// Get sport-specific icon for section
-  Widget _getSportIcon(PlanSection section) {
+  Widget _getSportIcon(String? sportType, String sectionId) {
     IconData iconData;
     Color iconColor;
 
-    if (section.title.toLowerCase().contains('swim')) {
+    if (sportType == 'swimming') {
       iconData = FontAwesomeIcons.personSwimming;
       iconColor = AppColors.electrolyte;
-    } else if (section.title.toLowerCase().contains('bike') || section.title.toLowerCase().contains('cycle')) {
+    } else if (sportType == 'cycling') {
       iconData = FontAwesomeIcons.personBiking;
       iconColor = AppColors.orange;
-    } else if (section.title.toLowerCase().contains('run')) {
+    } else if (sportType == 'running') {
       iconData = FontAwesomeIcons.personRunning;
       iconColor = AppColors.dragonfruit;
-    } else if (section.id == 'before') {
+    } else if (sportType == null && sectionId == 'before') {
       iconData = FontAwesomeIcons.clock;
       iconColor = AppColors.orange;
-    } else if (section.id == 'after') {
+    } else if (sportType == null && sectionId == 'after') {
       iconData = FontAwesomeIcons.utensils;
       iconColor = AppColors.dragonfruit;
     } else {
@@ -227,23 +289,29 @@ class BrickNutritionSections extends StatelessWidget {
     );
   }
 
-  /// Get category from section ID and title for food operations
+  /// Get category from section ID and sport type for food operations
   ///
-  /// For brick during segments, extracts sport type from section title:
-  /// - "During Swim" -> 'during_swim'
-  /// - "During Bike" / "During Cycle" -> 'during_cycling'
-  /// - "During Run" -> 'during_run'
-  String _getCategoryFromSection(String sectionId, String sectionTitle) {
-    if (sectionId == 'before') return 'before_run';
-    if (sectionId == 'after') return 'after_run';
-    if (sectionId.startsWith('T')) return 'transition';
+  /// For brick during segments, uses sport type when available:
+  /// - 'swimming' -> 'during_swim'
+  /// - 'cycling' -> 'during_cycling'
+  /// - 'running' -> 'during_run'
+  String _getCategoryFromSection(
+    PlanSection section,
+    String? sportType, {
+    required bool isDuring,
+  }) {
+    final idLower = section.id.toLowerCase();
+    final titleLower = section.title.toLowerCase();
 
-    if (sectionId.startsWith('during_segment')) {
-      final titleLower = sectionTitle.toLowerCase();
-      if (titleLower.contains('swim')) {
+    if (idLower.startsWith('before') || titleLower.startsWith('before')) return 'before_run';
+    if (idLower.startsWith('after') || titleLower.startsWith('after')) return 'after_run';
+    if (idLower.startsWith('t') || titleLower.startsWith('transition')) return 'transition';
+
+    if (isDuring) {
+      if (sportType == 'swimming') {
         return 'during_swim';
       }
-      if (titleLower.contains('bike') || titleLower.contains('cycle') || titleLower.contains('ride')) {
+      if (sportType == 'cycling') {
         return 'during_cycling';
       }
       // Default to during_run for running segments
@@ -254,11 +322,93 @@ class BrickNutritionSections extends StatelessWidget {
   }
 
   /// Get color for section based on phase
-  Color _getSectionColor(String sectionId) {
-    if (sectionId == 'before') return AppColors.orange;
-    if (sectionId == 'after') return AppColors.dragonfruit;
-    if (sectionId.startsWith('T')) return AppColors.electrolyte;
-    if (sectionId.startsWith('during_segment')) return AppColors.electrolyte;
+  Color _getSectionColor(PlanSection section) {
+    final idLower = section.id.toLowerCase();
+    final titleLower = section.title.toLowerCase();
+    if (idLower.startsWith('before') || titleLower.startsWith('before')) return AppColors.orange;
+    if (idLower.startsWith('after') || titleLower.startsWith('after')) return AppColors.dragonfruit;
+    if (idLower.startsWith('t') || titleLower.startsWith('transition')) return AppColors.electrolyte;
+    if (idLower.startsWith('during_segment') || titleLower.startsWith('during')) {
+      return AppColors.electrolyte;
+    }
     return AppColors.electrolyte;
+  }
+
+  String? _resolveSportType(
+    PlanSection section,
+    int? duringIndex, {
+    required List<String>? fallbackSegmentOrder,
+  }) {
+    final segmentOrder = brick.brickMetadata?.segmentOrder ?? fallbackSegmentOrder;
+
+    if (section.id.startsWith('during_segment_')) {
+      final segmentIndex = int.tryParse(section.id.split('_').last);
+      if (segmentIndex != null &&
+          segmentIndex > 0 &&
+          segmentOrder != null &&
+          segmentIndex <= segmentOrder.length) {
+        return segmentOrder[segmentIndex - 1];
+      }
+    }
+
+    final titleLower = section.title.toLowerCase();
+    if (titleLower.contains('swim')) return 'swimming';
+    if (titleLower.contains('bike') || titleLower.contains('cycle') || titleLower.contains('ride')) {
+      return 'cycling';
+    }
+    if (titleLower.contains('run')) return 'running';
+
+    if (duringIndex != null && segmentOrder != null && duringIndex < segmentOrder.length) {
+      return segmentOrder[duringIndex];
+    }
+
+    return null;
+  }
+
+  String _resolveDisplayTitle(PlanSection section, String? sportType) {
+    if (section.id == 'before') return 'Before Brick';
+    if (section.id == 'after') return 'After Brick';
+    if (section.id.startsWith('T')) {
+      final transitionNumber = int.tryParse(section.id.replaceAll(RegExp(r'[^0-9]'), ''));
+      if (transitionNumber != null) return 'Transition $transitionNumber';
+      return 'Transition';
+    }
+
+    final sportName = _sportDisplayName(sportType);
+    if (sportName != null) return 'During $sportName';
+
+    return section.title;
+  }
+
+  bool _isDuringSection(PlanSection section) {
+    if (section.id.startsWith('during')) return true;
+    final titleLower = section.title.toLowerCase();
+    return titleLower.startsWith('during ');
+  }
+
+  List<String>? _inferSegmentOrder(List<PlanSection> sections) {
+    final explicitOrder = brick.brickMetadata?.segmentOrder;
+    if (explicitOrder != null && explicitOrder.isNotEmpty) {
+      return explicitOrder;
+    }
+
+    final duringCount = sections.where(_isDuringSection).length;
+    if (duringCount >= 3) return const ['swimming', 'cycling', 'running'];
+    if (duringCount == 2) return const ['cycling', 'running'];
+    if (duringCount == 1) return const ['running'];
+    return null;
+  }
+
+  String? _sportDisplayName(String? sportType) {
+    switch (sportType) {
+      case 'swimming':
+        return 'Swim';
+      case 'cycling':
+        return 'Bike';
+      case 'running':
+        return 'Run';
+      default:
+        return null;
+    }
   }
 }

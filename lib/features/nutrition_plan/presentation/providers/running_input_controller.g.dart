@@ -48,7 +48,7 @@ final class RunningInputControllerProvider
 }
 
 String _$runningInputControllerHash() =>
-    r'8354843152a0889bbb1b2bc977538703f41032b2';
+    r'7e1f1ffde7dd9f14c2bc45fa897cff21c278901f';
 
 /// Running Input Controller - manages form state and delegates macro generation
 /// FOA COMPLIANT: Contains form state management and business logic coordination

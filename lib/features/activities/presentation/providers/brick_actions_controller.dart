@@ -21,9 +21,11 @@ part 'brick_actions_controller.g.dart';
 @riverpod
 class BrickActionsController extends _$BrickActionsController {
   ActivitiesService get _service => ref.read(activitiesServiceProvider);
-  ActivitiesRepository get _repository => ref.read(activitiesRepositoryProvider);
+  ActivitiesRepository get _repository =>
+      ref.read(activitiesRepositoryProvider);
   AppLogger get _logger => ref.read(appLoggerProvider);
-  SchemaRecoveryService get _schemaRecovery => ref.read(schemaRecoveryServiceProvider);
+  SchemaRecoveryService get _schemaRecovery =>
+      ref.read(schemaRecoveryServiceProvider);
 
   @override
   FutureOr<void> build() {
@@ -35,7 +37,7 @@ class BrickActionsController extends _$BrickActionsController {
   ///
   /// Parameters:
   /// - activities: List of 2-3 activities to combine (already validated)
-  /// - segmentOrder: List of activity IDs defining segment order
+  /// - segmentOrder: List of sport names defining segment order
   ///
   /// Returns the created brick activity
   ///
@@ -112,15 +114,15 @@ class BrickActionsController extends _$BrickActionsController {
         context: 'BRICK_ACTIONS_CONTROLLER',
         error: e,
         stackTrace: stackTrace,
-        data: {
-          'activityIds': activities.map((a) => a.id).toList(),
-        },
+        data: {'activityIds': activities.map((a) => a.id).toList()},
       );
 
       // Wrap unknown errors in BrickCreationException
-      if (e.toString().contains('network') || e.toString().contains('connection')) {
+      if (e.toString().contains('network') ||
+          e.toString().contains('connection')) {
         throw BrickCreationException.networkError(e);
-      } else if (e.toString().contains('database') || e.toString().contains('drift')) {
+      } else if (e.toString().contains('database') ||
+          e.toString().contains('drift')) {
         throw BrickCreationException.databaseError(e);
       } else {
         throw BrickCreationException.unknown(e);
@@ -182,7 +184,8 @@ class BrickActionsController extends _$BrickActionsController {
       );
 
       // Wrap unknown errors in BrickUngroupException
-      if (e.toString().contains('network') || e.toString().contains('connection')) {
+      if (e.toString().contains('network') ||
+          e.toString().contains('connection')) {
         throw BrickUngroupException.networkError(e);
       } else {
         throw BrickUngroupException.databaseError(e);
@@ -215,10 +218,7 @@ class BrickActionsController extends _$BrickActionsController {
     _logger.info(
       'Removing segment from brick',
       context: 'BRICK_ACTIONS_CONTROLLER',
-      data: {
-        'brickId': brickId,
-        'segmentIndex': segmentIndex,
-      },
+      data: {'brickId': brickId, 'segmentIndex': segmentIndex},
     );
 
     throw UnimplementedError(

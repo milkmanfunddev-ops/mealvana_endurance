@@ -397,7 +397,9 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       DebugLogger.error('❌ NEW ACTIVITY: Error in macro generation flow: $e');
       if (!mounted) return;
 
-      MealvanaSnackbar.showError(context, 'Error generating plan: $e');
+      // Strip 'Exception: ' prefix for cleaner user-facing messages
+      final message = e.toString().replaceFirst('Exception: ', '');
+      MealvanaSnackbar.showError(context, message);
     }
   }
 

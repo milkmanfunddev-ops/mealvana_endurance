@@ -6,6 +6,8 @@ import '../../../auth/data/user_repository.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/intensity_distribution.dart';
+import '../../domain/meal_type.dart';
+import '../../../../shared/domain/activity_type.dart';
 import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
 import '../../../weather/domain/weather_forecast.dart';
@@ -43,6 +45,12 @@ class RunningFormState {
   final bool zonePaceApplied;
   final double? zoneSuggestedPace;
 
+  // V3: Fasted workout toggle
+  final bool isFasted;
+
+  // V3: Track if user manually changed the pre-run timing
+  final bool preRunMinutesManuallySet;
+
   // Weather integration fields
   final weather_domain.Location? location;
   final WeatherForecast? weatherForecast;
@@ -54,8 +62,8 @@ class RunningFormState {
   RunningFormState({
     this.distance = 12.0,
     this.paceMinutes = 9.0,
-    this.preRunMinutes = 120,
-    this.gutTraining = GutTraining.high,
+    this.preRunMinutes = 150, // V3: default from recommendedHoursBefore (2.5h for moderate running)
+    this.gutTraining = GutTraining.moderate,
     this.sweatRate = SweatRateCat.medium,
     this.temperatureC = 20.0,
     this.humidityPct = 60.0,
@@ -66,6 +74,8 @@ class RunningFormState {
     IntensityDistribution? intensity,
     this.durationPaceMode = DurationPaceMode.byDuration,
     this.estimatedDuration,
+    this.isFasted = false,
+    this.preRunMinutesManuallySet = false,
     this.zonePaceApplied = false,
     this.zoneSuggestedPace,
     this.location,
@@ -91,6 +101,8 @@ class RunningFormState {
     IntensityDistribution? intensity,
     DurationPaceMode? durationPaceMode,
     Duration? estimatedDuration,
+    bool? isFasted,
+    bool? preRunMinutesManuallySet,
     bool? zonePaceApplied,
     double? zoneSuggestedPace,
     weather_domain.Location? location,
@@ -115,6 +127,8 @@ class RunningFormState {
       intensity: intensity ?? this.intensity,
       durationPaceMode: durationPaceMode ?? this.durationPaceMode,
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
+      isFasted: isFasted ?? this.isFasted,
+      preRunMinutesManuallySet: preRunMinutesManuallySet ?? this.preRunMinutesManuallySet,
       zonePaceApplied: zonePaceApplied ?? this.zonePaceApplied,
       zoneSuggestedPace: zoneSuggestedPace ?? this.zoneSuggestedPace,
       location: location ?? this.location,
@@ -149,6 +163,10 @@ class RunningInputController extends _$RunningInputController {
       seconds: (((defaultDistance * defaultPace) - (defaultDistance * defaultPace).floor()) * 60).round(),
     );
 
+    // V3: Pre-fill timing from recommendation based on default intensity
+    final defaultIntensity = IntensityDistribution.defaultDistribution();
+    final recommendedMinutes = (recommendedHoursBefore(ActivityType.running, defaultIntensity) * 60).round();
+
     final initialState = RunningFormState(
       selectedDate: now,
       selectedTime: const TimeOfDay(hour: 7, minute: 0),
@@ -157,8 +175,9 @@ class RunningInputController extends _$RunningInputController {
       sweatRate: SweatRateCat.medium,
       distance: defaultDistance,
       paceMinutes: defaultPace,
+      preRunMinutes: recommendedMinutes,
       estimatedDuration: initialDuration,
-      intensity: IntensityDistribution.defaultDistribution(),
+      intensity: defaultIntensity,
       durationPaceMode: DurationPaceMode.byDuration,
     );
 
@@ -176,6 +195,8 @@ class RunningInputController extends _$RunningInputController {
   /// if available. This is called once when the tab becomes active.
   Future<void> applyZonePaceIfAvailable(String userId) async {
     if (state.zonePaceApplied) return; // Only apply once
+    // Avoid overriding an existing pace (e.g., from event data or manual edits)
+    if (state.paceMinutes != 9.0) return;
 
     try {
       final zone2Pace = await ref.read(zone2PaceMinPerMileProvider(userId).future);
@@ -241,6 +262,18 @@ class RunningInputController extends _$RunningInputController {
 
   /// Update form field values
   void updateDistance(double distance) {
+    final hasDuration =
+        state.estimatedDuration != null && state.estimatedDuration!.inSeconds > 0;
+
+    if (state.durationPaceMode == DurationPaceMode.byDuration && hasDuration) {
+      final newPace = _estimatePace(distance: distance, duration: state.estimatedDuration);
+      state = state.copyWith(
+        distance: distance,
+        paceMinutes: newPace ?? state.paceMinutes,
+      );
+      return;
+    }
+
     state = state.copyWith(
       distance: distance,
       estimatedDuration: _estimateDuration(distance: distance),
@@ -256,14 +289,36 @@ class RunningInputController extends _$RunningInputController {
 
   void updateIntensityDistribution(IntensityDistribution intensity) {
     state = state.copyWith(intensity: intensity);
+
+    // V3: Auto-update timing to recommendation if user hasn't manually overridden
+    if (!state.preRunMinutesManuallySet) {
+      final recommended = recommendedHoursBefore(ActivityType.running, intensity);
+      state = state.copyWith(preRunMinutes: (recommended * 60).round());
+    }
   }
 
   void updateDuration(Duration duration) {
-    state = state.copyWith(estimatedDuration: duration);
+    final newPace = _estimatePace(duration: duration);
+    state = state.copyWith(
+      estimatedDuration: duration,
+      paceMinutes: newPace ?? state.paceMinutes,
+    );
   }
 
   void updateDurationPaceMode(DurationPaceMode mode) {
-    state = state.copyWith(durationPaceMode: mode);
+    if (mode == DurationPaceMode.byDuration) {
+      state = state.copyWith(
+        durationPaceMode: mode,
+        estimatedDuration: state.estimatedDuration ?? _estimateDuration(),
+      );
+      return;
+    }
+
+    final newPace = _estimatePace();
+    state = state.copyWith(
+      durationPaceMode: mode,
+      paceMinutes: newPace ?? state.paceMinutes,
+    );
   }
 
   /// Calculate estimated duration from distance and pace.
@@ -289,8 +344,36 @@ class RunningInputController extends _$RunningInputController {
     return Duration(minutes: minutes, seconds: seconds);
   }
 
+  /// Calculate pace (minutes per unit) from duration and distance.
+  double? _estimatePace({
+    double? distance,
+    Duration? duration,
+  }) {
+    final currentDistance = distance ?? state.distance;
+    final currentDuration = duration ?? state.estimatedDuration;
+
+    if (currentDuration == null || currentDistance <= 0) {
+      return null;
+    }
+
+    final totalMinutes = currentDuration.inSeconds / 60.0;
+    if (totalMinutes <= 0) {
+      return null;
+    }
+
+    return totalMinutes / currentDistance;
+  }
+
   void updatePreRunMinutes(int minutes) {
-    state = state.copyWith(preRunMinutes: minutes);
+    state = state.copyWith(
+      preRunMinutes: minutes,
+      preRunMinutesManuallySet: true,
+    );
+  }
+
+  /// V3: Update fasted workout toggle
+  void updateFasted(bool isFasted) {
+    state = state.copyWith(isFasted: isFasted);
   }
 
   void updateGutTraining(GutTraining gutTraining) {
@@ -456,6 +539,8 @@ class RunningInputController extends _$RunningInputController {
       sweatRateCat: currentState.sweatRate,
       temperatureC: currentState.temperatureC,
       humidityPct: currentState.humidityPct,
+      isFasted: currentState.isFasted,
+      intensity: currentState.intensity,
       activityId: activityId,
       eventId: eventId,
       forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities

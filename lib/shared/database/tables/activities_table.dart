@@ -101,5 +101,7 @@ class ActivitiesTable extends Table {
   // CHECK constraints removed - Supabase enums are the source of truth
   // This prevents schema mismatch errors between local DB and server data
   @override
-  List<String> get customConstraints => [];
+  List<String> get customConstraints => [
+    'UNIQUE(user_id, synced_from_provider, provider_workout_id)',
+  ];
 }

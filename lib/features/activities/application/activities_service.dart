@@ -49,15 +49,23 @@ class ActivitiesService {
       // Supabase returns lowercase UUIDs, but local user profile may have uppercase
       // Filter out archivedForBrick activities - they are hidden when grouped into a brick
       final query = _database.select(_database.activitiesTable)
-            ..where((tbl) => tbl.userId.lower().equals(userId.toLowerCase()) &
-                              tbl.scheduledDateTime.isBetweenValues(startDate, endDate) &
-                              tbl.deletedAt.isNull() &
-                              tbl.status.equals('archivedForBrick').not())
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]);
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.scheduledDateTime.isBetweenValues(startDate, endDate) &
+              tbl.deletedAt.isNull() &
+              (tbl.status.equals('archivedForBrick') |
+                      tbl.status.equals('archived_for_brick'))
+                  .not(),
+        )
+        ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]);
 
       final activities = await query.get();
-
-      return _mapActivitiesAsync(activities);
+      final mapped = await _mapActivitiesAsync(activities);
+      return _hydrateBrickMetadataForActivities(
+        userId: userId,
+        activities: mapped,
+      );
     } catch (e) {
       _logger.error('Error getting activities for date range', error: e);
       rethrow;
@@ -65,8 +73,13 @@ class ActivitiesService {
   }
 
   /// Get activities for a specific week
-  Future<List<domain.Activity>> getActivitiesForWeek(String userId, DateTime weekStart) async {
-    final weekEnd = weekStart.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+  Future<List<domain.Activity>> getActivitiesForWeek(
+    String userId,
+    DateTime weekStart,
+  ) async {
+    final weekEnd = weekStart.add(
+      const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+    );
     return getActivitiesForDateRange(userId, weekStart, weekEnd);
   }
 
@@ -76,14 +89,22 @@ class ActivitiesService {
       // CRITICAL FIX: Use case-insensitive comparison for userId
       // Filter out archivedForBrick activities - they are hidden when grouped into a brick
       final query = _database.select(_database.activitiesTable)
-            ..where((tbl) => tbl.userId.lower().equals(userId.toLowerCase()) &
-                              tbl.deletedAt.isNull() &
-                              tbl.status.equals('archivedForBrick').not())
-            ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]);
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.deletedAt.isNull() &
+              (tbl.status.equals('archivedForBrick') |
+                      tbl.status.equals('archived_for_brick'))
+                  .not(),
+        )
+        ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]);
 
       final activities = await query.get();
-
-      return _mapActivitiesAsync(activities);
+      final mapped = await _mapActivitiesAsync(activities);
+      return _hydrateBrickMetadataForActivities(
+        userId: userId,
+        activities: mapped,
+      );
     } catch (e) {
       _logger.error('Error getting all activities', error: e);
       rethrow;
@@ -92,7 +113,9 @@ class ActivitiesService {
 
   /// Helper to map activities asynchronously yielding to the event loop
   /// This prevents the main thread from freezing during heavy syncs
-  Future<List<domain.Activity>> _mapActivitiesAsync(List<Activity> activities) async {
+  Future<List<domain.Activity>> _mapActivitiesAsync(
+    List<Activity> activities,
+  ) async {
     final result = <domain.Activity>[];
     final stopwatch = Stopwatch()..start();
 
@@ -102,28 +125,391 @@ class ActivitiesService {
         await Future.delayed(Duration.zero);
         stopwatch.reset();
       }
-      result.add(mapToActivityDomain(activities[i]));
+      result.add(_activitiesRepository.mapper.fromDriftRow(activities[i]));
     }
     return result;
   }
 
+  Future<List<domain.Activity>> _hydrateBrickMetadataForActivities({
+    required String userId,
+    required List<domain.Activity> activities,
+  }) async {
+    final hydrated = <domain.Activity>[];
+
+    for (final activity in activities) {
+      if (!activity.isBrick) {
+        hydrated.add(activity);
+        continue;
+      }
+
+      final segments = activity.brickMetadata?.segments ?? const [];
+      if (segments.isNotEmpty) {
+        hydrated.add(activity);
+        continue;
+      }
+
+      final archivedRows =
+          await (_database.select(_database.activitiesTable)
+                ..where(
+                  (tbl) =>
+                      tbl.userId.lower().equals(userId.toLowerCase()) &
+                      tbl.brickId.equals(activity.id) &
+                      tbl.deletedAt.isNull() &
+                      (tbl.status.equals('archivedForBrick') |
+                          tbl.status.equals('archived_for_brick')),
+                )
+                ..orderBy([(tbl) => OrderingTerm.asc(tbl.scheduledDateTime)]))
+              .get();
+
+      var segmentRows = archivedRows;
+      if (segmentRows.isEmpty) {
+        segmentRows = await _findLegacyBrickSegmentRows(
+          userId: userId,
+          brick: activity,
+        );
+      }
+      if (segmentRows.isEmpty) {
+        segmentRows = await _findTitleMatchedArchivedRows(
+          userId: userId,
+          brick: activity,
+        );
+      }
+
+      if (segmentRows.isEmpty) {
+        _logger.warning(
+          'Orphan brick activity has no segment data; keeping visible',
+          context: 'ACTIVITIES_SERVICE',
+          data: {
+            'brickId': activity.id,
+            'title': activity.title,
+            'userId': userId,
+          },
+        );
+        hydrated.add(activity);
+        continue;
+      }
+
+      await _linkSegmentRowsToBrickIfNeeded(
+        brickId: activity.id,
+        segmentRows: segmentRows,
+      );
+
+      final reconstructed = _buildBrickMetadataFromActivityRows(segmentRows);
+      final patched = activity.copyWith(brickMetadata: reconstructed);
+      hydrated.add(patched);
+
+      await _persistReconstructedBrickMetadata(
+        brickId: activity.id,
+        metadata: reconstructed,
+      );
+    }
+
+    return hydrated;
+  }
+
+  Future<List<Activity>> _findLegacyBrickSegmentRows({
+    required String userId,
+    required domain.Activity brick,
+  }) async {
+    final segmentIds = _extractLegacySegmentIdsFromBrickTitle(brick.title);
+    if (segmentIds.length < 2) {
+      return const [];
+    }
+
+    final rows =
+        await (_database.select(_database.activitiesTable)..where(
+              (tbl) =>
+                  tbl.userId.lower().equals(userId.toLowerCase()) &
+                  tbl.id.isIn(segmentIds) &
+                  tbl.activityType.equals('brick').not() &
+                  tbl.deletedAt.isNull(),
+            ))
+            .get();
+
+    if (rows.isEmpty) {
+      return const [];
+    }
+
+    final byId = <String, Activity>{
+      for (final row in rows) row.id.toLowerCase(): row,
+    };
+    final orderedRows = <Activity>[];
+    for (final segmentId in segmentIds) {
+      final match = byId[segmentId.toLowerCase()];
+      if (match != null) {
+        orderedRows.add(match);
+      }
+    }
+
+    if (orderedRows.length < 2) {
+      return const [];
+    }
+
+    _logger.warning(
+      'Recovered brick metadata from legacy title IDs',
+      context: 'ACTIVITIES_SERVICE',
+      data: {
+        'brickId': brick.id,
+        'segmentIds': segmentIds,
+        'recoveredCount': orderedRows.length,
+      },
+    );
+    return orderedRows;
+  }
+
+  Future<List<Activity>> _findTitleMatchedArchivedRows({
+    required String userId,
+    required domain.Activity brick,
+  }) async {
+    final sports = _extractSportsFromBrickTitle(brick.title);
+    if (sports.length < 2) {
+      return const [];
+    }
+
+    final from = brick.scheduledDateTime.subtract(const Duration(minutes: 1));
+    final to = brick.scheduledDateTime.add(const Duration(minutes: 1));
+
+    final candidateRows =
+        await (_database.select(_database.activitiesTable)
+              ..where(
+                (tbl) =>
+                    tbl.userId.lower().equals(userId.toLowerCase()) &
+                    tbl.activityType.isIn(sports) &
+                    tbl.scheduledDateTime.isBetweenValues(from, to) &
+                    tbl.deletedAt.isNull() &
+                    tbl.brickId.isNull() &
+                    (tbl.status.equals('archivedForBrick') |
+                        tbl.status.equals('archived_for_brick')),
+              )
+              ..orderBy([
+                (tbl) => OrderingTerm.asc(tbl.scheduledDateTime),
+                (tbl) => OrderingTerm.asc(tbl.updatedAt),
+              ]))
+            .get();
+
+    if (candidateRows.length < sports.length) {
+      return const [];
+    }
+
+    final usedIds = <String>{};
+    final ordered = <Activity>[];
+
+    for (final sport in sports) {
+      Activity? match;
+      for (final row in candidateRows) {
+        if (usedIds.contains(row.id)) continue;
+        if (row.activityType == sport) {
+          match = row;
+          break;
+        }
+      }
+
+      if (match == null) {
+        return const [];
+      }
+
+      usedIds.add(match.id);
+      ordered.add(match);
+    }
+
+    _logger.warning(
+      'Recovered brick metadata from archived rows missing brick_id',
+      context: 'ACTIVITIES_SERVICE',
+      data: {
+        'brickId': brick.id,
+        'sports': sports,
+        'segmentIds': ordered.map((row) => row.id).toList(),
+      },
+    );
+
+    return ordered;
+  }
+
+  List<String> _extractSportsFromBrickTitle(String title) {
+    final stripped = title.trim().replaceFirst(
+      RegExp(r'\s+BRICK$', caseSensitive: false),
+      '',
+    );
+    final tokens = stripped
+        .split('/')
+        .map((part) => part.trim().toUpperCase())
+        .where((part) => part.isNotEmpty)
+        .toList();
+
+    if (tokens.length < 2 || tokens.length > 3) {
+      return const [];
+    }
+
+    const map = <String, String>{
+      'SWIM': 'swimming',
+      'SWIMMING': 'swimming',
+      'BIKE': 'cycling',
+      'CYCLING': 'cycling',
+      'RIDE': 'cycling',
+      'RUN': 'running',
+      'RUNNING': 'running',
+    };
+
+    final sports = <String>[];
+    for (final token in tokens) {
+      final sport = map[token];
+      if (sport == null) {
+        return const [];
+      }
+      sports.add(sport);
+    }
+
+    return sports;
+  }
+
+  Future<void> _linkSegmentRowsToBrickIfNeeded({
+    required String brickId,
+    required List<Activity> segmentRows,
+  }) async {
+    final rowsNeedingLink = segmentRows.where((row) => row.brickId != brickId);
+    if (rowsNeedingLink.isEmpty) {
+      return;
+    }
+
+    final now = DateTime.now();
+    for (final row in rowsNeedingLink) {
+      try {
+        await (_database.update(
+          _database.activitiesTable,
+        )..where((tbl) => tbl.id.equals(row.id))).write(
+          ActivitiesTableCompanion(
+            brickId: Value(brickId),
+            needsUpload: const Value(true),
+            localUpdatedAt: Value(now),
+            updatedAt: Value(now),
+          ),
+        );
+      } catch (e) {
+        _logger.warning(
+          'Failed to relink segment row to brick',
+          context: 'ACTIVITIES_SERVICE',
+          error: e,
+          data: {'brickId': brickId, 'segmentId': row.id},
+        );
+      }
+    }
+  }
+
+  List<String> _extractLegacySegmentIdsFromBrickTitle(String title) {
+    final stripped = title.trim().replaceFirst(
+      RegExp(r'\s+BRICK$', caseSensitive: false),
+      '',
+    );
+    final parts = stripped
+        .split('/')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.length < 2 || parts.length > 3) {
+      return const [];
+    }
+
+    final uuidPattern = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+    );
+    if (parts.any((part) => !uuidPattern.hasMatch(part))) {
+      return const [];
+    }
+    return parts;
+  }
+
+  Future<void> _persistReconstructedBrickMetadata({
+    required String brickId,
+    required BrickMetadata metadata,
+  }) async {
+    try {
+      final now = DateTime.now();
+      await (_database.update(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(brickId))).write(
+        ActivitiesTableCompanion(
+          brickMetadata: Value(jsonEncode(metadata.toJson())),
+          needsUpload: const Value(true),
+          localUpdatedAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+    } catch (e) {
+      _logger.warning(
+        'Failed to persist reconstructed brick metadata',
+        context: 'ACTIVITIES_SERVICE',
+        error: e,
+        data: {'brickId': brickId},
+      );
+    }
+  }
+
+  BrickMetadata _buildBrickMetadataFromActivityRows(
+    List<Activity> activityRows,
+  ) {
+    final segments = <BrickSegment>[];
+    var totalDurationMinutes = 0;
+
+    for (var i = 0; i < activityRows.length; i++) {
+      final row = activityRows[i];
+      final durationMinutes = row.durationMinutes ?? 0;
+      totalDurationMinutes += durationMinutes;
+
+      final sport = row.activityType;
+      final isSwim = sport == 'swimming';
+      final isRunOrBike = sport == 'running' || sport == 'cycling';
+
+      segments.add(
+        BrickSegment(
+          sport: sport,
+          order: i + 1,
+          durationMinutes: durationMinutes,
+          intensity: row.intensityLevel ?? 'moderate',
+          distanceMeters: isSwim && row.distanceMiles != null
+              ? row.distanceMiles! * 1609.34
+              : null,
+          pacePer100mSeconds: row.swimmingPacePer100mSeconds,
+          poolOrOpenWater: row.swimmingPoolOrOpenWater,
+          waterTempC: row.swimmingWaterTempC,
+          distanceMiles: isRunOrBike ? row.distanceMiles : null,
+          speedMph: row.cyclingSpeedMph,
+          terrain: row.cyclingTerrain,
+          indoorOutdoor: row.cyclingIndoorOutdoor,
+          elevationGainFt: row.cyclingElevationGainFt,
+          paceMinutesPerMile: row.paceTargetMinutesPerMile,
+        ),
+      );
+    }
+
+    return BrickMetadata(
+      segmentOrder: activityRows.map((row) => row.activityType).toList(),
+      segments: segments,
+      originalActivityIds: activityRows.map((row) => row.id).toList(),
+      createdFromExisting: true,
+      totalDurationMinutes: totalDurationMinutes,
+    );
+  }
+
   /// Get a specific activity by ID
-  Future<domain.Activity?> getActivityById(String userId, String activityId) async {
+  Future<domain.Activity?> getActivityById(
+    String userId,
+    String activityId,
+  ) async {
     try {
       _logger.info(
         'Fetching activity by ID',
         context: 'ACTIVITIES_SERVICE',
-        data: {
-          'userId': userId,
-          'activityId': activityId,
-        },
+        data: {'userId': userId, 'activityId': activityId},
       );
 
       // CRITICAL FIX: Use case-insensitive comparison for userId
       final query = _database.select(_database.activitiesTable)
-            ..where((tbl) => tbl.userId.lower().equals(userId.toLowerCase()) &
-                              tbl.id.equals(activityId) &
-                              tbl.deletedAt.isNull());
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.id.equals(activityId) &
+              tbl.deletedAt.isNull(),
+        );
 
       final activity = await query.getSingleOrNull();
 
@@ -150,16 +536,18 @@ class ActivitiesService {
         },
       );
 
-      return mapToActivityDomain(activity);
+      final mapped = _activitiesRepository.mapper.fromDriftRow(activity);
+      final hydrated = await _hydrateBrickMetadataForActivities(
+        userId: userId,
+        activities: [mapped],
+      );
+      return hydrated.isEmpty ? null : hydrated.first;
     } catch (e) {
       _logger.error(
         'Error getting activity by ID',
         context: 'ACTIVITIES_SERVICE',
         error: e,
-        data: {
-          'userId': userId,
-          'activityId': activityId,
-        },
+        data: {'userId': userId, 'activityId': activityId},
       );
       rethrow;
     }
@@ -170,7 +558,8 @@ class ActivitiesService {
   Future<domain.Activity> createActivity({
     required String deviceId,
     required String userId,
-    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
+    String?
+    forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
     required ActivityType activityType,
     required String title,
     required DateTime scheduledDateTime,
@@ -206,21 +595,19 @@ class ActivitiesService {
       if (forUserId != null && forUserId != userId) {
         final hasActiveRelationship = await _coachRepository
             .isActiveCoachAthleteRelationship(
-          coachUserId: userId,
-          athleteUserId: forUserId,
-        );
+              coachUserId: userId,
+              athleteUserId: forUserId,
+            );
 
         if (!hasActiveRelationship) {
           _logger.error(
             'Coach does not have active relationship with athlete',
             context: 'ACTIVITIES_SERVICE',
-            data: {
-              'coachUserId': userId,
-              'athleteUserId': forUserId,
-            },
+            data: {'coachUserId': userId, 'athleteUserId': forUserId},
           );
           throw Exception(
-              'Not authorized to create activities for this athlete');
+            'Not authorized to create activities for this athlete',
+          );
         }
       }
 
@@ -264,7 +651,11 @@ class ActivitiesService {
         activity: activity,
       );
     } catch (e, stackTrace) {
-      _logger.error('Error creating activity', error: e, stackTrace: stackTrace);
+      _logger.error(
+        'Error creating activity',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -273,7 +664,8 @@ class ActivitiesService {
   Future<domain.Activity> createCyclingActivity({
     required String deviceId,
     required String userId,
-    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
+    String?
+    forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
     required String title,
     required DateTime scheduledDateTime,
     required double distanceMiles,
@@ -311,7 +703,8 @@ class ActivitiesService {
   Future<domain.Activity> createSwimmingActivity({
     required String deviceId,
     required String userId,
-    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
+    String?
+    forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
     required String title,
     required DateTime scheduledDateTime,
     required double distanceMiles,
@@ -389,16 +782,17 @@ class ActivitiesService {
   Future<domain.Activity> updateActivity({
     required String deviceId,
     required domain.Activity activity,
-    String? currentUserId, // NEW: Current user ID (for validation if coach is editing athlete's activity)
+    String?
+    currentUserId, // NEW: Current user ID (for validation if coach is editing athlete's activity)
   }) async {
     try {
       // Validate coach-athlete relationship if editing for someone else
       if (currentUserId != null && currentUserId != activity.userId) {
         final hasActiveRelationship = await _coachRepository
             .isActiveCoachAthleteRelationship(
-          coachUserId: currentUserId,
-          athleteUserId: activity.userId,
-        );
+              coachUserId: currentUserId,
+              athleteUserId: activity.userId,
+            );
 
         if (!hasActiveRelationship) {
           _logger.error(
@@ -410,7 +804,8 @@ class ActivitiesService {
             },
           );
           throw Exception(
-              'Not authorized to update activities for this athlete');
+            'Not authorized to update activities for this athlete',
+          );
         }
       }
 
@@ -419,7 +814,11 @@ class ActivitiesService {
         activity: activity.copyWith(updatedAt: DateTime.now()),
       );
     } catch (e, stackTrace) {
-      _logger.error('Error updating activity', error: e, stackTrace: stackTrace);
+      _logger.error(
+        'Error updating activity',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -429,17 +828,20 @@ class ActivitiesService {
   Future<void> deleteActivity({
     required String deviceId,
     required String activityId,
-    String? currentUserId, // NEW: Current user ID (for validation if coach is deleting athlete's activity)
+    String?
+    currentUserId, // NEW: Current user ID (for validation if coach is deleting athlete's activity)
     String? activityOwnerId, // NEW: Activity owner ID (for validation)
   }) async {
     try {
       // Validate coach-athlete relationship if deleting for someone else
-      if (currentUserId != null && activityOwnerId != null && currentUserId != activityOwnerId) {
+      if (currentUserId != null &&
+          activityOwnerId != null &&
+          currentUserId != activityOwnerId) {
         final hasActiveRelationship = await _coachRepository
             .isActiveCoachAthleteRelationship(
-          coachUserId: currentUserId,
-          athleteUserId: activityOwnerId,
-        );
+              coachUserId: currentUserId,
+              athleteUserId: activityOwnerId,
+            );
 
         if (!hasActiveRelationship) {
           _logger.error(
@@ -451,7 +853,8 @@ class ActivitiesService {
             },
           );
           throw Exception(
-              'Not authorized to delete activities for this athlete');
+            'Not authorized to delete activities for this athlete',
+          );
         }
       }
 
@@ -460,117 +863,13 @@ class ActivitiesService {
         activityId: activityId,
       );
     } catch (e, stackTrace) {
-      _logger.error('Error deleting activity', error: e, stackTrace: stackTrace);
+      _logger.error(
+        'Error deleting activity',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
 
-  /// Map database Activity to domain Activity
-  /// Public to support Drift streams in controllers
-  domain.Activity mapToActivityDomain(Activity activity) {
-    // Log nutrition plan data presence for debugging
-    // if (activity.nutritionPlanData != null) {
-    //   _logger.info(
-    //     'Mapping activity with nutrition plan data',
-    //     context: 'ACTIVITIES_SERVICE',
-    //     data: {
-    //       'activityId': activity.id,
-    //       'hasNutritionPlan': true,
-    //       'nutritionPlanDataSize': activity.nutritionPlanData!.length,
-    //     },
-    //   );
-    // }
-
-    return domain.Activity(
-      id: activity.id,
-      userId: activity.userId,
-      activityType: ActivityType.values.firstWhere(
-        (type) => type.name == activity.activityType,
-        orElse: () => ActivityType.running,
-      ),
-      title: activity.title,
-      scheduledDateTime: activity.scheduledDateTime,
-      status: domain.ActivityStatus.values.firstWhere(
-        (s) => s.name == activity.status,
-        orElse: () => domain.ActivityStatus.planned,
-      ),
-      distanceMiles: activity.distanceMiles,
-      durationMinutes: activity.durationMinutes,
-      paceTargetMinutesPerMile: activity.paceTargetMinutesPerMile,
-      intensityLevel: activity.intensityLevel != null
-          ? domain.IntensityLevel.values.firstWhere(
-              (level) => level.name == activity.intensityLevel,
-              orElse: () => domain.IntensityLevel.easy,
-            )
-          : null,
-      // Cycling-specific fields
-      cyclingSpeedMph: activity.cyclingSpeedMph,
-      cyclingTerrain: activity.cyclingTerrain,
-      cyclingIndoorOutdoor: activity.cyclingIndoorOutdoor,
-      cyclingElevationGainFt: activity.cyclingElevationGainFt,
-      cyclingSessionGoal: activity.cyclingSessionGoal,
-      // Swimming-specific fields
-      swimmingPacePer100mSeconds: activity.swimmingPacePer100mSeconds,
-      swimmingPoolOrOpenWater: activity.swimmingPoolOrOpenWater,
-      swimmingWaterTempC: activity.swimmingWaterTempC,
-      // Shared fields
-      intensityTarget: activity.intensityTarget,
-      timeBeforeMinutes: activity.timeBeforeMinutes,
-      // Nutrition plan data (parse JSON string from database)
-      nutritionPlanData: activity.nutritionPlanData != null
-          ? _parseNutritionPlanData(activity.nutritionPlanData!)
-          : null,
-      // Brick-specific fields (parse JSON string from database)
-      brickMetadata: activity.brickMetadata != null
-          ? _parseBrickMetadata(activity.brickMetadata!)
-          : null,
-      brickId: activity.brickId,
-      completedAt: activity.completedAt,
-      completionRating: activity.completionRating,
-      completionNotes: activity.completionNotes,
-      actualDistanceMiles: activity.actualDistanceMiles,
-      actualDurationMinutes: activity.actualDurationMinutes,
-      notes: activity.notes,
-      createdAt: activity.createdAt,
-      updatedAt: activity.updatedAt,
-      deletedAt: activity.deletedAt,
-      // Reminder fields
-      reminderEnabled: activity.reminderEnabled,
-      reminderDaysBefore: activity.reminderDaysBefore,
-      reminderTimeOfDay: activity.reminderTimeOfDay,
-      reminderRecurring: activity.reminderRecurring,
-      // Sync fields
-      needsUpload: activity.needsUpload,
-      localUpdatedAt: activity.localUpdatedAt,
-    );
-  }
-
-  /// Parse nutrition plan data from JSON string
-  Map<String, dynamic>? _parseNutritionPlanData(String jsonString) {
-    try {
-      return jsonDecode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      _logger.error(
-        'Failed to parse nutrition plan data',
-        context: 'ACTIVITIES_SERVICE',
-        error: e,
-      );
-      return null;
-    }
-  }
-
-  /// Parse brick metadata from JSON string
-  BrickMetadata? _parseBrickMetadata(String jsonString) {
-    try {
-      final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      return BrickMetadata.fromJson(json);
-    } catch (e) {
-      _logger.error(
-        'Failed to parse brick metadata',
-        context: 'ACTIVITIES_SERVICE',
-        error: e,
-      );
-      return null;
-    }
-  }
 }

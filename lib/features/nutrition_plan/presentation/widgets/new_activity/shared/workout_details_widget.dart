@@ -47,6 +47,11 @@ class WorkoutDetailsWidget extends StatelessWidget {
     this.enabled = true,
   });
 
+  static Duration _paceMinutesToDuration(double paceMinutes) {
+    final totalSeconds = (paceMinutes * 60).round();
+    return Duration(seconds: totalSeconds);
+  }
+
   final ActivityType sport;
   final double distance;
   final String distanceUnit;
@@ -73,48 +78,16 @@ class WorkoutDetailsWidget extends StatelessWidget {
     }
   }
 
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-
-    if (hours > 0) {
-      return '$hours:${minutes.toString().padLeft(2, '0')}';
-    } else {
-      return '$minutes min';
-    }
-  }
-
-  String _formatPace(double paceValue) {
-    if (sport == ActivityType.cycling) {
-      // Speed in mph/kph
-      return paceValue.toStringAsFixed(1);
-    } else {
-      // Pace in min/mile or min/100m
-      final minutes = paceValue.floor();
-      final seconds = ((paceValue - minutes) * 60).round();
-      return '$minutes:${seconds.toString().padLeft(2, '0')}';
-    }
-  }
-
-  String get _secondaryFieldValue {
-    if (mode == DurationPaceMode.byDuration) {
-      if (estimatedDuration == null) {
-        return '--';
-      }
-      return _formatDuration(estimatedDuration!);
-    } else {
-      // By Pace mode
-      if (pace == null) {
-        return '--';
-      }
-      return _formatPace(pace!);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final useSplitDurationInput = mode == DurationPaceMode.byDuration;
+    final useSplitPaceInput =
+        mode == DurationPaceMode.byPace && sport != ActivityType.cycling;
+    final paceDuration = pace != null && pace! > 0
+        ? WorkoutDetailsWidget._paceMinutesToDuration(pace!)
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,17 +126,50 @@ class WorkoutDetailsWidget extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
 
         // Estimated Duration or Pace Field
-        _SecondaryField(
-          label: _secondaryFieldLabel,
-          value: _secondaryFieldValue,
-          unit: mode == DurationPaceMode.byPace ? paceUnit : null,
-          isDark: isDark,
-          enabled: enabled,
-          isEditable: true,
-          onChanged: mode == DurationPaceMode.byPace ? onPaceChanged : null,
-          onDurationChanged: mode == DurationPaceMode.byDuration ? onDurationChanged : null,
-          isDurationMode: mode == DurationPaceMode.byDuration,
-        ),
+        if (useSplitDurationInput)
+          _DualSegmentField(
+            label: _secondaryFieldLabel,
+            firstLabel: 'hr',
+            secondLabel: 'mins',
+            firstHint: '0',
+            secondHint: '00',
+            firstValue: estimatedDuration?.inHours,
+            secondValue: estimatedDuration?.inMinutes.remainder(60),
+            isDark: isDark,
+            enabled: enabled,
+            onChanged: onDurationChanged == null
+                ? null
+                : (hours, minutes) {
+                    onDurationChanged!(
+                      Duration(hours: hours, minutes: minutes),
+                    );
+                  },
+          )
+        else if (useSplitPaceInput)
+          _DualSegmentField(
+            label: _secondaryFieldLabel,
+            firstLabel: 'min',
+            secondLabel: 'sec',
+            firstHint: '0',
+            secondHint: '00',
+            firstValue: paceDuration?.inMinutes,
+            secondValue: paceDuration?.inSeconds.remainder(60),
+            trailingUnit: paceUnit,
+            isDark: isDark,
+            enabled: enabled,
+            onChanged: (minutes, seconds) {
+              onPaceChanged(minutes + (seconds / 60.0));
+            },
+          )
+        else
+          _SingleValueField(
+            label: _secondaryFieldLabel,
+            value: pace?.toStringAsFixed(1) ?? '',
+            unit: paceUnit,
+            isDark: isDark,
+            enabled: enabled,
+            onChanged: onPaceChanged,
+          ),
       ],
     );
   }
@@ -192,24 +198,31 @@ class _DistanceInput extends StatefulWidget {
 class _DistanceInputState extends State<_DistanceInput> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
+  bool _isSyncingText = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.distance.toStringAsFixed(1));
+    _controller = TextEditingController(
+      text: widget.distance.toStringAsFixed(1),
+    );
     _focusNode = FocusNode();
+    _controller.addListener(_handleLiveChange);
   }
 
   @override
   void didUpdateWidget(_DistanceInput oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.distance != widget.distance && !_focusNode.hasFocus) {
+      _isSyncingText = true;
       _controller.text = widget.distance.toStringAsFixed(1);
+      _isSyncingText = false;
     }
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_handleLiveChange);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -224,6 +237,14 @@ class _DistanceInputState extends State<_DistanceInput> {
       _controller.text = widget.distance.toStringAsFixed(1);
     }
     _focusNode.unfocus();
+  }
+
+  void _handleLiveChange() {
+    if (_isSyncingText) return;
+    final value = double.tryParse(_controller.text);
+    if (value != null && value > 0) {
+      widget.onChanged(value);
+    }
   }
 
   @override
@@ -255,28 +276,21 @@ class _DistanceInputState extends State<_DistanceInput> {
         Row(
           children: [
             Expanded(
-              child: Container(
-                height: 46,
-                decoration: BoxDecoration(
-                  color: widget.isDark
-                      ? AppColors.inputBackground
-                      : AppColors.cream.withValues(alpha: 0.5),
-                  borderRadius: AppRadius.inputRadius,
-                ),
+              child: _InputShell(
+                isDark: widget.isDark,
                 child: TextField(
                   controller: _controller,
                   focusNode: _focusNode,
                   enabled: widget.enabled,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   textInputAction: TextInputAction.done,
                   textAlign: TextAlign.left,
-                  style: AppTextStyles.inputText.copyWith(
-                    color: widget.isDark ? AppColors.cream : AppColors.blackberry,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  decoration: InputDecoration(
+                  style: _inputTextStyle(widget.isDark),
+                  decoration: const InputDecoration(
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
+                    contentPadding: EdgeInsets.symmetric(
                       horizontal: AppSpacing.md,
                       vertical: AppSpacing.sm,
                     ),
@@ -303,18 +317,15 @@ class _DistanceInputState extends State<_DistanceInput> {
   }
 }
 
-/// Secondary field for estimated duration or pace
-class _SecondaryField extends StatefulWidget {
-  const _SecondaryField({
+/// Single value input used for cycling speed entry (mph/kph).
+class _SingleValueField extends StatefulWidget {
+  const _SingleValueField({
     required this.label,
     required this.value,
     this.unit,
     required this.isDark,
     required this.enabled,
-    required this.isEditable,
     this.onChanged,
-    this.onDurationChanged,
-    this.isDurationMode = false,
   });
 
   final String label;
@@ -322,98 +333,69 @@ class _SecondaryField extends StatefulWidget {
   final String? unit;
   final bool isDark;
   final bool enabled;
-  final bool isEditable;
   final ValueChanged<double>? onChanged;
-  final ValueChanged<Duration>? onDurationChanged;
-  final bool isDurationMode;
 
   @override
-  State<_SecondaryField> createState() => _SecondaryFieldState();
+  State<_SingleValueField> createState() => _SingleValueFieldState();
 }
 
-class _SecondaryFieldState extends State<_SecondaryField> {
+class _SingleValueFieldState extends State<_SingleValueField> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
+  bool _isSyncingText = false;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.value);
     _focusNode = FocusNode();
+    _focusNode.addListener(_handleFocusChange);
+    _controller.addListener(_handleLiveChange);
   }
 
   @override
-  void didUpdateWidget(_SecondaryField oldWidget) {
+  void didUpdateWidget(_SingleValueField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.value != widget.value && !_focusNode.hasFocus) {
+      _isSyncingText = true;
       _controller.text = widget.value;
+      _isSyncingText = false;
     }
   }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_handleFocusChange);
+    _controller.removeListener(_handleLiveChange);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
+  void _handleFocusChange() {
+    if (!_focusNode.hasFocus) {
+      _handleSubmit();
+    }
+  }
+
   void _handleSubmit() {
-    if (!widget.isEditable) return;
-
     final text = _controller.text.trim();
-
-    if (widget.isDurationMode && widget.onDurationChanged != null) {
-      // Parse duration format: "H:MM", "MM min", or just minutes
-      Duration? duration;
-
-      if (text.contains(':')) {
-        final parts = text.split(':');
-        if (parts.length == 2) {
-          final hours = int.tryParse(parts[0]);
-          final minutes = int.tryParse(parts[1]);
-          if (hours != null && minutes != null) {
-            duration = Duration(hours: hours, minutes: minutes);
-          }
-        }
-      } else {
-        // Try parsing as plain minutes (strip "min" suffix if present)
-        final cleanText = text.replaceAll(RegExp(r'[^0-9.]'), '');
-        final minutes = double.tryParse(cleanText);
-        if (minutes != null && minutes > 0) {
-          duration = Duration(minutes: minutes.floor());
-        }
-      }
-
-      if (duration != null && duration.inMinutes > 0) {
-        widget.onDurationChanged!(duration);
-      } else {
-        _controller.text = widget.value;
-      }
-    } else if (widget.onChanged != null) {
-      // Parse pace format (min:sec or decimal)
-      double? paceValue;
-
-      if (text.contains(':')) {
-        final parts = text.split(':');
-        if (parts.length == 2) {
-          final minutes = int.tryParse(parts[0]);
-          final seconds = int.tryParse(parts[1]);
-          if (minutes != null && seconds != null) {
-            paceValue = minutes + (seconds / 60.0);
-          }
-        }
-      } else {
-        paceValue = double.tryParse(text);
-      }
-
-      if (paceValue != null && paceValue > 0) {
-        widget.onChanged!(paceValue);
-      } else {
-        _controller.text = widget.value;
-      }
+    final value = double.tryParse(text);
+    if (value != null && value > 0 && widget.onChanged != null) {
+      widget.onChanged!(value);
+    } else {
+      _controller.text = widget.value;
     }
 
     _focusNode.unfocus();
+  }
+
+  void _handleLiveChange() {
+    if (_isSyncingText) return;
+    final value = double.tryParse(_controller.text.trim());
+    if (value != null && value > 0 && widget.onChanged != null) {
+      widget.onChanged!(value);
+    }
   }
 
   @override
@@ -432,39 +414,28 @@ class _SecondaryFieldState extends State<_SecondaryField> {
         Row(
           children: [
             Expanded(
-              child: Container(
-                height: 46,
-                decoration: BoxDecoration(
-                  color: widget.isDark
-                      ? AppColors.inputBackground
-                      : AppColors.cream.withValues(alpha: 0.5),
-                  borderRadius: AppRadius.inputRadius,
-                ),
+              child: _InputShell(
+                isDark: widget.isDark,
                 child: TextField(
                   controller: _controller,
                   focusNode: _focusNode,
-                  enabled: widget.enabled && widget.isEditable,
-                  keyboardType: widget.isEditable
-                      ? const TextInputType.numberWithOptions(decimal: true)
-                      : null,
+                  enabled: widget.enabled && widget.onChanged != null,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   textInputAction: TextInputAction.done,
                   textAlign: TextAlign.left,
-                  style: AppTextStyles.inputText.copyWith(
-                    color: widget.isDark ? AppColors.cream : AppColors.blackberry,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  decoration: InputDecoration(
+                  style: _inputTextStyle(widget.isDark),
+                  decoration: const InputDecoration(
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
+                    contentPadding: EdgeInsets.symmetric(
                       horizontal: AppSpacing.md,
                       vertical: AppSpacing.sm,
                     ),
                   ),
-                  inputFormatters: widget.isEditable
-                      ? [
-                          FilteringTextInputFormatter.allow(RegExp(r'^\d*:?\d*\.?\d*')),
-                        ]
-                      : null,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
                   onSubmitted: (_) => _handleSubmit(),
                 ),
               ),
@@ -484,4 +455,289 @@ class _SecondaryFieldState extends State<_SecondaryField> {
       ],
     );
   }
+}
+
+/// Reusable two-field input row for `hr/mins` and `min/sec` patterns.
+class _DualSegmentField extends StatefulWidget {
+  const _DualSegmentField({
+    required this.label,
+    required this.firstLabel,
+    required this.secondLabel,
+    required this.firstHint,
+    required this.secondHint,
+    required this.firstValue,
+    required this.secondValue,
+    required this.isDark,
+    required this.enabled,
+    this.trailingUnit,
+    this.onChanged,
+  });
+
+  final String label;
+  final String firstLabel;
+  final String secondLabel;
+  final String firstHint;
+  final String secondHint;
+  final int? firstValue;
+  final int? secondValue;
+  final String? trailingUnit;
+  final bool isDark;
+  final bool enabled;
+  final void Function(int first, int second)? onChanged;
+
+  @override
+  State<_DualSegmentField> createState() => _DualSegmentFieldState();
+}
+
+class _DualSegmentFieldState extends State<_DualSegmentField> {
+  late TextEditingController _firstController;
+  late TextEditingController _secondController;
+  late FocusNode _firstFocus;
+  late FocusNode _secondFocus;
+  bool _isSyncingText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstController = TextEditingController();
+    _secondController = TextEditingController();
+    _firstFocus = FocusNode();
+    _secondFocus = FocusNode();
+    _firstFocus.addListener(_handleFocusChange);
+    _secondFocus.addListener(_handleFocusChange);
+    _firstController.addListener(_handleLiveChange);
+    _secondController.addListener(_handleLiveChange);
+    _syncControllers(
+      firstValue: widget.firstValue,
+      secondValue: widget.secondValue,
+    );
+  }
+
+  @override
+  void didUpdateWidget(_DualSegmentField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final hasFocus = _firstFocus.hasFocus || _secondFocus.hasFocus;
+    if (!hasFocus &&
+        (oldWidget.firstValue != widget.firstValue ||
+            oldWidget.secondValue != widget.secondValue)) {
+      _syncControllers(
+        firstValue: widget.firstValue,
+        secondValue: widget.secondValue,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _firstFocus.removeListener(_handleFocusChange);
+    _secondFocus.removeListener(_handleFocusChange);
+    _firstController.removeListener(_handleLiveChange);
+    _secondController.removeListener(_handleLiveChange);
+    _firstController.dispose();
+    _secondController.dispose();
+    _firstFocus.dispose();
+    _secondFocus.dispose();
+    super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (_firstFocus.hasFocus || _secondFocus.hasFocus) return;
+    _handleSubmit();
+  }
+
+  void _syncControllers({required int? firstValue, required int? secondValue}) {
+    _isSyncingText = true;
+    _firstController.text = firstValue?.toString() ?? '';
+    _secondController.text = secondValue != null
+        ? secondValue.toString().padLeft(2, '0')
+        : '';
+    _isSyncingText = false;
+  }
+
+  ({int first, int second})? _parseSegments({required bool requireNonZero}) {
+    final firstText = _firstController.text.trim();
+    final secondText = _secondController.text.trim();
+    final firstValue = firstText.isEmpty ? 0 : int.tryParse(firstText);
+    final secondValue = secondText.isEmpty ? 0 : int.tryParse(secondText);
+
+    if (firstValue == null || secondValue == null) {
+      return null;
+    }
+
+    final isInvalid =
+        firstValue < 0 ||
+        secondValue < 0 ||
+        secondValue >= 60 ||
+        (requireNonZero && firstValue == 0 && secondValue == 0);
+
+    if (isInvalid) {
+      return null;
+    }
+
+    return (first: firstValue, second: secondValue);
+  }
+
+  void _handleLiveChange() {
+    if (_isSyncingText) return;
+    if (!widget.enabled || widget.onChanged == null) {
+      return;
+    }
+
+    final parsed = _parseSegments(requireNonZero: true);
+    if (parsed == null) {
+      return;
+    }
+
+    widget.onChanged!(parsed.first, parsed.second);
+  }
+
+  void _handleSubmit() {
+    if (!widget.enabled || widget.onChanged == null) {
+      return;
+    }
+
+    final parsed = _parseSegments(requireNonZero: true);
+    if (parsed == null) {
+      _syncControllers(
+        firstValue: widget.firstValue,
+        secondValue: widget.secondValue,
+      );
+      return;
+    }
+
+    widget.onChanged!(parsed.first, parsed.second);
+    _firstFocus.unfocus();
+    _secondFocus.unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              widget.label,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: widget.isDark ? AppColors.cream : AppColors.blackberry,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            if (widget.trailingUnit != null) ...[
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                '(${widget.trailingUnit!.toLowerCase()})',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          children: [
+            Expanded(
+              child: _InputShell(
+                isDark: widget.isDark,
+                child: TextField(
+                  controller: _firstController,
+                  focusNode: _firstFocus,
+                  enabled: widget.enabled && widget.onChanged != null,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  textAlign: TextAlign.left,
+                  style: _inputTextStyle(widget.isDark),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: widget.firstHint,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                  ),
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onSubmitted: (_) => _secondFocus.requestFocus(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              widget.firstLabel,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _InputShell(
+                isDark: widget.isDark,
+                child: TextField(
+                  controller: _secondController,
+                  focusNode: _secondFocus,
+                  enabled: widget.enabled && widget.onChanged != null,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  textAlign: TextAlign.left,
+                  style: _inputTextStyle(widget.isDark),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: widget.secondHint,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(2),
+                  ],
+                  onSubmitted: (_) => _handleSubmit(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              widget.secondLabel,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _InputShell extends StatelessWidget {
+  const _InputShell({required this.isDark, required this.child});
+
+  final bool isDark;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 46,
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.inputBackground
+            : AppColors.cream.withValues(alpha: 0.5),
+        borderRadius: AppRadius.inputRadius,
+      ),
+      child: child,
+    );
+  }
+}
+
+TextStyle _inputTextStyle(bool isDark) {
+  return AppTextStyles.inputText.copyWith(
+    color: isDark ? AppColors.cream : AppColors.blackberry,
+    fontWeight: FontWeight.w600,
+  );
 }

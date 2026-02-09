@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../providers/cycling_input_controller.dart';
 import '../../../../../theme/kyle_design/app_spacing.dart';
@@ -9,9 +10,9 @@ import '../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_
 import 'shared/workout_details_widget.dart';
 import '../../../../../shared/domain/activity_type.dart';
 
-import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/indoor_outdoor_toggle.dart';
 import 'shared/environment_section.dart';
+import 'shared/fasted_toggle.dart';
 
 /// Cycling Tab Content
 ///
@@ -70,13 +71,25 @@ class CyclingTabContent extends ConsumerWidget {
 
           // Time before Ride
           KylePlusMinusControl(
-            label: 'Time Before Ride',
+            label: 'Pre-Ride Fueling Window',
             value: formState.preRideMinutes,
             onChanged: controller.updatePreRideMinutes,
             min: 0,
             max: 480,
-            step: 15,
+            step: 30,
             unit: 'minutes',
+          ),
+
+          // FASTED TOGGLE
+          FastedToggle(
+            isFasted: formState.isFasted,
+            onChanged: controller.updateFasted,
+            showWarning: !FastedToggle.isSuitable(
+              conversationalPct: formState.intensity.conversationalPct,
+              estimatedDurationMinutes: formState.estimatedDuration?.inMinutes ?? 0,
+              isSwimming: false,
+            ),
+            warningText: 'Fasted training is not recommended for longer or harder rides. Consider fueling before.',
           ),
 
           const SizedBox(height: AppSpacing.xl),
@@ -104,23 +117,24 @@ class CyclingTabContent extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xl),
 
           // Collapsible Environment Section
-          EnvironmentSection(
-            isExpanded: formState.showEnvironment,
-            onToggle: controller.toggleEnvironmentSection,
-            temperatureC: formState.temperatureC,
-            onTemperatureChanged: controller.updateTemperature,
-            humidityPct: formState.humidityPct,
-            onHumidityChanged: controller.updateHumidity,
-            windCondition: formState.windCondition,
-            onWindChanged: controller.updateWindCondition,
-            sunExposure: formState.sunExposure,
-            onSunChanged: controller.updateSunExposure,
-            isIndoor: isIndoor,
-            isLoadingWeather: formState.isLoadingWeather,
-            onFetchWeather: controller.fetchWeatherForecast,
-            weatherSource: formState.weatherForecast?.source,
-            hasAttemptedWeatherFetch: formState.hasAttemptedWeatherFetch,
-            locationFailureReason: formState.locationFailureReason,
+        EnvironmentSection(
+          isExpanded: formState.showEnvironment,
+          onToggle: controller.toggleEnvironmentSection,
+          temperatureC: formState.temperatureC,
+          onTemperatureChanged: controller.updateTemperature,
+          humidityPct: formState.humidityPct,
+          onHumidityChanged: controller.updateHumidity,
+          windCondition: formState.windCondition,
+          onWindChanged: controller.updateWindCondition,
+          sunExposure: formState.sunExposure,
+          onSunChanged: controller.updateSunExposure,
+          isIndoor: isIndoor,
+          showWindAndSun: false,
+          isLoadingWeather: formState.isLoadingWeather,
+          onFetchWeather: controller.fetchWeatherForecast,
+          weatherSource: formState.weatherForecast?.source,
+          hasAttemptedWeatherFetch: formState.hasAttemptedWeatherFetch,
+          locationFailureReason: formState.locationFailureReason,
             onRequestPermission: controller.requestLocationPermissionAndFetch,
             onOpenSettings: controller.openLocationSettings,
             onOpenAppSettings: controller.openAppSettings,
@@ -131,4 +145,3 @@ class CyclingTabContent extends ConsumerWidget {
     );
   }
 }
-

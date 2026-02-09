@@ -417,7 +417,12 @@ class TrainingPeaksTransformer {
     return workoutType;
   }
 
-  /// Parse scheduled date and time from ISO strings
+  /// Default hour for workouts when no time is provided
+  static const int _defaultHour = 7;
+
+  /// Parse scheduled date and time from ISO strings.
+  ///
+  /// When no time is provided, defaults to 7:00 AM rather than midnight.
   DateTime _parseScheduledDate(String? dateStr, String? timeStr) {
     if (dateStr == null || dateStr.isEmpty) {
       return DateTime.now();
@@ -429,7 +434,7 @@ class TrainingPeaksTransformer {
     if (timeStr != null && timeStr.isNotEmpty) {
       final time = DateTime.tryParse(timeStr);
       if (time != null) {
-        date = DateTime(
+        return DateTime(
           date.year,
           date.month,
           date.day,
@@ -440,7 +445,8 @@ class TrainingPeaksTransformer {
       }
     }
 
-    return date;
+    // No time provided — default to 7:00 AM
+    return DateTime(date.year, date.month, date.day, _defaultHour);
   }
 
   /// Get duration in minutes (TotalTime is in DECIMAL HOURS)

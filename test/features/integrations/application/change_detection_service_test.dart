@@ -17,6 +17,8 @@ void main() {
   Activity createActivity({
     required String id,
     String? providerWorkoutId,
+    String? syncedFromProvider,
+    ActivityStatus status = ActivityStatus.planned,
     required DateTime scheduledDateTime,
     int? durationMinutes,
     double? distanceMiles,
@@ -28,9 +30,11 @@ void main() {
       activityType: ActivityType.running,
       title: title,
       scheduledDateTime: scheduledDateTime,
-      status: ActivityStatus.planned,
+      status: status,
       providerWorkoutId: providerWorkoutId,
-      syncedFromProvider: providerWorkoutId != null ? testProvider : null,
+      syncedFromProvider:
+          syncedFromProvider ??
+          (providerWorkoutId != null ? testProvider : null),
       durationMinutes: durationMinutes,
       distanceMiles: distanceMiles,
       createdAt: DateTime.now(),
@@ -128,7 +132,9 @@ void main() {
           createActivity(
             id: 'remote-1',
             providerWorkoutId: 'workout-123',
-            scheduledDateTime: baseTime.add(const Duration(minutes: 35)), // 8:35 AM - 35 min change
+            scheduledDateTime: baseTime.add(
+              const Duration(minutes: 35),
+            ), // 8:35 AM - 35 min change
             durationMinutes: 60,
             distanceMiles: 10.0,
           ),
@@ -166,7 +172,9 @@ void main() {
           createActivity(
             id: 'remote-1',
             providerWorkoutId: 'workout-123',
-            scheduledDateTime: baseTime.add(const Duration(minutes: 15)), // 8:15 AM - 15 min change
+            scheduledDateTime: baseTime.add(
+              const Duration(minutes: 15),
+            ), // 8:15 AM - 15 min change
             durationMinutes: 60,
             distanceMiles: 10.0,
           ),
@@ -187,71 +195,81 @@ void main() {
         expect(result.hasScheduleChanges, false);
       });
 
-      test('detects exactly 30 min time change as NOT schedule change (boundary)', () {
-        // Arrange
-        final baseTime = DateTime(2026, 1, 26, 8, 0);
-        final local = [
-          createActivity(
-            id: 'local-1',
-            providerWorkoutId: 'workout-123',
-            scheduledDateTime: baseTime,
-            durationMinutes: 60,
-            distanceMiles: 10.0,
-          ),
-        ];
-        final remote = [
-          createActivity(
-            id: 'remote-1',
-            providerWorkoutId: 'workout-123',
-            scheduledDateTime: baseTime.add(const Duration(minutes: 30)), // Exactly 30 min
-            durationMinutes: 60,
-            distanceMiles: 10.0,
-          ),
-        ];
+      test(
+        'detects exactly 30 min time change as NOT schedule change (boundary)',
+        () {
+          // Arrange
+          final baseTime = DateTime(2026, 1, 26, 8, 0);
+          final local = [
+            createActivity(
+              id: 'local-1',
+              providerWorkoutId: 'workout-123',
+              scheduledDateTime: baseTime,
+              durationMinutes: 60,
+              distanceMiles: 10.0,
+            ),
+          ];
+          final remote = [
+            createActivity(
+              id: 'remote-1',
+              providerWorkoutId: 'workout-123',
+              scheduledDateTime: baseTime.add(
+                const Duration(minutes: 30),
+              ), // Exactly 30 min
+              durationMinutes: 60,
+              distanceMiles: 10.0,
+            ),
+          ];
 
-        // Act
-        final result = service.detectChanges(
-          localActivities: local,
-          remoteWorkouts: remote,
-          provider: testProvider,
-        );
+          // Act
+          final result = service.detectChanges(
+            localActivities: local,
+            remoteWorkouts: remote,
+            provider: testProvider,
+          );
 
-        // Assert - Should NOT be flagged as significant (> 30 min threshold)
-        expect(result.updatedActivities.first.scheduleChanged, false);
-      });
+          // Assert - Should NOT be flagged as significant (> 30 min threshold)
+          expect(result.updatedActivities.first.scheduleChanged, false);
+        },
+      );
 
-      test('detects exactly 31 min time change as schedule change (boundary)', () {
-        // Arrange
-        final baseTime = DateTime(2026, 1, 26, 8, 0);
-        final local = [
-          createActivity(
-            id: 'local-1',
-            providerWorkoutId: 'workout-123',
-            scheduledDateTime: baseTime,
-            durationMinutes: 60,
-            distanceMiles: 10.0,
-          ),
-        ];
-        final remote = [
-          createActivity(
-            id: 'remote-1',
-            providerWorkoutId: 'workout-123',
-            scheduledDateTime: baseTime.add(const Duration(minutes: 31)), // Exactly 31 min
-            durationMinutes: 60,
-            distanceMiles: 10.0,
-          ),
-        ];
+      test(
+        'detects exactly 31 min time change as schedule change (boundary)',
+        () {
+          // Arrange
+          final baseTime = DateTime(2026, 1, 26, 8, 0);
+          final local = [
+            createActivity(
+              id: 'local-1',
+              providerWorkoutId: 'workout-123',
+              scheduledDateTime: baseTime,
+              durationMinutes: 60,
+              distanceMiles: 10.0,
+            ),
+          ];
+          final remote = [
+            createActivity(
+              id: 'remote-1',
+              providerWorkoutId: 'workout-123',
+              scheduledDateTime: baseTime.add(
+                const Duration(minutes: 31),
+              ), // Exactly 31 min
+              durationMinutes: 60,
+              distanceMiles: 10.0,
+            ),
+          ];
 
-        // Act
-        final result = service.detectChanges(
-          localActivities: local,
-          remoteWorkouts: remote,
-          provider: testProvider,
-        );
+          // Act
+          final result = service.detectChanges(
+            localActivities: local,
+            remoteWorkouts: remote,
+            provider: testProvider,
+          );
 
-        // Assert - Should be flagged as significant (> 30 min threshold)
-        expect(result.updatedActivities.first.scheduleChanged, true);
-      });
+          // Assert - Should be flagged as significant (> 30 min threshold)
+          expect(result.updatedActivities.first.scheduleChanged, true);
+        },
+      );
     });
 
     // =========================================================================
@@ -273,7 +291,13 @@ void main() {
           createActivity(
             id: 'remote-1',
             providerWorkoutId: 'workout-123',
-            scheduledDateTime: DateTime(2026, 1, 27, 8, 0), // Jan 27 - different day
+            scheduledDateTime: DateTime(
+              2026,
+              1,
+              27,
+              8,
+              0,
+            ), // Jan 27 - different day
             durationMinutes: 60,
             distanceMiles: 10.0,
           ),
@@ -307,7 +331,13 @@ void main() {
           createActivity(
             id: 'remote-1',
             providerWorkoutId: 'workout-123',
-            scheduledDateTime: DateTime(2026, 2, 26, 8, 0), // Feb 26 - different month
+            scheduledDateTime: DateTime(
+              2026,
+              2,
+              26,
+              8,
+              0,
+            ), // Feb 26 - different month
             durationMinutes: 60,
             distanceMiles: 10.0,
           ),
@@ -339,7 +369,13 @@ void main() {
           createActivity(
             id: 'remote-1',
             providerWorkoutId: 'workout-123',
-            scheduledDateTime: DateTime(2027, 1, 26, 8, 0), // 2027 - different year
+            scheduledDateTime: DateTime(
+              2027,
+              1,
+              26,
+              8,
+              0,
+            ), // 2027 - different year
             durationMinutes: 60,
             distanceMiles: 10.0,
           ),
@@ -495,38 +531,41 @@ void main() {
         expect(result.updatedActivities.first.scheduleChanged, false);
       });
 
-      test('exactly 15 min duration change is NOT schedule change (boundary)', () {
-        // Arrange
-        final baseTime = DateTime(2026, 1, 26, 8, 0);
-        final local = [
-          createActivity(
-            id: 'local-1',
-            providerWorkoutId: 'workout-123',
-            scheduledDateTime: baseTime,
-            durationMinutes: 60,
-            distanceMiles: 10.0,
-          ),
-        ];
-        final remote = [
-          createActivity(
-            id: 'remote-1',
-            providerWorkoutId: 'workout-123',
-            scheduledDateTime: baseTime,
-            durationMinutes: 75, // Exactly 15 min
-            distanceMiles: 10.0,
-          ),
-        ];
+      test(
+        'exactly 15 min duration change is NOT schedule change (boundary)',
+        () {
+          // Arrange
+          final baseTime = DateTime(2026, 1, 26, 8, 0);
+          final local = [
+            createActivity(
+              id: 'local-1',
+              providerWorkoutId: 'workout-123',
+              scheduledDateTime: baseTime,
+              durationMinutes: 60,
+              distanceMiles: 10.0,
+            ),
+          ];
+          final remote = [
+            createActivity(
+              id: 'remote-1',
+              providerWorkoutId: 'workout-123',
+              scheduledDateTime: baseTime,
+              durationMinutes: 75, // Exactly 15 min
+              distanceMiles: 10.0,
+            ),
+          ];
 
-        // Act
-        final result = service.detectChanges(
-          localActivities: local,
-          remoteWorkouts: remote,
-          provider: testProvider,
-        );
+          // Act
+          final result = service.detectChanges(
+            localActivities: local,
+            remoteWorkouts: remote,
+            provider: testProvider,
+          );
 
-        // Assert
-        expect(result.updatedActivities.first.scheduleChanged, false);
-      });
+          // Assert
+          expect(result.updatedActivities.first.scheduleChanged, false);
+        },
+      );
 
       test('exactly 16 min duration change is schedule change (boundary)', () {
         // Arrange
@@ -598,7 +637,10 @@ void main() {
         // Assert
         expect(result.updatedActivities.length, 1);
         expect(result.updatedActivities.first.scheduleChanged, true);
-        expect(result.updatedActivities.first.distanceChangePercentage, closeTo(20.0, 0.1));
+        expect(
+          result.updatedActivities.first.distanceChangePercentage,
+          closeTo(20.0, 0.1),
+        );
       });
 
       test('detects distance decrease >10% as schedule change', () {
@@ -632,7 +674,10 @@ void main() {
 
         // Assert
         expect(result.updatedActivities.first.scheduleChanged, true);
-        expect(result.updatedActivities.first.distanceChangePercentage, closeTo(15.0, 0.1));
+        expect(
+          result.updatedActivities.first.distanceChangePercentage,
+          closeTo(15.0, 0.1),
+        );
       });
 
       test('distance change <=10% is NOT schedule change', () {
@@ -996,7 +1041,13 @@ void main() {
           createActivity(
             id: 'remote-1',
             providerWorkoutId: 'workout-existing',
-            scheduledDateTime: DateTime(2026, 1, 26, 9, 0), // Time changed (1 hour)
+            scheduledDateTime: DateTime(
+              2026,
+              1,
+              26,
+              9,
+              0,
+            ), // Time changed (1 hour)
             durationMinutes: 60,
           ),
           createActivity(
@@ -1016,7 +1067,10 @@ void main() {
 
         // Assert
         expect(result.newActivities.length, 1); // workout-new
-        expect(result.updatedActivities.length, 1); // workout-existing (1 hour change)
+        expect(
+          result.updatedActivities.length,
+          1,
+        ); // workout-existing (1 hour change)
         expect(result.updatedActivities.first.scheduleChanged, true); // >30 min
         expect(result.deletedActivityIds.length, 1); // workout-deleted
         expect(result.unchangedCount, 0);
@@ -1072,8 +1126,14 @@ void main() {
 
         // Assert
         expect(result.updatedActivities.length, 1);
-        expect(result.updatedActivities.first.activityId, 'local-abc-123'); // Preserves local ID
-        expect(result.updatedActivities.first.updatedActivity.providerWorkoutId, 'workout-123');
+        expect(
+          result.updatedActivities.first.activityId,
+          'local-abc-123',
+        ); // Preserves local ID
+        expect(
+          result.updatedActivities.first.updatedActivity.providerWorkoutId,
+          'workout-123',
+        );
       });
     });
 
@@ -1238,13 +1298,25 @@ void main() {
         // Create a result manually to test computed property
         final result = SyncChangeResult(
           newActivities: [
-            createActivity(id: '1', providerWorkoutId: 'w1', scheduledDateTime: DateTime.now()),
-            createActivity(id: '2', providerWorkoutId: 'w2', scheduledDateTime: DateTime.now()),
+            createActivity(
+              id: '1',
+              providerWorkoutId: 'w1',
+              scheduledDateTime: DateTime.now(),
+            ),
+            createActivity(
+              id: '2',
+              providerWorkoutId: 'w2',
+              scheduledDateTime: DateTime.now(),
+            ),
           ],
           updatedActivities: [
             ActivityChange(
               activityId: 'local-1',
-              updatedActivity: createActivity(id: 'r1', providerWorkoutId: 'w3', scheduledDateTime: DateTime.now()),
+              updatedActivity: createActivity(
+                id: 'r1',
+                providerWorkoutId: 'w3',
+                scheduledDateTime: DateTime.now(),
+              ),
               scheduleChanged: true,
             ),
           ],
@@ -1258,7 +1330,11 @@ void main() {
       test('hasChanges returns true when changes exist', () {
         final result = SyncChangeResult(
           newActivities: [
-            createActivity(id: '1', providerWorkoutId: 'w1', scheduledDateTime: DateTime.now()),
+            createActivity(
+              id: '1',
+              providerWorkoutId: 'w1',
+              scheduledDateTime: DateTime.now(),
+            ),
           ],
           updatedActivities: [],
           deletedActivityIds: [],
@@ -1285,7 +1361,11 @@ void main() {
           updatedActivities: [
             ActivityChange(
               activityId: 'local-1',
-              updatedActivity: createActivity(id: 'r1', providerWorkoutId: 'w1', scheduledDateTime: DateTime.now()),
+              updatedActivity: createActivity(
+                id: 'r1',
+                providerWorkoutId: 'w1',
+                scheduledDateTime: DateTime.now(),
+              ),
               scheduleChanged: true,
             ),
           ],
@@ -1302,7 +1382,11 @@ void main() {
           updatedActivities: [
             ActivityChange(
               activityId: 'local-1',
-              updatedActivity: createActivity(id: 'r1', providerWorkoutId: 'w1', scheduledDateTime: DateTime.now()),
+              updatedActivity: createActivity(
+                id: 'r1',
+                providerWorkoutId: 'w1',
+                scheduledDateTime: DateTime.now(),
+              ),
               scheduleChanged: false,
             ),
           ],
@@ -1324,7 +1408,11 @@ void main() {
 
         final change = ActivityChange(
           activityId: 'local-1',
-          updatedActivity: createActivity(id: 'r1', providerWorkoutId: 'w1', scheduledDateTime: newTime),
+          updatedActivity: createActivity(
+            id: 'r1',
+            providerWorkoutId: 'w1',
+            scheduledDateTime: newTime,
+          ),
           scheduleChanged: true,
           oldScheduledAt: oldTime,
           newScheduledAt: newTime,
@@ -1336,7 +1424,11 @@ void main() {
       test('durationDifferenceMinutes calculates absolute difference', () {
         final change = ActivityChange(
           activityId: 'local-1',
-          updatedActivity: createActivity(id: 'r1', providerWorkoutId: 'w1', scheduledDateTime: DateTime.now()),
+          updatedActivity: createActivity(
+            id: 'r1',
+            providerWorkoutId: 'w1',
+            scheduledDateTime: DateTime.now(),
+          ),
           scheduleChanged: true,
           oldDurationMinutes: 60,
           newDurationMinutes: 90,
@@ -1348,7 +1440,11 @@ void main() {
       test('distanceChangePercentage calculates percentage correctly', () {
         final change = ActivityChange(
           activityId: 'local-1',
-          updatedActivity: createActivity(id: 'r1', providerWorkoutId: 'w1', scheduledDateTime: DateTime.now()),
+          updatedActivity: createActivity(
+            id: 'r1',
+            providerWorkoutId: 'w1',
+            scheduledDateTime: DateTime.now(),
+          ),
           scheduleChanged: true,
           oldDistanceMiles: 10.0,
           newDistanceMiles: 12.0,
@@ -1357,17 +1453,110 @@ void main() {
         expect(change.distanceChangePercentage, closeTo(20.0, 0.1));
       });
 
-      test('distanceChangePercentage returns 100% when old distance is zero', () {
-        final change = ActivityChange(
-          activityId: 'local-1',
-          updatedActivity: createActivity(id: 'r1', providerWorkoutId: 'w1', scheduledDateTime: DateTime.now()),
-          scheduleChanged: true,
-          oldDistanceMiles: 0.0,
-          newDistanceMiles: 10.0,
-        );
+      test(
+        'distanceChangePercentage returns 100% when old distance is zero',
+        () {
+          final change = ActivityChange(
+            activityId: 'local-1',
+            updatedActivity: createActivity(
+              id: 'r1',
+              providerWorkoutId: 'w1',
+              scheduledDateTime: DateTime.now(),
+            ),
+            scheduleChanged: true,
+            oldDistanceMiles: 0.0,
+            newDistanceMiles: 10.0,
+          );
 
-        expect(change.distanceChangePercentage, 100.0);
-      });
+          expect(change.distanceChangePercentage, 100.0);
+        },
+      );
+    });
+
+    group('Brick sync behavior', () {
+      test(
+        'matches archived brick segment by fingerprint to avoid re-import',
+        () {
+          final local = [
+            createActivity(
+              id: 'local-brick-segment',
+              providerWorkoutId: null,
+              syncedFromProvider: testProvider,
+              status: ActivityStatus.archivedForBrick,
+              scheduledDateTime: DateTime(2026, 2, 9, 7, 0),
+              durationMinutes: 30,
+              distanceMiles: 1.25,
+              title: 'SS Fast form 15*25s; 1175 yds with new drills',
+            ),
+          ];
+
+          final remote = [
+            createActivity(
+              id: 'remote-workout',
+              providerWorkoutId: 'workout-123',
+              syncedFromProvider: testProvider,
+              scheduledDateTime: DateTime(2026, 2, 9, 7, 0),
+              durationMinutes: 30,
+              distanceMiles: 1.25,
+              title: 'SS Fast form 15*25s; 1175 yds with new drills',
+            ),
+          ];
+
+          final result = service.detectChanges(
+            localActivities: local,
+            remoteWorkouts: remote,
+            provider: testProvider,
+          );
+
+          expect(result.newActivities, isEmpty);
+          expect(result.updatedActivities.length, 1);
+          expect(
+            result.updatedActivities.first.activityId,
+            'local-brick-segment',
+          );
+          expect(result.updatedActivities.first.scheduleChanged, false);
+        },
+      );
+
+      test(
+        'imports as new when archived brick workout fingerprint has changed',
+        () {
+          final local = [
+            createActivity(
+              id: 'local-brick-segment',
+              providerWorkoutId: null,
+              syncedFromProvider: testProvider,
+              status: ActivityStatus.archivedForBrick,
+              scheduledDateTime: DateTime(2026, 2, 9, 7, 0),
+              durationMinutes: 30,
+              distanceMiles: 1.25,
+              title: 'SS Fast form 15*25s; 1175 yds with new drills',
+            ),
+          ];
+
+          final remote = [
+            createActivity(
+              id: 'remote-workout',
+              providerWorkoutId: 'workout-123',
+              syncedFromProvider: testProvider,
+              // Fingerprint changed (scheduled time changed)
+              scheduledDateTime: DateTime(2026, 2, 9, 8, 0),
+              durationMinutes: 30,
+              distanceMiles: 1.25,
+              title: 'SS Fast form 15*25s; 1175 yds with new drills',
+            ),
+          ];
+
+          final result = service.detectChanges(
+            localActivities: local,
+            remoteWorkouts: remote,
+            provider: testProvider,
+          );
+
+          expect(result.newActivities.length, 1);
+          expect(result.updatedActivities, isEmpty);
+        },
+      );
     });
   });
 }

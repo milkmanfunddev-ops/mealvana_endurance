@@ -70,6 +70,7 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
     String? imageAddress,
     double? servingAmount,
     String? servingUnit,
+    String? servingSize,
     int? caloriesPerServing,
     double? carbsPerServing,
     double? proteinPerServing,
@@ -105,6 +106,7 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
         imageAddress: Value(imageAddress),
         servingAmount: Value(servingAmount),
         servingUnit: Value(servingUnit),
+        servingSize: Value(servingSize),
         caloriesPerServing: Value(caloriesPerServing),
         carbsPerServing: Value(carbsPerServing),
         proteinPerServing: Value(proteinPerServing),
@@ -137,6 +139,7 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
     String? description,
     double? servingAmount,
     String? servingUnit,
+    String? servingSize,
     int? caloriesPerServing,
     double? carbsPerServing,
     double? proteinPerServing,
@@ -159,6 +162,8 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
           servingAmount != null ? Value(servingAmount) : const Value.absent(),
       servingUnit:
           servingUnit != null ? Value(servingUnit) : const Value.absent(),
+      servingSize:
+          servingSize != null ? Value(servingSize) : const Value.absent(),
       caloriesPerServing: caloriesPerServing != null
           ? Value(caloriesPerServing)
           : const Value.absent(),
@@ -276,6 +281,7 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
               servingAmount:
                   Value((food['serving_amount'] as num?)?.toDouble()),
               servingUnit: Value(food['serving_unit'] as String?),
+              servingSize: Value(food['serving_size'] as String?),
               caloriesPerServing: Value(food['calories_per_serving'] as int?),
               carbsPerServing:
                   Value((food['carbs_per_serving'] as num?)?.toDouble()),
@@ -331,6 +337,7 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
       description: userFood.description,
       categories: categories,
       servingAmount: userFood.servingAmount,
+      servingSize: userFood.servingSize,
       displayName: userFood.displayName,
       displayNamePlural: userFood.displayNamePlural,
       carbsPerServing: userFood.carbsPerServing,

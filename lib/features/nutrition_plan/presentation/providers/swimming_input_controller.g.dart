@@ -48,7 +48,7 @@ final class SwimmingInputControllerProvider
 }
 
 String _$swimmingInputControllerHash() =>
-    r'cc73cf5e82f25db241a9774a636404ed9d51a4f3';
+    r'25b37935857576d84d7a8a4d7aba3d861f26cb28';
 
 /// Swimming Input Controller - manages form state and delegates macro generation
 /// FOA COMPLIANT: Contains form state management and business logic coordination

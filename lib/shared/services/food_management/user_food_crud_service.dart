@@ -84,6 +84,7 @@ class UserFoodCrudService {
         imageAddress: food.imageAddress,
         servingAmount: food.servingAmount,
         servingUnit: food.servingUnit,
+        servingSize: food.servingSize,
         caloriesPerServing: food.caloriesPerServing,
         carbsPerServing: food.carbsPerServing,
         proteinPerServing: food.proteinPerServing,
@@ -123,6 +124,7 @@ class UserFoodCrudService {
     String? description,
     double? servingAmount,
     String? servingUnit,
+    String? servingSize,
     int? caloriesPerServing,
     double? carbsPerServing,
     double? proteinPerServing,
@@ -146,6 +148,7 @@ class UserFoodCrudService {
         description: description,
         servingAmount: servingAmount,
         servingUnit: servingUnit,
+        servingSize: servingSize,
         caloriesPerServing: caloriesPerServing,
         carbsPerServing: carbsPerServing,
         proteinPerServing: proteinPerServing,
@@ -165,6 +168,7 @@ class UserFoodCrudService {
           description: description,
           servingAmount: servingAmount,
           servingUnit: servingUnit,
+          servingSize: servingSize,
           caloriesPerServing: caloriesPerServing,
           carbsPerServing: carbsPerServing,
           proteinPerServing: proteinPerServing,
@@ -236,6 +240,7 @@ class UserFoodCrudService {
         'image_address': food.imageAddress,
         'serving_amount': food.servingAmount,
         'serving_unit': food.servingUnit,
+        'serving_size': food.servingSize,
         'calories_per_serving': food.caloriesPerServing,
         'carbs_per_serving': food.carbsPerServing,
         'protein_per_serving': food.proteinPerServing,
@@ -300,6 +305,7 @@ class UserFoodCrudService {
     String? description,
     double? servingAmount,
     String? servingUnit,
+    String? servingSize,
     int? caloriesPerServing,
     double? carbsPerServing,
     double? proteinPerServing,
@@ -321,6 +327,7 @@ class UserFoodCrudService {
       if (description != null) updateData['description'] = description;
       if (servingAmount != null) updateData['serving_amount'] = servingAmount;
       if (servingUnit != null) updateData['serving_unit'] = servingUnit;
+      if (servingSize != null) updateData['serving_size'] = servingSize;
       if (caloriesPerServing != null) updateData['calories_per_serving'] = caloriesPerServing;
       if (carbsPerServing != null) updateData['carbs_per_serving'] = carbsPerServing;
       if (proteinPerServing != null) updateData['protein_per_serving'] = proteinPerServing;
@@ -384,6 +391,7 @@ class UserFoodCrudService {
       imageAddress: userFood.imageAddress,
       servingAmount: userFood.servingAmount,
       servingUnit: userFood.servingUnit,
+      servingSize: userFood.servingSize,
       categories: categories,
       carbsPerServing: userFood.carbsPerServing,
       proteinPerServing: userFood.proteinPerServing,

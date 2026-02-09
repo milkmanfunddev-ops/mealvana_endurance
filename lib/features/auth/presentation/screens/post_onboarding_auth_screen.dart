@@ -43,16 +43,29 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     final supabase = ref.read(appExternalDepsProvider).supabaseClient;
     final authListenerService = ref.read(authListenerServiceProvider);
 
-    // For signup mode (onboarding), sign out any existing session first
-    // This ensures we create a fresh new user, not link to an old one
-    // Mark this as an onboarding sign-out to preserve cached onboarding data
-    if (!isLogin && supabase.auth.currentUser != null) {
-      authListenerService.markOnboardingSignOut();
-      await supabase.auth.signOut();
+    if (!isLogin) {
+      // For signup mode, we LINK to the existing anonymous session to preserve onboarding data.
+      // If we don't have an anonymous session (unexpected), create one to link against.
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null || !currentUser.isAnonymous) {
+        // Preserve cached onboarding data while resetting the auth session.
+        authListenerService.markOnboardingSignOut();
+        await supabase.auth.signOut();
+        final response = await supabase.auth.signInAnonymously();
+        if (response.user == null) {
+          if (mounted) {
+            _handleError(context, 'Apple');
+          }
+          return;
+        }
+      }
     }
 
-    // signInWithApple creates a new user OR logs in existing user
-    final bool success = await controller.signInWithApple();
+    // Signup mode: link to anonymous user (throws AccountAlreadyExistsException if provider exists)
+    // Login mode: sign in to existing account (or create if none exists)
+    final bool success = isLogin
+        ? await controller.signInWithApple()
+        : await controller.linkAppleAccount();
 
     if (!mounted) return;
 
@@ -82,16 +95,29 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     final supabase = ref.read(appExternalDepsProvider).supabaseClient;
     final authListenerService = ref.read(authListenerServiceProvider);
 
-    // For signup mode (onboarding), sign out any existing session first
-    // This ensures we create a fresh new user, not link to an old one
-    // Mark this as an onboarding sign-out to preserve cached onboarding data
-    if (!isLogin && supabase.auth.currentUser != null) {
-      authListenerService.markOnboardingSignOut();
-      await supabase.auth.signOut();
+    if (!isLogin) {
+      // For signup mode, we LINK to the existing anonymous session to preserve onboarding data.
+      // If we don't have an anonymous session (unexpected), create one to link against.
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null || !currentUser.isAnonymous) {
+        // Preserve cached onboarding data while resetting the auth session.
+        authListenerService.markOnboardingSignOut();
+        await supabase.auth.signOut();
+        final response = await supabase.auth.signInAnonymously();
+        if (response.user == null) {
+          if (mounted) {
+            _handleError(context, 'Google');
+          }
+          return;
+        }
+      }
     }
 
-    // signInWithGoogle creates a new user OR logs in existing user
-    final bool success = await controller.signInWithGoogle();
+    // Signup mode: link to anonymous user (throws AccountAlreadyExistsException if provider exists)
+    // Login mode: sign in to existing account (or create if none exists)
+    final bool success = isLogin
+        ? await controller.signInWithGoogle()
+        : await controller.linkGoogleAccount();
 
     if (!mounted) return;
 

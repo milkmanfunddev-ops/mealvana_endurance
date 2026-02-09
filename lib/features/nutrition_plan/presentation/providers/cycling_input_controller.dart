@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/intensity_distribution.dart';
+import '../../domain/meal_type.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../../auth/data/user_repository.dart';
 import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
@@ -37,6 +39,12 @@ class CyclingFormState {
   final DurationPaceMode durationPaceMode;
   final Duration? estimatedDuration;
 
+  // V3: Fasted workout toggle
+  final bool isFasted;
+
+  // V3: Track if user manually changed the pre-ride timing
+  final bool preRideMinutesManuallySet;
+
   // Weather integration fields
   final weather_domain.Location? location;
   final WeatherForecast? weatherForecast;
@@ -48,7 +56,8 @@ class CyclingFormState {
   CyclingFormState({
     this.distance = 25.0,
     this.speedMph = 15.0,
-    this.preRideMinutes = 120,
+    this.preRideMinutes = 120, // V3: will be pre-filled from recommendation in controller build()
+
     this.intensityTarget = 'zone_2',
     this.sessionGoal = 'endurance',
     this.terrain = 'flat_outdoor',
@@ -64,6 +73,8 @@ class CyclingFormState {
     IntensityDistribution? intensity,
     this.durationPaceMode = DurationPaceMode.byDuration,
     this.estimatedDuration,
+    this.isFasted = false,
+    this.preRideMinutesManuallySet = false,
     this.location,
     this.weatherForecast,
     this.isLoadingLocation = false,
@@ -91,6 +102,8 @@ class CyclingFormState {
     IntensityDistribution? intensity,
     DurationPaceMode? durationPaceMode,
     Duration? estimatedDuration,
+    bool? isFasted,
+    bool? preRideMinutesManuallySet,
     weather_domain.Location? location,
     WeatherForecast? weatherForecast,
     bool? isLoadingLocation,
@@ -117,6 +130,8 @@ class CyclingFormState {
       intensity: intensity ?? this.intensity,
       durationPaceMode: durationPaceMode ?? this.durationPaceMode,
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
+      isFasted: isFasted ?? this.isFasted,
+      preRideMinutesManuallySet: preRideMinutesManuallySet ?? this.preRideMinutesManuallySet,
       location: location ?? this.location,
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
@@ -144,9 +159,14 @@ class CyclingInputController extends _$CyclingInputController {
     // Default: 25 miles at 15 mph = 1.67 hours = 100 minutes
     final initialDurationMinutes = (25.0 / 15.0 * 60).round();
 
+    // V3: Pre-fill timing from recommendation based on default intensity
+    final defaultIntensity = IntensityDistribution(conversationalPct: 70, tempoPct: 20, allOutPct: 10);
+    final recommendedMinutes = (recommendedHoursBefore(ActivityType.cycling, defaultIntensity) * 60).round();
+
     final initialState = CyclingFormState(
       selectedDate: now,
       selectedTime: const TimeOfDay(hour: 7, minute: 0),
+      preRideMinutes: recommendedMinutes,
       estimatedDuration: Duration(minutes: initialDurationMinutes),
     );
 
@@ -213,23 +233,37 @@ class CyclingInputController extends _$CyclingInputController {
 
   /// Update form field values
   void updateDistance(double distance) {
-    state = state.copyWith(distance: distance);
-    // Recalculate estimated duration if in byDuration mode
-    if (state.durationPaceMode == DurationPaceMode.byDuration) {
-      _estimateDuration();
+    final hasDuration =
+        state.estimatedDuration != null && state.estimatedDuration!.inSeconds > 0;
+
+    if (state.durationPaceMode == DurationPaceMode.byDuration && hasDuration) {
+      final newSpeed = _estimateSpeed(distance: distance, duration: state.estimatedDuration);
+      state = state.copyWith(
+        distance: distance,
+        speedMph: newSpeed ?? state.speedMph,
+      );
+      return;
     }
+
+    state = state.copyWith(distance: distance);
+    _estimateDuration(distance: distance, speedMph: state.speedMph);
   }
 
   void updateSpeed(double speedMph) {
     state = state.copyWith(speedMph: speedMph);
-    // Recalculate estimated duration if in byDuration mode
-    if (state.durationPaceMode == DurationPaceMode.byDuration) {
-      _estimateDuration();
-    }
+    _estimateDuration(distance: state.distance, speedMph: speedMph);
   }
 
   void updatePreRideMinutes(int minutes) {
-    state = state.copyWith(preRideMinutes: minutes);
+    state = state.copyWith(
+      preRideMinutes: minutes,
+      preRideMinutesManuallySet: true,
+    );
+  }
+
+  /// V3: Update fasted workout toggle
+  void updateFasted(bool isFasted) {
+    state = state.copyWith(isFasted: isFasted);
   }
 
   void updateIntensityTarget(String intensityTarget) {
@@ -309,33 +343,67 @@ class CyclingInputController extends _$CyclingInputController {
   /// Update intensity distribution
   void updateIntensityDistribution(IntensityDistribution intensity) {
     state = state.copyWith(intensity: intensity);
+
+    // V3: Auto-update timing to recommendation if user hasn't manually overridden
+    if (!state.preRideMinutesManuallySet) {
+      final recommended = recommendedHoursBefore(ActivityType.cycling, intensity);
+      state = state.copyWith(preRideMinutes: (recommended * 60).round());
+    }
   }
 
   void updateDuration(Duration duration) {
-    state = state.copyWith(estimatedDuration: duration);
+    final newSpeed = _estimateSpeed(duration: duration);
+    state = state.copyWith(
+      estimatedDuration: duration,
+      speedMph: newSpeed ?? state.speedMph,
+    );
   }
 
   /// Update duration/pace mode
   void updateDurationPaceMode(DurationPaceMode mode) {
-    state = state.copyWith(durationPaceMode: mode);
-    // Recalculate estimated duration when switching to byDuration mode
     if (mode == DurationPaceMode.byDuration) {
-      _estimateDuration();
+      state = state.copyWith(durationPaceMode: mode);
+      _estimateDuration(distance: state.distance, speedMph: state.speedMph);
+      return;
     }
+
+    final newSpeed = _estimateSpeed();
+    state = state.copyWith(
+      durationPaceMode: mode,
+      speedMph: newSpeed ?? state.speedMph,
+    );
   }
 
   /// Calculate estimated duration from distance and speed
   /// For cycling: estimatedDuration = (distance / speedMph) * 60 minutes
-  void _estimateDuration() {
-    if (state.speedMph > 0) {
+  void _estimateDuration({double? distance, double? speedMph}) {
+    final currentDistance = distance ?? state.distance;
+    final currentSpeed = speedMph ?? state.speedMph;
+
+    if (currentSpeed > 0 && currentDistance > 0) {
       // Convert to hours, then to minutes
-      final durationHours = state.distance / state.speedMph;
+      final durationHours = currentDistance / currentSpeed;
       final durationMinutes = (durationHours * 60).round();
 
       state = state.copyWith(
         estimatedDuration: Duration(minutes: durationMinutes),
       );
     }
+  }
+
+  double? _estimateSpeed({double? distance, Duration? duration}) {
+    final currentDistance = distance ?? state.distance;
+    final currentDuration = duration ?? state.estimatedDuration;
+    if (currentDuration == null || currentDistance <= 0) {
+      return null;
+    }
+
+    final hours = currentDuration.inSeconds / 3600.0;
+    if (hours <= 0) {
+      return null;
+    }
+
+    return currentDistance / hours;
   }
 
   /// Fetch current GPS location
@@ -484,6 +552,8 @@ class CyclingInputController extends _$CyclingInputController {
       scheduledTime: currentState.selectedTime,
       temperatureC: currentState.temperatureC,
       humidityPct: currentState.humidityPct,
+      isFasted: currentState.isFasted,
+      intensity: currentState.intensity,
       activityId: activityId,
       eventId: eventId,
       forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
