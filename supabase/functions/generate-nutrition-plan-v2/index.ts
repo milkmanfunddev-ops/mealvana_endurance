@@ -22,14 +22,12 @@ import { jsonResponse, errorResponse, serverError } from '../_shared/responses.t
 import { createServiceClient } from '../_shared/supabase-client.ts';
 import { generateUUID } from '../_shared/utils.ts';
 
-// Existing nutrition module (for during/after LP solving)
+// Nutrition types and LP solver (unchanged)
 import {
   type Phase,
   type ActivityType,
   type MacroTargets,
   type FoodResult,
-  getFoodsForPhase,
-  getElectrolyteFoods,
   buildLPModel,
   solveLPModel,
   greedyFallback,
@@ -39,6 +37,9 @@ import {
   PREFERENCE_SCORE_MAP,
   calculateTotals,
 } from '../_shared/nutrition/index.ts';
+
+// v2 food queries — queries template_foods table (not legacy foods table)
+import { getTemplateFoodsForPhase } from '../_shared/nutrition/template-food-queries.ts';
 
 // Template system modules
 import {
@@ -323,8 +324,8 @@ async function generateLPPhase(
 ): Promise<FoodResult[]> {
   console.log(`[PLAN-V2] Generating ${phase} phase via LP solver`);
 
-  // Get foods for this phase
-  const foods = await getFoodsForPhase(
+  // Get foods for this phase from template_foods table
+  const foods = await getTemplateFoodsForPhase(
     supabase,
     phase,
     activityType,

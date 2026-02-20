@@ -108,6 +108,48 @@ class TemplateFoodsRepository with SyncableRepository {
         .getSingleOrNull();
   }
 
+  /// Get all active template foods that should show in preferences
+  Future<List<TemplateFoodEntry>> getFoodsForPreferences() async {
+    return (_database.select(_database.templateFoodsTable)
+          ..where((t) =>
+              t.isActive.equals(true) & t.showInPreferences.equals(true))
+          ..orderBy([(t) => OrderingTerm.asc(t.displayName)]))
+        .get();
+  }
+
+  /// Get foods suitable for swap in a given phase
+  Future<List<TemplateFoodEntry>> getFoodsForSwap(String phase) async {
+    final allFoods = await (_database.select(_database.templateFoodsTable)
+          ..where((t) =>
+              t.isActive.equals(true) & t.showInPreferences.equals(true))
+          ..orderBy([(t) => OrderingTerm.asc(t.displayName)]))
+        .get();
+
+    // Filter by phase category (stored as JSON array in categories)
+    final phaseCategory = _phaseToCategoryName(phase);
+    return allFoods.where((food) {
+      try {
+        final categories = jsonDecode(food.categories) as List<dynamic>;
+        return categories.contains(phaseCategory);
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+  }
+
+  String _phaseToCategoryName(String phase) {
+    switch (phase) {
+      case 'before':
+        return 'before_run';
+      case 'during':
+        return 'during_run';
+      case 'after':
+        return 'after_run';
+      default:
+        return phase;
+    }
+  }
+
   /// Get all drink pool items for a given phase
   Future<List<TemplateFoodEntry>> getDrinkPoolForPhase(String phase) async {
     final allDrinks = await (_database.select(_database.templateFoodsTable)
@@ -160,6 +202,20 @@ class TemplateFoodsRepository with SyncableRepository {
         potassiumMg: Value((json['potassium_mg'] as num?)?.toDouble()),
         isDrinkPool: Value(json['is_drink_pool'] as bool? ?? false),
         drinkPoolPhases: Value(_arrayToJsonString(json['drink_pool_phases'])),
+        // LP solver columns (unified food table)
+        maxServingsBefore: Value((json['max_servings_before'] as num?)?.toInt() ?? 4),
+        maxServingsDuring: Value((json['max_servings_during'] as num?)?.toInt() ?? 4),
+        maxServingsAfter: Value((json['max_servings_after'] as num?)?.toInt() ?? 4),
+        toExcludeFromSolver: Value(json['to_exclude_from_solver'] as bool? ?? false),
+        isEssential: Value(json['is_essential'] as bool? ?? false),
+        showInPreferences: Value(json['show_in_preferences'] as bool? ?? true),
+        displayNamePlural: Value(json['display_name_plural'] as String?),
+        imageAddress: Value(json['image_address'] as String?),
+        description: Value(json['description'] as String?),
+        servingAmount: Value((json['serving_amount'] as num?)?.toDouble()),
+        servingUnit: Value(json['serving_unit'] as String?),
+        servingQualifier: Value(json['serving_qualifier'] as String?),
+        isLiquid: Value(json['is_liquid'] as bool? ?? false),
         createdAt: Value(DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now()),
         updatedAt: Value(DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now()),
       );

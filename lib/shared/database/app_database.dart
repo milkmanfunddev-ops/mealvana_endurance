@@ -131,9 +131,10 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 4: Adds template_foods and templates tables for nutrition templates.
+  /// Schema version 5: Extends template_foods with LP solver columns (unified food table).
+  /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).

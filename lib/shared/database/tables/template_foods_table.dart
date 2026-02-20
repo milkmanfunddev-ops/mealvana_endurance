@@ -61,6 +61,21 @@ class TemplateFoodsTable extends Table {
   /// Which phases this drink can be selected for (JSON array string)
   TextColumn get drinkPoolPhases => text().withDefault(const Constant('[]')).named('drink_pool_phases')();
 
+  // LP solver columns (unified with foods table)
+  IntColumn get maxServingsBefore => integer().withDefault(const Constant(4)).named('max_servings_before')();
+  IntColumn get maxServingsDuring => integer().withDefault(const Constant(4)).named('max_servings_during')();
+  IntColumn get maxServingsAfter => integer().withDefault(const Constant(4)).named('max_servings_after')();
+  BoolColumn get toExcludeFromSolver => boolean().withDefault(const Constant(false)).named('to_exclude_from_solver')();
+  BoolColumn get isEssential => boolean().withDefault(const Constant(false)).named('is_essential')();
+  BoolColumn get showInPreferences => boolean().withDefault(const Constant(true)).named('show_in_preferences')();
+  TextColumn get displayNamePlural => text().nullable().named('display_name_plural')();
+  TextColumn get imageAddress => text().nullable().named('image_address')();
+  TextColumn get description => text().nullable()();
+  RealColumn get servingAmount => real().nullable().named('serving_amount')();
+  TextColumn get servingUnit => text().nullable().named('serving_unit')();
+  TextColumn get servingQualifier => text().nullable().named('serving_qualifier')();
+  BoolColumn get isLiquid => boolean().withDefault(const Constant(false)).named('is_liquid')();
+
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime).named('created_at')();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime).named('updated_at')();
 

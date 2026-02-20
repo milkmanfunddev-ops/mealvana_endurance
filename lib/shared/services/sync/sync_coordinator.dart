@@ -44,7 +44,7 @@ class SyncCoordinator extends _$SyncCoordinator {
     'carb_loading_foods': [],
     'activities': ['users'],
     'events': ['users'],
-    'food_preferences': ['users', 'foods'],
+    'food_preferences': ['users', 'template_foods'],
     'user_foods': ['users'],
     'coaches': ['users'],
     'coach_athlete_relationships': ['coaches', 'users'],

@@ -22656,6 +22656,168 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
     requiredDuringInsert: false,
     defaultValue: const Constant('[]'),
   );
+  static const VerificationMeta _maxServingsBeforeMeta = const VerificationMeta(
+    'maxServingsBefore',
+  );
+  @override
+  late final GeneratedColumn<int> maxServingsBefore = GeneratedColumn<int>(
+    'max_servings_before',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(4),
+  );
+  static const VerificationMeta _maxServingsDuringMeta = const VerificationMeta(
+    'maxServingsDuring',
+  );
+  @override
+  late final GeneratedColumn<int> maxServingsDuring = GeneratedColumn<int>(
+    'max_servings_during',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(4),
+  );
+  static const VerificationMeta _maxServingsAfterMeta = const VerificationMeta(
+    'maxServingsAfter',
+  );
+  @override
+  late final GeneratedColumn<int> maxServingsAfter = GeneratedColumn<int>(
+    'max_servings_after',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(4),
+  );
+  static const VerificationMeta _toExcludeFromSolverMeta =
+      const VerificationMeta('toExcludeFromSolver');
+  @override
+  late final GeneratedColumn<bool> toExcludeFromSolver = GeneratedColumn<bool>(
+    'to_exclude_from_solver',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("to_exclude_from_solver" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isEssentialMeta = const VerificationMeta(
+    'isEssential',
+  );
+  @override
+  late final GeneratedColumn<bool> isEssential = GeneratedColumn<bool>(
+    'is_essential',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_essential" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _showInPreferencesMeta = const VerificationMeta(
+    'showInPreferences',
+  );
+  @override
+  late final GeneratedColumn<bool> showInPreferences = GeneratedColumn<bool>(
+    'show_in_preferences',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("show_in_preferences" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _displayNamePluralMeta = const VerificationMeta(
+    'displayNamePlural',
+  );
+  @override
+  late final GeneratedColumn<String> displayNamePlural =
+      GeneratedColumn<String>(
+        'display_name_plural',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _imageAddressMeta = const VerificationMeta(
+    'imageAddress',
+  );
+  @override
+  late final GeneratedColumn<String> imageAddress = GeneratedColumn<String>(
+    'image_address',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _servingAmountMeta = const VerificationMeta(
+    'servingAmount',
+  );
+  @override
+  late final GeneratedColumn<double> servingAmount = GeneratedColumn<double>(
+    'serving_amount',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _servingUnitMeta = const VerificationMeta(
+    'servingUnit',
+  );
+  @override
+  late final GeneratedColumn<String> servingUnit = GeneratedColumn<String>(
+    'serving_unit',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _servingQualifierMeta = const VerificationMeta(
+    'servingQualifier',
+  );
+  @override
+  late final GeneratedColumn<String> servingQualifier = GeneratedColumn<String>(
+    'serving_qualifier',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isLiquidMeta = const VerificationMeta(
+    'isLiquid',
+  );
+  @override
+  late final GeneratedColumn<bool> isLiquid = GeneratedColumn<bool>(
+    'is_liquid',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_liquid" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -22707,6 +22869,19 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
     potassiumMg,
     isDrinkPool,
     drinkPoolPhases,
+    maxServingsBefore,
+    maxServingsDuring,
+    maxServingsAfter,
+    toExcludeFromSolver,
+    isEssential,
+    showInPreferences,
+    displayNamePlural,
+    imageAddress,
+    description,
+    servingAmount,
+    servingUnit,
+    servingQualifier,
+    isLiquid,
     createdAt,
     updatedAt,
   ];
@@ -22913,6 +23088,120 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
         ),
       );
     }
+    if (data.containsKey('max_servings_before')) {
+      context.handle(
+        _maxServingsBeforeMeta,
+        maxServingsBefore.isAcceptableOrUnknown(
+          data['max_servings_before']!,
+          _maxServingsBeforeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('max_servings_during')) {
+      context.handle(
+        _maxServingsDuringMeta,
+        maxServingsDuring.isAcceptableOrUnknown(
+          data['max_servings_during']!,
+          _maxServingsDuringMeta,
+        ),
+      );
+    }
+    if (data.containsKey('max_servings_after')) {
+      context.handle(
+        _maxServingsAfterMeta,
+        maxServingsAfter.isAcceptableOrUnknown(
+          data['max_servings_after']!,
+          _maxServingsAfterMeta,
+        ),
+      );
+    }
+    if (data.containsKey('to_exclude_from_solver')) {
+      context.handle(
+        _toExcludeFromSolverMeta,
+        toExcludeFromSolver.isAcceptableOrUnknown(
+          data['to_exclude_from_solver']!,
+          _toExcludeFromSolverMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_essential')) {
+      context.handle(
+        _isEssentialMeta,
+        isEssential.isAcceptableOrUnknown(
+          data['is_essential']!,
+          _isEssentialMeta,
+        ),
+      );
+    }
+    if (data.containsKey('show_in_preferences')) {
+      context.handle(
+        _showInPreferencesMeta,
+        showInPreferences.isAcceptableOrUnknown(
+          data['show_in_preferences']!,
+          _showInPreferencesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('display_name_plural')) {
+      context.handle(
+        _displayNamePluralMeta,
+        displayNamePlural.isAcceptableOrUnknown(
+          data['display_name_plural']!,
+          _displayNamePluralMeta,
+        ),
+      );
+    }
+    if (data.containsKey('image_address')) {
+      context.handle(
+        _imageAddressMeta,
+        imageAddress.isAcceptableOrUnknown(
+          data['image_address']!,
+          _imageAddressMeta,
+        ),
+      );
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('serving_amount')) {
+      context.handle(
+        _servingAmountMeta,
+        servingAmount.isAcceptableOrUnknown(
+          data['serving_amount']!,
+          _servingAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('serving_unit')) {
+      context.handle(
+        _servingUnitMeta,
+        servingUnit.isAcceptableOrUnknown(
+          data['serving_unit']!,
+          _servingUnitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('serving_qualifier')) {
+      context.handle(
+        _servingQualifierMeta,
+        servingQualifier.isAcceptableOrUnknown(
+          data['serving_qualifier']!,
+          _servingQualifierMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_liquid')) {
+      context.handle(
+        _isLiquidMeta,
+        isLiquid.isAcceptableOrUnknown(data['is_liquid']!, _isLiquidMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -23034,6 +23323,58 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
         DriftSqlType.string,
         data['${effectivePrefix}drink_pool_phases'],
       )!,
+      maxServingsBefore: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_servings_before'],
+      )!,
+      maxServingsDuring: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_servings_during'],
+      )!,
+      maxServingsAfter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_servings_after'],
+      )!,
+      toExcludeFromSolver: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}to_exclude_from_solver'],
+      )!,
+      isEssential: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_essential'],
+      )!,
+      showInPreferences: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}show_in_preferences'],
+      )!,
+      displayNamePlural: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name_plural'],
+      ),
+      imageAddress: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_address'],
+      ),
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      servingAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}serving_amount'],
+      ),
+      servingUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serving_unit'],
+      ),
+      servingQualifier: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serving_qualifier'],
+      ),
+      isLiquid: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_liquid'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -23101,6 +23442,19 @@ class TemplateFoodEntry extends DataClass
 
   /// Which phases this drink can be selected for (JSON array string)
   final String drinkPoolPhases;
+  final int maxServingsBefore;
+  final int maxServingsDuring;
+  final int maxServingsAfter;
+  final bool toExcludeFromSolver;
+  final bool isEssential;
+  final bool showInPreferences;
+  final String? displayNamePlural;
+  final String? imageAddress;
+  final String? description;
+  final double? servingAmount;
+  final String? servingUnit;
+  final String? servingQualifier;
+  final bool isLiquid;
   final DateTime createdAt;
   final DateTime updatedAt;
   const TemplateFoodEntry({
@@ -23129,6 +23483,19 @@ class TemplateFoodEntry extends DataClass
     this.potassiumMg,
     required this.isDrinkPool,
     required this.drinkPoolPhases,
+    required this.maxServingsBefore,
+    required this.maxServingsDuring,
+    required this.maxServingsAfter,
+    required this.toExcludeFromSolver,
+    required this.isEssential,
+    required this.showInPreferences,
+    this.displayNamePlural,
+    this.imageAddress,
+    this.description,
+    this.servingAmount,
+    this.servingUnit,
+    this.servingQualifier,
+    required this.isLiquid,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -23170,6 +23537,31 @@ class TemplateFoodEntry extends DataClass
     }
     map['is_drink_pool'] = Variable<bool>(isDrinkPool);
     map['drink_pool_phases'] = Variable<String>(drinkPoolPhases);
+    map['max_servings_before'] = Variable<int>(maxServingsBefore);
+    map['max_servings_during'] = Variable<int>(maxServingsDuring);
+    map['max_servings_after'] = Variable<int>(maxServingsAfter);
+    map['to_exclude_from_solver'] = Variable<bool>(toExcludeFromSolver);
+    map['is_essential'] = Variable<bool>(isEssential);
+    map['show_in_preferences'] = Variable<bool>(showInPreferences);
+    if (!nullToAbsent || displayNamePlural != null) {
+      map['display_name_plural'] = Variable<String>(displayNamePlural);
+    }
+    if (!nullToAbsent || imageAddress != null) {
+      map['image_address'] = Variable<String>(imageAddress);
+    }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || servingAmount != null) {
+      map['serving_amount'] = Variable<double>(servingAmount);
+    }
+    if (!nullToAbsent || servingUnit != null) {
+      map['serving_unit'] = Variable<String>(servingUnit);
+    }
+    if (!nullToAbsent || servingQualifier != null) {
+      map['serving_qualifier'] = Variable<String>(servingQualifier);
+    }
+    map['is_liquid'] = Variable<bool>(isLiquid);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -23212,6 +23604,31 @@ class TemplateFoodEntry extends DataClass
           : Value(potassiumMg),
       isDrinkPool: Value(isDrinkPool),
       drinkPoolPhases: Value(drinkPoolPhases),
+      maxServingsBefore: Value(maxServingsBefore),
+      maxServingsDuring: Value(maxServingsDuring),
+      maxServingsAfter: Value(maxServingsAfter),
+      toExcludeFromSolver: Value(toExcludeFromSolver),
+      isEssential: Value(isEssential),
+      showInPreferences: Value(showInPreferences),
+      displayNamePlural: displayNamePlural == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayNamePlural),
+      imageAddress: imageAddress == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageAddress),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      servingAmount: servingAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingAmount),
+      servingUnit: servingUnit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingUnit),
+      servingQualifier: servingQualifier == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingQualifier),
+      isLiquid: Value(isLiquid),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -23250,6 +23667,23 @@ class TemplateFoodEntry extends DataClass
       potassiumMg: serializer.fromJson<double?>(json['potassiumMg']),
       isDrinkPool: serializer.fromJson<bool>(json['isDrinkPool']),
       drinkPoolPhases: serializer.fromJson<String>(json['drinkPoolPhases']),
+      maxServingsBefore: serializer.fromJson<int>(json['maxServingsBefore']),
+      maxServingsDuring: serializer.fromJson<int>(json['maxServingsDuring']),
+      maxServingsAfter: serializer.fromJson<int>(json['maxServingsAfter']),
+      toExcludeFromSolver: serializer.fromJson<bool>(
+        json['toExcludeFromSolver'],
+      ),
+      isEssential: serializer.fromJson<bool>(json['isEssential']),
+      showInPreferences: serializer.fromJson<bool>(json['showInPreferences']),
+      displayNamePlural: serializer.fromJson<String?>(
+        json['displayNamePlural'],
+      ),
+      imageAddress: serializer.fromJson<String?>(json['imageAddress']),
+      description: serializer.fromJson<String?>(json['description']),
+      servingAmount: serializer.fromJson<double?>(json['servingAmount']),
+      servingUnit: serializer.fromJson<String?>(json['servingUnit']),
+      servingQualifier: serializer.fromJson<String?>(json['servingQualifier']),
+      isLiquid: serializer.fromJson<bool>(json['isLiquid']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -23283,6 +23717,19 @@ class TemplateFoodEntry extends DataClass
       'potassiumMg': serializer.toJson<double?>(potassiumMg),
       'isDrinkPool': serializer.toJson<bool>(isDrinkPool),
       'drinkPoolPhases': serializer.toJson<String>(drinkPoolPhases),
+      'maxServingsBefore': serializer.toJson<int>(maxServingsBefore),
+      'maxServingsDuring': serializer.toJson<int>(maxServingsDuring),
+      'maxServingsAfter': serializer.toJson<int>(maxServingsAfter),
+      'toExcludeFromSolver': serializer.toJson<bool>(toExcludeFromSolver),
+      'isEssential': serializer.toJson<bool>(isEssential),
+      'showInPreferences': serializer.toJson<bool>(showInPreferences),
+      'displayNamePlural': serializer.toJson<String?>(displayNamePlural),
+      'imageAddress': serializer.toJson<String?>(imageAddress),
+      'description': serializer.toJson<String?>(description),
+      'servingAmount': serializer.toJson<double?>(servingAmount),
+      'servingUnit': serializer.toJson<String?>(servingUnit),
+      'servingQualifier': serializer.toJson<String?>(servingQualifier),
+      'isLiquid': serializer.toJson<bool>(isLiquid),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -23314,6 +23761,19 @@ class TemplateFoodEntry extends DataClass
     Value<double?> potassiumMg = const Value.absent(),
     bool? isDrinkPool,
     String? drinkPoolPhases,
+    int? maxServingsBefore,
+    int? maxServingsDuring,
+    int? maxServingsAfter,
+    bool? toExcludeFromSolver,
+    bool? isEssential,
+    bool? showInPreferences,
+    Value<String?> displayNamePlural = const Value.absent(),
+    Value<String?> imageAddress = const Value.absent(),
+    Value<String?> description = const Value.absent(),
+    Value<double?> servingAmount = const Value.absent(),
+    Value<String?> servingUnit = const Value.absent(),
+    Value<String?> servingQualifier = const Value.absent(),
+    bool? isLiquid,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => TemplateFoodEntry(
@@ -23344,6 +23804,25 @@ class TemplateFoodEntry extends DataClass
     potassiumMg: potassiumMg.present ? potassiumMg.value : this.potassiumMg,
     isDrinkPool: isDrinkPool ?? this.isDrinkPool,
     drinkPoolPhases: drinkPoolPhases ?? this.drinkPoolPhases,
+    maxServingsBefore: maxServingsBefore ?? this.maxServingsBefore,
+    maxServingsDuring: maxServingsDuring ?? this.maxServingsDuring,
+    maxServingsAfter: maxServingsAfter ?? this.maxServingsAfter,
+    toExcludeFromSolver: toExcludeFromSolver ?? this.toExcludeFromSolver,
+    isEssential: isEssential ?? this.isEssential,
+    showInPreferences: showInPreferences ?? this.showInPreferences,
+    displayNamePlural: displayNamePlural.present
+        ? displayNamePlural.value
+        : this.displayNamePlural,
+    imageAddress: imageAddress.present ? imageAddress.value : this.imageAddress,
+    description: description.present ? description.value : this.description,
+    servingAmount: servingAmount.present
+        ? servingAmount.value
+        : this.servingAmount,
+    servingUnit: servingUnit.present ? servingUnit.value : this.servingUnit,
+    servingQualifier: servingQualifier.present
+        ? servingQualifier.value
+        : this.servingQualifier,
+    isLiquid: isLiquid ?? this.isLiquid,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -23402,6 +23881,43 @@ class TemplateFoodEntry extends DataClass
       drinkPoolPhases: data.drinkPoolPhases.present
           ? data.drinkPoolPhases.value
           : this.drinkPoolPhases,
+      maxServingsBefore: data.maxServingsBefore.present
+          ? data.maxServingsBefore.value
+          : this.maxServingsBefore,
+      maxServingsDuring: data.maxServingsDuring.present
+          ? data.maxServingsDuring.value
+          : this.maxServingsDuring,
+      maxServingsAfter: data.maxServingsAfter.present
+          ? data.maxServingsAfter.value
+          : this.maxServingsAfter,
+      toExcludeFromSolver: data.toExcludeFromSolver.present
+          ? data.toExcludeFromSolver.value
+          : this.toExcludeFromSolver,
+      isEssential: data.isEssential.present
+          ? data.isEssential.value
+          : this.isEssential,
+      showInPreferences: data.showInPreferences.present
+          ? data.showInPreferences.value
+          : this.showInPreferences,
+      displayNamePlural: data.displayNamePlural.present
+          ? data.displayNamePlural.value
+          : this.displayNamePlural,
+      imageAddress: data.imageAddress.present
+          ? data.imageAddress.value
+          : this.imageAddress,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      servingAmount: data.servingAmount.present
+          ? data.servingAmount.value
+          : this.servingAmount,
+      servingUnit: data.servingUnit.present
+          ? data.servingUnit.value
+          : this.servingUnit,
+      servingQualifier: data.servingQualifier.present
+          ? data.servingQualifier.value
+          : this.servingQualifier,
+      isLiquid: data.isLiquid.present ? data.isLiquid.value : this.isLiquid,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -23435,6 +23951,19 @@ class TemplateFoodEntry extends DataClass
           ..write('potassiumMg: $potassiumMg, ')
           ..write('isDrinkPool: $isDrinkPool, ')
           ..write('drinkPoolPhases: $drinkPoolPhases, ')
+          ..write('maxServingsBefore: $maxServingsBefore, ')
+          ..write('maxServingsDuring: $maxServingsDuring, ')
+          ..write('maxServingsAfter: $maxServingsAfter, ')
+          ..write('toExcludeFromSolver: $toExcludeFromSolver, ')
+          ..write('isEssential: $isEssential, ')
+          ..write('showInPreferences: $showInPreferences, ')
+          ..write('displayNamePlural: $displayNamePlural, ')
+          ..write('imageAddress: $imageAddress, ')
+          ..write('description: $description, ')
+          ..write('servingAmount: $servingAmount, ')
+          ..write('servingUnit: $servingUnit, ')
+          ..write('servingQualifier: $servingQualifier, ')
+          ..write('isLiquid: $isLiquid, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -23468,6 +23997,19 @@ class TemplateFoodEntry extends DataClass
     potassiumMg,
     isDrinkPool,
     drinkPoolPhases,
+    maxServingsBefore,
+    maxServingsDuring,
+    maxServingsAfter,
+    toExcludeFromSolver,
+    isEssential,
+    showInPreferences,
+    displayNamePlural,
+    imageAddress,
+    description,
+    servingAmount,
+    servingUnit,
+    servingQualifier,
+    isLiquid,
     createdAt,
     updatedAt,
   ]);
@@ -23500,6 +24042,19 @@ class TemplateFoodEntry extends DataClass
           other.potassiumMg == this.potassiumMg &&
           other.isDrinkPool == this.isDrinkPool &&
           other.drinkPoolPhases == this.drinkPoolPhases &&
+          other.maxServingsBefore == this.maxServingsBefore &&
+          other.maxServingsDuring == this.maxServingsDuring &&
+          other.maxServingsAfter == this.maxServingsAfter &&
+          other.toExcludeFromSolver == this.toExcludeFromSolver &&
+          other.isEssential == this.isEssential &&
+          other.showInPreferences == this.showInPreferences &&
+          other.displayNamePlural == this.displayNamePlural &&
+          other.imageAddress == this.imageAddress &&
+          other.description == this.description &&
+          other.servingAmount == this.servingAmount &&
+          other.servingUnit == this.servingUnit &&
+          other.servingQualifier == this.servingQualifier &&
+          other.isLiquid == this.isLiquid &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -23530,6 +24085,19 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
   final Value<double?> potassiumMg;
   final Value<bool> isDrinkPool;
   final Value<String> drinkPoolPhases;
+  final Value<int> maxServingsBefore;
+  final Value<int> maxServingsDuring;
+  final Value<int> maxServingsAfter;
+  final Value<bool> toExcludeFromSolver;
+  final Value<bool> isEssential;
+  final Value<bool> showInPreferences;
+  final Value<String?> displayNamePlural;
+  final Value<String?> imageAddress;
+  final Value<String?> description;
+  final Value<double?> servingAmount;
+  final Value<String?> servingUnit;
+  final Value<String?> servingQualifier;
+  final Value<bool> isLiquid;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -23559,6 +24127,19 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     this.potassiumMg = const Value.absent(),
     this.isDrinkPool = const Value.absent(),
     this.drinkPoolPhases = const Value.absent(),
+    this.maxServingsBefore = const Value.absent(),
+    this.maxServingsDuring = const Value.absent(),
+    this.maxServingsAfter = const Value.absent(),
+    this.toExcludeFromSolver = const Value.absent(),
+    this.isEssential = const Value.absent(),
+    this.showInPreferences = const Value.absent(),
+    this.displayNamePlural = const Value.absent(),
+    this.imageAddress = const Value.absent(),
+    this.description = const Value.absent(),
+    this.servingAmount = const Value.absent(),
+    this.servingUnit = const Value.absent(),
+    this.servingQualifier = const Value.absent(),
+    this.isLiquid = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -23589,6 +24170,19 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     this.potassiumMg = const Value.absent(),
     this.isDrinkPool = const Value.absent(),
     this.drinkPoolPhases = const Value.absent(),
+    this.maxServingsBefore = const Value.absent(),
+    this.maxServingsDuring = const Value.absent(),
+    this.maxServingsAfter = const Value.absent(),
+    this.toExcludeFromSolver = const Value.absent(),
+    this.isEssential = const Value.absent(),
+    this.showInPreferences = const Value.absent(),
+    this.displayNamePlural = const Value.absent(),
+    this.imageAddress = const Value.absent(),
+    this.description = const Value.absent(),
+    this.servingAmount = const Value.absent(),
+    this.servingUnit = const Value.absent(),
+    this.servingQualifier = const Value.absent(),
+    this.isLiquid = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -23622,6 +24216,19 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     Expression<double>? potassiumMg,
     Expression<bool>? isDrinkPool,
     Expression<String>? drinkPoolPhases,
+    Expression<int>? maxServingsBefore,
+    Expression<int>? maxServingsDuring,
+    Expression<int>? maxServingsAfter,
+    Expression<bool>? toExcludeFromSolver,
+    Expression<bool>? isEssential,
+    Expression<bool>? showInPreferences,
+    Expression<String>? displayNamePlural,
+    Expression<String>? imageAddress,
+    Expression<String>? description,
+    Expression<double>? servingAmount,
+    Expression<String>? servingUnit,
+    Expression<String>? servingQualifier,
+    Expression<bool>? isLiquid,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -23653,6 +24260,20 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
       if (potassiumMg != null) 'potassium_mg': potassiumMg,
       if (isDrinkPool != null) 'is_drink_pool': isDrinkPool,
       if (drinkPoolPhases != null) 'drink_pool_phases': drinkPoolPhases,
+      if (maxServingsBefore != null) 'max_servings_before': maxServingsBefore,
+      if (maxServingsDuring != null) 'max_servings_during': maxServingsDuring,
+      if (maxServingsAfter != null) 'max_servings_after': maxServingsAfter,
+      if (toExcludeFromSolver != null)
+        'to_exclude_from_solver': toExcludeFromSolver,
+      if (isEssential != null) 'is_essential': isEssential,
+      if (showInPreferences != null) 'show_in_preferences': showInPreferences,
+      if (displayNamePlural != null) 'display_name_plural': displayNamePlural,
+      if (imageAddress != null) 'image_address': imageAddress,
+      if (description != null) 'description': description,
+      if (servingAmount != null) 'serving_amount': servingAmount,
+      if (servingUnit != null) 'serving_unit': servingUnit,
+      if (servingQualifier != null) 'serving_qualifier': servingQualifier,
+      if (isLiquid != null) 'is_liquid': isLiquid,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -23685,6 +24306,19 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     Value<double?>? potassiumMg,
     Value<bool>? isDrinkPool,
     Value<String>? drinkPoolPhases,
+    Value<int>? maxServingsBefore,
+    Value<int>? maxServingsDuring,
+    Value<int>? maxServingsAfter,
+    Value<bool>? toExcludeFromSolver,
+    Value<bool>? isEssential,
+    Value<bool>? showInPreferences,
+    Value<String?>? displayNamePlural,
+    Value<String?>? imageAddress,
+    Value<String?>? description,
+    Value<double?>? servingAmount,
+    Value<String?>? servingUnit,
+    Value<String?>? servingQualifier,
+    Value<bool>? isLiquid,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -23715,6 +24349,19 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
       potassiumMg: potassiumMg ?? this.potassiumMg,
       isDrinkPool: isDrinkPool ?? this.isDrinkPool,
       drinkPoolPhases: drinkPoolPhases ?? this.drinkPoolPhases,
+      maxServingsBefore: maxServingsBefore ?? this.maxServingsBefore,
+      maxServingsDuring: maxServingsDuring ?? this.maxServingsDuring,
+      maxServingsAfter: maxServingsAfter ?? this.maxServingsAfter,
+      toExcludeFromSolver: toExcludeFromSolver ?? this.toExcludeFromSolver,
+      isEssential: isEssential ?? this.isEssential,
+      showInPreferences: showInPreferences ?? this.showInPreferences,
+      displayNamePlural: displayNamePlural ?? this.displayNamePlural,
+      imageAddress: imageAddress ?? this.imageAddress,
+      description: description ?? this.description,
+      servingAmount: servingAmount ?? this.servingAmount,
+      servingUnit: servingUnit ?? this.servingUnit,
+      servingQualifier: servingQualifier ?? this.servingQualifier,
+      isLiquid: isLiquid ?? this.isLiquid,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -23799,6 +24446,45 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     if (drinkPoolPhases.present) {
       map['drink_pool_phases'] = Variable<String>(drinkPoolPhases.value);
     }
+    if (maxServingsBefore.present) {
+      map['max_servings_before'] = Variable<int>(maxServingsBefore.value);
+    }
+    if (maxServingsDuring.present) {
+      map['max_servings_during'] = Variable<int>(maxServingsDuring.value);
+    }
+    if (maxServingsAfter.present) {
+      map['max_servings_after'] = Variable<int>(maxServingsAfter.value);
+    }
+    if (toExcludeFromSolver.present) {
+      map['to_exclude_from_solver'] = Variable<bool>(toExcludeFromSolver.value);
+    }
+    if (isEssential.present) {
+      map['is_essential'] = Variable<bool>(isEssential.value);
+    }
+    if (showInPreferences.present) {
+      map['show_in_preferences'] = Variable<bool>(showInPreferences.value);
+    }
+    if (displayNamePlural.present) {
+      map['display_name_plural'] = Variable<String>(displayNamePlural.value);
+    }
+    if (imageAddress.present) {
+      map['image_address'] = Variable<String>(imageAddress.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (servingAmount.present) {
+      map['serving_amount'] = Variable<double>(servingAmount.value);
+    }
+    if (servingUnit.present) {
+      map['serving_unit'] = Variable<String>(servingUnit.value);
+    }
+    if (servingQualifier.present) {
+      map['serving_qualifier'] = Variable<String>(servingQualifier.value);
+    }
+    if (isLiquid.present) {
+      map['is_liquid'] = Variable<bool>(isLiquid.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -23839,6 +24525,19 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
           ..write('potassiumMg: $potassiumMg, ')
           ..write('isDrinkPool: $isDrinkPool, ')
           ..write('drinkPoolPhases: $drinkPoolPhases, ')
+          ..write('maxServingsBefore: $maxServingsBefore, ')
+          ..write('maxServingsDuring: $maxServingsDuring, ')
+          ..write('maxServingsAfter: $maxServingsAfter, ')
+          ..write('toExcludeFromSolver: $toExcludeFromSolver, ')
+          ..write('isEssential: $isEssential, ')
+          ..write('showInPreferences: $showInPreferences, ')
+          ..write('displayNamePlural: $displayNamePlural, ')
+          ..write('imageAddress: $imageAddress, ')
+          ..write('description: $description, ')
+          ..write('servingAmount: $servingAmount, ')
+          ..write('servingUnit: $servingUnit, ')
+          ..write('servingQualifier: $servingQualifier, ')
+          ..write('isLiquid: $isLiquid, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -35123,6 +35822,19 @@ typedef $$TemplateFoodsTableTableCreateCompanionBuilder =
       Value<double?> potassiumMg,
       Value<bool> isDrinkPool,
       Value<String> drinkPoolPhases,
+      Value<int> maxServingsBefore,
+      Value<int> maxServingsDuring,
+      Value<int> maxServingsAfter,
+      Value<bool> toExcludeFromSolver,
+      Value<bool> isEssential,
+      Value<bool> showInPreferences,
+      Value<String?> displayNamePlural,
+      Value<String?> imageAddress,
+      Value<String?> description,
+      Value<double?> servingAmount,
+      Value<String?> servingUnit,
+      Value<String?> servingQualifier,
+      Value<bool> isLiquid,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -35154,6 +35866,19 @@ typedef $$TemplateFoodsTableTableUpdateCompanionBuilder =
       Value<double?> potassiumMg,
       Value<bool> isDrinkPool,
       Value<String> drinkPoolPhases,
+      Value<int> maxServingsBefore,
+      Value<int> maxServingsDuring,
+      Value<int> maxServingsAfter,
+      Value<bool> toExcludeFromSolver,
+      Value<bool> isEssential,
+      Value<bool> showInPreferences,
+      Value<String?> displayNamePlural,
+      Value<String?> imageAddress,
+      Value<String?> description,
+      Value<double?> servingAmount,
+      Value<String?> servingUnit,
+      Value<String?> servingQualifier,
+      Value<bool> isLiquid,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -35290,6 +36015,71 @@ class $$TemplateFoodsTableTableFilterComposer
 
   ColumnFilters<String> get drinkPoolPhases => $composableBuilder(
     column: $table.drinkPoolPhases,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get maxServingsBefore => $composableBuilder(
+    column: $table.maxServingsBefore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get maxServingsDuring => $composableBuilder(
+    column: $table.maxServingsDuring,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get maxServingsAfter => $composableBuilder(
+    column: $table.maxServingsAfter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get toExcludeFromSolver => $composableBuilder(
+    column: $table.toExcludeFromSolver,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEssential => $composableBuilder(
+    column: $table.isEssential,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get showInPreferences => $composableBuilder(
+    column: $table.showInPreferences,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayNamePlural => $composableBuilder(
+    column: $table.displayNamePlural,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageAddress => $composableBuilder(
+    column: $table.imageAddress,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get servingAmount => $composableBuilder(
+    column: $table.servingAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get servingUnit => $composableBuilder(
+    column: $table.servingUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get servingQualifier => $composableBuilder(
+    column: $table.servingQualifier,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isLiquid => $composableBuilder(
+    column: $table.isLiquid,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -35438,6 +36228,71 @@ class $$TemplateFoodsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get maxServingsBefore => $composableBuilder(
+    column: $table.maxServingsBefore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get maxServingsDuring => $composableBuilder(
+    column: $table.maxServingsDuring,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get maxServingsAfter => $composableBuilder(
+    column: $table.maxServingsAfter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get toExcludeFromSolver => $composableBuilder(
+    column: $table.toExcludeFromSolver,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEssential => $composableBuilder(
+    column: $table.isEssential,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get showInPreferences => $composableBuilder(
+    column: $table.showInPreferences,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayNamePlural => $composableBuilder(
+    column: $table.displayNamePlural,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imageAddress => $composableBuilder(
+    column: $table.imageAddress,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get servingAmount => $composableBuilder(
+    column: $table.servingAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get servingUnit => $composableBuilder(
+    column: $table.servingUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get servingQualifier => $composableBuilder(
+    column: $table.servingQualifier,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isLiquid => $composableBuilder(
+    column: $table.isLiquid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -35561,6 +36416,69 @@ class $$TemplateFoodsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get maxServingsBefore => $composableBuilder(
+    column: $table.maxServingsBefore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get maxServingsDuring => $composableBuilder(
+    column: $table.maxServingsDuring,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get maxServingsAfter => $composableBuilder(
+    column: $table.maxServingsAfter,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get toExcludeFromSolver => $composableBuilder(
+    column: $table.toExcludeFromSolver,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isEssential => $composableBuilder(
+    column: $table.isEssential,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get showInPreferences => $composableBuilder(
+    column: $table.showInPreferences,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get displayNamePlural => $composableBuilder(
+    column: $table.displayNamePlural,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get imageAddress => $composableBuilder(
+    column: $table.imageAddress,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get servingAmount => $composableBuilder(
+    column: $table.servingAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get servingUnit => $composableBuilder(
+    column: $table.servingUnit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get servingQualifier => $composableBuilder(
+    column: $table.servingQualifier,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isLiquid =>
+      $composableBuilder(column: $table.isLiquid, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -35633,6 +36551,19 @@ class $$TemplateFoodsTableTableTableManager
                 Value<double?> potassiumMg = const Value.absent(),
                 Value<bool> isDrinkPool = const Value.absent(),
                 Value<String> drinkPoolPhases = const Value.absent(),
+                Value<int> maxServingsBefore = const Value.absent(),
+                Value<int> maxServingsDuring = const Value.absent(),
+                Value<int> maxServingsAfter = const Value.absent(),
+                Value<bool> toExcludeFromSolver = const Value.absent(),
+                Value<bool> isEssential = const Value.absent(),
+                Value<bool> showInPreferences = const Value.absent(),
+                Value<String?> displayNamePlural = const Value.absent(),
+                Value<String?> imageAddress = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<double?> servingAmount = const Value.absent(),
+                Value<String?> servingUnit = const Value.absent(),
+                Value<String?> servingQualifier = const Value.absent(),
+                Value<bool> isLiquid = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -35662,6 +36593,19 @@ class $$TemplateFoodsTableTableTableManager
                 potassiumMg: potassiumMg,
                 isDrinkPool: isDrinkPool,
                 drinkPoolPhases: drinkPoolPhases,
+                maxServingsBefore: maxServingsBefore,
+                maxServingsDuring: maxServingsDuring,
+                maxServingsAfter: maxServingsAfter,
+                toExcludeFromSolver: toExcludeFromSolver,
+                isEssential: isEssential,
+                showInPreferences: showInPreferences,
+                displayNamePlural: displayNamePlural,
+                imageAddress: imageAddress,
+                description: description,
+                servingAmount: servingAmount,
+                servingUnit: servingUnit,
+                servingQualifier: servingQualifier,
+                isLiquid: isLiquid,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -35693,6 +36637,19 @@ class $$TemplateFoodsTableTableTableManager
                 Value<double?> potassiumMg = const Value.absent(),
                 Value<bool> isDrinkPool = const Value.absent(),
                 Value<String> drinkPoolPhases = const Value.absent(),
+                Value<int> maxServingsBefore = const Value.absent(),
+                Value<int> maxServingsDuring = const Value.absent(),
+                Value<int> maxServingsAfter = const Value.absent(),
+                Value<bool> toExcludeFromSolver = const Value.absent(),
+                Value<bool> isEssential = const Value.absent(),
+                Value<bool> showInPreferences = const Value.absent(),
+                Value<String?> displayNamePlural = const Value.absent(),
+                Value<String?> imageAddress = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<double?> servingAmount = const Value.absent(),
+                Value<String?> servingUnit = const Value.absent(),
+                Value<String?> servingQualifier = const Value.absent(),
+                Value<bool> isLiquid = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -35722,6 +36679,19 @@ class $$TemplateFoodsTableTableTableManager
                 potassiumMg: potassiumMg,
                 isDrinkPool: isDrinkPool,
                 drinkPoolPhases: drinkPoolPhases,
+                maxServingsBefore: maxServingsBefore,
+                maxServingsDuring: maxServingsDuring,
+                maxServingsAfter: maxServingsAfter,
+                toExcludeFromSolver: toExcludeFromSolver,
+                isEssential: isEssential,
+                showInPreferences: showInPreferences,
+                displayNamePlural: displayNamePlural,
+                imageAddress: imageAddress,
+                description: description,
+                servingAmount: servingAmount,
+                servingUnit: servingUnit,
+                servingQualifier: servingQualifier,
+                isLiquid: isLiquid,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

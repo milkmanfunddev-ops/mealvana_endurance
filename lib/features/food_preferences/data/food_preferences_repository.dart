@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/sync/immediate_remote_write_service.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../auth/domain/user_preferences.dart';
 
@@ -16,11 +19,13 @@ class FoodPreferencesRepository with SyncableRepository {
     required this.database,
     required this.supabase,
     required this.sentry,
+    required this.immediateRemoteWriteService,
   });
 
   final AppDatabase database;
   final SupabaseClient supabase;
   final SentryReporter sentry;
+  final ImmediateRemoteWriteService immediateRemoteWriteService;
 
   // ========== SyncableRepository Implementation ==========
 
@@ -28,7 +33,7 @@ class FoodPreferencesRepository with SyncableRepository {
   String get repositoryKey => 'food_preferences';
 
   @override
-  List<String> get dependencies => ['users', 'foods']; // Needs users and foods to validate
+  List<String> get dependencies => ['users', 'template_foods']; // Needs users and template_foods to validate
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
@@ -109,29 +114,33 @@ class FoodPreferencesRepository with SyncableRepository {
       // Get all food preference entries for this user
       // Note: Food preferences don't have a needs_upload flag yet
       // For now, we just upload all preferences (this is safe since it's a small dataset)
-      final allPreferences = await database.foodPreferencesDao.getAllFoodPreferenceEntries(userId);
+      final allPreferences = await database.foodPreferencesDao
+          .getAllFoodPreferenceEntries(userId);
 
       if (allPreferences.isEmpty) {
         return UploadResult.nothingToUpload();
       }
 
       // Convert to JSON array for batch upsert
-      final preferencesToUpload = allPreferences.map((pref) => {
-        'id': pref.id,
-        'user_id': pref.userId,
-        'food_name': pref.foodName,
-        'preference': pref.preference,
-        'preference_level': pref.preferenceLevel,
-        'preference_source': pref.preferenceSource,
-        'created_at': pref.createdAt.toIso8601String(),
-        'updated_at': pref.updatedAt.toIso8601String(),
-      }).toList();
+      final preferencesToUpload = allPreferences
+          .map(
+            (pref) => {
+              'id': pref.id,
+              'user_id': pref.userId,
+              'food_name': pref.foodName,
+              'preference': pref.preference,
+              'preference_level': pref.preferenceLevel,
+              'preference_source': pref.preferenceSource,
+              'created_at': pref.createdAt.toIso8601String(),
+              'updated_at': pref.updatedAt.toIso8601String(),
+            },
+          )
+          .toList();
 
       // Batch upload to Supabase
-      await supabase.from('food_preferences').upsert(
-        preferencesToUpload,
-        onConflict: 'id',
-      );
+      await supabase
+          .from('food_preferences')
+          .upsert(preferencesToUpload, onConflict: 'id');
 
       sentry.addBreadcrumb(
         message: 'Uploaded food preferences to Supabase',
@@ -183,6 +192,20 @@ class FoodPreferencesRepository with SyncableRepository {
         source: source,
       );
 
+      // For local user edits, attempt immediate remote write.
+      // Skip for mergeMode sync pulls to avoid upload loops.
+      if (!mergeMode) {
+        unawaited(
+          immediateRemoteWriteService.run(
+            repository: repositoryKey,
+            operation: 'upsert_preferences',
+            recordId: userId,
+            method: 'UPSERT',
+            write: () => _uploadAllPreferencesForUser(userId),
+          ),
+        );
+      }
+
       sentry.addBreadcrumb(
         message: 'Food preferences saved successfully',
         category: 'database',
@@ -206,18 +229,18 @@ class FoodPreferencesRepository with SyncableRepository {
   /// Remove food preferences by source
   /// Used when allergies or dietary preferences are removed to undo auto-avoids
   /// Returns the number of preferences removed
-  Future<int> removeFoodPreferencesBySource(String userId, String source) async {
+  Future<int> removeFoodPreferencesBySource(
+    String userId,
+    String source,
+  ) async {
     try {
-      final count = await database.foodPreferencesDao.removeFoodPreferencesBySource(userId, source);
+      final count = await database.foodPreferencesDao
+          .removeFoodPreferencesBySource(userId, source);
 
       sentry.addBreadcrumb(
         message: 'Removed food preferences by source',
         category: 'database',
-        data: {
-          'user_id': userId,
-          'source': source,
-          'count': count,
-        },
+        data: {'user_id': userId, 'source': source, 'count': count},
       );
 
       return count;
@@ -265,7 +288,9 @@ class FoodPreferencesRepository with SyncableRepository {
   /// Get stored slider levels for each food preference
   Future<Map<String, int>> getFoodPreferenceLevels(String userId) async {
     try {
-      return await database.foodPreferencesDao.getUserFoodPreferenceLevels(userId);
+      return await database.foodPreferencesDao.getUserFoodPreferenceLevels(
+        userId,
+      );
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
         e,
@@ -343,6 +368,34 @@ class FoodPreferencesRepository with SyncableRepository {
       rethrow;
     }
   }
+
+  Future<void> _uploadAllPreferencesForUser(String userId) async {
+    final allPreferences = await database.foodPreferencesDao
+        .getAllFoodPreferenceEntries(userId);
+
+    if (allPreferences.isEmpty) {
+      return;
+    }
+
+    final preferencesToUpload = allPreferences
+        .map(
+          (pref) => {
+            'id': pref.id,
+            'user_id': pref.userId,
+            'food_name': pref.foodName,
+            'preference': pref.preference,
+            'preference_level': pref.preferenceLevel,
+            'preference_source': pref.preferenceSource,
+            'created_at': pref.createdAt.toIso8601String(),
+            'updated_at': pref.updatedAt.toIso8601String(),
+          },
+        )
+        .toList(growable: false);
+
+    await supabase
+        .from('food_preferences')
+        .upsert(preferencesToUpload, onConflict: 'id');
+  }
 }
 
 /// Repository provider following Andrea's pattern
@@ -356,5 +409,6 @@ Future<FoodPreferencesRepository> foodPreferencesRepository(Ref ref) async {
     database: database,
     supabase: supabase,
     sentry: sentry,
+    immediateRemoteWriteService: ref.watch(immediateRemoteWriteServiceProvider),
   );
 }
