@@ -5,7 +5,7 @@ import '../../../domain/nutrition_plan.dart';
 import '../../utils/activity_detail_helpers.dart';
 
 /// Reusable macro summary row for nutrition plan sections
-/// Shows actual/target for carbs, protein/fluids, and sodium
+/// Shows actual/target for carbs, fluids/protein (phase-dependent), and sodium
 class MacroSummaryRow extends StatelessWidget {
   const MacroSummaryRow({
     super.key,
@@ -53,7 +53,10 @@ class MacroSummaryRow extends StatelessWidget {
       fluidsUnit = 'oz';
     }
 
-    final isDuringSection = category.contains('during');
+    final categoryLower = category.toLowerCase();
+    final isDuringSection = categoryLower.contains('during');
+    final isBeforeSection = categoryLower.contains('before');
+    final showFluids = isBeforeSection || isDuringSection;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -64,7 +67,7 @@ class MacroSummaryRow extends StatelessWidget {
           unit: 'g',
           label: 'CARBS',
         ),
-        if (isDuringSection)
+        if (showFluids)
           MacroSummaryItem(
             actual: displayFluidsActual,
             target: displayFluidsTarget,
@@ -106,7 +109,11 @@ class MacroSummaryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actualColor = ActivityDetailHelpers.getMacroDeviationColor(context, actual, target);
+    final actualColor = ActivityDetailHelpers.getMacroDeviationColor(
+      context,
+      actual,
+      target,
+    );
     final targetColor = Theme.of(context).colorScheme.onSurface;
 
     return Column(

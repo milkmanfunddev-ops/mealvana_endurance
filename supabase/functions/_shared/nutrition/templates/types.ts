@@ -1,0 +1,151 @@
+/**
+ * Types for the template-based nutrition planning system
+ */
+
+import { type FoodResult, type MacroTargets } from '../types.ts';
+
+// ============================================================================
+// Template Types (from Supabase)
+// ============================================================================
+
+export interface TemplateFoodItem {
+  food_id: string;
+  food_name: string;
+  display_name: string;
+  serving_size: string;
+  default_servings: number;
+  min_servings: number;
+  max_servings: number;
+  carbs_g: number;
+  protein_g: number;
+  fat_g: number;
+  sodium_mg: number;
+  fluid_ml: number;
+  calories: number;
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  slug: string;
+  phase: string;
+  timing_window: string;
+  timing_min_minutes: number;
+  timing_max_minutes: number;
+  meal_type: string; // 'full_meal' | 'snack' | 'top_up'
+  base_category: string;
+  digestion_speed: string;
+  allergens: string[];
+  excluded_diets: string[];
+  notes: string | null;
+  foods: TemplateFoodItem[];
+  food_names: string[];
+  total_carbs_g: number;
+  total_protein_g: number;
+  total_fat_g: number;
+  total_sodium_mg: number;
+  total_fluid_ml: number;
+  total_calories: number;
+  validation_status: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface DrinkPoolItem {
+  id: string;
+  name: string;
+  display_name: string;
+  serving_size: string;
+  carbs_g: number;
+  protein_g: number;
+  fat_g: number;
+  sodium_mg: number;
+  fluid_ml: number;
+  calories: number;
+  caffeine_mg: number | null;
+  is_electrolyte: boolean;
+  drink_pool_phases: string[];
+}
+
+// ============================================================================
+// Sub-Phase Types
+// ============================================================================
+
+export type SubPhaseType = 'meal' | 'snack' | 'top_up';
+
+export interface SubPhaseTargets {
+  carbs_g: number;
+  protein_g: number;
+  fat_g: number;
+  sodium_mg: number;
+  water_ml: number;
+}
+
+export interface ScaledFood {
+  food_id: string;
+  food_name: string;
+  display_name: string;
+  serving_size: string;
+  quantity: number;
+  original_servings: number;
+  scale_multiplier: number;
+  carbs_grams: number;
+  protein_grams: number;
+  fat_grams: number;
+  sodium_mg: number;
+  fluids_ml: number;
+  calories: number;
+}
+
+export interface SubPhaseResult {
+  sub_phase_type: SubPhaseType;
+  targets: SubPhaseTargets;
+  foods: FoodResult[];
+  template_id?: string;
+  template_name?: string;
+  drink?: FoodResult;
+}
+
+// ============================================================================
+// Plan V2 Output Types
+// ============================================================================
+
+export interface BeforePhaseResult {
+  meal?: SubPhaseResult;
+  snack?: SubPhaseResult;
+  top_up?: SubPhaseResult;
+}
+
+export interface NutritionPlanV2Result {
+  success: boolean;
+  plan_id: string;
+  plan: {
+    before: BeforePhaseResult;
+    during: FoodResult[];
+    during_segments?: Record<string, FoodResult[]>;
+    transitions?: Record<string, FoodResult[]>;
+    after: FoodResult[];
+  };
+  macro_targets: Record<string, unknown>;
+}
+
+// ============================================================================
+// Scaling Types
+// ============================================================================
+
+export interface ScalingResult {
+  multiplier: number;
+  foods: ScaledFood[];
+  total_carbs: number;
+  total_protein: number;
+  total_fat: number;
+  total_sodium: number;
+  total_fluid: number;
+  total_calories: number;
+  score: number;
+}
+
+export interface FriendlyFraction {
+  value: number;
+  display: string;
+}

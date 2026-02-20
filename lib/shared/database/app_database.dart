@@ -30,6 +30,8 @@ import 'tables/integrations_table.dart';
 import 'tables/coaches_table.dart';
 import 'tables/coach_athlete_relationships_table.dart';
 import 'tables/coach_messages_table.dart';
+import 'tables/template_foods_table.dart';
+import 'tables/templates_table.dart';
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
@@ -97,6 +99,10 @@ part 'app_database.g.dart';
     CoachesTable,
     CoachAthleteRelationshipsTable,
     CoachMessagesTable,
+
+    // Template system tables (read-only reference data)
+    TemplateFoodsTable,
+    TemplatesTable,
   ],
   daos: [
     UserDao,
@@ -125,9 +131,9 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 4: Adds athlete_zones_json column to integrations table
+  /// Schema version 4: Adds template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).

@@ -5,8 +5,9 @@ import 'package:uuid/uuid.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/activity_completion.dart';
 import '../../../activities/application/activities_service.dart';
-import '../../domain/nutrition_plan.dart' show NutritionPlan;
+import '../../domain/nutrition_plan.dart';
 import '../../domain/food_item_data.dart';
+import '../../application/proportional_scaling_service.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../activities/domain/activity_reminder.dart';
 import '../../../../shared/services/logging_service.dart';
@@ -417,6 +418,14 @@ class ActivityDetailController extends _$ActivityDetailController {
       // Update sections, using copyWith to preserve all section properties (including targets)
       final updatedSections = currentPlan.sections.map((section) {
         if (_categoryMatchesSection(category, section.id, section.title)) {
+          // If the section has sub-phases (V2 template plans), apply transform to each sub-phase's foods
+          if (section.hasSubPhases) {
+            final updatedSubPhases = section.subPhases!.map((subPhase) {
+              final updatedItems = transform(subPhase.foodItems);
+              return subPhase.copyWith(foodItems: updatedItems);
+            }).toList();
+            return section.copyWith(subPhases: updatedSubPhases);
+          }
           final updatedItems = transform(section.foodItems);
           return section.copyWith(foodItems: updatedItems);
         }
@@ -579,6 +588,81 @@ class ActivityDetailController extends _$ActivityDetailController {
         return item;
       }).toList(),
     );
+  }
+
+  /// Update a food quantity within a sub-phase, applying proportional scaling
+  /// to all sibling items in the same sub-phase.
+  ///
+  /// [subPhaseIndex] - Index of the sub-phase within the before section
+  /// [foodIndex] - Index of the changed food within the sub-phase
+  /// [newQuantity] - New quantity for the changed food
+  Future<void> updateSubPhaseQuantityWithScaling(
+    int subPhaseIndex,
+    int foodIndex,
+    double newQuantity,
+  ) async {
+    final currentState = state.value;
+    if (currentState?.nutritionPlan == null) {
+      _logger.warning('Cannot updateSubPhaseQuantityWithScaling: no nutrition plan');
+      return;
+    }
+
+    final currentPlan = currentState!.nutritionPlan!;
+
+    state = AsyncData(currentState.copyWith(hasUnsavedChanges: true));
+
+    try {
+      final updatedSections = currentPlan.sections.map((section) {
+        if (_categoryMatchesSection('before_run', section.id, section.title) &&
+            section.hasSubPhases) {
+          final updatedSubPhases = section.subPhases!.asMap().entries.map((entry) {
+            if (entry.key == subPhaseIndex) {
+              final subPhase = entry.value;
+              // Apply proportional scaling to all items in this sub-phase
+              final scaledSubPhase = ProportionalScalingService.scaleSubPhase(
+                subPhase,
+                foodIndex,
+                newQuantity,
+              );
+              return scaledSubPhase;
+            }
+            return entry.value;
+          }).toList();
+          return section.copyWith(subPhases: updatedSubPhases);
+        }
+        return section;
+      }).toList();
+
+      final updatedPlan = currentPlan.copyWith(
+        sections: updatedSections,
+        updatedAt: DateTime.now(),
+      );
+
+      state = AsyncData(currentState.copyWith(
+        nutritionPlan: updatedPlan,
+        hasUnsavedChanges: false,
+      ));
+
+      // Auto-save
+      final activity = currentState.activity;
+      if (activity != null) {
+        await _saveNutritionPlanToActivity(activity.id, updatedPlan);
+        _logger.info('updateSubPhaseQuantityWithScaling: Auto-saved nutrition plan');
+      }
+
+      _logger.info('updateSubPhaseQuantityWithScaling SUCCESS',
+        context: 'ActivityDetailController',
+        data: {
+          'subPhaseIndex': subPhaseIndex,
+          'foodIndex': foodIndex,
+          'newQuantity': newQuantity,
+        },
+      );
+    } catch (error, stackTrace) {
+      _logger.error('Error in updateSubPhaseQuantityWithScaling',
+          error: error, stackTrace: stackTrace);
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   // ============================================================================

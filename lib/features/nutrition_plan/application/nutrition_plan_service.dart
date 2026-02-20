@@ -443,6 +443,103 @@ class NutritionPlanService {
     }
   }
 
+  /// Generate nutrition plan using template-based V2 edge function.
+  ///
+  /// Pre-workout phase uses templates with proportional scaling and drink selection.
+  /// During/after phases reuse the existing LP solver.
+  /// Falls back to existing v1 flow if v2 fails.
+  Future<NutritionPlan> generatePlanFromMacrosV2({
+    required MacroTargets macroTargets,
+    required double hoursBefore,
+    required double weightKg,
+    String? activityId,
+    String? userId,
+    String? dietaryPreference,
+    List<String>? allergies,
+    List<String>? likedFoods,
+    List<String>? dislikedFoods,
+    List<String>? willingToTryFoods,
+  }) async {
+    try {
+      _logger.info('Generating plan via V2 template system', context: 'NUTRITION_PLAN_SERVICE');
+
+      final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+
+      // Build the v2 request payload
+      final requestData = {
+        'device_id': userId ?? '',
+        'activity_type': macroTargets.activityType.name,
+        'hours_before': hoursBefore,
+        'weight_kg': weightKg,
+        'macro_targets': {
+          'pre_run': {
+            'carbs_g': macroTargets.preRun.carbsG,
+            'protein_g': macroTargets.preRun.proteinG,
+            'fat_g': macroTargets.preRun.fatCapG,
+            'sodium_mg': macroTargets.preRun.sodiumMg,
+            'water_ml': macroTargets.preRun.fluidsMl,
+          },
+          'during_run': {
+            'carbs_g': macroTargets.duringRun.carbTotalG,
+            'sodium_mg': macroTargets.duringRun.sodiumTotalMg,
+            'water_ml': macroTargets.duringRun.fluidTotalMl,
+          },
+          'post_run': {
+            'carbs_g': macroTargets.postRun.carbsG,
+            'protein_g': macroTargets.postRun.proteinG,
+            'sodium_mg': macroTargets.postRun.sodiumMg,
+            'water_ml': macroTargets.postRun.fluidsMl,
+          },
+        },
+        if (dietaryPreference != null) 'dietary_preference': dietaryPreference,
+        if (allergies != null) 'allergies': allergies,
+        if (likedFoods != null) 'liked_foods': likedFoods,
+        if (dislikedFoods != null) 'disliked_foods': dislikedFoods,
+        if (willingToTryFoods != null) 'willing_to_try_foods': willingToTryFoods,
+      };
+
+      final response = await supabase.functions.invoke(
+        'generate-nutrition-plan-v2',
+        body: requestData,
+      );
+
+      if (response.status >= 400) {
+        throw Exception('V2 edge function error: ${response.data?['error'] ?? 'Unknown error'}');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      if (data['success'] != true) {
+        throw Exception('V2 edge function returned success=false: ${data['error']}');
+      }
+
+      // Parse the v2 response into NutritionPlan
+      final now = DateTime.now();
+      final planId = data['plan_id'] as String? ?? const Uuid().v4();
+
+      return NutritionPlan.fromSupabaseJson({
+        'plan_id': planId,
+        'plan_name': 'Nutrition Plan',
+        'plan_data': data, // Contains plan.before (nested), plan.during, plan.after
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+        'activity_id': activityId,
+      });
+    } catch (e) {
+      _logger.error(
+        'V2 plan generation failed, falling back to v1',
+        context: 'NUTRITION_PLAN_SERVICE',
+        error: e,
+      );
+
+      // Fallback to existing v1 flow
+      return generatePlanFromMacrosWithFallback(
+        macroTargets: macroTargets,
+        activityId: activityId,
+        userId: userId,
+      );
+    }
+  }
+
   /// Get all available foods from the database
   Future<List<FoodItem>> getAllFoods() async {
     return await _foodRepository.getAllFoods();

@@ -52,6 +52,8 @@ class SyncCoordinator extends _$SyncCoordinator {
     'carb_loading_days': ['carb_loading_plans'],
     'carb_loading_day_meals': ['carb_loading_days', 'carb_loading_foods'],
     'coach_messages': ['coach_athlete_relationships'],
+    'template_foods': [],
+    'templates': ['template_foods'],
   };
 
   /// Track what's currently being synced to prevent infinite loops
@@ -177,7 +179,12 @@ class SyncCoordinator extends _$SyncCoordinator {
 
       // 6. Upload dirty records (if repository provided)
       if (repository != null) {
-        await repository.uploadDirtyRecords(userId);
+        final uploadResult = await repository.uploadDirtyRecords(userId);
+        if (!uploadResult.success) {
+          throw StateError(
+            'Upload failed for $repoKey: ${uploadResult.error ?? 'unknown error'}',
+          );
+        }
       }
 
       // 7. Sync this repository (if repository provided)
@@ -331,10 +338,7 @@ class SyncCoordinator extends _$SyncCoordinator {
     state = SyncState.syncing;
 
     try {
-      // STEP 1: Upload dirty records FIRST (protect user data)
-      await _dataSyncService.uploadDirtyRecords(userId);
-
-      // STEP 2: Download fresh data from Supabase (includes user profile sync)
+      // Download fresh data from Supabase (includes upload-first gate)
       final success = await _dataSyncService.syncAllData(userId);
 
       if (success) {
@@ -469,7 +473,12 @@ class SyncCoordinator extends _$SyncCoordinator {
       }
 
       // 2. Upload dirty records FIRST (protect user data)
-      await repository.uploadDirtyRecords(userId);
+      final uploadResult = await repository.uploadDirtyRecords(userId);
+      if (!uploadResult.success) {
+        throw StateError(
+          'Upload failed for $repoKey: ${uploadResult.error ?? 'unknown error'}',
+        );
+      }
 
       // 3. Force sync from remote (bypass staleness)
       await repository.syncFromRemote(userId);

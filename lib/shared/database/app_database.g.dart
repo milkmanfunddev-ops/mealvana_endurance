@@ -22358,6 +22358,2917 @@ class CoachMessagesTableCompanion extends UpdateCompanion<CoachMessageEntry> {
   }
 }
 
+class $TemplateFoodsTableTable extends TemplateFoodsTable
+    with TableInfo<$TemplateFoodsTableTable, TemplateFoodEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TemplateFoodsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _servingSizeMeta = const VerificationMeta(
+    'servingSize',
+  );
+  @override
+  late final GeneratedColumn<String> servingSize = GeneratedColumn<String>(
+    'serving_size',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _servingWeightGMeta = const VerificationMeta(
+    'servingWeightG',
+  );
+  @override
+  late final GeneratedColumn<double> servingWeightG = GeneratedColumn<double>(
+    'serving_weight_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _caloriesMeta = const VerificationMeta(
+    'calories',
+  );
+  @override
+  late final GeneratedColumn<int> calories = GeneratedColumn<int>(
+    'calories',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _carbsGMeta = const VerificationMeta('carbsG');
+  @override
+  late final GeneratedColumn<double> carbsG = GeneratedColumn<double>(
+    'carbs_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _proteinGMeta = const VerificationMeta(
+    'proteinG',
+  );
+  @override
+  late final GeneratedColumn<double> proteinG = GeneratedColumn<double>(
+    'protein_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _fatGMeta = const VerificationMeta('fatG');
+  @override
+  late final GeneratedColumn<double> fatG = GeneratedColumn<double>(
+    'fat_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _fiberGMeta = const VerificationMeta('fiberG');
+  @override
+  late final GeneratedColumn<double> fiberG = GeneratedColumn<double>(
+    'fiber_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sodiumMgMeta = const VerificationMeta(
+    'sodiumMg',
+  );
+  @override
+  late final GeneratedColumn<double> sodiumMg = GeneratedColumn<double>(
+    'sodium_mg',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _fluidMlMeta = const VerificationMeta(
+    'fluidMl',
+  );
+  @override
+  late final GeneratedColumn<double> fluidMl = GeneratedColumn<double>(
+    'fluid_ml',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _allergensMeta = const VerificationMeta(
+    'allergens',
+  );
+  @override
+  late final GeneratedColumn<String> allergens = GeneratedColumn<String>(
+    'allergens',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _digestionSpeedMeta = const VerificationMeta(
+    'digestionSpeed',
+  );
+  @override
+  late final GeneratedColumn<String> digestionSpeed = GeneratedColumn<String>(
+    'digestion_speed',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('medium'),
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _excludedDietsMeta = const VerificationMeta(
+    'excludedDiets',
+  );
+  @override
+  late final GeneratedColumn<String> excludedDiets = GeneratedColumn<String>(
+    'excluded_diets',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _productTypeMeta = const VerificationMeta(
+    'productType',
+  );
+  @override
+  late final GeneratedColumn<String> productType = GeneratedColumn<String>(
+    'product_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('real_food'),
+  );
+  static const VerificationMeta _activityTypesMeta = const VerificationMeta(
+    'activityTypes',
+  );
+  @override
+  late final GeneratedColumn<String> activityTypes = GeneratedColumn<String>(
+    'activity_types',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('["running","cycling","swimming"]'),
+  );
+  static const VerificationMeta _categoriesMeta = const VerificationMeta(
+    'categories',
+  );
+  @override
+  late final GeneratedColumn<String> categories = GeneratedColumn<String>(
+    'categories',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('["before_run"]'),
+  );
+  static const VerificationMeta _isElectrolyteMeta = const VerificationMeta(
+    'isElectrolyte',
+  );
+  @override
+  late final GeneratedColumn<bool> isElectrolyte = GeneratedColumn<bool>(
+    'is_electrolyte',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_electrolyte" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _requiresPreparationMeta =
+      const VerificationMeta('requiresPreparation');
+  @override
+  late final GeneratedColumn<bool> requiresPreparation = GeneratedColumn<bool>(
+    'requires_preparation',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("requires_preparation" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _caffeineMgMeta = const VerificationMeta(
+    'caffeineMg',
+  );
+  @override
+  late final GeneratedColumn<double> caffeineMg = GeneratedColumn<double>(
+    'caffeine_mg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _potassiumMgMeta = const VerificationMeta(
+    'potassiumMg',
+  );
+  @override
+  late final GeneratedColumn<double> potassiumMg = GeneratedColumn<double>(
+    'potassium_mg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDrinkPoolMeta = const VerificationMeta(
+    'isDrinkPool',
+  );
+  @override
+  late final GeneratedColumn<bool> isDrinkPool = GeneratedColumn<bool>(
+    'is_drink_pool',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_drink_pool" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _drinkPoolPhasesMeta = const VerificationMeta(
+    'drinkPoolPhases',
+  );
+  @override
+  late final GeneratedColumn<String> drinkPoolPhases = GeneratedColumn<String>(
+    'drink_pool_phases',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    displayName,
+    servingSize,
+    servingWeightG,
+    calories,
+    carbsG,
+    proteinG,
+    fatG,
+    fiberG,
+    sodiumMg,
+    fluidMl,
+    allergens,
+    digestionSpeed,
+    isActive,
+    excludedDiets,
+    productType,
+    activityTypes,
+    categories,
+    isElectrolyte,
+    requiresPreparation,
+    caffeineMg,
+    potassiumMg,
+    isDrinkPool,
+    drinkPoolPhases,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'template_foods';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TemplateFoodEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_displayNameMeta);
+    }
+    if (data.containsKey('serving_size')) {
+      context.handle(
+        _servingSizeMeta,
+        servingSize.isAcceptableOrUnknown(
+          data['serving_size']!,
+          _servingSizeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_servingSizeMeta);
+    }
+    if (data.containsKey('serving_weight_g')) {
+      context.handle(
+        _servingWeightGMeta,
+        servingWeightG.isAcceptableOrUnknown(
+          data['serving_weight_g']!,
+          _servingWeightGMeta,
+        ),
+      );
+    }
+    if (data.containsKey('calories')) {
+      context.handle(
+        _caloriesMeta,
+        calories.isAcceptableOrUnknown(data['calories']!, _caloriesMeta),
+      );
+    }
+    if (data.containsKey('carbs_g')) {
+      context.handle(
+        _carbsGMeta,
+        carbsG.isAcceptableOrUnknown(data['carbs_g']!, _carbsGMeta),
+      );
+    }
+    if (data.containsKey('protein_g')) {
+      context.handle(
+        _proteinGMeta,
+        proteinG.isAcceptableOrUnknown(data['protein_g']!, _proteinGMeta),
+      );
+    }
+    if (data.containsKey('fat_g')) {
+      context.handle(
+        _fatGMeta,
+        fatG.isAcceptableOrUnknown(data['fat_g']!, _fatGMeta),
+      );
+    }
+    if (data.containsKey('fiber_g')) {
+      context.handle(
+        _fiberGMeta,
+        fiberG.isAcceptableOrUnknown(data['fiber_g']!, _fiberGMeta),
+      );
+    }
+    if (data.containsKey('sodium_mg')) {
+      context.handle(
+        _sodiumMgMeta,
+        sodiumMg.isAcceptableOrUnknown(data['sodium_mg']!, _sodiumMgMeta),
+      );
+    }
+    if (data.containsKey('fluid_ml')) {
+      context.handle(
+        _fluidMlMeta,
+        fluidMl.isAcceptableOrUnknown(data['fluid_ml']!, _fluidMlMeta),
+      );
+    }
+    if (data.containsKey('allergens')) {
+      context.handle(
+        _allergensMeta,
+        allergens.isAcceptableOrUnknown(data['allergens']!, _allergensMeta),
+      );
+    }
+    if (data.containsKey('digestion_speed')) {
+      context.handle(
+        _digestionSpeedMeta,
+        digestionSpeed.isAcceptableOrUnknown(
+          data['digestion_speed']!,
+          _digestionSpeedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('excluded_diets')) {
+      context.handle(
+        _excludedDietsMeta,
+        excludedDiets.isAcceptableOrUnknown(
+          data['excluded_diets']!,
+          _excludedDietsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('product_type')) {
+      context.handle(
+        _productTypeMeta,
+        productType.isAcceptableOrUnknown(
+          data['product_type']!,
+          _productTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('activity_types')) {
+      context.handle(
+        _activityTypesMeta,
+        activityTypes.isAcceptableOrUnknown(
+          data['activity_types']!,
+          _activityTypesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('categories')) {
+      context.handle(
+        _categoriesMeta,
+        categories.isAcceptableOrUnknown(data['categories']!, _categoriesMeta),
+      );
+    }
+    if (data.containsKey('is_electrolyte')) {
+      context.handle(
+        _isElectrolyteMeta,
+        isElectrolyte.isAcceptableOrUnknown(
+          data['is_electrolyte']!,
+          _isElectrolyteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('requires_preparation')) {
+      context.handle(
+        _requiresPreparationMeta,
+        requiresPreparation.isAcceptableOrUnknown(
+          data['requires_preparation']!,
+          _requiresPreparationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('caffeine_mg')) {
+      context.handle(
+        _caffeineMgMeta,
+        caffeineMg.isAcceptableOrUnknown(data['caffeine_mg']!, _caffeineMgMeta),
+      );
+    }
+    if (data.containsKey('potassium_mg')) {
+      context.handle(
+        _potassiumMgMeta,
+        potassiumMg.isAcceptableOrUnknown(
+          data['potassium_mg']!,
+          _potassiumMgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_drink_pool')) {
+      context.handle(
+        _isDrinkPoolMeta,
+        isDrinkPool.isAcceptableOrUnknown(
+          data['is_drink_pool']!,
+          _isDrinkPoolMeta,
+        ),
+      );
+    }
+    if (data.containsKey('drink_pool_phases')) {
+      context.handle(
+        _drinkPoolPhasesMeta,
+        drinkPoolPhases.isAcceptableOrUnknown(
+          data['drink_pool_phases']!,
+          _drinkPoolPhasesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TemplateFoodEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TemplateFoodEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      )!,
+      servingSize: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serving_size'],
+      )!,
+      servingWeightG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}serving_weight_g'],
+      ),
+      calories: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}calories'],
+      )!,
+      carbsG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}carbs_g'],
+      )!,
+      proteinG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}protein_g'],
+      )!,
+      fatG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fat_g'],
+      )!,
+      fiberG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber_g'],
+      ),
+      sodiumMg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium_mg'],
+      )!,
+      fluidMl: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fluid_ml'],
+      ),
+      allergens: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}allergens'],
+      )!,
+      digestionSpeed: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}digestion_speed'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      excludedDiets: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}excluded_diets'],
+      )!,
+      productType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_type'],
+      )!,
+      activityTypes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_types'],
+      )!,
+      categories: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}categories'],
+      )!,
+      isElectrolyte: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_electrolyte'],
+      )!,
+      requiresPreparation: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}requires_preparation'],
+      )!,
+      caffeineMg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}caffeine_mg'],
+      ),
+      potassiumMg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}potassium_mg'],
+      ),
+      isDrinkPool: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_drink_pool'],
+      )!,
+      drinkPoolPhases: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}drink_pool_phases'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TemplateFoodsTableTable createAlias(String alias) {
+    return $TemplateFoodsTableTable(attachedDatabase, alias);
+  }
+}
+
+class TemplateFoodEntry extends DataClass
+    implements Insertable<TemplateFoodEntry> {
+  /// UUID primary key (matches Supabase template_foods.id)
+  final String id;
+
+  /// Machine-readable identifier (e.g., 'white_bread')
+  final String name;
+
+  /// Human-readable name (e.g., 'White Bread')
+  final String displayName;
+
+  /// Serving description (e.g., '1 slice', '1 cup cooked')
+  final String servingSize;
+
+  /// Weight per serving in grams
+  final double? servingWeightG;
+  final int calories;
+  final double carbsG;
+  final double proteinG;
+  final double fatG;
+  final double? fiberG;
+  final double sodiumMg;
+  final double? fluidMl;
+
+  /// Allergen tags stored as JSON array string (e.g., '["gluten","dairy"]')
+  final String allergens;
+
+  /// Digestion speed: fast/medium/slow
+  final String digestionSpeed;
+  final bool isActive;
+
+  /// Diets that should exclude this food (JSON array string)
+  final String excludedDiets;
+
+  /// Product type: real_food/bar/gel/chew/supplement/beverage/condiment/sports_drink
+  final String productType;
+
+  /// Activity types this food is suitable for (JSON array string)
+  final String activityTypes;
+
+  /// Categories this food belongs to (JSON array string)
+  final String categories;
+  final bool isElectrolyte;
+  final bool requiresPreparation;
+  final double? caffeineMg;
+  final double? potassiumMg;
+  final bool isDrinkPool;
+
+  /// Which phases this drink can be selected for (JSON array string)
+  final String drinkPoolPhases;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const TemplateFoodEntry({
+    required this.id,
+    required this.name,
+    required this.displayName,
+    required this.servingSize,
+    this.servingWeightG,
+    required this.calories,
+    required this.carbsG,
+    required this.proteinG,
+    required this.fatG,
+    this.fiberG,
+    required this.sodiumMg,
+    this.fluidMl,
+    required this.allergens,
+    required this.digestionSpeed,
+    required this.isActive,
+    required this.excludedDiets,
+    required this.productType,
+    required this.activityTypes,
+    required this.categories,
+    required this.isElectrolyte,
+    required this.requiresPreparation,
+    this.caffeineMg,
+    this.potassiumMg,
+    required this.isDrinkPool,
+    required this.drinkPoolPhases,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['display_name'] = Variable<String>(displayName);
+    map['serving_size'] = Variable<String>(servingSize);
+    if (!nullToAbsent || servingWeightG != null) {
+      map['serving_weight_g'] = Variable<double>(servingWeightG);
+    }
+    map['calories'] = Variable<int>(calories);
+    map['carbs_g'] = Variable<double>(carbsG);
+    map['protein_g'] = Variable<double>(proteinG);
+    map['fat_g'] = Variable<double>(fatG);
+    if (!nullToAbsent || fiberG != null) {
+      map['fiber_g'] = Variable<double>(fiberG);
+    }
+    map['sodium_mg'] = Variable<double>(sodiumMg);
+    if (!nullToAbsent || fluidMl != null) {
+      map['fluid_ml'] = Variable<double>(fluidMl);
+    }
+    map['allergens'] = Variable<String>(allergens);
+    map['digestion_speed'] = Variable<String>(digestionSpeed);
+    map['is_active'] = Variable<bool>(isActive);
+    map['excluded_diets'] = Variable<String>(excludedDiets);
+    map['product_type'] = Variable<String>(productType);
+    map['activity_types'] = Variable<String>(activityTypes);
+    map['categories'] = Variable<String>(categories);
+    map['is_electrolyte'] = Variable<bool>(isElectrolyte);
+    map['requires_preparation'] = Variable<bool>(requiresPreparation);
+    if (!nullToAbsent || caffeineMg != null) {
+      map['caffeine_mg'] = Variable<double>(caffeineMg);
+    }
+    if (!nullToAbsent || potassiumMg != null) {
+      map['potassium_mg'] = Variable<double>(potassiumMg);
+    }
+    map['is_drink_pool'] = Variable<bool>(isDrinkPool);
+    map['drink_pool_phases'] = Variable<String>(drinkPoolPhases);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  TemplateFoodsTableCompanion toCompanion(bool nullToAbsent) {
+    return TemplateFoodsTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      displayName: Value(displayName),
+      servingSize: Value(servingSize),
+      servingWeightG: servingWeightG == null && nullToAbsent
+          ? const Value.absent()
+          : Value(servingWeightG),
+      calories: Value(calories),
+      carbsG: Value(carbsG),
+      proteinG: Value(proteinG),
+      fatG: Value(fatG),
+      fiberG: fiberG == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fiberG),
+      sodiumMg: Value(sodiumMg),
+      fluidMl: fluidMl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(fluidMl),
+      allergens: Value(allergens),
+      digestionSpeed: Value(digestionSpeed),
+      isActive: Value(isActive),
+      excludedDiets: Value(excludedDiets),
+      productType: Value(productType),
+      activityTypes: Value(activityTypes),
+      categories: Value(categories),
+      isElectrolyte: Value(isElectrolyte),
+      requiresPreparation: Value(requiresPreparation),
+      caffeineMg: caffeineMg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(caffeineMg),
+      potassiumMg: potassiumMg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(potassiumMg),
+      isDrinkPool: Value(isDrinkPool),
+      drinkPoolPhases: Value(drinkPoolPhases),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TemplateFoodEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TemplateFoodEntry(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      displayName: serializer.fromJson<String>(json['displayName']),
+      servingSize: serializer.fromJson<String>(json['servingSize']),
+      servingWeightG: serializer.fromJson<double?>(json['servingWeightG']),
+      calories: serializer.fromJson<int>(json['calories']),
+      carbsG: serializer.fromJson<double>(json['carbsG']),
+      proteinG: serializer.fromJson<double>(json['proteinG']),
+      fatG: serializer.fromJson<double>(json['fatG']),
+      fiberG: serializer.fromJson<double?>(json['fiberG']),
+      sodiumMg: serializer.fromJson<double>(json['sodiumMg']),
+      fluidMl: serializer.fromJson<double?>(json['fluidMl']),
+      allergens: serializer.fromJson<String>(json['allergens']),
+      digestionSpeed: serializer.fromJson<String>(json['digestionSpeed']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      excludedDiets: serializer.fromJson<String>(json['excludedDiets']),
+      productType: serializer.fromJson<String>(json['productType']),
+      activityTypes: serializer.fromJson<String>(json['activityTypes']),
+      categories: serializer.fromJson<String>(json['categories']),
+      isElectrolyte: serializer.fromJson<bool>(json['isElectrolyte']),
+      requiresPreparation: serializer.fromJson<bool>(
+        json['requiresPreparation'],
+      ),
+      caffeineMg: serializer.fromJson<double?>(json['caffeineMg']),
+      potassiumMg: serializer.fromJson<double?>(json['potassiumMg']),
+      isDrinkPool: serializer.fromJson<bool>(json['isDrinkPool']),
+      drinkPoolPhases: serializer.fromJson<String>(json['drinkPoolPhases']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'displayName': serializer.toJson<String>(displayName),
+      'servingSize': serializer.toJson<String>(servingSize),
+      'servingWeightG': serializer.toJson<double?>(servingWeightG),
+      'calories': serializer.toJson<int>(calories),
+      'carbsG': serializer.toJson<double>(carbsG),
+      'proteinG': serializer.toJson<double>(proteinG),
+      'fatG': serializer.toJson<double>(fatG),
+      'fiberG': serializer.toJson<double?>(fiberG),
+      'sodiumMg': serializer.toJson<double>(sodiumMg),
+      'fluidMl': serializer.toJson<double?>(fluidMl),
+      'allergens': serializer.toJson<String>(allergens),
+      'digestionSpeed': serializer.toJson<String>(digestionSpeed),
+      'isActive': serializer.toJson<bool>(isActive),
+      'excludedDiets': serializer.toJson<String>(excludedDiets),
+      'productType': serializer.toJson<String>(productType),
+      'activityTypes': serializer.toJson<String>(activityTypes),
+      'categories': serializer.toJson<String>(categories),
+      'isElectrolyte': serializer.toJson<bool>(isElectrolyte),
+      'requiresPreparation': serializer.toJson<bool>(requiresPreparation),
+      'caffeineMg': serializer.toJson<double?>(caffeineMg),
+      'potassiumMg': serializer.toJson<double?>(potassiumMg),
+      'isDrinkPool': serializer.toJson<bool>(isDrinkPool),
+      'drinkPoolPhases': serializer.toJson<String>(drinkPoolPhases),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  TemplateFoodEntry copyWith({
+    String? id,
+    String? name,
+    String? displayName,
+    String? servingSize,
+    Value<double?> servingWeightG = const Value.absent(),
+    int? calories,
+    double? carbsG,
+    double? proteinG,
+    double? fatG,
+    Value<double?> fiberG = const Value.absent(),
+    double? sodiumMg,
+    Value<double?> fluidMl = const Value.absent(),
+    String? allergens,
+    String? digestionSpeed,
+    bool? isActive,
+    String? excludedDiets,
+    String? productType,
+    String? activityTypes,
+    String? categories,
+    bool? isElectrolyte,
+    bool? requiresPreparation,
+    Value<double?> caffeineMg = const Value.absent(),
+    Value<double?> potassiumMg = const Value.absent(),
+    bool? isDrinkPool,
+    String? drinkPoolPhases,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => TemplateFoodEntry(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    displayName: displayName ?? this.displayName,
+    servingSize: servingSize ?? this.servingSize,
+    servingWeightG: servingWeightG.present
+        ? servingWeightG.value
+        : this.servingWeightG,
+    calories: calories ?? this.calories,
+    carbsG: carbsG ?? this.carbsG,
+    proteinG: proteinG ?? this.proteinG,
+    fatG: fatG ?? this.fatG,
+    fiberG: fiberG.present ? fiberG.value : this.fiberG,
+    sodiumMg: sodiumMg ?? this.sodiumMg,
+    fluidMl: fluidMl.present ? fluidMl.value : this.fluidMl,
+    allergens: allergens ?? this.allergens,
+    digestionSpeed: digestionSpeed ?? this.digestionSpeed,
+    isActive: isActive ?? this.isActive,
+    excludedDiets: excludedDiets ?? this.excludedDiets,
+    productType: productType ?? this.productType,
+    activityTypes: activityTypes ?? this.activityTypes,
+    categories: categories ?? this.categories,
+    isElectrolyte: isElectrolyte ?? this.isElectrolyte,
+    requiresPreparation: requiresPreparation ?? this.requiresPreparation,
+    caffeineMg: caffeineMg.present ? caffeineMg.value : this.caffeineMg,
+    potassiumMg: potassiumMg.present ? potassiumMg.value : this.potassiumMg,
+    isDrinkPool: isDrinkPool ?? this.isDrinkPool,
+    drinkPoolPhases: drinkPoolPhases ?? this.drinkPoolPhases,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TemplateFoodEntry copyWithCompanion(TemplateFoodsTableCompanion data) {
+    return TemplateFoodEntry(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      servingSize: data.servingSize.present
+          ? data.servingSize.value
+          : this.servingSize,
+      servingWeightG: data.servingWeightG.present
+          ? data.servingWeightG.value
+          : this.servingWeightG,
+      calories: data.calories.present ? data.calories.value : this.calories,
+      carbsG: data.carbsG.present ? data.carbsG.value : this.carbsG,
+      proteinG: data.proteinG.present ? data.proteinG.value : this.proteinG,
+      fatG: data.fatG.present ? data.fatG.value : this.fatG,
+      fiberG: data.fiberG.present ? data.fiberG.value : this.fiberG,
+      sodiumMg: data.sodiumMg.present ? data.sodiumMg.value : this.sodiumMg,
+      fluidMl: data.fluidMl.present ? data.fluidMl.value : this.fluidMl,
+      allergens: data.allergens.present ? data.allergens.value : this.allergens,
+      digestionSpeed: data.digestionSpeed.present
+          ? data.digestionSpeed.value
+          : this.digestionSpeed,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      excludedDiets: data.excludedDiets.present
+          ? data.excludedDiets.value
+          : this.excludedDiets,
+      productType: data.productType.present
+          ? data.productType.value
+          : this.productType,
+      activityTypes: data.activityTypes.present
+          ? data.activityTypes.value
+          : this.activityTypes,
+      categories: data.categories.present
+          ? data.categories.value
+          : this.categories,
+      isElectrolyte: data.isElectrolyte.present
+          ? data.isElectrolyte.value
+          : this.isElectrolyte,
+      requiresPreparation: data.requiresPreparation.present
+          ? data.requiresPreparation.value
+          : this.requiresPreparation,
+      caffeineMg: data.caffeineMg.present
+          ? data.caffeineMg.value
+          : this.caffeineMg,
+      potassiumMg: data.potassiumMg.present
+          ? data.potassiumMg.value
+          : this.potassiumMg,
+      isDrinkPool: data.isDrinkPool.present
+          ? data.isDrinkPool.value
+          : this.isDrinkPool,
+      drinkPoolPhases: data.drinkPoolPhases.present
+          ? data.drinkPoolPhases.value
+          : this.drinkPoolPhases,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateFoodEntry(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('displayName: $displayName, ')
+          ..write('servingSize: $servingSize, ')
+          ..write('servingWeightG: $servingWeightG, ')
+          ..write('calories: $calories, ')
+          ..write('carbsG: $carbsG, ')
+          ..write('proteinG: $proteinG, ')
+          ..write('fatG: $fatG, ')
+          ..write('fiberG: $fiberG, ')
+          ..write('sodiumMg: $sodiumMg, ')
+          ..write('fluidMl: $fluidMl, ')
+          ..write('allergens: $allergens, ')
+          ..write('digestionSpeed: $digestionSpeed, ')
+          ..write('isActive: $isActive, ')
+          ..write('excludedDiets: $excludedDiets, ')
+          ..write('productType: $productType, ')
+          ..write('activityTypes: $activityTypes, ')
+          ..write('categories: $categories, ')
+          ..write('isElectrolyte: $isElectrolyte, ')
+          ..write('requiresPreparation: $requiresPreparation, ')
+          ..write('caffeineMg: $caffeineMg, ')
+          ..write('potassiumMg: $potassiumMg, ')
+          ..write('isDrinkPool: $isDrinkPool, ')
+          ..write('drinkPoolPhases: $drinkPoolPhases, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    name,
+    displayName,
+    servingSize,
+    servingWeightG,
+    calories,
+    carbsG,
+    proteinG,
+    fatG,
+    fiberG,
+    sodiumMg,
+    fluidMl,
+    allergens,
+    digestionSpeed,
+    isActive,
+    excludedDiets,
+    productType,
+    activityTypes,
+    categories,
+    isElectrolyte,
+    requiresPreparation,
+    caffeineMg,
+    potassiumMg,
+    isDrinkPool,
+    drinkPoolPhases,
+    createdAt,
+    updatedAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TemplateFoodEntry &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.displayName == this.displayName &&
+          other.servingSize == this.servingSize &&
+          other.servingWeightG == this.servingWeightG &&
+          other.calories == this.calories &&
+          other.carbsG == this.carbsG &&
+          other.proteinG == this.proteinG &&
+          other.fatG == this.fatG &&
+          other.fiberG == this.fiberG &&
+          other.sodiumMg == this.sodiumMg &&
+          other.fluidMl == this.fluidMl &&
+          other.allergens == this.allergens &&
+          other.digestionSpeed == this.digestionSpeed &&
+          other.isActive == this.isActive &&
+          other.excludedDiets == this.excludedDiets &&
+          other.productType == this.productType &&
+          other.activityTypes == this.activityTypes &&
+          other.categories == this.categories &&
+          other.isElectrolyte == this.isElectrolyte &&
+          other.requiresPreparation == this.requiresPreparation &&
+          other.caffeineMg == this.caffeineMg &&
+          other.potassiumMg == this.potassiumMg &&
+          other.isDrinkPool == this.isDrinkPool &&
+          other.drinkPoolPhases == this.drinkPoolPhases &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> displayName;
+  final Value<String> servingSize;
+  final Value<double?> servingWeightG;
+  final Value<int> calories;
+  final Value<double> carbsG;
+  final Value<double> proteinG;
+  final Value<double> fatG;
+  final Value<double?> fiberG;
+  final Value<double> sodiumMg;
+  final Value<double?> fluidMl;
+  final Value<String> allergens;
+  final Value<String> digestionSpeed;
+  final Value<bool> isActive;
+  final Value<String> excludedDiets;
+  final Value<String> productType;
+  final Value<String> activityTypes;
+  final Value<String> categories;
+  final Value<bool> isElectrolyte;
+  final Value<bool> requiresPreparation;
+  final Value<double?> caffeineMg;
+  final Value<double?> potassiumMg;
+  final Value<bool> isDrinkPool;
+  final Value<String> drinkPoolPhases;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const TemplateFoodsTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.servingSize = const Value.absent(),
+    this.servingWeightG = const Value.absent(),
+    this.calories = const Value.absent(),
+    this.carbsG = const Value.absent(),
+    this.proteinG = const Value.absent(),
+    this.fatG = const Value.absent(),
+    this.fiberG = const Value.absent(),
+    this.sodiumMg = const Value.absent(),
+    this.fluidMl = const Value.absent(),
+    this.allergens = const Value.absent(),
+    this.digestionSpeed = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
+    this.productType = const Value.absent(),
+    this.activityTypes = const Value.absent(),
+    this.categories = const Value.absent(),
+    this.isElectrolyte = const Value.absent(),
+    this.requiresPreparation = const Value.absent(),
+    this.caffeineMg = const Value.absent(),
+    this.potassiumMg = const Value.absent(),
+    this.isDrinkPool = const Value.absent(),
+    this.drinkPoolPhases = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TemplateFoodsTableCompanion.insert({
+    required String id,
+    required String name,
+    required String displayName,
+    required String servingSize,
+    this.servingWeightG = const Value.absent(),
+    this.calories = const Value.absent(),
+    this.carbsG = const Value.absent(),
+    this.proteinG = const Value.absent(),
+    this.fatG = const Value.absent(),
+    this.fiberG = const Value.absent(),
+    this.sodiumMg = const Value.absent(),
+    this.fluidMl = const Value.absent(),
+    this.allergens = const Value.absent(),
+    this.digestionSpeed = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
+    this.productType = const Value.absent(),
+    this.activityTypes = const Value.absent(),
+    this.categories = const Value.absent(),
+    this.isElectrolyte = const Value.absent(),
+    this.requiresPreparation = const Value.absent(),
+    this.caffeineMg = const Value.absent(),
+    this.potassiumMg = const Value.absent(),
+    this.isDrinkPool = const Value.absent(),
+    this.drinkPoolPhases = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       displayName = Value(displayName),
+       servingSize = Value(servingSize);
+  static Insertable<TemplateFoodEntry> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? displayName,
+    Expression<String>? servingSize,
+    Expression<double>? servingWeightG,
+    Expression<int>? calories,
+    Expression<double>? carbsG,
+    Expression<double>? proteinG,
+    Expression<double>? fatG,
+    Expression<double>? fiberG,
+    Expression<double>? sodiumMg,
+    Expression<double>? fluidMl,
+    Expression<String>? allergens,
+    Expression<String>? digestionSpeed,
+    Expression<bool>? isActive,
+    Expression<String>? excludedDiets,
+    Expression<String>? productType,
+    Expression<String>? activityTypes,
+    Expression<String>? categories,
+    Expression<bool>? isElectrolyte,
+    Expression<bool>? requiresPreparation,
+    Expression<double>? caffeineMg,
+    Expression<double>? potassiumMg,
+    Expression<bool>? isDrinkPool,
+    Expression<String>? drinkPoolPhases,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (displayName != null) 'display_name': displayName,
+      if (servingSize != null) 'serving_size': servingSize,
+      if (servingWeightG != null) 'serving_weight_g': servingWeightG,
+      if (calories != null) 'calories': calories,
+      if (carbsG != null) 'carbs_g': carbsG,
+      if (proteinG != null) 'protein_g': proteinG,
+      if (fatG != null) 'fat_g': fatG,
+      if (fiberG != null) 'fiber_g': fiberG,
+      if (sodiumMg != null) 'sodium_mg': sodiumMg,
+      if (fluidMl != null) 'fluid_ml': fluidMl,
+      if (allergens != null) 'allergens': allergens,
+      if (digestionSpeed != null) 'digestion_speed': digestionSpeed,
+      if (isActive != null) 'is_active': isActive,
+      if (excludedDiets != null) 'excluded_diets': excludedDiets,
+      if (productType != null) 'product_type': productType,
+      if (activityTypes != null) 'activity_types': activityTypes,
+      if (categories != null) 'categories': categories,
+      if (isElectrolyte != null) 'is_electrolyte': isElectrolyte,
+      if (requiresPreparation != null)
+        'requires_preparation': requiresPreparation,
+      if (caffeineMg != null) 'caffeine_mg': caffeineMg,
+      if (potassiumMg != null) 'potassium_mg': potassiumMg,
+      if (isDrinkPool != null) 'is_drink_pool': isDrinkPool,
+      if (drinkPoolPhases != null) 'drink_pool_phases': drinkPoolPhases,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TemplateFoodsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? displayName,
+    Value<String>? servingSize,
+    Value<double?>? servingWeightG,
+    Value<int>? calories,
+    Value<double>? carbsG,
+    Value<double>? proteinG,
+    Value<double>? fatG,
+    Value<double?>? fiberG,
+    Value<double>? sodiumMg,
+    Value<double?>? fluidMl,
+    Value<String>? allergens,
+    Value<String>? digestionSpeed,
+    Value<bool>? isActive,
+    Value<String>? excludedDiets,
+    Value<String>? productType,
+    Value<String>? activityTypes,
+    Value<String>? categories,
+    Value<bool>? isElectrolyte,
+    Value<bool>? requiresPreparation,
+    Value<double?>? caffeineMg,
+    Value<double?>? potassiumMg,
+    Value<bool>? isDrinkPool,
+    Value<String>? drinkPoolPhases,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return TemplateFoodsTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      displayName: displayName ?? this.displayName,
+      servingSize: servingSize ?? this.servingSize,
+      servingWeightG: servingWeightG ?? this.servingWeightG,
+      calories: calories ?? this.calories,
+      carbsG: carbsG ?? this.carbsG,
+      proteinG: proteinG ?? this.proteinG,
+      fatG: fatG ?? this.fatG,
+      fiberG: fiberG ?? this.fiberG,
+      sodiumMg: sodiumMg ?? this.sodiumMg,
+      fluidMl: fluidMl ?? this.fluidMl,
+      allergens: allergens ?? this.allergens,
+      digestionSpeed: digestionSpeed ?? this.digestionSpeed,
+      isActive: isActive ?? this.isActive,
+      excludedDiets: excludedDiets ?? this.excludedDiets,
+      productType: productType ?? this.productType,
+      activityTypes: activityTypes ?? this.activityTypes,
+      categories: categories ?? this.categories,
+      isElectrolyte: isElectrolyte ?? this.isElectrolyte,
+      requiresPreparation: requiresPreparation ?? this.requiresPreparation,
+      caffeineMg: caffeineMg ?? this.caffeineMg,
+      potassiumMg: potassiumMg ?? this.potassiumMg,
+      isDrinkPool: isDrinkPool ?? this.isDrinkPool,
+      drinkPoolPhases: drinkPoolPhases ?? this.drinkPoolPhases,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (servingSize.present) {
+      map['serving_size'] = Variable<String>(servingSize.value);
+    }
+    if (servingWeightG.present) {
+      map['serving_weight_g'] = Variable<double>(servingWeightG.value);
+    }
+    if (calories.present) {
+      map['calories'] = Variable<int>(calories.value);
+    }
+    if (carbsG.present) {
+      map['carbs_g'] = Variable<double>(carbsG.value);
+    }
+    if (proteinG.present) {
+      map['protein_g'] = Variable<double>(proteinG.value);
+    }
+    if (fatG.present) {
+      map['fat_g'] = Variable<double>(fatG.value);
+    }
+    if (fiberG.present) {
+      map['fiber_g'] = Variable<double>(fiberG.value);
+    }
+    if (sodiumMg.present) {
+      map['sodium_mg'] = Variable<double>(sodiumMg.value);
+    }
+    if (fluidMl.present) {
+      map['fluid_ml'] = Variable<double>(fluidMl.value);
+    }
+    if (allergens.present) {
+      map['allergens'] = Variable<String>(allergens.value);
+    }
+    if (digestionSpeed.present) {
+      map['digestion_speed'] = Variable<String>(digestionSpeed.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (excludedDiets.present) {
+      map['excluded_diets'] = Variable<String>(excludedDiets.value);
+    }
+    if (productType.present) {
+      map['product_type'] = Variable<String>(productType.value);
+    }
+    if (activityTypes.present) {
+      map['activity_types'] = Variable<String>(activityTypes.value);
+    }
+    if (categories.present) {
+      map['categories'] = Variable<String>(categories.value);
+    }
+    if (isElectrolyte.present) {
+      map['is_electrolyte'] = Variable<bool>(isElectrolyte.value);
+    }
+    if (requiresPreparation.present) {
+      map['requires_preparation'] = Variable<bool>(requiresPreparation.value);
+    }
+    if (caffeineMg.present) {
+      map['caffeine_mg'] = Variable<double>(caffeineMg.value);
+    }
+    if (potassiumMg.present) {
+      map['potassium_mg'] = Variable<double>(potassiumMg.value);
+    }
+    if (isDrinkPool.present) {
+      map['is_drink_pool'] = Variable<bool>(isDrinkPool.value);
+    }
+    if (drinkPoolPhases.present) {
+      map['drink_pool_phases'] = Variable<String>(drinkPoolPhases.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateFoodsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('displayName: $displayName, ')
+          ..write('servingSize: $servingSize, ')
+          ..write('servingWeightG: $servingWeightG, ')
+          ..write('calories: $calories, ')
+          ..write('carbsG: $carbsG, ')
+          ..write('proteinG: $proteinG, ')
+          ..write('fatG: $fatG, ')
+          ..write('fiberG: $fiberG, ')
+          ..write('sodiumMg: $sodiumMg, ')
+          ..write('fluidMl: $fluidMl, ')
+          ..write('allergens: $allergens, ')
+          ..write('digestionSpeed: $digestionSpeed, ')
+          ..write('isActive: $isActive, ')
+          ..write('excludedDiets: $excludedDiets, ')
+          ..write('productType: $productType, ')
+          ..write('activityTypes: $activityTypes, ')
+          ..write('categories: $categories, ')
+          ..write('isElectrolyte: $isElectrolyte, ')
+          ..write('requiresPreparation: $requiresPreparation, ')
+          ..write('caffeineMg: $caffeineMg, ')
+          ..write('potassiumMg: $potassiumMg, ')
+          ..write('isDrinkPool: $isDrinkPool, ')
+          ..write('drinkPoolPhases: $drinkPoolPhases, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TemplatesTableTable extends TemplatesTable
+    with TableInfo<$TemplatesTableTable, TemplateEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TemplatesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
+  @override
+  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
+    'slug',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _phaseMeta = const VerificationMeta('phase');
+  @override
+  late final GeneratedColumn<String> phase = GeneratedColumn<String>(
+    'phase',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('before'),
+  );
+  static const VerificationMeta _timingWindowMeta = const VerificationMeta(
+    'timingWindow',
+  );
+  @override
+  late final GeneratedColumn<String> timingWindow = GeneratedColumn<String>(
+    'timing_window',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timingMinMinutesMeta = const VerificationMeta(
+    'timingMinMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> timingMinMinutes = GeneratedColumn<int>(
+    'timing_min_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timingMaxMinutesMeta = const VerificationMeta(
+    'timingMaxMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> timingMaxMinutes = GeneratedColumn<int>(
+    'timing_max_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mealTypeMeta = const VerificationMeta(
+    'mealType',
+  );
+  @override
+  late final GeneratedColumn<String> mealType = GeneratedColumn<String>(
+    'meal_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('snack'),
+  );
+  static const VerificationMeta _baseCategoryMeta = const VerificationMeta(
+    'baseCategory',
+  );
+  @override
+  late final GeneratedColumn<String> baseCategory = GeneratedColumn<String>(
+    'base_category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _digestionSpeedMeta = const VerificationMeta(
+    'digestionSpeed',
+  );
+  @override
+  late final GeneratedColumn<String> digestionSpeed = GeneratedColumn<String>(
+    'digestion_speed',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('medium'),
+  );
+  static const VerificationMeta _allergensMeta = const VerificationMeta(
+    'allergens',
+  );
+  @override
+  late final GeneratedColumn<String> allergens = GeneratedColumn<String>(
+    'allergens',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _excludedDietsMeta = const VerificationMeta(
+    'excludedDiets',
+  );
+  @override
+  late final GeneratedColumn<String> excludedDiets = GeneratedColumn<String>(
+    'excluded_diets',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _foodsMeta = const VerificationMeta('foods');
+  @override
+  late final GeneratedColumn<String> foods = GeneratedColumn<String>(
+    'foods',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _totalCarbsGMeta = const VerificationMeta(
+    'totalCarbsG',
+  );
+  @override
+  late final GeneratedColumn<double> totalCarbsG = GeneratedColumn<double>(
+    'total_carbs_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _totalProteinGMeta = const VerificationMeta(
+    'totalProteinG',
+  );
+  @override
+  late final GeneratedColumn<double> totalProteinG = GeneratedColumn<double>(
+    'total_protein_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _totalFatGMeta = const VerificationMeta(
+    'totalFatG',
+  );
+  @override
+  late final GeneratedColumn<double> totalFatG = GeneratedColumn<double>(
+    'total_fat_g',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _totalSodiumMgMeta = const VerificationMeta(
+    'totalSodiumMg',
+  );
+  @override
+  late final GeneratedColumn<double> totalSodiumMg = GeneratedColumn<double>(
+    'total_sodium_mg',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _totalFluidMlMeta = const VerificationMeta(
+    'totalFluidMl',
+  );
+  @override
+  late final GeneratedColumn<double> totalFluidMl = GeneratedColumn<double>(
+    'total_fluid_ml',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _totalCaloriesMeta = const VerificationMeta(
+    'totalCalories',
+  );
+  @override
+  late final GeneratedColumn<int> totalCalories = GeneratedColumn<int>(
+    'total_calories',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _validationStatusMeta = const VerificationMeta(
+    'validationStatus',
+  );
+  @override
+  late final GeneratedColumn<String> validationStatus = GeneratedColumn<String>(
+    'validation_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('unvalidated'),
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _foodNamesMeta = const VerificationMeta(
+    'foodNames',
+  );
+  @override
+  late final GeneratedColumn<String> foodNames = GeneratedColumn<String>(
+    'food_names',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    slug,
+    phase,
+    timingWindow,
+    timingMinMinutes,
+    timingMaxMinutes,
+    mealType,
+    baseCategory,
+    digestionSpeed,
+    allergens,
+    excludedDiets,
+    notes,
+    foods,
+    totalCarbsG,
+    totalProteinG,
+    totalFatG,
+    totalSodiumMg,
+    totalFluidMl,
+    totalCalories,
+    validationStatus,
+    isActive,
+    sortOrder,
+    foodNames,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'templates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TemplateEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('slug')) {
+      context.handle(
+        _slugMeta,
+        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_slugMeta);
+    }
+    if (data.containsKey('phase')) {
+      context.handle(
+        _phaseMeta,
+        phase.isAcceptableOrUnknown(data['phase']!, _phaseMeta),
+      );
+    }
+    if (data.containsKey('timing_window')) {
+      context.handle(
+        _timingWindowMeta,
+        timingWindow.isAcceptableOrUnknown(
+          data['timing_window']!,
+          _timingWindowMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timingWindowMeta);
+    }
+    if (data.containsKey('timing_min_minutes')) {
+      context.handle(
+        _timingMinMinutesMeta,
+        timingMinMinutes.isAcceptableOrUnknown(
+          data['timing_min_minutes']!,
+          _timingMinMinutesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timingMinMinutesMeta);
+    }
+    if (data.containsKey('timing_max_minutes')) {
+      context.handle(
+        _timingMaxMinutesMeta,
+        timingMaxMinutes.isAcceptableOrUnknown(
+          data['timing_max_minutes']!,
+          _timingMaxMinutesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timingMaxMinutesMeta);
+    }
+    if (data.containsKey('meal_type')) {
+      context.handle(
+        _mealTypeMeta,
+        mealType.isAcceptableOrUnknown(data['meal_type']!, _mealTypeMeta),
+      );
+    }
+    if (data.containsKey('base_category')) {
+      context.handle(
+        _baseCategoryMeta,
+        baseCategory.isAcceptableOrUnknown(
+          data['base_category']!,
+          _baseCategoryMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_baseCategoryMeta);
+    }
+    if (data.containsKey('digestion_speed')) {
+      context.handle(
+        _digestionSpeedMeta,
+        digestionSpeed.isAcceptableOrUnknown(
+          data['digestion_speed']!,
+          _digestionSpeedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('allergens')) {
+      context.handle(
+        _allergensMeta,
+        allergens.isAcceptableOrUnknown(data['allergens']!, _allergensMeta),
+      );
+    }
+    if (data.containsKey('excluded_diets')) {
+      context.handle(
+        _excludedDietsMeta,
+        excludedDiets.isAcceptableOrUnknown(
+          data['excluded_diets']!,
+          _excludedDietsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('foods')) {
+      context.handle(
+        _foodsMeta,
+        foods.isAcceptableOrUnknown(data['foods']!, _foodsMeta),
+      );
+    }
+    if (data.containsKey('total_carbs_g')) {
+      context.handle(
+        _totalCarbsGMeta,
+        totalCarbsG.isAcceptableOrUnknown(
+          data['total_carbs_g']!,
+          _totalCarbsGMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_protein_g')) {
+      context.handle(
+        _totalProteinGMeta,
+        totalProteinG.isAcceptableOrUnknown(
+          data['total_protein_g']!,
+          _totalProteinGMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_fat_g')) {
+      context.handle(
+        _totalFatGMeta,
+        totalFatG.isAcceptableOrUnknown(data['total_fat_g']!, _totalFatGMeta),
+      );
+    }
+    if (data.containsKey('total_sodium_mg')) {
+      context.handle(
+        _totalSodiumMgMeta,
+        totalSodiumMg.isAcceptableOrUnknown(
+          data['total_sodium_mg']!,
+          _totalSodiumMgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_fluid_ml')) {
+      context.handle(
+        _totalFluidMlMeta,
+        totalFluidMl.isAcceptableOrUnknown(
+          data['total_fluid_ml']!,
+          _totalFluidMlMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_calories')) {
+      context.handle(
+        _totalCaloriesMeta,
+        totalCalories.isAcceptableOrUnknown(
+          data['total_calories']!,
+          _totalCaloriesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('validation_status')) {
+      context.handle(
+        _validationStatusMeta,
+        validationStatus.isAcceptableOrUnknown(
+          data['validation_status']!,
+          _validationStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('food_names')) {
+      context.handle(
+        _foodNamesMeta,
+        foodNames.isAcceptableOrUnknown(data['food_names']!, _foodNamesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TemplateEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TemplateEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      slug: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}slug'],
+      )!,
+      phase: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phase'],
+      )!,
+      timingWindow: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}timing_window'],
+      )!,
+      timingMinMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}timing_min_minutes'],
+      )!,
+      timingMaxMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}timing_max_minutes'],
+      )!,
+      mealType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}meal_type'],
+      )!,
+      baseCategory: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}base_category'],
+      )!,
+      digestionSpeed: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}digestion_speed'],
+      )!,
+      allergens: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}allergens'],
+      )!,
+      excludedDiets: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}excluded_diets'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      foods: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}foods'],
+      )!,
+      totalCarbsG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_carbs_g'],
+      )!,
+      totalProteinG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_protein_g'],
+      )!,
+      totalFatG: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_fat_g'],
+      )!,
+      totalSodiumMg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_sodium_mg'],
+      )!,
+      totalFluidMl: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_fluid_ml'],
+      )!,
+      totalCalories: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_calories'],
+      )!,
+      validationStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}validation_status'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      foodNames: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}food_names'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TemplatesTableTable createAlias(String alias) {
+    return $TemplatesTableTable(attachedDatabase, alias);
+  }
+}
+
+class TemplateEntry extends DataClass implements Insertable<TemplateEntry> {
+  /// UUID primary key (matches Supabase templates.id)
+  final String id;
+
+  /// Template name (e.g., 'Toast + PB + Banana')
+  final String name;
+
+  /// URL-friendly slug (e.g., 'toast-pb-banana')
+  final String slug;
+
+  /// Phase: before/during/after/transition
+  final String phase;
+
+  /// Display label: '< 30 min', '30-60 min', '1-2 hours', '3-4 hours'
+  final String timingWindow;
+  final int timingMinMinutes;
+  final int timingMaxMinutes;
+
+  /// Meal type: top_up/snack/full_meal/during_fuel/recovery/transition_fuel
+  final String mealType;
+
+  /// Base category for conflict avoidance (e.g., 'Toast / Bread', 'Bagel')
+  final String baseCategory;
+
+  /// Digestion speed: fast/medium/slow
+  final String digestionSpeed;
+
+  /// Union of all food allergens (JSON array string)
+  final String allergens;
+
+  /// Diets that should exclude this template (JSON array string)
+  final String excludedDiets;
+  final String? notes;
+
+  /// JSONB foods array stored as JSON string
+  /// Each item: {food_id, food_name, display_name, serving_size,
+  ///             default_servings, min_servings, max_servings,
+  ///             carbs_g, protein_g, fat_g, sodium_mg, fluid_ml}
+  final String foods;
+  final double totalCarbsG;
+  final double totalProteinG;
+  final double totalFatG;
+  final double totalSodiumMg;
+  final double totalFluidMl;
+  final int totalCalories;
+
+  /// Validation status: unvalidated/validated/needs_adjustment/failed
+  final String validationStatus;
+  final bool isActive;
+  final int sortOrder;
+
+  /// Denormalized food names for conflict avoidance (JSON array string)
+  final String foodNames;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const TemplateEntry({
+    required this.id,
+    required this.name,
+    required this.slug,
+    required this.phase,
+    required this.timingWindow,
+    required this.timingMinMinutes,
+    required this.timingMaxMinutes,
+    required this.mealType,
+    required this.baseCategory,
+    required this.digestionSpeed,
+    required this.allergens,
+    required this.excludedDiets,
+    this.notes,
+    required this.foods,
+    required this.totalCarbsG,
+    required this.totalProteinG,
+    required this.totalFatG,
+    required this.totalSodiumMg,
+    required this.totalFluidMl,
+    required this.totalCalories,
+    required this.validationStatus,
+    required this.isActive,
+    required this.sortOrder,
+    required this.foodNames,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['slug'] = Variable<String>(slug);
+    map['phase'] = Variable<String>(phase);
+    map['timing_window'] = Variable<String>(timingWindow);
+    map['timing_min_minutes'] = Variable<int>(timingMinMinutes);
+    map['timing_max_minutes'] = Variable<int>(timingMaxMinutes);
+    map['meal_type'] = Variable<String>(mealType);
+    map['base_category'] = Variable<String>(baseCategory);
+    map['digestion_speed'] = Variable<String>(digestionSpeed);
+    map['allergens'] = Variable<String>(allergens);
+    map['excluded_diets'] = Variable<String>(excludedDiets);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['foods'] = Variable<String>(foods);
+    map['total_carbs_g'] = Variable<double>(totalCarbsG);
+    map['total_protein_g'] = Variable<double>(totalProteinG);
+    map['total_fat_g'] = Variable<double>(totalFatG);
+    map['total_sodium_mg'] = Variable<double>(totalSodiumMg);
+    map['total_fluid_ml'] = Variable<double>(totalFluidMl);
+    map['total_calories'] = Variable<int>(totalCalories);
+    map['validation_status'] = Variable<String>(validationStatus);
+    map['is_active'] = Variable<bool>(isActive);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['food_names'] = Variable<String>(foodNames);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  TemplatesTableCompanion toCompanion(bool nullToAbsent) {
+    return TemplatesTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      slug: Value(slug),
+      phase: Value(phase),
+      timingWindow: Value(timingWindow),
+      timingMinMinutes: Value(timingMinMinutes),
+      timingMaxMinutes: Value(timingMaxMinutes),
+      mealType: Value(mealType),
+      baseCategory: Value(baseCategory),
+      digestionSpeed: Value(digestionSpeed),
+      allergens: Value(allergens),
+      excludedDiets: Value(excludedDiets),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      foods: Value(foods),
+      totalCarbsG: Value(totalCarbsG),
+      totalProteinG: Value(totalProteinG),
+      totalFatG: Value(totalFatG),
+      totalSodiumMg: Value(totalSodiumMg),
+      totalFluidMl: Value(totalFluidMl),
+      totalCalories: Value(totalCalories),
+      validationStatus: Value(validationStatus),
+      isActive: Value(isActive),
+      sortOrder: Value(sortOrder),
+      foodNames: Value(foodNames),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TemplateEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TemplateEntry(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      slug: serializer.fromJson<String>(json['slug']),
+      phase: serializer.fromJson<String>(json['phase']),
+      timingWindow: serializer.fromJson<String>(json['timingWindow']),
+      timingMinMinutes: serializer.fromJson<int>(json['timingMinMinutes']),
+      timingMaxMinutes: serializer.fromJson<int>(json['timingMaxMinutes']),
+      mealType: serializer.fromJson<String>(json['mealType']),
+      baseCategory: serializer.fromJson<String>(json['baseCategory']),
+      digestionSpeed: serializer.fromJson<String>(json['digestionSpeed']),
+      allergens: serializer.fromJson<String>(json['allergens']),
+      excludedDiets: serializer.fromJson<String>(json['excludedDiets']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      foods: serializer.fromJson<String>(json['foods']),
+      totalCarbsG: serializer.fromJson<double>(json['totalCarbsG']),
+      totalProteinG: serializer.fromJson<double>(json['totalProteinG']),
+      totalFatG: serializer.fromJson<double>(json['totalFatG']),
+      totalSodiumMg: serializer.fromJson<double>(json['totalSodiumMg']),
+      totalFluidMl: serializer.fromJson<double>(json['totalFluidMl']),
+      totalCalories: serializer.fromJson<int>(json['totalCalories']),
+      validationStatus: serializer.fromJson<String>(json['validationStatus']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      foodNames: serializer.fromJson<String>(json['foodNames']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'slug': serializer.toJson<String>(slug),
+      'phase': serializer.toJson<String>(phase),
+      'timingWindow': serializer.toJson<String>(timingWindow),
+      'timingMinMinutes': serializer.toJson<int>(timingMinMinutes),
+      'timingMaxMinutes': serializer.toJson<int>(timingMaxMinutes),
+      'mealType': serializer.toJson<String>(mealType),
+      'baseCategory': serializer.toJson<String>(baseCategory),
+      'digestionSpeed': serializer.toJson<String>(digestionSpeed),
+      'allergens': serializer.toJson<String>(allergens),
+      'excludedDiets': serializer.toJson<String>(excludedDiets),
+      'notes': serializer.toJson<String?>(notes),
+      'foods': serializer.toJson<String>(foods),
+      'totalCarbsG': serializer.toJson<double>(totalCarbsG),
+      'totalProteinG': serializer.toJson<double>(totalProteinG),
+      'totalFatG': serializer.toJson<double>(totalFatG),
+      'totalSodiumMg': serializer.toJson<double>(totalSodiumMg),
+      'totalFluidMl': serializer.toJson<double>(totalFluidMl),
+      'totalCalories': serializer.toJson<int>(totalCalories),
+      'validationStatus': serializer.toJson<String>(validationStatus),
+      'isActive': serializer.toJson<bool>(isActive),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'foodNames': serializer.toJson<String>(foodNames),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  TemplateEntry copyWith({
+    String? id,
+    String? name,
+    String? slug,
+    String? phase,
+    String? timingWindow,
+    int? timingMinMinutes,
+    int? timingMaxMinutes,
+    String? mealType,
+    String? baseCategory,
+    String? digestionSpeed,
+    String? allergens,
+    String? excludedDiets,
+    Value<String?> notes = const Value.absent(),
+    String? foods,
+    double? totalCarbsG,
+    double? totalProteinG,
+    double? totalFatG,
+    double? totalSodiumMg,
+    double? totalFluidMl,
+    int? totalCalories,
+    String? validationStatus,
+    bool? isActive,
+    int? sortOrder,
+    String? foodNames,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => TemplateEntry(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    slug: slug ?? this.slug,
+    phase: phase ?? this.phase,
+    timingWindow: timingWindow ?? this.timingWindow,
+    timingMinMinutes: timingMinMinutes ?? this.timingMinMinutes,
+    timingMaxMinutes: timingMaxMinutes ?? this.timingMaxMinutes,
+    mealType: mealType ?? this.mealType,
+    baseCategory: baseCategory ?? this.baseCategory,
+    digestionSpeed: digestionSpeed ?? this.digestionSpeed,
+    allergens: allergens ?? this.allergens,
+    excludedDiets: excludedDiets ?? this.excludedDiets,
+    notes: notes.present ? notes.value : this.notes,
+    foods: foods ?? this.foods,
+    totalCarbsG: totalCarbsG ?? this.totalCarbsG,
+    totalProteinG: totalProteinG ?? this.totalProteinG,
+    totalFatG: totalFatG ?? this.totalFatG,
+    totalSodiumMg: totalSodiumMg ?? this.totalSodiumMg,
+    totalFluidMl: totalFluidMl ?? this.totalFluidMl,
+    totalCalories: totalCalories ?? this.totalCalories,
+    validationStatus: validationStatus ?? this.validationStatus,
+    isActive: isActive ?? this.isActive,
+    sortOrder: sortOrder ?? this.sortOrder,
+    foodNames: foodNames ?? this.foodNames,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TemplateEntry copyWithCompanion(TemplatesTableCompanion data) {
+    return TemplateEntry(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      slug: data.slug.present ? data.slug.value : this.slug,
+      phase: data.phase.present ? data.phase.value : this.phase,
+      timingWindow: data.timingWindow.present
+          ? data.timingWindow.value
+          : this.timingWindow,
+      timingMinMinutes: data.timingMinMinutes.present
+          ? data.timingMinMinutes.value
+          : this.timingMinMinutes,
+      timingMaxMinutes: data.timingMaxMinutes.present
+          ? data.timingMaxMinutes.value
+          : this.timingMaxMinutes,
+      mealType: data.mealType.present ? data.mealType.value : this.mealType,
+      baseCategory: data.baseCategory.present
+          ? data.baseCategory.value
+          : this.baseCategory,
+      digestionSpeed: data.digestionSpeed.present
+          ? data.digestionSpeed.value
+          : this.digestionSpeed,
+      allergens: data.allergens.present ? data.allergens.value : this.allergens,
+      excludedDiets: data.excludedDiets.present
+          ? data.excludedDiets.value
+          : this.excludedDiets,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      foods: data.foods.present ? data.foods.value : this.foods,
+      totalCarbsG: data.totalCarbsG.present
+          ? data.totalCarbsG.value
+          : this.totalCarbsG,
+      totalProteinG: data.totalProteinG.present
+          ? data.totalProteinG.value
+          : this.totalProteinG,
+      totalFatG: data.totalFatG.present ? data.totalFatG.value : this.totalFatG,
+      totalSodiumMg: data.totalSodiumMg.present
+          ? data.totalSodiumMg.value
+          : this.totalSodiumMg,
+      totalFluidMl: data.totalFluidMl.present
+          ? data.totalFluidMl.value
+          : this.totalFluidMl,
+      totalCalories: data.totalCalories.present
+          ? data.totalCalories.value
+          : this.totalCalories,
+      validationStatus: data.validationStatus.present
+          ? data.validationStatus.value
+          : this.validationStatus,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      foodNames: data.foodNames.present ? data.foodNames.value : this.foodNames,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateEntry(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('slug: $slug, ')
+          ..write('phase: $phase, ')
+          ..write('timingWindow: $timingWindow, ')
+          ..write('timingMinMinutes: $timingMinMinutes, ')
+          ..write('timingMaxMinutes: $timingMaxMinutes, ')
+          ..write('mealType: $mealType, ')
+          ..write('baseCategory: $baseCategory, ')
+          ..write('digestionSpeed: $digestionSpeed, ')
+          ..write('allergens: $allergens, ')
+          ..write('excludedDiets: $excludedDiets, ')
+          ..write('notes: $notes, ')
+          ..write('foods: $foods, ')
+          ..write('totalCarbsG: $totalCarbsG, ')
+          ..write('totalProteinG: $totalProteinG, ')
+          ..write('totalFatG: $totalFatG, ')
+          ..write('totalSodiumMg: $totalSodiumMg, ')
+          ..write('totalFluidMl: $totalFluidMl, ')
+          ..write('totalCalories: $totalCalories, ')
+          ..write('validationStatus: $validationStatus, ')
+          ..write('isActive: $isActive, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('foodNames: $foodNames, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    name,
+    slug,
+    phase,
+    timingWindow,
+    timingMinMinutes,
+    timingMaxMinutes,
+    mealType,
+    baseCategory,
+    digestionSpeed,
+    allergens,
+    excludedDiets,
+    notes,
+    foods,
+    totalCarbsG,
+    totalProteinG,
+    totalFatG,
+    totalSodiumMg,
+    totalFluidMl,
+    totalCalories,
+    validationStatus,
+    isActive,
+    sortOrder,
+    foodNames,
+    createdAt,
+    updatedAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TemplateEntry &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.slug == this.slug &&
+          other.phase == this.phase &&
+          other.timingWindow == this.timingWindow &&
+          other.timingMinMinutes == this.timingMinMinutes &&
+          other.timingMaxMinutes == this.timingMaxMinutes &&
+          other.mealType == this.mealType &&
+          other.baseCategory == this.baseCategory &&
+          other.digestionSpeed == this.digestionSpeed &&
+          other.allergens == this.allergens &&
+          other.excludedDiets == this.excludedDiets &&
+          other.notes == this.notes &&
+          other.foods == this.foods &&
+          other.totalCarbsG == this.totalCarbsG &&
+          other.totalProteinG == this.totalProteinG &&
+          other.totalFatG == this.totalFatG &&
+          other.totalSodiumMg == this.totalSodiumMg &&
+          other.totalFluidMl == this.totalFluidMl &&
+          other.totalCalories == this.totalCalories &&
+          other.validationStatus == this.validationStatus &&
+          other.isActive == this.isActive &&
+          other.sortOrder == this.sortOrder &&
+          other.foodNames == this.foodNames &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TemplatesTableCompanion extends UpdateCompanion<TemplateEntry> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> slug;
+  final Value<String> phase;
+  final Value<String> timingWindow;
+  final Value<int> timingMinMinutes;
+  final Value<int> timingMaxMinutes;
+  final Value<String> mealType;
+  final Value<String> baseCategory;
+  final Value<String> digestionSpeed;
+  final Value<String> allergens;
+  final Value<String> excludedDiets;
+  final Value<String?> notes;
+  final Value<String> foods;
+  final Value<double> totalCarbsG;
+  final Value<double> totalProteinG;
+  final Value<double> totalFatG;
+  final Value<double> totalSodiumMg;
+  final Value<double> totalFluidMl;
+  final Value<int> totalCalories;
+  final Value<String> validationStatus;
+  final Value<bool> isActive;
+  final Value<int> sortOrder;
+  final Value<String> foodNames;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const TemplatesTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.slug = const Value.absent(),
+    this.phase = const Value.absent(),
+    this.timingWindow = const Value.absent(),
+    this.timingMinMinutes = const Value.absent(),
+    this.timingMaxMinutes = const Value.absent(),
+    this.mealType = const Value.absent(),
+    this.baseCategory = const Value.absent(),
+    this.digestionSpeed = const Value.absent(),
+    this.allergens = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.foods = const Value.absent(),
+    this.totalCarbsG = const Value.absent(),
+    this.totalProteinG = const Value.absent(),
+    this.totalFatG = const Value.absent(),
+    this.totalSodiumMg = const Value.absent(),
+    this.totalFluidMl = const Value.absent(),
+    this.totalCalories = const Value.absent(),
+    this.validationStatus = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.foodNames = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TemplatesTableCompanion.insert({
+    required String id,
+    required String name,
+    required String slug,
+    this.phase = const Value.absent(),
+    required String timingWindow,
+    required int timingMinMinutes,
+    required int timingMaxMinutes,
+    this.mealType = const Value.absent(),
+    required String baseCategory,
+    this.digestionSpeed = const Value.absent(),
+    this.allergens = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.foods = const Value.absent(),
+    this.totalCarbsG = const Value.absent(),
+    this.totalProteinG = const Value.absent(),
+    this.totalFatG = const Value.absent(),
+    this.totalSodiumMg = const Value.absent(),
+    this.totalFluidMl = const Value.absent(),
+    this.totalCalories = const Value.absent(),
+    this.validationStatus = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.foodNames = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       slug = Value(slug),
+       timingWindow = Value(timingWindow),
+       timingMinMinutes = Value(timingMinMinutes),
+       timingMaxMinutes = Value(timingMaxMinutes),
+       baseCategory = Value(baseCategory);
+  static Insertable<TemplateEntry> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? slug,
+    Expression<String>? phase,
+    Expression<String>? timingWindow,
+    Expression<int>? timingMinMinutes,
+    Expression<int>? timingMaxMinutes,
+    Expression<String>? mealType,
+    Expression<String>? baseCategory,
+    Expression<String>? digestionSpeed,
+    Expression<String>? allergens,
+    Expression<String>? excludedDiets,
+    Expression<String>? notes,
+    Expression<String>? foods,
+    Expression<double>? totalCarbsG,
+    Expression<double>? totalProteinG,
+    Expression<double>? totalFatG,
+    Expression<double>? totalSodiumMg,
+    Expression<double>? totalFluidMl,
+    Expression<int>? totalCalories,
+    Expression<String>? validationStatus,
+    Expression<bool>? isActive,
+    Expression<int>? sortOrder,
+    Expression<String>? foodNames,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (slug != null) 'slug': slug,
+      if (phase != null) 'phase': phase,
+      if (timingWindow != null) 'timing_window': timingWindow,
+      if (timingMinMinutes != null) 'timing_min_minutes': timingMinMinutes,
+      if (timingMaxMinutes != null) 'timing_max_minutes': timingMaxMinutes,
+      if (mealType != null) 'meal_type': mealType,
+      if (baseCategory != null) 'base_category': baseCategory,
+      if (digestionSpeed != null) 'digestion_speed': digestionSpeed,
+      if (allergens != null) 'allergens': allergens,
+      if (excludedDiets != null) 'excluded_diets': excludedDiets,
+      if (notes != null) 'notes': notes,
+      if (foods != null) 'foods': foods,
+      if (totalCarbsG != null) 'total_carbs_g': totalCarbsG,
+      if (totalProteinG != null) 'total_protein_g': totalProteinG,
+      if (totalFatG != null) 'total_fat_g': totalFatG,
+      if (totalSodiumMg != null) 'total_sodium_mg': totalSodiumMg,
+      if (totalFluidMl != null) 'total_fluid_ml': totalFluidMl,
+      if (totalCalories != null) 'total_calories': totalCalories,
+      if (validationStatus != null) 'validation_status': validationStatus,
+      if (isActive != null) 'is_active': isActive,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (foodNames != null) 'food_names': foodNames,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TemplatesTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? slug,
+    Value<String>? phase,
+    Value<String>? timingWindow,
+    Value<int>? timingMinMinutes,
+    Value<int>? timingMaxMinutes,
+    Value<String>? mealType,
+    Value<String>? baseCategory,
+    Value<String>? digestionSpeed,
+    Value<String>? allergens,
+    Value<String>? excludedDiets,
+    Value<String?>? notes,
+    Value<String>? foods,
+    Value<double>? totalCarbsG,
+    Value<double>? totalProteinG,
+    Value<double>? totalFatG,
+    Value<double>? totalSodiumMg,
+    Value<double>? totalFluidMl,
+    Value<int>? totalCalories,
+    Value<String>? validationStatus,
+    Value<bool>? isActive,
+    Value<int>? sortOrder,
+    Value<String>? foodNames,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return TemplatesTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      slug: slug ?? this.slug,
+      phase: phase ?? this.phase,
+      timingWindow: timingWindow ?? this.timingWindow,
+      timingMinMinutes: timingMinMinutes ?? this.timingMinMinutes,
+      timingMaxMinutes: timingMaxMinutes ?? this.timingMaxMinutes,
+      mealType: mealType ?? this.mealType,
+      baseCategory: baseCategory ?? this.baseCategory,
+      digestionSpeed: digestionSpeed ?? this.digestionSpeed,
+      allergens: allergens ?? this.allergens,
+      excludedDiets: excludedDiets ?? this.excludedDiets,
+      notes: notes ?? this.notes,
+      foods: foods ?? this.foods,
+      totalCarbsG: totalCarbsG ?? this.totalCarbsG,
+      totalProteinG: totalProteinG ?? this.totalProteinG,
+      totalFatG: totalFatG ?? this.totalFatG,
+      totalSodiumMg: totalSodiumMg ?? this.totalSodiumMg,
+      totalFluidMl: totalFluidMl ?? this.totalFluidMl,
+      totalCalories: totalCalories ?? this.totalCalories,
+      validationStatus: validationStatus ?? this.validationStatus,
+      isActive: isActive ?? this.isActive,
+      sortOrder: sortOrder ?? this.sortOrder,
+      foodNames: foodNames ?? this.foodNames,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (slug.present) {
+      map['slug'] = Variable<String>(slug.value);
+    }
+    if (phase.present) {
+      map['phase'] = Variable<String>(phase.value);
+    }
+    if (timingWindow.present) {
+      map['timing_window'] = Variable<String>(timingWindow.value);
+    }
+    if (timingMinMinutes.present) {
+      map['timing_min_minutes'] = Variable<int>(timingMinMinutes.value);
+    }
+    if (timingMaxMinutes.present) {
+      map['timing_max_minutes'] = Variable<int>(timingMaxMinutes.value);
+    }
+    if (mealType.present) {
+      map['meal_type'] = Variable<String>(mealType.value);
+    }
+    if (baseCategory.present) {
+      map['base_category'] = Variable<String>(baseCategory.value);
+    }
+    if (digestionSpeed.present) {
+      map['digestion_speed'] = Variable<String>(digestionSpeed.value);
+    }
+    if (allergens.present) {
+      map['allergens'] = Variable<String>(allergens.value);
+    }
+    if (excludedDiets.present) {
+      map['excluded_diets'] = Variable<String>(excludedDiets.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (foods.present) {
+      map['foods'] = Variable<String>(foods.value);
+    }
+    if (totalCarbsG.present) {
+      map['total_carbs_g'] = Variable<double>(totalCarbsG.value);
+    }
+    if (totalProteinG.present) {
+      map['total_protein_g'] = Variable<double>(totalProteinG.value);
+    }
+    if (totalFatG.present) {
+      map['total_fat_g'] = Variable<double>(totalFatG.value);
+    }
+    if (totalSodiumMg.present) {
+      map['total_sodium_mg'] = Variable<double>(totalSodiumMg.value);
+    }
+    if (totalFluidMl.present) {
+      map['total_fluid_ml'] = Variable<double>(totalFluidMl.value);
+    }
+    if (totalCalories.present) {
+      map['total_calories'] = Variable<int>(totalCalories.value);
+    }
+    if (validationStatus.present) {
+      map['validation_status'] = Variable<String>(validationStatus.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (foodNames.present) {
+      map['food_names'] = Variable<String>(foodNames.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplatesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('slug: $slug, ')
+          ..write('phase: $phase, ')
+          ..write('timingWindow: $timingWindow, ')
+          ..write('timingMinMinutes: $timingMinMinutes, ')
+          ..write('timingMaxMinutes: $timingMaxMinutes, ')
+          ..write('mealType: $mealType, ')
+          ..write('baseCategory: $baseCategory, ')
+          ..write('digestionSpeed: $digestionSpeed, ')
+          ..write('allergens: $allergens, ')
+          ..write('excludedDiets: $excludedDiets, ')
+          ..write('notes: $notes, ')
+          ..write('foods: $foods, ')
+          ..write('totalCarbsG: $totalCarbsG, ')
+          ..write('totalProteinG: $totalProteinG, ')
+          ..write('totalFatG: $totalFatG, ')
+          ..write('totalSodiumMg: $totalSodiumMg, ')
+          ..write('totalFluidMl: $totalFluidMl, ')
+          ..write('totalCalories: $totalCalories, ')
+          ..write('validationStatus: $validationStatus, ')
+          ..write('isActive: $isActive, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('foodNames: $foodNames, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -22396,6 +25307,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   coachAthleteRelationshipsTable = $CoachAthleteRelationshipsTableTable(this);
   late final $CoachMessagesTableTable coachMessagesTable =
       $CoachMessagesTableTable(this);
+  late final $TemplateFoodsTableTable templateFoodsTable =
+      $TemplateFoodsTableTable(this);
+  late final $TemplatesTableTable templatesTable = $TemplatesTableTable(this);
   late final UserDao userDao = UserDao(this as AppDatabase);
   late final FoodPreferencesDao foodPreferencesDao = FoodPreferencesDao(
     this as AppDatabase,
@@ -22428,6 +25342,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     coachesTable,
     coachAthleteRelationshipsTable,
     coachMessagesTable,
+    templateFoodsTable,
+    templatesTable,
   ];
 }
 
@@ -32180,6 +35096,1290 @@ typedef $$CoachMessagesTableTableProcessedTableManager =
       CoachMessageEntry,
       PrefetchHooks Function()
     >;
+typedef $$TemplateFoodsTableTableCreateCompanionBuilder =
+    TemplateFoodsTableCompanion Function({
+      required String id,
+      required String name,
+      required String displayName,
+      required String servingSize,
+      Value<double?> servingWeightG,
+      Value<int> calories,
+      Value<double> carbsG,
+      Value<double> proteinG,
+      Value<double> fatG,
+      Value<double?> fiberG,
+      Value<double> sodiumMg,
+      Value<double?> fluidMl,
+      Value<String> allergens,
+      Value<String> digestionSpeed,
+      Value<bool> isActive,
+      Value<String> excludedDiets,
+      Value<String> productType,
+      Value<String> activityTypes,
+      Value<String> categories,
+      Value<bool> isElectrolyte,
+      Value<bool> requiresPreparation,
+      Value<double?> caffeineMg,
+      Value<double?> potassiumMg,
+      Value<bool> isDrinkPool,
+      Value<String> drinkPoolPhases,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$TemplateFoodsTableTableUpdateCompanionBuilder =
+    TemplateFoodsTableCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> displayName,
+      Value<String> servingSize,
+      Value<double?> servingWeightG,
+      Value<int> calories,
+      Value<double> carbsG,
+      Value<double> proteinG,
+      Value<double> fatG,
+      Value<double?> fiberG,
+      Value<double> sodiumMg,
+      Value<double?> fluidMl,
+      Value<String> allergens,
+      Value<String> digestionSpeed,
+      Value<bool> isActive,
+      Value<String> excludedDiets,
+      Value<String> productType,
+      Value<String> activityTypes,
+      Value<String> categories,
+      Value<bool> isElectrolyte,
+      Value<bool> requiresPreparation,
+      Value<double?> caffeineMg,
+      Value<double?> potassiumMg,
+      Value<bool> isDrinkPool,
+      Value<String> drinkPoolPhases,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$TemplateFoodsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $TemplateFoodsTableTable> {
+  $$TemplateFoodsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get servingSize => $composableBuilder(
+    column: $table.servingSize,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get servingWeightG => $composableBuilder(
+    column: $table.servingWeightG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get calories => $composableBuilder(
+    column: $table.calories,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get carbsG => $composableBuilder(
+    column: $table.carbsG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get proteinG => $composableBuilder(
+    column: $table.proteinG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fatG => $composableBuilder(
+    column: $table.fatG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiberG => $composableBuilder(
+    column: $table.fiberG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodiumMg => $composableBuilder(
+    column: $table.sodiumMg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fluidMl => $composableBuilder(
+    column: $table.fluidMl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get digestionSpeed => $composableBuilder(
+    column: $table.digestionSpeed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productType => $composableBuilder(
+    column: $table.productType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activityTypes => $composableBuilder(
+    column: $table.activityTypes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get categories => $composableBuilder(
+    column: $table.categories,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isElectrolyte => $composableBuilder(
+    column: $table.isElectrolyte,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get requiresPreparation => $composableBuilder(
+    column: $table.requiresPreparation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get caffeineMg => $composableBuilder(
+    column: $table.caffeineMg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get potassiumMg => $composableBuilder(
+    column: $table.potassiumMg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDrinkPool => $composableBuilder(
+    column: $table.isDrinkPool,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get drinkPoolPhases => $composableBuilder(
+    column: $table.drinkPoolPhases,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TemplateFoodsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $TemplateFoodsTableTable> {
+  $$TemplateFoodsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get servingSize => $composableBuilder(
+    column: $table.servingSize,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get servingWeightG => $composableBuilder(
+    column: $table.servingWeightG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get calories => $composableBuilder(
+    column: $table.calories,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get carbsG => $composableBuilder(
+    column: $table.carbsG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get proteinG => $composableBuilder(
+    column: $table.proteinG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fatG => $composableBuilder(
+    column: $table.fatG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fiberG => $composableBuilder(
+    column: $table.fiberG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodiumMg => $composableBuilder(
+    column: $table.sodiumMg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fluidMl => $composableBuilder(
+    column: $table.fluidMl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get digestionSpeed => $composableBuilder(
+    column: $table.digestionSpeed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productType => $composableBuilder(
+    column: $table.productType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityTypes => $composableBuilder(
+    column: $table.activityTypes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get categories => $composableBuilder(
+    column: $table.categories,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isElectrolyte => $composableBuilder(
+    column: $table.isElectrolyte,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get requiresPreparation => $composableBuilder(
+    column: $table.requiresPreparation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get caffeineMg => $composableBuilder(
+    column: $table.caffeineMg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get potassiumMg => $composableBuilder(
+    column: $table.potassiumMg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDrinkPool => $composableBuilder(
+    column: $table.isDrinkPool,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get drinkPoolPhases => $composableBuilder(
+    column: $table.drinkPoolPhases,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TemplateFoodsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TemplateFoodsTableTable> {
+  $$TemplateFoodsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get servingSize => $composableBuilder(
+    column: $table.servingSize,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get servingWeightG => $composableBuilder(
+    column: $table.servingWeightG,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get calories =>
+      $composableBuilder(column: $table.calories, builder: (column) => column);
+
+  GeneratedColumn<double> get carbsG =>
+      $composableBuilder(column: $table.carbsG, builder: (column) => column);
+
+  GeneratedColumn<double> get proteinG =>
+      $composableBuilder(column: $table.proteinG, builder: (column) => column);
+
+  GeneratedColumn<double> get fatG =>
+      $composableBuilder(column: $table.fatG, builder: (column) => column);
+
+  GeneratedColumn<double> get fiberG =>
+      $composableBuilder(column: $table.fiberG, builder: (column) => column);
+
+  GeneratedColumn<double> get sodiumMg =>
+      $composableBuilder(column: $table.sodiumMg, builder: (column) => column);
+
+  GeneratedColumn<double> get fluidMl =>
+      $composableBuilder(column: $table.fluidMl, builder: (column) => column);
+
+  GeneratedColumn<String> get allergens =>
+      $composableBuilder(column: $table.allergens, builder: (column) => column);
+
+  GeneratedColumn<String> get digestionSpeed => $composableBuilder(
+    column: $table.digestionSpeed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get productType => $composableBuilder(
+    column: $table.productType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get activityTypes => $composableBuilder(
+    column: $table.activityTypes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get categories => $composableBuilder(
+    column: $table.categories,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isElectrolyte => $composableBuilder(
+    column: $table.isElectrolyte,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get requiresPreparation => $composableBuilder(
+    column: $table.requiresPreparation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get caffeineMg => $composableBuilder(
+    column: $table.caffeineMg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get potassiumMg => $composableBuilder(
+    column: $table.potassiumMg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDrinkPool => $composableBuilder(
+    column: $table.isDrinkPool,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get drinkPoolPhases => $composableBuilder(
+    column: $table.drinkPoolPhases,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$TemplateFoodsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TemplateFoodsTableTable,
+          TemplateFoodEntry,
+          $$TemplateFoodsTableTableFilterComposer,
+          $$TemplateFoodsTableTableOrderingComposer,
+          $$TemplateFoodsTableTableAnnotationComposer,
+          $$TemplateFoodsTableTableCreateCompanionBuilder,
+          $$TemplateFoodsTableTableUpdateCompanionBuilder,
+          (
+            TemplateFoodEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $TemplateFoodsTableTable,
+              TemplateFoodEntry
+            >,
+          ),
+          TemplateFoodEntry,
+          PrefetchHooks Function()
+        > {
+  $$TemplateFoodsTableTableTableManager(
+    _$AppDatabase db,
+    $TemplateFoodsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TemplateFoodsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TemplateFoodsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TemplateFoodsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> displayName = const Value.absent(),
+                Value<String> servingSize = const Value.absent(),
+                Value<double?> servingWeightG = const Value.absent(),
+                Value<int> calories = const Value.absent(),
+                Value<double> carbsG = const Value.absent(),
+                Value<double> proteinG = const Value.absent(),
+                Value<double> fatG = const Value.absent(),
+                Value<double?> fiberG = const Value.absent(),
+                Value<double> sodiumMg = const Value.absent(),
+                Value<double?> fluidMl = const Value.absent(),
+                Value<String> allergens = const Value.absent(),
+                Value<String> digestionSpeed = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
+                Value<String> productType = const Value.absent(),
+                Value<String> activityTypes = const Value.absent(),
+                Value<String> categories = const Value.absent(),
+                Value<bool> isElectrolyte = const Value.absent(),
+                Value<bool> requiresPreparation = const Value.absent(),
+                Value<double?> caffeineMg = const Value.absent(),
+                Value<double?> potassiumMg = const Value.absent(),
+                Value<bool> isDrinkPool = const Value.absent(),
+                Value<String> drinkPoolPhases = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TemplateFoodsTableCompanion(
+                id: id,
+                name: name,
+                displayName: displayName,
+                servingSize: servingSize,
+                servingWeightG: servingWeightG,
+                calories: calories,
+                carbsG: carbsG,
+                proteinG: proteinG,
+                fatG: fatG,
+                fiberG: fiberG,
+                sodiumMg: sodiumMg,
+                fluidMl: fluidMl,
+                allergens: allergens,
+                digestionSpeed: digestionSpeed,
+                isActive: isActive,
+                excludedDiets: excludedDiets,
+                productType: productType,
+                activityTypes: activityTypes,
+                categories: categories,
+                isElectrolyte: isElectrolyte,
+                requiresPreparation: requiresPreparation,
+                caffeineMg: caffeineMg,
+                potassiumMg: potassiumMg,
+                isDrinkPool: isDrinkPool,
+                drinkPoolPhases: drinkPoolPhases,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String displayName,
+                required String servingSize,
+                Value<double?> servingWeightG = const Value.absent(),
+                Value<int> calories = const Value.absent(),
+                Value<double> carbsG = const Value.absent(),
+                Value<double> proteinG = const Value.absent(),
+                Value<double> fatG = const Value.absent(),
+                Value<double?> fiberG = const Value.absent(),
+                Value<double> sodiumMg = const Value.absent(),
+                Value<double?> fluidMl = const Value.absent(),
+                Value<String> allergens = const Value.absent(),
+                Value<String> digestionSpeed = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
+                Value<String> productType = const Value.absent(),
+                Value<String> activityTypes = const Value.absent(),
+                Value<String> categories = const Value.absent(),
+                Value<bool> isElectrolyte = const Value.absent(),
+                Value<bool> requiresPreparation = const Value.absent(),
+                Value<double?> caffeineMg = const Value.absent(),
+                Value<double?> potassiumMg = const Value.absent(),
+                Value<bool> isDrinkPool = const Value.absent(),
+                Value<String> drinkPoolPhases = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TemplateFoodsTableCompanion.insert(
+                id: id,
+                name: name,
+                displayName: displayName,
+                servingSize: servingSize,
+                servingWeightG: servingWeightG,
+                calories: calories,
+                carbsG: carbsG,
+                proteinG: proteinG,
+                fatG: fatG,
+                fiberG: fiberG,
+                sodiumMg: sodiumMg,
+                fluidMl: fluidMl,
+                allergens: allergens,
+                digestionSpeed: digestionSpeed,
+                isActive: isActive,
+                excludedDiets: excludedDiets,
+                productType: productType,
+                activityTypes: activityTypes,
+                categories: categories,
+                isElectrolyte: isElectrolyte,
+                requiresPreparation: requiresPreparation,
+                caffeineMg: caffeineMg,
+                potassiumMg: potassiumMg,
+                isDrinkPool: isDrinkPool,
+                drinkPoolPhases: drinkPoolPhases,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TemplateFoodsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TemplateFoodsTableTable,
+      TemplateFoodEntry,
+      $$TemplateFoodsTableTableFilterComposer,
+      $$TemplateFoodsTableTableOrderingComposer,
+      $$TemplateFoodsTableTableAnnotationComposer,
+      $$TemplateFoodsTableTableCreateCompanionBuilder,
+      $$TemplateFoodsTableTableUpdateCompanionBuilder,
+      (
+        TemplateFoodEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $TemplateFoodsTableTable,
+          TemplateFoodEntry
+        >,
+      ),
+      TemplateFoodEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$TemplatesTableTableCreateCompanionBuilder =
+    TemplatesTableCompanion Function({
+      required String id,
+      required String name,
+      required String slug,
+      Value<String> phase,
+      required String timingWindow,
+      required int timingMinMinutes,
+      required int timingMaxMinutes,
+      Value<String> mealType,
+      required String baseCategory,
+      Value<String> digestionSpeed,
+      Value<String> allergens,
+      Value<String> excludedDiets,
+      Value<String?> notes,
+      Value<String> foods,
+      Value<double> totalCarbsG,
+      Value<double> totalProteinG,
+      Value<double> totalFatG,
+      Value<double> totalSodiumMg,
+      Value<double> totalFluidMl,
+      Value<int> totalCalories,
+      Value<String> validationStatus,
+      Value<bool> isActive,
+      Value<int> sortOrder,
+      Value<String> foodNames,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$TemplatesTableTableUpdateCompanionBuilder =
+    TemplatesTableCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> slug,
+      Value<String> phase,
+      Value<String> timingWindow,
+      Value<int> timingMinMinutes,
+      Value<int> timingMaxMinutes,
+      Value<String> mealType,
+      Value<String> baseCategory,
+      Value<String> digestionSpeed,
+      Value<String> allergens,
+      Value<String> excludedDiets,
+      Value<String?> notes,
+      Value<String> foods,
+      Value<double> totalCarbsG,
+      Value<double> totalProteinG,
+      Value<double> totalFatG,
+      Value<double> totalSodiumMg,
+      Value<double> totalFluidMl,
+      Value<int> totalCalories,
+      Value<String> validationStatus,
+      Value<bool> isActive,
+      Value<int> sortOrder,
+      Value<String> foodNames,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$TemplatesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $TemplatesTableTable> {
+  $$TemplatesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get slug => $composableBuilder(
+    column: $table.slug,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phase => $composableBuilder(
+    column: $table.phase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timingWindow => $composableBuilder(
+    column: $table.timingWindow,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timingMinMinutes => $composableBuilder(
+    column: $table.timingMinMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timingMaxMinutes => $composableBuilder(
+    column: $table.timingMaxMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mealType => $composableBuilder(
+    column: $table.mealType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get baseCategory => $composableBuilder(
+    column: $table.baseCategory,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get digestionSpeed => $composableBuilder(
+    column: $table.digestionSpeed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get foods => $composableBuilder(
+    column: $table.foods,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalCarbsG => $composableBuilder(
+    column: $table.totalCarbsG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalProteinG => $composableBuilder(
+    column: $table.totalProteinG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalFatG => $composableBuilder(
+    column: $table.totalFatG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalSodiumMg => $composableBuilder(
+    column: $table.totalSodiumMg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get totalFluidMl => $composableBuilder(
+    column: $table.totalFluidMl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalCalories => $composableBuilder(
+    column: $table.totalCalories,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get validationStatus => $composableBuilder(
+    column: $table.validationStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get foodNames => $composableBuilder(
+    column: $table.foodNames,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TemplatesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $TemplatesTableTable> {
+  $$TemplatesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get slug => $composableBuilder(
+    column: $table.slug,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phase => $composableBuilder(
+    column: $table.phase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timingWindow => $composableBuilder(
+    column: $table.timingWindow,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timingMinMinutes => $composableBuilder(
+    column: $table.timingMinMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timingMaxMinutes => $composableBuilder(
+    column: $table.timingMaxMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mealType => $composableBuilder(
+    column: $table.mealType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get baseCategory => $composableBuilder(
+    column: $table.baseCategory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get digestionSpeed => $composableBuilder(
+    column: $table.digestionSpeed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get foods => $composableBuilder(
+    column: $table.foods,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalCarbsG => $composableBuilder(
+    column: $table.totalCarbsG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalProteinG => $composableBuilder(
+    column: $table.totalProteinG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalFatG => $composableBuilder(
+    column: $table.totalFatG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalSodiumMg => $composableBuilder(
+    column: $table.totalSodiumMg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get totalFluidMl => $composableBuilder(
+    column: $table.totalFluidMl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalCalories => $composableBuilder(
+    column: $table.totalCalories,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get validationStatus => $composableBuilder(
+    column: $table.validationStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get foodNames => $composableBuilder(
+    column: $table.foodNames,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TemplatesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TemplatesTableTable> {
+  $$TemplatesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get slug =>
+      $composableBuilder(column: $table.slug, builder: (column) => column);
+
+  GeneratedColumn<String> get phase =>
+      $composableBuilder(column: $table.phase, builder: (column) => column);
+
+  GeneratedColumn<String> get timingWindow => $composableBuilder(
+    column: $table.timingWindow,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get timingMinMinutes => $composableBuilder(
+    column: $table.timingMinMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get timingMaxMinutes => $composableBuilder(
+    column: $table.timingMaxMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mealType =>
+      $composableBuilder(column: $table.mealType, builder: (column) => column);
+
+  GeneratedColumn<String> get baseCategory => $composableBuilder(
+    column: $table.baseCategory,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get digestionSpeed => $composableBuilder(
+    column: $table.digestionSpeed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get allergens =>
+      $composableBuilder(column: $table.allergens, builder: (column) => column);
+
+  GeneratedColumn<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get foods =>
+      $composableBuilder(column: $table.foods, builder: (column) => column);
+
+  GeneratedColumn<double> get totalCarbsG => $composableBuilder(
+    column: $table.totalCarbsG,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get totalProteinG => $composableBuilder(
+    column: $table.totalProteinG,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get totalFatG =>
+      $composableBuilder(column: $table.totalFatG, builder: (column) => column);
+
+  GeneratedColumn<double> get totalSodiumMg => $composableBuilder(
+    column: $table.totalSodiumMg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get totalFluidMl => $composableBuilder(
+    column: $table.totalFluidMl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalCalories => $composableBuilder(
+    column: $table.totalCalories,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get validationStatus => $composableBuilder(
+    column: $table.validationStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get foodNames =>
+      $composableBuilder(column: $table.foodNames, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$TemplatesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TemplatesTableTable,
+          TemplateEntry,
+          $$TemplatesTableTableFilterComposer,
+          $$TemplatesTableTableOrderingComposer,
+          $$TemplatesTableTableAnnotationComposer,
+          $$TemplatesTableTableCreateCompanionBuilder,
+          $$TemplatesTableTableUpdateCompanionBuilder,
+          (
+            TemplateEntry,
+            BaseReferences<_$AppDatabase, $TemplatesTableTable, TemplateEntry>,
+          ),
+          TemplateEntry,
+          PrefetchHooks Function()
+        > {
+  $$TemplatesTableTableTableManager(
+    _$AppDatabase db,
+    $TemplatesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TemplatesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TemplatesTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TemplatesTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> slug = const Value.absent(),
+                Value<String> phase = const Value.absent(),
+                Value<String> timingWindow = const Value.absent(),
+                Value<int> timingMinMinutes = const Value.absent(),
+                Value<int> timingMaxMinutes = const Value.absent(),
+                Value<String> mealType = const Value.absent(),
+                Value<String> baseCategory = const Value.absent(),
+                Value<String> digestionSpeed = const Value.absent(),
+                Value<String> allergens = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String> foods = const Value.absent(),
+                Value<double> totalCarbsG = const Value.absent(),
+                Value<double> totalProteinG = const Value.absent(),
+                Value<double> totalFatG = const Value.absent(),
+                Value<double> totalSodiumMg = const Value.absent(),
+                Value<double> totalFluidMl = const Value.absent(),
+                Value<int> totalCalories = const Value.absent(),
+                Value<String> validationStatus = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String> foodNames = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TemplatesTableCompanion(
+                id: id,
+                name: name,
+                slug: slug,
+                phase: phase,
+                timingWindow: timingWindow,
+                timingMinMinutes: timingMinMinutes,
+                timingMaxMinutes: timingMaxMinutes,
+                mealType: mealType,
+                baseCategory: baseCategory,
+                digestionSpeed: digestionSpeed,
+                allergens: allergens,
+                excludedDiets: excludedDiets,
+                notes: notes,
+                foods: foods,
+                totalCarbsG: totalCarbsG,
+                totalProteinG: totalProteinG,
+                totalFatG: totalFatG,
+                totalSodiumMg: totalSodiumMg,
+                totalFluidMl: totalFluidMl,
+                totalCalories: totalCalories,
+                validationStatus: validationStatus,
+                isActive: isActive,
+                sortOrder: sortOrder,
+                foodNames: foodNames,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String slug,
+                Value<String> phase = const Value.absent(),
+                required String timingWindow,
+                required int timingMinMinutes,
+                required int timingMaxMinutes,
+                Value<String> mealType = const Value.absent(),
+                required String baseCategory,
+                Value<String> digestionSpeed = const Value.absent(),
+                Value<String> allergens = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String> foods = const Value.absent(),
+                Value<double> totalCarbsG = const Value.absent(),
+                Value<double> totalProteinG = const Value.absent(),
+                Value<double> totalFatG = const Value.absent(),
+                Value<double> totalSodiumMg = const Value.absent(),
+                Value<double> totalFluidMl = const Value.absent(),
+                Value<int> totalCalories = const Value.absent(),
+                Value<String> validationStatus = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String> foodNames = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TemplatesTableCompanion.insert(
+                id: id,
+                name: name,
+                slug: slug,
+                phase: phase,
+                timingWindow: timingWindow,
+                timingMinMinutes: timingMinMinutes,
+                timingMaxMinutes: timingMaxMinutes,
+                mealType: mealType,
+                baseCategory: baseCategory,
+                digestionSpeed: digestionSpeed,
+                allergens: allergens,
+                excludedDiets: excludedDiets,
+                notes: notes,
+                foods: foods,
+                totalCarbsG: totalCarbsG,
+                totalProteinG: totalProteinG,
+                totalFatG: totalFatG,
+                totalSodiumMg: totalSodiumMg,
+                totalFluidMl: totalFluidMl,
+                totalCalories: totalCalories,
+                validationStatus: validationStatus,
+                isActive: isActive,
+                sortOrder: sortOrder,
+                foodNames: foodNames,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TemplatesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TemplatesTableTable,
+      TemplateEntry,
+      $$TemplatesTableTableFilterComposer,
+      $$TemplatesTableTableOrderingComposer,
+      $$TemplatesTableTableAnnotationComposer,
+      $$TemplatesTableTableCreateCompanionBuilder,
+      $$TemplatesTableTableUpdateCompanionBuilder,
+      (
+        TemplateEntry,
+        BaseReferences<_$AppDatabase, $TemplatesTableTable, TemplateEntry>,
+      ),
+      TemplateEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -32232,4 +36432,8 @@ class $AppDatabaseManager {
       );
   $$CoachMessagesTableTableTableManager get coachMessagesTable =>
       $$CoachMessagesTableTableTableManager(_db, _db.coachMessagesTable);
+  $$TemplateFoodsTableTableTableManager get templateFoodsTable =>
+      $$TemplateFoodsTableTableTableManager(_db, _db.templateFoodsTable);
+  $$TemplatesTableTableTableManager get templatesTable =>
+      $$TemplatesTableTableTableManager(_db, _db.templatesTable);
 }

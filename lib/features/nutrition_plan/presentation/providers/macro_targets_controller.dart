@@ -1409,10 +1409,47 @@ class MacroTargetsController extends _$MacroTargetsController {
         final currentStateValue = state.value;
         final userId = await ref.read(userIdProvider.future);
 
-        final nutritionPlan = await nutritionPlanService.generatePlanFromMacrosWithFallback(
+        // Gather V2 parameters: hoursBefore, weightKg, dietary preferences
+        final userProfile = await _authService.getCurrentUser();
+        final weightKg = userProfile != null
+            ? userProfile.weightPounds * 0.453592
+            : 70.0;
+
+        // Get hoursBefore from the draft activity's timeBeforeMinutes
+        double hoursBefore = 2.0; // default fallback
+        if (currentStateValue?.activityId != null) {
+          final activitiesService = ref.read(activitiesServiceProvider);
+          final draftActivity = await activitiesService.getActivityById(
+            userId, currentStateValue!.activityId!,
+          );
+          if (draftActivity?.timeBeforeMinutes != null) {
+            hoursBefore = draftActivity!.timeBeforeMinutes! / 60.0;
+          }
+        }
+
+        // Get dietary preferences and food preferences
+        final dietaryPreference = userProfile?.dietaryPreference?.dbValue;
+        final allergies = userProfile?.allergies
+            .map((a) => a.dbValue)
+            .toList();
+        final likedFoods = userId.isNotEmpty
+            ? await _authService.getLikedFoods(userId)
+            : <String>[];
+        final dislikedFoods = userId.isNotEmpty
+            ? await _authService.getDislikedFoods(userId)
+            : <String>[];
+
+        // Try V2 template-based generation, falls back to V1 internally
+        final nutritionPlan = await nutritionPlanService.generatePlanFromMacrosV2(
           macroTargets: macroTargets,
-          activityId: currentStateValue?.activityId, // Link to calendar activity/event if provided
+          hoursBefore: hoursBefore,
+          weightKg: weightKg,
+          activityId: currentStateValue?.activityId,
           userId: userId,
+          dietaryPreference: dietaryPreference,
+          allergies: allergies,
+          likedFoods: likedFoods,
+          dislikedFoods: dislikedFoods,
         );
 
         // Track successful plan creation (the service handles whether it's LLM or algorithmic)
@@ -1424,7 +1461,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           'during_run_carbs_g': macroTargets.duringRun.carbTotalG,
           'post_run_carbs_g': macroTargets.postRun.carbsG,
           'modified_fields_count': modifiedFieldsCount,
-          'plan_type': 'with_fallback', // Could be either LLM or algorithmic
+          'plan_type': 'v2_template', // Template-based with LP fallback
         });
 
         // activityId should ALWAYS exist now (created during macro generation as draft)

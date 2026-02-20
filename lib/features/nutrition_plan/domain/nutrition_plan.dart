@@ -179,8 +179,27 @@ class NutritionPlan {
           final plan = planData['plan'] as Map<String, dynamic>;
           final List<PlanSection> parsedSections = [];
 
-          // Parse "before" section
-          if (plan['before'] is List) {
+          // Parse "before" section - check for v2 sub-phase format vs v1 flat list
+          if (plan['before'] is Map) {
+            // V2 format: before is an object with meal/snack/top_up sub-phases
+            final beforeMap = plan['before'] as Map<String, dynamic>;
+            final List<BeforeSubPhase> subPhases = [];
+
+            for (final key in ['meal', 'snack', 'top_up']) {
+              if (beforeMap[key] is Map) {
+                subPhases.add(BeforeSubPhase.fromJson(beforeMap[key] as Map<String, dynamic>));
+              }
+            }
+
+            parsedSections.add(PlanSection(
+              id: 'before_run',
+              title: 'Before Run',
+              subtitle: 'Pre-workout nutrition',
+              foodItems: const [], // Foods live in sub-phases
+              subPhases: subPhases,
+            ));
+          } else if (plan['before'] is List) {
+            // V1 format: before is a flat list of food items
             parsedSections.add(PlanSection.fromEdgeFunctionJson('before_run', plan['before'] as List<dynamic>));
           }
 
@@ -195,7 +214,7 @@ class NutritionPlan {
           }
 
           sections = parsedSections;
-          DebugLogger.info('✅ Parsed ${sections.length} sections from Edge Function legacy format');
+          DebugLogger.info('✅ Parsed ${sections.length} sections from Edge Function format');
         } catch (e) {
           DebugLogger.error('Error parsing sections from Edge Function format: $e');
           sections = [];
@@ -270,6 +289,117 @@ class NutritionPlan {
   String toString() => 'NutritionPlan(id: $id, name: $name, version: $version)';
 }
 
+/// Sub-phase within the "before" section (meal, snack, top_up)
+/// Used when the plan is generated via template-based v2 system.
+class BeforeSubPhase {
+  const BeforeSubPhase({
+    required this.subPhaseType,
+    required this.foodItems,
+    this.carbsTarget,
+    this.proteinTarget,
+    this.fatTarget,
+    this.sodiumTarget,
+    this.fluidsTarget,
+    this.templateId,
+    this.templateName,
+  });
+
+  final String subPhaseType; // 'meal', 'snack', 'top_up'
+  final List<FoodItemData> foodItems;
+  final double? carbsTarget;
+  final double? proteinTarget;
+  final double? fatTarget;
+  final double? sodiumTarget;
+  final double? fluidsTarget;
+  final String? templateId;
+  final String? templateName;
+
+  /// Display title for this sub-phase
+  String get displayTitle {
+    switch (subPhaseType) {
+      case 'meal':
+        return 'Meal';
+      case 'snack':
+        return 'Snack';
+      case 'top_up':
+        return 'Top Off';
+      default:
+        return subPhaseType;
+    }
+  }
+
+  factory BeforeSubPhase.fromJson(Map<String, dynamic> json) {
+    return BeforeSubPhase(
+      subPhaseType: json['sub_phase_type'] as String? ?? json['subPhaseType'] as String,
+      foodItems: (json['foods'] as List<dynamic>? ?? json['foodItems'] as List<dynamic>? ?? [])
+          .map((item) {
+            if (item is Map<String, dynamic>) {
+              // Check if it's edge function format (has food_id) or standard format
+              if (item.containsKey('food_id')) {
+                return FoodItemData.fromEdgeFunctionJson(item);
+              }
+              return FoodItemData.fromJson(item);
+            }
+            return FoodItemData(id: '', name: 'Unknown', quantity: '0');
+          })
+          .toList(),
+      carbsTarget: (json['targets'] is Map ? (json['targets']['carbs_g'] as num?)?.toDouble() : null)
+          ?? (json['carbsTarget'] as num?)?.toDouble(),
+      proteinTarget: (json['targets'] is Map ? (json['targets']['protein_g'] as num?)?.toDouble() : null)
+          ?? (json['proteinTarget'] as num?)?.toDouble(),
+      fatTarget: (json['targets'] is Map ? (json['targets']['fat_g'] as num?)?.toDouble() : null)
+          ?? (json['fatTarget'] as num?)?.toDouble(),
+      sodiumTarget: (json['targets'] is Map ? (json['targets']['sodium_mg'] as num?)?.toDouble() : null)
+          ?? (json['sodiumTarget'] as num?)?.toDouble(),
+      fluidsTarget: (json['targets'] is Map ? (json['targets']['water_ml'] as num?)?.toDouble() : null)
+          ?? (json['fluidsTarget'] as num?)?.toDouble(),
+      templateId: json['template_id'] as String? ?? json['templateId'] as String?,
+      templateName: json['template_name'] as String? ?? json['templateName'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'subPhaseType': subPhaseType,
+      'foodItems': foodItems.map((item) => item.toJson()).toList(),
+      'carbsTarget': carbsTarget,
+      'proteinTarget': proteinTarget,
+      'fatTarget': fatTarget,
+      'sodiumTarget': sodiumTarget,
+      'fluidsTarget': fluidsTarget,
+      'templateId': templateId,
+      'templateName': templateName,
+    };
+  }
+
+  BeforeSubPhase copyWith({
+    String? subPhaseType,
+    List<FoodItemData>? foodItems,
+    double? carbsTarget,
+    double? proteinTarget,
+    double? fatTarget,
+    double? sodiumTarget,
+    double? fluidsTarget,
+    String? templateId,
+    String? templateName,
+  }) {
+    return BeforeSubPhase(
+      subPhaseType: subPhaseType ?? this.subPhaseType,
+      foodItems: foodItems ?? this.foodItems,
+      carbsTarget: carbsTarget ?? this.carbsTarget,
+      proteinTarget: proteinTarget ?? this.proteinTarget,
+      fatTarget: fatTarget ?? this.fatTarget,
+      sodiumTarget: sodiumTarget ?? this.sodiumTarget,
+      fluidsTarget: fluidsTarget ?? this.fluidsTarget,
+      templateId: templateId ?? this.templateId,
+      templateName: templateName ?? this.templateName,
+    );
+  }
+
+  @override
+  String toString() => 'BeforeSubPhase($subPhaseType, items: ${foodItems.length})';
+}
+
 /// Section within a nutrition plan (Before/During/After Run)
 class PlanSection {
   const PlanSection({
@@ -283,6 +413,7 @@ class PlanSection {
     this.carbsTarget,
     this.sodiumTarget,
     this.fluidsTarget,
+    this.subPhases,
   });
 
   final String id;
@@ -290,7 +421,7 @@ class PlanSection {
   final String? subtitle; // "30-60 min pre-run"
   final String? timing;
   final List<FoodItemData> foodItems;
-  
+
   // Macro targets for this section (nullable with defaults)
   final double? proteinTarget; // grams
   final double? fatTarget; // grams
@@ -298,21 +429,38 @@ class PlanSection {
   final double? sodiumTarget; // milligrams
   final double? fluidsTarget; // milliliters
 
+  /// Nested sub-phases for template-based "before" sections.
+  /// When present, foodItems list is empty (foods live in sub-phases instead).
+  final List<BeforeSubPhase>? subPhases;
+
+  /// Whether this section uses the template-based sub-phase layout
+  bool get hasSubPhases => subPhases != null && subPhases!.isNotEmpty;
+
   /// Create PlanSection from JSON
   factory PlanSection.fromJson(Map<String, dynamic> json) {
+    // Parse sub-phases if present
+    List<BeforeSubPhase>? subPhases;
+    if (json['subPhases'] is List) {
+      subPhases = (json['subPhases'] as List<dynamic>)
+          .map((sp) => BeforeSubPhase.fromJson(sp as Map<String, dynamic>))
+          .toList();
+    }
+
     return PlanSection(
       id: json['id'] as String,
       title: json['title'] as String,
       subtitle: json['subtitle'] as String?,
       timing: json['timing'] as String?,
-      foodItems: (json['foodItems'] as List<dynamic>)
-          .map((item) => FoodItemData.fromJson(item))
-          .toList(),
+      foodItems: (json['foodItems'] as List<dynamic>?)
+              ?.map((item) => FoodItemData.fromJson(item))
+              .toList() ??
+          [],
       proteinTarget: json['proteinTarget'] as double?,
       fatTarget: json['fatTarget'] as double?,
       carbsTarget: json['carbsTarget'] as double?,
       sodiumTarget: json['sodiumTarget'] as double?,
       fluidsTarget: json['fluidsTarget'] as double?,
+      subPhases: subPhases,
     );
   }
 
@@ -356,6 +504,7 @@ class PlanSection {
       'carbsTarget': carbsTarget,
       'sodiumTarget': sodiumTarget,
       'fluidsTarget': fluidsTarget,
+      if (subPhases != null) 'subPhases': subPhases!.map((sp) => sp.toJson()).toList(),
     };
   }
 
@@ -371,6 +520,7 @@ class PlanSection {
     double? carbsTarget,
     double? sodiumTarget,
     double? fluidsTarget,
+    List<BeforeSubPhase>? subPhases,
   }) {
     return PlanSection(
       id: id ?? this.id,
@@ -383,6 +533,7 @@ class PlanSection {
       carbsTarget: carbsTarget ?? this.carbsTarget,
       sodiumTarget: sodiumTarget ?? this.sodiumTarget,
       fluidsTarget: fluidsTarget ?? this.fluidsTarget,
+      subPhases: subPhases ?? this.subPhases,
     );
   }
 

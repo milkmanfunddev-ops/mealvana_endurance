@@ -11,6 +11,7 @@ import '../widgets/activity_detail/activity_schedule_info.dart';
 import '../widgets/activity_detail/activity_completed_badge.dart';
 import '../widgets/activity_detail/brick_header.dart';
 import '../widgets/activity_detail/brick_nutrition_sections.dart';
+import '../widgets/activity_detail/before_phase_widget.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -22,7 +23,6 @@ import '../../../activities/domain/activity.dart';
 import '../../../coach_mode/presentation/widgets/activity_coach_feedback_widget.dart';
 import '../../../coach_mode/presentation/providers/coach_activity_detail_controller.dart';
 import '../providers/activity_detail_state.dart';
-import '../../../integrations/presentation/widgets/sync_status_widget.dart';
 import '../widgets/stale_plan_warning.dart';
 import '../widgets/low_fuel_risk_badge.dart';
 
@@ -41,7 +41,8 @@ class ActivityDetailScreen extends ConsumerStatefulWidget {
   final bool isCoachView;
 
   @override
-  ConsumerState<ActivityDetailScreen> createState() => _ActivityDetailScreenState();
+  ConsumerState<ActivityDetailScreen> createState() =>
+      _ActivityDetailScreenState();
 }
 
 class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
@@ -104,26 +105,26 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
       body: activityDetailAsync.when(
-                data: (data) {
-                  final ActivityDetailState state;
-                  if (data is ActivityDetailState) {
-                    state = data;
-                  } else {
-                    final dynamic d = data;
-                    state = ActivityDetailState(
-                      activity: d.activity,
-                      nutritionPlan: d.nutritionPlan,
-                      completion: d.completion,
-                      scheduledDateTime: d.scheduledDateTime,
-                      isSaving: d.isSaving ?? false,
-                      isCompleting: d.isCompleting ?? false,
-                      hasUnsavedChanges: d.hasUnsavedChanges ?? false,
-                      error: d.error,
-                    );
-                  }
-                  return _buildContent(context, state);
-                },
-                loading: () => _buildLoadingState(context),
+        data: (data) {
+          final ActivityDetailState state;
+          if (data is ActivityDetailState) {
+            state = data;
+          } else {
+            final dynamic d = data;
+            state = ActivityDetailState(
+              activity: d.activity,
+              nutritionPlan: d.nutritionPlan,
+              completion: d.completion,
+              scheduledDateTime: d.scheduledDateTime,
+              isSaving: d.isSaving ?? false,
+              isCompleting: d.isCompleting ?? false,
+              hasUnsavedChanges: d.hasUnsavedChanges ?? false,
+              error: d.error,
+            );
+          }
+          return _buildContent(context, state);
+        },
+        loading: () => _buildLoadingState(context),
         error: (error, stack) => _buildErrorState(context, error),
       ),
     );
@@ -131,7 +132,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.95),
+      backgroundColor: Theme.of(
+        context,
+      ).scaffoldBackgroundColor.withValues(alpha: 0.95),
       elevation: 0,
       scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,
@@ -141,7 +144,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: IconButton(
@@ -254,7 +259,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           if (activity.needsNutritionRefresh == true) ...[
             StalePlanWarning(
               onRegeneratePlan: () => _handleRegeneratePlan(context, state),
-              isRegenerating: state.isSaving, // Use existing saving state to prevent double operations
+              isRegenerating: state
+                  .isSaving, // Use existing saving state to prevent double operations
             ),
             const SizedBox(height: AppSpacing.lg),
           ],
@@ -288,11 +294,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final scheduledDateTime = state.scheduledDateTime ?? DateTime.now();
 
     // Check if this is a brick workout
-    if (activity != null && activity.isBrick && activity.brickMetadata != null) {
-      return BrickHeader(
-        brick: activity,
-        metadata: activity.brickMetadata!,
-      );
+    if (activity != null &&
+        activity.isBrick &&
+        activity.brickMetadata != null) {
+      return BrickHeader(brick: activity, metadata: activity.brickMetadata!);
     }
 
     // Standard single-sport header
@@ -304,22 +309,14 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           scheduledDateTime: scheduledDateTime,
           activityType: activityType,
         ),
-
-        // Sync status widget (only for synced activities)
-        if (activity != null && activity.syncedFromProvider != null) ...[
-          const SizedBox(height: AppSpacing.md),
-          SyncStatusWidget(
-            lastSyncAt: activity.lastSyncedAt,
-            isSyncedActivity: activity.syncedFromProvider != null,
-            isLoading: false,
-            onRefresh: () => _handleRefreshActivity(context, state),
-          ),
-        ],
       ],
     );
   }
 
-  Widget _buildNoNutritionPlanState(BuildContext context, ActivityDetailState state) {
+  Widget _buildNoNutritionPlanState(
+    BuildContext context,
+    ActivityDetailState state,
+  ) {
     final activity = state.activity;
 
     return BaseCard(
@@ -378,7 +375,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     );
   }
 
-  Widget _buildNutritionSections(BuildContext context, ActivityDetailState state) {
+  Widget _buildNutritionSections(
+    BuildContext context,
+    ActivityDetailState state,
+  ) {
     final plan = state.nutritionPlan!;
     final activity = state.activity;
 
@@ -387,17 +387,29 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       return BrickNutritionSections(
         brick: activity,
         planData: plan,
-        useImperial: ref.watch(settingsControllerProvider).value?.preferredDistanceUnit == DistanceUnit.miles,
+        useImperial:
+            ref
+                .watch(settingsControllerProvider)
+                .value
+                ?.preferredDistanceUnit ==
+            DistanceUnit.miles,
         onAddFood: (category) => _addFood(context, category),
-        onSwapFood: (foodId, foodName, category) => _swapFood(context, state, foodId, foodName, category),
-        onDeleteFood: (foodId, category) => _deleteFood(context, state, foodId, category),
-        onUpdateQuantity: (foodId, category, newQuantity) => _updateFoodQuantity(context, state, foodId, category, newQuantity),
+        onSwapFood: (foodId, foodName, category) =>
+            _swapFood(context, state, foodId, foodName, category),
+        onDeleteFood: (foodId, category) =>
+            _deleteFood(context, state, foodId, category),
+        onUpdateQuantity: (foodId, category, newQuantity) =>
+            _updateFoodQuantity(context, state, foodId, category, newQuantity),
         showSwipeHint: _consumeSwipeHint(),
       );
     }
 
     // Get activity type for sport-specific section titles (e.g., "Before Swim", "During Ride")
     final activityType = state.activity?.activityType ?? ActivityType.running;
+
+    // Check unit preference
+    final settings = ref.watch(settingsControllerProvider).value;
+    final useImperial = settings?.preferredDistanceUnit == DistanceUnit.miles;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,6 +431,33 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
         // Generate sport-specific title using ActivityType
         final sectionTitle = activityType.getSectionTitle(category);
+
+        // Use BeforePhaseWidget for before sections with sub-phases (V2 template plans)
+        if (category == 'before_run' && section.hasSubPhases) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            child: BeforePhaseWidget(
+              section: section,
+              sectionColor: sectionColor,
+              sectionTitle: sectionTitle.toUpperCase(),
+              useImperial: useImperial,
+              onSwapFood: (foodId, foodName, cat) =>
+                  _swapFood(context, state, foodId, foodName, cat),
+              onDeleteFood: (foodId, cat) =>
+                  _deleteFood(context, state, foodId, cat),
+              onUpdateQuantity: (foodId, cat, newQuantity) =>
+                  _updateFoodQuantity(context, state, foodId, cat, newQuantity),
+              onScaleSubPhase: (subPhaseIndex, foodIndex, newQuantity) {
+                final controller = _getControllerNotifier();
+                controller.updateSubPhaseQuantityWithScaling(
+                  subPhaseIndex, foodIndex, newQuantity,
+                );
+              },
+              onAddFood: (cat) => _addFood(context, cat),
+              showSwipeHint: _consumeSwipeHint(),
+            ),
+          );
+        }
 
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.lg),
@@ -479,14 +518,23 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             final food = entry.value;
             return Padding(
               padding: EdgeInsets.only(
-                bottom: index < section.foodItems.length - 1 ? AppSpacing.sm : 0,
+                bottom: index < section.foodItems.length - 1
+                    ? AppSpacing.sm
+                    : 0,
               ),
               child: DismissibleFoodItem(
                 food: food,
                 category: category,
-                onSwap: () => _swapFood(context, state, food.id, food.name, category),
+                onSwap: () =>
+                    _swapFood(context, state, food.id, food.name, category),
                 onDelete: () => _deleteFood(context, state, food.id, category),
-                onQuantityChange: (newQuantity) => _updateFoodQuantity(context, state, food.id, category, newQuantity),
+                onQuantityChange: (newQuantity) => _updateFoodQuantity(
+                  context,
+                  state,
+                  food.id,
+                  category,
+                  newQuantity,
+                ),
                 showSwipeHint: _consumeSwipeHint(),
               ),
             );
@@ -526,14 +574,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         Expanded(
           child: KyleSecondaryButton(
             text: state.isSaving ? 'Saving...' : 'Save',
-            onPressed: state.isSaving ? null : () => _saveWorkout(context, state),
+            onPressed: state.isSaving
+                ? null
+                : () => _saveWorkout(context, state),
           ),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: KylePrimaryButton(
             text: state.isCompleting ? 'Completing...' : 'Complete',
-            onPressed: state.isCompleting ? null : () => _completeWorkout(context, state),
+            onPressed: state.isCompleting
+                ? null
+                : () => _completeWorkout(context, state),
           ),
         ),
       ],
@@ -543,7 +595,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   // Helper to get the correct controller notifier based on view mode
   dynamic _getControllerNotifier() {
     if (widget.isCoachView) {
-      return ref.read(coachActivityDetailControllerProvider(widget.activityId).notifier);
+      return ref.read(
+        coachActivityDetailControllerProvider(widget.activityId).notifier,
+      );
     }
     return ref.read(
       activityDetailControllerProvider(
@@ -588,7 +642,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             brick: activity,
             onComplete: (rating, notes) async {
               Navigator.of(dialogContext).pop();
-              await _handleCompletion(context, state, rating, notes, isBrick: true);
+              await _handleCompletion(
+                context,
+                state,
+                rating,
+                notes,
+                isBrick: true,
+              );
             },
           );
         }
@@ -597,7 +657,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         return CompletionDialog(
           onComplete: (rating, notes) async {
             Navigator.of(dialogContext).pop();
-            await _handleCompletion(context, state, rating, notes, isBrick: false);
+            await _handleCompletion(
+              context,
+              state,
+              rating,
+              notes,
+              isBrick: false,
+            );
           },
         );
       },
@@ -635,7 +701,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     }
   }
 
-  void _swapFood(BuildContext context, ActivityDetailState state, String foodId, String foodName, String category) {
+  void _swapFood(
+    BuildContext context,
+    ActivityDetailState state,
+    String foodId,
+    String foodName,
+    String category,
+  ) {
     final controller = _getControllerNotifier();
     controller.trackEvent('swap_food_tapped', {
       'food_id': foodId,
@@ -644,17 +716,25 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       'is_coach_view': widget.isCoachView,
     });
 
-    context.push('/swap-food', extra: {
-      'foodToSwapId': foodId,
-      'foodToSwapName': foodName,
-      'category': category,
-      'activityId': widget.activityId,
-      'isNewActivity': widget.isNewActivity,
-      'isCoachView': widget.isCoachView,
-    });
+    context.push(
+      '/swap-food',
+      extra: {
+        'foodToSwapId': foodId,
+        'foodToSwapName': foodName,
+        'category': category,
+        'activityId': widget.activityId,
+        'isNewActivity': widget.isNewActivity,
+        'isCoachView': widget.isCoachView,
+      },
+    );
   }
 
-  Future<void> _deleteFood(BuildContext context, ActivityDetailState state, String foodId, String category) async {
+  Future<void> _deleteFood(
+    BuildContext context,
+    ActivityDetailState state,
+    String foodId,
+    String category,
+  ) async {
     final controller = _getControllerNotifier();
 
     await controller.deleteFoodItem(foodId, category);
@@ -664,7 +744,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     }
   }
 
-  Future<void> _updateFoodQuantity(BuildContext context, ActivityDetailState state, String foodId, String category, double newQuantity) async {
+  Future<void> _updateFoodQuantity(
+    BuildContext context,
+    ActivityDetailState state,
+    String foodId,
+    String category,
+    double newQuantity,
+  ) async {
     final controller = _getControllerNotifier();
 
     await controller.updateFoodQuantity(foodId, category, newQuantity);
@@ -672,29 +758,26 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   void _addFood(BuildContext context, String category) {
     final controller = _getControllerNotifier();
-    controller.trackEvent('add_food_tapped', {
-      'section': category,
-    });
+    controller.trackEvent('add_food_tapped', {'section': category});
 
-    context.push('/swap-food', extra: {
-      'foodToSwapId': null,
-      'foodToSwapName': null,
-      'category': category,
-      'activityId': widget.activityId,
-      'isNewActivity': widget.isNewActivity,
-      'isCoachView': widget.isCoachView,
-    });
-  }
-
-  /// Handle refresh button tap for synced activities
-  void _handleRefreshActivity(BuildContext context, ActivityDetailState state) {
-    if (mounted) {
-      MealvanaSnackbar.showInfo(context, 'Refresh coming soon');
-    }
+    context.push(
+      '/swap-food',
+      extra: {
+        'foodToSwapId': null,
+        'foodToSwapName': null,
+        'category': category,
+        'activityId': widget.activityId,
+        'isNewActivity': widget.isNewActivity,
+        'isCoachView': widget.isCoachView,
+      },
+    );
   }
 
   /// Handle regenerate plan button tap for stale nutrition plans
-  Future<void> _handleRegeneratePlan(BuildContext context, ActivityDetailState state) async {
+  Future<void> _handleRegeneratePlan(
+    BuildContext context,
+    ActivityDetailState state,
+  ) async {
     if (state.activity == null) {
       if (mounted) {
         MealvanaSnackbar.showError(context, 'Activity not found');
@@ -707,9 +790,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
     if (mounted) {
       if (success) {
-        MealvanaSnackbar.showSuccess(context, 'Nutrition plan regenerated successfully!');
+        MealvanaSnackbar.showSuccess(
+          context,
+          'Nutrition plan regenerated successfully!',
+        );
       } else {
-        MealvanaSnackbar.showError(context, 'Failed to regenerate nutrition plan. Please try again.');
+        MealvanaSnackbar.showError(
+          context,
+          'Failed to regenerate nutrition plan. Please try again.',
+        );
       }
     }
   }
@@ -720,7 +809,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Activity'),
-        content: const Text('Are you sure you want to delete this activity? This action cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to delete this activity? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -728,9 +819,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.dragonfruit,
-            ),
+            style: TextButton.styleFrom(foregroundColor: AppColors.dragonfruit),
             child: const Text('Delete'),
           ),
         ],
@@ -752,7 +841,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         MealvanaSnackbar.showSuccess(context, 'Activity deleted successfully');
         context.go('/main');
       } else {
-        MealvanaSnackbar.showError(context, 'Failed to delete activity. Please try again.');
+        MealvanaSnackbar.showError(
+          context,
+          'Failed to delete activity. Please try again.',
+        );
       }
     }
   }

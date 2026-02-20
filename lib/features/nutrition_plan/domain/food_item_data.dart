@@ -14,6 +14,9 @@ class FoodItemData {
     this.displayNamePlural,
     this.displayOverride,
     this.servingSize,
+    this.isDrink = false,
+    this.templateId,
+    this.scaleMultiplier,
   });
 
   final String id;
@@ -28,6 +31,15 @@ class FoodItemData {
   final String? displayNamePlural; // Display name for plural quantities
   final String? displayOverride; // Override display name
   final String? servingSize; // Serving size information (e.g., "1 cup", "100g")
+
+  /// Whether this item is a drink (vs food) - used for UI distinction
+  final bool isDrink;
+
+  /// Template ID this food came from (for tracking in template-based plans)
+  final String? templateId;
+
+  /// Scale multiplier applied during proportional scaling (for UX)
+  final double? scaleMultiplier;
 
   /// Get the full image URL for this food item data
   /// Returns Open Food Facts URLs directly, or constructs S3 URL for other images
@@ -63,6 +75,9 @@ class FoodItemData {
       displayNamePlural: json['displayNamePlural'] as String?,
       displayOverride: json['displayOverride'] as String?,
       servingSize: json['servingSize'] as String? ?? json['serving_size'] as String?,
+      isDrink: json['isDrink'] as bool? ?? json['is_drink'] as bool? ?? false,
+      templateId: json['templateId'] as String? ?? json['template_id'] as String?,
+      scaleMultiplier: (json['scaleMultiplier'] as num?)?.toDouble() ?? (json['scale_multiplier'] as num?)?.toDouble(),
     );
   }
 
@@ -92,6 +107,9 @@ class FoodItemData {
       displayName: json['display_name'] as String?,
       displayNamePlural: json['display_name_plural'] as String?,
       servingSize: json['serving_size'] as String?,
+      isDrink: json['is_drink'] as bool? ?? false,
+      templateId: json['template_id'] as String?,
+      scaleMultiplier: (json['scale_multiplier'] as num?)?.toDouble(),
     );
   }
 
@@ -110,6 +128,9 @@ class FoodItemData {
       'displayNamePlural': displayNamePlural,
       'displayOverride': displayOverride,
       'servingSize': servingSize,
+      'isDrink': isDrink,
+      'templateId': templateId,
+      'scaleMultiplier': scaleMultiplier,
     };
   }
 
