@@ -6,7 +6,10 @@
  * then each item's quantity is snapped to a friendly fraction based
  * on its unit type.
  *
- * Score: carbs 50% + hydration 30% + sodium 20%
+ * Score: carbs 60% + hydration 20% + sodium 20%
+ *
+ * Only fluid from is_liquid foods (milk, OJ) counts toward hydration scoring.
+ * Non-liquid food fluid (banana 88ml, grapes 122ml) is ignored for scoring.
  */
 
 import { type TemplateFoodItem, type ScaledFood, type ScalingResult, type SubPhaseTargets } from './types.ts';
@@ -170,6 +173,7 @@ export function scaleTemplate(
     for (const food of foods) {
       const rawServings = food.default_servings * multiplier;
       const snapped = snapToFriendly(rawServings);
+      const isLiquid = food.is_liquid === true;
 
       // Check against min/max constraints
       if (snapped < food.min_servings || snapped > food.max_servings) {
@@ -206,7 +210,8 @@ export function scaleTemplate(
           totalProtein += proteinContrib;
           totalFat += fatContrib;
           totalSodium += sodiumContrib;
-          totalFluid += fluidContrib;
+          // Only count fluid from liquid foods (milk, OJ) toward hydration scoring
+          if (isLiquid) totalFluid += fluidContrib;
           totalCalories += caloriesContrib;
           continue;
         }
@@ -239,7 +244,8 @@ export function scaleTemplate(
       totalProtein += proteinContrib;
       totalFat += fatContrib;
       totalSodium += sodiumContrib;
-      totalFluid += fluidContrib;
+      // Only count fluid from liquid foods (milk, OJ) toward hydration scoring
+      if (isLiquid) totalFluid += fluidContrib;
       totalCalories += caloriesContrib;
     }
 
@@ -288,6 +294,10 @@ export function scaleTemplate(
       calories: Math.round(food.calories * food.default_servings),
     }));
 
+    // Only count fluid from liquid foods (milk, OJ) in fallback
+    const fallbackLiquidFluid = foods.reduce((s, food) =>
+      food.is_liquid === true ? s + Math.round(food.fluid_ml * food.default_servings * 10) / 10 : s, 0);
+
     bestResult = {
       multiplier: 1.0,
       foods: defaultFoods,
@@ -295,7 +305,7 @@ export function scaleTemplate(
       total_protein: defaultFoods.reduce((s, f) => s + f.protein_grams, 0),
       total_fat: defaultFoods.reduce((s, f) => s + f.fat_grams, 0),
       total_sodium: defaultFoods.reduce((s, f) => s + f.sodium_mg, 0),
-      total_fluid: defaultFoods.reduce((s, f) => s + f.fluids_ml, 0),
+      total_fluid: fallbackLiquidFluid,
       total_calories: defaultFoods.reduce((s, f) => s + f.calories, 0),
       score: 0,
     };

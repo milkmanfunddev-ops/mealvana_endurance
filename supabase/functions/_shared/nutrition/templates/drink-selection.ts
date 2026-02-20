@@ -94,11 +94,15 @@ const MIN_FLUID_BUDGET_FOR_DRINK = 120;
  * and with 3 sub-phases that would be ~711ml from drinks alone. The budget
  * ensures total drink fluid stays close to the overall pre-workout fluid target.
  *
+ * Skips drink assignment for sub-phases where the template has has_liquid_base
+ * (e.g., smoothie with milk, cereal with milk — the liquid is already in the food).
+ *
  * @param drinkPool - Available drinks from template_foods where is_drink_pool = true
  * @param activeSubPhases - Which sub-phases need drinks
  * @param targets - Per-sub-phase targets for scoring
  * @param likedFoods - User's liked food names
  * @param dislikedFoods - User's disliked food names
+ * @param hasLiquidBasePhases - Sub-phases where the selected template already has a liquid ingredient
  * @returns Map of sub-phase type to selected drink (as FoodResult)
  */
 export function selectDrinksForPhases(
@@ -107,6 +111,7 @@ export function selectDrinksForPhases(
   targets: Map<SubPhaseType, { carbs_g: number; water_ml: number }>,
   likedFoods?: string[],
   dislikedFoods?: string[],
+  hasLiquidBasePhases?: Set<SubPhaseType>,
 ): Map<SubPhaseType, FoodResult | null> {
   const result = new Map<SubPhaseType, FoodResult | null>();
   const usedDrinks = new Set<string>();
@@ -114,18 +119,27 @@ export function selectDrinksForPhases(
   const likedSet = new Set((likedFoods ?? []).map((f) => f.toLowerCase()));
   const dislikedSet = new Set((dislikedFoods ?? []).map((f) => f.toLowerCase()));
 
-  // Compute total fluid budget across all sub-phases
+  // Compute total fluid budget across all sub-phases (exclude has_liquid_base phases)
   let totalFluidBudget = 0;
-  for (const [, phaseTarget] of targets) {
-    totalFluidBudget += phaseTarget.water_ml;
+  for (const [phase, phaseTarget] of targets) {
+    if (!hasLiquidBasePhases?.has(phase)) {
+      totalFluidBudget += phaseTarget.water_ml;
+    }
   }
 
   let remainingFluidBudget = totalFluidBudget;
   let drinksAssigned = 0;
 
-  console.log(`[DRINK-SELECT] Total fluid budget: ${totalFluidBudget}ml for ${activeSubPhases.length} phases`);
+  console.log(`[DRINK-SELECT] Total fluid budget: ${totalFluidBudget}ml for ${activeSubPhases.length} phases (${hasLiquidBasePhases?.size ?? 0} have liquid base)`);
 
   for (const subPhase of activeSubPhases) {
+    // Skip drink for sub-phases where template already has a liquid base (smoothie+milk, cereal+milk)
+    if (hasLiquidBasePhases?.has(subPhase)) {
+      console.log(`[DRINK-SELECT] Skipping drink for ${subPhase} (template has liquid base)`);
+      result.set(subPhase, null);
+      continue;
+    }
+
     // Check fluid budget: skip drink if budget exhausted (but always assign at least 1)
     if (remainingFluidBudget < MIN_FLUID_BUDGET_FOR_DRINK && drinksAssigned > 0) {
       console.log(

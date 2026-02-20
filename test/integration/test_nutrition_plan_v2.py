@@ -177,18 +177,11 @@ def run_test(
         template_name = sp_data.get("template_name", "none")
         drink = sp_data.get("drink")
 
-        # Sum food macros
+        # Sum food macros (foods array already includes the drink item)
         sp_carbs = sum(f.get("carbs_grams", 0) or 0 for f in foods)
         sp_fluids = sum(f.get("fluids_ml", 0) or 0 for f in foods)
         sp_sodium = sum(f.get("sodium_mg", 0) or 0 for f in foods)
         sp_protein = sum(f.get("protein_grams", 0) or 0 for f in foods)
-
-        # Add drink contributions
-        if drink:
-            sp_carbs += drink.get("carbs_grams", 0) or 0
-            sp_fluids += drink.get("fluids_ml", 0) or 0
-            sp_sodium += drink.get("sodium_mg", 0) or 0
-            sp_protein += drink.get("protein_grams", 0) or 0
 
         total_carbs += sp_carbs
         total_fluids += sp_fluids

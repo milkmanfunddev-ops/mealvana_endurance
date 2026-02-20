@@ -207,7 +207,16 @@ async function generateBeforePhase(
   // 6. Select template chain
   const templateChain = selectTemplateChain(filteredTemplates, activeSubPhases);
 
-  // 7. Select drinks for each phase
+  // 7. Build has_liquid_base phase set (skip drink assignment for these)
+  const hasLiquidBasePhases = new Set<SubPhaseType>();
+  for (const [subPhase, template] of templateChain) {
+    if (template.has_liquid_base) {
+      hasLiquidBasePhases.add(subPhase);
+      console.log(`[PLAN-V2] ${subPhase}: template "${template.name}" has liquid base — skipping drink`);
+    }
+  }
+
+  // 8. Select drinks for each phase (skipping has_liquid_base phases)
   const drinkTargetsMap = new Map<SubPhaseType, { carbs_g: number; water_ml: number }>();
   for (const [phase, targets] of subPhaseTargets) {
     drinkTargetsMap.set(phase, { carbs_g: targets.carbs_g, water_ml: targets.water_ml });
@@ -219,9 +228,10 @@ async function generateBeforePhase(
     drinkTargetsMap,
     input.liked_foods,
     input.disliked_foods,
+    hasLiquidBasePhases,
   );
 
-  // 8. Scale templates and build sub-phase results
+  // 9. Scale templates and build sub-phase results
   const beforeResult: BeforePhaseResult = {};
 
   for (const subPhase of activeSubPhases) {
@@ -248,22 +258,29 @@ async function generateBeforePhase(
     );
 
     // Convert scaled foods to FoodResult format
-    const foodResults: FoodResult[] = scaled.foods.map((sf) => ({
-      food_id: sf.food_id,
-      quantity: sf.quantity,
-      carbs_grams: sf.carbs_grams,
-      protein_grams: sf.protein_grams,
-      fat_grams: sf.fat_grams,
-      sodium_mg: sf.sodium_mg,
-      fluids_ml: sf.fluids_ml,
-      calories: sf.calories,
-      display_name: sf.display_name,
-      serving_size: sf.serving_size,
-      timing: getSubPhaseTimingLabel(subPhase, input.hours_before),
-      is_drink: false,
-      template_id: template.id,
-      scale_multiplier: sf.scale_multiplier,
-    } as FoodResult & { is_drink: boolean; template_id: string; scale_multiplier: number }));
+    // Only include fluids_ml for liquid foods (milk, OJ) — non-liquid food moisture
+    // (banana 88ml, grapes 122ml) doesn't count toward hydration targets
+    const foodResults: FoodResult[] = scaled.foods.map((sf) => {
+      const originalFood = template.foods.find(f => f.food_id === sf.food_id);
+      const isLiquid = originalFood?.is_liquid === true;
+      return {
+        food_id: sf.food_id,
+        quantity: sf.quantity,
+        carbs_grams: sf.carbs_grams,
+        protein_grams: sf.protein_grams,
+        fat_grams: sf.fat_grams,
+        sodium_mg: sf.sodium_mg,
+        fluids_ml: isLiquid ? sf.fluids_ml : 0,
+        calories: sf.calories,
+        display_name: sf.display_name,
+        serving_size: sf.serving_size,
+        timing: getSubPhaseTimingLabel(subPhase, input.hours_before),
+        is_drink: false,
+        is_liquid: isLiquid,
+        template_id: template.id,
+        scale_multiplier: sf.scale_multiplier,
+      } as FoodResult & { is_drink: boolean; is_liquid: boolean; template_id: string; scale_multiplier: number };
+    });
 
     // Add drink to the food list
     if (drink) {

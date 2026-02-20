@@ -22,6 +22,7 @@ export interface TemplateFoodItem {
   sodium_mg: number;
   fluid_ml: number;
   calories: number;
+  is_liquid?: boolean; // true for milk, OJ — fluid counts toward hydration targets
 }
 
 export interface Template {
@@ -49,6 +50,7 @@ export interface Template {
   validation_status: string;
   is_active: boolean;
   sort_order: number;
+  has_liquid_base?: boolean; // true for smoothie+milk, cereal+milk — skip drink assignment
 }
 
 export interface DrinkPoolItem {
