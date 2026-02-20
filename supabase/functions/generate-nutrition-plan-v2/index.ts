@@ -145,6 +145,15 @@ async function generateBeforePhase(
 ): Promise<BeforePhaseResult> {
   console.log(`[PLAN-V2] Generating before phase (hours_before=${input.hours_before})`);
 
+  // 0. Handle fasted state: if all pre-run targets are 0, skip the before phase
+  const preTargetsCheck = input.macro_targets.pre_run;
+  const totalPreCarbs = preTargetsCheck.carbs_g ?? 0;
+  const totalPreFluids = preTargetsCheck.water_ml ?? 0;
+  if (totalPreCarbs <= 0 && totalPreFluids <= 0) {
+    console.log(`[PLAN-V2] Fasted state detected (carbs=0, fluids=0), skipping before phase`);
+    return {};
+  }
+
   // 1. Determine active sub-phases
   const activeSubPhases = getActiveSubPhases(input.hours_before);
   console.log(`[PLAN-V2] Active sub-phases: ${activeSubPhases.join(', ')}`);
@@ -225,11 +234,13 @@ async function generateBeforePhase(
       continue;
     }
 
-    // Calculate drink carb contribution to subtract from food target
+    // Calculate drink contributions to subtract from food targets
     const drinkCarbs = drink ? drink.carbs_grams : 0;
+    const drinkFluids = drink ? drink.fluids_ml : 0;
+    const drinkSodium = drink ? drink.sodium_mg : 0;
 
-    // Scale template foods
-    const scaled = scaleTemplate(template.foods, targets, drinkCarbs);
+    // Scale template foods (adjusted targets account for drink contribution)
+    const scaled = scaleTemplate(template.foods, targets, drinkCarbs, drinkFluids, drinkSodium);
 
     console.log(
       `[PLAN-V2] ${subPhase}: ${template.name} scaled @${scaled.multiplier}x ` +

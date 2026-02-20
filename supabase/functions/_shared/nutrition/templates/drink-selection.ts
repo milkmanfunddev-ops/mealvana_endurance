@@ -81,7 +81,18 @@ function scoreDrink(
 }
 
 /**
+ * Minimum remaining fluid budget (ml) to justify assigning another drink.
+ * Below this threshold, additional drinks would significantly overshoot
+ * the hydration target. Set to ~half a standard serving.
+ */
+const MIN_FLUID_BUDGET_FOR_DRINK = 120;
+
+/**
  * Select a drink for each active sub-phase from the drink pool.
+ *
+ * Uses a fluid budget to avoid over-assigning drinks. Each drink is ~237ml,
+ * and with 3 sub-phases that would be ~711ml from drinks alone. The budget
+ * ensures total drink fluid stays close to the overall pre-workout fluid target.
  *
  * @param drinkPool - Available drinks from template_foods where is_drink_pool = true
  * @param activeSubPhases - Which sub-phases need drinks
@@ -103,7 +114,28 @@ export function selectDrinksForPhases(
   const likedSet = new Set((likedFoods ?? []).map((f) => f.toLowerCase()));
   const dislikedSet = new Set((dislikedFoods ?? []).map((f) => f.toLowerCase()));
 
+  // Compute total fluid budget across all sub-phases
+  let totalFluidBudget = 0;
+  for (const [, phaseTarget] of targets) {
+    totalFluidBudget += phaseTarget.water_ml;
+  }
+
+  let remainingFluidBudget = totalFluidBudget;
+  let drinksAssigned = 0;
+
+  console.log(`[DRINK-SELECT] Total fluid budget: ${totalFluidBudget}ml for ${activeSubPhases.length} phases`);
+
   for (const subPhase of activeSubPhases) {
+    // Check fluid budget: skip drink if budget exhausted (but always assign at least 1)
+    if (remainingFluidBudget < MIN_FLUID_BUDGET_FOR_DRINK && drinksAssigned > 0) {
+      console.log(
+        `[DRINK-SELECT] Skipping drink for ${subPhase} ` +
+        `(fluid budget exhausted: ${remainingFluidBudget}ml remaining)`
+      );
+      result.set(subPhase, null);
+      continue;
+    }
+
     // Filter drinks available for this phase
     const phaseDrinks = drinkPool.filter((d) =>
       d.drink_pool_phases.includes(subPhase) &&
@@ -136,10 +168,13 @@ export function selectDrinksForPhases(
 
     const selected = scored[0].drink;
     usedDrinks.add(selected.name);
+    remainingFluidBudget -= selected.fluid_ml;
+    drinksAssigned++;
 
     console.log(
       `[DRINK-SELECT] ${subPhase}: ${selected.display_name} (score: ${scored[0].score.toFixed(1)}, ` +
-      `${selected.fluid_ml}ml fluid, ${selected.carbs_g}g carbs)`
+      `${selected.fluid_ml}ml fluid, ${selected.carbs_g}g carbs, ` +
+      `budget remaining: ${remainingFluidBudget}ml)`
     );
 
     // Convert to FoodResult

@@ -90,12 +90,13 @@ const MULTIPLIER_GRID = generateMultiplierGrid();
  * Score a scaling result against targets.
  *
  * Weighted scoring:
- * - Carbs: 50% weight (primary macro for endurance)
- * - Hydration: 30% weight (critical for performance)
- * - Sodium: 20% weight (important for long efforts)
+ * - Carbs: 60% weight (primary macro for endurance — most important)
+ * - Hydration: 20% weight (drink provides most of the fluid)
+ * - Sodium: 20% weight (important but shouldn't block carb scaling)
  *
- * Each component is scored as 1 - |actual - target| / target.
- * Negative scores (overshoot) are penalized more heavily.
+ * Each component is scored as 1 - |actual - target| / target,
+ * clamped to [0, 1] so that no single component can go deeply negative
+ * and overwhelm the others.
  */
 function scoreScaling(
   totalCarbs: number,
@@ -103,28 +104,33 @@ function scoreScaling(
   totalSodium: number,
   targets: SubPhaseTargets,
 ): number {
-  const carbScore = targets.carbs_g > 0
+  const rawCarbScore = targets.carbs_g > 0
     ? 1 - Math.abs(totalCarbs - targets.carbs_g) / targets.carbs_g
     : 1;
 
-  const fluidScore = targets.water_ml > 0
+  const rawFluidScore = targets.water_ml > 0
     ? 1 - Math.abs(totalFluid - targets.water_ml) / targets.water_ml
     : 1;
 
-  const sodiumScore = targets.sodium_mg > 0
+  const rawSodiumScore = targets.sodium_mg > 0
     ? 1 - Math.abs(totalSodium - targets.sodium_mg) / targets.sodium_mg
     : 1;
 
-  // Penalize overshoot more than undershoot
-  const carbPenalty = totalCarbs > targets.carbs_g * 1.15 ? -0.3 : 0;
-  const fluidPenalty = totalFluid > targets.water_ml * 1.2 ? -0.2 : 0;
+  // Clamp to [0, 1] to prevent any single macro from going deeply negative
+  // and overriding carb optimization (e.g., high-sodium tortilla at 2x would
+  // produce sodiumScore = -2.5 without clamping, killing the entire result)
+  const carbScore = Math.max(0, Math.min(1, rawCarbScore));
+  const fluidScore = Math.max(0, Math.min(1, rawFluidScore));
+  const sodiumScore = Math.max(0, Math.min(1, rawSodiumScore));
+
+  // Mild penalty for significant carb overshoot (>20% over target)
+  const carbPenalty = totalCarbs > targets.carbs_g * 1.2 ? -0.15 : 0;
 
   return (
-    0.5 * carbScore +
-    0.3 * fluidScore +
+    0.6 * carbScore +
+    0.2 * fluidScore +
     0.2 * sodiumScore +
-    carbPenalty +
-    fluidPenalty
+    carbPenalty
   );
 }
 
@@ -141,9 +147,13 @@ export function scaleTemplate(
   foods: TemplateFoodItem[],
   targets: SubPhaseTargets,
   drinkCarbsToSubtract: number = 0,
+  drinkFluidsToSubtract: number = 0,
+  drinkSodiumToSubtract: number = 0,
 ): ScalingResult {
-  // Adjust target carbs to account for drink contribution
+  // Adjust targets to account for drink contribution
   const adjustedCarbTarget = Math.max(0, targets.carbs_g - drinkCarbsToSubtract);
+  const adjustedFluidTarget = Math.max(0, targets.water_ml - drinkFluidsToSubtract);
+  const adjustedSodiumTarget = Math.max(0, targets.sodium_mg - drinkSodiumToSubtract);
 
   let bestResult: ScalingResult | null = null;
 
@@ -235,10 +245,12 @@ export function scaleTemplate(
 
     if (!valid) continue;
 
-    // Use adjustedCarbTarget for scoring (subtract drink carbs)
+    // Use adjusted targets for scoring (subtract drink contributions)
     const adjustedTargets: SubPhaseTargets = {
       ...targets,
       carbs_g: adjustedCarbTarget,
+      water_ml: adjustedFluidTarget,
+      sodium_mg: adjustedSodiumTarget,
     };
 
     const score = scoreScaling(totalCarbs, totalFluid, totalSodium, adjustedTargets);
