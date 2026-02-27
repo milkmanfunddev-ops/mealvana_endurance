@@ -5,7 +5,9 @@ import '../../../../../core/utils/debug_logger.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../activities/domain/activity.dart';
 import '../../../domain/nutrition_plan.dart';
+import '../../../domain/time_slot_assignment.dart';
 import 'dismissible_food_item.dart';
+import 'during_phase_section_widget.dart';
 import 'macro_summary_row.dart';
 
 /// BrickNutritionSections widget - renders multi-phase nutrition sections for brick workouts
@@ -22,6 +24,8 @@ class BrickNutritionSections extends StatelessWidget {
     required this.onSwapFood,
     required this.onDeleteFood,
     required this.onUpdateQuantity,
+    this.onInitializeByHour,
+    this.onMoveFoodToTimeSlot,
     this.showSwipeHint = false,
     this.useImperial = false,
   });
@@ -32,6 +36,8 @@ class BrickNutritionSections extends StatelessWidget {
   final Function(String foodId, String foodName, String category) onSwapFood;
   final Function(String foodId, String category) onDeleteFood;
   final Function(String foodId, String category, double newQuantity) onUpdateQuantity;
+  final void Function(String category, int durationMinutes)? onInitializeByHour;
+  final void Function(String foodId, String category, TimeSlot newTimeSlot)? onMoveFoodToTimeSlot;
   final bool showSwipeHint;
   final bool useImperial;
 
@@ -147,6 +153,34 @@ class BrickNutritionSections extends StatelessWidget {
       );
     }
 
+    // For during sections (not swim), use DuringPhaseSectionWidget if by-hour callbacks available
+    if (isDuring &&
+        !isSwimming &&
+        onInitializeByHour != null &&
+        onMoveFoodToTimeSlot != null) {
+      final segmentDuration = _getSegmentDuration(duringIndex);
+      if (segmentDuration >= 60) {
+        return DuringPhaseSectionWidget(
+          section: section,
+          sectionColor: sectionColor,
+          sectionTitle: displayTitle.toUpperCase(),
+          category: category,
+          durationMinutes: segmentDuration,
+          useImperial: useImperial,
+          subtitle: section.subtitle,
+          onSwapFood: (foodId, foodName, cat) =>
+              onSwapFood(foodId, foodName, cat),
+          onDeleteFood: (foodId, cat) => onDeleteFood(foodId, cat),
+          onUpdateQuantity: (foodId, cat, newQuantity) =>
+              onUpdateQuantity(foodId, cat, newQuantity),
+          onAddFood: (cat) => onAddFood(cat),
+          onInitializeByHour: onInitializeByHour!,
+          onMoveFoodToTimeSlot: onMoveFoodToTimeSlot!,
+          showSwipeHint: showSwipeHint,
+        );
+      }
+    }
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: AppRadius.cardRadius,
@@ -195,6 +229,7 @@ class BrickNutritionSections extends StatelessWidget {
                   onDelete: () => onDeleteFood(food.id, category),
                   onQuantityChange: (newQuantity) => onUpdateQuantity(food.id, category, newQuantity),
                   showSwipeHint: showSwipeHint,
+                  useImperial: useImperial,
                 ),
               );
             }),
@@ -397,6 +432,18 @@ class BrickNutritionSections extends StatelessWidget {
     if (duringCount == 2) return const ['cycling', 'running'];
     if (duringCount == 1) return const ['running'];
     return null;
+  }
+
+  /// Get segment duration in minutes from brick metadata.
+  /// Falls back to total duration / segment count if specific segment not found.
+  int _getSegmentDuration(int? duringIndex) {
+    final segments = brick.brickMetadata?.segments;
+    if (segments != null && duringIndex != null && duringIndex < segments.length) {
+      return segments[duringIndex].durationMinutes;
+    }
+    // Fallback: use total duration divided by number of during sections
+    final totalDuration = brick.durationMinutes ?? 60;
+    return totalDuration;
   }
 
   String? _sportDisplayName(String? sportType) {

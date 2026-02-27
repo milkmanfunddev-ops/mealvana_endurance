@@ -7,13 +7,16 @@ import '../../../activities/domain/activity_completion.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../domain/food_item_data.dart';
+import '../../domain/time_slot_assignment.dart';
 import '../../application/proportional_scaling_service.dart';
+import '../../application/by_hour_apportionment_service.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../activities/domain/activity_reminder.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../application/nutrition_plan_service.dart';
 import '../../data/nutrition_plan_repository.dart';
+import '../../data/template_foods_repository.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'activity_detail_state.dart';
@@ -80,6 +83,8 @@ class ActivityDetailController extends _$ActivityDetailController {
       nutritionPlan = await repository.getNutritionPlanByActivityId(userId, activityId);
       if (nutritionPlan != null) {
         _logger.info('Loaded nutrition plan for activity: ${nutritionPlan.id}');
+        // Enrich food items with displayNamePlural/servingSize from template_foods
+        nutritionPlan = await _enrichFoodItemsFromTemplateFoods(nutritionPlan);
       }
     } catch (e) {
       _logger.error('Error loading nutrition plan for activity', error: e);
@@ -310,6 +315,66 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   // ============================================================================
+  // FOOD ENRICHMENT
+  // ============================================================================
+
+  /// Enrich food items in a nutrition plan with displayNamePlural and servingSize
+  /// from the local template_foods table.
+  Future<NutritionPlan> _enrichFoodItemsFromTemplateFoods(NutritionPlan plan) async {
+    try {
+      final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
+      final allTemplateFoods = await templateFoodsRepo.getAllTemplateFoods();
+
+      // Build a lookup map by ID for fast matching
+      final foodLookup = <String, dynamic>{};
+      for (final tf in allTemplateFoods) {
+        foodLookup[tf.id] = tf;
+      }
+
+      FoodItemData enrichFood(FoodItemData food) {
+        final tf = foodLookup[food.id];
+        if (tf == null) return food;
+        return FoodItemData(
+          id: food.id,
+          name: food.name,
+          quantity: food.quantity,
+          imageAddress: food.imageAddress ?? tf.imageAddress,
+          description: food.description ?? tf.description,
+          timing: food.timing,
+          nutritionalInfo: food.nutritionalInfo,
+          instructions: food.instructions,
+          displayName: food.displayName ?? tf.displayName,
+          displayNamePlural: food.displayNamePlural ?? tf.displayNamePlural,
+          displayOverride: food.displayOverride,
+          servingSize: food.servingSize ?? tf.servingSize,
+          isDrink: food.isDrink,
+          templateId: food.templateId,
+          scaleMultiplier: food.scaleMultiplier,
+        );
+      }
+
+      final enrichedSections = plan.sections.map((section) {
+        if (section.hasSubPhases) {
+          final enrichedSubPhases = section.subPhases!.map((sp) {
+            return sp.copyWith(
+              foodItems: sp.foodItems.map(enrichFood).toList(),
+            );
+          }).toList();
+          return section.copyWith(subPhases: enrichedSubPhases);
+        }
+        return section.copyWith(
+          foodItems: section.foodItems.map(enrichFood).toList(),
+        );
+      }).toList();
+
+      return plan.copyWith(sections: enrichedSections);
+    } catch (e) {
+      _logger.warning('Failed to enrich food items from template_foods: $e');
+      return plan;
+    }
+  }
+
+  // ============================================================================
   // UNIFIED FOOD MODIFICATION METHODS
   // ============================================================================
 
@@ -427,7 +492,21 @@ class ActivityDetailController extends _$ActivityDetailController {
             return section.copyWith(subPhases: updatedSubPhases);
           }
           final updatedItems = transform(section.foodItems);
-          return section.copyWith(foodItems: updatedItems);
+
+          // Keep byHourData in sync when food items change
+          ByHourData? updatedByHour = section.byHourData;
+          if (updatedByHour != null) {
+            final service = ByHourApportionmentService();
+            updatedByHour = service.reapportion(
+              existing: updatedByHour,
+              currentFoodItems: updatedItems,
+            );
+          }
+
+          return section.copyWith(
+            foodItems: updatedItems,
+            byHourData: updatedByHour,
+          );
         }
         return section;
       }).toList();
@@ -662,6 +741,111 @@ class ActivityDetailController extends _$ActivityDetailController {
       _logger.error('Error in updateSubPhaseQuantityWithScaling',
           error: error, stackTrace: stackTrace);
       state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  // ============================================================================
+  // BY-HOUR VIEW METHODS
+  // ============================================================================
+
+  /// Initialize byHourData for a during-activity section on first toggle.
+  ///
+  /// [category] - The section category (e.g., 'during_run', 'during_bike')
+  /// [durationMinutes] - Duration of the during phase in minutes
+  Future<void> initializeByHourData(String category, int durationMinutes) async {
+    final currentState = state.value;
+    if (currentState?.nutritionPlan == null) return;
+
+    final currentPlan = currentState!.nutritionPlan!;
+
+    // Find the target section
+    final targetSection = currentPlan.sections.firstWhere(
+      (s) => _categoryMatchesSection(category, s.id, s.title),
+      orElse: () => currentPlan.sections.first,
+    );
+
+    // Already initialized - skip
+    if (targetSection.byHourData != null) return;
+
+    final service = ByHourApportionmentService();
+    final byHourData = service.apportion(
+      foodItems: targetSection.foodItems,
+      durationMinutes: durationMinutes,
+    );
+
+    if (byHourData == null) return;
+
+    final updatedSections = currentPlan.sections.map((section) {
+      if (_categoryMatchesSection(category, section.id, section.title)) {
+        return section.copyWith(byHourData: byHourData);
+      }
+      return section;
+    }).toList();
+
+    final updatedPlan = currentPlan.copyWith(
+      sections: updatedSections,
+      updatedAt: DateTime.now(),
+    );
+
+    state = AsyncData(currentState.copyWith(nutritionPlan: updatedPlan));
+
+    // Auto-save to persist byHourData
+    final activity = currentState.activity;
+    if (activity != null) {
+      await _saveNutritionPlanToActivity(activity.id, updatedPlan);
+    }
+
+    _logger.info('initializeByHourData SUCCESS',
+      context: 'ActivityDetailController',
+      data: {
+        'category': category,
+        'durationMinutes': durationMinutes,
+        'assignmentCount': byHourData.assignments.length,
+      },
+    );
+  }
+
+  /// Move a food item to a different time slot (drag & drop).
+  Future<void> moveFoodToTimeSlot(
+    String foodId,
+    String category,
+    TimeSlot newTimeSlot,
+  ) async {
+    final currentState = state.value;
+    if (currentState?.nutritionPlan == null) return;
+
+    final currentPlan = currentState!.nutritionPlan!;
+
+    final updatedSections = currentPlan.sections.map((section) {
+      if (_categoryMatchesSection(category, section.id, section.title) &&
+          section.byHourData != null) {
+        final updatedAssignments = section.byHourData!.assignments.map((a) {
+          if (a.foodItemId == foodId) {
+            return a.copyWith(timeSlot: newTimeSlot);
+          }
+          return a;
+        }).toList();
+
+        return section.copyWith(
+          byHourData: section.byHourData!.copyWith(
+            assignments: updatedAssignments,
+          ),
+        );
+      }
+      return section;
+    }).toList();
+
+    final updatedPlan = currentPlan.copyWith(
+      sections: updatedSections,
+      updatedAt: DateTime.now(),
+    );
+
+    state = AsyncData(currentState.copyWith(nutritionPlan: updatedPlan));
+
+    // Auto-save
+    final activity = currentState.activity;
+    if (activity != null) {
+      await _saveNutritionPlanToActivity(activity.id, updatedPlan);
     }
   }
 

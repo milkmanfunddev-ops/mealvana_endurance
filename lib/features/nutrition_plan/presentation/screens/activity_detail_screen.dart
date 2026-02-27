@@ -12,6 +12,7 @@ import '../widgets/activity_detail/activity_completed_badge.dart';
 import '../widgets/activity_detail/brick_header.dart';
 import '../widgets/activity_detail/brick_nutrition_sections.dart';
 import '../widgets/activity_detail/before_phase_widget.dart';
+import '../widgets/activity_detail/during_phase_section_widget.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -48,6 +49,7 @@ class ActivityDetailScreen extends ConsumerStatefulWidget {
 class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   bool _hasShownSwipeHint = false;
   bool _swipeHintChecked = false;
+  final Map<String, bool> _expandedSections = {};
 
   @override
   void initState() {
@@ -168,6 +170,17 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         ],
       ),
       actions: [
+        // Edit button for existing activities (not new ones, not coach view)
+        if (!widget.isNewActivity && !widget.isCoachView)
+          IconButton(
+            icon: Icon(
+              FontAwesomeIcons.penToSquare,
+              size: AppIconSizes.md,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            onPressed: () => _navigateToEditActivity(context),
+            tooltip: 'Edit Activity',
+          ),
         // Only show delete button for existing activities (not new ones, not coach view)
         if (!widget.isNewActivity && !widget.isCoachView)
           IconButton(
@@ -368,9 +381,56 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       extra: {
         'initialDate': activity.scheduledDateTime,
         'distance': activity.distanceMiles,
-        'pace': activity.paceTargetMinutesPerMile,
-        'duration': activity.durationMinutes,
+        'goalPace': activity.paceTargetMinutesPerMile,
         'activityId': activity.id,
+        'activityType': activity.activityType.name,
+        'timeBeforeMinutes': activity.timeBeforeMinutes,
+      },
+    );
+  }
+
+  /// Navigate to NewActivityScreen with all activity fields pre-populated for editing
+  void _navigateToEditActivity(BuildContext context) {
+    final AsyncValue<dynamic> activityDetailAsync = widget.isCoachView
+        ? ref.read(coachActivityDetailControllerProvider(widget.activityId))
+        : ref.read(
+            activityDetailControllerProvider(
+              activityId: widget.activityId,
+              isNewActivity: widget.isNewActivity,
+            ),
+          );
+
+    final data = activityDetailAsync.value;
+    if (data == null) return;
+
+    final Activity? activity;
+    if (data is ActivityDetailState) {
+      activity = data.activity;
+    } else {
+      activity = (data as dynamic).activity as Activity?;
+    }
+
+    if (activity == null) return;
+
+    context.pushNamed(
+      'distance-pace-gut-entry',
+      extra: {
+        'initialDate': activity.scheduledDateTime,
+        'distance': activity.distanceMiles,
+        'goalPace': activity.paceTargetMinutesPerMile,
+        'activityId': activity.id,
+        'activityType': activity.activityType.name,
+        'timeBeforeMinutes': activity.timeBeforeMinutes,
+        // Cycling-specific
+        'cyclingSpeedMph': activity.cyclingSpeedMph,
+        'cyclingTerrain': activity.cyclingTerrain,
+        'cyclingIndoorOutdoor': activity.cyclingIndoorOutdoor,
+        'cyclingElevationGainFt': activity.cyclingElevationGainFt,
+        'cyclingSessionGoal': activity.cyclingSessionGoal,
+        // Swimming-specific
+        'swimmingPacePer100mSeconds': activity.swimmingPacePer100mSeconds,
+        'swimmingPoolOrOpenWater': activity.swimmingPoolOrOpenWater,
+        'swimmingWaterTempC': activity.swimmingWaterTempC,
       },
     );
   }
@@ -400,6 +460,14 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             _deleteFood(context, state, foodId, category),
         onUpdateQuantity: (foodId, category, newQuantity) =>
             _updateFoodQuantity(context, state, foodId, category, newQuantity),
+        onInitializeByHour: (cat, duration) {
+          final controller = _getControllerNotifier();
+          controller.initializeByHourData(cat, duration);
+        },
+        onMoveFoodToTimeSlot: (foodId, cat, newSlot) {
+          final controller = _getControllerNotifier();
+          controller.moveFoodToTimeSlot(foodId, cat, newSlot);
+        },
         showSwipeHint: _consumeSwipeHint(),
       );
     }
@@ -459,6 +527,38 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           );
         }
 
+        // Use DuringPhaseSectionWidget for during sections (supports By Hour toggle)
+        if (category == 'during_run') {
+          final durationMinutes = state.activity?.durationMinutes ?? 0;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            child: DuringPhaseSectionWidget(
+              section: section,
+              sectionColor: sectionColor,
+              sectionTitle: sectionTitle.toUpperCase(),
+              category: category,
+              durationMinutes: durationMinutes,
+              useImperial: useImperial,
+              onSwapFood: (foodId, foodName, cat) =>
+                  _swapFood(context, state, foodId, foodName, cat),
+              onDeleteFood: (foodId, cat) =>
+                  _deleteFood(context, state, foodId, cat),
+              onUpdateQuantity: (foodId, cat, newQuantity) =>
+                  _updateFoodQuantity(context, state, foodId, cat, newQuantity),
+              onAddFood: (cat) => _addFood(context, cat),
+              onInitializeByHour: (cat, duration) {
+                final controller = _getControllerNotifier();
+                controller.initializeByHourData(cat, duration);
+              },
+              onMoveFoodToTimeSlot: (foodId, cat, newSlot) {
+                final controller = _getControllerNotifier();
+                controller.moveFoodToTimeSlot(foodId, cat, newSlot);
+              },
+              showSwipeHint: _consumeSwipeHint(),
+            ),
+          );
+        }
+
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.lg),
           child: _buildNutritionSection(
@@ -485,6 +585,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     // Check unit preference
     final settings = ref.watch(settingsControllerProvider).value;
     final useImperial = settings?.preferredDistanceUnit == DistanceUnit.miles;
+
+    final isExpanded = _expandedSections[category] ?? true;
+
+    // Auto-generate template summary from food names
+    final foodSummary = section.foodItems
+        .map((f) => f.displayName ?? f.name)
+        .join(' + ');
 
     return Container(
       decoration: BoxDecoration(
@@ -513,37 +620,75 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             useImperial: useImperial,
           ),
           const SizedBox(height: AppSpacing.md),
-          ...section.foodItems.asMap().entries.map((entry) {
-            final index = entry.key;
-            final food = entry.value;
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: index < section.foodItems.length - 1
-                    ? AppSpacing.sm
-                    : 0,
+          // Collapsible food list
+          InkWell(
+            onTap: () {
+              setState(() {
+                _expandedSections[category] = !isExpanded;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+              child: Row(
+                children: [
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_down
+                        : Icons.keyboard_arrow_right,
+                    color: sectionColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      foodSummary,
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              child: DismissibleFoodItem(
-                food: food,
-                category: category,
-                onSwap: () =>
-                    _swapFood(context, state, food.id, food.name, category),
-                onDelete: () => _deleteFood(context, state, food.id, category),
-                onQuantityChange: (newQuantity) => _updateFoodQuantity(
-                  context,
-                  state,
-                  food.id,
-                  category,
-                  newQuantity,
-                ),
-                showSwipeHint: _consumeSwipeHint(),
-              ),
-            );
-          }),
-          const SizedBox(height: AppSpacing.md),
-          KyleAddFoodButton(
-            text: 'ADD FOOD',
-            onPressed: () => _addFood(context, category),
+            ),
           ),
+          if (isExpanded) ...[
+            const SizedBox(height: AppSpacing.sm),
+            ...section.foodItems.asMap().entries.map((entry) {
+              final index = entry.key;
+              final food = entry.value;
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: index < section.foodItems.length - 1
+                      ? AppSpacing.sm
+                      : 0,
+                ),
+                child: DismissibleFoodItem(
+                  food: food,
+                  category: category,
+                  onSwap: () =>
+                      _swapFood(context, state, food.id, food.name, category),
+                  onDelete: () => _deleteFood(context, state, food.id, category),
+                  onQuantityChange: (newQuantity) => _updateFoodQuantity(
+                    context,
+                    state,
+                    food.id,
+                    category,
+                    newQuantity,
+                  ),
+                  showSwipeHint: _consumeSwipeHint(),
+                  useImperial: useImperial,
+                ),
+              );
+            }),
+            const SizedBox(height: AppSpacing.md),
+            KyleAddFoodButton(
+              text: 'ADD FOOD',
+              onPressed: () => _addFood(context, category),
+            ),
+          ],
         ],
       ),
     );

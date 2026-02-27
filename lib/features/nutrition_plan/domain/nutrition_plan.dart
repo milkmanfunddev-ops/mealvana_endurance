@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'food_item_data.dart';
+import 'time_slot_assignment.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
@@ -213,7 +214,32 @@ class NutritionPlan {
             parsedSections.add(PlanSection.fromEdgeFunctionJson('after_run', plan['after'] as List<dynamic>));
           }
 
-          sections = parsedSections;
+          // Apply per-phase targets from macro_targets (snake_case from V2 edge function)
+          final macroTargetsMap = planData['macro_targets'] as Map<String, dynamic>?;
+          if (macroTargetsMap != null) {
+            sections = parsedSections.map((section) {
+              Map<String, dynamic>? phaseTargets;
+              if (section.id == 'before_run') {
+                phaseTargets = macroTargetsMap['pre_run'] as Map<String, dynamic>?;
+              } else if (section.id == 'during_run') {
+                phaseTargets = macroTargetsMap['during_run'] as Map<String, dynamic>?;
+              } else if (section.id == 'after_run') {
+                phaseTargets = macroTargetsMap['post_run'] as Map<String, dynamic>?;
+              }
+              if (phaseTargets != null) {
+                return section.copyWith(
+                  carbsTarget: (phaseTargets['carbs_g'] as num?)?.toDouble(),
+                  proteinTarget: (phaseTargets['protein_g'] as num?)?.toDouble(),
+                  fatTarget: (phaseTargets['fat_g'] as num?)?.toDouble(),
+                  sodiumTarget: (phaseTargets['sodium_mg'] as num?)?.toDouble(),
+                  fluidsTarget: (phaseTargets['water_ml'] as num?)?.toDouble(),
+                );
+              }
+              return section;
+            }).toList();
+          } else {
+            sections = parsedSections;
+          }
           DebugLogger.info('✅ Parsed ${sections.length} sections from Edge Function format');
         } catch (e) {
           DebugLogger.error('Error parsing sections from Edge Function format: $e');
@@ -222,7 +248,7 @@ class NutritionPlan {
       }
     }
 
-    // Parse macro targets with error handling
+    // Parse macro targets with error handling (try camelCase first, then snake_case)
     PlanMacroSummary? macroTargets;
     if (planData != null && planData['macroTargets'] is Map) {
       try {
@@ -230,6 +256,30 @@ class NutritionPlan {
       } catch (e) {
         DebugLogger.error('Error parsing macroTargets: $e');
         macroTargets = null;
+      }
+    }
+    // Fallback: build PlanMacroSummary from snake_case macro_targets (V2 edge function)
+    if (macroTargets == null && planData != null && planData['macro_targets'] is Map) {
+      try {
+        final mt = planData['macro_targets'] as Map<String, dynamic>;
+        final pre = mt['pre_run'] as Map<String, dynamic>? ?? {};
+        final during = mt['during_run'] as Map<String, dynamic>? ?? {};
+        final post = mt['post_run'] as Map<String, dynamic>? ?? {};
+        // Sum across all phases for the overall summary
+        final totalCarbs = ((pre['carbs_g'] as num?) ?? 0) + ((during['carbs_g'] as num?) ?? 0) + ((post['carbs_g'] as num?) ?? 0);
+        final totalProtein = ((pre['protein_g'] as num?) ?? 0) + ((post['protein_g'] as num?) ?? 0);
+        final totalFat = ((pre['fat_g'] as num?) ?? 0) + ((post['fat_g'] as num?) ?? 0);
+        final totalSodium = ((pre['sodium_mg'] as num?) ?? 0) + ((during['sodium_mg'] as num?) ?? 0) + ((post['sodium_mg'] as num?) ?? 0);
+        final totalCalories = (totalCarbs * 4 + totalProtein * 4 + totalFat * 9).round();
+        macroTargets = PlanMacroSummary(
+          calories: totalCalories,
+          carbs: totalCarbs.round(),
+          protein: totalProtein.round(),
+          fat: totalFat.round(),
+          sodium: totalSodium.round(),
+        );
+      } catch (e) {
+        DebugLogger.error('Error parsing macro_targets (snake_case): $e');
       }
     }
 
@@ -318,14 +368,32 @@ class BeforeSubPhase {
   String get displayTitle {
     switch (subPhaseType) {
       case 'meal':
-        return 'Meal';
+        return 'Full Meal';
       case 'snack':
-        return 'Snack';
+        return 'Pre-Workout Snack';
       case 'top_up':
-        return 'Top Off';
+        return 'Top-Off';
       default:
         return subPhaseType;
     }
+  }
+
+  /// Auto-generated summary of foods in this sub-phase (for collapsed display)
+  String get templateSummary {
+    if (templateName != null && templateName!.isNotEmpty) {
+      return templateName!;
+    }
+    if (foodItems.isEmpty) return '';
+    return foodItems.map((f) {
+      final qty = f.quantity;
+      final name = f.displayName ?? f.name;
+      // If quantity is just a number, prefix it; otherwise use as-is
+      final numericQty = double.tryParse(qty);
+      if (numericQty != null && numericQty == 1.0) {
+        return name;
+      }
+      return '$qty $name';
+    }).join(' + ');
   }
 
   factory BeforeSubPhase.fromJson(Map<String, dynamic> json) {
@@ -414,6 +482,7 @@ class PlanSection {
     this.sodiumTarget,
     this.fluidsTarget,
     this.subPhases,
+    this.byHourData,
   });
 
   final String id;
@@ -433,8 +502,16 @@ class PlanSection {
   /// When present, foodItems list is empty (foods live in sub-phases instead).
   final List<BeforeSubPhase>? subPhases;
 
+  /// By-hour time slot assignments for during-activity sections.
+  /// Lazily initialized on first "By Hour" toggle for qualifying sections.
+  final ByHourData? byHourData;
+
   /// Whether this section uses the template-based sub-phase layout
   bool get hasSubPhases => subPhases != null && subPhases!.isNotEmpty;
+
+  /// Whether this section supports the by-hour view (>= 60 min duration)
+  bool get supportsByHour =>
+      byHourData != null && byHourData!.durationMinutes >= 60;
 
   /// Create PlanSection from JSON
   factory PlanSection.fromJson(Map<String, dynamic> json) {
@@ -444,6 +521,13 @@ class PlanSection {
       subPhases = (json['subPhases'] as List<dynamic>)
           .map((sp) => BeforeSubPhase.fromJson(sp as Map<String, dynamic>))
           .toList();
+    }
+
+    // Parse byHourData if present
+    ByHourData? byHourData;
+    if (json['byHourData'] is Map<String, dynamic>) {
+      byHourData =
+          ByHourData.fromJson(json['byHourData'] as Map<String, dynamic>);
     }
 
     return PlanSection(
@@ -461,6 +545,7 @@ class PlanSection {
       sodiumTarget: json['sodiumTarget'] as double?,
       fluidsTarget: json['fluidsTarget'] as double?,
       subPhases: subPhases,
+      byHourData: byHourData,
     );
   }
 
@@ -505,6 +590,7 @@ class PlanSection {
       'sodiumTarget': sodiumTarget,
       'fluidsTarget': fluidsTarget,
       if (subPhases != null) 'subPhases': subPhases!.map((sp) => sp.toJson()).toList(),
+      if (byHourData != null) 'byHourData': byHourData!.toJson(),
     };
   }
 
@@ -521,6 +607,8 @@ class PlanSection {
     double? sodiumTarget,
     double? fluidsTarget,
     List<BeforeSubPhase>? subPhases,
+    ByHourData? byHourData,
+    bool clearByHourData = false,
   }) {
     return PlanSection(
       id: id ?? this.id,
@@ -534,6 +622,7 @@ class PlanSection {
       sodiumTarget: sodiumTarget ?? this.sodiumTarget,
       fluidsTarget: fluidsTarget ?? this.fluidsTarget,
       subPhases: subPhases ?? this.subPhases,
+      byHourData: clearByHourData ? null : (byHourData ?? this.byHourData),
     );
   }
 
