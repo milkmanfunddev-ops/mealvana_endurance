@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/two_option_pill_slider.dart';
 import '../../../domain/nutrition_plan.dart';
@@ -28,9 +29,12 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
     required this.onDeleteFood,
     required this.onUpdateQuantity,
     required this.onAddFood,
+    this.onAddFoodToHour,
     required this.onInitializeByHour,
     required this.onMoveFoodToTimeSlot,
     this.subtitle,
+    this.sportIcon,
+    this.sportIconColor,
     this.showSwipeHint = false,
   });
 
@@ -41,11 +45,16 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
   final int durationMinutes;
   final bool useImperial;
   final String? subtitle;
+  final IconData? sportIcon;
+  final Color? sportIconColor;
   final void Function(String foodId, String foodName, String category) onSwapFood;
   final void Function(String foodId, String category) onDeleteFood;
   final void Function(String foodId, String category, double newQuantity)
       onUpdateQuantity;
   final void Function(String category) onAddFood;
+
+  /// Called when "ADD TO HOUR X" is pressed in By Hour view
+  final void Function(String category, int hourIndex)? onAddFoodToHour;
 
   /// Called on first toggle to By Hour to initialize byHourData
   final void Function(String category, int durationMinutes) onInitializeByHour;
@@ -66,15 +75,18 @@ class _DuringPhaseSectionWidgetState
   /// True = By Hour view, False = Summary view
   bool _showByHour = false;
 
-  /// Whether the summary food list is expanded
-  bool _summaryExpanded = true;
-
   @override
   void initState() {
     super.initState();
-    // Default to By Hour if byHourData already exists
-    if (widget.section.byHourData != null && widget.durationMinutes >= 60) {
+    // Default to By Hour for activities >= 60 min
+    if (widget.durationMinutes >= 60) {
       _showByHour = true;
+      // If byHourData doesn't exist yet, trigger initialization after build
+      if (widget.section.byHourData == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          widget.onInitializeByHour(widget.category, widget.durationMinutes);
+        });
+      }
     }
   }
 
@@ -138,6 +150,14 @@ class _DuringPhaseSectionWidgetState
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
+        if (widget.sportIcon != null) ...[
+          FaIcon(
+            widget.sportIcon!,
+            color: widget.sportIconColor ?? widget.sectionColor,
+            size: 16,
+          ),
+          const SizedBox(width: AppSpacing.xs),
+        ],
         Expanded(
           child: Text(
             widget.sectionTitle,
@@ -166,7 +186,7 @@ class _DuringPhaseSectionWidgetState
                   Theme.of(context).colorScheme.onSurfaceVariant,
               trackColor:
                   Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
-              thumbColor: widget.sectionColor,
+              thumbColor: AppColors.orange,
               height: 32,
               thumbInset: 2,
             ),
@@ -177,79 +197,37 @@ class _DuringPhaseSectionWidgetState
   }
 
   Widget _buildSummaryContent(BuildContext context) {
-    final foodSummary = widget.section.foodItems
-        .map((f) => f.displayName ?? f.name)
-        .join(' + ');
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Collapsible food list
-        InkWell(
-          onTap: () {
-            setState(() {
-              _summaryExpanded = !_summaryExpanded;
-            });
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            child: Row(
-              children: [
-                Icon(
-                  _summaryExpanded
-                      ? Icons.keyboard_arrow_down
-                      : Icons.keyboard_arrow_right,
-                  color: widget.sectionColor,
-                  size: 20,
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: Text(
-                    foodSummary,
-                    style: AppTextStyles.smallLabel.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+        ...widget.section.foodItems.asMap().entries.map((entry) {
+          final index = entry.key;
+          final food = entry.value;
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: index < widget.section.foodItems.length - 1
+                  ? AppSpacing.sm
+                  : 0,
             ),
-          ),
+            child: DismissibleFoodItem(
+              food: food,
+              category: widget.category,
+              onSwap: () =>
+                  widget.onSwapFood(food.id, food.name, widget.category),
+              onDelete: () =>
+                  widget.onDeleteFood(food.id, widget.category),
+              onQuantityChange: (newQuantity) => widget.onUpdateQuantity(
+                  food.id, widget.category, newQuantity),
+              showSwipeHint: widget.showSwipeHint,
+              useImperial: widget.useImperial,
+            ),
+          );
+        }),
+        const SizedBox(height: AppSpacing.md),
+        KyleAddFoodButton(
+          text: 'ADD FOOD',
+          onPressed: () => widget.onAddFood(widget.category),
         ),
-        if (_summaryExpanded) ...[
-          const SizedBox(height: AppSpacing.sm),
-          ...widget.section.foodItems.asMap().entries.map((entry) {
-            final index = entry.key;
-            final food = entry.value;
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: index < widget.section.foodItems.length - 1
-                    ? AppSpacing.sm
-                    : 0,
-              ),
-              child: DismissibleFoodItem(
-                food: food,
-                category: widget.category,
-                onSwap: () => widget.onSwapFood(
-                    food.id, food.name, widget.category),
-                onDelete: () =>
-                    widget.onDeleteFood(food.id, widget.category),
-                onQuantityChange: (newQuantity) =>
-                    widget.onUpdateQuantity(
-                        food.id, widget.category, newQuantity),
-                showSwipeHint: widget.showSwipeHint,
-                useImperial: widget.useImperial,
-              ),
-            );
-          }),
-          const SizedBox(height: AppSpacing.md),
-          KyleAddFoodButton(
-            text: 'ADD FORMULA',
-            onPressed: () => widget.onAddFood(widget.category),
-          ),
-        ],
       ],
     );
   }
@@ -264,7 +242,7 @@ class _DuringPhaseSectionWidgetState
       onSwapFood: widget.onSwapFood,
       onDeleteFood: widget.onDeleteFood,
       onUpdateQuantity: widget.onUpdateQuantity,
-      onAddFood: widget.onAddFood,
+      onAddFood: widget.onAddFoodToHour ?? (cat, _) => widget.onAddFood(cat),
       onMoveFoodToTimeSlot: widget.onMoveFoodToTimeSlot,
     );
   }

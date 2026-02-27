@@ -35,6 +35,9 @@ class ActivityDetailController extends _$ActivityDetailController {
   ActivitiesService get _activitiesService => ref.read(activitiesServiceProvider);
   AuthService get _authService => ref.read(authServiceProvider);
 
+  /// When set, the next food added via reapportion will be placed only in this hour.
+  int? _pendingAddFoodHourIndex;
+
   Future<NutritionPlanRepository> get _nutritionPlanRepository async =>
       await ref.read(nutritionPlanRepositoryProvider.future);
 
@@ -500,7 +503,9 @@ class ActivityDetailController extends _$ActivityDetailController {
             updatedByHour = service.reapportion(
               existing: updatedByHour,
               currentFoodItems: updatedItems,
+              targetHourIndex: _pendingAddFoodHourIndex,
             );
+            _pendingAddFoodHourIndex = null;
           }
 
           return section.copyWith(
@@ -742,6 +747,12 @@ class ActivityDetailController extends _$ActivityDetailController {
           error: error, stackTrace: stackTrace);
       state = AsyncValue.error(error, stackTrace);
     }
+  }
+
+  /// Set the target hour index for the next food add operation.
+  /// Called before navigating to food picker from "ADD TO HOUR X".
+  void setPendingAddFoodHourIndex(int? hourIndex) {
+    _pendingAddFoodHourIndex = hourIndex;
   }
 
   // ============================================================================

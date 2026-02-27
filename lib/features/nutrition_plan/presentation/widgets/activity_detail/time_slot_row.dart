@@ -137,12 +137,72 @@ class TimeSlotRow extends StatelessWidget {
         final food = foodMap[assignment.foodItemId];
         if (food == null) return const SizedBox.shrink();
 
+        // If adjustedQuantity is set, create a display copy with scaled values
+        final displayFood = _adjustFoodForDisplay(food, assignment);
+
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-          child: _buildDraggableFoodItem(context, assignment, food),
+          child: _buildDraggableFoodItem(context, assignment, displayFood),
         );
       }).toList(),
     );
+  }
+
+  /// Creates a display copy of FoodItemData with adjusted quantity and scaled nutrition.
+  FoodItemData _adjustFoodForDisplay(FoodItemData food, TimeSlotAssignment assignment) {
+    if (assignment.adjustedQuantity == null) return food;
+
+    final originalQty = _parseQuantity(food);
+    if (originalQty <= 0) return food;
+
+    final adjustedQty = assignment.adjustedQuantity!;
+    final scale = adjustedQty / originalQty;
+
+    // Build adjusted quantity string
+    final qtyStr = adjustedQty == adjustedQty.roundToDouble() && adjustedQty >= 1
+        ? adjustedQty.toInt().toString()
+        : adjustedQty.toStringAsFixed(1);
+
+    // Extract the unit part from the original quantity string
+    final unitMatch = RegExp(r'^[\d.]+\s*(.*)$').firstMatch(food.quantity);
+    final unit = unitMatch?.group(1) ?? '';
+    final adjustedQuantityStr = unit.isNotEmpty ? '$qtyStr $unit' : qtyStr;
+
+    final ni = food.nutritionalInfo;
+    return FoodItemData(
+      id: food.id,
+      name: food.name,
+      quantity: adjustedQuantityStr,
+      imageAddress: food.imageAddress,
+      description: food.description,
+      timing: food.timing,
+      instructions: food.instructions,
+      displayName: food.displayName,
+      displayNamePlural: food.displayNamePlural,
+      displayOverride: food.displayOverride,
+      servingSize: food.servingSize,
+      isDrink: food.isDrink,
+      templateId: food.templateId,
+      scaleMultiplier: food.scaleMultiplier,
+      nutritionalInfo: ni != null
+          ? NutritionalInfo(
+              calories: ((ni.calories ?? 0) * scale).round(),
+              carbs: ((ni.carbs ?? 0) * scale).round(),
+              protein: ((ni.protein ?? 0) * scale).round(),
+              fat: ((ni.fat ?? 0) * scale).round(),
+              sodium: ((ni.sodium ?? 0) * scale).round(),
+              fluids: (ni.fluids ?? 0) * scale,
+            )
+          : null,
+    );
+  }
+
+  double _parseQuantity(FoodItemData food) {
+    final match = RegExp(r'^([\d.]+)').firstMatch(food.quantity);
+    if (match != null) {
+      return double.tryParse(match.group(1)!) ?? 1.0;
+    }
+    return 1.0;
   }
 
   Widget _buildDraggableFoodItem(
@@ -163,6 +223,8 @@ class TimeSlotRow extends StatelessWidget {
 
     return LongPressDraggable<TimeSlotAssignment>(
       data: assignment,
+      delay: const Duration(milliseconds: 300),
+      hapticFeedbackOnStart: true,
       feedback: Material(
         elevation: 4,
         borderRadius: BorderRadius.circular(8),

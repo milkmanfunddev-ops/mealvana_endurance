@@ -36,7 +36,7 @@ class HourBucketWidget extends StatefulWidget {
   final void Function(String foodId, String category) onDeleteFood;
   final void Function(String foodId, String category, double newQuantity)
       onUpdateQuantity;
-  final void Function(String category) onAddFood;
+  final void Function(String category, int hourIndex) onAddFood;
   final void Function(String foodId, String category, TimeSlot newTimeSlot)
       onMoveFoodToTimeSlot;
 
@@ -47,22 +47,45 @@ class HourBucketWidget extends StatefulWidget {
 class _HourBucketWidgetState extends State<HourBucketWidget> {
   bool _isExpanded = false;
 
-  /// Calculate aggregate macros for this hour's food items
+  /// Calculate aggregate macros for this hour's food items,
+  /// scaling by adjustedQuantity when present.
   _HourMacros get _macros {
-    int calories = 0;
-    int carbs = 0;
-    int sodium = 0;
+    double calories = 0;
+    double carbs = 0;
+    double sodium = 0;
 
     for (final assignment in widget.assignments) {
       final food = widget.foodMap[assignment.foodItemId];
       if (food?.nutritionalInfo != null) {
-        calories += food!.nutritionalInfo!.calories ?? 0;
-        carbs += food.nutritionalInfo!.carbs ?? 0;
-        sodium += food.nutritionalInfo!.sodium ?? 0;
+        final scale = _quantityScale(food!, assignment);
+        calories += (food.nutritionalInfo!.calories ?? 0) * scale;
+        carbs += (food.nutritionalInfo!.carbs ?? 0) * scale;
+        sodium += (food.nutritionalInfo!.sodium ?? 0) * scale;
       }
     }
 
-    return _HourMacros(calories: calories, carbs: carbs, sodium: sodium);
+    return _HourMacros(
+      calories: calories.round(),
+      carbs: carbs.round(),
+      sodium: sodium.round(),
+    );
+  }
+
+  /// Returns the scaling factor for an assignment's nutritional values.
+  /// When adjustedQuantity is set, scales relative to the food's original quantity.
+  double _quantityScale(FoodItemData food, TimeSlotAssignment assignment) {
+    if (assignment.adjustedQuantity == null) return 1.0;
+    final originalQty = _parseQuantity(food);
+    if (originalQty <= 0) return 1.0;
+    return assignment.adjustedQuantity! / originalQty;
+  }
+
+  double _parseQuantity(FoodItemData food) {
+    final match = RegExp(r'^([\d.]+)').firstMatch(food.quantity);
+    if (match != null) {
+      return double.tryParse(match.group(1)!) ?? 1.0;
+    }
+    return 1.0;
   }
 
   @override
@@ -116,8 +139,8 @@ class _HourBucketWidgetState extends State<HourBucketWidget> {
           // ADD TO HOUR X button
           Center(
             child: KyleAddFoodButton(
-              text: '+ ADD TO HOUR ${widget.hourIndex + 1}',
-              onPressed: () => widget.onAddFood(widget.category),
+              text: 'ADD TO HOUR ${widget.hourIndex + 1}',
+              onPressed: () => widget.onAddFood(widget.category, widget.hourIndex),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),

@@ -77,6 +77,49 @@ void main() {
       expect(moved.timeSlot.hourIndex, 1);
       expect(moved.timeSlot.slotIndex, 2);
     });
+
+    test('adjustedQuantity JSON round-trip', () {
+      const original = TimeSlotAssignment(
+        foodItemId: 'food-1',
+        timeSlot: TimeSlot(hourIndex: 0, slotIndex: 1),
+        adjustedQuantity: 1.5,
+      );
+      final json = original.toJson();
+      expect(json['adjustedQuantity'], 1.5);
+
+      final restored = TimeSlotAssignment.fromJson(json);
+      expect(restored.adjustedQuantity, 1.5);
+    });
+
+    test('adjustedQuantity defaults to null (backward compat)', () {
+      final json = {
+        'foodItemId': 'food-1',
+        'timeSlot': {'hourIndex': 0, 'slotIndex': 0},
+      };
+      final assignment = TimeSlotAssignment.fromJson(json);
+      expect(assignment.adjustedQuantity, isNull);
+    });
+
+    test('adjustedQuantity omitted from JSON when null', () {
+      const original = TimeSlotAssignment(
+        foodItemId: 'food-1',
+        timeSlot: TimeSlot(hourIndex: 0, slotIndex: 0),
+      );
+      final json = original.toJson();
+      expect(json.containsKey('adjustedQuantity'), false);
+    });
+
+    test('copyWith preserves adjustedQuantity', () {
+      const original = TimeSlotAssignment(
+        foodItemId: 'food-1',
+        timeSlot: TimeSlot(hourIndex: 0, slotIndex: 0),
+        adjustedQuantity: 2.0,
+      );
+      final moved = original.copyWith(
+        timeSlot: const TimeSlot(hourIndex: 1, slotIndex: 0),
+      );
+      expect(moved.adjustedQuantity, 2.0);
+    });
   });
 
   group('ByHourData', () {

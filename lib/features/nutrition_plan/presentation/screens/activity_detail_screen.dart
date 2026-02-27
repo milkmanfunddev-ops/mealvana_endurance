@@ -321,6 +321,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         ActivityScheduleInfo(
           scheduledDateTime: scheduledDateTime,
           activityType: activityType,
+          distanceMiles: activity?.distanceMiles,
+          durationMinutes: activity?.durationMinutes,
+          paceTargetMinutesPerMile: activity?.paceTargetMinutesPerMile,
+          onDateTap: widget.isCoachView ? null : () => _showDatePicker(context, state),
+          onTimeTap: widget.isCoachView ? null : () => _showTimePicker(context, state),
         ),
       ],
     );
@@ -529,7 +534,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
         // Use DuringPhaseSectionWidget for during sections (supports By Hour toggle)
         if (category == 'during_run') {
-          final durationMinutes = state.activity?.durationMinutes ?? 0;
+          final durationMinutes = state.activity?.durationMinutes ?? 120;
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.lg),
             child: DuringPhaseSectionWidget(
@@ -539,6 +544,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               category: category,
               durationMinutes: durationMinutes,
               useImperial: useImperial,
+              subtitle: section.subtitle,
+              sportIcon: _getSportIcon(activityType),
+              sportIconColor: sectionColor,
               onSwapFood: (foodId, foodName, cat) =>
                   _swapFood(context, state, foodId, foodName, cat),
               onDeleteFood: (foodId, cat) =>
@@ -546,6 +554,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               onUpdateQuantity: (foodId, cat, newQuantity) =>
                   _updateFoodQuantity(context, state, foodId, cat, newQuantity),
               onAddFood: (cat) => _addFood(context, cat),
+              onAddFoodToHour: (cat, hourIndex) {
+                final controller = _getControllerNotifier();
+                controller.setPendingAddFoodHourIndex(hourIndex);
+                _addFood(context, cat);
+              },
               onInitializeByHour: (cat, duration) {
                 final controller = _getControllerNotifier();
                 controller.initializeByHourData(cat, duration);
@@ -916,6 +929,52 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         'isCoachView': widget.isCoachView,
       },
     );
+  }
+
+  Future<void> _showDatePicker(BuildContext context, ActivityDetailState state) async {
+    final currentDate = state.scheduledDateTime ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: currentDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null && mounted) {
+      final newDateTime = DateTime(
+        picked.year, picked.month, picked.day,
+        currentDate.hour, currentDate.minute,
+      );
+      final controller = _getControllerNotifier();
+      await controller.updateScheduledDateTime(newDateTime);
+    }
+  }
+
+  Future<void> _showTimePicker(BuildContext context, ActivityDetailState state) async {
+    final currentDate = state.scheduledDateTime ?? DateTime.now();
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(currentDate),
+    );
+    if (picked != null && mounted) {
+      final newDateTime = DateTime(
+        currentDate.year, currentDate.month, currentDate.day,
+        picked.hour, picked.minute,
+      );
+      final controller = _getControllerNotifier();
+      await controller.updateScheduledDateTime(newDateTime);
+    }
+  }
+
+  IconData _getSportIcon(ActivityType activityType) {
+    switch (activityType) {
+      case ActivityType.cycling:
+        return FontAwesomeIcons.personBiking;
+      case ActivityType.swimming:
+        return FontAwesomeIcons.personSwimming;
+      case ActivityType.running:
+      default:
+        return FontAwesomeIcons.personRunning;
+    }
   }
 
   /// Handle regenerate plan button tap for stale nutrition plans

@@ -58,6 +58,7 @@ class TimeSlotAssignment {
     required this.foodItemId,
     required this.timeSlot,
     this.isSipThroughout = false,
+    this.adjustedQuantity,
   });
 
   /// References FoodItemData.id in the parent PlanSection.foodItems
@@ -69,15 +70,21 @@ class TimeSlotAssignment {
   /// True for drinks that should be sipped throughout the hour
   final bool isSipThroughout;
 
+  /// Adjusted quantity for this hour's portion (e.g., 1.0 when 3 servings split across 3 hours).
+  /// When null, the food's full quantity is used (backward compat).
+  final double? adjustedQuantity;
+
   TimeSlotAssignment copyWith({
     String? foodItemId,
     TimeSlot? timeSlot,
     bool? isSipThroughout,
+    double? adjustedQuantity,
   }) {
     return TimeSlotAssignment(
       foodItemId: foodItemId ?? this.foodItemId,
       timeSlot: timeSlot ?? this.timeSlot,
       isSipThroughout: isSipThroughout ?? this.isSipThroughout,
+      adjustedQuantity: adjustedQuantity ?? this.adjustedQuantity,
     );
   }
 
@@ -86,6 +93,7 @@ class TimeSlotAssignment {
       foodItemId: json['foodItemId'] as String,
       timeSlot: TimeSlot.fromJson(json['timeSlot'] as Map<String, dynamic>),
       isSipThroughout: json['isSipThroughout'] as bool? ?? false,
+      adjustedQuantity: (json['adjustedQuantity'] as num?)?.toDouble(),
     );
   }
 
@@ -93,11 +101,12 @@ class TimeSlotAssignment {
         'foodItemId': foodItemId,
         'timeSlot': timeSlot.toJson(),
         'isSipThroughout': isSipThroughout,
+        if (adjustedQuantity != null) 'adjustedQuantity': adjustedQuantity,
       };
 
   @override
   String toString() =>
-      'TimeSlotAssignment($foodItemId @ ${timeSlot.displayLabel}${isSipThroughout ? " sip" : ""})';
+      'TimeSlotAssignment($foodItemId @ ${timeSlot.displayLabel}${isSipThroughout ? " sip" : ""}${adjustedQuantity != null ? " qty=$adjustedQuantity" : ""})';
 }
 
 /// Container for all by-hour assignment data for a during-activity section.

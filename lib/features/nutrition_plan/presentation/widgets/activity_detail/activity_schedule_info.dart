@@ -3,16 +3,34 @@ import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import '../../utils/activity_detail_helpers.dart';
 
-/// Displays scheduled date and time for an activity
+/// Displays scheduled date and time for an activity,
+/// plus optional activity summary (distance/pace/duration)
+/// and tappable date/time editing.
 class ActivityScheduleInfo extends StatelessWidget {
   const ActivityScheduleInfo({
     super.key,
     required this.scheduledDateTime,
     required this.activityType,
+    this.distanceMiles,
+    this.durationMinutes,
+    this.paceTargetMinutesPerMile,
+    this.onDateTap,
+    this.onTimeTap,
   });
 
   final DateTime scheduledDateTime;
   final ActivityType activityType;
+  final double? distanceMiles;
+  final int? durationMinutes;
+  final double? paceTargetMinutesPerMile;
+  final VoidCallback? onDateTap;
+  final VoidCallback? onTimeTap;
+
+  String _formatPace(double minutesPerMile) {
+    final mins = minutesPerMile.floor();
+    final secs = ((minutesPerMile - mins) * 60).round();
+    return '$mins:${secs.toString().padLeft(2, '0')}/mi';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,50 +59,135 @@ class ActivityScheduleInfo extends StatelessWidget {
             letterSpacing: 1.2,
           ),
         ),
+        // Activity summary row (distance · duration · pace)
+        if (_hasSummary) ...[
+          const SizedBox(height: AppSpacing.xs),
+          _buildActivitySummary(context),
+        ],
         const SizedBox(height: AppSpacing.sm),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Column(
-              children: [
-                Text(
-                  'DATE',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  ActivityDetailHelpers.formatDateShort(scheduledDateTime),
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 20,
-                  ),
-                ),
-              ],
-            ),
+            _buildDateColumn(context),
             const SizedBox(width: AppSpacing.xxl),
-            Column(
-              children: [
-                Text(
-                  'TIME',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  ActivityDetailHelpers.formatTime(scheduledDateTime),
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 20,
-                  ),
-                ),
-              ],
-            ),
+            _buildTimeColumn(context),
           ],
         ),
       ],
     );
+  }
+
+  bool get _hasSummary =>
+      distanceMiles != null || durationMinutes != null || paceTargetMinutesPerMile != null;
+
+  Widget _buildActivitySummary(BuildContext context) {
+    final parts = <String>[];
+
+    if (distanceMiles != null) {
+      final d = distanceMiles!;
+      final display = d == d.roundToDouble() ? d.toInt().toString() : d.toStringAsFixed(1);
+      parts.add('$display mi');
+    }
+
+    if (durationMinutes != null) {
+      parts.add(ActivityDetailHelpers.formatDuration(durationMinutes!));
+    }
+
+    if (paceTargetMinutesPerMile != null) {
+      parts.add(_formatPace(paceTargetMinutesPerMile!));
+    }
+
+    return Text(
+      parts.join('  \u00B7  '),
+      style: AppTextStyles.bodyMedium.copyWith(
+        color: Theme.of(context).colorScheme.onSurface,
+        fontWeight: FontWeight.w600,
+        fontSize: 15,
+      ),
+    );
+  }
+
+  Widget _buildDateColumn(BuildContext context) {
+    final dateWidget = Column(
+      children: [
+        Text(
+          'DATE',
+          style: AppTextStyles.smallLabel.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              ActivityDetailHelpers.formatDateShort(scheduledDateTime),
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 20,
+              ),
+            ),
+            if (onDateTap != null) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.edit,
+                size: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+
+    if (onDateTap != null) {
+      return GestureDetector(
+        onTap: onDateTap,
+        child: dateWidget,
+      );
+    }
+    return dateWidget;
+  }
+
+  Widget _buildTimeColumn(BuildContext context) {
+    final timeWidget = Column(
+      children: [
+        Text(
+          'TIME',
+          style: AppTextStyles.smallLabel.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              ActivityDetailHelpers.formatTime(scheduledDateTime),
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 20,
+              ),
+            ),
+            if (onTimeTap != null) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.edit,
+                size: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+
+    if (onTimeTap != null) {
+      return GestureDetector(
+        onTap: onTimeTap,
+        child: timeWidget,
+      );
+    }
+    return timeWidget;
   }
 }

@@ -31,7 +31,7 @@ class ByHourView extends StatelessWidget {
   final void Function(String foodId, String category) onDeleteFood;
   final void Function(String foodId, String category, double newQuantity)
       onUpdateQuantity;
-  final void Function(String category) onAddFood;
+  final void Function(String category, int hourIndex) onAddFood;
   final void Function(String foodId, String category, TimeSlot newTimeSlot)
       onMoveFoodToTimeSlot;
 
