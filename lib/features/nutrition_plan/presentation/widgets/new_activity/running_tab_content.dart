@@ -548,8 +548,8 @@ class _TimeBeforeRunControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canIncrement = value + 30 <= 480;
-    final canDecrement = value - 30 >= 0;
+    final canIncrement = value + 15 <= 480;
+    final canDecrement = value - 15 >= 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -568,7 +568,7 @@ class _TimeBeforeRunControl extends StatelessWidget {
             // Minus button
             _ControlButton(
               icon: FontAwesomeIcons.minus,
-              onPressed: canDecrement ? () => onChanged(value - 30) : null,
+              onPressed: canDecrement ? () => onChanged(value - 15) : null,
               enabled: canDecrement,
             ),
             const SizedBox(width: AppSpacing.xl),
@@ -588,7 +588,7 @@ class _TimeBeforeRunControl extends StatelessWidget {
             // Plus button
             _ControlButton(
               icon: FontAwesomeIcons.plus,
-              onPressed: canIncrement ? () => onChanged(value + 30) : null,
+              onPressed: canIncrement ? () => onChanged(value + 15) : null,
               enabled: canIncrement,
             ),
           ],

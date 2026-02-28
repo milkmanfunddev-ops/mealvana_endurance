@@ -319,12 +319,17 @@ class BrickInputController extends _$BrickInputController {
 
     // Default intensity distribution (70/20/10)
     final defaultIntensity = IntensityDistribution.defaultDistribution();
+    // Default durations for each sport
+    final defaultSwimDuration = ((1500 / 100) * (120 / 60)).round(); // 30 min
+    final defaultCycleDuration = ((20.0 / 18.0) * 60).round();       // 67 min
+    final defaultRunDuration = (3.0 * 9.0).round();                   // 27 min
+
     final defaultPreSwimMinutes =
-        (recommendedHoursBefore(ActivityType.swimming, defaultIntensity) * 60).round();
+        (recommendedHoursBefore(ActivityType.swimming, defaultIntensity, durationMinutes: defaultSwimDuration) * 60).round();
     final defaultPreRideMinutes =
-        (recommendedHoursBefore(ActivityType.cycling, defaultIntensity) * 60).round();
+        (recommendedHoursBefore(ActivityType.cycling, defaultIntensity, durationMinutes: defaultCycleDuration) * 60).round();
     final defaultPreRunMinutes =
-        (recommendedHoursBefore(ActivityType.running, defaultIntensity) * 60).round();
+        (recommendedHoursBefore(ActivityType.running, defaultIntensity, durationMinutes: defaultRunDuration) * 60).round();
 
     // Initialize segment inputs for all possible sports
     final defaultInputs = <String, BrickSegmentInput>{
@@ -340,7 +345,7 @@ class BrickInputController extends _$BrickInputController {
         deckTemperature: 22.0,
         deckHumidity: 50.0,
         preActivityMinutes: defaultPreSwimMinutes,
-        durationMinutes: ((1500 / 100) * (120 / 60)).round(),
+        durationMinutes: defaultSwimDuration,
       ),
       'cycling': BrickSegmentInput(
         sport: 'cycling',
@@ -356,7 +361,7 @@ class BrickInputController extends _$BrickInputController {
         windCondition: 'still',
         sunExposure: 'mixed',
         preActivityMinutes: defaultPreRideMinutes,
-        durationMinutes: ((20.0 / 18.0) * 60).round(),
+        durationMinutes: defaultCycleDuration,
       ),
       'running': BrickSegmentInput(
         sport: 'running',
@@ -367,7 +372,7 @@ class BrickInputController extends _$BrickInputController {
         temperatureC: 20.0,
         humidityPct: 50.0,
         preActivityMinutes: defaultPreRunMinutes,
-        durationMinutes: (3.0 * 9.0).round(),
+        durationMinutes: defaultRunDuration,
       ),
     };
 
@@ -448,12 +453,16 @@ class BrickInputController extends _$BrickInputController {
   BrickSegmentInput _createDefaultSegmentInput(String sport, int order) {
     // All segments start with default 70/20/10 intensity distribution
     final defaultIntensity = IntensityDistribution.defaultDistribution();
+    // Default durations for each sport (used for fueling window calculation)
+    const defaultSwimDuration = 30; // 1500m at 2:00/100m
+    const defaultCycleDuration = 67; // 20mi at 18mph
+    const defaultRunDuration = 27;  // 3mi at 9:00/mi
     final defaultPreSwimMinutes =
-        (recommendedHoursBefore(ActivityType.swimming, defaultIntensity) * 60).round();
+        (recommendedHoursBefore(ActivityType.swimming, defaultIntensity, durationMinutes: defaultSwimDuration) * 60).round();
     final defaultPreRideMinutes =
-        (recommendedHoursBefore(ActivityType.cycling, defaultIntensity) * 60).round();
+        (recommendedHoursBefore(ActivityType.cycling, defaultIntensity, durationMinutes: defaultCycleDuration) * 60).round();
     final defaultPreRunMinutes =
-        (recommendedHoursBefore(ActivityType.running, defaultIntensity) * 60).round();
+        (recommendedHoursBefore(ActivityType.running, defaultIntensity, durationMinutes: defaultRunDuration) * 60).round();
 
     switch (sport) {
       case 'swimming':
@@ -588,8 +597,13 @@ class BrickInputController extends _$BrickInputController {
 
     int maxMinutes = 0;
     for (final sport in sports) {
-      final intensity = inputs[sport]?.intensityDistribution ?? defaultIntensity;
-      final minutes = (recommendedHoursBefore(ActivityType.brick, intensity) * 60).round();
+      final input = inputs[sport];
+      final intensity = input?.intensityDistribution ?? defaultIntensity;
+      final duration = input?.durationMinutes ?? 90;
+      final minutes = (recommendedHoursBefore(
+        ActivityType.brick, intensity,
+        durationMinutes: duration,
+      ) * 60).round();
       if (minutes > maxMinutes) {
         maxMinutes = minutes;
       }
@@ -681,10 +695,11 @@ class BrickInputController extends _$BrickInputController {
       // Convert BrickSegment to BrickSegmentInput
       // Note: intensityDistribution is nullable to support existing segments without this field
       // Defaults to 70/20/10 if not present
+      final segmentDuration = segment.durationMinutes;
       final preActivityMinutes = switch (segment.sport) {
-        'swimming' => (recommendedHoursBefore(ActivityType.swimming, defaultIntensity) * 60).round(),
-        'cycling' => (recommendedHoursBefore(ActivityType.cycling, defaultIntensity) * 60).round(),
-        'running' => (recommendedHoursBefore(ActivityType.running, defaultIntensity) * 60).round(),
+        'swimming' => (recommendedHoursBefore(ActivityType.swimming, defaultIntensity, durationMinutes: segmentDuration) * 60).round(),
+        'cycling' => (recommendedHoursBefore(ActivityType.cycling, defaultIntensity, durationMinutes: segmentDuration) * 60).round(),
+        'running' => (recommendedHoursBefore(ActivityType.running, defaultIntensity, durationMinutes: segmentDuration) * 60).round(),
         _ => 0,
       };
 

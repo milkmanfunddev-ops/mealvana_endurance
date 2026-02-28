@@ -109,7 +109,7 @@ class SwimmingTabContent extends ConsumerWidget {
             onChanged: controller.updatePreSwimMinutes,
             min: 0,
             max: 480,
-            step: 30,
+            step: 15,
             unit: 'minutes',
           ),
 

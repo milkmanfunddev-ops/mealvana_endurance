@@ -153,7 +153,10 @@ class SwimmingInputController extends _$SwimmingInputController {
 
     // V3: Pre-fill timing from recommendation based on default intensity
     final defaultIntensity = IntensityDistribution(conversationalPct: 70, tempoPct: 20, allOutPct: 10);
-    final recommendedMinutes = (recommendedHoursBefore(ActivityType.swimming, defaultIntensity) * 60).round();
+    final recommendedMinutes = (recommendedHoursBefore(
+      ActivityType.swimming, defaultIntensity,
+      durationMinutes: initialDurationMinutes,
+    ) * 60).round();
 
     final initialState = SwimmingFormState(
       selectedDate: now,
@@ -235,16 +238,19 @@ class SwimmingInputController extends _$SwimmingInputController {
         distanceMeters: distanceMeters,
         pacePer100mSeconds: newPace ?? state.pacePer100mSeconds,
       );
+      _autoUpdateFuelingWindow();
       return;
     }
 
     state = state.copyWith(distanceMeters: distanceMeters);
     _estimateDuration(distanceMeters: distanceMeters, pacePer100mSeconds: state.pacePer100mSeconds);
+    _autoUpdateFuelingWindow();
   }
 
   void updatePace(int pacePer100mSeconds) {
     state = state.copyWith(pacePer100mSeconds: pacePer100mSeconds);
     _estimateDuration(distanceMeters: state.distanceMeters, pacePer100mSeconds: pacePer100mSeconds);
+    _autoUpdateFuelingWindow();
   }
 
   void updatePreSwimMinutes(int minutes) {
@@ -252,6 +258,18 @@ class SwimmingInputController extends _$SwimmingInputController {
       preSwimMinutes: minutes,
       preSwimMinutesManuallySet: true,
     );
+  }
+
+  /// Auto-update fueling window when duration or intensity changes,
+  /// unless user has manually overridden it.
+  void _autoUpdateFuelingWindow() {
+    if (!state.preSwimMinutesManuallySet) {
+      final recommended = recommendedHoursBefore(
+        ActivityType.swimming, state.intensity,
+        durationMinutes: state.estimatedDuration?.inMinutes ?? 90,
+      );
+      state = state.copyWith(preSwimMinutes: (recommended * 60).round());
+    }
   }
 
   void updateIntensityTarget(String intensityTarget) {
@@ -283,26 +301,34 @@ class SwimmingInputController extends _$SwimmingInputController {
   }
 
   void updateDateTime(DateTime date, TimeOfDay time) {
+    final currentDate = state.selectedDate;
+    final currentTime = state.selectedTime;
+    final hasChanged = currentDate.year != date.year ||
+        currentDate.month != date.month ||
+        currentDate.day != date.day ||
+        currentTime.hour != time.hour ||
+        currentTime.minute != time.minute;
+
+    if (!hasChanged) return;
+
     state = state.copyWith(
       selectedDate: date,
       selectedTime: time,
+      // Reset to defaults immediately while refreshed forecast loads.
+      deckTemperature: 24.0,
+      deckHumidity: 70.0,
     );
 
-    // Auto-fetch weather when date changes if location is set
+    // Auto-fetch weather when date/time changes if location is set.
     if (state.location != null) {
-      fetchWeatherForecast();
+      unawaited(fetchWeatherForecast());
     }
   }
 
   /// Update intensity distribution
   void updateIntensityDistribution(IntensityDistribution intensity) {
     state = state.copyWith(intensity: intensity);
-
-    // V3: Auto-update timing to recommendation if user hasn't manually overridden
-    if (!state.preSwimMinutesManuallySet) {
-      final recommended = recommendedHoursBefore(ActivityType.swimming, intensity);
-      state = state.copyWith(preSwimMinutes: (recommended * 60).round());
-    }
+    _autoUpdateFuelingWindow();
   }
 
   void updateDuration(Duration duration) {
@@ -311,6 +337,7 @@ class SwimmingInputController extends _$SwimmingInputController {
       estimatedDuration: duration,
       pacePer100mSeconds: newPace ?? state.pacePer100mSeconds,
     );
+    _autoUpdateFuelingWindow();
   }
 
   /// Update duration/pace mode

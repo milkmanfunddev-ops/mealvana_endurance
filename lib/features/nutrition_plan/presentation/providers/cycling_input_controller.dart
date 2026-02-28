@@ -161,7 +161,10 @@ class CyclingInputController extends _$CyclingInputController {
 
     // V3: Pre-fill timing from recommendation based on default intensity
     final defaultIntensity = IntensityDistribution(conversationalPct: 70, tempoPct: 20, allOutPct: 10);
-    final recommendedMinutes = (recommendedHoursBefore(ActivityType.cycling, defaultIntensity) * 60).round();
+    final recommendedMinutes = (recommendedHoursBefore(
+      ActivityType.cycling, defaultIntensity,
+      durationMinutes: initialDurationMinutes,
+    ) * 60).round();
 
     final initialState = CyclingFormState(
       selectedDate: now,
@@ -242,16 +245,19 @@ class CyclingInputController extends _$CyclingInputController {
         distance: distance,
         speedMph: newSpeed ?? state.speedMph,
       );
+      _autoUpdateFuelingWindow();
       return;
     }
 
     state = state.copyWith(distance: distance);
     _estimateDuration(distance: distance, speedMph: state.speedMph);
+    _autoUpdateFuelingWindow();
   }
 
   void updateSpeed(double speedMph) {
     state = state.copyWith(speedMph: speedMph);
     _estimateDuration(distance: state.distance, speedMph: speedMph);
+    _autoUpdateFuelingWindow();
   }
 
   void updatePreRideMinutes(int minutes) {
@@ -259,6 +265,18 @@ class CyclingInputController extends _$CyclingInputController {
       preRideMinutes: minutes,
       preRideMinutesManuallySet: true,
     );
+  }
+
+  /// Auto-update fueling window when duration or intensity changes,
+  /// unless user has manually overridden it.
+  void _autoUpdateFuelingWindow() {
+    if (!state.preRideMinutesManuallySet) {
+      final recommended = recommendedHoursBefore(
+        ActivityType.cycling, state.intensity,
+        durationMinutes: state.estimatedDuration?.inMinutes ?? 90,
+      );
+      state = state.copyWith(preRideMinutes: (recommended * 60).round());
+    }
   }
 
   /// V3: Update fasted workout toggle
@@ -329,26 +347,36 @@ class CyclingInputController extends _$CyclingInputController {
   }
 
   void updateDateTime(DateTime date, TimeOfDay time) {
+    final currentDate = state.selectedDate;
+    final currentTime = state.selectedTime;
+    final hasChanged = currentDate.year != date.year ||
+        currentDate.month != date.month ||
+        currentDate.day != date.day ||
+        currentTime.hour != time.hour ||
+        currentTime.minute != time.minute;
+
+    if (!hasChanged) return;
+
+    final isIndoor = state.terrain.contains('indoor');
+
     state = state.copyWith(
       selectedDate: date,
       selectedTime: time,
+      // Reset to environment defaults immediately while refreshed forecast loads.
+      temperatureC: 20.0,
+      humidityPct: isIndoor ? 45.0 : 60.0,
     );
 
-    // Auto-fetch weather when date changes if location is set
-    if (state.location != null) {
-      fetchWeatherForecast();
+    // Auto-fetch weather when date/time changes for outdoor rides if location is set.
+    if (!isIndoor && state.location != null) {
+      unawaited(fetchWeatherForecast());
     }
   }
 
   /// Update intensity distribution
   void updateIntensityDistribution(IntensityDistribution intensity) {
     state = state.copyWith(intensity: intensity);
-
-    // V3: Auto-update timing to recommendation if user hasn't manually overridden
-    if (!state.preRideMinutesManuallySet) {
-      final recommended = recommendedHoursBefore(ActivityType.cycling, intensity);
-      state = state.copyWith(preRideMinutes: (recommended * 60).round());
-    }
+    _autoUpdateFuelingWindow();
   }
 
   void updateDuration(Duration duration) {
@@ -357,6 +385,7 @@ class CyclingInputController extends _$CyclingInputController {
       estimatedDuration: duration,
       speedMph: newSpeed ?? state.speedMph,
     );
+    _autoUpdateFuelingWindow();
   }
 
   /// Update duration/pace mode

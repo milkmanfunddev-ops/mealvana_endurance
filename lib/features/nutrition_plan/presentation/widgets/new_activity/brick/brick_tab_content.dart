@@ -59,7 +59,7 @@ class BrickTabContent extends ConsumerWidget {
           onChanged: controller.updatePreActivityMinutes,
           min: 0,
           max: 480,
-          step: 30,
+          step: 15,
           unit: 'minutes',
         ),
 

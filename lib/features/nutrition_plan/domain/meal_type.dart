@@ -29,62 +29,49 @@ enum MealType {
   }
 }
 
-/// Recommended hours before exercise based on sport type and intensity classification.
+/// Recommended hours before exercise based on sport type, intensity, and duration.
 ///
-/// Intensity classification from IntensityDistribution:
-/// - Easy: conversationalPct >= 70
-/// - Hard: allOutPct >= 25 OR tempoPct >= 50
-/// - Moderate: everything else
+/// Uses a continuous formula that considers both intensity and workout duration:
+/// - Weighted intensity: 0.0 (all easy) → 1.0 (all hard)
+/// - Duration factor: dead zone below 30 min, scales linearly to 1.0 at 180 min
+/// - Combined: duration 60% + intensity 40% (duration matters more)
+/// - Sport-specific min/max windows with linear interpolation
+/// - Result rounded to nearest 15 minutes (0.25h)
 ///
 /// These are pre-filled defaults; user can override based on their schedule.
 double recommendedHoursBefore(
   ActivityType sport,
-  IntensityDistribution intensity,
-) {
-  final level = _classifyIntensity(intensity);
+  IntensityDistribution intensity, {
+  int durationMinutes = 90,
+}) {
+  // Weighted intensity: 0.0 (all easy) → 1.0 (all hard)
+  final weightedIntensity =
+      (intensity.tempoPct * 0.5 + intensity.allOutPct * 1.0) / 100.0;
 
-  switch (sport) {
-    case ActivityType.running:
-      switch (level) {
-        case _IntensityLevel.easy:
-          return 1.5;
-        case _IntensityLevel.moderate:
-          return 2.5;
-        case _IntensityLevel.hard:
-          return 3.5;
-      }
-    case ActivityType.cycling:
-      switch (level) {
-        case _IntensityLevel.easy:
-          return 1.0;
-        case _IntensityLevel.moderate:
-          return 2.0;
-        case _IntensityLevel.hard:
-          return 3.0;
-      }
-    case ActivityType.swimming:
-      switch (level) {
-        case _IntensityLevel.easy:
-          return 1.5;
-        case _IntensityLevel.moderate:
-          return 2.0;
-        case _IntensityLevel.hard:
-          return 2.5;
-      }
-    case ActivityType.brick:
-    case ActivityType.triathlon:
-    case ActivityType.duathlon:
-    case ActivityType.multisport:
-      // Multi-sport defaults to running (most conservative)
-      switch (level) {
-        case _IntensityLevel.easy:
-          return 1.5;
-        case _IntensityLevel.moderate:
-          return 2.5;
-        case _IntensityLevel.hard:
-          return 3.5;
-      }
-  }
+  // Duration factor: short workouts need less pre-fueling
+  // Dead zone below 30 min, scales linearly to 1.0 at 180 min
+  final durationFactor =
+      ((durationMinutes - 30) / 150.0).clamp(0.0, 1.0);
+
+  // Combined factor: duration weighted 60%, intensity 40%
+  // Duration matters more: a 45-min easy jog needs far less pre-fueling
+  // than a 3-hour easy long run, regardless of intensity
+  final combinedFactor =
+      durationFactor * 0.6 + weightedIntensity * 0.4;
+
+  // Sport-specific min/max windows
+  final (minHours, maxHours) = switch (sport) {
+    ActivityType.running   => (0.25, 3.5),
+    ActivityType.cycling   => (0.25, 3.0),
+    ActivityType.swimming  => (0.5,  2.5),
+    _                      => (0.25, 3.5), // brick/triathlon/etc
+  };
+
+  // Linear interpolation between min and max
+  final hours = minHours + combinedFactor * (maxHours - minHours);
+
+  // Round to nearest 15 minutes (0.25h)
+  return (hours * 4).round() / 4.0;
 }
 
 /// Format minutes as a compact recommendation string (e.g., "2h 30m", "1h", "45 min").
@@ -94,14 +81,4 @@ String formatRecommendedTime(int minutes) {
   final rem = minutes % 60;
   if (rem == 0) return '${hours}h';
   return '${hours}h ${rem}m';
-}
-
-enum _IntensityLevel { easy, moderate, hard }
-
-_IntensityLevel _classifyIntensity(IntensityDistribution intensity) {
-  if (intensity.conversationalPct >= 70) return _IntensityLevel.easy;
-  if (intensity.allOutPct >= 25 || intensity.tempoPct >= 50) {
-    return _IntensityLevel.hard;
-  }
-  return _IntensityLevel.moderate;
 }

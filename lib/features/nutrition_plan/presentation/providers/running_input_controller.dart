@@ -165,7 +165,10 @@ class RunningInputController extends _$RunningInputController {
 
     // V3: Pre-fill timing from recommendation based on default intensity
     final defaultIntensity = IntensityDistribution.defaultDistribution();
-    final recommendedMinutes = (recommendedHoursBefore(ActivityType.running, defaultIntensity) * 60).round();
+    final recommendedMinutes = (recommendedHoursBefore(
+      ActivityType.running, defaultIntensity,
+      durationMinutes: initialDuration.inMinutes,
+    ) * 60).round();
 
     final initialState = RunningFormState(
       selectedDate: now,
@@ -271,6 +274,7 @@ class RunningInputController extends _$RunningInputController {
         distance: distance,
         paceMinutes: newPace ?? state.paceMinutes,
       );
+      _autoUpdateFuelingWindow();
       return;
     }
 
@@ -278,6 +282,7 @@ class RunningInputController extends _$RunningInputController {
       distance: distance,
       estimatedDuration: _estimateDuration(distance: distance),
     );
+    _autoUpdateFuelingWindow();
   }
 
   void updatePace(double paceMinutes) {
@@ -285,16 +290,12 @@ class RunningInputController extends _$RunningInputController {
       paceMinutes: paceMinutes,
       estimatedDuration: _estimateDuration(paceMinutes: paceMinutes),
     );
+    _autoUpdateFuelingWindow();
   }
 
   void updateIntensityDistribution(IntensityDistribution intensity) {
     state = state.copyWith(intensity: intensity);
-
-    // V3: Auto-update timing to recommendation if user hasn't manually overridden
-    if (!state.preRunMinutesManuallySet) {
-      final recommended = recommendedHoursBefore(ActivityType.running, intensity);
-      state = state.copyWith(preRunMinutes: (recommended * 60).round());
-    }
+    _autoUpdateFuelingWindow();
   }
 
   void updateDuration(Duration duration) {
@@ -303,6 +304,7 @@ class RunningInputController extends _$RunningInputController {
       estimatedDuration: duration,
       paceMinutes: newPace ?? state.paceMinutes,
     );
+    _autoUpdateFuelingWindow();
   }
 
   void updateDurationPaceMode(DurationPaceMode mode) {
@@ -371,6 +373,18 @@ class RunningInputController extends _$RunningInputController {
     );
   }
 
+  /// Auto-update fueling window when duration or intensity changes,
+  /// unless user has manually overridden it.
+  void _autoUpdateFuelingWindow() {
+    if (!state.preRunMinutesManuallySet) {
+      final recommended = recommendedHoursBefore(
+        ActivityType.running, state.intensity,
+        durationMinutes: state.estimatedDuration?.inMinutes ?? 90,
+      );
+      state = state.copyWith(preRunMinutes: (recommended * 60).round());
+    }
+  }
+
   /// V3: Update fasted workout toggle
   void updateFasted(bool isFasted) {
     state = state.copyWith(isFasted: isFasted);
@@ -393,14 +407,27 @@ class RunningInputController extends _$RunningInputController {
   }
 
   void updateDateTime(DateTime date, TimeOfDay time) {
+    final currentDate = state.selectedDate;
+    final currentTime = state.selectedTime;
+    final hasChanged = currentDate.year != date.year ||
+        currentDate.month != date.month ||
+        currentDate.day != date.day ||
+        currentTime.hour != time.hour ||
+        currentTime.minute != time.minute;
+
+    if (!hasChanged) return;
+
     state = state.copyWith(
       selectedDate: date,
       selectedTime: time,
+      // Reset to defaults immediately while refreshed forecast loads.
+      temperatureC: 20.0,
+      humidityPct: 60.0,
     );
 
-    // Auto-fetch weather when date changes if location is set
+    // Auto-fetch weather when date/time changes if location is set.
     if (state.location != null) {
-      fetchWeatherForecast();
+      unawaited(fetchWeatherForecast());
     }
   }
 

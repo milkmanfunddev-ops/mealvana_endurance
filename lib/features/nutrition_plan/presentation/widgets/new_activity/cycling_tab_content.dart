@@ -76,7 +76,7 @@ class CyclingTabContent extends ConsumerWidget {
             onChanged: controller.updatePreRideMinutes,
             min: 0,
             max: 480,
-            step: 30,
+            step: 15,
             unit: 'minutes',
           ),
 
