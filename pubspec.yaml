@@ -121,11 +121,10 @@ dev_dependencies:
   mocktail: ^1.0.4
   
   # Code Generation
-  build_runner: ^2.4.13
+  build_runner: ^2.6.0
   # riverpod_generator: ^2.4.3
   riverpod_generator: ^3.0.0
   drift_dev: ^2.20.3
-  analyzer: ^7.6.0
   
   # App Icons & Splash Screen
   flutter_launcher_icons: ^0.14.3
