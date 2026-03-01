@@ -1,0 +1,703 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../activities/domain/activity.dart';
+import '../../../calendar/domain/calendar_day_indicators.dart';
+import '../../../calendar/presentation/providers/calendar_view_provider.dart';
+import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
+import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
+import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
+import '../../domain/coach_athlete_relationship.dart';
+import '../providers/athlete_detail_controller.dart';
+import '../screens/coach_chat_screen.dart';
+
+/// Right panel showing athlete details within the coach portal
+class PortalAthleteDetailPanel extends ConsumerStatefulWidget {
+  final String relationshipId;
+
+  const PortalAthleteDetailPanel({
+    super.key,
+    required this.relationshipId,
+  });
+
+  @override
+  ConsumerState<PortalAthleteDetailPanel> createState() =>
+      _PortalAthleteDetailPanelState();
+}
+
+class _PortalAthleteDetailPanelState
+    extends ConsumerState<PortalAthleteDetailPanel> {
+  DateTime _selectedDate = DateTime.now();
+
+  @override
+  Widget build(BuildContext context) {
+    final detailAsync = ref.watch(
+      athleteDetailControllerProvider(widget.relationshipId),
+    );
+
+    return Container(
+      color: AppColors.blackberryDark,
+      child: detailAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.electrolyte),
+        ),
+        error: (error, _) => _buildErrorView(error.toString()),
+        data: (state) => _buildContent(state),
+      ),
+    );
+  }
+
+  Widget _buildErrorView(String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: AppColors.dragonfruit),
+            const SizedBox(height: 16),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textDarkSecondary),
+            ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: AppColors.electrolyte),
+              onPressed: () {
+                ref
+                    .read(athleteDetailControllerProvider(widget.relationshipId)
+                        .notifier)
+                    .refresh();
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(AthleteDetailState state) {
+    return DefaultTabController(
+      length: 5,
+      child: Column(
+        children: [
+          // Athlete header
+          _buildAthleteHeader(state),
+
+          // Tab bar
+          Container(
+            color: AppColors.blackberry,
+            child: TabBar(
+              labelColor: AppColors.electrolyte,
+              unselectedLabelColor: AppColors.textDarkSecondary,
+              indicatorColor: AppColors.electrolyte,
+              dividerColor: AppColors.blackberryLight,
+              tabs: [
+                const Tab(icon: Icon(Icons.person, size: 18), text: 'Profile'),
+                Tab(
+                  icon: const Icon(Icons.calendar_today, size: 18),
+                  text: 'Events (${state.events.length})',
+                ),
+                const Tab(icon: Icon(Icons.restaurant, size: 18), text: 'Carb Loading'),
+                Tab(
+                  icon: const Icon(Icons.directions_run, size: 18),
+                  text: 'Activities (${state.activities.length})',
+                ),
+                const Tab(icon: Icon(Icons.chat, size: 18), text: 'Chat'),
+              ],
+            ),
+          ),
+
+          // Tab views
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildProfileTab(state),
+                _buildEventsTab(state),
+                _buildCarbLoadingTab(state),
+                _buildActivitiesTab(state),
+                _buildChatTab(state),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAthleteHeader(AthleteDetailState state) {
+    final relationship = state.relationship;
+    final athleteProfile = state.athleteProfile;
+
+    String athleteName;
+    if (athleteProfile != null) {
+      athleteName = athleteProfile.displayName;
+    } else {
+      athleteName = relationship.athleteDisplayName ??
+          'Athlete ${relationship.athleteUserId.substring(0, 8)}...';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: AppColors.blackberry,
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: AppColors.electrolyte,
+            child: Text(
+              _getInitials(athleteName),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.blackberryDark,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  athleteName,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.cream,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                _buildStatusChip(relationship.status),
+              ],
+            ),
+          ),
+          // Refresh button
+          IconButton(
+            icon: const Icon(Icons.refresh, color: AppColors.textDarkSecondary),
+            tooltip: 'Refresh athlete data',
+            onPressed: () {
+              ref
+                  .read(athleteDetailControllerProvider(widget.relationshipId)
+                      .notifier)
+                  .refresh();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(RelationshipStatus status) {
+    final (label, color) = switch (status) {
+      RelationshipStatus.active => ('Active', AppColors.electrolyte),
+      RelationshipStatus.pending => ('Pending', AppColors.orange),
+      RelationshipStatus.declined => ('Declined', AppColors.dragonfruit),
+      RelationshipStatus.archived => ('Archived', AppColors.inactive),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          color: color,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileTab(AthleteDetailState state) {
+    final profile = state.athleteProfile;
+
+    if (profile == null) {
+      return _buildEmptyView(
+        'No Profile Data',
+        'Profile information is not available yet. Try refreshing.',
+        Icons.person_off,
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildInfoCard(
+          'Personal Information',
+          Icons.person,
+          [
+            _ProfileRow('Name', profile.displayName),
+            if (profile.firstName != null)
+              _ProfileRow('First Name', profile.firstName!),
+            if (profile.lastName != null)
+              _ProfileRow('Last Name', profile.lastName!),
+            _ProfileRow('Gender', profile.gender.name.toUpperCase()),
+            _ProfileRow('Birthday', _formatDate(profile.birthday)),
+            _ProfileRow(
+              'Height',
+              '${profile.heightFeet}\'${profile.heightInches}"',
+            ),
+            _ProfileRow(
+              'Weight',
+              '${profile.weightPounds.toStringAsFixed(1)} lbs',
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildInfoCard(
+          'Training Preferences',
+          Icons.fitness_center,
+          [
+            _ProfileRow(
+              'Runs with Water Bottle',
+              profile.runsWithWaterBottle ? 'Yes' : 'No',
+            ),
+            _ProfileRow(
+              'Gut Training Level',
+              profile.gutTraining.name.toUpperCase(),
+            ),
+            if (profile.giSensitivity != null)
+              _ProfileRow(
+                'GI Sensitivity',
+                profile.giSensitivity! ? 'Yes' : 'No',
+              ),
+          ],
+        ),
+        if (profile.ftpWatts != null ||
+            profile.typicalBikeBottles != null) ...[
+          const SizedBox(height: 16),
+          _buildInfoCard(
+            'Cycling Details',
+            Icons.directions_bike,
+            [
+              if (profile.ftpWatts != null)
+                _ProfileRow('FTP', '${profile.ftpWatts} watts'),
+              if (profile.typicalBikeBottles != null)
+                _ProfileRow('Bike Bottles', '${profile.typicalBikeBottles}'),
+              if (profile.hasAeroBottle != null)
+                _ProfileRow('Has Aero Bottle', profile.hasAeroBottle! ? 'Yes' : 'No'),
+              if (profile.hasBentoBox != null)
+                _ProfileRow('Has Bento Box', profile.hasBentoBox! ? 'Yes' : 'No'),
+            ],
+          ),
+        ],
+        if (profile.cssPacePer100mSeconds != null) ...[
+          const SizedBox(height: 16),
+          _buildInfoCard(
+            'Swimming Details',
+            Icons.pool,
+            [
+              _ProfileRow('CSS Pace', '${profile.cssPacePer100mSeconds}s per 100m'),
+              if (profile.typicalWetsuit != null)
+                _ProfileRow('Wetsuit', profile.typicalWetsuit! ? 'Yes' : 'No'),
+              if (profile.typicalSwimCapType != null)
+                _ProfileRow('Swim Cap', profile.typicalSwimCapType!),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildInfoCard(String title, IconData icon, List<_ProfileRow> rows) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.blackberry,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.blackberryLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppColors.electrolyte, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.cream,
+                ),
+              ),
+            ],
+          ),
+          const Divider(color: AppColors.blackberryLight, height: 24),
+          ...rows.map((row) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 140,
+                      child: Text(
+                        row.label,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textDarkSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        row.value,
+                        style: const TextStyle(
+                          color: AppColors.cream,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEventsTab(AthleteDetailState state) {
+    if (state.events.isEmpty) {
+      return _buildEmptyView(
+        'No Events',
+        'This athlete has no upcoming events.',
+        Icons.calendar_today,
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: state.events.length,
+      itemBuilder: (context, index) {
+        final event = state.events[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.blackberry,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.blackberryLight),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.event, color: AppColors.electrolyte, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.eventName ?? 'Unnamed Event',
+                      style: const TextStyle(
+                        color: AppColors.cream,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      event.eventDate != null
+                          ? _formatDate(event.eventDate!)
+                          : 'No Date',
+                      style: const TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCarbLoadingTab(AthleteDetailState state) {
+    if (state.carbLoadingPlans.isEmpty) {
+      return _buildEmptyView(
+        'No Carb Loading Plans',
+        'This athlete has no active carb loading plans.',
+        Icons.restaurant,
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: state.carbLoadingPlans.length,
+      itemBuilder: (context, index) {
+        final plan = state.carbLoadingPlans[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.blackberry,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.blackberryLight),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.restaurant_menu, color: AppColors.electrolyte, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${plan.raceDistance.displayName} - ${_formatDate(plan.raceDate)}',
+                      style: const TextStyle(
+                        color: AppColors.cream,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      '${plan.dailyCarbTargetG}g carbs/day',
+                      style: const TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                plan.isActive ? Icons.check_circle : Icons.pause_circle,
+                color: plan.isActive ? AppColors.electrolyte : AppColors.inactive,
+                size: 20,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildActivitiesTab(AthleteDetailState state) {
+    final calendarMode = ref.watch(calendarViewProvider);
+    final dayIndicators = _buildDayIndicatorsMap(state);
+
+    final selectedDateActivities = state.activities.where((activity) {
+      return _isSameDay(activity.scheduledDateTime, _selectedDate);
+    }).toList()
+      ..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
+
+    return Column(
+      children: [
+        const SizedBox(height: 4),
+        CalendarViewToggle(
+          selectedMode: calendarMode,
+          onModeChanged: (mode) {
+            ref.read(calendarViewProvider.notifier).setView(mode);
+          },
+        ),
+        const SizedBox(height: 8),
+        if (calendarMode == CalendarViewMode.week)
+          CalendarWeekViewKyle(
+            selectedDate: _selectedDate,
+            onDateSelected: (date) {
+              setState(() {
+                _selectedDate = date;
+              });
+            },
+            dayIndicators: dayIndicators,
+          )
+        else
+          CalendarMonthViewKyle(
+            selectedDate: _selectedDate,
+            onDateSelected: (date) {
+              setState(() {
+                _selectedDate = date;
+              });
+            },
+            dayIndicators: dayIndicators,
+          ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: selectedDateActivities.isEmpty
+              ? _buildEmptyActivitiesForDate()
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: selectedDateActivities.length,
+                  itemBuilder: (context, index) {
+                    final activity = selectedDateActivities[index];
+                    return _buildActivityItem(activity);
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActivityItem(Activity activity) {
+    return GestureDetector(
+      onTap: () {
+        context.push('/plan', extra: {
+          'activityId': activity.id,
+          'isCoachView': true,
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.blackberry,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.blackberryLight),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.directions_run, color: AppColors.electrolyte, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    activity.title,
+                    style: const TextStyle(
+                      color: AppColors.cream,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    '${activity.distanceMiles?.toStringAsFixed(1) ?? "-"} mi - ${_formatDate(activity.scheduledDateTime)}',
+                    style: const TextStyle(
+                      color: AppColors.textDarkSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textDarkSecondary, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChatTab(AthleteDetailState state) {
+    // Embed the chat screen inline within the portal
+    return CoachChatScreen(
+      relationshipId: widget.relationshipId,
+    );
+  }
+
+  Map<DateTime, Set<DayIndicatorType>> _buildDayIndicatorsMap(
+      AthleteDetailState state) {
+    final map = <DateTime, Set<DayIndicatorType>>{};
+
+    for (final activity in state.activities) {
+      final date = DateTime(
+        activity.scheduledDateTime.year,
+        activity.scheduledDateTime.month,
+        activity.scheduledDateTime.day,
+      );
+      map.putIfAbsent(date, () => {}).add(DayIndicatorType.activity);
+    }
+
+    for (final event in state.events) {
+      if (event.eventDate != null) {
+        final date = DateTime(
+          event.eventDate!.year,
+          event.eventDate!.month,
+          event.eventDate!.day,
+        );
+        map.putIfAbsent(date, () => {}).add(DayIndicatorType.event);
+      }
+    }
+
+    for (final plan in state.carbLoadingPlans) {
+      final raceDate = DateTime(
+        plan.raceDate.year,
+        plan.raceDate.month,
+        plan.raceDate.day,
+      );
+      map.putIfAbsent(raceDate, () => {}).add(DayIndicatorType.carbLoading);
+    }
+
+    return map;
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  Widget _buildEmptyActivitiesForDate() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.calendar_today, size: 40, color: AppColors.inactive),
+          const SizedBox(height: 12),
+          Text(
+            'No activities on ${_formatDate(_selectedDate)}',
+            style: const TextStyle(color: AppColors.textDarkSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyView(String title, String message, IconData icon) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 48, color: AppColors.inactive),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: AppColors.cream,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textDarkSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.month}/${date.day}/${date.year}';
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return parts[0].isNotEmpty ? parts[0][0].toUpperCase() : '?';
+  }
+}
+
+class _ProfileRow {
+  final String label;
+  final String value;
+
+  const _ProfileRow(this.label, this.value);
+}
