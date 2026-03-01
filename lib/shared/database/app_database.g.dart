@@ -198,7 +198,7 @@ class $UserProfilesTableTable extends UserProfilesTable
         false,
         type: DriftSqlType.string,
         requiredDuringInsert: false,
-        defaultValue: const Constant('min_per_mile'),
+        defaultValue: const Constant('minPerMile'),
       );
   static const VerificationMeta _gutTrainingLevelMeta = const VerificationMeta(
     'gutTrainingLevel',
@@ -1200,7 +1200,7 @@ class UserProfileEntry extends DataClass
   /// Preferred distance unit: 'miles' or 'kilometers'
   final String preferredDistanceUnit;
 
-  /// Preferred pace unit: 'min_per_mile' or 'min_per_km'
+  /// Preferred pace unit: 'minPerMile' or 'minPerKm'
   final String preferredPaceUnit;
 
   /// Gut training level (stored as string enum: 'low', 'moderate', 'high')

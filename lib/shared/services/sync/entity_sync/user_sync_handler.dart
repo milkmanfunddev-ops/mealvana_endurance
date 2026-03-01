@@ -134,7 +134,7 @@ class UserSyncHandler {
         id: userId,
         deviceId: userId, // In unified auth, deviceId == userId
         isAnonymous: const Value(false), // OAuth user = not anonymous
-        authProvider: const Value('google'), // OAuth provider
+        authProvider: Value(remoteUser['auth_provider'] as String? ?? 'google'),
         gender: Value(EnumParsers.parseGender(remoteUser['gender'] as String?)),
         birthday: Value(DateTime.tryParse(remoteUser['birthday'] as String? ?? '') ??
             DateTime(1990, 1, 1)),
@@ -142,6 +142,8 @@ class UserSyncHandler {
         heightInches: Value(remoteUser['height_inches'] as int? ?? 8),
         weightPounds: Value((remoteUser['weight_pounds'] as num?)?.toDouble() ?? 150.0),
         runsWithWaterBottle: Value(remoteUser['runs_with_water_bottle'] as bool? ?? true),
+        preferredPaceUnit: const Value('minPerMile'),
+        preferredDistanceUnit: const Value('miles'),
         gutTrainingLevel: Value(EnumParsers.parseGutTrainingLevel(
             remoteUser['gut_training_level'] as String?)),
         onboardingCompleted: Value(remoteUser['onboarding_completed'] as bool? ?? false),

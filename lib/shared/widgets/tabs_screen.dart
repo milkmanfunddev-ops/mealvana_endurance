@@ -106,9 +106,14 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
               }
             },
             onCoachTap: () {
-              setState(() {
-                _currentIndex = 1; // Coach tab is always at index 1 if visible
-              });
+              if (kIsWeb && isCoach) {
+                // Navigate directly to Coach Portal on web
+                context.go('/coach');
+              } else {
+                setState(() {
+                  _currentIndex = 1; // Coach tab is always at index 1 if visible
+                });
+              }
             },
             onEventsTap: () {
               setState(() {

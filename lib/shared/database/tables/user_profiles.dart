@@ -55,8 +55,8 @@ class UserProfilesTable extends Table {
   /// Preferred distance unit: 'miles' or 'kilometers'
   TextColumn get preferredDistanceUnit => text().withDefault(const Constant('miles')).named('preferred_distance_unit')();
 
-  /// Preferred pace unit: 'min_per_mile' or 'min_per_km'
-  TextColumn get preferredPaceUnit => text().withDefault(const Constant('min_per_mile')).named('preferred_pace_unit')();
+  /// Preferred pace unit: 'minPerMile' or 'minPerKm'
+  TextColumn get preferredPaceUnit => text().withDefault(const Constant('minPerMile')).named('preferred_pace_unit')();
 
   /// Gut training level (stored as string enum: 'low', 'moderate', 'high')
   TextColumn get gutTrainingLevel => text().withDefault(const Constant('moderate')).named('gut_training_level')();

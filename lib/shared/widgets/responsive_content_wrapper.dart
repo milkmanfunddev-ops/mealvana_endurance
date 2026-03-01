@@ -40,8 +40,12 @@ class ResponsiveContentWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Only apply constraints on web or when screen is large enough
-    // Using LayoutBuilder instead of MediaQuery for proper constraint-based layout
+    // On web, allow full-width layout (no max-width constraint)
+    if (kIsWeb) {
+      return child;
+    }
+
+    // On native (iPad), apply constraints for large screens
     return LayoutBuilder(
       builder: (context, constraints) {
         final isLargeScreen = constraints.maxWidth > breakpoint;
@@ -51,8 +55,7 @@ class ResponsiveContentWrapper extends StatelessWidget {
           return child;
         }
 
-        // On large screens, center the content with max-width constraint
-        // Use scaffold background color to fill the sides
+        // On large screens (iPad), center the content with max-width constraint
         final bgColor =
             backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
 
