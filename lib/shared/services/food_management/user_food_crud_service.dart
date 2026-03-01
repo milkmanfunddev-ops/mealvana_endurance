@@ -8,6 +8,7 @@ import '../../database/database_provider.dart';
 import '../../database/app_database.dart';
 import '../app_external_deps.dart';
 import '../logging_service.dart';
+import '../sync/immediate_remote_write_service.dart';
 import 'product_type_mapper.dart';
 
 /// Provider for UserFoodCrudService
@@ -18,17 +19,24 @@ final userFoodCrudServiceProvider = Provider<UserFoodCrudService>((ref) {
     database,
     deps.logger,
     deps.supabaseClient,
+    ref.read(immediateRemoteWriteServiceProvider),
   );
 });
 
 /// Service for managing user's custom foods
 /// Handles CRUD operations for user_foods table with local-first approach
 class UserFoodCrudService {
-  UserFoodCrudService(this._database, this._logger, this._supabase);
+  UserFoodCrudService(
+    this._database,
+    this._logger,
+    this._supabase,
+    this._immediateRemoteWriteService,
+  );
 
   final AppDatabase _database;
   final AppLogger _logger;
   final SupabaseClient _supabase;
+  final ImmediateRemoteWriteService _immediateRemoteWriteService;
   static const _uuid = Uuid();
 
   /// Load user foods for a user
@@ -39,9 +47,11 @@ class UserFoodCrudService {
       // Convert to Food domain objects
       final foods = userFoodsData
           .map((userFood) => _convertUserFoodToFood(userFood))
-          .toList();      return foods;
+          .toList();
+      return foods;
     } catch (e) {
-      _logger.error('Error loading user foods',
+      _logger.error(
+        'Error loading user foods',
         context: 'UserFoodCrudService',
         data: {'userId': userId},
         error: e,
@@ -64,7 +74,8 @@ class UserFoodCrudService {
       // Get current user's ID
       final userProfile = await _database.userDao.getCurrentUserProfile();
       final userId = userProfile?.id ?? 'unknown';
-      final deviceId = userProfile?.deviceId ?? userId; // Use userId as fallback
+      final deviceId =
+          userProfile?.deviceId ?? userId; // Use userId as fallback
       // Generate unique UUID for this food
       final foodId = _uuid.v4();
 
@@ -97,16 +108,25 @@ class UserFoodCrudService {
       );
 
       // Attempt background upload (non-blocking); needs_upload handles offline failure
-      unawaited(_uploadUserFoodToSupabase(
-        deviceId: deviceId,
-        userId: userId,
-        foodId: foodId,
-        food: food,
-        categoryNames: categoryNames,
-        barcode: barcode,
-      ));
+      unawaited(
+        _immediateRemoteWriteService.run(
+          repository: 'user_foods',
+          operation: 'create',
+          recordId: foodId,
+          method: 'UPSERT',
+          write: () => _uploadUserFoodToSupabase(
+            deviceId: deviceId,
+            userId: userId,
+            foodId: foodId,
+            food: food,
+            categoryNames: categoryNames,
+            barcode: barcode,
+          ),
+        ),
+      );
     } catch (e) {
-      _logger.error('Error saving user food',
+      _logger.error(
+        'Error saving user food',
         context: 'UserFoodCrudService',
         data: {'foodName': food.name},
         error: e,
@@ -160,28 +180,37 @@ class UserFoodCrudService {
 
       if (success) {
         // Attempt background upload (non-blocking)
-        unawaited(_uploadUserFoodUpdateToSupabase(
-          foodId: foodId,
-          name: name,
-          displayName: displayName,
-          displayNamePlural: displayNamePlural,
-          description: description,
-          servingAmount: servingAmount,
-          servingUnit: servingUnit,
-          servingSize: servingSize,
-          caloriesPerServing: caloriesPerServing,
-          carbsPerServing: carbsPerServing,
-          proteinPerServing: proteinPerServing,
-          fatPerServing: fatPerServing,
-          sodiumMg: sodiumMg,
-          fluidMlPerServing: fluidMlPerServing,
-          categoryNames: categoryNames,
-        ));
+        unawaited(
+          _immediateRemoteWriteService.run(
+            repository: 'user_foods',
+            operation: 'update',
+            recordId: foodId,
+            method: 'UPDATE',
+            write: () => _uploadUserFoodUpdateToSupabase(
+              foodId: foodId,
+              name: name,
+              displayName: displayName,
+              displayNamePlural: displayNamePlural,
+              description: description,
+              servingAmount: servingAmount,
+              servingUnit: servingUnit,
+              servingSize: servingSize,
+              caloriesPerServing: caloriesPerServing,
+              carbsPerServing: carbsPerServing,
+              proteinPerServing: proteinPerServing,
+              fatPerServing: fatPerServing,
+              sodiumMg: sodiumMg,
+              fluidMlPerServing: fluidMlPerServing,
+              categoryNames: categoryNames,
+            ),
+          ),
+        );
       }
 
       return success;
     } catch (e) {
-      _logger.error('Error updating user food',
+      _logger.error(
+        'Error updating user food',
         context: 'UserFoodCrudService',
         data: {'foodId': foodId},
         error: e,
@@ -201,9 +230,18 @@ class UserFoodCrudService {
       await _database.foodsDao.deleteUserFood(foodId);
 
       // Attempt background upload (non-blocking)
-      unawaited(_uploadUserFoodDeletion(deviceId, foodId));
+      unawaited(
+        _immediateRemoteWriteService.run(
+          repository: 'user_foods',
+          operation: 'delete',
+          recordId: foodId,
+          method: 'UPDATE',
+          write: () => _uploadUserFoodDeletion(deviceId, foodId),
+        ),
+      );
     } catch (e) {
-      _logger.error('Error deleting user food',
+      _logger.error(
+        'Error deleting user food',
         context: 'UserFoodCrudService',
         data: {'foodId': foodId},
         error: e,
@@ -221,79 +259,63 @@ class UserFoodCrudService {
     required List<String> categoryNames,
     String? barcode,
   }) async {
-    try {
-      final normalizedProductType = normalizeProductType(
-        food.productTypeId,
-        logger: _logger,
-      );
+    final normalizedProductType = normalizeProductType(
+      food.productTypeId,
+      logger: _logger,
+    );
 
-      await _supabase.from('user_foods').upsert({
-        'id': foodId,
-        'device_id': deviceId,
-        'user_id': userId,
-        'client_food_id': food.id,
-        'barcode': barcode,
-        'name': food.name,
-        'display_name': food.displayName ?? food.name,
-        'display_name_plural': food.displayNamePlural ?? '${food.name}s',
-        'description': food.description,
-        'image_address': food.imageAddress,
-        'serving_amount': food.servingAmount,
-        'serving_unit': food.servingUnit,
-        'serving_size': food.servingSize,
-        'calories_per_serving': food.caloriesPerServing,
-        'carbs_per_serving': food.carbsPerServing,
-        'protein_per_serving': food.proteinPerServing,
-        'fat_per_serving': food.fatPerServing,
-        'sodium_mg': food.sodiumMg,
-        'fluid_ml_per_serving': food.fluidMlPerServing,
-        'product_type': normalizedProductType,
-        'categories': categoryNames,
-        'activity_types': null,
-        'is_electrolyte': false,
-        'to_exclude_from_solver': false,
-        'is_deleted': false,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-        'client_updated_at': DateTime.now().toIso8601String(),
-      });
+    await _supabase.from('user_foods').upsert({
+      'id': foodId,
+      'device_id': deviceId,
+      'user_id': userId,
+      'client_food_id': food.id,
+      'barcode': barcode,
+      'name': food.name,
+      'display_name': food.displayName ?? food.name,
+      'display_name_plural': food.displayNamePlural ?? '${food.name}s',
+      'description': food.description,
+      'image_address': food.imageAddress,
+      'serving_amount': food.servingAmount,
+      'serving_unit': food.servingUnit,
+      'serving_size': food.servingSize,
+      'calories_per_serving': food.caloriesPerServing,
+      'carbs_per_serving': food.carbsPerServing,
+      'protein_per_serving': food.proteinPerServing,
+      'fat_per_serving': food.fatPerServing,
+      'sodium_mg': food.sodiumMg,
+      'fluid_ml_per_serving': food.fluidMlPerServing,
+      'product_type': normalizedProductType,
+      'categories': categoryNames,
+      'activity_types': null,
+      'is_electrolyte': false,
+      'to_exclude_from_solver': false,
+      'is_deleted': false,
+      'created_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+      'client_updated_at': DateTime.now().toIso8601String(),
+    });
 
-      await _database.customStatement(
-        'UPDATE user_foods SET needs_upload = 0 WHERE id = ?',
-        [foodId],
-      );
-    } catch (e) {
-      _logger.warning(
-        'Failed to upload user food (will retry on next sync)',
-        context: 'UserFoodCrudService',
-        error: e,
-        data: {'foodId': foodId},
-      );
-      // Don't rethrow - keep dirty flag, will retry on next sync
-    }
+    await _database.customStatement(
+      'UPDATE user_foods SET needs_upload = 0 WHERE id = ?',
+      [foodId],
+    );
   }
 
   /// Upload user food deletion to Supabase in background (non-blocking)
   Future<void> _uploadUserFoodDeletion(String deviceId, String foodId) async {
-    try {
-      await _supabase
-          .from('user_foods')
-          .update({'is_deleted': true, 'updated_at': DateTime.now().toIso8601String()})
-          .eq('id', foodId)
-          .eq('device_id', deviceId);
+    await _supabase
+        .from('user_foods')
+        .update({
+          'is_deleted': true,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', foodId)
+        .eq('device_id', deviceId);
 
-      await _database.customStatement(
-        'UPDATE user_foods SET needs_upload = 0 WHERE id = ?',
-        [foodId],
-      );
-    } catch (e) {
-      _logger.warning(
-        'Failed to upload user food deletion',
-        context: 'UserFoodCrudService',
-        error: e,
-        data: {'foodId': foodId},
-      );
-    }
+    await _database.customStatement(
+      'UPDATE user_foods SET needs_upload = 0 WHERE id = ?',
+      [foodId],
+    );
   }
 
   /// Upload user food update to Supabase in background (non-blocking)
@@ -314,46 +336,61 @@ class UserFoodCrudService {
     double? fluidMlPerServing,
     List<String>? categoryNames,
   }) async {
-    try {
-      // Build update map with only provided fields
-      final updateData = <String, dynamic>{
-        'updated_at': DateTime.now().toIso8601String(),
-        'client_updated_at': DateTime.now().toIso8601String(),
-      };
+    // Build update map with only provided fields
+    final updateData = <String, dynamic>{
+      'updated_at': DateTime.now().toIso8601String(),
+      'client_updated_at': DateTime.now().toIso8601String(),
+    };
 
-      if (name != null) updateData['name'] = name;
-      if (displayName != null) updateData['display_name'] = displayName;
-      if (displayNamePlural != null) updateData['display_name_plural'] = displayNamePlural;
-      if (description != null) updateData['description'] = description;
-      if (servingAmount != null) updateData['serving_amount'] = servingAmount;
-      if (servingUnit != null) updateData['serving_unit'] = servingUnit;
-      if (servingSize != null) updateData['serving_size'] = servingSize;
-      if (caloriesPerServing != null) updateData['calories_per_serving'] = caloriesPerServing;
-      if (carbsPerServing != null) updateData['carbs_per_serving'] = carbsPerServing;
-      if (proteinPerServing != null) updateData['protein_per_serving'] = proteinPerServing;
-      if (fatPerServing != null) updateData['fat_per_serving'] = fatPerServing;
-      if (sodiumMg != null) updateData['sodium_mg'] = sodiumMg;
-      if (fluidMlPerServing != null) updateData['fluid_ml_per_serving'] = fluidMlPerServing;
-      if (categoryNames != null) updateData['categories'] = categoryNames;
-
-      await _supabase
-          .from('user_foods')
-          .update(updateData)
-          .eq('id', foodId);
-
-      await _database.customStatement(
-        'UPDATE user_foods SET needs_upload = 0 WHERE id = ?',
-        [foodId],
-      );
-    } catch (e) {
-      _logger.warning(
-        'Failed to upload user food update (will retry on next sync)',
-        context: 'UserFoodCrudService',
-        error: e,
-        data: {'foodId': foodId},
-      );
-      // Don't rethrow - keep dirty flag, will retry on next sync
+    if (name != null) {
+      updateData['name'] = name;
     }
+    if (displayName != null) {
+      updateData['display_name'] = displayName;
+    }
+    if (displayNamePlural != null) {
+      updateData['display_name_plural'] = displayNamePlural;
+    }
+    if (description != null) {
+      updateData['description'] = description;
+    }
+    if (servingAmount != null) {
+      updateData['serving_amount'] = servingAmount;
+    }
+    if (servingUnit != null) {
+      updateData['serving_unit'] = servingUnit;
+    }
+    if (servingSize != null) {
+      updateData['serving_size'] = servingSize;
+    }
+    if (caloriesPerServing != null) {
+      updateData['calories_per_serving'] = caloriesPerServing;
+    }
+    if (carbsPerServing != null) {
+      updateData['carbs_per_serving'] = carbsPerServing;
+    }
+    if (proteinPerServing != null) {
+      updateData['protein_per_serving'] = proteinPerServing;
+    }
+    if (fatPerServing != null) {
+      updateData['fat_per_serving'] = fatPerServing;
+    }
+    if (sodiumMg != null) {
+      updateData['sodium_mg'] = sodiumMg;
+    }
+    if (fluidMlPerServing != null) {
+      updateData['fluid_ml_per_serving'] = fluidMlPerServing;
+    }
+    if (categoryNames != null) {
+      updateData['categories'] = categoryNames;
+    }
+
+    await _supabase.from('user_foods').update(updateData).eq('id', foodId);
+
+    await _database.customStatement(
+      'UPDATE user_foods SET needs_upload = 0 WHERE id = ?',
+      [foodId],
+    );
   }
 
   /// Check if food exists in user_foods
@@ -363,9 +400,12 @@ class UserFoodCrudService {
       final userId = userProfile?.id ?? 'unknown';
 
       final userFoods = await _database.foodsDao.getUserFoods(userId);
-      return userFoods.any((userFood) => userFood.clientFoodId == foodId || userFood.id == foodId);
+      return userFoods.any(
+        (userFood) => userFood.clientFoodId == foodId || userFood.id == foodId,
+      );
     } catch (e) {
-      _logger.error('Error checking if food is user food',
+      _logger.error(
+        'Error checking if food is user food',
         context: 'UserFoodCrudService',
         data: {'foodId': foodId},
         error: e,
@@ -405,7 +445,9 @@ class UserFoodCrudService {
       duringRunSuitable: true,
       // Default values for missing fields
       instructions: '',
-      servingUnitPlural: userFood.servingUnit != null ? '${userFood.servingUnit}s' : null,
+      servingUnitPlural: userFood.servingUnit != null
+          ? '${userFood.servingUnit}s'
+          : null,
       servingQualifier: null,
     );
   }

@@ -13,6 +13,8 @@ class PreferencesService {
 
   // Keys
   static const String _keyHasCompletedInitialSurvey = 'has_completed_initial_survey';
+  static const String _keyTpWritebackEnabled = 'tp_writeback_enabled';
+  static const String _keyTpWritebackPremiumBlocked = 'tp_writeback_premium_blocked';
 
   /// Check if user has completed the initial survey after first activity creation
   bool get hasCompletedInitialSurvey {
@@ -27,6 +29,23 @@ class PreferencesService {
   /// Clear the initial survey flag (useful for testing)
   Future<void> clearInitialSurveyFlag() async {
     await _prefs.remove(_keyHasCompletedInitialSurvey);
+  }
+
+  // ─── TrainingPeaks Write-Back ───
+
+  /// Whether TP write-back is enabled (default ON)
+  bool get tpWritebackEnabled => _prefs.getBool(_keyTpWritebackEnabled) ?? true;
+
+  Future<void> setTpWritebackEnabled(bool enabled) async {
+    await _prefs.setBool(_keyTpWritebackEnabled, enabled);
+  }
+
+  /// Whether TP write-back is blocked due to 403 (non-Premium account)
+  bool get tpWritebackPremiumBlocked =>
+      _prefs.getBool(_keyTpWritebackPremiumBlocked) ?? false;
+
+  Future<void> setTpWritebackPremiumBlocked(bool blocked) async {
+    await _prefs.setBool(_keyTpWritebackPremiumBlocked, blocked);
   }
 
   /// Clear all preferences (useful for testing or logout)

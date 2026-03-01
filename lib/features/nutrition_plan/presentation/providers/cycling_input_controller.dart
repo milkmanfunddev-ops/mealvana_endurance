@@ -45,6 +45,9 @@ class CyclingFormState {
   // V3: Track if user manually changed the pre-ride timing
   final bool preRideMinutesManuallySet;
 
+  // Unit system preference (imperial = °F, metric = °C)
+  final UnitSystem unitSystem;
+
   // Weather integration fields
   final weather_domain.Location? location;
   final WeatherForecast? weatherForecast;
@@ -75,6 +78,7 @@ class CyclingFormState {
     this.estimatedDuration,
     this.isFasted = false,
     this.preRideMinutesManuallySet = false,
+    this.unitSystem = UnitSystem.imperial,
     this.location,
     this.weatherForecast,
     this.isLoadingLocation = false,
@@ -104,6 +108,7 @@ class CyclingFormState {
     Duration? estimatedDuration,
     bool? isFasted,
     bool? preRideMinutesManuallySet,
+    UnitSystem? unitSystem,
     weather_domain.Location? location,
     WeatherForecast? weatherForecast,
     bool? isLoadingLocation,
@@ -132,6 +137,7 @@ class CyclingFormState {
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
       isFasted: isFasted ?? this.isFasted,
       preRideMinutesManuallySet: preRideMinutesManuallySet ?? this.preRideMinutesManuallySet,
+      unitSystem: unitSystem ?? this.unitSystem,
       location: location ?? this.location,
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
@@ -194,15 +200,17 @@ class CyclingInputController extends _$CyclingInputController {
           state = state.copyWith(
             distanceUnit: userProfile.preferredDistanceUnit,
             speedMph: defaultSpeed,
+            unitSystem: userProfile.unitSystem,
           );
           // Recalculate estimated duration with user's default speed
           _estimateDuration();
-          DebugLogger.info('🚴 CYCLING CONTROLLER: Loaded user preferences - distance unit: ${userProfile.preferredDistanceUnit.name}, default speed: ${defaultSpeed}mph');
+          DebugLogger.info('🚴 CYCLING CONTROLLER: Loaded user preferences - distance unit: ${userProfile.preferredDistanceUnit.name}, default speed: ${defaultSpeed}mph, unitSystem: ${userProfile.unitSystem.name}');
         } else {
           state = state.copyWith(
             distanceUnit: userProfile.preferredDistanceUnit,
+            unitSystem: userProfile.unitSystem,
           );
-          DebugLogger.info('🚴 CYCLING CONTROLLER: Loaded user preferences - distance unit: ${userProfile.preferredDistanceUnit.name}');
+          DebugLogger.info('🚴 CYCLING CONTROLLER: Loaded user preferences - distance unit: ${userProfile.preferredDistanceUnit.name}, unitSystem: ${userProfile.unitSystem.name}');
         }
       }
     } catch (e) {
@@ -367,8 +375,9 @@ class CyclingInputController extends _$CyclingInputController {
       humidityPct: isIndoor ? 45.0 : 60.0,
     );
 
-    // Auto-fetch weather when date/time changes for outdoor rides if location is set.
-    if (!isIndoor && state.location != null) {
+    // Auto-fetch weather when date/time changes for outdoor rides if location is set
+    // or if weather was previously fetched successfully (via GPS fallback).
+    if (!isIndoor && (state.location != null || state.weatherForecast != null)) {
       unawaited(fetchWeatherForecast());
     }
   }

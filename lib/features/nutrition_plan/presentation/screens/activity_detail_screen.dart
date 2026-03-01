@@ -465,13 +465,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             _deleteFood(context, state, foodId, category),
         onUpdateQuantity: (foodId, category, newQuantity) =>
             _updateFoodQuantity(context, state, foodId, category, newQuantity),
+        onAddFoodToHour: (cat, hourIndex) {
+          final controller = _getControllerNotifier();
+          controller.setPendingAddFoodHourIndex(hourIndex);
+          _addFood(context, cat);
+        },
         onInitializeByHour: (cat, duration) {
           final controller = _getControllerNotifier();
           controller.initializeByHourData(cat, duration);
         },
-        onMoveFoodToTimeSlot: (foodId, cat, newSlot) {
+        onMoveFoodToTimeSlot: (foodId, cat, sourceSlot, newSlot) {
           final controller = _getControllerNotifier();
-          controller.moveFoodToTimeSlot(foodId, cat, newSlot);
+          controller.moveFoodToTimeSlot(foodId, cat, sourceSlot, newSlot);
         },
         showSwipeHint: _consumeSwipeHint(),
       );
@@ -492,7 +497,14 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         Color sectionColor;
 
         if (section.id.contains('during')) {
-          category = 'during_run';
+          switch (activityType) {
+            case ActivityType.cycling:
+              category = 'during_cycling';
+            case ActivityType.swimming:
+              category = 'during_swim';
+            default:
+              category = 'during_run';
+          }
           sectionColor = AppColors.electrolyte;
         } else if (section.id.contains('after')) {
           category = 'after_run';
@@ -533,7 +545,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         }
 
         // Use DuringPhaseSectionWidget for during sections (supports By Hour toggle)
-        if (category == 'during_run') {
+        if (category.startsWith('during_')) {
           final durationMinutes = state.activity?.durationMinutes ?? 120;
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.lg),
@@ -544,6 +556,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               category: category,
               durationMinutes: durationMinutes,
               useImperial: useImperial,
+              activityType: activityType,
               subtitle: section.subtitle,
               sportIcon: _getSportIcon(activityType),
               sportIconColor: sectionColor,
@@ -563,9 +576,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                 final controller = _getControllerNotifier();
                 controller.initializeByHourData(cat, duration);
               },
-              onMoveFoodToTimeSlot: (foodId, cat, newSlot) {
+              onMoveFoodToTimeSlot: (foodId, cat, sourceSlot, newSlot) {
                 final controller = _getControllerNotifier();
-                controller.moveFoodToTimeSlot(foodId, cat, newSlot);
+                controller.moveFoodToTimeSlot(foodId, cat, sourceSlot, newSlot);
               },
               showSwipeHint: _consumeSwipeHint(),
             ),

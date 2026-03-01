@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../core/utils/debug_logger.dart';
+import '../../../../../shared/domain/activity_type.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../activities/domain/activity.dart';
 import '../../../domain/nutrition_plan.dart';
@@ -24,6 +25,7 @@ class BrickNutritionSections extends StatelessWidget {
     required this.onSwapFood,
     required this.onDeleteFood,
     required this.onUpdateQuantity,
+    this.onAddFoodToHour,
     this.onInitializeByHour,
     this.onMoveFoodToTimeSlot,
     this.showSwipeHint = false,
@@ -36,8 +38,10 @@ class BrickNutritionSections extends StatelessWidget {
   final Function(String foodId, String foodName, String category) onSwapFood;
   final Function(String foodId, String category) onDeleteFood;
   final Function(String foodId, String category, double newQuantity) onUpdateQuantity;
+  final void Function(String category, int hourIndex)? onAddFoodToHour;
   final void Function(String category, int durationMinutes)? onInitializeByHour;
-  final void Function(String foodId, String category, TimeSlot newTimeSlot)? onMoveFoodToTimeSlot;
+  final void Function(
+          String foodId, String category, TimeSlot sourceTimeSlot, TimeSlot newTimeSlot)? onMoveFoodToTimeSlot;
   final bool showSwipeHint;
   final bool useImperial;
 
@@ -167,6 +171,7 @@ class BrickNutritionSections extends StatelessWidget {
           category: category,
           durationMinutes: segmentDuration,
           useImperial: useImperial,
+          activityType: ActivityType.fromDbValue(sportType ?? 'running'),
           subtitle: section.subtitle,
           onSwapFood: (foodId, foodName, cat) =>
               onSwapFood(foodId, foodName, cat),
@@ -174,6 +179,9 @@ class BrickNutritionSections extends StatelessWidget {
           onUpdateQuantity: (foodId, cat, newQuantity) =>
               onUpdateQuantity(foodId, cat, newQuantity),
           onAddFood: (cat) => onAddFood(cat),
+          onAddFoodToHour: onAddFoodToHour != null
+              ? (cat, hourIndex) => onAddFoodToHour!(cat, hourIndex)
+              : null,
           onInitializeByHour: onInitializeByHour!,
           onMoveFoodToTimeSlot: onMoveFoodToTimeSlot!,
           showSwipeHint: showSwipeHint,

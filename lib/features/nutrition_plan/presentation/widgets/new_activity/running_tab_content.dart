@@ -37,16 +37,23 @@ class RunningTabContent extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final weatherForecast = formState.weatherForecast;
-    final isAutoFilled = weatherForecast != null &&
+    final isAutoFilled =
+        weatherForecast != null &&
         weatherForecast.forecastAvailable &&
         weatherForecast.source != WeatherSource.defaultValue;
-    final showWeatherPrompt = formState.hasAttemptedWeatherFetch && !isAutoFilled;
+    final showWeatherPrompt =
+        formState.hasAttemptedWeatherFetch && !isAutoFilled;
     final locationFailureReason = formState.locationFailureReason;
-    final showLocationPrompt = showWeatherPrompt && locationFailureReason != null;
-    final isServicesDisabled = locationFailureReason == LocationFailureReason.servicesDisabled;
-    final isPermissionDenied = locationFailureReason == LocationFailureReason.permissionDenied;
-    final isPermissionBlocked = locationFailureReason == LocationFailureReason.permissionDeniedForever;
-    final canOpenForecast = isAutoFilled && weatherForecast != null;
+    final showLocationPrompt =
+        showWeatherPrompt && locationFailureReason != null;
+    final isServicesDisabled =
+        locationFailureReason == LocationFailureReason.servicesDisabled;
+    final isPermissionDenied =
+        locationFailureReason == LocationFailureReason.permissionDenied;
+    final isPermissionBlocked =
+        locationFailureReason == LocationFailureReason.permissionDeniedForever;
+    final useImperial = formState.unitSystem == UnitSystem.imperial;
+    final canOpenForecast = isAutoFilled;
     final forecastActionLabel = formState.isLoadingWeather
         ? 'Loading...'
         : (canOpenForecast ? 'View Forecast' : 'Get Forecast');
@@ -55,7 +62,7 @@ class RunningTabContent extends ConsumerWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: AppColors.electrolyte.withOpacity(0.2),
+          color: AppColors.electrolyte.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: AppColors.electrolyte),
         ),
@@ -77,11 +84,15 @@ class RunningTabContent extends ConsumerWidget {
         WorkoutDetailsWidget(
           sport: ActivityType.running,
           distance: formState.distance,
-          distanceUnit: formState.distanceUnit == DistanceUnit.kilometers ? 'km' : 'mi',
+          distanceUnit: formState.distanceUnit == DistanceUnit.kilometers
+              ? 'km'
+              : 'mi',
           mode: formState.durationPaceMode,
           estimatedDuration: formState.estimatedDuration,
           pace: formState.paceMinutes,
-          paceUnit: formState.paceUnit == PaceUnit.minPerKm ? 'min/km' : 'min/mi',
+          paceUnit: formState.paceUnit == PaceUnit.minPerKm
+              ? 'min/km'
+              : 'min/mi',
           onDistanceChanged: controller.updateDistance,
           onModeChanged: controller.updateDurationPaceMode,
           onPaceChanged: controller.updatePace,
@@ -97,10 +108,10 @@ class RunningTabContent extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.electrolyte.withOpacity(0.15),
+                  color: AppColors.electrolyte.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: AppColors.electrolyte.withOpacity(0.4),
+                    color: AppColors.electrolyte.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Row(
@@ -139,58 +150,60 @@ class RunningTabContent extends ConsumerWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-          // PRE-RUN FUELING WINDOW
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _TimeBeforeRunControl(
-                value: formState.preRunMinutes,
-                onChanged: controller.updatePreRunMinutes,
-              ),
-            ],
-          ),
-
-          // FASTED TOGGLE
-          FastedToggle(
-            isFasted: formState.isFasted,
-            onChanged: controller.updateFasted,
-            showWarning: !FastedToggle.isSuitable(
-              conversationalPct: formState.intensity.conversationalPct,
-              estimatedDurationMinutes: formState.estimatedDuration?.inMinutes ?? 0,
-              isSwimming: false,
+        // PRE-RUN FUELING WINDOW
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _TimeBeforeRunControl(
+              value: formState.preRunMinutes,
+              onChanged: controller.updatePreRunMinutes,
             ),
-            warningText: 'Fasted training is not recommended for longer or harder runs. Consider fueling before.',
+          ],
+        ),
+
+        // FASTED TOGGLE
+        FastedToggle(
+          isFasted: formState.isFasted,
+          onChanged: controller.updateFasted,
+          showWarning: !FastedToggle.isSuitable(
+            conversationalPct: formState.intensity.conversationalPct,
+            estimatedDurationMinutes:
+                formState.estimatedDuration?.inMinutes ?? 0,
+            isSwimming: false,
           ),
+          warningText:
+              'Fasted training is not recommended for longer or harder runs. Consider fueling before.',
+        ),
 
-          const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.xl),
 
-          // Temperature with Forecast link
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Temperature label with Forecast link on the right
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Temperature',
-                        style: AppTextStyles.descriptor.copyWith(
-                          color: isDark ? AppColors.cream : AppColors.blackberry,
-                          fontWeight: FontWeight.w700,
-                        ),
+        // Temperature with Forecast link
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Temperature label with Forecast link on the right
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Temperature',
+                      style: AppTextStyles.descriptor.copyWith(
+                        color: isDark ? AppColors.cream : AppColors.blackberry,
+                        fontWeight: FontWeight.w700,
                       ),
-                      if (isAutoFilled) ...[
-                        const SizedBox(width: 8),
-                        buildAutoBadge(),
-                      ],
+                    ),
+                    if (isAutoFilled) ...[
+                      const SizedBox(width: 8),
+                      buildAutoBadge(),
                     ],
-                  ),
-                  GestureDetector(
-                    onTap: formState.isLoadingWeather
-                        ? null
-                        : (canOpenForecast
+                  ],
+                ),
+                GestureDetector(
+                  onTap: formState.isLoadingWeather
+                      ? null
+                      : (canOpenForecast
                             ? () {
                                 final forecast = formState.weatherForecast;
                                 if (forecast != null) {
@@ -199,273 +212,298 @@ class RunningTabContent extends ConsumerWidget {
                                     MaterialPageRoute(
                                       builder: (_) => WeatherDetailScreen(
                                         forecast: forecast,
+                                        location: formState.location,
+                                        useImperial: useImperial,
                                       ),
                                     ),
                                   );
                                 }
                               }
                             : controller.fetchWeatherForecast),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.wb_sunny_outlined,
-                          size: 14,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.wb_sunny_outlined,
+                        size: 14,
+                        color: formState.isLoadingWeather
+                            ? AppColors.dragonfruit.withValues(alpha: 0.4)
+                            : AppColors.dragonfruit,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        forecastActionLabel,
+                        style: AppTextStyles.bodyMedium.copyWith(
                           color: formState.isLoadingWeather
                               ? AppColors.dragonfruit.withValues(alpha: 0.4)
                               : AppColors.dragonfruit,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          forecastActionLabel,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: formState.isLoadingWeather
-                                ? AppColors.dragonfruit.withValues(alpha: 0.4)
-                                : AppColors.dragonfruit,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              if (isAutoFilled) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Auto-filled from location',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
-                    fontSize: 11,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-              if (showWeatherPrompt) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 6,
-                  children: [
-                    if (showLocationPrompt && isServicesDisabled) ...[
-                      Text(
-                        'Location services are off.',
-                        style: AppTextStyles.smallLabel.copyWith(
-                          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
-                          fontSize: 11,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: controller.openLocationSettings,
-                        child: Text(
-                          'Open settings',
-                          style: AppTextStyles.smallLabel.copyWith(
-                            color: AppColors.dragonfruit,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ] else if (showLocationPrompt && isPermissionBlocked) ...[
-                      Text(
-                        'Location permission blocked.',
-                        style: AppTextStyles.smallLabel.copyWith(
-                          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
-                          fontSize: 11,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: controller.openAppSettings,
-                        child: Text(
-                          'Open app settings',
-                          style: AppTextStyles.smallLabel.copyWith(
-                            color: AppColors.dragonfruit,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ] else if (showLocationPrompt && isPermissionDenied) ...[
-                      Text(
-                        'Allow location to auto-fill.',
-                        style: AppTextStyles.smallLabel.copyWith(
-                          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
-                          fontSize: 11,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: formState.isLoadingWeather ? null : controller.requestLocationPermissionAndFetch,
-                        child: Text(
-                          'Enable location',
-                          style: AppTextStyles.smallLabel.copyWith(
-                            color: formState.isLoadingWeather
-                                ? AppColors.dragonfruit.withValues(alpha: 0.4)
-                                : AppColors.dragonfruit,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: controller.openAppSettings,
-                        child: Text(
-                          'Open app settings',
-                          style: AppTextStyles.smallLabel.copyWith(
-                            color: AppColors.dragonfruit,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ] else ...[
-                      Text(
-                        "Couldn't fetch weather. Enter manually or",
-                        style: AppTextStyles.smallLabel.copyWith(
-                          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7),
-                          fontSize: 11,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: formState.isLoadingWeather ? null : controller.fetchWeatherForecast,
-                        child: Text(
-                          'try again',
-                          style: AppTextStyles.smallLabel.copyWith(
-                            color: formState.isLoadingWeather
-                                ? AppColors.dragonfruit.withValues(alpha: 0.4)
-                                : AppColors.dragonfruit,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            decoration: TextDecoration.underline,
-                          ),
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
               ],
-              const SizedBox(height: AppSpacing.sm),
-              // Temperature control
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Minus button
-                  GestureDetector(
-                    onTap: !formState.isLoadingWeather && formState.temperatureC > -5.0
-                        ? () => controller.updateTemperature((formState.temperatureC - 1.0).clamp(-5.0, 40.0))
-                        : null,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.orange,
-                          width: 2,
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.remove,
-                        color: !formState.isLoadingWeather ? AppColors.orange : AppColors.orange.withValues(alpha: 0.4),
-                        size: 20,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: AppSpacing.xl),
-
-                  // Value display
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text(
-                          '${formState.temperatureC.toStringAsFixed(0)}°C (${_celsiusToFahrenheit(formState.temperatureC)}°F)',
-                          style: AppTextStyles.dataNumber.copyWith(
-                            color: isDark ? AppColors.cream : AppColors.blackberry,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: AppSpacing.xl),
-
-                  // Plus button
-                  GestureDetector(
-                    onTap: !formState.isLoadingWeather && formState.temperatureC < 40.0
-                        ? () => controller.updateTemperature((formState.temperatureC + 1.0).clamp(-5.0, 40.0))
-                        : null,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.orange,
-                          width: 2,
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.add,
-                        color: !formState.isLoadingWeather ? AppColors.orange : AppColors.orange.withValues(alpha: 0.4),
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ],
+            ),
+            if (isAutoFilled) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Auto-filled from location',
+                style: AppTextStyles.smallLabel.copyWith(
+                  color: (isDark ? AppColors.cream : AppColors.blackberry)
+                      .withValues(alpha: 0.7),
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ],
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Humidity
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
+            if (showWeatherPrompt) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
                 children: [
-                  Text(
-                    'Humidity',
-                    style: AppTextStyles.descriptor.copyWith(
-                      color: isDark ? AppColors.cream : AppColors.blackberry,
-                      fontWeight: FontWeight.w700,
+                  if (showLocationPrompt && isServicesDisabled) ...[
+                    Text(
+                      'Location services are off.',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: (isDark ? AppColors.cream : AppColors.blackberry)
+                            .withValues(alpha: 0.7),
+                        fontSize: 11,
+                      ),
                     ),
-                  ),
-                  if (isAutoFilled) ...[
-                    const SizedBox(width: 8),
-                    buildAutoBadge(),
+                    GestureDetector(
+                      onTap: controller.openLocationSettings,
+                      child: Text(
+                        'Open settings',
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: AppColors.dragonfruit,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ] else if (showLocationPrompt && isPermissionBlocked) ...[
+                    Text(
+                      'Location permission blocked.',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: (isDark ? AppColors.cream : AppColors.blackberry)
+                            .withValues(alpha: 0.7),
+                        fontSize: 11,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: controller.openAppSettings,
+                      child: Text(
+                        'Open app settings',
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: AppColors.dragonfruit,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ] else if (showLocationPrompt && isPermissionDenied) ...[
+                    Text(
+                      'Allow location to auto-fill.',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: (isDark ? AppColors.cream : AppColors.blackberry)
+                            .withValues(alpha: 0.7),
+                        fontSize: 11,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: formState.isLoadingWeather
+                          ? null
+                          : controller.requestLocationPermissionAndFetch,
+                      child: Text(
+                        'Enable location',
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: formState.isLoadingWeather
+                              ? AppColors.dragonfruit.withValues(alpha: 0.4)
+                              : AppColors.dragonfruit,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: controller.openAppSettings,
+                      child: Text(
+                        'Open app settings',
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: AppColors.dragonfruit,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    Text(
+                      "Couldn't fetch weather. Enter manually or",
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: (isDark ? AppColors.cream : AppColors.blackberry)
+                            .withValues(alpha: 0.7),
+                        fontSize: 11,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: formState.isLoadingWeather
+                          ? null
+                          : controller.fetchWeatherForecast,
+                      child: Text(
+                        'try again',
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: formState.isLoadingWeather
+                              ? AppColors.dragonfruit.withValues(alpha: 0.4)
+                              : AppColors.dragonfruit,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              KylePlusMinusDecimalControl(
-                value: formState.humidityPct,
-                onChanged: controller.updateHumidity,
-                min: 20.0,
-                max: 95.0,
-                step: 5.0,
-                decimalPlaces: 0,
-                unit: '% humidity', // Will be displayed as "% HUMIDITY"
-              ),
             ],
-          ),
+            const SizedBox(height: AppSpacing.sm),
+            // Temperature control
+            Builder(
+              builder: (context) {
+                final tempC = formState.temperatureC;
+                final displayTemp = useImperial ? (tempC * 9 / 5) + 32 : tempC;
+                final primaryUnit = useImperial ? '°F' : '°C';
+                final minC = -5.0;
+                final maxC = 40.0;
 
-          const SizedBox(height: AppSpacing.xxl),
-        ],
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Minus button
+                    GestureDetector(
+                      onTap: !formState.isLoadingWeather && tempC > minC
+                          ? () => controller.updateTemperature(
+                              (tempC - (useImperial ? 10 / 9 : 1.0)).clamp(
+                                minC,
+                                maxC,
+                              ),
+                            )
+                          : null,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.orange, width: 2),
+                        ),
+                        child: Icon(
+                          Icons.remove,
+                          color: !formState.isLoadingWeather
+                              ? AppColors.orange
+                              : AppColors.orange.withValues(alpha: 0.4),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: AppSpacing.xl),
+
+                    // Value display - primary unit large, secondary in parens
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            '${displayTemp.toStringAsFixed(0)}$primaryUnit',
+                            style: AppTextStyles.dataNumber.copyWith(
+                              color: isDark
+                                  ? AppColors.cream
+                                  : AppColors.blackberry,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: AppSpacing.xl),
+
+                    // Plus button
+                    GestureDetector(
+                      onTap: !formState.isLoadingWeather && tempC < maxC
+                          ? () => controller.updateTemperature(
+                              (tempC + (useImperial ? 10 / 9 : 1.0)).clamp(
+                                minC,
+                                maxC,
+                              ),
+                            )
+                          : null,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.orange, width: 2),
+                        ),
+                        child: Icon(
+                          Icons.add,
+                          color: !formState.isLoadingWeather
+                              ? AppColors.orange
+                              : AppColors.orange.withValues(alpha: 0.4),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+
+        const SizedBox(height: AppSpacing.xl),
+
+        // Humidity
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Humidity',
+                  style: AppTextStyles.descriptor.copyWith(
+                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (isAutoFilled) ...[
+                  const SizedBox(width: 8),
+                  buildAutoBadge(),
+                ],
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            KylePlusMinusDecimalControl(
+              value: formState.humidityPct,
+              onChanged: controller.updateHumidity,
+              min: 20.0,
+              max: 95.0,
+              step: 5.0,
+              decimalPlaces: 0,
+              unit: '% humidity', // Will be displayed as "% HUMIDITY"
+            ),
+          ],
+        ),
+
+        const SizedBox(height: AppSpacing.xxl),
+      ],
     );
-  }
-
-  /// Convert Celsius to Fahrenheit
-  String _celsiusToFahrenheit(double celsius) {
-    final fahrenheit = (celsius * 9 / 5) + 32;
-    return fahrenheit.toStringAsFixed(0);
   }
 }
 
@@ -492,28 +530,27 @@ class _ControlButton extends StatelessWidget {
           backgroundColor: Colors.transparent,
           foregroundColor: enabled
               ? Colors.orange
-              : Colors.orange.withOpacity(0.4),
+              : Colors.orange.withValues(alpha: 0.4),
           disabledBackgroundColor: Colors.transparent,
-          disabledForegroundColor: Colors.orange.withOpacity(0.4),
+          disabledForegroundColor: Colors.orange.withValues(alpha: 0.4),
           elevation: 0,
           shadowColor: Colors.transparent,
           side: BorderSide(
             color: enabled
                 ? Colors.orange
-                : Colors.orange.withOpacity(0.4),
+                : Colors.orange.withValues(alpha: 0.4),
             width: 2,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.circularRadius,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.circularRadius),
           padding: EdgeInsets.zero,
         ),
         child: Icon(
           icon,
           size: AppIconSizes.controlIcon,
           color: enabled
-              ? AppColors.cream  // White/cream icon color to match Kyle's design
-              : AppColors.cream.withOpacity(0.4),
+              ? AppColors
+                    .cream // White/cream icon color to match Kyle's design
+              : AppColors.cream.withValues(alpha: 0.4),
         ),
       ),
     );
@@ -522,10 +559,7 @@ class _ControlButton extends StatelessWidget {
 
 /// Custom time before run control that formats as hours
 class _TimeBeforeRunControl extends StatelessWidget {
-  const _TimeBeforeRunControl({
-    required this.value,
-    required this.onChanged,
-  });
+  const _TimeBeforeRunControl({required this.value, required this.onChanged});
 
   final int value;
   final ValueChanged<int> onChanged;

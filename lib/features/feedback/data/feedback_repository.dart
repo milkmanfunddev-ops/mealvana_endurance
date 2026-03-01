@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sync/immediate_remote_write_service.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/feedback_data.dart';
 
@@ -17,17 +18,24 @@ final feedbackRepositoryProvider = Provider<FeedbackRepository>((ref) {
     database,
     deps.logger,
     deps.supabaseClient,
+    ref.read(immediateRemoteWriteServiceProvider),
   );
 });
 
 /// Repository for handling feedback data persistence
 /// Manages survey responses and notification preferences in local database and Supabase
 class FeedbackRepository with SyncableRepository {
-  FeedbackRepository(this._database, this._logger, this._supabase);
+  FeedbackRepository(
+    this._database,
+    this._logger,
+    this._supabase,
+    this._immediateRemoteWriteService,
+  );
 
   final AppDatabase _database;
   final AppLogger _logger;
   final SupabaseClient _supabase;
+  final ImmediateRemoteWriteService _immediateRemoteWriteService;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -53,33 +61,24 @@ class FeedbackRepository with SyncableRepository {
       final response = await _supabase
           .from('feedback')
           .select('*')
-          .eq('user_name', userId)  // feedback.user_name maps to device_id
+          .eq('user_name', userId) // feedback.user_name maps to device_id
           .order('created_at', ascending: false);
 
       final feedbackRecords = response as List<dynamic>;
 
-      // Save to Drift using batch insert
-      await _database.batch((batch) {
-        for (final feedbackJson in feedbackRecords) {
-          final feedbackMap = feedbackJson as Map<String, dynamic>;
-          final companion = _mapSupabaseJsonToCompanion(feedbackMap);
-          batch.insert(
-            _database.feedbackTable,
-            companion,
-            mode: InsertMode.insertOrReplace,
-          );
-        }
-      });
+      final syncedCount = await _upsertRemoteFeedbackPreservingDirty(
+        feedbackRecords,
+      );
 
       await setLastSyncTime(DateTime.now());
 
       _logger.info(
         'Successfully synced feedback from Supabase',
         context: 'FEEDBACK_REPOSITORY',
-        data: {'userId': userId, 'count': feedbackRecords.length},
+        data: {'userId': userId, 'count': syncedCount},
       );
 
-      return SyncResult.successful(feedbackRecords.length);
+      return SyncResult.successful(syncedCount);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to sync feedback from Supabase',
@@ -102,9 +101,11 @@ class FeedbackRepository with SyncableRepository {
       );
 
       // Query Drift for dirty records (feedback uses deviceId)
-      final dirtyRecords = await (_database.select(_database.feedbackTable)
-            ..where((t) => t.needsUpload.equals(true) & t.deviceId.equals(userId)))
-          .get();
+      final dirtyRecords =
+          await (_database.select(_database.feedbackTable)..where(
+                (t) => t.needsUpload.equals(true) & t.deviceId.equals(userId),
+              ))
+              .get();
 
       if (dirtyRecords.isEmpty) {
         return UploadResult.nothingToUpload();
@@ -153,6 +154,59 @@ class FeedbackRepository with SyncableRepository {
     }
   }
 
+  Future<int> _upsertRemoteFeedbackPreservingDirty(
+    List<dynamic> remoteRows,
+  ) async {
+    final remoteById = <String, Map<String, dynamic>>{};
+    for (final item in remoteRows) {
+      if (item is! Map) continue;
+      final mapped = Map<String, dynamic>.from(item);
+      final id = mapped['id']?.toString();
+      if (id == null || id.isEmpty) continue;
+      remoteById[id] = mapped;
+    }
+
+    if (remoteById.isEmpty) {
+      return 0;
+    }
+
+    final remoteIds = remoteById.keys.toList(growable: false);
+    final dirtyRows = await (_database.select(
+      _database.feedbackTable,
+    )..where((t) => t.id.isIn(remoteIds) & t.needsUpload.equals(true))).get();
+    final dirtyIds = dirtyRows.map((row) => row.id).toSet();
+
+    var upsertedCount = 0;
+    await _database.batch((batch) {
+      for (final entry in remoteById.entries) {
+        if (dirtyIds.contains(entry.key)) {
+          continue;
+        }
+
+        final companion = _mapSupabaseJsonToCompanion(entry.value);
+        batch.insert(
+          _database.feedbackTable,
+          companion,
+          mode: InsertMode.insertOrReplace,
+        );
+        upsertedCount++;
+      }
+    });
+
+    if (dirtyIds.isNotEmpty) {
+      _logger.warning(
+        'Skipped remote feedback overwrite for dirty local rows',
+        context: 'FEEDBACK_REPOSITORY',
+        data: {
+          'skippedCount': dirtyIds.length,
+          'totalRemote': remoteById.length,
+        },
+      );
+    }
+
+    return upsertedCount;
+  }
+
   // ========================================================================
   // Existing Methods
   // ========================================================================
@@ -160,7 +214,7 @@ class FeedbackRepository with SyncableRepository {
   /// Save survey response to both local database and Supabase
   Future<void> saveSurveyResponse(SurveyResponse response) async {
     final localId = DateTime.now().millisecondsSinceEpoch.toString();
-    
+
     // Save to local database first (for offline access)
     await _database.contentDao.saveSurveyResponse(
       id: localId,
@@ -168,7 +222,9 @@ class FeedbackRepository with SyncableRepository {
       confidenceLabel: response.confidenceLevel.label,
       reuseIntent: response.reuseIntent.value,
       reminderRequested: response.reminderPreference != null,
-      missedReasons: response.missedReason != null ? [response.missedReason!.value] : null,
+      missedReasons: response.missedReason != null
+          ? [response.missedReason!.value]
+          : null,
       missedOther: response.missedOther,
       reminderDayOfWeek: response.reminderPreference?.dayOfWeek,
       reminderHour: response.reminderPreference?.hour,
@@ -177,28 +233,24 @@ class FeedbackRepository with SyncableRepository {
       deviceId: response.deviceId,
       planName: response.planName,
     );
-    
-    // Also save to Supabase for analytics and backup
-    try {
-      await _saveToSupabase(response);
+
+    final uploaded = await _immediateRemoteWriteService.run(
+      repository: repositoryKey,
+      operation: 'create',
+      recordId: localId,
+      method: 'INSERT',
+      write: () => _saveToSupabase(response),
+    );
+    if (uploaded) {
       await _database.customStatement(
         'UPDATE feedback SET needs_upload = 0 WHERE id = ?',
         [localId],
       );
-    } catch (error, stackTrace) {
-      _logger.error('Failed to save survey response to Supabase',
-        context: 'FEEDBACK',
-        error: error,
-        stackTrace: stackTrace
-      );
-      // Don't throw error - local save already succeeded
-      // The survey was saved locally, so this is not a critical failure
     }
   }
-  
+
   /// Save survey response to Supabase feedback table
   Future<void> _saveToSupabase(SurveyResponse response) async {
-    
     final feedbackId = const Uuid().v4();
     final feedbackData = {
       'id': feedbackId,
@@ -217,21 +269,24 @@ class FeedbackRepository with SyncableRepository {
       'reminder_recurring': response.reminderPreference?.isRecurring ?? false,
       'plan_name': response.planName,
       'user_name': response.deviceId, // Using deviceId as user identifier
-      'timestamp': response.timestamp?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'timestamp':
+          response.timestamp?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       'created_at': DateTime.now().toIso8601String(),
     };
-    
+
     try {
       await _supabase.from('feedback').insert(feedbackData).select();
     } catch (e) {
-      _logger.error('Supabase insert failed for survey feedback',
+      _logger.error(
+        'Supabase insert failed for survey feedback',
         context: 'FEEDBACK',
-        error: e
+        error: e,
       );
       rethrow; // Let the caller handle the error
     }
   }
-  
+
   /// Get emoji for confidence level (since ConfidenceLevel doesn't have emoji property)
   String _getConfidenceEmoji(ConfidenceLevel level) {
     switch (level) {
@@ -261,7 +316,8 @@ class FeedbackRepository with SyncableRepository {
     await _database.userDao.updateUserNotificationPreferences(
       userId: userId,
       notificationsEnabled: true, // User explicitly requested notifications
-      defaultReminderDay: preference.dayOfWeek ?? 4, // Default to Thursday if null
+      defaultReminderDay:
+          preference.dayOfWeek ?? 4, // Default to Thursday if null
       defaultReminderHour: preference.hour,
       defaultReminderMinute: preference.minute,
       defaultReminderRecurring: preference.isRecurring,
@@ -271,7 +327,9 @@ class FeedbackRepository with SyncableRepository {
   /// Check if user has submitted survey recently
   /// Rate limits to one survey per 24 hours per device to prevent spam/abuse
   Future<bool> hasRecentSurveyResponse(String deviceId) async {
-    final latestResponse = await _database.contentDao.getLatestSurveyResponse(deviceId);
+    final latestResponse = await _database.contentDao.getLatestSurveyResponse(
+      deviceId,
+    );
     if (latestResponse == null) return false;
 
     final hoursSinceLastResponse = DateTime.now()
@@ -330,10 +388,14 @@ class FeedbackRepository with SyncableRepository {
   // ========================================================================
 
   /// Map Supabase JSON (snake_case) to Drift FeedbackTableCompanion
-  FeedbackTableCompanion _mapSupabaseJsonToCompanion(Map<String, dynamic> json) {
+  FeedbackTableCompanion _mapSupabaseJsonToCompanion(
+    Map<String, dynamic> json,
+  ) {
     return FeedbackTableCompanion(
       id: Value(json['id'] as String),
-      deviceId: Value(json['user_name'] as String?),  // Supabase user_name -> Drift deviceId
+      deviceId: Value(
+        json['user_name'] as String?,
+      ), // Supabase user_name -> Drift deviceId
       satisfactionLevel: Value(json['satisfaction_level'] as int),
       satisfactionEmoji: Value(json['satisfaction_emoji'] as String),
       satisfactionLabel: Value(json['satisfaction_label'] as String),
@@ -341,7 +403,11 @@ class FeedbackRepository with SyncableRepository {
       suggestions: Value(json['suggestions'] as String?),
       planName: Value(json['plan_name'] as String?),
       userName: Value(json['user_name'] as String?),
-      timestamp: Value(json['timestamp'] != null ? DateTime.parse(json['timestamp'] as String) : null),
+      timestamp: Value(
+        json['timestamp'] != null
+            ? DateTime.parse(json['timestamp'] as String)
+            : null,
+      ),
       confidenceLevel: Value(json['confidence_level'] as int?),
       confidenceLabel: Value(json['confidence_label'] as String?),
       reuseIntent: Value(json['reuse_intent']?.toString()),
@@ -352,7 +418,7 @@ class FeedbackRepository with SyncableRepository {
       reminderHour: Value(json['reminder_hour'] as int? ?? 17),
       reminderMinute: Value(json['reminder_minute'] as int? ?? 0),
       reminderRecurring: Value(json['reminder_recurring'] as bool? ?? false),
-      needsUpload: const Value(false),  // Coming from server, so not dirty
+      needsUpload: const Value(false), // Coming from server, so not dirty
       localUpdatedAt: Value(DateTime.now()),
       createdAt: Value(DateTime.parse(json['created_at'] as String)),
     );
@@ -368,7 +434,7 @@ class FeedbackRepository with SyncableRepository {
       'app_feedback': entry.appFeedback,
       'suggestions': entry.suggestions,
       'plan_name': entry.planName,
-      'user_name': entry.deviceId,  // Drift deviceId -> Supabase user_name
+      'user_name': entry.deviceId, // Drift deviceId -> Supabase user_name
       'timestamp': entry.timestamp?.toIso8601String(),
       'confidence_level': entry.confidenceLevel,
       'confidence_label': entry.confidenceLabel,

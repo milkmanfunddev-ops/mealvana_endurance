@@ -42,8 +42,22 @@ const DEFAULT_HUMIDITY_PCT = 60;
     // Parse dates
     const activityDate = new Date(requestData.activity_date);
     const now = new Date();
-    // Calculate days difference
-    const daysDiff = Math.floor((activityDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Calculate day difference by calendar day, not exact timestamp.
+    // This avoids same-day timezone/timestamp drift incorrectly classifying
+    // requests as historical.
+    const activityDay = new Date(
+      activityDate.getFullYear(),
+      activityDate.getMonth(),
+      activityDate.getDate(),
+    );
+    const today = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const daysDiff = Math.round((activityDay.getTime() - today.getTime()) / msPerDay);
     console.log('📅 Date analysis:', {
       activity_date: activityDate.toISOString(),
       current_date: now.toISOString(),

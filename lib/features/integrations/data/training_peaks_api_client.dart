@@ -128,6 +128,10 @@ class TrainingPeaksApiClient {
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;
+    if (kDebugMode) {
+      print('   Token scopes: ${json['scope'] ?? 'NOT IN RESPONSE'}');
+      print('   Expires in: ${json['expires_in']}s');
+    }
     return TrainingPeaksTokenResponse.fromJson(json);
   }
 
@@ -238,11 +242,16 @@ class TrainingPeaksApiClient {
   /// - [IntegrationApiException] for other API errors (including 404 if workout not found)
   Future<Map<String, dynamic>> getWorkoutById(
     String accessToken,
-    String workoutId,
-  ) async {
+    String workoutId, {
+    bool includeDescription = false,
+  }) async {
     return HttpRetryClient.executeWithRetry(
       request: () => _httpClient.get(
-        Uri.parse('$_apiBaseUrl/v1/workouts/$workoutId'),
+        Uri.parse('$_apiBaseUrl/v2/workouts/id/$workoutId').replace(
+          queryParameters: {
+            if (includeDescription) 'includeDescription': 'true',
+          },
+        ),
         headers: _authHeaders(accessToken),
       ),
       onResponse: (response) {
@@ -398,6 +407,39 @@ class TrainingPeaksApiClient {
         if (response.statusCode != 201) {
           _handleErrorResponse(response, 'Failed to create nutrition entry');
         }
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      },
+      provider: _provider,
+      config: _retryConfig,
+    );
+  }
+
+  /// Update a planned workout's data (used for write-back of nutrition summary).
+  ///
+  /// Sends the full workout JSON with updated fields via PUT.
+  /// The caller should GET the workout first, modify the Description field,
+  /// then send the complete object back to preserve all original fields.
+  ///
+  /// Returns the updated workout JSON on success.
+  /// Throws [TrainingPeaksApiException] on failure.
+  Future<Map<String, dynamic>> updatePlannedWorkout(
+    String accessToken, {
+    required String workoutId,
+    required Map<String, dynamic> workoutData,
+  }) async {
+    return HttpRetryClient.executeWithRetry(
+      request: () => _httpClient.put(
+        Uri.parse('$_apiBaseUrl/v2/workouts/plan/$workoutId'),
+        headers: {
+          ..._authHeaders(accessToken),
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(workoutData),
+      ),
+      onResponse: (response) {
+        // 200 = success with body, 204 = success no body
+        if (response.statusCode == 204) return <String, dynamic>{};
+        _handleErrorResponse(response, 'Failed to update planned workout');
         return jsonDecode(response.body) as Map<String, dynamic>;
       },
       provider: _provider,

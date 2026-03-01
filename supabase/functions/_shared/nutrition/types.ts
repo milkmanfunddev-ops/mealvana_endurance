@@ -30,9 +30,14 @@ export interface Food {
   max_servings: number;
   preference_score: number;
   is_electrolyte: boolean;
+  is_liquid: boolean;
   is_essential: boolean;
   is_user_food: boolean;
+  is_indivisible: boolean;
+  product_type?: string;
 }
+
+export type TimingCategory = 'sip_throughout' | 'quick_consume' | 'slow_consume' | 'electrolyte';
 
 export interface FoodResult {
   food_id: string;
@@ -51,6 +56,25 @@ export interface FoodResult {
   serving_size?: string | null;
   serving_unit?: string | null;
   serving_qualifier?: string | null;
+  is_liquid?: boolean;
+  is_electrolyte?: boolean;
+  is_drink?: boolean;
+  is_indivisible?: boolean;
+  timing_category?: TimingCategory;
+  product_type?: string;
+}
+
+/**
+ * Derive timing category from food properties.
+ * Priority: supplements > liquids > electrolytes > gels/chews > everything else.
+ */
+export function deriveTimingCategory(food: Food): TimingCategory {
+  // Supplement items are discrete electrolyte events, not sip-throughout drinks.
+  if (food.product_type === 'supplement') return 'electrolyte';
+  if (food.is_liquid) return 'sip_throughout';
+  if (food.is_electrolyte) return 'electrolyte';
+  if (food.product_type === 'gel' || food.product_type === 'chew') return 'quick_consume';
+  return 'slow_consume';
 }
 
 // ============================================================================

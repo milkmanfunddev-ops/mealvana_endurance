@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sync/immediate_remote_write_service.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../carb_loading/data/carb_loading_repository.dart';
@@ -21,6 +22,7 @@ EventsRepository eventsRepository(Ref ref) {
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
     carbLoadingRepository: ref.read(carbLoadingRepositoryProvider),
+    immediateRemoteWriteService: ref.read(immediateRemoteWriteServiceProvider),
   );
 }
 
@@ -32,15 +34,18 @@ class EventsRepository implements SyncableRepository {
     required AppDatabase database,
     required AppLogger logger,
     required CarbLoadingRepository carbLoadingRepository,
-  })  : _supabase = supabase,
-        _database = database,
-        _logger = logger,
-        _carbLoadingRepository = carbLoadingRepository;
+    required ImmediateRemoteWriteService immediateRemoteWriteService,
+  }) : _supabase = supabase,
+       _database = database,
+       _logger = logger,
+       _carbLoadingRepository = carbLoadingRepository,
+       _immediateRemoteWriteService = immediateRemoteWriteService;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
   final CarbLoadingRepository _carbLoadingRepository;
+  final ImmediateRemoteWriteService _immediateRemoteWriteService;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -102,28 +107,17 @@ class EventsRepository implements SyncableRepository {
       // Cast response to List<Map<String, dynamic>>
       final events = response as List<dynamic>;
 
-      // Save to Drift using batch insert
-      await _database.batch((batch) {
-        for (final eventJson in events) {
-          final eventMap = eventJson as Map<String, dynamic>;
-          final companion = _mapSupabaseJsonToCompanion(eventMap);
-          batch.insert(
-            _database.eventsTable,
-            companion,
-            mode: InsertMode.insertOrReplace,
-          );
-        }
-      });
+      final syncedCount = await _upsertRemoteEventsPreservingDirty(events);
 
       await setLastSyncTime(DateTime.now());
 
       _logger.info(
         'Successfully synced events from Supabase',
         context: 'EVENTS_REPOSITORY',
-        data: {'userId': userId, 'count': events.length},
+        data: {'userId': userId, 'count': syncedCount},
       );
 
-      return SyncResult.successful(events.length);
+      return SyncResult.successful(syncedCount);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to sync events from Supabase',
@@ -136,6 +130,62 @@ class EventsRepository implements SyncableRepository {
     }
   }
 
+  Future<int> _upsertRemoteEventsPreservingDirty(
+    List<dynamic> remoteEvents,
+  ) async {
+    final remoteById = <String, Map<String, dynamic>>{};
+
+    for (final item in remoteEvents) {
+      if (item is! Map) continue;
+      final mapped = Map<String, dynamic>.from(item);
+      final id = mapped['id']?.toString();
+      if (id == null || id.isEmpty) continue;
+      remoteById[id] = mapped;
+    }
+
+    if (remoteById.isEmpty) {
+      return 0;
+    }
+
+    final remoteIds = remoteById.keys.toList(growable: false);
+    final dirtyRows =
+        await (_database.select(_database.eventsTable)..where(
+              (tbl) => tbl.id.isIn(remoteIds) & tbl.needsUpload.equals(true),
+            ))
+            .get();
+    final dirtyIds = dirtyRows.map((row) => row.id).toSet();
+
+    var upsertedCount = 0;
+    await _database.batch((batch) {
+      for (final entry in remoteById.entries) {
+        if (dirtyIds.contains(entry.key)) {
+          continue;
+        }
+
+        final companion = _mapSupabaseJsonToCompanion(entry.value);
+        batch.insert(
+          _database.eventsTable,
+          companion,
+          mode: InsertMode.insertOrReplace,
+        );
+        upsertedCount++;
+      }
+    });
+
+    if (dirtyIds.isNotEmpty) {
+      _logger.warning(
+        'Skipped remote event overwrite for dirty local rows',
+        context: 'EVENTS_REPOSITORY',
+        data: {
+          'skippedCount': dirtyIds.length,
+          'totalRemote': remoteById.length,
+        },
+      );
+    }
+
+    return upsertedCount;
+  }
+
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
@@ -146,9 +196,11 @@ class EventsRepository implements SyncableRepository {
       );
 
       // Query Drift for dirty records
-      final dirtyRecords = await (_database.select(_database.eventsTable)
-            ..where((t) => t.needsUpload.equals(true) & t.userId.equals(userId)))
-          .get();
+      final dirtyRecords =
+          await (_database.select(_database.eventsTable)..where(
+                (t) => t.needsUpload.equals(true) & t.userId.equals(userId),
+              ))
+              .get();
 
       if (dirtyRecords.isEmpty) {
         return UploadResult.nothingToUpload();
@@ -220,19 +272,17 @@ class EventsRepository implements SyncableRepository {
       var createdEvent = eventWithDirtyFlag.copyWith(id: generatedId);
 
       // Attempt upload immediately to sync with Supabase
-      try {
-        await _uploadEventToSupabase(deviceId, createdEvent, 'create');
-        // Upload succeeded - clear dirty flag on the returned model
+      final uploaded = await _immediateRemoteWriteService.run(
+        repository: repositoryKey,
+        operation: 'create',
+        recordId: createdEvent.id,
+        method: 'INSERT',
+        write: () => _uploadEventToSupabase(createdEvent, 'create'),
+      );
+      if (uploaded) {
         createdEvent = createdEvent.copyWith(
           needsUpload: false,
           localUpdatedAt: DateTime.now(),
-        );
-      } catch (uploadError) {
-        // Upload failed but local save succeeded - event will sync later
-        _logger.warning(
-          'Supabase upload failed during create, event will sync later',
-          context: 'EVENTS_REPOSITORY',
-          data: {'eventId': createdEvent.id, 'error': uploadError.toString()},
         );
       }
 
@@ -265,7 +315,15 @@ class EventsRepository implements SyncableRepository {
       await _saveToDrift(eventWithDirtyFlag);
 
       // Attempt background upload (non-blocking)
-      unawaited(_uploadEventToSupabase(deviceId, eventWithDirtyFlag, 'update'));
+      unawaited(
+        _immediateRemoteWriteService.run(
+          repository: repositoryKey,
+          operation: 'update',
+          recordId: eventWithDirtyFlag.id,
+          method: 'UPSERT',
+          write: () => _uploadEventToSupabase(eventWithDirtyFlag, 'update'),
+        ),
+      );
 
       return eventWithDirtyFlag;
     } catch (e, stackTrace) {
@@ -299,9 +357,9 @@ class EventsRepository implements SyncableRepository {
       // CASCADE: Delete associated activity if exists
       if (event != null && event.activityId != null) {
         final activityId = event.activityId!;
-        await (_database.delete(_database.activitiesTable)
-              ..where((tbl) => tbl.id.equals(activityId)))
-            .go();
+        await (_database.delete(
+          _database.activitiesTable,
+        )..where((tbl) => tbl.id.equals(activityId))).go();
         _logger.info(
           'CASCADE deleted activity $activityId for event $eventId',
           context: 'EVENTS_REPOSITORY',
@@ -309,13 +367,21 @@ class EventsRepository implements SyncableRepository {
       }
 
       // OFFLINE-FIRST: Hard delete event from Drift IMMEDIATELY
-      await (_database.delete(_database.eventsTable)
-            ..where((tbl) => tbl.id.equals(eventId)))
-          .go();
+      await (_database.delete(
+        _database.eventsTable,
+      )..where((tbl) => tbl.id.equals(eventId))).go();
 
       // Attempt background upload (non-blocking)
       // Note: Supabase CASCADE will also delete the carb_loading_plan on the server
-      unawaited(_uploadEventDeletion(deviceId, eventId));
+      unawaited(
+        _immediateRemoteWriteService.run(
+          repository: repositoryKey,
+          operation: 'delete',
+          recordId: eventId,
+          method: 'DELETE',
+          write: () => _uploadEventDeletion(deviceId, eventId),
+        ),
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete event',
@@ -352,9 +418,11 @@ class EventsRepository implements SyncableRepository {
   Future<domain.Event?> getEventById(String userId, String eventId) async {
     try {
       final query = _database.select(_database.eventsTable)
-        ..where((tbl) =>
-            tbl.id.equals(eventId) &
-            tbl.userId.lower().equals(userId.toLowerCase()));
+        ..where(
+          (tbl) =>
+              tbl.id.equals(eventId) &
+              tbl.userId.lower().equals(userId.toLowerCase()),
+        );
 
       final events = await query.get();
 
@@ -414,11 +482,13 @@ class EventsRepository implements SyncableRepository {
       final nextDay = dateOnly.add(const Duration(days: 1));
 
       final query = _database.select(_database.eventsTable)
-        ..where((tbl) =>
-            tbl.userId.lower().equals(userId.toLowerCase()) &
-            tbl.eventName.equals(eventName) &
-            tbl.eventDate.isBiggerOrEqualValue(dateOnly) &
-            tbl.eventDate.isSmallerThanValue(nextDay));
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.eventName.equals(eventName) &
+              tbl.eventDate.isBiggerOrEqualValue(dateOnly) &
+              tbl.eventDate.isSmallerThanValue(nextDay),
+        );
 
       final event = await query.getSingleOrNull();
       return event != null ? _mapToEventDomain(event) : null;
@@ -428,7 +498,11 @@ class EventsRepository implements SyncableRepository {
         context: 'EVENTS_REPOSITORY',
         error: e,
         stackTrace: stackTrace,
-        data: {'userId': userId, 'eventName': eventName, 'eventDate': eventDate.toIso8601String()},
+        data: {
+          'userId': userId,
+          'eventName': eventName,
+          'eventDate': eventDate.toIso8601String(),
+        },
       );
       return null; // Return null on error to allow sync to continue
     }
@@ -455,7 +529,9 @@ class EventsRepository implements SyncableRepository {
         hasCarbLoading: Value(event.hasCarbLoading),
         carbLoadingDays: Value(event.carbLoadingDays),
         carbLoadingStartDate: Value(event.carbLoadingStartDate),
-        hasNutritionPlan: Value(event.hasNutritionPlan), // OBSOLETE: kept for backward compatibility
+        hasNutritionPlan: Value(
+          event.hasNutritionPlan,
+        ), // OBSOLETE: kept for backward compatibility
         bibNumber: Value(event.bibNumber),
         waveStartTime: Value(event.waveStartTime),
         packetPickupInfo: Value(event.packetPickupInfo),
@@ -500,7 +576,9 @@ class EventsRepository implements SyncableRepository {
         hasCarbLoading: Value(event.hasCarbLoading),
         carbLoadingDays: Value(event.carbLoadingDays),
         carbLoadingStartDate: Value(event.carbLoadingStartDate),
-        hasNutritionPlan: Value(event.hasNutritionPlan), // OBSOLETE: kept for backward compatibility
+        hasNutritionPlan: Value(
+          event.hasNutritionPlan,
+        ), // OBSOLETE: kept for backward compatibility
         bibNumber: Value(event.bibNumber),
         waveStartTime: Value(event.waveStartTime),
         packetPickupInfo: Value(event.packetPickupInfo),
@@ -515,9 +593,9 @@ class EventsRepository implements SyncableRepository {
         updatedAt: Value(event.updatedAt),
       );
 
-      await (_database.update(_database.eventsTable)
-            ..where((tbl) => tbl.id.equals(event.id)))
-          .write(companion);
+      await (_database.update(
+        _database.eventsTable,
+      )..where((tbl) => tbl.id.equals(event.id))).write(companion);
 
       _logger.debug(
         'Updated existing event',
@@ -531,48 +609,32 @@ class EventsRepository implements SyncableRepository {
 
   /// Upload event to Supabase directly
   Future<void> _uploadEventToSupabase(
-    String deviceId, // acts as userId
     domain.Event event,
     String operation,
   ) async {
-    try {
-      // Use userId from event directly
-      final userUuid = event.userId;
+    // Use userId from event directly
+    final userUuid = event.userId;
 
-      // Prepare data with explicit UUID from Drift
-      final eventData = _toSupabaseJson(event, userUuid);
-      eventData['id'] = event.id; // Use same UUID from Drift
+    // Prepare data with explicit UUID from Drift
+    final eventData = _toSupabaseJson(event, userUuid);
+    eventData['id'] = event.id; // Use same UUID from Drift
 
-      if (operation == 'create') {
-        // Insert with explicit UUID from Drift
-        await _supabase
-            .from('events')
-            .insert(eventData);
+    if (operation == 'create') {
+      // Insert with explicit UUID from Drift
+      await _supabase.from('events').insert(eventData);
 
-        _logger.info(
-          'Event uploaded to Supabase with UUID',
-          context: 'EVENTS_REPOSITORY',
-          data: {'eventId': event.id},
-        );
-
-        await _clearDirtyFlag(event.id);
-      } else {
-        // Update existing record by UUID
-        await _supabase
-            .from('events')
-            .upsert(eventData);
-
-        await _clearDirtyFlag(event.id);
-      }
-
-    } catch (e) {
-      _logger.warning(
-        'Failed to upload event (will retry on next sync)',
+      _logger.info(
+        'Event uploaded to Supabase with UUID',
         context: 'EVENTS_REPOSITORY',
-        error: e,
         data: {'eventId': event.id},
       );
-      // Don't rethrow - keep dirty flag, will retry on next sync
+
+      await _clearDirtyFlag(event.id);
+    } else {
+      // Update existing record by UUID
+      await _supabase.from('events').upsert(eventData);
+
+      await _clearDirtyFlag(event.id);
     }
   }
 
@@ -581,22 +643,11 @@ class EventsRepository implements SyncableRepository {
     String deviceId, // acts as userId
     String eventId,
   ) async {
-    try {
-      await _supabase
-          .from('events')
-          .delete()
-          .eq('id', eventId)
-          .eq('user_id', deviceId); // Scope by user for safety
-
-    } catch (e) {
-      _logger.warning(
-        'Failed to upload event deletion (will retry on next sync)',
-        context: 'EVENTS_REPOSITORY',
-        error: e,
-        data: {'eventId': eventId},
-      );
-      // Don't rethrow - will retry on next sync
-    }
+    await _supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId)
+        .eq('user_id', deviceId); // Scope by user for safety
   }
 
   /// Helper to map domain Event to Supabase JSON (snake_case columns)
@@ -617,7 +668,8 @@ class EventsRepository implements SyncableRepository {
       'has_carb_loading': event.hasCarbLoading,
       'carb_loading_days': event.carbLoadingDays,
       'carb_loading_start_date': event.carbLoadingStartDate?.toIso8601String(),
-      'has_nutrition_plan': event.hasNutritionPlan, // OBSOLETE: kept for backward compatibility
+      'has_nutrition_plan':
+          event.hasNutritionPlan, // OBSOLETE: kept for backward compatibility
       'bib_number': event.bibNumber,
       'wave_start_time': event.waveStartTime,
       'packet_pickup_info': event.packetPickupInfo,
@@ -657,7 +709,8 @@ class EventsRepository implements SyncableRepository {
       hasCarbLoading: event.hasCarbLoading,
       carbLoadingDays: event.carbLoadingDays,
       carbLoadingStartDate: event.carbLoadingStartDate,
-      hasNutritionPlan: event.hasNutritionPlan, // OBSOLETE: kept for backward compatibility
+      hasNutritionPlan:
+          event.hasNutritionPlan, // OBSOLETE: kept for backward compatibility
       bibNumber: event.bibNumber,
       waveStartTime: event.waveStartTime,
       packetPickupInfo: event.packetPickupInfo,
@@ -700,19 +753,33 @@ class EventsRepository implements SyncableRepository {
       eventName: Value(json['event_name'] as String?),
       location: Value(json['location'] as String?),
       registrationUrl: Value(json['registration_url'] as String?),
-      eventDate: Value(json['event_date'] != null ? DateTime.parse(json['event_date'] as String) : null),
+      eventDate: Value(
+        json['event_date'] != null
+            ? DateTime.parse(json['event_date'] as String)
+            : null,
+      ),
       startTime: Value(json['start_time'] as String?),
       goalTimeMinutes: Value(json['goal_time_minutes'] as int?),
-      goalPaceMinutesPerMile: Value(json['goal_pace_minutes_per_mile'] as double?),
-      predictedFinishTimeMinutes: Value(json['predicted_finish_time_minutes'] as int?),
+      goalPaceMinutesPerMile: Value(
+        json['goal_pace_minutes_per_mile'] as double?,
+      ),
+      predictedFinishTimeMinutes: Value(
+        json['predicted_finish_time_minutes'] as int?,
+      ),
       hasCarbLoading: Value(json['has_carb_loading'] as bool? ?? false),
       carbLoadingDays: Value(json['carb_loading_days'] as int?),
-      carbLoadingStartDate: Value(json['carb_loading_start_date'] != null ? DateTime.parse(json['carb_loading_start_date'] as String) : null),
+      carbLoadingStartDate: Value(
+        json['carb_loading_start_date'] != null
+            ? DateTime.parse(json['carb_loading_start_date'] as String)
+            : null,
+      ),
       hasNutritionPlan: Value(json['has_nutrition_plan'] as bool? ?? false),
       bibNumber: Value(json['bib_number'] as String?),
       waveStartTime: Value(json['wave_start_time'] as String?),
       packetPickupInfo: Value(json['packet_pickup_info'] as String?),
-      actualFinishTimeMinutes: Value(json['actual_finish_time_minutes'] as int?),
+      actualFinishTimeMinutes: Value(
+        json['actual_finish_time_minutes'] as int?,
+      ),
       finalPlacement: Value(json['final_placement'] as int?),
       ageGroupPlacement: Value(json['age_group_placement'] as int?),
       needsUpload: const Value(false), // Coming from server, so not dirty
@@ -721,5 +788,4 @@ class EventsRepository implements SyncableRepository {
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
-
 }

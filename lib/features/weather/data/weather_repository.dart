@@ -27,9 +27,14 @@ class WeatherRepository {
     required this.logger,
   });
 
-  /// Get cached weather forecast for location and date
+  /// Normalize a datetime to the top of the hour for cache bucketing.
+  DateTime _normalizeToHour(DateTime date) {
+    return DateTime(date.year, date.month, date.day, date.hour);
+  }
+
+  /// Get cached weather forecast for location and activity hour
   /// Returns null if no valid cache exists
-  /// Note: Caches by DATE only (ignoring time) to prevent refetches when time changes
+  /// Note: Caches by HOUR to support time-sensitive forecasts.
   Future<WeatherForecast?> getCachedForecast({
     required double latitude,
     required double longitude,
@@ -38,19 +43,15 @@ class WeatherRepository {
     try {
       final now = DateTime.now();
 
-      // Normalize to date only (ignore time portion)
-      final forecastDateOnly = DateTime(
-        forecastDate.year,
-        forecastDate.month,
-        forecastDate.day,
-      );
+      // Normalize to top-of-hour bucket
+      final forecastHour = _normalizeToHour(forecastDate);
 
-      // Query for cached forecast (matching date only, not time)
+      // Query for cached forecast matching the same hour bucket
       final query = database.select(database.weatherForecastsTable)
         ..where((tbl) =>
             tbl.latitude.equals(latitude) &
             tbl.longitude.equals(longitude) &
-            tbl.forecastDate.equals(forecastDateOnly) &
+            tbl.forecastDate.equals(forecastHour) &
             tbl.expiresAt.isBiggerThanValue(now))
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.fetchedAt)])
         ..limit(1);
@@ -78,7 +79,7 @@ class WeatherRepository {
   }
 
   /// Save weather forecast to cache
-  /// Note: Stores by DATE only (ignoring time) with variable expiry:
+  /// Note: Stores by HOUR with variable expiry:
   /// - Historical data: 24 hours (rarely changes)
   /// - Forecast data: 1 hour (can change frequently)
   Future<void> cacheForecast({
@@ -89,12 +90,8 @@ class WeatherRepository {
     try {
       final now = DateTime.now();
 
-      // Normalize to date only (ignore time portion)
-      final forecastDateOnly = DateTime(
-        forecast.forecastDate.year,
-        forecast.forecastDate.month,
-        forecast.forecastDate.day,
-      );
+      // Normalize to top-of-hour bucket
+      final forecastHour = _normalizeToHour(forecast.forecastDate);
 
       // Variable expiry: Historical data lasts longer
       final expiryDuration = forecast.source == WeatherSource.historical
@@ -107,7 +104,7 @@ class WeatherRepository {
         WeatherForecastsTableCompanion.insert(
           latitude: latitude,
           longitude: longitude,
-          forecastDate: forecastDateOnly,  // Store date only
+          forecastDate: forecastHour, // Store hour bucket
           temperatureC: forecast.temperatureC,
           humidityPct: forecast.humidityPct,
           forecastAvailable: Value(forecast.forecastAvailable),
@@ -117,7 +114,7 @@ class WeatherRepository {
           precipitationMm: Value(forecast.precipitationMm),
           expiresAt: expiresAt,
         ),
-        mode: InsertMode.insertOrReplace,  // Replace existing cache for same date
+        mode: InsertMode.insertOrReplace,
       );
     } catch (e, stackTrace) {
       logger.error('Error caching forecast', error: e, stackTrace: stackTrace);
@@ -142,7 +139,8 @@ class WeatherRepository {
   /// Clear all weather forecasts from cache
   Future<void> clearAllForecasts() async {
     try {
-      final deleted = await database.delete(database.weatherForecastsTable).go();    } catch (e, stackTrace) {
+      await database.delete(database.weatherForecastsTable).go();
+    } catch (e, stackTrace) {
       logger.error('Error clearing all forecasts', error: e, stackTrace: stackTrace);
     }
   }

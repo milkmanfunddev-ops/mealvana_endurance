@@ -72,7 +72,8 @@ class NewActivityScreen extends ConsumerStatefulWidget {
   final double? initialPace;
   final String? activityId;
   final String? eventId;
-  final String? forUserId; // NEW: Target athlete user ID (when coach is creating for athlete)
+  final String?
+  forUserId; // NEW: Target athlete user ID (when coach is creating for athlete)
 
   /// Activity type for selecting the correct sport tab (e.g., 'running', 'cycling', 'swimming')
   final String? activityType;
@@ -131,23 +132,35 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     if (widget.activityType != null) {
       final sportTab = _getSportTabFromActivityType(widget.activityType!);
       if (sportTab != null && sportTab != coordinatorState.selectedTab) {
-        DebugLogger.info('🏃 NEW ACTIVITY: Selecting ${widget.activityType} tab');
+        DebugLogger.info(
+          '🏃 NEW ACTIVITY: Selecting ${widget.activityType} tab',
+        );
         coordinator.selectTab(sportTab);
       }
     }
 
-    // Check if coordinator has default date (today) - only override if it's the default
-    final now = DateTime.now();
-    final isDefaultDate = coordinatorState.selectedDate.year == now.year &&
-        coordinatorState.selectedDate.month == now.month &&
-        coordinatorState.selectedDate.day == now.day;
+    // Only override coordinator date/time when it is still at fresh defaults.
+    final defaultDateTime = defaultNewActivityDateTime();
+    final isDefaultDate = _isSameDay(
+      coordinatorState.selectedDate,
+      defaultDateTime,
+    );
 
     // Initialize date/time from event/activity
     if (widget.initialDate != null && isDefaultDate) {
-      DebugLogger.info('🗓️ NEW ACTIVITY: Initializing date: ${widget.initialDate}');
+      final resolvedDateTime = _resolveInitialDateTime(widget.initialDate!);
+      DebugLogger.info(
+        '🗓️ NEW ACTIVITY: Initializing date/time: $resolvedDateTime',
+      );
       coordinator.updateDateTime(
-        widget.initialDate!,
-        TimeOfDay.fromDateTime(widget.initialDate!),
+        resolvedDateTime,
+        TimeOfDay.fromDateTime(resolvedDateTime),
+      );
+    } else if (widget.initialDate == null) {
+      // Propagate default coordinator date/time into sport controllers on first load.
+      coordinator.updateDateTime(
+        coordinatorState.selectedDate,
+        coordinatorState.selectedTime,
       );
     }
 
@@ -170,12 +183,48 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     }
 
     if (widget.activityId != null || widget.eventId != null) {
-      DebugLogger.info('🔗 NEW ACTIVITY: Linked to activityId: ${widget.activityId}, eventId: ${widget.eventId}');
+      DebugLogger.info(
+        '🔗 NEW ACTIVITY: Linked to activityId: ${widget.activityId}, eventId: ${widget.eventId}',
+      );
     }
 
     // Trigger location fetch for the active sport tab
     // This is done via coordinator to ensure only ONE controller fetches at a time
     coordinator.fetchLocationForActiveTab();
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  DateTime _resolveInitialDateTime(DateTime initialDate) {
+    final now = DateTime.now();
+    final minimumDateTime = defaultNewActivityDateTime(now);
+    final hasLinkedSource = widget.activityId != null || widget.eventId != null;
+    final hasExplicitTime = initialDate.hour != 0 || initialDate.minute != 0;
+
+    if (hasLinkedSource) {
+      return initialDate;
+    }
+
+    if (_isSameDay(initialDate, now)) {
+      if (!hasExplicitTime || initialDate.isBefore(minimumDateTime)) {
+        return minimumDateTime;
+      }
+      return initialDate;
+    }
+
+    if (!hasExplicitTime) {
+      return DateTime(
+        initialDate.year,
+        initialDate.month,
+        initialDate.day,
+        7,
+        0,
+      );
+    }
+
+    return initialDate;
   }
 
   /// Convert activity type string to SportTab enum
@@ -199,12 +248,16 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     final controller = ref.read(runningInputControllerProvider.notifier);
 
     if (widget.initialDistance != null) {
-      DebugLogger.info('📏 NEW ACTIVITY: Initializing distance: ${widget.initialDistance} miles');
+      DebugLogger.info(
+        '📏 NEW ACTIVITY: Initializing distance: ${widget.initialDistance} miles',
+      );
       controller.updateDistance(widget.initialDistance!);
     }
 
     if (widget.initialPace != null) {
-      DebugLogger.info('⏱️ NEW ACTIVITY: Initializing pace: ${widget.initialPace} min/mile');
+      DebugLogger.info(
+        '⏱️ NEW ACTIVITY: Initializing pace: ${widget.initialPace} min/mile',
+      );
       controller.updatePace(widget.initialPace!);
     }
 
@@ -218,12 +271,16 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     final controller = ref.read(cyclingInputControllerProvider.notifier);
 
     if (widget.initialDistance != null) {
-      DebugLogger.info('📏 NEW ACTIVITY: Initializing cycling distance: ${widget.initialDistance} miles');
+      DebugLogger.info(
+        '📏 NEW ACTIVITY: Initializing cycling distance: ${widget.initialDistance} miles',
+      );
       controller.updateDistance(widget.initialDistance!);
     }
 
     if (widget.cyclingSpeedMph != null) {
-      DebugLogger.info('🚴 NEW ACTIVITY: Initializing cycling speed: ${widget.cyclingSpeedMph} mph');
+      DebugLogger.info(
+        '🚴 NEW ACTIVITY: Initializing cycling speed: ${widget.cyclingSpeedMph} mph',
+      );
       controller.updateSpeed(widget.cyclingSpeedMph!);
     }
 
@@ -239,12 +296,16 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     if (widget.initialDistance != null) {
       // Convert miles to meters for swimming
       final distanceMeters = (widget.initialDistance! * 1609.34).round();
-      DebugLogger.info('📏 NEW ACTIVITY: Initializing swimming distance: $distanceMeters meters');
+      DebugLogger.info(
+        '📏 NEW ACTIVITY: Initializing swimming distance: $distanceMeters meters',
+      );
       controller.updateDistance(distanceMeters);
     }
 
     if (widget.swimmingPacePer100mSeconds != null) {
-      DebugLogger.info('🏊 NEW ACTIVITY: Initializing swimming pace: ${widget.swimmingPacePer100mSeconds} sec/100m');
+      DebugLogger.info(
+        '🏊 NEW ACTIVITY: Initializing swimming pace: ${widget.swimmingPacePer100mSeconds} sec/100m',
+      );
       controller.updatePace(widget.swimmingPacePer100mSeconds!);
     }
 
@@ -257,11 +318,15 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   /// Loads the activity by ID and populates the form with brick metadata
   void _initializeBrickController() {
     if (widget.activityId == null) {
-      DebugLogger.info('🧱 NEW ACTIVITY: No activityId for brick - starting fresh');
+      DebugLogger.info(
+        '🧱 NEW ACTIVITY: No activityId for brick - starting fresh',
+      );
       return;
     }
 
-    DebugLogger.info('🧱 NEW ACTIVITY: Loading existing brick activity: ${widget.activityId}');
+    DebugLogger.info(
+      '🧱 NEW ACTIVITY: Loading existing brick activity: ${widget.activityId}',
+    );
 
     // Load the activity asynchronously and initialize the form
     _loadExistingBrickActivity();
@@ -274,15 +339,22 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       final userId = await ref.read(userIdProvider.future);
 
       final repository = ref.read(activitiesRepositoryProvider);
-      final activity = await repository.getActivityById(userId, widget.activityId!);
+      final activity = await repository.getActivityById(
+        userId,
+        widget.activityId!,
+      );
 
       if (activity == null) {
-        DebugLogger.warning('🧱 NEW ACTIVITY: Activity not found: ${widget.activityId}');
+        DebugLogger.warning(
+          '🧱 NEW ACTIVITY: Activity not found: ${widget.activityId}',
+        );
         return;
       }
 
       if (activity.brickMetadata == null) {
-        DebugLogger.warning('🧱 NEW ACTIVITY: Activity has no brick metadata: ${widget.activityId}');
+        DebugLogger.warning(
+          '🧱 NEW ACTIVITY: Activity has no brick metadata: ${widget.activityId}',
+        );
         return;
       }
 
@@ -293,7 +365,9 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         activity.scheduledDateTime,
       );
 
-      DebugLogger.info('🧱 NEW ACTIVITY: Brick form initialized from existing activity');
+      DebugLogger.info(
+        '🧱 NEW ACTIVITY: Brick form initialized from existing activity',
+      );
     } catch (e) {
       DebugLogger.error('🧱 NEW ACTIVITY: Error loading brick activity: $e');
     }
@@ -321,38 +395,39 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // Sport Selector Buttons (center these)
-                  const Center(child: SportSelector()),
+                    // Sport Selector Buttons (center these)
+                    const Center(child: SportSelector()),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // Hero Image Section (center this)
-                  // For brick workouts, shows composite image of all three sports
-                  NewActivityHeroSection(
-                    heroImagePath: coordinator.getHeroImagePath(),
-                    isBrick: coordinatorState.selectedTab == SportTab.brick,
-                  ),
+                    // Hero Image Section (center this)
+                    // For brick workouts, shows composite image of all three sports
+                    NewActivityHeroSection(
+                      heroImagePath: coordinator.getHeroImagePath(),
+                      isBrick: coordinatorState.selectedTab == SportTab.brick,
+                    ),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // Date and Time Section (center this)
-                  NewActivityDateTimeSection(
-                    selectedDate: coordinatorState.selectedDate,
-                    selectedTime: coordinatorState.selectedTime,
-                    onEditTapped: () => _showDateTimePicker(coordinatorState, coordinator),
-                    isDark: isDark,
-                  ),
+                    // Date and Time Section (center this)
+                    NewActivityDateTimeSection(
+                      selectedDate: coordinatorState.selectedDate,
+                      selectedTime: coordinatorState.selectedTime,
+                      onEditTapped: () =>
+                          _showDateTimePicker(coordinatorState, coordinator),
+                      isDark: isDark,
+                    ),
 
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
-                  // Sport-specific form fields (full width)
-                  _buildFormFields(coordinatorState),
+                    // Sport-specific form fields (full width)
+                    _buildFormFields(coordinatorState),
 
-                  // Add padding at bottom for the sticky button
-                  const SizedBox(height: 120),
-                ],
+                    // Add padding at bottom for the sticky button
+                    const SizedBox(height: 120),
+                  ],
                 ),
               ),
             ),
@@ -380,11 +455,14 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   Future<void> _handleGeneratePlan(NewActivityCoordinator coordinator) async {
     try {
       DebugLogger.info('🎯 NEW ACTIVITY: Starting macro generation from UI...');
-      DebugLogger.info('🔗 NEW ACTIVITY: activityId=${widget.activityId}, eventId=${widget.eventId}, forUserId=${widget.forUserId}');
+      DebugLogger.info(
+        '🔗 NEW ACTIVITY: activityId=${widget.activityId}, eventId=${widget.eventId}, forUserId=${widget.forUserId}',
+      );
       await coordinator.generateMacros(
         activityId: widget.activityId,
         eventId: widget.eventId,
-        forUserId: widget.forUserId, // NEW: Pass through forUserId for coach-created activities
+        forUserId: widget
+            .forUserId, // NEW: Pass through forUserId for coach-created activities
       );
       DebugLogger.info('✅ NEW ACTIVITY: Coordinator generateMacros completed');
 

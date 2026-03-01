@@ -176,13 +176,12 @@ class ActivitiesService {
       }
 
       if (segmentRows.isEmpty) {
-        _logger.warning(
+        _logger.debug(
           'Orphan brick activity has no segment data; keeping visible',
           context: 'ACTIVITIES_SERVICE',
           data: {
             'brickId': activity.id,
             'title': activity.title,
-            'userId': userId,
           },
         );
         hydrated.add(activity);
@@ -245,7 +244,7 @@ class ActivitiesService {
       return const [];
     }
 
-    _logger.warning(
+    _logger.debug(
       'Recovered brick metadata from legacy title IDs',
       context: 'ACTIVITIES_SERVICE',
       data: {
@@ -312,7 +311,7 @@ class ActivitiesService {
       ordered.add(match);
     }
 
-    _logger.warning(
+    _logger.debug(
       'Recovered brick metadata from archived rows missing brick_id',
       context: 'ACTIVITIES_SERVICE',
       data: {

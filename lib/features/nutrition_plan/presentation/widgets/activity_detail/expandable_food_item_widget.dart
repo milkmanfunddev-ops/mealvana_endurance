@@ -16,6 +16,7 @@ class ExpandableFoodItemWidget extends StatefulWidget {
     this.onRemove,
     this.onQuantityChange,
     this.showSwipeHint = false,
+    this.useImperial = true,
   });
 
   final FoodItemData food;
@@ -26,6 +27,7 @@ class ExpandableFoodItemWidget extends StatefulWidget {
   final VoidCallback? onRemove;
   final Function(double)? onQuantityChange;
   final bool showSwipeHint;
+  final bool useImperial;
 
   @override
   State<ExpandableFoodItemWidget> createState() => _ExpandableFoodItemWidgetState();
@@ -87,6 +89,13 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
   @override
   void didUpdateWidget(covariant ExpandableFoodItemWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // Re-sync _quantity when food data changes externally (e.g., summary view update)
+    if (widget.food.quantity != oldWidget.food.quantity) {
+      final quantityMatch = RegExp(r'^([\d.]+)').firstMatch(widget.food.quantity);
+      _quantity = quantityMatch != null
+          ? double.tryParse(quantityMatch.group(1)!) ?? 1.0
+          : 1.0;
+    }
     if (widget.showSwipeHint && !_hasPlayedSwipeHint) {
       _playSwipeHint();
     }
@@ -106,6 +115,79 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
         _swipeHintController.forward(from: 0);
       }
     });
+  }
+
+  /// Convert imperial volume units to metric when user prefers metric.
+  /// cups → ml (×237), oz/fl oz → ml (×30).
+  /// All other units (packets, bars, servings, tablets, etc.) pass through unchanged.
+  String _convertToMetric(String description) {
+    // Pattern: number + unit (cups, oz, fl oz)
+    final cupsPattern = RegExp(r'(\d+\.?\d*)\s*cups?', caseSensitive: false);
+    final ozPattern = RegExp(r'(\d+\.?\d*)\s*(fl\s*oz|oz)', caseSensitive: false);
+
+    var result = description;
+
+    result = result.replaceAllMapped(cupsPattern, (match) {
+      final value = double.tryParse(match.group(1)!) ?? 0;
+      final ml = (value * 237).round();
+      return '${ml}ml';
+    });
+
+    result = result.replaceAllMapped(ozPattern, (match) {
+      final value = double.tryParse(match.group(1)!) ?? 0;
+      final ml = (value * 30).round();
+      return '${ml}ml';
+    });
+
+    return result;
+  }
+
+  /// Build a human-readable quantity description
+  /// Priority: displayNamePlural > servingSize > raw quantity
+  String _buildQuantityDescription() {
+    final qty = widget.food.quantity;
+    final numericQty = double.tryParse(qty);
+    final displayPlural = widget.food.displayNamePlural;
+    final servingSize = widget.food.servingSize;
+
+    String description;
+
+    // Priority 1: displayNamePlural available (e.g., "3 cups Sports Drink")
+    if (displayPlural != null && displayPlural.isNotEmpty && numericQty != null) {
+      final qtyStr = numericQty == numericQty.roundToDouble()
+          ? numericQty.round().toString()
+          : numericQty.toStringAsFixed(1);
+      description = '$qtyStr $displayPlural';
+    }
+    // Priority 2: servingSize available (e.g., "1 medium banana", "2 x 1 slice")
+    else if (servingSize != null && servingSize.isNotEmpty) {
+      if (numericQty != null && numericQty == 1.0) {
+        description = servingSize;
+      } else if (numericQty != null) {
+        final qtyStr = numericQty == numericQty.roundToDouble()
+            ? numericQty.round().toString()
+            : numericQty.toStringAsFixed(1);
+        description = '$qtyStr x $servingSize';
+      } else {
+        description = servingSize;
+      }
+    }
+    // Priority 3: fallback to raw quantity (only if it looks informative)
+    else if (numericQty != null) {
+      final qtyStr = numericQty == numericQty.roundToDouble()
+          ? numericQty.round().toString()
+          : numericQty.toStringAsFixed(1);
+      description = '$qtyStr serving${numericQty != 1.0 ? 's' : ''}';
+    } else {
+      description = qty;
+    }
+
+    // Convert to metric if user prefers metric
+    if (!widget.useImperial) {
+      description = _convertToMetric(description);
+    }
+
+    return description;
   }
 
   @override
@@ -145,7 +227,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
 
                   const SizedBox(width: AppSpacing.md),
 
-                  // Food name and quantity
+                  // Food name and quantity description
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,22 +241,11 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
                         ),
                         const SizedBox(height: AppSpacing.xxs),
                         Text(
-                          widget.food.quantity,
+                          _buildQuantityDescription(),
                           style: AppTextStyles.smallLabel.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        if (widget.food.servingSize != null && widget.food.servingSize!.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.food.servingSize!,
-                            style: AppTextStyles.smallLabel.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                              fontSize: 10,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),

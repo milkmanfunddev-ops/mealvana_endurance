@@ -45,6 +45,7 @@ class TrainingPeaksOAuthService {
     'athlete:profile', // Read athlete data (weight, zones, premium status)
     'events:read', // Fetch upcoming races/events
     'workouts:read', // Access workout data
+    'workouts:plan', // Create/update/delete planned workouts (required for write-back)
     'nutrition:write', // Push daily macros to TrainingPeaks
     'nutrition:read', // Read nutrition data
   ];
@@ -210,9 +211,6 @@ class TrainingPeaksOAuthService {
       print('🔄 Refreshing TrainingPeaks token...');
       print('   Token expires at: ${integration.tokenExpiresAt}');
       print('   Current time: ${DateTime.now()}');
-      print('   Refresh token exists: ${refreshToken.isNotEmpty}');
-      print('   Refresh token length: ${refreshToken.length}');
-      print('   Refresh token preview: ${refreshToken.length > 10 ? '${refreshToken.substring(0, 5)}...${refreshToken.substring(refreshToken.length - 5)}' : '[too short]'}');
     }
 
     try {
@@ -241,6 +239,49 @@ class TrainingPeaksOAuthService {
         print('   Response body: ${e.body}');
       }
       // Mark integration as needing re-auth
+      await _repository.updateSyncStatus(
+        userId,
+        'training_peaks',
+        status: 'error',
+        error: 'Token refresh failed. Please reconnect.',
+      );
+      return null;
+    }
+  }
+
+  /// Force a token refresh regardless of expiry status.
+  ///
+  /// Use when the server returns 401 even though the local expiry looks valid.
+  /// Returns the new access token, or null if refresh failed.
+  Future<String?> forceRefreshToken(String userId) async {
+    final integration = await _repository.getIntegration(userId, 'training_peaks');
+    if (integration == null || !integration.isActive) return null;
+
+    final refreshToken = integration.refreshToken;
+    if (refreshToken == null || refreshToken.isEmpty) return null;
+
+    if (kDebugMode) {
+      print('🔄 Force-refreshing TrainingPeaks token...');
+    }
+
+    try {
+      final tokenResponse = await _apiClient.refreshToken(refreshToken);
+      final updatedIntegration = integration.copyWith(
+        accessToken: tokenResponse.accessToken,
+        refreshToken: tokenResponse.refreshToken ?? refreshToken,
+        tokenExpiresAt: tokenResponse.expiresAt,
+        updatedAt: DateTime.now(),
+      );
+      await _repository.upsertIntegration(updatedIntegration);
+
+      if (kDebugMode) {
+        print('✅ Force-refresh succeeded, new expiry: ${tokenResponse.expiresAt}');
+      }
+      return tokenResponse.accessToken;
+    } on TrainingPeaksApiException catch (e) {
+      if (kDebugMode) {
+        print('❌ Force-refresh failed: $e');
+      }
       await _repository.updateSyncStatus(
         userId,
         'training_peaks',

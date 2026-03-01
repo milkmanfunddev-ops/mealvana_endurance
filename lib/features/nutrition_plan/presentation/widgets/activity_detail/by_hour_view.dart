@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../shared/domain/activity_type.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/time_slot_assignment.dart';
 import 'hour_bucket_widget.dart';
@@ -20,6 +21,7 @@ class ByHourView extends StatelessWidget {
     required this.onUpdateQuantity,
     required this.onAddFood,
     required this.onMoveFoodToTimeSlot,
+    this.activityType = ActivityType.running,
   });
 
   final PlanSection section;
@@ -27,12 +29,14 @@ class ByHourView extends StatelessWidget {
   final Color sectionColor;
   final String category;
   final bool useImperial;
+  final ActivityType activityType;
   final void Function(String foodId, String foodName, String category) onSwapFood;
   final void Function(String foodId, String category) onDeleteFood;
   final void Function(String foodId, String category, double newQuantity)
       onUpdateQuantity;
   final void Function(String category, int hourIndex) onAddFood;
-  final void Function(String foodId, String category, TimeSlot newTimeSlot)
+  final void Function(
+          String foodId, String category, TimeSlot sourceTimeSlot, TimeSlot newTimeSlot)
       onMoveFoodToTimeSlot;
 
   @override
@@ -57,6 +61,7 @@ class ByHourView extends StatelessWidget {
           sectionColor: sectionColor,
           category: category,
           useImperial: useImperial,
+          activityType: activityType,
           onSwapFood: onSwapFood,
           onDeleteFood: onDeleteFood,
           onUpdateQuantity: onUpdateQuantity,

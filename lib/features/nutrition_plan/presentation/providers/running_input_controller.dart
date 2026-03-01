@@ -51,6 +51,9 @@ class RunningFormState {
   // V3: Track if user manually changed the pre-run timing
   final bool preRunMinutesManuallySet;
 
+  // Unit system preference (imperial = °F, metric = °C)
+  final UnitSystem unitSystem;
+
   // Weather integration fields
   final weather_domain.Location? location;
   final WeatherForecast? weatherForecast;
@@ -78,6 +81,7 @@ class RunningFormState {
     this.preRunMinutesManuallySet = false,
     this.zonePaceApplied = false,
     this.zoneSuggestedPace,
+    this.unitSystem = UnitSystem.imperial,
     this.location,
     this.weatherForecast,
     this.isLoadingLocation = false,
@@ -105,6 +109,7 @@ class RunningFormState {
     bool? preRunMinutesManuallySet,
     bool? zonePaceApplied,
     double? zoneSuggestedPace,
+    UnitSystem? unitSystem,
     weather_domain.Location? location,
     WeatherForecast? weatherForecast,
     bool? isLoadingLocation,
@@ -131,6 +136,7 @@ class RunningFormState {
       preRunMinutesManuallySet: preRunMinutesManuallySet ?? this.preRunMinutesManuallySet,
       zonePaceApplied: zonePaceApplied ?? this.zonePaceApplied,
       zoneSuggestedPace: zoneSuggestedPace ?? this.zoneSuggestedPace,
+      unitSystem: unitSystem ?? this.unitSystem,
       location: location ?? this.location,
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
@@ -230,8 +236,9 @@ class RunningInputController extends _$RunningInputController {
           sweatRate: userProfile.sweatRate,
           distanceUnit: userProfile.preferredDistanceUnit,
           paceUnit: userProfile.preferredPaceUnit,
+          unitSystem: userProfile.unitSystem,
         );
-        DebugLogger.info('🏃 RUNNING CONTROLLER: Loaded user preferences - gut training: ${userProfile.gutTraining.name}, sweat rate: ${userProfile.sweatRate.name}');
+        DebugLogger.info('🏃 RUNNING CONTROLLER: Loaded user preferences - gut training: ${userProfile.gutTraining.name}, sweat rate: ${userProfile.sweatRate.name}, unitSystem: ${userProfile.unitSystem.name}');
       }
     } catch (e) {
       DebugLogger.error('🏃 RUNNING CONTROLLER: Failed to load user preferences', error: e);
@@ -425,8 +432,9 @@ class RunningInputController extends _$RunningInputController {
       humidityPct: 60.0,
     );
 
-    // Auto-fetch weather when date/time changes if location is set.
-    if (state.location != null) {
+    // Auto-fetch weather when date/time changes if location is set
+    // or if weather was previously fetched successfully (via GPS fallback).
+    if (state.location != null || state.weatherForecast != null) {
       unawaited(fetchWeatherForecast());
     }
   }

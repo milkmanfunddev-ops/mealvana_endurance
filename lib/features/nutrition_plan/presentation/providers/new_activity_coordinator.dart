@@ -11,11 +11,26 @@ import '../../../../shared/providers/user_id_provider.dart';
 part 'new_activity_coordinator.g.dart';
 
 /// Sport tab selection enum
-enum SportTab {
-  running,
-  cycling,
-  swimming,
-  brick
+enum SportTab { running, cycling, swimming, brick }
+
+/// Default datetime for newly-created activities.
+/// Ensures the suggested time is at least one hour in the future.
+DateTime defaultNewActivityDateTime([DateTime? reference]) {
+  final now = reference ?? DateTime.now();
+  final atLeastOneHourAhead = now.add(const Duration(hours: 1));
+
+  // Round up to the next 15-minute boundary for cleaner defaults in the UI.
+  final roundedMinute = ((atLeastOneHourAhead.minute + 14) ~/ 15) * 15;
+  final hourCarry = roundedMinute ~/ 60;
+  final minute = roundedMinute % 60;
+
+  return DateTime(
+    atLeastOneHourAhead.year,
+    atLeastOneHourAhead.month,
+    atLeastOneHourAhead.day,
+    atLeastOneHourAhead.hour + hourCarry,
+    minute,
+  );
 }
 
 /// New Activity Coordinator
@@ -31,10 +46,16 @@ enum SportTab {
 class NewActivityCoordinator extends _$NewActivityCoordinator {
   @override
   NewActivityCoordinatorState build() {
+    final defaultDateTime = defaultNewActivityDateTime();
+
     return NewActivityCoordinatorState(
       selectedTab: SportTab.running,
-      selectedDate: DateTime.now(),
-      selectedTime: TimeOfDay.now(),
+      selectedDate: DateTime(
+        defaultDateTime.year,
+        defaultDateTime.month,
+        defaultDateTime.day,
+      ),
+      selectedTime: TimeOfDay.fromDateTime(defaultDateTime),
       isGenerating: false,
     );
   }
@@ -47,7 +68,9 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
     ref.read(macroTargetsControllerProvider.notifier).clearCachedMacros();
 
     state = state.copyWith(selectedTab: tab);
-    DebugLogger.info('✅ COORDINATOR: Sport tab switched, cached macros cleared');
+    DebugLogger.info(
+      '✅ COORDINATOR: Sport tab switched, cached macros cleared',
+    );
 
     // Trigger location fetch for the newly selected sport
     fetchLocationForActiveTab();
@@ -57,18 +80,26 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
   /// This ensures only ONE controller requests location at a time,
   /// preventing race conditions with the geolocator.
   Future<void> fetchLocationForActiveTab() async {
-    DebugLogger.info('📍 COORDINATOR: Fetching location for ${state.selectedTab.name} tab');
+    DebugLogger.info(
+      '📍 COORDINATOR: Fetching location for ${state.selectedTab.name} tab',
+    );
 
     switch (state.selectedTab) {
       case SportTab.running:
-        await ref.read(runningInputControllerProvider.notifier).fetchLocationIfNeeded();
+        await ref
+            .read(runningInputControllerProvider.notifier)
+            .fetchLocationIfNeeded();
         await _applyZonePaceIfAvailableForRunning();
         break;
       case SportTab.cycling:
-        await ref.read(cyclingInputControllerProvider.notifier).fetchLocationIfNeeded();
+        await ref
+            .read(cyclingInputControllerProvider.notifier)
+            .fetchLocationIfNeeded();
         break;
       case SportTab.swimming:
-        await ref.read(swimmingInputControllerProvider.notifier).fetchLocationIfNeeded();
+        await ref
+            .read(swimmingInputControllerProvider.notifier)
+            .fetchLocationIfNeeded();
         await _applyZonePaceIfAvailableForSwimming();
         break;
       case SportTab.brick:
@@ -81,20 +112,28 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
   Future<void> _applyZonePaceIfAvailableForRunning() async {
     try {
       final userId = await ref.read(userIdProvider.future);
-      await ref.read(runningInputControllerProvider.notifier).applyZonePaceIfAvailable(userId);
+      await ref
+          .read(runningInputControllerProvider.notifier)
+          .applyZonePaceIfAvailable(userId);
     } catch (e) {
       // Non-blocking - skip if userId isn't available
-      DebugLogger.warning('🏃 COORDINATOR: Unable to apply running zone pace -> $e');
+      DebugLogger.warning(
+        '🏃 COORDINATOR: Unable to apply running zone pace -> $e',
+      );
     }
   }
 
   Future<void> _applyZonePaceIfAvailableForSwimming() async {
     try {
       final userId = await ref.read(userIdProvider.future);
-      await ref.read(swimmingInputControllerProvider.notifier).applyZonePaceIfAvailable(userId);
+      await ref
+          .read(swimmingInputControllerProvider.notifier)
+          .applyZonePaceIfAvailable(userId);
     } catch (e) {
       // Non-blocking - skip if userId isn't available
-      DebugLogger.warning('🏊 COORDINATOR: Unable to apply swimming zone pace -> $e');
+      DebugLogger.warning(
+        '🏊 COORDINATOR: Unable to apply swimming zone pace -> $e',
+      );
     }
   }
 
@@ -103,9 +142,15 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
     state = state.copyWith(selectedDate: date, selectedTime: time);
 
     // Propagate to all sport controllers
-    ref.read(runningInputControllerProvider.notifier).updateDateTime(date, time);
-    ref.read(cyclingInputControllerProvider.notifier).updateDateTime(date, time);
-    ref.read(swimmingInputControllerProvider.notifier).updateDateTime(date, time);
+    ref
+        .read(runningInputControllerProvider.notifier)
+        .updateDateTime(date, time);
+    ref
+        .read(cyclingInputControllerProvider.notifier)
+        .updateDateTime(date, time);
+    ref
+        .read(swimmingInputControllerProvider.notifier)
+        .updateDateTime(date, time);
     ref.read(brickInputControllerProvider.notifier).updateDateTime(date, time);
   }
 
@@ -116,54 +161,87 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
   Future<void> generateMacros({
     String? activityId,
     String? eventId,
-    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
+    String?
+    forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
   }) async {
-    DebugLogger.info('🎮 COORDINATOR: generateMacros called for sport: ${state.selectedTab.name}');
+    DebugLogger.info(
+      '🎮 COORDINATOR: generateMacros called for sport: ${state.selectedTab.name}',
+    );
 
     // CRITICAL: Clear cached macros BEFORE generating to prevent stale data
-    DebugLogger.info('🎮 COORDINATOR: Clearing cached macros before generation...');
+    DebugLogger.info(
+      '🎮 COORDINATOR: Clearing cached macros before generation...',
+    );
     await ref.read(macroTargetsControllerProvider.notifier).clearCachedMacros();
-    DebugLogger.info('🎮 COORDINATOR: Cached macros cleared, proceeding with generation');
+    DebugLogger.info(
+      '🎮 COORDINATOR: Cached macros cleared, proceeding with generation',
+    );
 
     state = state.copyWith(isGenerating: true);
 
     try {
       switch (state.selectedTab) {
         case SportTab.running:
-          DebugLogger.info('🎮 COORDINATOR: Calling runningInputController.generateMacros...');
-          await ref.read(runningInputControllerProvider.notifier).generateMacros(
-            activityId: activityId,
-            eventId: eventId,
-            forUserId: forUserId, // NEW: Pass through forUserId
+          DebugLogger.info(
+            '🎮 COORDINATOR: Calling runningInputController.generateMacros...',
           );
-          DebugLogger.info('🎮 COORDINATOR: runningInputController.generateMacros returned');
+          await ref
+              .read(runningInputControllerProvider.notifier)
+              .generateMacros(
+                activityId: activityId,
+                eventId: eventId,
+                forUserId: forUserId, // NEW: Pass through forUserId
+              );
+          DebugLogger.info(
+            '🎮 COORDINATOR: runningInputController.generateMacros returned',
+          );
           break;
         case SportTab.cycling:
-          DebugLogger.info('🎮 COORDINATOR: Calling cyclingInputController.generateMacros...');
-          await ref.read(cyclingInputControllerProvider.notifier).generateMacros(
-            activityId: activityId,
-            eventId: eventId,
-            forUserId: forUserId, // NEW: Pass through forUserId
+          DebugLogger.info(
+            '🎮 COORDINATOR: Calling cyclingInputController.generateMacros...',
           );
-          DebugLogger.info('🎮 COORDINATOR: cyclingInputController.generateMacros returned');
+          await ref
+              .read(cyclingInputControllerProvider.notifier)
+              .generateMacros(
+                activityId: activityId,
+                eventId: eventId,
+                forUserId: forUserId, // NEW: Pass through forUserId
+              );
+          DebugLogger.info(
+            '🎮 COORDINATOR: cyclingInputController.generateMacros returned',
+          );
           break;
         case SportTab.swimming:
-          DebugLogger.info('🎮 COORDINATOR: Calling swimmingInputController.generateMacros...');
-          await ref.read(swimmingInputControllerProvider.notifier).generateMacros(
-            activityId: activityId,
-            eventId: eventId,
-            forUserId: forUserId, // NEW: Pass through forUserId
+          DebugLogger.info(
+            '🎮 COORDINATOR: Calling swimmingInputController.generateMacros...',
           );
-          DebugLogger.info('🎮 COORDINATOR: swimmingInputController.generateMacros returned');
+          await ref
+              .read(swimmingInputControllerProvider.notifier)
+              .generateMacros(
+                activityId: activityId,
+                eventId: eventId,
+                forUserId: forUserId, // NEW: Pass through forUserId
+              );
+          DebugLogger.info(
+            '🎮 COORDINATOR: swimmingInputController.generateMacros returned',
+          );
           break;
         case SportTab.brick:
-          DebugLogger.info('🎮 COORDINATOR: Calling brickInputController to get segments...');
-          final brickController = ref.read(brickInputControllerProvider.notifier);
+          DebugLogger.info(
+            '🎮 COORDINATOR: Calling brickInputController to get segments...',
+          );
+          final brickController = ref.read(
+            brickInputControllerProvider.notifier,
+          );
 
           // Validate before calling edge function
           if (!brickController.isValid()) {
-            DebugLogger.error('❌ COORDINATOR: Brick form is not valid - missing required fields');
-            throw Exception('Please fill in all required fields for each sport segment before generating a plan.');
+            DebugLogger.error(
+              '❌ COORDINATOR: Brick form is not valid - missing required fields',
+            );
+            throw Exception(
+              'Please fill in all required fields for each sport segment before generating a plan.',
+            );
           }
 
           final segments = brickController.getSegments();
@@ -172,23 +250,31 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           final selectedTime = brickController.state.selectedTime;
           final isFasted = brickController.state.isFasted;
 
-          DebugLogger.info('🎮 COORDINATOR: Got ${segments.length} brick segments, calling macroTargetsController...');
-          await ref.read(macroTargetsControllerProvider.notifier).generateBrickMacros(
-            segments: segments,
-            segmentOrder: segmentOrder,
-            scheduledDate: selectedDate,
-            scheduledTime: selectedTime,
-            isFasted: isFasted,
-            activityId: activityId,
-            eventId: eventId,
-            forUserId: forUserId,
+          DebugLogger.info(
+            '🎮 COORDINATOR: Got ${segments.length} brick segments, calling macroTargetsController...',
           );
-          DebugLogger.info('🎮 COORDINATOR: macroTargetsController.generateBrickMacros returned');
+          await ref
+              .read(macroTargetsControllerProvider.notifier)
+              .generateBrickMacros(
+                segments: segments,
+                segmentOrder: segmentOrder,
+                scheduledDate: selectedDate,
+                scheduledTime: selectedTime,
+                isFasted: isFasted,
+                activityId: activityId,
+                eventId: eventId,
+                forUserId: forUserId,
+              );
+          DebugLogger.info(
+            '🎮 COORDINATOR: macroTargetsController.generateBrickMacros returned',
+          );
       }
 
       // CRITICAL: Wait for distancePageGutEntryController state to fully update
       // This ensures the state has propagated through Riverpod before we return
-      DebugLogger.info('🎮 COORDINATOR: Waiting for distancePageGutEntryController state update...');
+      DebugLogger.info(
+        '🎮 COORDINATOR: Waiting for distancePageGutEntryController state update...',
+      );
       await ref.read(macroTargetsControllerProvider.future);
       DebugLogger.info('🎮 COORDINATOR: State update confirmed');
 

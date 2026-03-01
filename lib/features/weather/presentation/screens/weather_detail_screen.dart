@@ -10,11 +10,13 @@ import '../../domain/location.dart' as domain;
 class WeatherDetailScreen extends StatelessWidget {
   final WeatherForecast forecast;
   final domain.Location? location;
+  final bool useImperial;
 
   const WeatherDetailScreen({
     super.key,
     required this.forecast,
     this.location,
+    this.useImperial = false,
   });
 
   @override
@@ -38,43 +40,28 @@ class WeatherDetailScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    AppTheme.primary600,
-                    AppTheme.primary900,
-                  ],
+                  colors: [AppTheme.primary600, AppTheme.primary900],
                 ),
               ),
               child: Column(
                 children: [
-                  Icon(
-                    _getWeatherIcon(),
-                    size: 80,
-                    color: Colors.white,
-                  ),
+                  Icon(_getWeatherIcon(), size: 80, color: Colors.white),
                   SizedBox(height: 16.h),
                   Text(
-                    '${forecast.temperatureC.round()}°C',
+                    useImperial
+                        ? '${forecast.temperatureF.round()}°F'
+                        : '${forecast.temperatureC.round()}°C',
                     style: TextStyle(
                       fontSize: 48.sp,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  Text(
-                    '${forecast.temperatureF.round()}°F',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      color: Colors.white70,
-                    ),
-                  ),
                   SizedBox(height: 8.h),
                   if (forecast.conditions != null)
                     Text(
                       forecast.conditions!,
-                      style: TextStyle(
-                        fontSize: 20.sp,
-                        color: Colors.white,
-                      ),
+                      style: TextStyle(fontSize: 20.sp, color: Colors.white),
                     ),
                   SizedBox(height: 16.h),
                   _buildInfoChip(
@@ -114,17 +101,26 @@ class WeatherDetailScreen extends StatelessWidget {
                 icon: Icons.thermostat,
                 title: 'Weather Details',
                 children: [
-                  _buildInfoRow('Temperature', '${forecast.temperatureC.round()}°C / ${forecast.temperatureF.round()}°F'),
+                  _buildInfoRow(
+                    'Temperature',
+                    useImperial
+                        ? '${forecast.temperatureF.round()}°F'
+                        : '${forecast.temperatureC.round()}°C',
+                  ),
                   _buildInfoRow('Humidity', '${forecast.humidityPct}%'),
                   if (forecast.windSpeedKmh != null)
                     _buildInfoRow(
                       'Wind Speed',
-                      '${forecast.windSpeedKmh} km/h / ${forecast.windSpeedMph?.round()} mph',
+                      useImperial
+                          ? '${forecast.windSpeedMph?.round()} mph'
+                          : '${forecast.windSpeedKmh} km/h',
                     ),
                   if (forecast.precipitationMm != null)
                     _buildInfoRow(
                       'Precipitation',
-                      '${forecast.precipitationMm?.toStringAsFixed(1)} mm / ${forecast.precipitationIn?.toStringAsFixed(2)} in',
+                      useImperial
+                          ? '${forecast.precipitationIn?.toStringAsFixed(2)} in'
+                          : '${forecast.precipitationMm?.toStringAsFixed(1)} mm',
                     ),
                   if (forecast.conditions != null)
                     _buildInfoRow('Conditions', forecast.conditions!),
@@ -171,7 +167,10 @@ class WeatherDetailScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.lightbulb_outline, color: AppTheme.primary600),
+                        Icon(
+                          Icons.lightbulb_outline,
+                          color: AppTheme.primary600,
+                        ),
                         SizedBox(width: 8.w),
                         Text(
                           'About this forecast',
@@ -212,7 +211,7 @@ class WeatherDetailScreen extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Row(
@@ -222,10 +221,7 @@ class WeatherDetailScreen extends StatelessWidget {
           SizedBox(width: 8.w),
           Text(
             '$label: $value',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: Colors.white,
-            ),
+            style: TextStyle(fontSize: 14.sp, color: Colors.white),
           ),
         ],
       ),
@@ -246,7 +242,7 @@ class WeatherDetailScreen extends StatelessWidget {
         border: Border.all(color: AppTheme.primary100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -286,10 +282,7 @@ class WeatherDetailScreen extends StatelessWidget {
             width: 120.w,
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: AppTheme.baseGrey,
-              ),
+              style: TextStyle(fontSize: 14.sp, color: AppTheme.baseGrey),
             ),
           ),
           Expanded(

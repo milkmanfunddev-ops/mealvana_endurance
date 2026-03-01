@@ -9,8 +9,9 @@ class WeatherForecast {
   final String? conditions;
   final int? windSpeedKmh;
   final double? precipitationMm;
+  final DateTime fetchedAt;
 
-  const WeatherForecast({
+  WeatherForecast({
     required this.temperatureC,
     required this.humidityPct,
     required this.forecastAvailable,
@@ -19,7 +20,8 @@ class WeatherForecast {
     this.conditions,
     this.windSpeedKmh,
     this.precipitationMm,
-  });
+    DateTime? fetchedAt,
+  }) : fetchedAt = fetchedAt ?? DateTime.now();
 
   /// Create from JSON response from edge function
   factory WeatherForecast.fromJson(Map<String, dynamic> json) {
@@ -60,10 +62,10 @@ class WeatherForecast {
     );
   }
 
-  /// Check if this forecast is still fresh (< 1 hour old)
+  /// Check if this forecast is still fresh (< 1 hour since fetched)
   bool isFresh() {
     final now = DateTime.now();
-    final age = now.difference(forecastDate);
+    final age = now.difference(fetchedAt);
     return age.inHours < 1;
   }
 
@@ -85,6 +87,7 @@ class WeatherForecast {
     String? conditions,
     int? windSpeedKmh,
     double? precipitationMm,
+    DateTime? fetchedAt,
   }) {
     return WeatherForecast(
       temperatureC: temperatureC ?? this.temperatureC,
@@ -95,6 +98,7 @@ class WeatherForecast {
       conditions: conditions ?? this.conditions,
       windSpeedKmh: windSpeedKmh ?? this.windSpeedKmh,
       precipitationMm: precipitationMm ?? this.precipitationMm,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
     );
   }
 }

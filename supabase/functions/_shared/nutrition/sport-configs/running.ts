@@ -25,7 +25,7 @@ export const runningConfig: SportConfig = {
     during: {
       maxFoods: 4,
       defaultMaxServings: 2,
-      maxServingsCap: 4,
+      maxServingsCap: 8,
       priorities: ['carbs', 'sodium'],
     },
     after: {

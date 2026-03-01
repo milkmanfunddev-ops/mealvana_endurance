@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sync/immediate_remote_write_service.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/activity.dart' as domain;
@@ -31,6 +32,7 @@ ActivitiesRepository activitiesRepository(Ref ref) {
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
+    immediateRemoteWriteService: ref.read(immediateRemoteWriteServiceProvider),
   );
 }
 
@@ -41,14 +43,17 @@ class ActivitiesRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
-  })  : _supabase = supabase,
-        _database = database,
-        _logger = logger,
-        _mapper = ActivityMapper(logger: logger);
+    required ImmediateRemoteWriteService immediateRemoteWriteService,
+  }) : _supabase = supabase,
+       _database = database,
+       _logger = logger,
+       _immediateRemoteWriteService = immediateRemoteWriteService,
+       _mapper = ActivityMapper(logger: logger);
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+  final ImmediateRemoteWriteService _immediateRemoteWriteService;
   final ActivityMapper _mapper;
 
   /// Expose mapper for use by ActivitiesService and other consumers.
@@ -81,17 +86,9 @@ class ActivitiesRepository with SyncableRepository {
           .isFilter('deleted_at', null)
           .order('created_at', ascending: false);
 
-      // Save to Drift using batch operations
-      await _database.batch((batch) {
-        for (final activityJson in response as List) {
-          final activity = _mapper.fromJson(activityJson);
-          batch.insert(
-            _database.activitiesTable,
-            _mapper.toCompanion(activity),
-            mode: InsertMode.insertOrReplace,
-          );
-        }
-      });
+      final syncedCount = await _upsertRemoteActivitiesPreservingDirty(
+        response as List<dynamic>,
+      );
 
       // Update last sync timestamp
       await setLastSyncTime(DateTime.now());
@@ -99,10 +96,10 @@ class ActivitiesRepository with SyncableRepository {
       _logger.info(
         'Activities synced successfully',
         context: 'ACTIVITIES_REPOSITORY',
-        data: {'userId': userId, 'count': response.length},
+        data: {'userId': userId, 'count': syncedCount},
       );
 
-      return SyncResult.successful(response.length);
+      return SyncResult.successful(syncedCount);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to sync activities from remote',
@@ -113,6 +110,62 @@ class ActivitiesRepository with SyncableRepository {
       );
       return SyncResult.failed(e.toString());
     }
+  }
+
+  Future<int> _upsertRemoteActivitiesPreservingDirty(
+    List<dynamic> rawActivities,
+  ) async {
+    final remoteById = <String, Map<String, dynamic>>{};
+
+    for (final item in rawActivities) {
+      if (item is! Map) continue;
+      final mapped = Map<String, dynamic>.from(item);
+      final id = mapped['id']?.toString();
+      if (id == null || id.isEmpty) continue;
+      remoteById[id] = mapped;
+    }
+
+    if (remoteById.isEmpty) {
+      return 0;
+    }
+
+    final remoteIds = remoteById.keys.toList(growable: false);
+    final dirtyRows =
+        await (_database.select(_database.activitiesTable)..where(
+              (tbl) => tbl.id.isIn(remoteIds) & tbl.needsUpload.equals(true),
+            ))
+            .get();
+    final dirtyIds = dirtyRows.map((row) => row.id).toSet();
+
+    var upsertedCount = 0;
+    await _database.batch((batch) {
+      for (final entry in remoteById.entries) {
+        if (dirtyIds.contains(entry.key)) {
+          continue;
+        }
+
+        final activity = _mapper.fromJson(entry.value);
+        batch.insert(
+          _database.activitiesTable,
+          _mapper.toCompanion(activity),
+          mode: InsertMode.insertOrReplace,
+        );
+        upsertedCount++;
+      }
+    });
+
+    if (dirtyIds.isNotEmpty) {
+      _logger.debug(
+        'Skipped remote activity overwrite for dirty local rows',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {
+          'skippedCount': dirtyIds.length,
+          'totalRemote': remoteById.length,
+        },
+      );
+    }
+
+    return upsertedCount;
   }
 
   @override
@@ -246,6 +299,7 @@ class ActivitiesRepository with SyncableRepository {
       uploadedIds.addAll(records.map((record) => record.id));
       return _BatchUploadResult(uploadedIds: uploadedIds, failedIds: failedIds);
     } catch (e, stackTrace) {
+      final missingRemoteUser = _isMissingRemoteUserForeignKeyError(e);
       _logger.warning(
         'Dirty activity batch failed, retrying one-by-one',
         context: 'ACTIVITIES_REPOSITORY',
@@ -255,8 +309,26 @@ class ActivitiesRepository with SyncableRepository {
           'batchLabel': batchLabel,
           'count': records.length,
           'code': _postgrestErrorCode(e),
+          'missingRemoteUser': missingRemoteUser,
         },
       );
+
+      if (missingRemoteUser) {
+        _logger.warning(
+          'Skipping one-by-one retry because remote user row is missing',
+          context: 'ACTIVITIES_REPOSITORY',
+          data: {
+            'batchLabel': batchLabel,
+            'count': records.length,
+            'reason': 'activities_user_id_fkey',
+          },
+        );
+        failedIds.addAll(records.map((record) => record.id));
+        return _BatchUploadResult(
+          uploadedIds: uploadedIds,
+          failedIds: failedIds,
+        );
+      }
     }
 
     for (final record in records) {
@@ -287,6 +359,21 @@ class ActivitiesRepository with SyncableRepository {
       return error.code;
     }
     return null;
+  }
+
+  bool _isMissingRemoteUserForeignKeyError(Object error) {
+    if (error is PostgrestException) {
+      final details = (error.details ?? '').toString().toLowerCase();
+      final message = error.message.toString().toLowerCase();
+      return error.code == '23503' &&
+          (details.contains('activities_user_id_fkey') ||
+              details.contains('key (user_id)') ||
+              message.contains('activities_user_id_fkey'));
+    }
+
+    final raw = error.toString().toLowerCase();
+    return raw.contains('activities_user_id_fkey') &&
+        raw.contains('key (user_id)');
   }
 
   Map<String, dynamic> _dirtyRecordLogData(Activity record) {
@@ -418,10 +505,13 @@ class ActivitiesRepository with SyncableRepository {
         },
       );
 
-      await _uploadActivityToSupabase(
-        activityWithId,
+      await _immediateRemoteWriteService.run(
+        repository: repositoryKey,
         operation: 'create',
-        throwOnError: false,
+        recordId: activityWithId.id,
+        method: 'INSERT',
+        write: () =>
+            _uploadActivityToSupabase(activityWithId, operation: 'create'),
       );
 
       return activityWithId;
@@ -452,7 +542,18 @@ class ActivitiesRepository with SyncableRepository {
       await _saveToDrift(activityWithDirtyFlag);
 
       // Attempt background upload (non-blocking)
-      unawaited(_uploadActivityToSupabase(activity, operation: 'update'));
+      unawaited(
+        _immediateRemoteWriteService.run(
+          repository: repositoryKey,
+          operation: 'update',
+          recordId: activityWithDirtyFlag.id,
+          method: 'UPSERT',
+          write: () => _uploadActivityToSupabase(
+            activityWithDirtyFlag,
+            operation: 'update',
+          ),
+        ),
+      );
 
       return activityWithDirtyFlag;
     } catch (e, stackTrace) {
@@ -484,7 +585,15 @@ class ActivitiesRepository with SyncableRepository {
       );
 
       // Attempt background upload (non-blocking)
-      unawaited(_uploadActivityDeletion(deviceId, activityId));
+      unawaited(
+        _immediateRemoteWriteService.run(
+          repository: repositoryKey,
+          operation: 'delete',
+          recordId: activityId,
+          method: 'DELETE',
+          write: () => _uploadActivityDeletion(deviceId, activityId),
+        ),
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete activity',
@@ -502,10 +611,7 @@ class ActivitiesRepository with SyncableRepository {
     try {
       final payload = _mapper.buildSupabasePayload(activity);
 
-      await _supabase
-          .from('activities')
-          .update(payload)
-          .eq('id', activity.id);
+      await _supabase.from('activities').update(payload).eq('id', activity.id);
 
       _logger.info(
         'Remote activity updated',
@@ -822,47 +928,36 @@ class ActivitiesRepository with SyncableRepository {
   Future<void> _uploadActivityToSupabase(
     domain.Activity activity, {
     required String operation,
-    bool throwOnError = false,
   }) async {
-    try {
-      final payload = _mapper.buildSupabasePayload(
-        activity,
-        includeCreatedAt: true,
+    final payload = _mapper.buildSupabasePayload(
+      activity,
+      includeCreatedAt: true,
+    );
+
+    if (operation == 'create') {
+      await _supabase.from('activities').insert(payload);
+    } else {
+      final hasProviderKey = _hasProviderConflictKey(
+        syncedFromProvider: activity.syncedFromProvider,
+        providerWorkoutId: activity.providerWorkoutId,
       );
 
-      if (operation == 'create') {
-        await _supabase.from('activities').insert(payload);
-      } else {
-        final hasProviderKey = _hasProviderConflictKey(
-          syncedFromProvider: activity.syncedFromProvider,
-          providerWorkoutId: activity.providerWorkoutId,
-        );
-
-        await _upsertWithConflictFallback(
-          payload,
-          onConflict: hasProviderKey
-              ? 'user_id,synced_from_provider,provider_workout_id'
-              : 'id',
-          fallbackOnConflict: hasProviderKey ? 'id' : null,
-        );
-      }
-
-      _logger.info(
-        'Activity uploaded to Supabase with UUID',
-        context: 'ACTIVITIES_REPOSITORY',
-        data: {'activityId': activity.id, 'operation': operation},
+      await _upsertWithConflictFallback(
+        payload,
+        onConflict: hasProviderKey
+            ? 'user_id,synced_from_provider,provider_workout_id'
+            : 'id',
+        fallbackOnConflict: hasProviderKey ? 'id' : null,
       );
-
-      await _clearDirtyFlag(activity.id);
-    } catch (e) {
-      _logger.warning(
-        'Failed to upload activity (will retry on next sync)',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
-        data: {'activityId': activity.id},
-      );
-      if (throwOnError) rethrow;
     }
+
+    _logger.info(
+      'Activity uploaded to Supabase with UUID',
+      context: 'ACTIVITIES_REPOSITORY',
+      data: {'activityId': activity.id, 'operation': operation},
+    );
+
+    await _clearDirtyFlag(activity.id);
   }
 
   /// Upload activity deletion to Supabase in background (non-blocking)
@@ -870,27 +965,39 @@ class ActivitiesRepository with SyncableRepository {
     String deviceId,
     String activityId,
   ) async {
-    try {
-      final userId = deviceId;
+    final userId = deviceId;
 
-      await _supabase
-          .from('activities')
-          .delete()
-          .eq('id', activityId)
-          .eq('user_id', userId);
+    await _supabase
+        .from('activities')
+        .delete()
+        .eq('id', activityId)
+        .eq('user_id', userId);
 
-      // Upload successful - hard delete from local database
-      await (_database.delete(
-        _database.activitiesTable,
-      )..where((tbl) => tbl.id.equals(activityId))).go();
-    } catch (e) {
-      _logger.warning(
-        'Failed to upload activity deletion (will retry on next sync)',
-        context: 'ACTIVITIES_REPOSITORY',
-        error: e,
-        data: {'activityId': activityId},
-      );
-    }
+    // Upload successful - hard delete from local database
+    await (_database.delete(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).go();
+  }
+
+  Future<void> _queueImmediateActivityUpsertById(
+    String activityId, {
+    required String operation,
+  }) async {
+    final row = await (_database.select(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
+    if (row == null) return;
+
+    final activity = _mapper.fromDriftRow(row);
+    unawaited(
+      _immediateRemoteWriteService.run(
+        repository: repositoryKey,
+        operation: operation,
+        recordId: activityId,
+        method: 'UPSERT',
+        write: () => _uploadActivityToSupabase(activity, operation: 'update'),
+      ),
+    );
   }
 
   /// Clear dirty flag after successful upload
@@ -917,7 +1024,7 @@ class ActivitiesRepository with SyncableRepository {
       );
 
       if (activities.isEmpty) {
-        _logger.warning(
+        _logger.debug(
           'No local provider activities found - attempting remote hydration',
           context: 'ACTIVITIES_REPOSITORY',
           data: {
@@ -1046,7 +1153,7 @@ class ActivitiesRepository with SyncableRepository {
         }
       }
 
-      _logger.warning(
+      _logger.debug(
         'Removed duplicate provider activities',
         context: 'ACTIVITIES_REPOSITORY',
         data: {
@@ -1189,16 +1296,9 @@ class ActivitiesRepository with SyncableRepository {
       return const [];
     }
 
-    await _database.batch((batch) {
-      for (final activityJson in remoteById.values) {
-        final activity = _mapper.fromJson(activityJson);
-        batch.insert(
-          _database.activitiesTable,
-          _mapper.toCompanion(activity),
-          mode: InsertMode.insertOrReplace,
-        );
-      }
-    });
+    final syncedCount = await _upsertRemoteActivitiesPreservingDirty(
+      remoteById.values.toList(growable: false),
+    );
 
     _logger.info(
       'Hydrated provider activities from Supabase',
@@ -1206,7 +1306,7 @@ class ActivitiesRepository with SyncableRepository {
       data: {
         'userId': userId,
         'providerVariants': providerVariants,
-        'count': remoteById.length,
+        'count': syncedCount,
       },
     );
 
@@ -1263,6 +1363,17 @@ class ActivitiesRepository with SyncableRepository {
 
       await _saveToDrift(activityWithFlags);
 
+      unawaited(
+        _immediateRemoteWriteService.run(
+          repository: repositoryKey,
+          operation: 'provider_update',
+          recordId: activityWithFlags.id,
+          method: 'UPSERT',
+          write: () =>
+              _uploadActivityToSupabase(activityWithFlags, operation: 'update'),
+        ),
+      );
+
       _logger.info(
         'Activity updated from provider',
         context: 'ACTIVITIES_REPOSITORY',
@@ -1303,6 +1414,11 @@ class ActivitiesRepository with SyncableRepository {
         ),
       );
 
+      await _queueImmediateActivityUpsertById(
+        activityId,
+        operation: 'provider_soft_delete',
+      );
+
       _logger.info(
         'Activity soft-deleted from provider',
         context: 'ACTIVITIES_REPOSITORY',
@@ -1339,6 +1455,11 @@ class ActivitiesRepository with SyncableRepository {
           needsUpload: const Value(true),
           localUpdatedAt: Value(now),
         ),
+      );
+
+      await _queueImmediateActivityUpsertById(
+        activityId,
+        operation: 'nutrition_refresh_cleared',
       );
 
       _logger.info(
@@ -1642,7 +1763,7 @@ class ActivitiesRepository with SyncableRepository {
         final archivedActivities = await getArchivedActivitiesForBrick(brickId);
 
         if (archivedActivities.isEmpty) {
-          _logger.warning(
+          _logger.debug(
             'No archived activities found for brick',
             context: 'ACTIVITIES_REPOSITORY',
             data: {'brickId': brickId},
@@ -1686,7 +1807,16 @@ class ActivitiesRepository with SyncableRepository {
 
       // Step 5: Delete from Supabase AFTER transaction completes (non-blocking)
       if (userIdForSupabaseDelete != null) {
-        unawaited(_uploadActivityDeletion(userIdForSupabaseDelete!, brickId));
+        unawaited(
+          _immediateRemoteWriteService.run(
+            repository: repositoryKey,
+            operation: 'delete',
+            recordId: brickId,
+            method: 'DELETE',
+            write: () =>
+                _uploadActivityDeletion(userIdForSupabaseDelete!, brickId),
+          ),
+        );
       }
     } catch (e, stackTrace) {
       _logger.error(

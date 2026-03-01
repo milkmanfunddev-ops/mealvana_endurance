@@ -196,6 +196,7 @@ export async function getFoodsForPhase(
         max_servings: maxServings,
         preference_score,
         is_electrolyte: f.is_electrolyte || false,
+        is_liquid: false,
         is_essential: f.is_essential || false,
         is_user_food: isUserFood,
       };
@@ -310,6 +311,7 @@ export async function getElectrolyteFoods(
         max_servings: DEFAULT_MAX_SERVINGS,
         preference_score: 50,
         is_electrolyte: true,
+        is_liquid: false,
         is_essential: 'is_essential' in e ? e.is_essential : false,
         is_user_food: false,
       };
@@ -364,6 +366,7 @@ export async function getEssentialFoods(
       preference_score: 50,
       is_essential: true,
       is_electrolyte: f.is_electrolyte || false,
+      is_liquid: false,
       is_user_food: false,
     };
   });

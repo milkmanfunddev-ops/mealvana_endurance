@@ -128,6 +128,7 @@ class WorkoutDetailsWidget extends StatelessWidget {
         // Estimated Duration or Pace Field
         if (useSplitDurationInput)
           _DualSegmentField(
+            key: ValueKey('duration_${sport.name}'),
             label: _secondaryFieldLabel,
             firstLabel: 'hr',
             secondLabel: 'mins',
@@ -147,6 +148,7 @@ class WorkoutDetailsWidget extends StatelessWidget {
           )
         else if (useSplitPaceInput)
           _DualSegmentField(
+            key: ValueKey('pace_${sport.name}_$paceUnit'),
             label: _secondaryFieldLabel,
             firstLabel: 'min',
             secondLabel: 'sec',
@@ -460,6 +462,7 @@ class _SingleValueFieldState extends State<_SingleValueField> {
 /// Reusable two-field input row for `hr/mins` and `min/sec` patterns.
 class _DualSegmentField extends StatefulWidget {
   const _DualSegmentField({
+    super.key,
     required this.label,
     required this.firstLabel,
     required this.secondLabel,

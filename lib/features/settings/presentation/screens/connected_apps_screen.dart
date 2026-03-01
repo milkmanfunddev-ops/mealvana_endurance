@@ -7,6 +7,7 @@ import 'package:mealvana_endurance/shared/widgets/navigation/figma_onboarding_fo
 import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/widgets/integration_provider_card.dart';
+import '../../../../shared/services/preferences_service.dart';
 
 /// Connected Apps Screen - Used for both settings and onboarding flows
 ///
@@ -288,6 +289,12 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
               ),
             ),
           ],
+        ],
+
+        // TP Write-Back toggle (only when TP is connected)
+        if (data.isTrainingPeaksConnected) ...[
+          const SizedBox(height: AppSpacing.md),
+          _buildTpWritebackToggle(context, ref),
         ],
 
         const SizedBox(height: AppSpacing.lg),
@@ -687,6 +694,55 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   // ============================================================
   // Onboarding Navigation
   // ============================================================
+
+  Widget _buildTpWritebackToggle(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(preferencesServiceProvider);
+    final enabled = prefs.tpWritebackEnabled;
+    final premiumBlocked = prefs.tpWritebackPremiumBlocked;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Write-Back to TrainingPeaks',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: premiumBlocked
+                        ? AppColors.textDarkSecondary
+                        : AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  premiumBlocked
+                      ? 'Requires TrainingPeaks Premium'
+                      : 'Add nutrition plan summary to workout descriptions',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textDarkSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: enabled,
+            onChanged: premiumBlocked
+                ? null
+                : (value) async {
+                    await prefs.setTpWritebackEnabled(value);
+                    // Force rebuild by invalidating the provider
+                    ref.invalidate(preferencesServiceProvider);
+                  },
+            activeTrackColor: AppColors.success,
+          ),
+        ],
+      ),
+    );
+  }
 
   void _skipConnection(WidgetRef ref) {
     // Track skip and continue

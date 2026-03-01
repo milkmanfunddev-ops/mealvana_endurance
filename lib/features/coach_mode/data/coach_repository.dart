@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sync/immediate_remote_write_service.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/coach.dart';
 import '../domain/coach_athlete_relationship.dart';
@@ -21,6 +22,7 @@ CoachRepository coachRepository(Ref ref) {
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
+    immediateRemoteWriteService: ref.read(immediateRemoteWriteServiceProvider),
   );
 }
 
@@ -33,13 +35,16 @@ class CoachRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
-  })  : _supabase = supabase,
-        _database = database,
-        _logger = logger;
+    required ImmediateRemoteWriteService immediateRemoteWriteService,
+  }) : _supabase = supabase,
+       _database = database,
+       _logger = logger,
+       _immediateRemoteWriteService = immediateRemoteWriteService;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+  final ImmediateRemoteWriteService _immediateRemoteWriteService;
 
   static const _uuid = Uuid();
 
@@ -78,26 +83,38 @@ class CoachRepository with SyncableRepository {
         // Upsert coach record to local Drift database
         await _database
             .into(_database.coachesTable)
-            .insertOnConflictUpdate(CoachesTableCompanion.insert(
-              id: coachJson['id'] as String,
-              userId: coachJson['user_id'] as String,
-              firstName: coachJson['first_name'] as String,
-              lastName: coachJson['last_name'] as String,
-              email: coachJson['email'] as String,
-              bio: Value(coachJson['bio'] as String?),
-              applicationStatus: Value(coachJson['application_status'] as String? ?? 'pending'),
-              reviewedBy: Value(coachJson['reviewed_by'] as String?),
-              reviewedAt: Value(coachJson['reviewed_at'] != null
-                  ? DateTime.parse(coachJson['reviewed_at'] as String)
-                  : null),
-              rejectionReason: Value(coachJson['rejection_reason'] as String?),
-              createdAt: Value(coachJson['created_at'] != null
-                  ? DateTime.parse(coachJson['created_at'] as String)
-                  : now),
-              updatedAt: Value(coachJson['updated_at'] != null
-                  ? DateTime.parse(coachJson['updated_at'] as String)
-                  : now),
-            ));
+            .insertOnConflictUpdate(
+              CoachesTableCompanion.insert(
+                id: coachJson['id'] as String,
+                userId: coachJson['user_id'] as String,
+                firstName: coachJson['first_name'] as String,
+                lastName: coachJson['last_name'] as String,
+                email: coachJson['email'] as String,
+                bio: Value(coachJson['bio'] as String?),
+                applicationStatus: Value(
+                  coachJson['application_status'] as String? ?? 'pending',
+                ),
+                reviewedBy: Value(coachJson['reviewed_by'] as String?),
+                reviewedAt: Value(
+                  coachJson['reviewed_at'] != null
+                      ? DateTime.parse(coachJson['reviewed_at'] as String)
+                      : null,
+                ),
+                rejectionReason: Value(
+                  coachJson['rejection_reason'] as String?,
+                ),
+                createdAt: Value(
+                  coachJson['created_at'] != null
+                      ? DateTime.parse(coachJson['created_at'] as String)
+                      : now,
+                ),
+                updatedAt: Value(
+                  coachJson['updated_at'] != null
+                      ? DateTime.parse(coachJson['updated_at'] as String)
+                      : now,
+                ),
+              ),
+            );
 
         totalSynced++;
       }
@@ -124,24 +141,36 @@ class CoachRepository with SyncableRepository {
               athleteUserId: r['athlete_user_id'] as String,
               status: Value(r['status'] as String? ?? 'pending'),
               requestedBy: r['requested_by'] as String,
-              requestedAt: Value(r['requested_at'] != null
-                  ? DateTime.parse(r['requested_at'] as String)
-                  : now),
-              acceptedAt: Value(r['accepted_at'] != null
-                  ? DateTime.parse(r['accepted_at'] as String)
-                  : null),
-              declinedAt: Value(r['declined_at'] != null
-                  ? DateTime.parse(r['declined_at'] as String)
-                  : null),
-              archivedAt: Value(r['archived_at'] != null
-                  ? DateTime.parse(r['archived_at'] as String)
-                  : null),
-              createdAt: Value(r['created_at'] != null
-                  ? DateTime.parse(r['created_at'] as String)
-                  : now),
-              updatedAt: Value(r['updated_at'] != null
-                  ? DateTime.parse(r['updated_at'] as String)
-                  : now),
+              requestedAt: Value(
+                r['requested_at'] != null
+                    ? DateTime.parse(r['requested_at'] as String)
+                    : now,
+              ),
+              acceptedAt: Value(
+                r['accepted_at'] != null
+                    ? DateTime.parse(r['accepted_at'] as String)
+                    : null,
+              ),
+              declinedAt: Value(
+                r['declined_at'] != null
+                    ? DateTime.parse(r['declined_at'] as String)
+                    : null,
+              ),
+              archivedAt: Value(
+                r['archived_at'] != null
+                    ? DateTime.parse(r['archived_at'] as String)
+                    : null,
+              ),
+              createdAt: Value(
+                r['created_at'] != null
+                    ? DateTime.parse(r['created_at'] as String)
+                    : now,
+              ),
+              updatedAt: Value(
+                r['updated_at'] != null
+                    ? DateTime.parse(r['updated_at'] as String)
+                    : now,
+              ),
             );
 
             batch.insert(
@@ -228,16 +257,20 @@ class CoachRepository with SyncableRepository {
   Future<CoachInfo?> getCoachInfoByUserId(String userId) async {
     try {
       // Check the local coaches table for an approved record
-      final result = await (_database.select(_database.coachesTable)
-            ..where((t) => t.userId.equals(userId) & t.applicationStatus.equals('approved')))
-          .getSingleOrNull();
+      final result =
+          await (_database.select(_database.coachesTable)..where(
+                (t) =>
+                    t.userId.equals(userId) &
+                    t.applicationStatus.equals('approved'),
+              ))
+              .getSingleOrNull();
 
       if (result == null) return null;
 
       // Get user profile for device ID
-      final userProfile = await (_database.select(_database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .getSingleOrNull();
+      final userProfile = await (_database.select(
+        _database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).getSingleOrNull();
 
       return CoachInfo(
         userId: result.userId,
@@ -269,12 +302,14 @@ class CoachRepository with SyncableRepository {
       final List<dynamic> results = response as List<dynamic>;
 
       return results
-          .map((r) => CoachInfo(
-                userId: r['user_id'] as String,
-                deviceId: '', // Not needed for directory listing
-                isCoach: true,
-                displayName: r['first_name'] as String?,
-              ))
+          .map(
+            (r) => CoachInfo(
+              userId: r['user_id'] as String,
+              deviceId: '', // Not needed for directory listing
+              isCoach: true,
+              displayName: r['first_name'] as String?,
+            ),
+          )
           .toList();
     } catch (e, stackTrace) {
       _logger.error(
@@ -298,24 +333,40 @@ class CoachRepository with SyncableRepository {
   ) async {
     try {
       // Join with user_profiles to get athlete display name
-      final query = _database.select(_database.coachAthleteRelationshipsTable).join([
-        leftOuterJoin(
-          _database.userProfilesTable,
-          _database.userProfilesTable.id.equalsExp(_database.coachAthleteRelationshipsTable.athleteUserId),
-        ),
-      ])
-        ..where(_database.coachAthleteRelationshipsTable.coachUserId.equals(coachUserId))
-        ..orderBy([OrderingTerm.desc(_database.coachAthleteRelationshipsTable.createdAt)]);
+      final query =
+          _database.select(_database.coachAthleteRelationshipsTable).join([
+              leftOuterJoin(
+                _database.userProfilesTable,
+                _database.userProfilesTable.id.equalsExp(
+                  _database.coachAthleteRelationshipsTable.athleteUserId,
+                ),
+              ),
+            ])
+            ..where(
+              _database.coachAthleteRelationshipsTable.coachUserId.equals(
+                coachUserId,
+              ),
+            )
+            ..orderBy([
+              OrderingTerm.desc(
+                _database.coachAthleteRelationshipsTable.createdAt,
+              ),
+            ]);
 
       final results = await query.get();
 
       return results.map((row) {
-        final relationship = row.readTable(_database.coachAthleteRelationshipsTable);
+        final relationship = row.readTable(
+          _database.coachAthleteRelationshipsTable,
+        );
         final athleteProfile = row.readTableOrNull(_database.userProfilesTable);
 
         return _mapToRelationshipDomain(
           relationship,
-          athleteDisplayName: _getDisplayNameFromProfile(athleteProfile, relationship.athleteUserId),
+          athleteDisplayName: _getDisplayNameFromProfile(
+            athleteProfile,
+            relationship.athleteUserId,
+          ),
         );
       }).toList();
     } catch (e, stackTrace) {
@@ -336,29 +387,48 @@ class CoachRepository with SyncableRepository {
     try {
       // Join with both coaches and user_profiles tables to get coach display name
       // Priority: coaches table (has first_name/last_name) > user_profiles (has sender_name)
-      final query = _database.select(_database.coachAthleteRelationshipsTable).join([
-        leftOuterJoin(
-          _database.coachesTable,
-          _database.coachesTable.userId.equalsExp(_database.coachAthleteRelationshipsTable.coachUserId),
-        ),
-        leftOuterJoin(
-          _database.userProfilesTable,
-          _database.userProfilesTable.id.equalsExp(_database.coachAthleteRelationshipsTable.coachUserId),
-        ),
-      ])
-        ..where(_database.coachAthleteRelationshipsTable.athleteUserId.equals(athleteUserId))
-        ..orderBy([OrderingTerm.desc(_database.coachAthleteRelationshipsTable.createdAt)]);
+      final query =
+          _database.select(_database.coachAthleteRelationshipsTable).join([
+              leftOuterJoin(
+                _database.coachesTable,
+                _database.coachesTable.userId.equalsExp(
+                  _database.coachAthleteRelationshipsTable.coachUserId,
+                ),
+              ),
+              leftOuterJoin(
+                _database.userProfilesTable,
+                _database.userProfilesTable.id.equalsExp(
+                  _database.coachAthleteRelationshipsTable.coachUserId,
+                ),
+              ),
+            ])
+            ..where(
+              _database.coachAthleteRelationshipsTable.athleteUserId.equals(
+                athleteUserId,
+              ),
+            )
+            ..orderBy([
+              OrderingTerm.desc(
+                _database.coachAthleteRelationshipsTable.createdAt,
+              ),
+            ]);
 
       final results = await query.get();
 
       return results.map((row) {
-        final relationship = row.readTable(_database.coachAthleteRelationshipsTable);
+        final relationship = row.readTable(
+          _database.coachAthleteRelationshipsTable,
+        );
         final coachEntry = row.readTableOrNull(_database.coachesTable);
         final coachProfile = row.readTableOrNull(_database.userProfilesTable);
 
         return _mapToRelationshipDomain(
           relationship,
-          coachDisplayName: _getCoachDisplayName(coachEntry, coachProfile, relationship.coachUserId),
+          coachDisplayName: _getCoachDisplayName(
+            coachEntry,
+            coachProfile,
+            relationship.coachUserId,
+          ),
         );
       }).toList();
     } catch (e, stackTrace) {
@@ -379,25 +449,43 @@ class CoachRepository with SyncableRepository {
   ) async {
     try {
       // Join with user_profiles to get athlete display name
-      final query = _database.select(_database.coachAthleteRelationshipsTable).join([
-        leftOuterJoin(
-          _database.userProfilesTable,
-          _database.userProfilesTable.id.equalsExp(_database.coachAthleteRelationshipsTable.athleteUserId),
-        ),
-      ])
-        ..where(_database.coachAthleteRelationshipsTable.coachUserId.equals(coachUserId) &
-                _database.coachAthleteRelationshipsTable.status.equals('active'))
-        ..orderBy([OrderingTerm.asc(_database.coachAthleteRelationshipsTable.createdAt)]);
+      final query =
+          _database.select(_database.coachAthleteRelationshipsTable).join([
+              leftOuterJoin(
+                _database.userProfilesTable,
+                _database.userProfilesTable.id.equalsExp(
+                  _database.coachAthleteRelationshipsTable.athleteUserId,
+                ),
+              ),
+            ])
+            ..where(
+              _database.coachAthleteRelationshipsTable.coachUserId.equals(
+                    coachUserId,
+                  ) &
+                  _database.coachAthleteRelationshipsTable.status.equals(
+                    'active',
+                  ),
+            )
+            ..orderBy([
+              OrderingTerm.asc(
+                _database.coachAthleteRelationshipsTable.createdAt,
+              ),
+            ]);
 
       final results = await query.get();
 
       return results.map((row) {
-        final relationship = row.readTable(_database.coachAthleteRelationshipsTable);
+        final relationship = row.readTable(
+          _database.coachAthleteRelationshipsTable,
+        );
         final athleteProfile = row.readTableOrNull(_database.userProfilesTable);
 
         return _mapToRelationshipDomain(
           relationship,
-          athleteDisplayName: _getDisplayNameFromProfile(athleteProfile, relationship.athleteUserId),
+          athleteDisplayName: _getDisplayNameFromProfile(
+            athleteProfile,
+            relationship.athleteUserId,
+          ),
         );
       }).toList();
     } catch (e, stackTrace) {
@@ -419,13 +507,15 @@ class CoachRepository with SyncableRepository {
     required String athleteUserId,
   }) async {
     try {
-      final relationship = await (_database
-              .select(_database.coachAthleteRelationshipsTable)
-            ..where((r) =>
-                r.coachUserId.equals(coachUserId) &
-                r.athleteUserId.equals(athleteUserId) &
-                r.status.equals('active')))
-          .getSingleOrNull();
+      final relationship =
+          await (_database.select(_database.coachAthleteRelationshipsTable)
+                ..where(
+                  (r) =>
+                      r.coachUserId.equals(coachUserId) &
+                      r.athleteUserId.equals(athleteUserId) &
+                      r.status.equals('active'),
+                ))
+              .getSingleOrNull();
 
       return relationship != null;
     } catch (e, stackTrace) {
@@ -451,16 +541,27 @@ class CoachRepository with SyncableRepository {
       final now = DateTime.now();
 
       // Insert into Supabase first (for cross-device sync)
-      await _supabase.from('coach_athlete_relationships').insert({
-        'id': id,
-        'coach_user_id': coachUserId,
-        'athlete_user_id': athleteUserId,
-        'status': 'pending',
-        'requested_by': requestedBy,
-        'requested_at': now.toIso8601String(),
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-      });
+      final uploaded = await _immediateRemoteWriteService.run(
+        repository: 'coach_athlete_relationships',
+        operation: 'create',
+        recordId: id,
+        method: 'INSERT',
+        write: () => _supabase.from('coach_athlete_relationships').insert({
+          'id': id,
+          'coach_user_id': coachUserId,
+          'athlete_user_id': athleteUserId,
+          'status': 'pending',
+          'requested_by': requestedBy,
+          'requested_at': now.toIso8601String(),
+          'created_at': now.toIso8601String(),
+          'updated_at': now.toIso8601String(),
+        }),
+      );
+      if (!uploaded) {
+        throw StateError(
+          'Failed to create coach-athlete relationship remotely',
+        );
+      }
 
       // Also save to local Drift database
       final companion = CoachAthleteRelationshipsTableCompanion.insert(
@@ -501,33 +602,46 @@ class CoachRepository with SyncableRepository {
   /// Accept a relationship request
   /// Updates both local Drift database AND Supabase for cross-device sync
   Future<CoachAthleteRelationship> acceptRelationship(
-      String relationshipId) async {
+    String relationshipId,
+  ) async {
     try {
       final now = DateTime.now();
 
       // Update Supabase first (for cross-device sync)
-      await _supabase
-          .from('coach_athlete_relationships')
-          .update({
-            'status': 'active',
-            'accepted_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-          })
-          .eq('id', relationshipId);
+      final uploaded = await _immediateRemoteWriteService.run(
+        repository: 'coach_athlete_relationships',
+        operation: 'accept',
+        recordId: relationshipId,
+        method: 'UPDATE',
+        write: () => _supabase
+            .from('coach_athlete_relationships')
+            .update({
+              'status': 'active',
+              'accepted_at': now.toIso8601String(),
+              'updated_at': now.toIso8601String(),
+            })
+            .eq('id', relationshipId),
+      );
+      if (!uploaded) {
+        throw StateError(
+          'Failed to accept coach-athlete relationship remotely',
+        );
+      }
 
       // Update local Drift database
-      await (_database.update(_database.coachAthleteRelationshipsTable)
-            ..where((t) => t.id.equals(relationshipId)))
-          .write(CoachAthleteRelationshipsTableCompanion(
-        status: const Value('active'),
-        acceptedAt: Value(now),
-        updatedAt: Value(now),
-      ));
+      await (_database.update(
+        _database.coachAthleteRelationshipsTable,
+      )..where((t) => t.id.equals(relationshipId))).write(
+        CoachAthleteRelationshipsTableCompanion(
+          status: const Value('active'),
+          acceptedAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
 
-      final result =
-          await (_database.select(_database.coachAthleteRelationshipsTable)
-                ..where((t) => t.id.equals(relationshipId)))
-              .getSingle();
+      final result = await (_database.select(
+        _database.coachAthleteRelationshipsTable,
+      )..where((t) => t.id.equals(relationshipId))).getSingle();
 
       return _mapToRelationshipDomain(result);
     } catch (e, stackTrace) {
@@ -544,33 +658,46 @@ class CoachRepository with SyncableRepository {
   /// Decline a relationship request
   /// Updates both local Drift database AND Supabase for cross-device sync
   Future<CoachAthleteRelationship> declineRelationship(
-      String relationshipId) async {
+    String relationshipId,
+  ) async {
     try {
       final now = DateTime.now();
 
       // Update Supabase first (for cross-device sync)
-      await _supabase
-          .from('coach_athlete_relationships')
-          .update({
-            'status': 'declined',
-            'declined_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-          })
-          .eq('id', relationshipId);
+      final uploaded = await _immediateRemoteWriteService.run(
+        repository: 'coach_athlete_relationships',
+        operation: 'decline',
+        recordId: relationshipId,
+        method: 'UPDATE',
+        write: () => _supabase
+            .from('coach_athlete_relationships')
+            .update({
+              'status': 'declined',
+              'declined_at': now.toIso8601String(),
+              'updated_at': now.toIso8601String(),
+            })
+            .eq('id', relationshipId),
+      );
+      if (!uploaded) {
+        throw StateError(
+          'Failed to decline coach-athlete relationship remotely',
+        );
+      }
 
       // Update local Drift database
-      await (_database.update(_database.coachAthleteRelationshipsTable)
-            ..where((t) => t.id.equals(relationshipId)))
-          .write(CoachAthleteRelationshipsTableCompanion(
-        status: const Value('declined'),
-        declinedAt: Value(now),
-        updatedAt: Value(now),
-      ));
+      await (_database.update(
+        _database.coachAthleteRelationshipsTable,
+      )..where((t) => t.id.equals(relationshipId))).write(
+        CoachAthleteRelationshipsTableCompanion(
+          status: const Value('declined'),
+          declinedAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
 
-      final result =
-          await (_database.select(_database.coachAthleteRelationshipsTable)
-                ..where((t) => t.id.equals(relationshipId)))
-              .getSingle();
+      final result = await (_database.select(
+        _database.coachAthleteRelationshipsTable,
+      )..where((t) => t.id.equals(relationshipId))).getSingle();
 
       return _mapToRelationshipDomain(result);
     } catch (e, stackTrace) {
@@ -587,33 +714,46 @@ class CoachRepository with SyncableRepository {
   /// Archive a relationship
   /// Updates both local Drift database AND Supabase for cross-device sync
   Future<CoachAthleteRelationship> archiveRelationship(
-      String relationshipId) async {
+    String relationshipId,
+  ) async {
     try {
       final now = DateTime.now();
 
       // Update Supabase first (for cross-device sync)
-      await _supabase
-          .from('coach_athlete_relationships')
-          .update({
-            'status': 'archived',
-            'archived_at': now.toIso8601String(),
-            'updated_at': now.toIso8601String(),
-          })
-          .eq('id', relationshipId);
+      final uploaded = await _immediateRemoteWriteService.run(
+        repository: 'coach_athlete_relationships',
+        operation: 'archive',
+        recordId: relationshipId,
+        method: 'UPDATE',
+        write: () => _supabase
+            .from('coach_athlete_relationships')
+            .update({
+              'status': 'archived',
+              'archived_at': now.toIso8601String(),
+              'updated_at': now.toIso8601String(),
+            })
+            .eq('id', relationshipId),
+      );
+      if (!uploaded) {
+        throw StateError(
+          'Failed to archive coach-athlete relationship remotely',
+        );
+      }
 
       // Update local Drift database
-      await (_database.update(_database.coachAthleteRelationshipsTable)
-            ..where((t) => t.id.equals(relationshipId)))
-          .write(CoachAthleteRelationshipsTableCompanion(
-        status: const Value('archived'),
-        archivedAt: Value(now),
-        updatedAt: Value(now),
-      ));
+      await (_database.update(
+        _database.coachAthleteRelationshipsTable,
+      )..where((t) => t.id.equals(relationshipId))).write(
+        CoachAthleteRelationshipsTableCompanion(
+          status: const Value('archived'),
+          archivedAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
 
-      final result =
-          await (_database.select(_database.coachAthleteRelationshipsTable)
-                ..where((t) => t.id.equals(relationshipId)))
-              .getSingle();
+      final result = await (_database.select(
+        _database.coachAthleteRelationshipsTable,
+      )..where((t) => t.id.equals(relationshipId))).getSingle();
 
       return _mapToRelationshipDomain(result);
     } catch (e, stackTrace) {
@@ -661,7 +801,8 @@ class CoachRepository with SyncableRepository {
                   coachUserId: record['coach_user_id'] as String,
                   athleteUserId: record['athlete_user_id'] as String,
                   status: RelationshipStatus.fromString(
-                      record['status'] as String? ?? 'pending'),
+                    record['status'] as String? ?? 'pending',
+                  ),
                   requestedBy: record['requested_by'] as String,
                   requestedAt: record['requested_at'] != null
                       ? DateTime.parse(record['requested_at'] as String)
@@ -705,7 +846,8 @@ class CoachRepository with SyncableRepository {
 
   /// Unsubscribe from relationship changes
   Future<void> unsubscribeFromRelationshipChanges(
-      RealtimeChannel channel) async {
+    RealtimeChannel channel,
+  ) async {
     try {
       await channel.unsubscribe();
       await _supabase.removeChannel(channel);
@@ -721,7 +863,8 @@ class CoachRepository with SyncableRepository {
 
   /// Sync a relationship from Supabase to local Drift database
   Future<void> _syncRelationshipToLocal(
-      CoachAthleteRelationship relationship) async {
+    CoachAthleteRelationship relationship,
+  ) async {
     try {
       final companion = CoachAthleteRelationshipsTableCompanion(
         id: Value(relationship.id),
@@ -753,7 +896,8 @@ class CoachRepository with SyncableRepository {
   /// Fetch all relationships for a user from Supabase and sync to local DB
   /// Call this on dashboard load to ensure local DB is up-to-date
   Future<List<CoachAthleteRelationship>> syncRelationshipsFromSupabase(
-      String userId) async {
+    String userId,
+  ) async {
     try {
       // Fetch relationships where user is coach OR athlete
       final response = await _supabase
@@ -771,8 +915,9 @@ class CoachRepository with SyncableRepository {
           id: r['id'] as String,
           coachUserId: r['coach_user_id'] as String,
           athleteUserId: r['athlete_user_id'] as String,
-          status:
-              RelationshipStatus.fromString(r['status'] as String? ?? 'pending'),
+          status: RelationshipStatus.fromString(
+            r['status'] as String? ?? 'pending',
+          ),
           requestedBy: r['requested_by'] as String,
           requestedAt: r['requested_at'] != null
               ? DateTime.parse(r['requested_at'] as String)
@@ -833,26 +978,36 @@ class CoachRepository with SyncableRepository {
         // Upsert into local coaches table
         await _database
             .into(_database.coachesTable)
-            .insertOnConflictUpdate(CoachesTableCompanion.insert(
-              id: r['id'] as String,
-              userId: r['user_id'] as String,
-              firstName: r['first_name'] as String,
-              lastName: r['last_name'] as String,
-              email: r['email'] as String,
-              bio: Value(r['bio'] as String?),
-              applicationStatus: Value(r['application_status'] as String? ?? 'pending'),
-              reviewedBy: Value(r['reviewed_by'] as String?),
-              reviewedAt: Value(r['reviewed_at'] != null
-                  ? DateTime.parse(r['reviewed_at'] as String)
-                  : null),
-              rejectionReason: Value(r['rejection_reason'] as String?),
-              createdAt: Value(r['created_at'] != null
-                  ? DateTime.parse(r['created_at'] as String)
-                  : now),
-              updatedAt: Value(r['updated_at'] != null
-                  ? DateTime.parse(r['updated_at'] as String)
-                  : now),
-            ));
+            .insertOnConflictUpdate(
+              CoachesTableCompanion.insert(
+                id: r['id'] as String,
+                userId: r['user_id'] as String,
+                firstName: r['first_name'] as String,
+                lastName: r['last_name'] as String,
+                email: r['email'] as String,
+                bio: Value(r['bio'] as String?),
+                applicationStatus: Value(
+                  r['application_status'] as String? ?? 'pending',
+                ),
+                reviewedBy: Value(r['reviewed_by'] as String?),
+                reviewedAt: Value(
+                  r['reviewed_at'] != null
+                      ? DateTime.parse(r['reviewed_at'] as String)
+                      : null,
+                ),
+                rejectionReason: Value(r['rejection_reason'] as String?),
+                createdAt: Value(
+                  r['created_at'] != null
+                      ? DateTime.parse(r['created_at'] as String)
+                      : now,
+                ),
+                updatedAt: Value(
+                  r['updated_at'] != null
+                      ? DateTime.parse(r['updated_at'] as String)
+                      : now,
+                ),
+              ),
+            );
       }
 
       _logger.info(
@@ -872,7 +1027,9 @@ class CoachRepository with SyncableRepository {
 
   /// Sync athlete profiles from Supabase to local database
   /// This should be called when loading the Coach Dashboard to ensure we have athlete names
-  Future<void> syncAthleteProfilesFromSupabase(List<String> athleteUserIds) async {
+  Future<void> syncAthleteProfilesFromSupabase(
+    List<String> athleteUserIds,
+  ) async {
     if (athleteUserIds.isEmpty) return;
 
     try {
@@ -892,14 +1049,16 @@ class CoachRepository with SyncableRepository {
         // We use UPDATE instead of INSERT because athlete profiles belong to
         // other users/devices and don't have a deviceId relevant to this device.
         // If the profile doesn't exist locally, we skip it (no error).
-        await (_database.update(_database.userProfilesTable)
-              ..where((t) => t.id.equals(id)))
-            .write(UserProfilesTableCompanion(
-          firstName: Value(r['first_name'] as String?),
-          lastName: Value(r['last_name'] as String?),
-          senderName: Value(r['sender_name'] as String?),
-          updatedAt: Value(DateTime.now()),
-        ));
+        await (_database.update(
+          _database.userProfilesTable,
+        )..where((t) => t.id.equals(id))).write(
+          UserProfilesTableCompanion(
+            firstName: Value(r['first_name'] as String?),
+            lastName: Value(r['last_name'] as String?),
+            senderName: Value(r['sender_name'] as String?),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
       }
 
       _logger.info(
@@ -938,7 +1097,10 @@ class CoachRepository with SyncableRepository {
           .eq('athlete_user_id', athleteUserId)
           .isFilter('activity_id', null)
           .isFilter('nutrition_plan_id', null)
-          .order('created_at', ascending: true); // Oldest first for chat display
+          .order(
+            'created_at',
+            ascending: true,
+          ); // Oldest first for chat display
 
       if (limit != null) {
         query = query.limit(limit);
@@ -1038,9 +1200,11 @@ class CoachRepository with SyncableRepository {
 
               // Check if this message is for our conversation
               final messageCoachUserId = newRecord['coach_user_id'] as String?;
-              final messageAthleteUserId = newRecord['athlete_user_id'] as String?;
+              final messageAthleteUserId =
+                  newRecord['athlete_user_id'] as String?;
 
-              if (messageCoachUserId != coachUserId || messageAthleteUserId != athleteUserId) {
+              if (messageCoachUserId != coachUserId ||
+                  messageAthleteUserId != athleteUserId) {
                 _logger.info(
                   'Message not for our conversation, skipping',
                   context: 'COACH_REPOSITORY',
@@ -1101,9 +1265,7 @@ class CoachRepository with SyncableRepository {
     _logger.info(
       'Realtime subscription created and subscribed',
       context: 'COACH_REPOSITORY',
-      data: {
-        'channelName': channelName,
-      },
+      data: {'channelName': channelName},
     );
 
     return channel;
@@ -1137,17 +1299,26 @@ class CoachRepository with SyncableRepository {
       final now = DateTime.now().toUtc();
 
       // Insert into Supabase first (this triggers realtime for other party)
-      await _supabase.from('coach_messages').insert({
-        'id': id,
-        'coach_user_id': coachUserId,
-        'athlete_user_id': athleteUserId,
-        'sender_user_id': senderUserId,
-        'message_text': messageText,
-        'is_read': false,
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-        // activity_id and nutrition_plan_id are NULL for general chat
-      });
+      final uploaded = await _immediateRemoteWriteService.run(
+        repository: 'coach_messages',
+        operation: 'send_chat_message',
+        recordId: id,
+        method: 'INSERT',
+        write: () => _supabase.from('coach_messages').insert({
+          'id': id,
+          'coach_user_id': coachUserId,
+          'athlete_user_id': athleteUserId,
+          'sender_user_id': senderUserId,
+          'message_text': messageText,
+          'is_read': false,
+          'created_at': now.toIso8601String(),
+          'updated_at': now.toIso8601String(),
+          // activity_id and nutrition_plan_id are NULL for general chat
+        }),
+      );
+      if (!uploaded) {
+        throw StateError('Failed to send chat message remotely');
+      }
 
       // Also save to local Drift database
       final companion = CoachMessagesTableCompanion.insert(
@@ -1185,44 +1356,55 @@ class CoachRepository with SyncableRepository {
 
   /// Get a relationship by ID (works for both coach and athlete perspective)
   Future<CoachAthleteRelationship?> getRelationshipById(
-      String relationshipId) async {
+    String relationshipId,
+  ) async {
     try {
       // Join with coaches and user_profiles tables to get coach display name
-      final query = _database
-          .select(_database.coachAthleteRelationshipsTable)
-          .join([
-        leftOuterJoin(
-          _database.coachesTable,
-          _database.coachesTable.userId.equalsExp(
-              _database.coachAthleteRelationshipsTable.coachUserId),
-        ),
-        leftOuterJoin(
-          _database.userProfilesTable,
-          _database.userProfilesTable.id.equalsExp(
-              _database.coachAthleteRelationshipsTable.coachUserId),
-        ),
-      ])
-        ..where(
-            _database.coachAthleteRelationshipsTable.id.equals(relationshipId));
+      final query =
+          _database.select(_database.coachAthleteRelationshipsTable).join([
+            leftOuterJoin(
+              _database.coachesTable,
+              _database.coachesTable.userId.equalsExp(
+                _database.coachAthleteRelationshipsTable.coachUserId,
+              ),
+            ),
+            leftOuterJoin(
+              _database.userProfilesTable,
+              _database.userProfilesTable.id.equalsExp(
+                _database.coachAthleteRelationshipsTable.coachUserId,
+              ),
+            ),
+          ])..where(
+            _database.coachAthleteRelationshipsTable.id.equals(relationshipId),
+          );
 
       final results = await query.get();
       if (results.isEmpty) return null;
 
       final row = results.first;
-      final relationship =
-          row.readTable(_database.coachAthleteRelationshipsTable);
+      final relationship = row.readTable(
+        _database.coachAthleteRelationshipsTable,
+      );
       final coachEntry = row.readTableOrNull(_database.coachesTable);
       final coachProfile = row.readTableOrNull(_database.userProfilesTable);
 
       // Also try to get athlete display name
-      final athleteProfile = await (_database.select(_database.userProfilesTable)
-            ..where((t) => t.id.equals(relationship.athleteUserId)))
-          .getSingleOrNull();
+      final athleteProfile =
+          await (_database.select(_database.userProfilesTable)
+                ..where((t) => t.id.equals(relationship.athleteUserId)))
+              .getSingleOrNull();
 
       return _mapToRelationshipDomain(
         relationship,
-        coachDisplayName: _getCoachDisplayName(coachEntry, coachProfile, relationship.coachUserId),
-        athleteDisplayName: _getDisplayNameFromProfile(athleteProfile, relationship.athleteUserId),
+        coachDisplayName: _getCoachDisplayName(
+          coachEntry,
+          coachProfile,
+          relationship.coachUserId,
+        ),
+        athleteDisplayName: _getDisplayNameFromProfile(
+          athleteProfile,
+          relationship.athleteUserId,
+        ),
       );
     } catch (e, stackTrace) {
       _logger.error(
@@ -1243,9 +1425,11 @@ class CoachRepository with SyncableRepository {
   }) async {
     try {
       var query = _database.select(_database.coachMessagesTable)
-        ..where((t) =>
-            t.coachUserId.equals(coachUserId) &
-            t.athleteUserId.equals(athleteUserId))
+        ..where(
+          (t) =>
+              t.coachUserId.equals(coachUserId) &
+              t.athleteUserId.equals(athleteUserId),
+        )
         ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]);
 
       if (limit != null) {
@@ -1267,12 +1451,14 @@ class CoachRepository with SyncableRepository {
 
   /// Get messages/comments for a nutrition plan
   Future<List<CoachMessage>> getMessagesForNutritionPlan(
-      String nutritionPlanId) async {
+    String nutritionPlanId,
+  ) async {
     try {
-      final results = await (_database.select(_database.coachMessagesTable)
-            ..where((t) => t.nutritionPlanId.equals(nutritionPlanId))
-            ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
-          .get();
+      final results =
+          await (_database.select(_database.coachMessagesTable)
+                ..where((t) => t.nutritionPlanId.equals(nutritionPlanId))
+                ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+              .get();
 
       return results.map(_mapToMessageDomain).toList();
     } catch (e, stackTrace) {
@@ -1289,10 +1475,11 @@ class CoachRepository with SyncableRepository {
   /// Get messages/comments for an activity
   Future<List<CoachMessage>> getMessagesForActivity(String activityId) async {
     try {
-      final results = await (_database.select(_database.coachMessagesTable)
-            ..where((t) => t.activityId.equals(activityId))
-            ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
-          .get();
+      final results =
+          await (_database.select(_database.coachMessagesTable)
+                ..where((t) => t.activityId.equals(activityId))
+                ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+              .get();
 
       return results.map(_mapToMessageDomain).toList();
     } catch (e, stackTrace) {
@@ -1311,12 +1498,15 @@ class CoachRepository with SyncableRepository {
     try {
       // User can be either coach or athlete in the conversation
       // Count messages where they are the recipient (not the sender) and unread
-      final results = await (_database.select(_database.coachMessagesTable)
-            ..where((t) =>
-                (t.coachUserId.equals(userId) | t.athleteUserId.equals(userId)) &
-                t.senderUserId.isNotValue(userId) &
-                t.isRead.equals(false)))
-          .get();
+      final results =
+          await (_database.select(_database.coachMessagesTable)..where(
+                (t) =>
+                    (t.coachUserId.equals(userId) |
+                        t.athleteUserId.equals(userId)) &
+                    t.senderUserId.isNotValue(userId) &
+                    t.isRead.equals(false),
+              ))
+              .get();
 
       return results.length;
     } catch (e, stackTrace) {
@@ -1345,18 +1535,27 @@ class CoachRepository with SyncableRepository {
       final now = DateTime.now().toUtc();
 
       // Insert into Supabase first (for cross-device sync and realtime)
-      await _supabase.from('coach_messages').insert({
-        'id': id,
-        'coach_user_id': coachUserId,
-        'athlete_user_id': athleteUserId,
-        'sender_user_id': senderUserId,
-        'message_text': messageText,
-        'nutrition_plan_id': nutritionPlanId,
-        'activity_id': activityId,
-        'is_read': false,
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-      });
+      final uploaded = await _immediateRemoteWriteService.run(
+        repository: 'coach_messages',
+        operation: 'send_message',
+        recordId: id,
+        method: 'INSERT',
+        write: () => _supabase.from('coach_messages').insert({
+          'id': id,
+          'coach_user_id': coachUserId,
+          'athlete_user_id': athleteUserId,
+          'sender_user_id': senderUserId,
+          'message_text': messageText,
+          'nutrition_plan_id': nutritionPlanId,
+          'activity_id': activityId,
+          'is_read': false,
+          'created_at': now.toIso8601String(),
+          'updated_at': now.toIso8601String(),
+        }),
+      );
+      if (!uploaded) {
+        throw StateError('Failed to send message remotely');
+      }
 
       // Also save to local Drift database
       final companion = CoachMessagesTableCompanion.insert(
@@ -1406,16 +1605,19 @@ class CoachRepository with SyncableRepository {
     try {
       // Mark all messages in this conversation as read where:
       // - The reader is not the sender (they're the recipient)
-      await (_database.update(_database.coachMessagesTable)
-            ..where((t) =>
+      await (_database.update(_database.coachMessagesTable)..where(
+            (t) =>
                 t.coachUserId.equals(coachUserId) &
                 t.athleteUserId.equals(athleteUserId) &
                 t.senderUserId.isNotValue(readerUserId) &
-                t.isRead.equals(false)))
-          .write(CoachMessagesTableCompanion(
-        isRead: const Value(true),
-        updatedAt: Value(DateTime.now()),
-      ));
+                t.isRead.equals(false),
+          ))
+          .write(
+            CoachMessagesTableCompanion(
+              isRead: const Value(true),
+              updatedAt: Value(DateTime.now()),
+            ),
+          );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to mark messages as read',
@@ -1430,9 +1632,9 @@ class CoachRepository with SyncableRepository {
   /// Delete a message (only sender can delete)
   Future<void> deleteMessage(String messageId) async {
     try {
-      await (_database.delete(_database.coachMessagesTable)
-            ..where((t) => t.id.equals(messageId)))
-          .go();
+      await (_database.delete(
+        _database.coachMessagesTable,
+      )..where((t) => t.id.equals(messageId))).go();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete message',
@@ -1467,7 +1669,9 @@ class CoachRepository with SyncableRepository {
       final codePrefix = code.substring(4); // Remove 'ATH-' prefix
 
       // First try locally from Drift
-      final localResults = await _database.select(_database.userProfilesTable).get();
+      final localResults = await _database
+          .select(_database.userProfilesTable)
+          .get();
       for (final user in localResults) {
         final cleanId = user.id.replaceAll('-', '').toUpperCase();
         if (cleanId.startsWith(codePrefix)) {
@@ -1514,9 +1718,13 @@ class CoachRepository with SyncableRepository {
   /// This is the primary method to determine coach status
   Future<bool> isUserApprovedCoach(String userId) async {
     try {
-      final result = await (_database.select(_database.coachesTable)
-            ..where((t) => t.userId.equals(userId) & t.applicationStatus.equals('approved')))
-          .getSingleOrNull();
+      final result =
+          await (_database.select(_database.coachesTable)..where(
+                (t) =>
+                    t.userId.equals(userId) &
+                    t.applicationStatus.equals('approved'),
+              ))
+              .getSingleOrNull();
 
       return result != null;
     } catch (e, stackTrace) {
@@ -1533,9 +1741,9 @@ class CoachRepository with SyncableRepository {
   /// Get the coach record for a user from local database (if they are a coach)
   Future<Coach?> getCoachRecordForUser(String userId) async {
     try {
-      final result = await (_database.select(_database.coachesTable)
-            ..where((t) => t.userId.equals(userId)))
-          .getSingleOrNull();
+      final result = await (_database.select(
+        _database.coachesTable,
+      )..where((t) => t.userId.equals(userId))).getSingleOrNull();
 
       if (result == null) return null;
 
@@ -1607,20 +1815,24 @@ class CoachRepository with SyncableRepository {
       final now = DateTime.now();
 
       // Insert into Supabase coaches table
-      await _supabase.from('coaches').insert({
-        'id': id,
-        'user_id': userId,
-        'first_name': firstName,
-        'last_name': lastName,
-        'email': email,
-        'bio': bio,
-        'application_status': 'pending',
-        'submitted_at': now.toIso8601String(),
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-      });
-
-      return true;
+      return await _immediateRemoteWriteService.run(
+        repository: repositoryKey,
+        operation: 'submit_application',
+        recordId: id,
+        method: 'INSERT',
+        write: () => _supabase.from('coaches').insert({
+          'id': id,
+          'user_id': userId,
+          'first_name': firstName,
+          'last_name': lastName,
+          'email': email,
+          'bio': bio,
+          'application_status': 'pending',
+          'submitted_at': now.toIso8601String(),
+          'created_at': now.toIso8601String(),
+          'updated_at': now.toIso8601String(),
+        }),
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to submit coach application',
@@ -1638,7 +1850,11 @@ class CoachRepository with SyncableRepository {
 
   /// Get coach display name, prioritizing coaches table over user_profiles
   /// Priority: coaches table (first_name + last_name) > user_profiles (firstName/lastName/senderName) > userId fallback
-  String? _getCoachDisplayName(CoachEntry? coachEntry, UserProfileEntry? profile, String userId) {
+  String? _getCoachDisplayName(
+    CoachEntry? coachEntry,
+    UserProfileEntry? profile,
+    String userId,
+  ) {
     // Priority 1: Try coaches table first (where coaches submit their application)
     if (coachEntry != null) {
       final firstName = coachEntry.firstName.trim();
@@ -1659,8 +1875,10 @@ class CoachRepository with SyncableRepository {
 
     // Priority 2: Fall back to user_profiles table
     if (profile != null) {
-      final hasFirstName = profile.firstName != null && profile.firstName!.trim().isNotEmpty;
-      final hasLastName = profile.lastName != null && profile.lastName!.trim().isNotEmpty;
+      final hasFirstName =
+          profile.firstName != null && profile.firstName!.trim().isNotEmpty;
+      final hasLastName =
+          profile.lastName != null && profile.lastName!.trim().isNotEmpty;
 
       if (hasFirstName && hasLastName) {
         return '${profile.firstName!.trim()} ${profile.lastName!.trim()}';
@@ -1693,8 +1911,10 @@ class CoachRepository with SyncableRepository {
     }
 
     // Priority 1: Full name (first + last)
-    final hasFirstName = profile.firstName != null && profile.firstName!.trim().isNotEmpty;
-    final hasLastName = profile.lastName != null && profile.lastName!.trim().isNotEmpty;
+    final hasFirstName =
+        profile.firstName != null && profile.firstName!.trim().isNotEmpty;
+    final hasLastName =
+        profile.lastName != null && profile.lastName!.trim().isNotEmpty;
 
     if (hasFirstName && hasLastName) {
       return '${profile.firstName!.trim()} ${profile.lastName!.trim()}';

@@ -32,10 +32,21 @@ class LowFuelRiskBadge extends StatelessWidget {
 
     for (final section in nutritionPlan.sections) {
       // Calculate actual carbs from food items in this section
+      // V2 template plans store foods in subPhases, not directly in section.foodItems
       int sectionActualCarbs = 0;
-      for (final food in section.foodItems) {
-        if (food.nutritionalInfo != null) {
-          sectionActualCarbs += food.nutritionalInfo!.carbs ?? 0;
+      if (section.hasSubPhases) {
+        for (final subPhase in section.subPhases!) {
+          for (final food in subPhase.foodItems) {
+            if (food.nutritionalInfo != null) {
+              sectionActualCarbs += food.nutritionalInfo!.carbs ?? 0;
+            }
+          }
+        }
+      } else {
+        for (final food in section.foodItems) {
+          if (food.nutritionalInfo != null) {
+            sectionActualCarbs += food.nutritionalInfo!.carbs ?? 0;
+          }
         }
       }
 

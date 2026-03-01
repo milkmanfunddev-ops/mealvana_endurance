@@ -11,7 +11,10 @@ import '../../domain/time_slot_assignment.dart';
 import '../../application/proportional_scaling_service.dart';
 import '../../application/by_hour_apportionment_service.dart';
 import '../../../auth/application/auth_service.dart';
+import '../../../auth/data/user_repository.dart';
+import '../../../auth/domain/user_preferences.dart';
 import '../../../activities/domain/activity_reminder.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../application/nutrition_plan_service.dart';
@@ -19,6 +22,7 @@ import '../../data/nutrition_plan_repository.dart';
 import '../../data/template_foods_repository.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
 import 'activity_detail_state.dart';
 
 part 'activity_detail_controller.g.dart';
@@ -37,6 +41,9 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// When set, the next food added via reapportion will be placed only in this hour.
   int? _pendingAddFoodHourIndex;
+
+  /// Cached gut training level from user profile, loaded in build().
+  GutTraining _cachedGutTraining = GutTraining.moderate;
 
   Future<NutritionPlanRepository> get _nutritionPlanRepository async =>
       await ref.read(nutritionPlanRepositoryProvider.future);
@@ -77,6 +84,17 @@ class ActivityDetailController extends _$ActivityDetailController {
         },
       );
       throw Exception('Activity not found');
+    }
+
+    // Cache gut training level from user profile
+    try {
+      final userRepo = await ref.read(userRepositoryProvider.future);
+      final profile = await userRepo.getUserProfile(userId);
+      if (profile != null) {
+        _cachedGutTraining = profile.gutTraining;
+      }
+    } catch (e) {
+      _logger.warning('Failed to load gut training, using default moderate: $e');
     }
 
     // Load nutrition plan from activity's nutritionPlanData field
@@ -190,6 +208,9 @@ class ActivityDetailController extends _$ActivityDetailController {
         deviceId: user.id,
         activity: updatedActivity,
       );
+
+      // Fire-and-forget write-back to TrainingPeaks (never blocks save)
+      unawaited(_pushToTrainingPeaks(user.id, updatedActivity, plan));
 
       DebugLogger.info('Nutrition plan saved to activity $activityId');
     } catch (e) {
@@ -337,6 +358,14 @@ class ActivityDetailController extends _$ActivityDetailController {
       FoodItemData enrichFood(FoodItemData food) {
         final tf = foodLookup[food.id];
         if (tf == null) return food;
+
+        // Derive timingCategory from template_foods DB fields
+        final derivedTimingCategory = TimingCategory.fromFoodProperties(
+          isLiquid: tf.isLiquid ?? false,
+          productType: tf.productType ?? 'real_food',
+          isElectrolyte: tf.isElectrolyte ?? false,
+        );
+
         return FoodItemData(
           id: food.id,
           name: food.name,
@@ -353,6 +382,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           isDrink: food.isDrink,
           templateId: food.templateId,
           scaleMultiplier: food.scaleMultiplier,
+          timingCategory: food.timingCategory ?? derivedTimingCategory,
         );
       }
 
@@ -389,6 +419,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     final categoryLower = category.toLowerCase();
     final sectionIdLower = sectionId.toLowerCase();
     final titleLower = sectionTitle.toLowerCase();
+
+    // Direct section ID match (e.g., category='during_run', sectionId='during_run')
+    if (sectionIdLower == categoryLower) return true;
 
     // Handle transition category (brick-specific)
     if (categoryLower == 'transition') {
@@ -439,6 +472,16 @@ class ActivityDetailController extends _$ActivityDetailController {
   /// Create a FoodItemData from a food object with optional custom amount
   FoodItemData _createFoodItemData(dynamic food, {double? customAmount}) {
     final multiplier = customAmount ?? food.servingAmount ?? 1.0;
+
+    // Derive timing category from product type for proper by-hour placement
+    final String productType = (food.productTypeId as String?) ?? 'real_food';
+    final timingCategory = TimingCategory.fromFoodProperties(
+      isLiquid: false, // User-added foods from picker are not liquids
+      productType: productType,
+      isElectrolyte: false,
+    );
+    final isDrink = timingCategory == TimingCategory.sipThroughout;
+
     return FoodItemData(
       id: const Uuid().v4(),
       name: food.name,
@@ -448,6 +491,8 @@ class ActivityDetailController extends _$ActivityDetailController {
       instructions: food.instructions,
       displayName: food.displayName,
       displayNamePlural: food.displayNamePlural,
+      isDrink: isDrink,
+      timingCategory: timingCategory,
       nutritionalInfo: NutritionalInfo(
         calories: ((food.caloriesPerServing ?? 0) * multiplier).toInt(),
         carbs: ((food.carbsPerServing ?? 0) * multiplier).toInt(),
@@ -500,10 +545,13 @@ class ActivityDetailController extends _$ActivityDetailController {
           ByHourData? updatedByHour = section.byHourData;
           if (updatedByHour != null) {
             final service = ByHourApportionmentService();
+            final activityType = currentState.activity?.activityType ?? ActivityType.running;
             updatedByHour = service.reapportion(
               existing: updatedByHour,
               currentFoodItems: updatedItems,
               targetHourIndex: _pendingAddFoodHourIndex,
+              gutTraining: _cachedGutTraining,
+              activityType: activityType,
             );
             _pendingAddFoodHourIndex = null;
           }
@@ -658,6 +706,12 @@ class ActivityDetailController extends _$ActivityDetailController {
               description: item.description,
               displayName: item.displayName,
               displayNamePlural: item.displayNamePlural,
+              displayOverride: item.displayOverride,
+              servingSize: item.servingSize,
+              isDrink: item.isDrink,
+              templateId: item.templateId,
+              scaleMultiplier: item.scaleMultiplier,
+              timingCategory: item.timingCategory,
               nutritionalInfo: NutritionalInfo(
                 calories: (currentNutrition.calories! * scaleFactor).round(),
                 carbs: (currentNutrition.carbs! * scaleFactor).round(),
@@ -779,9 +833,12 @@ class ActivityDetailController extends _$ActivityDetailController {
     if (targetSection.byHourData != null) return;
 
     final service = ByHourApportionmentService();
+    final activityType = currentState.activity?.activityType ?? ActivityType.running;
     final byHourData = service.apportion(
       foodItems: targetSection.foodItems,
       durationMinutes: durationMinutes,
+      gutTraining: _cachedGutTraining,
+      activityType: activityType,
     );
 
     if (byHourData == null) return;
@@ -820,6 +877,7 @@ class ActivityDetailController extends _$ActivityDetailController {
   Future<void> moveFoodToTimeSlot(
     String foodId,
     String category,
+    TimeSlot sourceTimeSlot,
     TimeSlot newTimeSlot,
   ) async {
     final currentState = state.value;
@@ -830,8 +888,12 @@ class ActivityDetailController extends _$ActivityDetailController {
     final updatedSections = currentPlan.sections.map((section) {
       if (_categoryMatchesSection(category, section.id, section.title) &&
           section.byHourData != null) {
+        var moved = false;
         final updatedAssignments = section.byHourData!.assignments.map((a) {
-          if (a.foodItemId == foodId) {
+          if (!moved &&
+              a.foodItemId == foodId &&
+              a.timeSlot == sourceTimeSlot) {
+            moved = true;
             return a.copyWith(timeSlot: newTimeSlot);
           }
           return a;
@@ -874,10 +936,20 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     try {
       final nutritionService = ref.read(nutritionPlanServiceProvider);
-      await nutritionService.regenerateForScheduleChange(activity);
+      final updatedActivity = await nutritionService.regenerateForScheduleChange(activity);
 
       // Refresh controller data from database
       ref.invalidateSelf();
+
+      // Fire-and-forget write-back to TrainingPeaks (never blocks regeneration)
+      final planData = updatedActivity.nutritionPlanData;
+      if (planData != null) {
+        final user = await _authService.getCurrentUser();
+        if (user != null) {
+          final plan = NutritionPlan.fromJson(planData);
+          unawaited(_pushToTrainingPeaks(user.id, updatedActivity, plan));
+        }
+      }
 
       _trackAnalytics('nutrition_plan_regenerated_after_schedule_change', {
         'activity_id': activity.id,
@@ -966,6 +1038,25 @@ class ActivityDetailController extends _$ActivityDetailController {
       await prefs.setBool(swipeHintShownKey, true);
     } catch (e) {
       // Silently fail
+    }
+  }
+
+  /// Fire-and-forget push of nutrition plan summary to TrainingPeaks.
+  /// Catches all errors — write-back must never block plan save.
+  Future<void> _pushToTrainingPeaks(
+    String userId,
+    Activity activity,
+    NutritionPlan plan,
+  ) async {
+    try {
+      final service = await ref.read(tpWritebackServiceProvider.future);
+      await service.pushPlanToWorkout(
+        userId: userId,
+        activity: activity,
+        plan: plan,
+      );
+    } catch (e) {
+      DebugLogger.error('TP write-back failed (non-blocking): $e');
     }
   }
 }

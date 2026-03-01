@@ -459,6 +459,8 @@ class NutritionPlanService {
     List<String>? likedFoods,
     List<String>? dislikedFoods,
     List<String>? willingToTryFoods,
+    int? durationMinutes,
+    String? gutTrainingLevel,
   }) async {
     try {
       _logger.info('Generating plan via V2 template system', context: 'NUTRITION_PLAN_SERVICE');
@@ -496,6 +498,8 @@ class NutritionPlanService {
         if (likedFoods != null) 'liked_foods': likedFoods,
         if (dislikedFoods != null) 'disliked_foods': dislikedFoods,
         if (willingToTryFoods != null) 'willing_to_try_foods': willingToTryFoods,
+        if (durationMinutes != null) 'duration_minutes': durationMinutes,
+        if (gutTrainingLevel != null) 'gut_training_level': gutTrainingLevel,
       };
 
       final response = await supabase.functions.invoke(

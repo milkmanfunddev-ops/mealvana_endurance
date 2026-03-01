@@ -1,7 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'dart:convert';
 import '../../domain/food.dart';
-import '../../domain/food_item.dart';
 import '../../data/food_repository.dart';
+import '../../data/template_foods_repository.dart';
 import '../providers/activity_detail_controller.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
@@ -188,14 +189,12 @@ class SwapFoodController extends _$SwapFoodController {
   /// Get product type ID for a food
   Future<String?> _getProductTypeId(String foodId) async {
     try {
-      // Try to find the food in all available sources
-      final foodRepository = ref.read(foodRepositoryProvider);
-      final genericFoodItems = await foodRepository.getAllFoods();
-
-      // Search in generic foods first
-      for (final foodItem in genericFoodItems) {
-        if (foodItem.id == foodId) {
-          return foodItem.productTypeId;
+      // Try template foods first (local Drift query)
+      final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
+      final allTemplateFoods = await templateFoodsRepo.getAllTemplateFoods();
+      for (final tf in allTemplateFoods) {
+        if (tf.id == foodId) {
+          return tf.productType;
         }
       }
 
@@ -224,20 +223,20 @@ class SwapFoodController extends _$SwapFoodController {
     }
   }
 
-  /// Load all foods for search (generic + user foods)
+  /// Load all foods for search (template foods + user foods)
   Future<List<Food>> _loadAllFoodsForSearch(String userId) async {
     try {
-      // Load generic foods
-      final foodRepository = ref.read(foodRepositoryProvider);
-      final genericFoodItems = await foodRepository.getAllFoods();
-      final genericFoods = genericFoodItems.map((item) => _convertFoodItemToFood(item)).toList();
+      // Load template foods from local Drift database
+      final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
+      final templateFoodEntries = await templateFoodsRepo.getAllTemplateFoods();
+      final templateFoods = templateFoodEntries.map(_convertTemplateFoodToFood).toList();
 
       // Load user foods
       final userFoodService = ref.read(userFoodCrudServiceProvider);
       final userFoods = await userFoodService.getUserFoods(userId);
 
       // Combine all foods
-      final allFoods = [...genericFoods, ...userFoods];      return allFoods;
+      return [...templateFoods, ...userFoods];
     } catch (e) {
       _logger.error('Error loading all foods for search',
         context: 'SwapFoodController',
@@ -246,34 +245,41 @@ class SwapFoodController extends _$SwapFoodController {
       return [];
     }
   }
-  
-  /// Convert FoodItem to Food domain object
-  Food _convertFoodItemToFood(FoodItem foodItem) {
-    // Convert FoodCategory enums to strings
-    final categories = foodItem.categories.map((cat) => cat.dbValue).toList();
+
+  /// Convert a TemplateFoodEntry (Drift) to a Food domain model
+  Food _convertTemplateFoodToFood(dynamic entry) {
+    List<String> categories = [];
+    try {
+      final parsed = jsonDecode(entry.categories as String);
+      if (parsed is List) {
+        categories = parsed.cast<String>();
+      }
+    } catch (_) {}
 
     return Food(
-      id: foodItem.id,
-      name: foodItem.name,
-      imageAddress: foodItem.imageAddress,
-      description: foodItem.description,
-      instructions: foodItem.instructions,
-      servingAmount: foodItem.servingAmount,
-      displayName: foodItem.displayName,
-      displayNamePlural: foodItem.displayNamePlural,
+      id: entry.id as String,
+      name: entry.displayName as String? ?? entry.name as String,
+      imageAddress: entry.imageAddress as String?,
+      description: entry.description as String?,
+      servingAmount: entry.servingAmount as double?,
+      displayName: entry.displayName as String?,
+      displayNamePlural: entry.displayNamePlural as String?,
       categories: categories,
-      servingUnit: foodItem.servingUnit,
-      servingUnitPlural: foodItem.servingUnitPlural,
-      servingQualifier: foodItem.servingQualifier,
-      beforeRunSuitable: foodItem.beforeRunSuitable,
-      duringRunSuitable: foodItem.duringRunSuitable,
-      carbsPerServing: foodItem.carbsPerServing,
-      proteinPerServing: foodItem.proteinPerServing,
-      fatPerServing: foodItem.fatPerServing,
-      caloriesPerServing: foodItem.caloriesPerServing,
-      fluidMlPerServing: foodItem.fluidMlPerServing,
-      sodiumMg: foodItem.sodiumMg,
-      productTypeId: foodItem.productTypeId,
+      servingUnit: entry.servingUnit as String?,
+      servingQualifier: entry.servingQualifier as String?,
+      servingSize: entry.servingSize as String?,
+      carbsPerServing: entry.carbsG as double?,
+      proteinPerServing: entry.proteinG as double?,
+      fatPerServing: entry.fatG as double?,
+      caloriesPerServing: entry.calories as int?,
+      sodiumMg: (entry.sodiumMg as double?)?.round(),
+      fluidMlPerServing: entry.fluidMl as double?,
+      caffeineMg: (entry.caffeineMg as double?)?.round(),
+      potassiumMg: (entry.potassiumMg as double?)?.round(),
+      productTypeId: entry.productType as String?,
+      requiresPreparation: entry.requiresPreparation as bool? ?? false,
+      maxServingsBefore: entry.maxServingsBefore as int?,
+      maxServingsDuring: entry.maxServingsDuring as int?,
     );
   }
   

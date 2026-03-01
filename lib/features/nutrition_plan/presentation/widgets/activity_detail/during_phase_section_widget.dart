@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/two_option_pill_slider.dart';
+import '../../../../../shared/domain/activity_type.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/time_slot_assignment.dart';
 import 'macro_summary_row.dart';
@@ -36,6 +37,7 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
     this.sportIcon,
     this.sportIconColor,
     this.showSwipeHint = false,
+    this.activityType = ActivityType.running,
   });
 
   final PlanSection section;
@@ -47,6 +49,9 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
   final String? subtitle;
   final IconData? sportIcon;
   final Color? sportIconColor;
+
+  /// Activity type for sport-aware UI (e.g., solid food warning badge on running)
+  final ActivityType activityType;
   final void Function(String foodId, String foodName, String category) onSwapFood;
   final void Function(String foodId, String category) onDeleteFood;
   final void Function(String foodId, String category, double newQuantity)
@@ -60,7 +65,8 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
   final void Function(String category, int durationMinutes) onInitializeByHour;
 
   /// Called when a food item is dragged to a new time slot
-  final void Function(String foodId, String category, TimeSlot newTimeSlot)
+  final void Function(
+          String foodId, String category, TimeSlot sourceTimeSlot, TimeSlot newTimeSlot)
       onMoveFoodToTimeSlot;
 
   final bool showSwipeHint;
@@ -120,7 +126,7 @@ class _DuringPhaseSectionWidgetState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(context),
-          if (widget.subtitle != null) ...[
+          if (widget.subtitle != null && !_showByHour) ...[
             const SizedBox(height: AppSpacing.xxs),
             Text(
               widget.subtitle!,
@@ -239,6 +245,7 @@ class _DuringPhaseSectionWidgetState
       sectionColor: widget.sectionColor,
       category: widget.category,
       useImperial: widget.useImperial,
+      activityType: widget.activityType,
       onSwapFood: widget.onSwapFood,
       onDeleteFood: widget.onDeleteFood,
       onUpdateQuantity: widget.onUpdateQuantity,

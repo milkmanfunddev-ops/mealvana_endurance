@@ -32,6 +32,7 @@ import 'tables/coach_athlete_relationships_table.dart';
 import 'tables/coach_messages_table.dart';
 import 'tables/template_foods_table.dart';
 import 'tables/templates_table.dart';
+import 'tables/tp_writeback_table.dart';
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
@@ -103,6 +104,9 @@ part 'app_database.g.dart';
     // Template system tables (read-only reference data)
     TemplateFoodsTable,
     TemplatesTable,
+
+    // TrainingPeaks write-back tracking
+    TpWritebackTable,
   ],
   daos: [
     UserDao,

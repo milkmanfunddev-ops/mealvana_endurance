@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../../shared/domain/activity_type.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../application/by_hour_apportionment_service.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/time_slot_assignment.dart';
 import 'dismissible_food_item.dart';
@@ -23,6 +25,7 @@ class TimeSlotRow extends StatelessWidget {
     required this.onDeleteFood,
     required this.onUpdateQuantity,
     required this.onMoveFoodToTimeSlot,
+    this.activityType = ActivityType.running,
   });
 
   final TimeSlot timeSlot;
@@ -32,11 +35,13 @@ class TimeSlotRow extends StatelessWidget {
   final String category;
   final bool useImperial;
   final bool isLastInHour;
+  final ActivityType activityType;
   final void Function(String foodId, String foodName, String category) onSwapFood;
   final void Function(String foodId, String category) onDeleteFood;
   final void Function(String foodId, String category, double newQuantity)
       onUpdateQuantity;
-  final void Function(String foodId, String category, TimeSlot newTimeSlot)
+  final void Function(
+          String foodId, String category, TimeSlot sourceTimeSlot, TimeSlot newTimeSlot)
       onMoveFoodToTimeSlot;
 
   @override
@@ -56,6 +61,7 @@ class TimeSlotRow extends StatelessWidget {
         onMoveFoodToTimeSlot(
           draggedAssignment.foodItemId,
           category,
+          draggedAssignment.timeSlot,
           timeSlot,
         );
       },
@@ -152,7 +158,7 @@ class TimeSlotRow extends StatelessWidget {
   FoodItemData _adjustFoodForDisplay(FoodItemData food, TimeSlotAssignment assignment) {
     if (assignment.adjustedQuantity == null) return food;
 
-    final originalQty = _parseQuantity(food);
+    final originalQty = ByHourApportionmentService.parseQuantity(food);
     if (originalQty <= 0) return food;
 
     final adjustedQty = assignment.adjustedQuantity!;
@@ -184,6 +190,7 @@ class TimeSlotRow extends StatelessWidget {
       isDrink: food.isDrink,
       templateId: food.templateId,
       scaleMultiplier: food.scaleMultiplier,
+      timingCategory: food.timingCategory,
       nutritionalInfo: ni != null
           ? NutritionalInfo(
               calories: ((ni.calories ?? 0) * scale).round(),
@@ -195,14 +202,6 @@ class TimeSlotRow extends StatelessWidget {
             )
           : null,
     );
-  }
-
-  double _parseQuantity(FoodItemData food) {
-    final match = RegExp(r'^([\d.]+)').firstMatch(food.quantity);
-    if (match != null) {
-      return double.tryParse(match.group(1)!) ?? 1.0;
-    }
-    return 1.0;
   }
 
   Widget _buildDraggableFoodItem(
@@ -263,7 +262,8 @@ class TimeSlotRow extends StatelessWidget {
 
 /// Individual food item within a time slot.
 ///
-/// Shows the food with an optional "Sip throughout hour" subtitle for drinks.
+/// Shows the food with an optional "Sip throughout hour" subtitle for drinks,
+/// and a "Hard to eat while running" badge for slow-consume foods during runs.
 /// Wraps DismissibleFoodItem for swipe-to-delete/swap functionality.
 class _TimeSlotFoodItem extends StatelessWidget {
   const _TimeSlotFoodItem({

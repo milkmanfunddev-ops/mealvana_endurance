@@ -29,7 +29,7 @@ class WeatherService {
   final AppLogger logger;
 
   /// In-memory cache: Map of cacheKey to WeatherForecast
-  /// Cache key format: "lat_lon_yyyy-MM-dd"
+  /// Cache key format: "lat_lon_yyyy-MM-ddTHH"
   final Map<String, WeatherForecast> _memoryCache = {};
 
   WeatherService({
@@ -42,10 +42,34 @@ class WeatherService {
     weatherRepository.clearDefaultForecasts().ignore();
   }
 
-  /// Generate cache key from location and date (date only, no time)
+  /// Normalize a datetime to the top of the hour.
+  DateTime _normalizeToHour(DateTime date) {
+    return DateTime(date.year, date.month, date.day, date.hour);
+  }
+
+  bool _isTodayOrFuture(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final requestedDay = DateTime(date.year, date.month, date.day);
+    return !requestedDay.isBefore(today);
+  }
+
+  bool _shouldBypassHistoricalCache(
+    WeatherForecast forecast,
+    DateTime activityDate,
+  ) {
+    // Historical cache is fine for truly past days, but not for same-day/future
+    // requests where users expect forecast data.
+    return forecast.source == WeatherSource.historical &&
+        _isTodayOrFuture(activityDate);
+  }
+
+  /// Generate cache key from location and activity hour (time-aware).
   String _getCacheKey(double latitude, double longitude, DateTime date) {
-    final dateOnly = DateTime(date.year, date.month, date.day);
-    return '${latitude.toStringAsFixed(4)}_${longitude.toStringAsFixed(4)}_${dateOnly.toIso8601String().substring(0, 10)}';
+    final hourOnly = _normalizeToHour(date);
+    final hourKey =
+        '${hourOnly.year.toString().padLeft(4, '0')}-${hourOnly.month.toString().padLeft(2, '0')}-${hourOnly.day.toString().padLeft(2, '0')}T${hourOnly.hour.toString().padLeft(2, '0')}';
+    return '${latitude.toStringAsFixed(4)}_${longitude.toStringAsFixed(4)}_$hourKey';
   }
 
   /// Get weather forecast for activity
@@ -77,7 +101,9 @@ class WeatherService {
           logger.warning(
             'No location available for weather',
             context: 'WeatherService',
-            data: {'failure_reason': locationService.getLastFailureReason()?.name},
+            data: {
+              'failure_reason': locationService.getLastFailureReason()?.name,
+            },
           );
           logger.warning('Could not get location, using default weather');
           return WeatherForecast.defaultForecast(activityDate);
@@ -95,12 +121,21 @@ class WeatherService {
         final cached = _memoryCache[cacheKey]!;
         // Verify it's still fresh (same expiry rules as database)
         if (cached.isFresh()) {
-          logger.debug(
-            'Weather cache hit (memory)',
-            context: 'WeatherService',
-            data: {'cache_key': cacheKey, 'source': cached.source.value},
-          );
-          return cached;
+          if (_shouldBypassHistoricalCache(cached, activityDate)) {
+            _memoryCache.remove(cacheKey);
+            logger.debug(
+              'Bypassing stale historical memory cache for same-day/future request',
+              context: 'WeatherService',
+              data: {'cache_key': cacheKey},
+            );
+          } else {
+            logger.debug(
+              'Weather cache hit (memory)',
+              context: 'WeatherService',
+              data: {'cache_key': cacheKey, 'source': cached.source.value},
+            );
+            return cached;
+          }
         }
       }
 
@@ -112,13 +147,21 @@ class WeatherService {
       );
 
       if (dbCached != null) {
-        logger.debug(
-          'Weather cache hit (db)',
-          context: 'WeatherService',
-          data: {'cache_key': cacheKey, 'source': dbCached.source.value},
-        );
-        _memoryCache[cacheKey] = dbCached;
-        return dbCached;
+        if (_shouldBypassHistoricalCache(dbCached, activityDate)) {
+          logger.debug(
+            'Bypassing stale historical DB cache for same-day/future request',
+            context: 'WeatherService',
+            data: {'cache_key': cacheKey},
+          );
+        } else {
+          logger.debug(
+            'Weather cache hit (db)',
+            context: 'WeatherService',
+            data: {'cache_key': cacheKey, 'source': dbCached.source.value},
+          );
+          _memoryCache[cacheKey] = dbCached;
+          return dbCached;
+        }
       }
 
       // Fetch from API (third level)
@@ -154,7 +197,11 @@ class WeatherService {
 
       return forecast;
     } catch (e, stackTrace) {
-      logger.error('Error getting weather forecast', error: e, stackTrace: stackTrace);
+      logger.error(
+        'Error getting weather forecast',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return WeatherForecast.defaultForecast(activityDate);
     }
   }
@@ -189,7 +236,9 @@ class WeatherService {
       );
 
       if (response.status != 200) {
-        logger.warning('Weather API returned non-200 status: ${response.status}');
+        logger.warning(
+          'Weather API returned non-200 status: ${response.status}',
+        );
         return WeatherForecast.defaultForecast(activityDate);
       }
 
@@ -212,7 +261,11 @@ class WeatherService {
       );
       return forecast;
     } catch (e, stackTrace) {
-      logger.error('Error fetching weather from API', error: e, stackTrace: stackTrace);
+      logger.error(
+        'Error fetching weather from API',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return WeatherForecast.defaultForecast(activityDate);
     }
   }

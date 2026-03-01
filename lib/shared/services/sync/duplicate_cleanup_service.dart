@@ -74,7 +74,7 @@ class DuplicateCleanupService {
       totalDuplicatesDeleted += await _cleanUserProfilesDuplicates(userId);
 
       if (totalDuplicatesDeleted > 0) {
-        _logger.warning(
+        _logger.info(
           'Cleaned duplicate records from Drift',
           context: 'DUPLICATE_CLEANUP',
           data: {
@@ -137,7 +137,7 @@ class DuplicateCleanupService {
         final id = duplicate.data['id'].toString();
         final count = duplicate.data['count'] as int;
 
-        _logger.warning(
+        _logger.debug(
           'Found duplicate records in $tableName',
           context: 'DUPLICATE_CLEANUP',
           data: {
@@ -171,7 +171,7 @@ class DuplicateCleanupService {
             [rowid],
           );
 
-          _logger.warning(
+          _logger.debug(
             'Deleted duplicate record from $tableName',
             context: 'DUPLICATE_CLEANUP',
             data: {
@@ -187,7 +187,7 @@ class DuplicateCleanupService {
       }
 
       if (deletedCount > 0) {
-        _logger.warning(
+        _logger.info(
           'Cleaned duplicates from $tableName',
           context: 'DUPLICATE_CLEANUP',
           data: {
@@ -236,7 +236,7 @@ class DuplicateCleanupService {
         final id = duplicate.data['id'].toString();
         final count = duplicate.data['count'] as int;
 
-        _logger.warning(
+        _logger.debug(
           'Found duplicate users records',
           context: 'DUPLICATE_CLEANUP',
           data: {'id': id, 'count': count},
@@ -266,7 +266,7 @@ class DuplicateCleanupService {
             [rowid],
           );
 
-          _logger.warning(
+          _logger.debug(
             'Deleted duplicate user',
             context: 'DUPLICATE_CLEANUP',
             data: {
@@ -290,7 +290,7 @@ class DuplicateCleanupService {
       final count = needsUploadCount.data['count'] as int;
 
       if (count > 1) {
-        _logger.warning(
+        _logger.info(
           'Multiple users need upload, keeping only most recent',
           context: 'DUPLICATE_CLEANUP',
           data: {'count': count},

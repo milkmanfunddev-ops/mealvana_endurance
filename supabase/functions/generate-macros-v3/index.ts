@@ -158,25 +158,30 @@ function calculatePreWorkoutMacros(
   const baseSodium = sweatSodiumCat === 'low' ? 300 : sweatSodiumCat === 'medium' ? 450 : 600;
   const envBump = (envLabel === 'hot' || envLabel === 'very_hot') ? 100 : 0;
 
+  // Per-window sodium: meal, snack, top_up
+  const mealSodium = baseSodium + envBump;
+  const snackSodium = Math.round((baseSodium + envBump) * 0.5);
+  const topUpSodium = envBump + 100;
+
   if (hoursBefore >= 2.5) {
-    // Full meal (≥2.5 hours before)
+    // Full meal (≥2.5 hours before) — 3 eating windows: meal + snack + top_up
     protein = Math.round(weightKg * 0.25);
     fat = Math.round(weightKg * 0.4);
-    sodium = baseSodium + envBump;
+    sodium = mealSodium + snackSodium + topUpSodium;
     hydration = Math.round(weightKg * 6.5); // 6-7 ml/kg midpoint
     mealType = 'full_meal';
   } else if (hoursBefore >= 1.0) {
-    // Snack (1-2.5 hours before)
+    // Snack (1-2.5 hours before) — 2 eating windows: snack + top_up
     protein = Math.round(weightKg * 0.15);
     fat = 5;
-    sodium = Math.round((baseSodium + envBump) * 0.5);
+    sodium = snackSodium + topUpSodium;
     hydration = Math.round(weightKg * 5.5); // 5-6 ml/kg midpoint
     mealType = 'snack';
   } else {
-    // Top-up (<1 hour before)
+    // Top-up (<1 hour before) — 1 eating window: top_up only
     protein = 0;
     fat = 0;
-    sodium = envBump + 100;
+    sodium = topUpSodium;
     hydration = 250; // 200-300ml fixed midpoint
     mealType = 'top_up';
   }

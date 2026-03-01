@@ -1,3 +1,50 @@
+/// Timing category for by-hour apportionment algorithm.
+///
+/// Derived from template_foods DB fields (productType, isElectrolyte, isLiquid).
+/// Controls placement rules: quiet zone, spacing, end cutoff, etc.
+enum TimingCategory {
+  /// Liquids sipped throughout the hour (sports drinks, water)
+  sipThroughout,
+
+  /// Quick-consume items (gels, chews) - placed after quiet zone
+  quickConsume,
+
+  /// Slow-consume items (bars, real food) - placed after quiet zone
+  slowConsume,
+
+  /// Electrolyte supplements - only for activities >= 90 min
+  electrolyte;
+
+  /// Derive timing category from template_foods DB fields.
+  ///
+  /// Priority: Supplements first, then liquids, then electrolytes,
+  /// then gels/chews, then everything else.
+  static TimingCategory fromFoodProperties({
+    required bool isLiquid,
+    required String productType,
+    required bool isElectrolyte,
+  }) {
+    // Supplements (tablet/shot/salt) are discrete electrolyte events.
+    if (productType == 'supplement') {
+      return TimingCategory.electrolyte;
+    }
+    // Liquids are sipped throughout.
+    if (isLiquid ||
+        productType == 'sports_drink' ||
+        productType == 'beverage') {
+      return TimingCategory.sipThroughout;
+    }
+    // Non-supplement electrolyte items.
+    if (isElectrolyte) return TimingCategory.electrolyte;
+    // Quick-consume
+    if (productType == 'gel' || productType == 'chew') {
+      return TimingCategory.quickConsume;
+    }
+    // Everything else is slow-consume
+    return TimingCategory.slowConsume;
+  }
+}
+
 /// Data model for food items in nutrition plans
 /// Used for expandable food items with details
 class FoodItemData {
@@ -15,8 +62,10 @@ class FoodItemData {
     this.displayOverride,
     this.servingSize,
     this.isDrink = false,
+    this.isIndivisible = false,
     this.templateId,
     this.scaleMultiplier,
+    this.timingCategory,
   });
 
   final String id;
@@ -35,11 +84,19 @@ class FoodItemData {
   /// Whether this item is a drink (vs food) - used for UI distinction
   final bool isDrink;
 
+  /// Whether this item is indivisible (sealed packets, tablets, etc.)
+  /// When true, quantity must always be a whole number.
+  final bool isIndivisible;
+
   /// Template ID this food came from (for tracking in template-based plans)
   final String? templateId;
 
   /// Scale multiplier applied during proportional scaling (for UX)
   final double? scaleMultiplier;
+
+  /// Timing category for by-hour placement. Derived from template_foods fields.
+  /// Nullable for backward compat with old saved plans (falls back to isDrink heuristic).
+  final TimingCategory? timingCategory;
 
   /// Get the full image URL for this food item data
   /// Returns Open Food Facts URLs directly, or constructs S3 URL for other images
@@ -64,7 +121,8 @@ class FoodItemData {
       id: json['id'] as String,
       name: json['name'] as String,
       quantity: json['quantity'] as String,
-      imageAddress: json['imageAddress'] as String? ?? json['image_address'] as String?,
+      imageAddress:
+          json['imageAddress'] as String? ?? json['image_address'] as String?,
       description: json['description'] as String?,
       timing: json['timing'] as String?,
       instructions: json['instructions'] as String?,
@@ -74,10 +132,21 @@ class FoodItemData {
       displayName: json['displayName'] as String?,
       displayNamePlural: json['displayNamePlural'] as String?,
       displayOverride: json['displayOverride'] as String?,
-      servingSize: json['servingSize'] as String? ?? json['serving_size'] as String?,
+      servingSize:
+          json['servingSize'] as String? ?? json['serving_size'] as String?,
       isDrink: json['isDrink'] as bool? ?? json['is_drink'] as bool? ?? false,
-      templateId: json['templateId'] as String? ?? json['template_id'] as String?,
-      scaleMultiplier: (json['scaleMultiplier'] as num?)?.toDouble() ?? (json['scale_multiplier'] as num?)?.toDouble(),
+      isIndivisible:
+          json['isIndivisible'] as bool? ??
+          json['is_indivisible'] as bool? ??
+          false,
+      templateId:
+          json['templateId'] as String? ?? json['template_id'] as String?,
+      scaleMultiplier:
+          (json['scaleMultiplier'] as num?)?.toDouble() ??
+          (json['scale_multiplier'] as num?)?.toDouble(),
+      timingCategory: _timingCategoryFromJson(
+        json['timingCategory'] as String?,
+      ),
     );
   }
 
@@ -98,7 +167,10 @@ class FoodItemData {
 
     return FoodItemData(
       id: json['food_id'] as String,
-      name: json['display_name'] as String? ?? json['food_name'] as String? ?? 'Unknown Food',
+      name:
+          json['display_name'] as String? ??
+          json['food_name'] as String? ??
+          'Unknown Food',
       quantity: json['quantity']?.toString() ?? '1',
       imageAddress: json['image_address'] as String?,
       description: json['description'] as String?,
@@ -108,8 +180,12 @@ class FoodItemData {
       displayNamePlural: json['display_name_plural'] as String?,
       servingSize: json['serving_size'] as String?,
       isDrink: json['is_drink'] as bool? ?? false,
+      isIndivisible: json['is_indivisible'] as bool? ?? false,
       templateId: json['template_id'] as String?,
       scaleMultiplier: (json['scale_multiplier'] as num?)?.toDouble(),
+      timingCategory: _timingCategoryFromJson(
+        json['timing_category'] as String?,
+      ),
     );
   }
 
@@ -129,13 +205,38 @@ class FoodItemData {
       'displayOverride': displayOverride,
       'servingSize': servingSize,
       'isDrink': isDrink,
+      'isIndivisible': isIndivisible,
       'templateId': templateId,
       'scaleMultiplier': scaleMultiplier,
+      if (timingCategory != null) 'timingCategory': timingCategory!.name,
     };
   }
 
   @override
-  String toString() => 'FoodItemData(id: $id, name: $name, quantity: $quantity)';
+  String toString() =>
+      'FoodItemData(id: $id, name: $name, quantity: $quantity)';
+}
+
+/// Parse TimingCategory from JSON string.
+/// Handles both camelCase ('sipThroughout') and snake_case ('sip_throughout').
+TimingCategory? _timingCategoryFromJson(String? value) {
+  if (value == null) return null;
+  // Try exact match first (camelCase from client)
+  for (final tc in TimingCategory.values) {
+    if (tc.name == value) return tc;
+  }
+  // Try snake_case match (from server edge function)
+  switch (value) {
+    case 'sip_throughout':
+      return TimingCategory.sipThroughout;
+    case 'quick_consume':
+      return TimingCategory.quickConsume;
+    case 'slow_consume':
+      return TimingCategory.slowConsume;
+    case 'electrolyte':
+      return TimingCategory.electrolyte;
+  }
+  return null;
 }
 
 /// Nutritional information for food items

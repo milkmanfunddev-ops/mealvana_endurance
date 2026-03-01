@@ -130,6 +130,7 @@ class CyclingTabContent extends ConsumerWidget {
           onSunChanged: controller.updateSunExposure,
           isIndoor: isIndoor,
           showWindAndSun: false,
+          useImperial: formState.unitSystem == UnitSystem.imperial,
           isLoadingWeather: formState.isLoadingWeather,
           onFetchWeather: controller.fetchWeatherForecast,
           weatherSource: formState.weatherForecast?.source,

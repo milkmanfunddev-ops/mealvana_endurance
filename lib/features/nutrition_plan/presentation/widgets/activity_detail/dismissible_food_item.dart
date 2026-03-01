@@ -16,6 +16,7 @@ class DismissibleFoodItem extends StatelessWidget {
     required this.onDelete,
     required this.onQuantityChange,
     this.showSwipeHint = false,
+    this.useImperial = true,
   });
 
   final FoodItemData food;
@@ -24,6 +25,7 @@ class DismissibleFoodItem extends StatelessWidget {
   final VoidCallback onDelete;
   final ValueChanged<double> onQuantityChange;
   final bool showSwipeHint;
+  final bool useImperial;
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +124,7 @@ class DismissibleFoodItem extends StatelessWidget {
         onRemove: onDelete,
         showSwipeHint: showSwipeHint,
         onQuantityChange: onQuantityChange,
+        useImperial: useImperial,
       ),
     );
   }

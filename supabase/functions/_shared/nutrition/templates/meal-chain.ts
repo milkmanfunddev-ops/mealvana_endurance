@@ -83,6 +83,10 @@ function hasConflict(
 /**
  * Select templates for each active sub-phase using the meal chain algorithm.
  *
+ * When multiple non-conflicting templates exist for a sub-phase, the one with
+ * the lowest total sodium is preferred (sodium as tiebreaker — carbs are
+ * optimized during scaling, so template selection prioritizes lower sodium).
+ *
  * @param availableTemplates - All templates filtered by diet/allergen
  * @param activeSubPhases - Which sub-phases need templates (e.g., ['meal', 'snack', 'top_up'])
  * @returns Map of sub-phase type to selected template (null if no valid template found)
@@ -111,24 +115,29 @@ export function selectTemplateChain(
 
     console.log(`[MEAL-CHAIN] Selecting for ${subPhase} (meal_type=${mealType}): ${candidates.length} candidates`);
 
-    // Find first non-conflicting template
-    let selected: Template | null = null;
+    // Collect all non-conflicting candidates
+    const nonConflicting: Template[] = [];
     for (const candidate of candidates) {
       if (!hasConflict(candidate, selectedTemplates)) {
-        selected = candidate;
-        break;
+        nonConflicting.push(candidate);
       }
     }
 
-    if (selected) {
-      console.log(`[MEAL-CHAIN] Selected: ${selected.name} (${selected.base_category})`);
+    let selected: Template | null = null;
+
+    if (nonConflicting.length > 0) {
+      // Sodium tiebreaker: pick the non-conflicting template with lowest sodium
+      nonConflicting.sort((a, b) => a.total_sodium_mg - b.total_sodium_mg);
+      selected = nonConflicting[0];
+      console.log(`[MEAL-CHAIN] Selected: ${selected.name} (${selected.base_category}, sodium=${selected.total_sodium_mg}mg) from ${nonConflicting.length} non-conflicting`);
       selectedTemplates.push(selected);
     } else {
       console.log(`[MEAL-CHAIN] No non-conflicting template found for ${subPhase}`);
-      // If no conflict-free option exists, pick the first candidate anyway
+      // If no conflict-free option exists, pick the lowest-sodium candidate anyway
       if (candidates.length > 0) {
-        selected = candidates[0];
-        console.log(`[MEAL-CHAIN] Fallback to first available: ${selected.name}`);
+        const sorted = [...candidates].sort((a, b) => a.total_sodium_mg - b.total_sodium_mg);
+        selected = sorted[0];
+        console.log(`[MEAL-CHAIN] Fallback to lowest-sodium: ${selected.name} (sodium=${selected.total_sodium_mg}mg)`);
         selectedTemplates.push(selected);
       }
     }

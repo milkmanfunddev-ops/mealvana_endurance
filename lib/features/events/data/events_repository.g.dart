@@ -53,4 +53,4 @@ final class EventsRepositoryProvider
   }
 }
 
-String _$eventsRepositoryHash() => r'414b53aab7bdeabe501560b0439570e13acbf23a';
+String _$eventsRepositoryHash() => r'c4deb1b5d5c148335e82b82d578120850016c8c7';

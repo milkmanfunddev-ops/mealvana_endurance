@@ -55,19 +55,19 @@ class DataSyncService {
     required CoachSyncHandler coachSyncHandler,
     required UserSyncHandler userSyncHandler,
     required FoodPreferenceSyncHandler foodPreferenceSyncHandler,
-  })  : _ref = ref,
-        _supabase = supabase,
-        _database = database,
-        _logger = logger,
-        _foodRepository = foodRepository,
-        _carbLoadingFoodSyncService = carbLoadingFoodSyncService,
-        _duplicateCleanupService = duplicateCleanupService,
-        _activitySyncHandler = activitySyncHandler,
-        _eventSyncHandler = eventSyncHandler,
-        _carbLoadingSyncHandler = carbLoadingSyncHandler,
-        _coachSyncHandler = coachSyncHandler,
-        _userSyncHandler = userSyncHandler,
-        _foodPreferenceSyncHandler = foodPreferenceSyncHandler;
+  }) : _ref = ref,
+       _supabase = supabase,
+       _database = database,
+       _logger = logger,
+       _foodRepository = foodRepository,
+       _carbLoadingFoodSyncService = carbLoadingFoodSyncService,
+       _duplicateCleanupService = duplicateCleanupService,
+       _activitySyncHandler = activitySyncHandler,
+       _eventSyncHandler = eventSyncHandler,
+       _carbLoadingSyncHandler = carbLoadingSyncHandler,
+       _coachSyncHandler = coachSyncHandler,
+       _userSyncHandler = userSyncHandler,
+       _foodPreferenceSyncHandler = foodPreferenceSyncHandler;
 
   final Ref _ref;
   final SupabaseClient _supabase;
@@ -102,10 +102,22 @@ class DataSyncService {
       await _userSyncHandler.syncUsers(userId);
 
       // STEP 1: CRITICAL - Upload dirty records FIRST to prevent data loss
-      await uploadDirtyRecords(userId);
+      final uploadResults = await uploadDirtyRecords(userId);
+      if (_hasUploadFailures(uploadResults)) {
+        final failedTables = _failedUploadTables(uploadResults);
+        _logger.warning(
+          'Blocking download because dirty upload failed',
+          context: 'DATA_SYNC',
+          data: {'userId': userId, 'failedTables': failedTables},
+        );
+        return false;
+      }
 
       // STEP 2: Try edge function for fast parallel download
-      final edgeFunctionSuccess = await _tryEdgeFunctionSync(userId, lastSyncTimestamp);
+      final edgeFunctionSuccess = await _tryEdgeFunctionSync(
+        userId,
+        lastSyncTimestamp,
+      );
 
       if (edgeFunctionSuccess) {
         _invalidateCalendarProviders();
@@ -116,7 +128,10 @@ class DataSyncService {
       await _clientSideDownload(userId);
 
       // Update timestamp on successful client-side sync too
-      await prefs.setString('last_sync_timestamp_$userId', DateTime.now().toIso8601String());
+      await prefs.setString(
+        'last_sync_timestamp_$userId',
+        DateTime.now().toIso8601String(),
+      );
 
       _invalidateCalendarProviders();
       return true;
@@ -158,33 +173,50 @@ class DataSyncService {
       await _duplicateCleanupService.cleanAllDuplicates(userId);
 
       // Collect dirty records from all tables
-      final dirtyUserProfiles = await (_database.select(_database.userProfilesTable)
-            ..where((tbl) => tbl.needsUpload.equals(true) & tbl.id.equals(userId)))
-          .get();
-      final dirtyUserProfile = dirtyUserProfiles.isNotEmpty ? dirtyUserProfiles.first : null;
+      final dirtyUserProfiles =
+          await (_database.select(_database.userProfilesTable)..where(
+                (tbl) => tbl.needsUpload.equals(true) & tbl.id.equals(userId),
+              ))
+              .get();
+      final dirtyUserProfile = dirtyUserProfiles.isNotEmpty
+          ? dirtyUserProfiles.first
+          : null;
 
-      final dirtyActivities = await (_database.select(_database.activitiesTable)
-            ..where((tbl) => tbl.needsUpload.equals(true) & tbl.userId.equals(userId)))
-          .get();
+      final dirtyActivities =
+          await (_database.select(_database.activitiesTable)..where(
+                (tbl) =>
+                    tbl.needsUpload.equals(true) & tbl.userId.equals(userId),
+              ))
+              .get();
 
-      final dirtyEvents = await (_database.select(_database.eventsTable)
-            ..where((tbl) => tbl.needsUpload.equals(true) & tbl.userId.equals(userId)))
-          .get();
+      final dirtyEvents =
+          await (_database.select(_database.eventsTable)..where(
+                (tbl) =>
+                    tbl.needsUpload.equals(true) & tbl.userId.equals(userId),
+              ))
+              .get();
 
-      final dirtyCarbLoadingPlans = await (_database.select(_database.carbLoadingPlansTable)
-            ..where((tbl) => tbl.needsUpload.equals(true) & tbl.userId.equals(userId)))
-          .get();
+      final dirtyCarbLoadingPlans =
+          await (_database.select(_database.carbLoadingPlansTable)..where(
+                (tbl) =>
+                    tbl.needsUpload.equals(true) & tbl.userId.equals(userId),
+              ))
+              .get();
 
-      final dirtyCarbLoadingDays = await (_database.select(_database.carbLoadingDaysTable).join([
-        innerJoin(
-          _database.carbLoadingPlansTable,
-          _database.carbLoadingPlansTable.id.equalsExp(_database.carbLoadingDaysTable.carbLoadingPlanId),
-        )
-      ])
-            ..where(_database.carbLoadingDaysTable.needsUpload.equals(true) &
-                _database.carbLoadingPlansTable.userId.equals(userId)))
-          .map((row) => row.readTable(_database.carbLoadingDaysTable))
-          .get();
+      final dirtyCarbLoadingDays =
+          await (_database.select(_database.carbLoadingDaysTable).join([
+                innerJoin(
+                  _database.carbLoadingPlansTable,
+                  _database.carbLoadingPlansTable.id.equalsExp(
+                    _database.carbLoadingDaysTable.carbLoadingPlanId,
+                  ),
+                ),
+              ])..where(
+                _database.carbLoadingDaysTable.needsUpload.equals(true) &
+                    _database.carbLoadingPlansTable.userId.equals(userId),
+              ))
+              .map((row) => row.readTable(_database.carbLoadingDaysTable))
+              .get();
 
       // User foods use raw queries
       List<QueryRow> dirtyUserFoods = const [];
@@ -207,7 +239,8 @@ class DataSyncService {
           .get();
 
       // Check if there are any dirty records for edge function
-      final hasEdgeFunctionRecords = dirtyActivities.isNotEmpty ||
+      final hasEdgeFunctionRecords =
+          dirtyActivities.isNotEmpty ||
           dirtyEvents.isNotEmpty ||
           dirtyCarbLoadingPlans.isNotEmpty ||
           dirtyCarbLoadingDays.isNotEmpty ||
@@ -263,13 +296,15 @@ class DataSyncService {
       final dirtyRecords = <String, dynamic>{};
 
       if (dirtyActivities.isNotEmpty) {
-        dirtyRecords['activities'] =
-            dirtyActivities.map((a) => _activitySyncHandler.activityToJson(a)).toList();
+        dirtyRecords['activities'] = dirtyActivities
+            .map((a) => _activitySyncHandler.activityToJson(a))
+            .toList();
       }
 
       if (dirtyEvents.isNotEmpty) {
-        dirtyRecords['events'] =
-            dirtyEvents.map((e) => _eventSyncHandler.eventToJson(e)).toList();
+        dirtyRecords['events'] = dirtyEvents
+            .map((e) => _eventSyncHandler.eventToJson(e))
+            .toList();
       }
 
       if (dirtyCarbLoadingPlans.isNotEmpty) {
@@ -285,20 +320,21 @@ class DataSyncService {
       }
 
       if (dirtyUserFoods.isNotEmpty) {
-        dirtyRecords['user_foods'] = dirtyUserFoods.map((row) => row.data).toList();
+        dirtyRecords['user_foods'] = dirtyUserFoods
+            .map((row) => row.data)
+            .toList();
       }
 
       if (dirtyFeedback.isNotEmpty) {
-        dirtyRecords['feedback'] = dirtyFeedback.map((row) => row.data).toList();
+        dirtyRecords['feedback'] = dirtyFeedback
+            .map((row) => row.data)
+            .toList();
       }
 
       // Call upload-all-data edge function
       final response = await _supabase.functions.invoke(
         'upload-all-data',
-        body: {
-          'user_id': userId,
-          'dirty_records': dirtyRecords,
-        },
+        body: {'user_id': userId, 'dirty_records': dirtyRecords},
       );
 
       if (response.status != 200) {
@@ -335,7 +371,7 @@ class DataSyncService {
         error: e,
         stackTrace: stackTrace,
       );
-      return uploadResults;
+      rethrow;
     }
   }
 
@@ -343,9 +379,9 @@ class DataSyncService {
   Future<bool> needsFullSync(String userId) async {
     try {
       // Check 1: User profile exists?
-      final profileCount = await (_database.select(_database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .get();
+      final profileCount = await (_database.select(
+        _database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).get();
 
       if (profileCount.isEmpty) {
         return true;
@@ -388,17 +424,26 @@ class DataSyncService {
   // ============================================================================
 
   /// Try to sync using the edge function with timeout.
-  Future<bool> _tryEdgeFunctionSync(String userId, String? lastSyncTimestamp) async {
+  Future<bool> _tryEdgeFunctionSync(
+    String userId,
+    String? lastSyncTimestamp,
+  ) async {
     try {
       final response = await _supabase.functions
-          .invoke('sync-all-data', body: {
-            'user_id': userId,
-            if (lastSyncTimestamp != null) 'last_sync_timestamp': lastSyncTimestamp,
-          })
+          .invoke(
+            'sync-all-data',
+            body: {
+              'user_id': userId,
+              if (lastSyncTimestamp != null)
+                'last_sync_timestamp': lastSyncTimestamp,
+            },
+          )
           .timeout(
             const Duration(seconds: 30),
             onTimeout: () {
-              throw TimeoutException('Edge function timed out after 30 seconds');
+              throw TimeoutException(
+                'Edge function timed out after 30 seconds',
+              );
             },
           );
 
@@ -417,12 +462,18 @@ class DataSyncService {
       }
 
       // Sync the data to local database
-      await _syncDataFromEdgeFunction(data['data'] as Map<String, dynamic>, userId);
+      await _syncDataFromEdgeFunction(
+        data['data'] as Map<String, dynamic>,
+        userId,
+      );
 
       // Update last sync timestamp
       if (data['timestamp'] != null) {
         final prefs = _ref.read(sharedPreferencesProvider);
-        await prefs.setString('last_sync_timestamp_$userId', data['timestamp'] as String);
+        await prefs.setString(
+          'last_sync_timestamp_$userId',
+          data['timestamp'] as String,
+        );
       }
 
       return true;
@@ -434,7 +485,10 @@ class DataSyncService {
   }
 
   /// Sync data from edge function response to local database.
-  Future<void> _syncDataFromEdgeFunction(Map<String, dynamic> data, String userId) async {
+  Future<void> _syncDataFromEdgeFunction(
+    Map<String, dynamic> data,
+    String userId,
+  ) async {
     try {
       // Sync foods (nutrition_foods from edge function)
       final nutritionFoods = data['nutrition_foods'] as List<dynamic>?;
@@ -454,7 +508,9 @@ class DataSyncService {
       final activities = data['activities'] as List<dynamic>?;
       if (activities != null) {
         for (final activityData in activities) {
-          await _activitySyncHandler.upsertActivity(activityData as Map<String, dynamic>);
+          await _activitySyncHandler.upsertActivity(
+            activityData as Map<String, dynamic>,
+          );
         }
       }
 
@@ -463,7 +519,10 @@ class DataSyncService {
       if (events != null) {
         for (final eventData in events) {
           final eventMap = eventData as Map<String, dynamic>;
-          await _eventSyncHandler.upsertEvent(eventMap, eventMap['user_id'] as String);
+          await _eventSyncHandler.upsertEvent(
+            eventMap,
+            eventMap['user_id'] as String,
+          );
         }
       }
 
@@ -471,7 +530,9 @@ class DataSyncService {
       final carbLoadingPlans = data['carb_loading_plans'] as List<dynamic>?;
       if (carbLoadingPlans != null) {
         for (final planData in carbLoadingPlans) {
-          await _carbLoadingSyncHandler.upsertCarbLoadingPlan(planData as Map<String, dynamic>);
+          await _carbLoadingSyncHandler.upsertCarbLoadingPlan(
+            planData as Map<String, dynamic>,
+          );
         }
       }
 
@@ -479,14 +540,18 @@ class DataSyncService {
       final carbLoadingDays = data['carb_loading_days'] as List<dynamic>?;
       if (carbLoadingDays != null) {
         for (final dayData in carbLoadingDays) {
-          await _carbLoadingSyncHandler.upsertCarbLoadingDay(dayData as Map<String, dynamic>);
+          await _carbLoadingSyncHandler.upsertCarbLoadingDay(
+            dayData as Map<String, dynamic>,
+          );
         }
       }
 
       // Sync food preferences
       final foodPreferences = data['food_preferences'] as List<dynamic>?;
       if (foodPreferences != null && foodPreferences.isNotEmpty) {
-        await _foodPreferenceSyncHandler.syncFoodPreferencesFromEdgeFunction(foodPreferences);
+        await _foodPreferenceSyncHandler.syncFoodPreferencesFromEdgeFunction(
+          foodPreferences,
+        );
       }
 
       // Sync coach record if user is an approved coach
@@ -496,7 +561,8 @@ class DataSyncService {
       }
 
       // Sync coach-athlete relationships
-      final relationships = data['coach_athlete_relationships'] as List<dynamic>?;
+      final relationships =
+          data['coach_athlete_relationships'] as List<dynamic>?;
       if (relationships != null && relationships.isNotEmpty) {
         await _coachSyncHandler.syncCoachAthleteRelationships(relationships);
       }
@@ -517,9 +583,13 @@ class DataSyncService {
         await _coachSyncHandler.syncAthleteProfiles(athleteProfiles);
       }
 
-      final athleteCarbLoadingPlans = data['athlete_carb_loading_plans'] as List<dynamic>?;
-      if (athleteCarbLoadingPlans != null && athleteCarbLoadingPlans.isNotEmpty) {
-        await _carbLoadingSyncHandler.syncAthleteCarbLoadingPlans(athleteCarbLoadingPlans);
+      final athleteCarbLoadingPlans =
+          data['athlete_carb_loading_plans'] as List<dynamic>?;
+      if (athleteCarbLoadingPlans != null &&
+          athleteCarbLoadingPlans.isNotEmpty) {
+        await _carbLoadingSyncHandler.syncAthleteCarbLoadingPlans(
+          athleteCarbLoadingPlans,
+        );
       }
 
       // Sync coach profiles for athletes
@@ -546,10 +616,7 @@ class DataSyncService {
   Future<void> _clientSideDownload(String userId) async {
     try {
       // STEP 1: Download reference data in parallel
-      await Future.wait([
-        _downloadFoods(),
-        _downloadCarbLoadingFoods(),
-      ]);
+      await Future.wait([_downloadFoods(), _downloadCarbLoadingFoods()]);
 
       // STEP 2: Download user-specific data in parallel
       await Future.wait([
@@ -609,7 +676,9 @@ class DataSyncService {
           .order('scheduled_date_time', ascending: false);
 
       final allActivities = response as List<dynamic>;
-      final activities = allActivities.where((a) => a['deleted_at'] == null).toList();
+      final activities = allActivities
+          .where((a) => a['deleted_at'] == null)
+          .toList();
 
       for (final activityData in activities) {
         await _activitySyncHandler.upsertActivity(activityData);
@@ -746,5 +815,16 @@ class DataSyncService {
     _ref.invalidate(calendarControllerProvider);
     _ref.invalidate(allEventsControllerProvider);
     _ref.invalidate(nextUpcomingEventProvider);
+  }
+
+  bool _hasUploadFailures(Map<String, bool> uploadResults) {
+    return uploadResults.values.any((success) => !success);
+  }
+
+  List<String> _failedUploadTables(Map<String, bool> uploadResults) {
+    return uploadResults.entries
+        .where((entry) => !entry.value)
+        .map((entry) => entry.key)
+        .toList(growable: false);
   }
 }

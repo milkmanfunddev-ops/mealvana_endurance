@@ -20,7 +20,7 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { handleCors } from '../_shared/cors.ts';
 import { jsonResponse, errorResponse, serverError } from '../_shared/responses.ts';
 import { createServiceClient } from '../_shared/supabase-client.ts';
-import { generateUUID } from '../_shared/utils.ts';
+import { generateUUID, roundToIncrement } from '../_shared/utils.ts';
 
 // Nutrition types and LP solver (unchanged)
 import {
@@ -28,6 +28,8 @@ import {
   type ActivityType,
   type MacroTargets,
   type FoodResult,
+  type TimingCategory,
+  deriveTimingCategory,
   buildLPModel,
   solveLPModel,
   greedyFallback,
@@ -35,11 +37,12 @@ import {
   getOptimizationWeights,
   MACRO_CONSTRAINT_RANGES,
   PREFERENCE_SCORE_MAP,
+  POST_PROCESS_THRESHOLDS,
   calculateTotals,
 } from '../_shared/nutrition/index.ts';
 
 // v2 food queries — queries template_foods table (not legacy foods table)
-import { getTemplateFoodsForPhase } from '../_shared/nutrition/template-food-queries.ts';
+import { getTemplateFoodsForPhase, getTemplateElectrolyteFoods } from '../_shared/nutrition/template-food-queries.ts';
 
 // Template system modules
 import {
@@ -75,6 +78,8 @@ interface PlanInputV2 {
   liked_foods?: string[];
   disliked_foods?: string[];
   willing_to_try_foods?: string[];
+  duration_minutes?: number;
+  gut_training_level?: 'low' | 'moderate' | 'high';
   brick_segments?: Array<{
     sport: string;
     duration_minutes: number;
@@ -205,7 +210,7 @@ async function generateBeforePhase(
 
   console.log(`[PLAN-V2] After filtering: ${filteredTemplates.length} templates, ${filteredDrinks.length} drinks`);
 
-  // 6. Select template chain
+  // 6. Select template chain (sodium tiebreaker picks lowest-sodium non-conflicting template)
   const templateChain = selectTemplateChain(filteredTemplates, activeSubPhases);
 
   // 7. Build has_liquid_base phase set (skip drink assignment for these)
@@ -276,19 +281,27 @@ async function generateBeforePhase(
         display_name: sf.display_name,
         serving_size: sf.serving_size,
         timing: getSubPhaseTimingLabel(subPhase, input.hours_before),
-        is_drink: false,
+        is_drink: isLiquid,
         is_liquid: isLiquid,
         template_id: template.id,
         scale_multiplier: sf.scale_multiplier,
       } as FoodResult & { is_drink: boolean; is_liquid: boolean; template_id: string; scale_multiplier: number };
     });
 
-    // Add drink to the food list
-    if (drink) {
+    // Add drink to the food list — but skip if template already includes a liquid food
+    // (e.g., Sports Drink Mix in template + Sports Drink from drink pool = duplicate)
+    const templateHasLiquid = foodResults.some(
+      (f: any) => f.is_liquid === true
+    );
+    if (drink && !templateHasLiquid) {
       foodResults.push({
         ...drink,
         timing: getSubPhaseTimingLabel(subPhase, input.hours_before),
       });
+    } else if (drink && templateHasLiquid) {
+      console.log(
+        `[PLAN-V2] ${subPhase}: skipping drink "${drink.display_name}" — template already has a liquid food`
+      );
     }
 
     const subPhaseResult: SubPhaseResult = {
@@ -309,8 +322,394 @@ async function generateBeforePhase(
 }
 
 // ============================================================================
+// By-Hour Apportionment (Server-Side)
+// ============================================================================
+
+interface ByHourTimeSlot {
+  hourIndex: number;
+  slotIndex: number;
+}
+
+interface ByHourAssignment {
+  foodItemId: string;
+  timeSlot: ByHourTimeSlot;
+  isSipThroughout: boolean;
+  adjustedQuantity: number;
+  timingCategory: string;
+}
+
+interface ByHourData {
+  durationMinutes: number;
+  assignments: ByHourAssignment[];
+}
+
+const QUIET_ZONE_MINUTES = 30;
+const END_CUTOFF_MINUTES = 15;
+const SIP_INCREMENT = 0.5;
+
+function gelIntervalMinutes(gutTrainingLevel: string): number {
+  switch (gutTrainingLevel) {
+    case 'low': return 45;
+    case 'high': return 25;
+    default: return 30; // moderate
+  }
+}
+
+function minuteToTimeSlot(absoluteMinutes: number): ByHourTimeSlot {
+  const hourIndex = Math.floor(absoluteMinutes / 60);
+  const minuteInHour = absoluteMinutes % 60;
+  const slotIndex = Math.min(Math.floor(minuteInHour / 15), 3);
+  return { hourIndex, slotIndex };
+}
+
+function sipPlacementCount(originalQty: number, totalHours: number): number {
+  let placementCount = totalHours;
+  const perHourQty = placementCount > 0 ? originalQty / placementCount : 0;
+  if (perHourQty < SIP_INCREMENT && originalQty > 0) {
+    placementCount = Math.min(
+      totalHours,
+      Math.max(1, Math.floor(originalQty / SIP_INCREMENT)),
+    );
+  }
+  return placementCount;
+}
+
+function splitSipQuantity(originalQty: number, placementCount: number): number[] {
+  if (placementCount <= 0) return [];
+
+  // Snap to 0.5 increments while preserving total quantity.
+  const baseQty = Math.floor((originalQty / placementCount) / SIP_INCREMENT) * SIP_INCREMENT;
+  const quantities = Array.from(
+    { length: placementCount },
+    () => Math.round(baseQty * 10) / 10,
+  );
+
+  const assignedTotal = quantities.reduce((sum, q) => sum + q, 0);
+  let extraUnits = Math.floor((originalQty - assignedTotal + 1e-9) / SIP_INCREMENT);
+  extraUnits = Math.max(0, Math.min(extraUnits, placementCount));
+
+  // Add remainder to later hours (e.g., 8 over 3h => 2.5, 2.5, 3.0).
+  for (let i = 0; i < extraUnits; i++) {
+    const idx = placementCount - 1 - i;
+    quantities[idx] = Math.round((quantities[idx] + SIP_INCREMENT) * 10) / 10;
+  }
+
+  return quantities;
+}
+
+/**
+ * Generate by-hour time slot assignments for during-phase foods.
+ *
+ * Same 4-phase algorithm as client-side ByHourApportionmentService:
+ * Phase 1: SIP_THROUGHOUT — drinks at :00 every hour
+ * Phase 2: ELECTROLYTES — every 60 min starting at minute 60 (skip if <90 min)
+ * Phase 3: QUICK_CONSUME — gels/chews after quiet zone, spaced by gut training
+ * Phase 4: SLOW_CONSUME — bars/real food after quiet zone
+ */
+function generateByHourData(
+  foods: FoodResult[],
+  durationMinutes: number,
+  activityType: string,
+  gutTrainingLevel: string = 'moderate',
+): ByHourData | null {
+  if (durationMinutes < 60) return null;
+  if (foods.length === 0) {
+    return { durationMinutes, assignments: [] };
+  }
+
+  const totalHours = Math.max(1, Math.ceil(durationMinutes / 60));
+  const assignments: ByHourAssignment[] = [];
+
+  // Categorize foods
+  const sipItems: FoodResult[] = [];
+  const electrolyteItems: FoodResult[] = [];
+  const quickItems: FoodResult[] = [];
+  const slowItems: FoodResult[] = [];
+
+  for (const food of foods) {
+    const tc = food.timing_category ?? 'slow_consume';
+    switch (tc) {
+      case 'sip_throughout':
+        sipItems.push(food);
+        break;
+      case 'electrolyte':
+        electrolyteItems.push(food);
+        break;
+      case 'quick_consume':
+        quickItems.push(food);
+        break;
+      default:
+        slowItems.push(food);
+        break;
+    }
+  }
+
+  // Phase 1: SIP_THROUGHOUT — drinks at :00 every hour
+  for (const drink of sipItems) {
+    const originalQty = drink.quantity;
+    const placementCount = sipPlacementCount(originalQty, totalHours);
+    const splitQuantities = splitSipQuantity(originalQty, placementCount);
+    const hourStep = placementCount < totalHours
+      ? Math.floor(totalHours / placementCount)
+      : 1;
+
+    for (let i = 0; i < placementCount; i++) {
+      const h = Math.min(i * hourStep, totalHours - 1);
+      assignments.push({
+        foodItemId: drink.food_id,
+        timeSlot: { hourIndex: h, slotIndex: 0 },
+        isSipThroughout: true,
+        adjustedQuantity: splitQuantities[i],
+        timingCategory: 'sipThroughout',
+      });
+    }
+  }
+
+  // Phase 2: ELECTROLYTES — every 60 min starting at minute 60, skip if <90 min
+  // Enforce whole-number quantities (can't split a tablet)
+  if (durationMinutes >= 90) {
+    for (const elec of electrolyteItems) {
+      const allMinutes: number[] = [];
+      for (let m = 60; m < durationMinutes; m += 60) {
+        allMinutes.push(m);
+      }
+      if (allMinutes.length === 0) continue;
+
+      // Round to whole number — tablets are indivisible
+      const wholeQty = Math.max(1, Math.round(elec.quantity));
+      // Limit placements to available quantity (each gets exactly 1)
+      const placementCount = Math.min(allMinutes.length, wholeQty);
+      const usedMinutes = allMinutes.slice(0, placementCount);
+
+      for (const minute of usedMinutes) {
+        assignments.push({
+          foodItemId: elec.food_id,
+          timeSlot: minuteToTimeSlot(minute),
+          isSipThroughout: false,
+          adjustedQuantity: 1.0,
+          timingCategory: 'electrolyte',
+        });
+      }
+    }
+  }
+
+  // Phase 3: QUICK_CONSUME — gels/chews after quiet zone, spaced by gut training
+  if (quickItems.length > 0) {
+    const interval = gelIntervalMinutes(gutTrainingLevel);
+    const endCutoff = durationMinutes - END_CUTOFF_MINUTES;
+
+    const placementMinutes: number[] = [];
+    for (let m = QUIET_ZONE_MINUTES; m <= endCutoff; m += interval) {
+      placementMinutes.push(m);
+    }
+
+    if (placementMinutes.length > 0) {
+      // Track remaining quantity per food (indivisible items use whole units)
+      const remainingQty: Record<string, number> = {};
+      for (const food of quickItems) {
+        const qty = food.is_indivisible ? Math.max(1, Math.round(food.quantity)) : food.quantity;
+        remainingQty[food.food_id] = qty < 1 ? 1 : qty;
+      }
+
+      for (let i = 0; i < placementMinutes.length; i++) {
+        const food = quickItems[i % quickItems.length];
+        const remaining = remainingQty[food.food_id] ?? 0;
+        if (remaining <= 0) continue;
+
+        const minute = placementMinutes[i];
+        assignments.push({
+          foodItemId: food.food_id,
+          timeSlot: minuteToTimeSlot(minute),
+          isSipThroughout: false,
+          adjustedQuantity: 1.0,
+          timingCategory: 'quickConsume',
+        });
+        remainingQty[food.food_id] = remaining - 1;
+      }
+    }
+  }
+
+  // Phase 4: SLOW_CONSUME — bars/real food after quiet zone
+  if (slowItems.length > 0) {
+    let endCutoff = durationMinutes - END_CUTOFF_MINUTES;
+
+    // Cycling: solids only in first 2/3
+    if (activityType === 'cycling') {
+      const twoThirds = Math.round(durationMinutes * 2 / 3);
+      endCutoff = Math.min(endCutoff, twoThirds);
+    }
+
+    // Place solids, avoiding :00 (top-of-hour) slots reserved for drinks
+    const placementMinutes: number[] = [];
+    for (let m = QUIET_ZONE_MINUTES; m <= endCutoff; m += 30) {
+      if (m % 60 === 0) continue; // Skip :00 slots
+      placementMinutes.push(m);
+    }
+
+    if (placementMinutes.length > 0) {
+      for (let i = 0; i < slowItems.length; i++) {
+        const food = slowItems[i];
+        const foodPlacements: number[] = [];
+        for (let j = i; j < placementMinutes.length; j += slowItems.length) {
+          foodPlacements.push(placementMinutes[j]);
+        }
+
+        if (foodPlacements.length === 0) {
+          foodPlacements.push(QUIET_ZONE_MINUTES);
+        }
+
+        const originalQty = food.is_indivisible
+          ? Math.max(1, Math.round(food.quantity))
+          : food.quantity;
+        let remaining = originalQty < 1 ? 1 : originalQty;
+
+        for (const minute of foodPlacements) {
+          if (remaining <= 0) break;
+          assignments.push({
+            foodItemId: food.food_id,
+            timeSlot: minuteToTimeSlot(minute),
+            isSipThroughout: false,
+            adjustedQuantity: 1.0,
+            timingCategory: 'slowConsume',
+          });
+          remaining -= 1;
+        }
+      }
+    }
+  }
+
+  return { durationMinutes, assignments };
+}
+
+// ============================================================================
+// During Phase Post-Processing (Two-Pass Approach)
+// ============================================================================
+
+/**
+ * Post-process during-phase results to fill sodium deficit with electrolyte supplements.
+ *
+ * Pass 1 (LP solver) focuses on carbs + preference with reduced sodium weight.
+ * Pass 2 (this function) adds electrolyte supplements to fill any sodium gap.
+ *
+ * Adapted from v1's postProcessPhase() pattern.
+ */
+async function postProcessDuringPhase(
+  supabase: ReturnType<typeof createServiceClient>,
+  resultFoods: FoodResult[],
+  targets: MacroTargets,
+  maxFoodsAllowed: number,
+  likedFoods?: string[],
+  willingToTryFoods?: string[],
+): Promise<FoodResult[]> {
+  const totals = calculateTotals(resultFoods);
+  const sodiumDeficit = targets.sodium_mg - totals.sodium_mg;
+  const deficitPercent = targets.sodium_mg > 0 ? sodiumDeficit / targets.sodium_mg : 0;
+
+  console.log(
+    `[POST-PROCESS-DURING] Totals: sodium=${totals.sodium_mg.toFixed(0)}mg, ` +
+    `target=${targets.sodium_mg}mg, deficit=${sodiumDeficit.toFixed(0)}mg (${(deficitPercent * 100).toFixed(1)}%)`
+  );
+
+  // Skip if sodium deficit is within threshold
+  if (deficitPercent <= POST_PROCESS_THRESHOLDS.sodium_deficit_percent) {
+    console.log(`[POST-PROCESS-DURING] Sodium within threshold (${(deficitPercent * 100).toFixed(1)}% <= ${(POST_PROCESS_THRESHOLDS.sodium_deficit_percent * 100)}%), skipping`);
+    return resultFoods;
+  }
+
+  // Skip if already at max food items
+  if (resultFoods.length >= maxFoodsAllowed) {
+    console.log(`[POST-PROCESS-DURING] Already ${resultFoods.length} foods, skipping electrolyte addition`);
+    return resultFoods;
+  }
+
+  // Check if there's already an electrolyte item
+  const hasElectrolyte = resultFoods.some(f => f.is_electrolyte === true);
+  if (hasElectrolyte) {
+    console.log(`[POST-PROCESS-DURING] Already has electrolyte item, skipping`);
+    return resultFoods;
+  }
+
+  // Fetch electrolyte foods
+  const electrolytes = await getTemplateElectrolyteFoods(supabase, likedFoods, willingToTryFoods);
+  if (electrolytes.length === 0) {
+    console.log(`[POST-PROCESS-DURING] No electrolyte foods available`);
+    return resultFoods;
+  }
+
+  // Sort by sodium-to-water ratio (prefer high sodium, low water — tablets over drinks)
+  const sortedElectrolytes = [...electrolytes].sort((a, b) => {
+    const ratioA = a.per_serving.sodium_mg / Math.max(1, a.per_serving.water_ml);
+    const ratioB = b.per_serving.sodium_mg / Math.max(1, b.per_serving.water_ml);
+    return ratioB - ratioA;
+  });
+
+  const best = sortedElectrolytes[0];
+
+  // Calculate needed servings to fill deficit
+  if (best.per_serving.sodium_mg <= 0) {
+    console.log(`[POST-PROCESS-DURING] Best electrolyte has 0mg sodium, skipping`);
+    return resultFoods;
+  }
+
+  let neededServings = sodiumDeficit / best.per_serving.sodium_mg;
+
+  // Enforce is_indivisible rounding (electrolytes are typically tablets)
+  neededServings = best.is_indivisible
+    ? Math.max(1, Math.round(neededServings))
+    : roundToIncrement(neededServings);
+
+  // Cap: don't overshoot sodium by more than 10%
+  const maxSodiumAllowed = targets.sodium_mg * 1.1;
+  const maxServingsForCap = (maxSodiumAllowed - totals.sodium_mg) / best.per_serving.sodium_mg;
+  const cappedServings = best.is_indivisible
+    ? Math.max(1, Math.floor(maxServingsForCap))
+    : roundToIncrement(Math.max(0.5, maxServingsForCap));
+
+  neededServings = Math.min(neededServings, cappedServings);
+
+  if (neededServings <= 0) {
+    console.log(`[POST-PROCESS-DURING] Needed servings <= 0 after capping, skipping`);
+    return resultFoods;
+  }
+
+  console.log(
+    `[POST-PROCESS-DURING] Adding ${neededServings}x "${best.display_name ?? best.name}" ` +
+    `(${(best.per_serving.sodium_mg * neededServings).toFixed(0)}mg sodium)`
+  );
+
+  const electrolyteFoodResult: FoodResult = {
+    food_id: best.id,
+    quantity: neededServings,
+    carbs_grams: best.per_serving.carbs_g * neededServings,
+    protein_grams: best.per_serving.protein_g * neededServings,
+    fat_grams: best.per_serving.fat_g * neededServings,
+    sodium_mg: best.per_serving.sodium_mg * neededServings,
+    fluids_ml: best.per_serving.water_ml * neededServings,
+    calories: best.per_serving.calories * neededServings,
+    timing: 'Throughout activity',
+    display_name: best.display_name ?? undefined,
+    display_name_plural: best.display_name_plural ?? undefined,
+    description: best.description ?? undefined,
+    image_address: best.image_address ?? undefined,
+    is_liquid: false,
+    is_electrolyte: true,
+    is_drink: false,
+    is_indivisible: best.is_indivisible ?? true,
+    timing_category: 'electrolyte',
+    product_type: best.product_type,
+  };
+
+  return [...resultFoods, electrolyteFoodResult];
+}
+
+// ============================================================================
 // During/After Phases (LP-Based, reusing existing solver)
 // ============================================================================
+
+interface LPPhaseResult {
+  foods: FoodResult[];
+  by_hour_data?: ByHourData | null;
+}
 
 async function generateLPPhase(
   supabase: ReturnType<typeof createServiceClient>,
@@ -321,11 +720,15 @@ async function generateLPPhase(
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
   deviceId?: string,
-): Promise<FoodResult[]> {
+  durationMinutes?: number,
+  gutTrainingLevel?: string,
+): Promise<LPPhaseResult> {
   console.log(`[PLAN-V2] Generating ${phase} phase via LP solver`);
+  const isDuringPhase = phase === 'during';
+  const useDefaultDuringFilter = isDuringPhase && activityType === 'running';
 
   // Get foods for this phase from template_foods table
-  const foods = await getTemplateFoodsForPhase(
+  let foods = await getTemplateFoodsForPhase(
     supabase,
     phase,
     activityType,
@@ -333,32 +736,113 @@ async function generateLPPhase(
     willingToTryFoods,
     dislikedFoods,
     deviceId,
+    false,
   );
 
   if (foods.length === 0) {
     console.log(`[PLAN-V2] No foods found for ${phase} phase`);
-    return [];
+    return { foods: [] };
   }
 
   console.log(`[PLAN-V2] ${phase}: ${foods.length} foods available`);
 
+  const sportConfig = getSportConfig(activityType);
+  const phaseConfig = sportConfig.phases[phase];
+
   // Get optimization weights for this phase
   const weights = getOptimizationWeights(activityType, phase);
-  const constraints = MACRO_CONSTRAINT_RANGES;
+
+  // Two-pass approach for during phase:
+  // Pass 1: LP solver with reduced sodium weight so carbs + preference dominate
+  // Pass 2: Post-processing adds electrolyte supplements to fill sodium deficit
+  const weightOverrides = isDuringPhase ? { sodium: 0.05 } : undefined;
+  const constraintOverrides = isDuringPhase
+    ? { sodium: { min: 0.0, max: 1.1 } }
+    : undefined;
+  const modelOptions = {
+    maxFoodItems: phaseConfig.maxFoods,
+    maxServingsCap: phaseConfig.maxServingsCap,
+    selectionPenalty: isDuringPhase ? 1.0 : 0.1,
+    maxElectrolyteSupplements: isDuringPhase && activityType === 'running' ? 1 : undefined,
+    enforceWaterMin: isDuringPhase,
+  };
 
   // Build and solve LP model
-  const model = buildLPModel(foods, targets, phase, weights, constraints);
-  const solution = solveLPModel(model, foods, targets, phase);
+  let model = buildLPModel(
+    foods,
+    targets,
+    phase,
+    weights,
+    weightOverrides,
+    constraintOverrides,
+    modelOptions,
+  );
+  let solution = solveLPModel(model, foods, phase);
 
-  if (solution && solution.foods.length > 0) {
-    console.log(`[PLAN-V2] ${phase} LP solved: ${solution.foods.length} foods`);
-    return solution.foods;
+  // Running during default policy:
+  // if default pool is infeasible, retry with all during foods.
+  if (useDefaultDuringFilter && (!solution || solution.foods.length === 0)) {
+    const expandedFoods = await getTemplateFoodsForPhase(
+      supabase,
+      phase,
+      activityType,
+      likedFoods,
+      willingToTryFoods,
+      dislikedFoods,
+      deviceId,
+      true,
+    );
+    if (expandedFoods.length > foods.length) {
+      console.log(
+        `[PLAN-V2] during running default pool infeasible; retrying with expanded food pool (${foods.length} -> ${expandedFoods.length})`
+      );
+      foods = expandedFoods;
+      model = buildLPModel(
+        foods,
+        targets,
+        phase,
+        weights,
+        weightOverrides,
+        constraintOverrides,
+        modelOptions,
+      );
+      solution = solveLPModel(model, foods, phase);
+    }
   }
 
-  // Fallback to greedy
-  console.log(`[PLAN-V2] ${phase} LP failed, using greedy fallback`);
-  const greedyResult = greedyFallback(foods, targets, phase);
-  return greedyResult.foods;
+  let resultFoods: FoodResult[];
+  if (solution && solution.foods.length > 0) {
+    console.log(`[PLAN-V2] ${phase} LP solved: ${solution.foods.length} foods`);
+    resultFoods = solution.foods;
+  } else {
+    // Fallback to greedy
+    console.log(`[PLAN-V2] ${phase} LP failed, using greedy fallback`);
+    const greedyResult = greedyFallback(foods, targets, phase);
+    resultFoods = greedyResult.foods;
+  }
+
+  // Pass 2: Post-process during phase to add electrolyte supplements for sodium deficit
+  if (isDuringPhase) {
+    resultFoods = await postProcessDuringPhase(
+      supabase,
+      resultFoods,
+      targets,
+      phaseConfig.maxFoods,
+      likedFoods,
+      willingToTryFoods,
+    );
+  }
+
+  // Generate by-hour data for during phase
+  let byHourData: ByHourData | null = null;
+  if (isDuringPhase && durationMinutes && durationMinutes >= 60) {
+    byHourData = generateByHourData(resultFoods, durationMinutes, activityType, gutTrainingLevel ?? 'moderate');
+    if (byHourData) {
+      console.log(`[PLAN-V2] Generated by-hour data: ${byHourData.assignments.length} assignments for ${durationMinutes}min`);
+    }
+  }
+
+  return { foods: resultFoods, by_hour_data: byHourData };
 }
 
 // ============================================================================
@@ -390,11 +874,11 @@ serve(async (req) => {
     console.log(`[PLAN-V2] Starting plan generation (activity=${activityType}, hours_before=${input.hours_before})`);
 
     // Generate all phases
-    const [beforeResult, duringResult, afterResult] = await Promise.all([
+    const [beforeResult, duringPhaseResult, afterPhaseResult] = await Promise.all([
       // Before: template-based
       generateBeforePhase(supabase, input),
 
-      // During: LP-based
+      // During: LP-based (with by-hour data generation)
       input.macro_targets.during_run
         ? generateLPPhase(
             supabase,
@@ -405,8 +889,10 @@ serve(async (req) => {
             input.willing_to_try_foods,
             input.disliked_foods,
             input.device_id,
+            input.duration_minutes,
+            input.gut_training_level,
           )
-        : Promise.resolve([]),
+        : Promise.resolve({ foods: [] } as LPPhaseResult),
 
       // After: LP-based
       input.macro_targets.post_run
@@ -420,8 +906,14 @@ serve(async (req) => {
             input.disliked_foods,
             input.device_id,
           )
-        : Promise.resolve([]),
+        : Promise.resolve({ foods: [] } as LPPhaseResult),
     ]);
+
+    // Build during response — always Map format with foods + by_hour_data
+    const duringResponse = {
+      foods: duringPhaseResult.foods,
+      by_hour_data: duringPhaseResult.by_hour_data ?? null,
+    };
 
     // Build response
     const response = {
@@ -429,8 +921,8 @@ serve(async (req) => {
       plan_id: planId,
       plan: {
         before: beforeResult,
-        during: duringResult,
-        after: afterResult,
+        during: duringResponse,
+        after: afterPhaseResult.foods,
       },
       macro_targets: {
         ...input.macro_targets,

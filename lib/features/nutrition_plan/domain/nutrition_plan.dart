@@ -204,8 +204,22 @@ class NutritionPlan {
             parsedSections.add(PlanSection.fromEdgeFunctionJson('before_run', plan['before'] as List<dynamic>));
           }
 
-          // Parse "during" section
-          if (plan['during'] is List) {
+          // Parse "during" section — V2 may return Map {foods, by_hour_data} or List
+          if (plan['during'] is Map) {
+            final duringMap = plan['during'] as Map<String, dynamic>;
+            final duringFoods = duringMap['foods'] as List<dynamic>? ?? [];
+            final section = PlanSection.fromEdgeFunctionJson('during_run', duringFoods);
+            // Parse byHourData if server provided it
+            final byHourJson = duringMap['by_hour_data'] as Map<String, dynamic>?;
+            if (byHourJson != null) {
+              parsedSections.add(section.copyWith(
+                byHourData: ByHourData.fromJson(byHourJson),
+              ));
+            } else {
+              parsedSections.add(section);
+            }
+          } else if (plan['during'] is List) {
+            // Backward compat: plain array of food items
             parsedSections.add(PlanSection.fromEdgeFunctionJson('during_run', plan['during'] as List<dynamic>));
           }
 

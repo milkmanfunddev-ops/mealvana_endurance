@@ -202,6 +202,27 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                   },
                 ),
 
+                const SizedBox(height: AppSpacing.md),
+
+                // Forgot Password link
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: asyncState.isLoading
+                        ? null
+                        : () => context.push('/auth/forgot-password'),
+                    child: Text(
+                      contentService.getValue(
+                        'auth.login.forgot_password',
+                        defaultValue: 'Forgot Password?',
+                      ),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.electrolyte,
+                      ),
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: AppSpacing.xxxl),
 
                 // Login button

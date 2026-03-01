@@ -204,7 +204,10 @@ export function selectDrinksForPhases(
       display_name: selected.display_name,
       serving_size: selected.serving_size,
       timing: undefined,
-      is_drink: true, // flag for client to distinguish drinks from foods
+      is_drink: true,
+      is_liquid: true,
+      is_electrolyte: false,
+      timing_category: 'sip_throughout',
     } as FoodResult & { is_drink: boolean });
   }
 

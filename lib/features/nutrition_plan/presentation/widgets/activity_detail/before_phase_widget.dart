@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../domain/nutrition_plan.dart';
-import '../../utils/activity_detail_helpers.dart';
 import 'macro_summary_row.dart';
 import 'dismissible_food_item.dart';
 
@@ -178,16 +177,32 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                     size: 20,
                   ),
                   const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    subPhase.displayTitle,
-                    style: AppTextStyles.sectionTitle.copyWith(
-                      color: widget.sectionColor,
-                      fontSize: 14,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          subPhase.displayTitle,
+                          style: AppTextStyles.sectionTitle.copyWith(
+                            color: widget.sectionColor,
+                            fontSize: 16,
+                          ),
+                        ),
+                        if (!isExpanded && subPhase.templateSummary.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            subPhase.templateSummary,
+                            style: AppTextStyles.smallLabel.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              fontSize: 11,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  // Compact macro summary in header
-                  _buildCompactMacros(subPhase),
                 ],
               ),
             ),
@@ -206,6 +221,9 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
               padding: const EdgeInsets.all(AppSpacing.sm),
               child: Column(
                 children: [
+                  // Centered macro summary
+                  _buildCenteredMacroSummary(subPhase),
+                  const SizedBox(height: AppSpacing.sm),
                   // Food items
                   ...subPhase.foodItems.asMap().entries.map((entry) {
                     final foodIndex = entry.key;
@@ -230,6 +248,7 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                           index, foodIndex, newQuantity,
                         ),
                         showSwipeHint: widget.showSwipeHint && index == 0 && foodIndex == 0,
+                        useImperial: widget.useImperial,
                       ),
                     );
                   }),
@@ -247,58 +266,51 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
     );
   }
 
-  /// Compact macro display for sub-phase header
-  Widget _buildCompactMacros(BeforeSubPhase subPhase) {
+  /// Centered macro summary displayed inside expanded sub-phase content
+  Widget _buildCenteredMacroSummary(BeforeSubPhase subPhase) {
     int totalCarbs = 0;
-    double totalFluids = 0;
+    int totalProtein = 0;
+    int totalSodium = 0;
 
     for (final food in subPhase.foodItems) {
       if (food.nutritionalInfo != null) {
         totalCarbs += food.nutritionalInfo!.carbs ?? 0;
-        totalFluids += food.nutritionalInfo!.fluids ?? 0;
+        totalProtein += food.nutritionalInfo!.protein ?? 0;
+        totalSodium += food.nutritionalInfo!.sodium ?? 0;
       }
     }
 
-    final targetCarbs = subPhase.carbsTarget?.round() ?? 0;
-
-    int displayFluidsActual = totalFluids.round();
-    int displayFluidsTarget = subPhase.fluidsTarget?.round() ?? 0;
-    String fluidsUnit = 'mL';
-
-    if (widget.useImperial) {
-      displayFluidsActual = (totalFluids * 0.033814).round();
-      displayFluidsTarget = ((subPhase.fluidsTarget ?? 0) * 0.033814).round();
-      fluidsUnit = 'oz';
-    }
-
-    final carbsColor = ActivityDetailHelpers.getMacroDeviationColor(
-      context, totalCarbs, targetCarbs,
-    );
-
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _compactMacroChip(
-          '$totalCarbs/${targetCarbs}g',
-          carbsColor,
-        ),
-        const SizedBox(width: AppSpacing.xs),
-        _compactMacroChip(
-          '$displayFluidsActual/$displayFluidsTarget$fluidsUnit',
-          Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+        _macroLabel('${totalCarbs}g', 'CARBS'),
+        const SizedBox(width: AppSpacing.lg),
+        _macroLabel('${totalProtein}g', 'PROTEIN'),
+        const SizedBox(width: AppSpacing.lg),
+        _macroLabel('${totalSodium}mg', 'SODIUM'),
       ],
     );
   }
 
-  Widget _compactMacroChip(String text, Color color) {
-    return Text(
-      text,
-      style: AppTextStyles.smallLabel.copyWith(
-        color: color,
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-      ),
+  Widget _macroLabel(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: AppTextStyles.smallLabel.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+        Text(
+          label,
+          style: AppTextStyles.smallLabel.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 }

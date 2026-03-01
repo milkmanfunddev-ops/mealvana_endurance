@@ -4,19 +4,23 @@ import 'package:flutter/foundation.dart';
 class DebugLogger {
   const DebugLogger._();
 
+  static bool get _enabled =>
+      kDebugMode && const bool.fromEnvironment('VERBOSE_DEBUG_LOGS');
+
   static void debug(String message) {
-    debugPrint(message);
+    if (_enabled) debugPrint(message);
   }
 
   static void info(String message) {
-    debugPrint(message);
+    if (_enabled) debugPrint(message);
   }
 
   static void warning(String message) {
-    debugPrint(message);
+    if (_enabled) debugPrint(message);
   }
 
   static void error(String message, {Object? error, StackTrace? stackTrace}) {
+    if (!_enabled) return;
     final buffer = StringBuffer(message);
     if (error != null) {
       buffer.write(' -> $error');

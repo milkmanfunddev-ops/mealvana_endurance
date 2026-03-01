@@ -150,13 +150,12 @@ export const PHASE_TO_CATEGORY: Record<Phase, string> = {
   after: 'after_run',
 };
 
-// Sport-specific category mapping for "during" phase
-// Currently all sports use 'during_run' as that's the only during category in the database
-// TODO: Add 'during_bike', 'during_swim' to category_enum when ready to differentiate
+// Sport-specific category mapping for "during" phase.
+// Query layer still falls back to during_run for backward compatibility.
 export const SPORT_DURING_CATEGORY: Record<string, string> = {
   running: 'during_run',
-  cycling: 'during_run', // Use during_run until during_bike is added to enum
-  swimming: 'during_run', // Use during_run until during_swim is added to enum
+  cycling: 'during_bike',
+  swimming: 'during_swim',
   triathlon: 'during_run',
   duathlon: 'during_run',
   multisport: 'during_run',
@@ -172,9 +171,11 @@ export function getCategoryForPhase(phase: Phase, activityType: string = 'runnin
     case 'before':
       return ['before_run'];
     case 'during':
-      // Get sport-specific during category (currently all map to during_run)
+      // Use sport-specific category first, then fallback to during_run for legacy data.
       const sportCategory = SPORT_DURING_CATEGORY[activityType] || 'during_run';
-      return [sportCategory];
+      return sportCategory === 'during_run'
+        ? ['during_run']
+        : [sportCategory, 'during_run'];
     case 'after':
       return ['after_run'];
   }

@@ -233,11 +233,26 @@ class VersionCheckService {
 
       await AppDatabase.deleteAndResync();
 
+      // Step 5: Clear all repository sync staleness timestamps from SharedPreferences.
+      // Without this, controllers calling ensureSynced() after the DB is recreated
+      // would see stale-but-recent timestamps and skip syncing, leaving the DB empty.
+      final prefs = await SharedPreferences.getInstance();
+      const repoKeys = [
+        'users', 'foods', 'carb_loading_foods', 'activities', 'events',
+        'food_preferences', 'user_foods', 'coaches', 'coach_athlete_relationships',
+        'carb_loading_plans', 'carb_loading_days', 'carb_loading_day_meals',
+        'coach_messages', 'template_foods', 'templates',
+      ];
+      for (final key in repoKeys) {
+        await prefs.remove('${key}_last_sync');
+      }
+
       _logger.info(
         'Schema resync completed successfully',
         context: 'VERSION_CHECK_SERVICE',
         data: {
           'dirtyRecordsBackedUp': uploadErrors.isNotEmpty,
+          'staleness_timestamps_cleared': repoKeys.length,
         },
       );
 

@@ -27,6 +27,7 @@ class EnvironmentSection extends StatelessWidget {
     required this.onSunChanged,
     required this.isIndoor,
     this.showWindAndSun = true,
+    this.useImperial = false,
     // Optional weather params (null = no weather UI)
     this.isLoadingWeather = false,
     this.onFetchWeather,
@@ -50,6 +51,7 @@ class EnvironmentSection extends StatelessWidget {
   final ValueChanged<String> onSunChanged;
   final bool isIndoor;
   final bool showWindAndSun;
+  final bool useImperial;
 
   // Optional weather integration
   final bool isLoadingWeather;
@@ -159,13 +161,15 @@ class EnvironmentSection extends StatelessWidget {
             children: [
               KylePlusMinusDecimalControl(
                 label: isIndoor ? 'Room Temperature' : 'Temperature',
-                value: temperatureC,
-                onChanged: onTemperatureChanged,
-                min: -5.0,
-                max: 40.0,
-                step: 1.0,
+                value: useImperial ? (temperatureC * 9 / 5) + 32 : temperatureC,
+                onChanged: useImperial
+                    ? (f) => onTemperatureChanged((f - 32) * 5 / 9)
+                    : onTemperatureChanged,
+                min: useImperial ? 23.0 : -5.0,
+                max: useImperial ? 104.0 : 40.0,
+                step: useImperial ? 2.0 : 1.0,
                 decimalPlaces: 0,
-                unit: '°C',
+                unit: useImperial ? '°F' : '°C',
                 enabled: isIndoor || !isLoadingWeather,
               ),
               if (_hasWeatherIntegration && !isIndoor) ...[

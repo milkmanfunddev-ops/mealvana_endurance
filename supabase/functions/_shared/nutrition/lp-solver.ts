@@ -6,7 +6,7 @@
 
 import solver from 'https://esm.sh/javascript-lp-solver@0.4.24?target=deno';
 import { roundToIncrement } from '../utils.ts';
-import type { Food, Phase, MacroTargets, PhaseSolution, LPModel, LPSolution } from './types.ts';
+import { type Food, type Phase, type MacroTargets, type PhaseSolution, type LPModel, type LPSolution, deriveTimingCategory } from './types.ts';
 import { MACRO_CONSTRAINT_RANGES, PHASE_TIMING_LABELS } from './constants.ts';
 import type { MacroWeights } from './constants.ts';
 
@@ -17,8 +17,24 @@ export function buildLPModel(
   foods: Food[],
   targets: MacroTargets,
   phase: Phase,
-  weights: MacroWeights
+  weights: MacroWeights,
+  weightOverrides?: Partial<MacroWeights>,
+  constraintOverrides?: { sodium?: { min: number; max: number } },
+  options?: {
+    maxFoodItems?: number;
+    maxServingsCap?: number;
+    selectionPenalty?: number;
+    maxElectrolyteSupplements?: number;
+    enforceWaterMin?: boolean;
+  },
 ): LPModel {
+  const effectiveWeights = { ...weights, ...(weightOverrides ?? {}) };
+  const maxFoodItems = options?.maxFoodItems ?? (phase === 'during' ? 6 : 4);
+  const maxServingsCap = options?.maxServingsCap ?? 4;
+  const selectionPenalty = options?.selectionPenalty ?? 0.1;
+  const maxElectrolyteSupplements = options?.maxElectrolyteSupplements;
+  const enforceWaterMin = options?.enforceWaterMin ?? false;
+
   const model: LPModel = {
     optimize: 'score',
     opType: 'max',
@@ -55,12 +71,20 @@ export function buildLPModel(
 
   // Balanced sodium constraints
   if (targets.sodium_mg > 0) {
-    const sodiumBounds = MACRO_CONSTRAINT_RANGES.sodium[phase];
-    if (sodiumBounds) {
+    if (constraintOverrides?.sodium) {
+      // Use overridden sodium constraints (e.g., relaxed for two-pass during phase)
       model.constraints.sodium = {
-        min: targets.sodium_mg * Math.min(sodiumBounds.min, 0.75),
-        max: targets.sodium_mg * sodiumBounds.max,
+        min: targets.sodium_mg * constraintOverrides.sodium.min,
+        max: targets.sodium_mg * constraintOverrides.sodium.max,
       };
+    } else {
+      const sodiumBounds = MACRO_CONSTRAINT_RANGES.sodium[phase];
+      if (sodiumBounds) {
+        model.constraints.sodium = {
+          min: targets.sodium_mg * Math.min(sodiumBounds.min, 0.75),
+          max: targets.sodium_mg * sodiumBounds.max,
+        };
+      }
     }
   }
 
@@ -68,21 +92,31 @@ export function buildLPModel(
   if (targets.water_ml > 0) {
     const waterBounds = MACRO_CONSTRAINT_RANGES.water[phase];
     if (waterBounds) {
-      model.constraints.water = {
-        max: targets.water_ml * waterBounds.max,
-      };
+      if (phase === 'during' && enforceWaterMin) {
+        model.constraints.water = {
+          min: targets.water_ml * waterBounds.min,
+          max: targets.water_ml * waterBounds.max,
+        };
+      } else {
+        model.constraints.water = {
+          max: targets.water_ml * waterBounds.max,
+        };
+      }
     }
   }
 
   // Constraint to limit number of distinct foods
-  model.constraints.total_food_items = { max: 4 };
+  model.constraints.total_food_items = { max: maxFoodItems };
+  if (maxElectrolyteSupplements != null) {
+    model.constraints.electrolyte_supplements = { max: maxElectrolyteSupplements };
+  }
 
   // Add variables for each food
   foods.forEach((food, index) => {
     const varName = `food_${index}`;
     const selectionConstraint = `select_${index}`;
     const selectionVarName = `choose_${index}`;
-    const maxServings = Math.max(0.5, Math.min(food.max_servings ?? 4, 4));
+    const maxServings = Math.max(0.5, Math.min(food.max_servings ?? 4, maxServingsCap));
 
     // Calculate score based on preference and macro contribution
     let score = food.preference_score;
@@ -95,11 +129,11 @@ export function buildLPModel(
       score += weights.protein * food.per_serving.protein_g;
     }
 
-    // Add sodium consideration
-    if (weights.sodium) {
+    // Add sodium consideration (uses effectiveWeights to allow per-phase overrides)
+    if (effectiveWeights.sodium) {
       const sodiumScore = Math.max(
         0,
-        weights.sodium * (200 - Math.abs(food.per_serving.sodium_mg - 200))
+        effectiveWeights.sodium * (200 - Math.abs(food.per_serving.sodium_mg - 200))
       );
       score += sodiumScore;
     }
@@ -122,11 +156,17 @@ export function buildLPModel(
 
     // Link servings to binary selection variable
     model.constraints[selectionConstraint] = { max: 0 };
-    model.variables[selectionVarName] = {
-      score: -0.1,
+    const selectionVariable: Record<string, number> = {
+      score: -selectionPenalty,
       [selectionConstraint]: -maxServings,
       total_food_items: 1,
     };
+    const isElectrolyteSupplement =
+      food.is_electrolyte === true && food.product_type === 'supplement';
+    if (maxElectrolyteSupplements != null && isElectrolyteSupplement) {
+      selectionVariable.electrolyte_supplements = 1;
+    }
+    model.variables[selectionVarName] = selectionVariable;
     model.binaries![selectionVarName] = 1;
   });
 
@@ -165,7 +205,11 @@ export function solveLPModel(
       const servings = (solution[varName] as number) || 0;
 
       if (servings > 0) {
-        const roundedServings = roundToIncrement(servings);
+        // Indivisible items (tablets, gel packets) round to whole numbers;
+        // everything else rounds to nearest 0.5
+        const roundedServings = food.is_indivisible
+          ? Math.max(1, Math.round(servings))
+          : roundToIncrement(servings);
         if (roundedServings <= 0) return;
 
         selectedFoods.push({
@@ -182,6 +226,12 @@ export function solveLPModel(
           display_name_plural: food.display_name_plural ?? undefined,
           description: food.description ?? undefined,
           image_address: food.image_address ?? undefined,
+          is_liquid: food.is_liquid ?? false,
+          is_electrolyte: food.is_electrolyte ?? false,
+          is_drink: food.is_liquid ?? false,
+          is_indivisible: food.is_indivisible ?? false,
+          timing_category: deriveTimingCategory(food),
+          product_type: food.product_type,
         });
 
         totals.carbs_g += food.per_serving.carbs_g * roundedServings;

@@ -5,7 +5,7 @@
  */
 
 import { roundToIncrement } from '../utils.ts';
-import type { Food, Phase, MacroTargets, PhaseSolution } from './types.ts';
+import { type Food, type Phase, type MacroTargets, type PhaseSolution, deriveTimingCategory } from './types.ts';
 
 /**
  * Greedy algorithm that selects foods based on preference and macro efficiency
@@ -49,7 +49,8 @@ export function greedyFallback(
   });
 
   // Greedily select foods to meet targets
-  const maxFoods = 3;
+  // During phase needs more items for longer runs to meet macro targets
+  const maxFoods = phase === 'during' ? 5 : 3;
   const carbsTarget = targets.carbs_g;
   const proteinTarget = targets.protein_g || 0;
   const sodiumTarget = targets.sodium_mg || 0;
@@ -112,7 +113,12 @@ export function greedyFallback(
 
     // Cap servings at reasonable amounts
     neededServings = Math.min(neededServings, 3);
-    neededServings = roundToIncrement(neededServings);
+
+    // Indivisible items (tablets, gel packets) round to whole numbers;
+    // everything else rounds to nearest 0.5
+    neededServings = food.is_indivisible
+      ? Math.max(1, Math.round(neededServings))
+      : roundToIncrement(neededServings);
 
     if (neededServings > 0) {
       selectedFoods.push({
@@ -128,6 +134,12 @@ export function greedyFallback(
         display_name_plural: food.display_name_plural ?? undefined,
         description: food.description ?? undefined,
         image_address: food.image_address ?? undefined,
+        is_liquid: food.is_liquid ?? false,
+        is_electrolyte: food.is_electrolyte ?? false,
+        is_drink: food.is_liquid ?? false,
+        is_indivisible: food.is_indivisible ?? false,
+        timing_category: deriveTimingCategory(food),
+        product_type: food.product_type,
       });
 
       totals.carbs_g += food.per_serving.carbs_g * neededServings;

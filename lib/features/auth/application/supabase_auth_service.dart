@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    hide AuthUser, AuthException;
 import '../../../shared/services/app_external_deps.dart';
 import '../domain/auth_user.dart';
 import '../domain/auth_exception.dart';
@@ -14,7 +15,7 @@ class SupabaseAuthService {
   AuthUser? get currentUser {
     final user = _supabase.auth.currentUser;
     if (user == null) return null;
-    
+
     return AuthUser(
       id: user.id,
       email: user.email ?? '',
@@ -178,6 +179,22 @@ class SupabaseAuthService {
     }
   }
 
+  /// Verify OTP code for password recovery
+  Future<void> verifyOtp({
+    required String email,
+    required String token,
+  }) async {
+    try {
+      await _supabase.auth.verifyOTP(
+        email: email,
+        token: token,
+        type: OtpType.recovery,
+      );
+    } catch (e) {
+      throw AuthException('Code verification failed: ${e.toString()}');
+    }
+  }
+
   /// Listen to authentication state changes
   Stream<AuthUser?> get authStateChanges {
     return _supabase.auth.onAuthStateChange.map((authState) {
@@ -204,9 +221,12 @@ final supabaseAuthServiceProvider = Provider<SupabaseAuthService>((ref) {
 });
 
 /// Provider for current auth user
-final currentUserProvider = StreamProvider<AuthUser?>((ref) {
+final currentUserProvider = StreamProvider<AuthUser?>((ref) async* {
   final authService = ref.watch(supabaseAuthServiceProvider);
-  return authService.authStateChanges;
+  // Emit current session user immediately so consumers don't get stuck
+  // waiting for the next auth-state event.
+  yield authService.currentUser;
+  yield* authService.authStateChanges;
 });
 
 /// Provider for authentication state

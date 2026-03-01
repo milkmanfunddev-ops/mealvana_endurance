@@ -58,6 +58,7 @@ export async function getTemplateFoodsForPhase(
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
   deviceId?: string,
+  allowNonDefaultDuring: boolean = false,
 ): Promise<Food[]> {
   const likedSet = buildPreferenceSet(likedFoods);
   const willTrySet = buildPreferenceSet(willingToTryFoods);
@@ -71,24 +72,52 @@ export async function getTemplateFoodsForPhase(
 
   // STEP 1: Get foods from template_foods table
   let templateFoods: Record<string, unknown>[] = [];
-  const { data: foods, error: foodsError } = await supabase
-    .from('template_foods')
-    .select(`
+  const selectWithDefaultDuring = `
       id, name, display_name, display_name_plural, image_address, description,
       calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
       serving_amount, serving_size, serving_unit, serving_qualifier,
       max_servings_before, max_servings_during, max_servings_after,
-      is_electrolyte, to_exclude_from_solver, is_essential,
-      categories, activity_types, is_liquid
-    `)
-    .eq('is_active', true)
-    .filter('categories', 'ov', categoryFilter)
-    .or(`activity_types.is.null,activity_types.ov.{${activityType}}`);
+      is_electrolyte, to_exclude_from_solver, is_essential, is_indivisible,
+      categories, activity_types, is_liquid, product_type, default_during
+    `;
+  const selectWithoutDefaultDuring = `
+      id, name, display_name, display_name_plural, image_address, description,
+      calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
+      serving_amount, serving_size, serving_unit, serving_qualifier,
+      max_servings_before, max_servings_during, max_servings_after,
+      is_electrolyte, to_exclude_from_solver, is_essential, is_indivisible,
+      categories, activity_types, is_liquid, product_type
+    `;
+
+  let foodsData: Record<string, unknown>[] | null = null;
+  let foodsError: { message?: string } | null = null;
+  {
+    const { data, error } = await supabase
+      .from('template_foods')
+      .select(selectWithDefaultDuring)
+      .eq('is_active', true)
+      .filter('categories', 'ov', categoryFilter)
+      .or(`activity_types.is.null,activity_types.ov.{${activityType}}`);
+    foodsData = data as Record<string, unknown>[] | null;
+    foodsError = error;
+  }
+
+  // Backward compatibility if DB has not yet added default_during.
+  if (foodsError && foodsError.message?.includes('default_during')) {
+    const fallback = await supabase
+      .from('template_foods')
+      .select(selectWithoutDefaultDuring)
+      .eq('is_active', true)
+      .filter('categories', 'ov', categoryFilter)
+      .or(`activity_types.is.null,activity_types.ov.{${activityType}}`);
+    foodsData = fallback.data as Record<string, unknown>[] | null;
+    foodsError = fallback.error;
+  }
 
   if (foodsError) {
     console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Error fetching template foods:`, foodsError);
-  } else if (foods) {
-    templateFoods = foods as Record<string, unknown>[];
+  } else if (foodsData) {
+    templateFoods = foodsData as Record<string, unknown>[];
     console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Found ${templateFoods.length} template foods for ${activityType}`);
   }
 
@@ -176,6 +205,11 @@ export async function getTemplateFoodsForPhase(
     .filter(({ data: f, isUserFood }) => {
       const isDisliked = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, dislikedSet);
       const isExcludedFromSolver = f.to_exclude_from_solver === true;
+      const isLiked = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, likedSet);
+      const isWilling = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, willTrySet);
+      const isPreferredDuring = isLiked || isWilling;
+      const isDefaultDuring = f.default_during === true;
+      const isEssential = f.is_essential === true;
 
       // Never filter out user foods as disliked
       if (isDisliked && !isUserFood) {
@@ -184,6 +218,21 @@ export async function getTemplateFoodsForPhase(
       }
       if (isDisliked && isUserFood) {
         console.log(`[TMPL-FILTER-DISLIKED] Keeping user food despite dislike: ${f.name}`);
+      }
+
+      // Running during default policy:
+      // - include default_during foods
+      // - include user-preferred foods (liked/willing_to_try)
+      // - include user foods and essentials
+      // - optionally include all during foods in fallback mode
+      if (phase === 'during' &&
+          activityType === 'running' &&
+          !allowNonDefaultDuring &&
+          !isUserFood &&
+          !isEssential &&
+          !isPreferredDuring &&
+          !isDefaultDuring) {
+        return false;
       }
 
       return !isExcludedFromSolver;
@@ -229,8 +278,11 @@ export async function getTemplateFoodsForPhase(
         max_servings: maxServings,
         preference_score,
         is_electrolyte: (f.is_electrolyte as boolean) || false,
+        is_liquid: isUserFood ? false : ((f.is_liquid as boolean) || false),
         is_essential: (f.is_essential as boolean) || false,
         is_user_food: isUserFood,
+        is_indivisible: isUserFood ? false : ((f.is_indivisible as boolean) || false),
+        product_type: isUserFood ? ((f.product_type as string) ?? undefined) : ((f.product_type as string) ?? undefined),
       };
     });
 }
@@ -296,8 +348,10 @@ export async function getTemplateElectrolyteFoods(
       max_servings: DEFAULT_MAX_SERVINGS,
       preference_score: 50,
       is_electrolyte: true,
+      is_liquid: false,
       is_essential: (e.is_essential as boolean) || false,
       is_user_food: false,
+      is_indivisible: true, // electrolyte items (tablets, etc.) are indivisible
     }));
 }
 
@@ -346,6 +400,8 @@ export async function getTemplateEssentialFoods(
     preference_score: 50,
     is_essential: true,
     is_electrolyte: (f.is_electrolyte as boolean) || false,
+    is_liquid: false,
     is_user_food: false,
+    is_indivisible: false,
   }));
 }

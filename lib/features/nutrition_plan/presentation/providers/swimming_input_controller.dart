@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/intensity_distribution.dart';
 import '../../domain/meal_type.dart';
+import '../../domain/run_parameters.dart' show UnitSystem;
 import '../../../../shared/domain/activity_type.dart';
+import '../../../auth/data/user_repository.dart';
 import 'macro_targets_controller.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
@@ -42,6 +44,9 @@ class SwimmingFormState {
   // V3: Track if user manually changed the pre-swim timing
   final bool preSwimMinutesManuallySet;
 
+  // Unit system preference (imperial = °F, metric = °C)
+  final UnitSystem unitSystem;
+
   // Weather integration fields
   final weather_domain.Location? location;
   final WeatherForecast? weatherForecast;
@@ -69,6 +74,7 @@ class SwimmingFormState {
     this.zonePaceApplied = false,
     this.zoneSuggestedPacePer100mSeconds,
     this.preSwimMinutesManuallySet = false,
+    this.unitSystem = UnitSystem.imperial,
     this.location,
     this.weatherForecast,
     this.isLoadingLocation = false,
@@ -100,6 +106,7 @@ class SwimmingFormState {
     bool? zonePaceApplied,
     int? zoneSuggestedPacePer100mSeconds,
     bool? preSwimMinutesManuallySet,
+    UnitSystem? unitSystem,
     weather_domain.Location? location,
     WeatherForecast? weatherForecast,
     bool? isLoadingLocation,
@@ -127,6 +134,7 @@ class SwimmingFormState {
       zoneSuggestedPacePer100mSeconds:
           zoneSuggestedPacePer100mSeconds ?? this.zoneSuggestedPacePer100mSeconds,
       preSwimMinutesManuallySet: preSwimMinutesManuallySet ?? this.preSwimMinutesManuallySet,
+      unitSystem: unitSystem ?? this.unitSystem,
       location: location ?? this.location,
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
@@ -158,6 +166,9 @@ class SwimmingInputController extends _$SwimmingInputController {
       durationMinutes: initialDurationMinutes,
     ) * 60).round();
 
+    // Load unit system from user preferences
+    _loadUserPreferences();
+
     final initialState = SwimmingFormState(
       selectedDate: now,
       selectedTime: const TimeOfDay(hour: 6, minute: 0),
@@ -171,6 +182,23 @@ class SwimmingInputController extends _$SwimmingInputController {
     // See: fetchLocationIfNeeded() method
 
     return initialState;
+  }
+
+  /// Load unit system from user profile
+  Future<void> _loadUserPreferences() async {
+    try {
+      final userRepository = await ref.read(userRepositoryProvider.future);
+      final userProfile = await userRepository.getCurrentUser();
+
+      if (userProfile != null) {
+        state = state.copyWith(
+          unitSystem: userProfile.unitSystem,
+        );
+        DebugLogger.info('🏊 SWIMMING CONTROLLER: Loaded user preferences - unitSystem: ${userProfile.unitSystem.name}');
+      }
+    } catch (e) {
+      DebugLogger.error('🏊 SWIMMING CONTROLLER: Failed to load user preferences', error: e);
+    }
   }
 
   /// Try to load zone-based swim pace suggestion from Training Peaks zones.
@@ -319,8 +347,9 @@ class SwimmingInputController extends _$SwimmingInputController {
       deckHumidity: 70.0,
     );
 
-    // Auto-fetch weather when date/time changes if location is set.
-    if (state.location != null) {
+    // Auto-fetch weather when date/time changes if location is set
+    // or if weather was previously fetched successfully (via GPS fallback).
+    if (state.location != null || state.weatherForecast != null) {
       unawaited(fetchWeatherForecast());
     }
   }

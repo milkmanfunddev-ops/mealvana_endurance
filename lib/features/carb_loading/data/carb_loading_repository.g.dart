@@ -55,4 +55,4 @@ final class CarbLoadingRepositoryProvider
 }
 
 String _$carbLoadingRepositoryHash() =>
-    r'6b37c51ed0beb37cbd9b90c538992b11cbbdf9d7';
+    r'2bbb786ad1f45521d9a8536e2504f2bd21a0eaeb';

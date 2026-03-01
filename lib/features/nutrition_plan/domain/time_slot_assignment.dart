@@ -2,6 +2,8 @@
 // Maps food items from a during-activity section into 15-minute time slots
 // grouped by hour. Drinks span the full hour at :00 with "Sip throughout hour".
 
+import 'food_item_data.dart';
+
 /// Represents a 15-minute slot within an hour.
 class TimeSlot {
   const TimeSlot({
@@ -59,6 +61,7 @@ class TimeSlotAssignment {
     required this.timeSlot,
     this.isSipThroughout = false,
     this.adjustedQuantity,
+    this.timingCategory,
   });
 
   /// References FoodItemData.id in the parent PlanSection.foodItems
@@ -74,17 +77,22 @@ class TimeSlotAssignment {
   /// When null, the food's full quantity is used (backward compat).
   final double? adjustedQuantity;
 
+  /// Timing category for UI badge rendering. Nullable for backward compat.
+  final TimingCategory? timingCategory;
+
   TimeSlotAssignment copyWith({
     String? foodItemId,
     TimeSlot? timeSlot,
     bool? isSipThroughout,
     double? adjustedQuantity,
+    TimingCategory? timingCategory,
   }) {
     return TimeSlotAssignment(
       foodItemId: foodItemId ?? this.foodItemId,
       timeSlot: timeSlot ?? this.timeSlot,
       isSipThroughout: isSipThroughout ?? this.isSipThroughout,
       adjustedQuantity: adjustedQuantity ?? this.adjustedQuantity,
+      timingCategory: timingCategory ?? this.timingCategory,
     );
   }
 
@@ -94,7 +102,16 @@ class TimeSlotAssignment {
       timeSlot: TimeSlot.fromJson(json['timeSlot'] as Map<String, dynamic>),
       isSipThroughout: json['isSipThroughout'] as bool? ?? false,
       adjustedQuantity: (json['adjustedQuantity'] as num?)?.toDouble(),
+      timingCategory: _parseTimingCategory(json['timingCategory'] as String?),
     );
+  }
+
+  static TimingCategory? _parseTimingCategory(String? value) {
+    if (value == null) return null;
+    for (final tc in TimingCategory.values) {
+      if (tc.name == value) return tc;
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() => {
@@ -102,6 +119,7 @@ class TimeSlotAssignment {
         'timeSlot': timeSlot.toJson(),
         'isSipThroughout': isSipThroughout,
         if (adjustedQuantity != null) 'adjustedQuantity': adjustedQuantity,
+        if (timingCategory != null) 'timingCategory': timingCategory!.name,
       };
 
   @override

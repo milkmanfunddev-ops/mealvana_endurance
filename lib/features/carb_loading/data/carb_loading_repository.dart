@@ -6,9 +6,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sync/immediate_remote_write_service.dart';
 import '../../../shared/data/syncable_repository.dart';
 
 part 'carb_loading_repository.g.dart';
+
+class _CarbLoadingUpsertCount {
+  const _CarbLoadingUpsertCount({required this.plans, required this.days});
+
+  final int plans;
+  final int days;
+
+  int get total => plans + days;
+}
 
 @riverpod
 CarbLoadingRepository carbLoadingRepository(Ref ref) {
@@ -16,6 +26,7 @@ CarbLoadingRepository carbLoadingRepository(Ref ref) {
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
+    immediateRemoteWriteService: ref.read(immediateRemoteWriteServiceProvider),
   );
 }
 
@@ -26,13 +37,16 @@ class CarbLoadingRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
-  })  : _supabase = supabase,
-        _database = database,
-        _logger = logger;
+    required ImmediateRemoteWriteService immediateRemoteWriteService,
+  }) : _supabase = supabase,
+       _database = database,
+       _logger = logger,
+       _immediateRemoteWriteService = immediateRemoteWriteService;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
+  final ImmediateRemoteWriteService _immediateRemoteWriteService;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -85,39 +99,23 @@ class CarbLoadingRepository with SyncableRepository {
 
       final days = daysResponse as List<dynamic>;
 
-      // 4. Save plans and days to Drift in a transaction
-      await _database.transaction(() async {
-        // Insert plans
-        for (final planJson in plans) {
-          final companion = _mapPlanJsonToCompanion(planJson as Map<String, dynamic>);
-          await _database.into(_database.carbLoadingPlansTable).insert(
-            companion,
-            mode: InsertMode.insertOrReplace,
-          );
-        }
-
-        // Insert days
-        for (final dayJson in days) {
-          final companion = _mapDayJsonToCompanion(dayJson as Map<String, dynamic>);
-          await _database.into(_database.carbLoadingDaysTable).insert(
-            companion,
-            mode: InsertMode.insertOrReplace,
-          );
-        }
-      });
+      final upsertCount = await _upsertRemoteCarbLoadingPreservingDirty(
+        plans: plans,
+        days: days,
+      );
 
       // 5. Update last sync timestamp
       await setLastSyncTime(DateTime.now());
 
-      final totalCount = plans.length + days.length;
+      final totalCount = upsertCount.total;
 
       _logger.info(
         'Successfully synced carb loading data',
         context: 'CARB_LOADING_REPOSITORY',
         data: {
           'userId': userId,
-          'plans': plans.length,
-          'days': days.length,
+          'plans': upsertCount.plans,
+          'days': upsertCount.days,
           'total': totalCount,
         },
       );
@@ -135,6 +133,92 @@ class CarbLoadingRepository with SyncableRepository {
     }
   }
 
+  Future<_CarbLoadingUpsertCount> _upsertRemoteCarbLoadingPreservingDirty({
+    required List<dynamic> plans,
+    required List<dynamic> days,
+  }) async {
+    final plansById = <String, Map<String, dynamic>>{};
+    for (final item in plans) {
+      if (item is! Map) continue;
+      final mapped = Map<String, dynamic>.from(item);
+      final id = mapped['id']?.toString();
+      if (id == null || id.isEmpty) continue;
+      plansById[id] = mapped;
+    }
+
+    final daysById = <String, Map<String, dynamic>>{};
+    for (final item in days) {
+      if (item is! Map) continue;
+      final mapped = Map<String, dynamic>.from(item);
+      final id = mapped['id']?.toString();
+      if (id == null || id.isEmpty) continue;
+      daysById[id] = mapped;
+    }
+
+    final planIds = plansById.keys.toList(growable: false);
+    final dayIds = daysById.keys.toList(growable: false);
+
+    final dirtyPlanIds = planIds.isEmpty
+        ? <String>{}
+        : (await (_database.select(_database.carbLoadingPlansTable)..where(
+                    (tbl) =>
+                        tbl.id.isIn(planIds) & tbl.needsUpload.equals(true),
+                  ))
+                  .get())
+              .map((row) => row.id)
+              .toSet();
+
+    final dirtyDayIds = dayIds.isEmpty
+        ? <String>{}
+        : (await (_database.select(_database.carbLoadingDaysTable)..where(
+                    (tbl) => tbl.id.isIn(dayIds) & tbl.needsUpload.equals(true),
+                  ))
+                  .get())
+              .map((row) => row.id)
+              .toSet();
+
+    var planUpserts = 0;
+    var dayUpserts = 0;
+    await _database.transaction(() async {
+      for (final entry in plansById.entries) {
+        if (dirtyPlanIds.contains(entry.key)) {
+          continue;
+        }
+
+        final companion = _mapPlanJsonToCompanion(entry.value);
+        await _database
+            .into(_database.carbLoadingPlansTable)
+            .insert(companion, mode: InsertMode.insertOrReplace);
+        planUpserts++;
+      }
+
+      for (final entry in daysById.entries) {
+        if (dirtyDayIds.contains(entry.key)) {
+          continue;
+        }
+
+        final companion = _mapDayJsonToCompanion(entry.value);
+        await _database
+            .into(_database.carbLoadingDaysTable)
+            .insert(companion, mode: InsertMode.insertOrReplace);
+        dayUpserts++;
+      }
+    });
+
+    if (dirtyPlanIds.isNotEmpty || dirtyDayIds.isNotEmpty) {
+      _logger.warning(
+        'Skipped remote carb loading overwrite for dirty local rows',
+        context: 'CARB_LOADING_REPOSITORY',
+        data: {
+          'skippedPlans': dirtyPlanIds.length,
+          'skippedDays': dirtyDayIds.length,
+        },
+      );
+    }
+
+    return _CarbLoadingUpsertCount(plans: planUpserts, days: dayUpserts);
+  }
+
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
@@ -145,9 +229,11 @@ class CarbLoadingRepository with SyncableRepository {
       );
 
       // 1. Query dirty plans
-      final dirtyPlans = await (_database.select(_database.carbLoadingPlansTable)
-            ..where((t) => t.needsUpload.equals(true) & t.userId.equals(userId)))
-          .get();
+      final dirtyPlans =
+          await (_database.select(_database.carbLoadingPlansTable)..where(
+                (t) => t.needsUpload.equals(true) & t.userId.equals(userId),
+              ))
+              .get();
 
       // 2. Query dirty days belonging to this user's plans
       if (dirtyPlans.isEmpty) {
@@ -158,11 +244,13 @@ class CarbLoadingRepository with SyncableRepository {
       final userPlanIds = dirtyPlans.map((p) => p.id).toList();
 
       // Get all days for these plans that are dirty
-      final dirtyDays = await (_database.select(_database.carbLoadingDaysTable)
-            ..where((t) =>
-                t.needsUpload.equals(true) &
-                t.carbLoadingPlanId.isIn(userPlanIds)))
-          .get();
+      final dirtyDays =
+          await (_database.select(_database.carbLoadingDaysTable)..where(
+                (t) =>
+                    t.needsUpload.equals(true) &
+                    t.carbLoadingPlanId.isIn(userPlanIds),
+              ))
+              .get();
 
       if (dirtyPlans.isEmpty && dirtyDays.isEmpty) {
         return UploadResult.nothingToUpload();
@@ -171,21 +259,22 @@ class CarbLoadingRepository with SyncableRepository {
       _logger.debug(
         'Found dirty carb loading records to upload',
         context: 'CARB_LOADING_REPOSITORY',
-        data: {
-          'plans': dirtyPlans.length,
-          'days': dirtyDays.length,
-        },
+        data: {'plans': dirtyPlans.length, 'days': dirtyDays.length},
       );
 
       // 3. Upload plans
       if (dirtyPlans.isNotEmpty) {
-        final plansToUpload = dirtyPlans.map((plan) => _mapPlanToSupabaseJson(plan)).toList();
+        final plansToUpload = dirtyPlans
+            .map((plan) => _mapPlanToSupabaseJson(plan))
+            .toList();
         await _supabase.from('carb_loading_plans').upsert(plansToUpload);
       }
 
       // 4. Upload days
       if (dirtyDays.isNotEmpty) {
-        final daysToUpload = dirtyDays.map((day) => _mapDayToSupabaseJson(day)).toList();
+        final daysToUpload = dirtyDays
+            .map((day) => _mapDayToSupabaseJson(day))
+            .toList();
         await _supabase.from('carb_loading_days').upsert(daysToUpload);
       }
 
@@ -276,8 +365,10 @@ class CarbLoadingRepository with SyncableRepository {
         localUpdatedAt: Value(DateTime.now()),
       );
 
-      final planId = await _database.into(_database.carbLoadingPlansTable).insertReturning(planCompanion)
-        .then((row) => row.id);
+      final planId = await _database
+          .into(_database.carbLoadingPlansTable)
+          .insertReturning(planCompanion)
+          .then((row) => row.id);
 
       // Generate carb loading day records locally with dirty flags
       for (int dayOffset = 0; dayOffset < protocolDays; dayOffset++) {
@@ -301,7 +392,9 @@ class CarbLoadingRepository with SyncableRepository {
           localUpdatedAt: Value(DateTime.now()),
         );
 
-        await _database.into(_database.carbLoadingDaysTable).insert(carbDayCompanion);
+        await _database
+            .into(_database.carbLoadingDaysTable)
+            .insert(carbDayCompanion);
       }
 
       // Get the created plan
@@ -311,14 +404,15 @@ class CarbLoadingRepository with SyncableRepository {
       }
 
       // Attempt background upload (non-blocking)
-      unawaited(_uploadCarbLoadingPlanToSupabase(
-        deviceId: deviceId,
-        planId: planId,
-        eventId: eventId,
-        protocolDays: protocolDays,
-        raceDate: raceDate,
-        bodyWeightPounds: bodyWeightPounds,
-      ));
+      unawaited(
+        _immediateRemoteWriteService.run(
+          repository: repositoryKey,
+          operation: 'create',
+          recordId: planId,
+          method: 'UPSERT',
+          write: () => _uploadCarbLoadingPlanToSupabase(planId: planId),
+        ),
+      );
 
       return createdPlan;
     } catch (e, stackTrace) {
@@ -378,9 +472,9 @@ class CarbLoadingRepository with SyncableRepository {
         localUpdatedAt: Value(DateTime.now()),
       );
 
-      await (_database.update(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.id.equals(carbLoadingDayId)))
-          .write(companion);
+      await (_database.update(
+        _database.carbLoadingDaysTable,
+      )..where((tbl) => tbl.id.equals(carbLoadingDayId))).write(companion);
 
       final updatedDay = await getCarbLoadingDayById(carbLoadingDayId);
       if (updatedDay == null) {
@@ -388,11 +482,17 @@ class CarbLoadingRepository with SyncableRepository {
       }
 
       // Attempt background upload (non-blocking)
-      unawaited(_uploadCarbLoadingDayToSupabase(
-        deviceId: deviceId,
-        carbLoadingDayId: carbLoadingDayId,
-        updates: updates,
-      ));
+      unawaited(
+        _immediateRemoteWriteService.run(
+          repository: repositoryKey,
+          operation: 'update_day',
+          recordId: carbLoadingDayId,
+          method: 'UPSERT',
+          write: () => _uploadCarbLoadingDayToSupabase(
+            carbLoadingDayId: carbLoadingDayId,
+          ),
+        ),
+      );
 
       return updatedDay;
     } catch (e, stackTrace) {
@@ -412,26 +512,34 @@ class CarbLoadingRepository with SyncableRepository {
   }) async {
     try {
       await _database.transaction(() async {
-        final carbLoadingDays = await (_database.select(_database.carbLoadingDaysTable)
-              ..where((tbl) => tbl.carbLoadingPlanId.equals(planId)))
-            .get();
+        final carbLoadingDays = await (_database.select(
+          _database.carbLoadingDaysTable,
+        )..where((tbl) => tbl.carbLoadingPlanId.equals(planId))).get();
 
         for (final day in carbLoadingDays) {
-          await (_database.delete(_database.carbLoadingDayMealsTable)
-                ..where((tbl) => tbl.carbLoadingDayId.equals(day.id)))
-              .go();
+          await (_database.delete(
+            _database.carbLoadingDayMealsTable,
+          )..where((tbl) => tbl.carbLoadingDayId.equals(day.id))).go();
         }
 
-        await (_database.delete(_database.carbLoadingDaysTable)
-              ..where((tbl) => tbl.carbLoadingPlanId.equals(planId)))
-            .go();
+        await (_database.delete(
+          _database.carbLoadingDaysTable,
+        )..where((tbl) => tbl.carbLoadingPlanId.equals(planId))).go();
 
-        await (_database.delete(_database.carbLoadingPlansTable)
-              ..where((tbl) => tbl.id.equals(planId)))
-            .go();
+        await (_database.delete(
+          _database.carbLoadingPlansTable,
+        )..where((tbl) => tbl.id.equals(planId))).go();
       });
 
-      unawaited(_uploadCarbLoadingPlanDeletion(deviceId: deviceId, planId: planId));
+      unawaited(
+        _immediateRemoteWriteService.run(
+          repository: repositoryKey,
+          operation: 'delete',
+          recordId: planId,
+          method: 'DELETE',
+          write: () => _uploadCarbLoadingPlanDeletion(planId: planId),
+        ),
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete carb loading plan',
@@ -535,7 +643,7 @@ class CarbLoadingRepository with SyncableRepository {
   }
 
   /// Get carb loading day by ID
-  Future<CarbLoadingDay?> getCarbLoadingDayById(String dayId) async{
+  Future<CarbLoadingDay?> getCarbLoadingDayById(String dayId) async {
     try {
       final query = _database.select(_database.carbLoadingDaysTable)
         ..where((tbl) => tbl.id.equals(dayId));
@@ -563,19 +671,27 @@ class CarbLoadingRepository with SyncableRepository {
   }) async {
     try {
       // Join carb_loading_days with carb_loading_plans to filter by user_id
-      final query = _database.select(_database.carbLoadingDaysTable).join([
-        innerJoin(
-          _database.carbLoadingPlansTable,
-          _database.carbLoadingPlansTable.id
-              .equalsExp(_database.carbLoadingDaysTable.carbLoadingPlanId),
-        ),
-      ])
-        ..where(_database.carbLoadingPlansTable.userId.equals(userId) &
-            _database.carbLoadingDaysTable.planDate
-                .isBiggerOrEqualValue(startDate) &
-            _database.carbLoadingDaysTable.planDate
-                .isSmallerOrEqualValue(endDate))
-        ..orderBy([OrderingTerm.asc(_database.carbLoadingDaysTable.planDate)]);
+      final query =
+          _database.select(_database.carbLoadingDaysTable).join([
+              innerJoin(
+                _database.carbLoadingPlansTable,
+                _database.carbLoadingPlansTable.id.equalsExp(
+                  _database.carbLoadingDaysTable.carbLoadingPlanId,
+                ),
+              ),
+            ])
+            ..where(
+              _database.carbLoadingPlansTable.userId.equals(userId) &
+                  _database.carbLoadingDaysTable.planDate.isBiggerOrEqualValue(
+                    startDate,
+                  ) &
+                  _database.carbLoadingDaysTable.planDate.isSmallerOrEqualValue(
+                    endDate,
+                  ),
+            )
+            ..orderBy([
+              OrderingTerm.asc(_database.carbLoadingDaysTable.planDate),
+            ]);
 
       final results = await query.get();
       return results
@@ -619,102 +735,42 @@ class CarbLoadingRepository with SyncableRepository {
   }
 
   Future<void> _uploadCarbLoadingPlanToSupabase({
-    required String deviceId,
     required String planId,
-    String? eventId,
-    required int protocolDays,
-    required DateTime raceDate,
-    required double bodyWeightPounds,
   }) async {
-    try {
-      // Get the plan from Drift
-      final plan = await getCarbLoadingPlanById(planId);
-      if (plan == null) {
-        throw Exception('Plan not found: $planId');
-      }
-
-      final planPayload = {
-        'id': plan.id, // UUID is stable - no rekeying needed
-        'event_id': plan.eventId,
-        'user_id': plan.userId,
-        'total_days': plan.totalDays,
-        'start_date': plan.startDate.toIso8601String().split('T')[0],
-        'end_date': plan.endDate.toIso8601String().split('T')[0],
-        'daily_carb_target_grams': plan.dailyCarbTargetGrams,
-        'generated_at': plan.generatedAt.toIso8601String(),
-        'algorithm_version': plan.algorithmVersion,
-        'adherence_score': plan.adherenceScore,
-        'completed_at': plan.completedAt?.toIso8601String(),
-        'local_updated_at': DateTime.now().toIso8601String(),
-      };
-
-      // Simple upsert - UUID is stable so no rekeying needed
-      await _supabase
-          .from('carb_loading_plans')
-          .upsert(planPayload);
-
-      // Get all days for this plan
-      final days = await (_database.select(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.carbLoadingPlanId.equals(plan.id))
-            ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]))
-          .get();
-
-      // Upsert all days
-      for (final day in days) {
-        final dayPayload = {
-          'id': day.id, // UUID is stable - no rekeying needed
-          'carb_loading_plan_id': day.carbLoadingPlanId,
-          'plan_date': day.planDate.toIso8601String().split('T')[0],
-          'day_number': day.dayNumber,
-          'carb_target_grams': day.carbTargetGrams,
-          'carb_protocol_g_per_kg': day.carbProtocolGPerKg,
-          'meal_count': day.mealCount,
-          'breakfast_percent': day.breakfastPercent,
-          'morning_snack_percent': day.morningSnackPercent,
-          'lunch_percent': day.lunchPercent,
-          'afternoon_snack_percent': day.afternoonSnackPercent,
-          'dinner_percent': day.dinnerPercent,
-          'evening_snack_percent': day.eveningSnackPercent,
-          'logged_carbs_grams': day.loggedCarbsGrams,
-          'logged_calories': day.loggedCalories,
-          'completed': day.completed,
-          'local_updated_at': DateTime.now().toIso8601String(),
-        };
-
-        await _supabase
-            .from('carb_loading_days')
-            .upsert(dayPayload);
-      }
-
-      // Clear dirty flags
-      await _clearPlanDirtyFlag(plan.id);
-      for (final day in days) {
-        await _clearDayDirtyFlag(day.id);
-      }
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Error uploading carb loading plan, will retry on next sync',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      // Don't rethrow - will retry on next sync
+    // Get the plan from Drift
+    final plan = await getCarbLoadingPlanById(planId);
+    if (plan == null) {
+      throw Exception('Plan not found: $planId');
     }
-  }
 
-  Future<void> _uploadCarbLoadingDayToSupabase({
-    required String deviceId,
-    required String carbLoadingDayId,
-    required Map<String, dynamic> updates,
-  }) async {
-    try {
-      // Get the day from Drift to get complete data
-      final day = await getCarbLoadingDayById(carbLoadingDayId);
-      if (day == null) {
-        throw Exception('Carb loading day not found: $carbLoadingDayId');
-      }
+    final planPayload = {
+      'id': plan.id, // UUID is stable - no rekeying needed
+      'event_id': plan.eventId,
+      'user_id': plan.userId,
+      'total_days': plan.totalDays,
+      'start_date': plan.startDate.toIso8601String().split('T')[0],
+      'end_date': plan.endDate.toIso8601String().split('T')[0],
+      'daily_carb_target_grams': plan.dailyCarbTargetGrams,
+      'generated_at': plan.generatedAt.toIso8601String(),
+      'algorithm_version': plan.algorithmVersion,
+      'adherence_score': plan.adherenceScore,
+      'completed_at': plan.completedAt?.toIso8601String(),
+      'local_updated_at': DateTime.now().toIso8601String(),
+    };
 
-      final payload = {
+    // Simple upsert - UUID is stable so no rekeying needed
+    await _supabase.from('carb_loading_plans').upsert(planPayload);
+
+    // Get all days for this plan
+    final days =
+        await (_database.select(_database.carbLoadingDaysTable)
+              ..where((tbl) => tbl.carbLoadingPlanId.equals(plan.id))
+              ..orderBy([(tbl) => OrderingTerm.asc(tbl.dayNumber)]))
+            .get();
+
+    // Upsert all days
+    for (final day in days) {
+      final dayPayload = {
         'id': day.id, // UUID is stable - no rekeying needed
         'carb_loading_plan_id': day.carbLoadingPlanId,
         'plan_date': day.planDate.toIso8601String().split('T')[0],
@@ -734,58 +790,70 @@ class CarbLoadingRepository with SyncableRepository {
         'local_updated_at': DateTime.now().toIso8601String(),
       };
 
-      // Simple upsert - UUID is stable so no rekeying needed
-      await _supabase
-          .from('carb_loading_days')
-          .upsert(payload);
+      await _supabase.from('carb_loading_days').upsert(dayPayload);
+    }
 
-      // Clear dirty flag
+    // Clear dirty flags
+    await _clearPlanDirtyFlag(plan.id);
+    for (final day in days) {
       await _clearDayDirtyFlag(day.id);
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Error uploading carb loading day, will retry on next sync',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      // Don't rethrow - will retry on next sync
     }
   }
 
-  Future<void> _uploadCarbLoadingPlanDeletion({
-    required String deviceId,
-    required String planId,
+  Future<void> _uploadCarbLoadingDayToSupabase({
+    required String carbLoadingDayId,
   }) async {
-    try {
-      // Delete days first (cascade handled by database, but doing explicitly for clarity)
-      await _supabase
-          .from('carb_loading_days')
-          .delete()
-          .eq('carb_loading_plan_id', planId);
-
-      // Delete the plan
-      await _supabase
-          .from('carb_loading_plans')
-          .delete()
-          .eq('id', planId);
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Error uploading carb loading plan deletion',
-        context: 'CARB_LOADING_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      // Don't rethrow - deletion already succeeded locally
+    // Get the day from Drift to get complete data
+    final day = await getCarbLoadingDayById(carbLoadingDayId);
+    if (day == null) {
+      throw Exception('Carb loading day not found: $carbLoadingDayId');
     }
+
+    final payload = {
+      'id': day.id, // UUID is stable - no rekeying needed
+      'carb_loading_plan_id': day.carbLoadingPlanId,
+      'plan_date': day.planDate.toIso8601String().split('T')[0],
+      'day_number': day.dayNumber,
+      'carb_target_grams': day.carbTargetGrams,
+      'carb_protocol_g_per_kg': day.carbProtocolGPerKg,
+      'meal_count': day.mealCount,
+      'breakfast_percent': day.breakfastPercent,
+      'morning_snack_percent': day.morningSnackPercent,
+      'lunch_percent': day.lunchPercent,
+      'afternoon_snack_percent': day.afternoonSnackPercent,
+      'dinner_percent': day.dinnerPercent,
+      'evening_snack_percent': day.eveningSnackPercent,
+      'logged_carbs_grams': day.loggedCarbsGrams,
+      'logged_calories': day.loggedCalories,
+      'completed': day.completed,
+      'local_updated_at': DateTime.now().toIso8601String(),
+    };
+
+    // Simple upsert - UUID is stable so no rekeying needed
+    await _supabase.from('carb_loading_days').upsert(payload);
+
+    // Clear dirty flag
+    await _clearDayDirtyFlag(day.id);
+  }
+
+  Future<void> _uploadCarbLoadingPlanDeletion({required String planId}) async {
+    // Delete days first (cascade handled by database, but doing explicitly for clarity)
+    await _supabase
+        .from('carb_loading_days')
+        .delete()
+        .eq('carb_loading_plan_id', planId);
+
+    // Delete the plan
+    await _supabase.from('carb_loading_plans').delete().eq('id', planId);
   }
 
   Future<void> _clearPlanDirtyFlag(String planId) async {
     try {
-      await (_database.update(_database.carbLoadingPlansTable)
-            ..where((tbl) => tbl.id.equals(planId)))
-          .write(const CarbLoadingPlansTableCompanion(
-        needsUpload: Value(false),
-      ));
+      await (_database.update(
+        _database.carbLoadingPlansTable,
+      )..where((tbl) => tbl.id.equals(planId))).write(
+        const CarbLoadingPlansTableCompanion(needsUpload: Value(false)),
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to clear plan dirty flag',
@@ -798,11 +866,11 @@ class CarbLoadingRepository with SyncableRepository {
 
   Future<void> _clearDayDirtyFlag(String dayId) async {
     try {
-      await (_database.update(_database.carbLoadingDaysTable)
-            ..where((tbl) => tbl.id.equals(dayId)))
-          .write(const CarbLoadingDaysTableCompanion(
-        needsUpload: Value(false),
-      ));
+      await (_database.update(
+        _database.carbLoadingDaysTable,
+      )..where((tbl) => tbl.id.equals(dayId))).write(
+        const CarbLoadingDaysTableCompanion(needsUpload: Value(false)),
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to clear day dirty flag',
@@ -818,10 +886,14 @@ class CarbLoadingRepository with SyncableRepository {
   // ========================================================================
 
   /// Map Supabase JSON (snake_case) to Drift CarbLoadingPlansTableCompanion
-  CarbLoadingPlansTableCompanion _mapPlanJsonToCompanion(Map<String, dynamic> json) {
+  CarbLoadingPlansTableCompanion _mapPlanJsonToCompanion(
+    Map<String, dynamic> json,
+  ) {
     return CarbLoadingPlansTableCompanion.insert(
       id: Value(json['id'] as String),
-      eventId: json['event_id'] != null ? Value(json['event_id'] as String) : const Value.absent(),
+      eventId: json['event_id'] != null
+          ? Value(json['event_id'] as String)
+          : const Value.absent(),
       userId: json['user_id'] as String,
       totalDays: json['total_days'] as int,
       startDate: DateTime.parse(json['start_date'] as String),
@@ -834,14 +906,18 @@ class CarbLoadingRepository with SyncableRepository {
       adherenceScore: json['adherence_score'] != null
           ? Value((json['adherence_score'] as num).toDouble())
           : const Value.absent(),
-      completedAt: json['completed_at'] != null ? Value(DateTime.parse(json['completed_at'] as String)) : const Value.absent(),
+      completedAt: json['completed_at'] != null
+          ? Value(DateTime.parse(json['completed_at'] as String))
+          : const Value.absent(),
       needsUpload: const Value(false), // Coming from server, not dirty
       localUpdatedAt: Value(DateTime.now()),
     );
   }
 
   /// Map Supabase JSON (snake_case) to Drift CarbLoadingDaysTableCompanion
-  CarbLoadingDaysTableCompanion _mapDayJsonToCompanion(Map<String, dynamic> json) {
+  CarbLoadingDaysTableCompanion _mapDayJsonToCompanion(
+    Map<String, dynamic> json,
+  ) {
     return CarbLoadingDaysTableCompanion.insert(
       id: Value(json['id'] as String),
       carbLoadingPlanId: json['carb_loading_plan_id'] as String,
@@ -852,12 +928,22 @@ class CarbLoadingRepository with SyncableRepository {
           ? Value((json['carb_protocol_g_per_kg'] as num).toDouble())
           : const Value.absent(),
       mealCount: Value(json['meal_count'] as int? ?? 6),
-      breakfastPercent: Value((json['breakfast_percent'] as num?)?.toDouble() ?? 16.67),
-      morningSnackPercent: Value((json['morning_snack_percent'] as num?)?.toDouble() ?? 16.67),
+      breakfastPercent: Value(
+        (json['breakfast_percent'] as num?)?.toDouble() ?? 16.67,
+      ),
+      morningSnackPercent: Value(
+        (json['morning_snack_percent'] as num?)?.toDouble() ?? 16.67,
+      ),
       lunchPercent: Value((json['lunch_percent'] as num?)?.toDouble() ?? 16.67),
-      afternoonSnackPercent: Value((json['afternoon_snack_percent'] as num?)?.toDouble() ?? 16.67),
-      dinnerPercent: Value((json['dinner_percent'] as num?)?.toDouble() ?? 16.67),
-      eveningSnackPercent: Value((json['evening_snack_percent'] as num?)?.toDouble() ?? 16.67),
+      afternoonSnackPercent: Value(
+        (json['afternoon_snack_percent'] as num?)?.toDouble() ?? 16.67,
+      ),
+      dinnerPercent: Value(
+        (json['dinner_percent'] as num?)?.toDouble() ?? 16.67,
+      ),
+      eveningSnackPercent: Value(
+        (json['evening_snack_percent'] as num?)?.toDouble() ?? 16.67,
+      ),
       loggedCarbsGrams: json['logged_carbs_grams'] != null
           ? Value(json['logged_carbs_grams'] as int)
           : const Value.absent(),

@@ -120,6 +120,49 @@ void main() {
       );
       expect(moved.adjustedQuantity, 2.0);
     });
+
+    test('timingCategory JSON round-trip', () {
+      const original = TimeSlotAssignment(
+        foodItemId: 'food-1',
+        timeSlot: TimeSlot(hourIndex: 0, slotIndex: 1),
+        timingCategory: TimingCategory.quickConsume,
+      );
+      final json = original.toJson();
+      expect(json['timingCategory'], 'quickConsume');
+
+      final restored = TimeSlotAssignment.fromJson(json);
+      expect(restored.timingCategory, TimingCategory.quickConsume);
+    });
+
+    test('timingCategory defaults to null (backward compat)', () {
+      final json = {
+        'foodItemId': 'food-1',
+        'timeSlot': {'hourIndex': 0, 'slotIndex': 0},
+      };
+      final assignment = TimeSlotAssignment.fromJson(json);
+      expect(assignment.timingCategory, isNull);
+    });
+
+    test('timingCategory omitted from JSON when null', () {
+      const original = TimeSlotAssignment(
+        foodItemId: 'food-1',
+        timeSlot: TimeSlot(hourIndex: 0, slotIndex: 0),
+      );
+      final json = original.toJson();
+      expect(json.containsKey('timingCategory'), false);
+    });
+
+    test('copyWith preserves timingCategory', () {
+      const original = TimeSlotAssignment(
+        foodItemId: 'food-1',
+        timeSlot: TimeSlot(hourIndex: 0, slotIndex: 0),
+        timingCategory: TimingCategory.electrolyte,
+      );
+      final moved = original.copyWith(
+        timeSlot: const TimeSlot(hourIndex: 1, slotIndex: 0),
+      );
+      expect(moved.timingCategory, TimingCategory.electrolyte);
+    });
   });
 
   group('ByHourData', () {

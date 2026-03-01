@@ -186,8 +186,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     // hydration lags behind auth restoration.
     String? resolvedUserIdFromAuth;
     if (currentAuthUserId != null) {
+      // Start with auth ID so we can proceed even if provider resolution stalls.
+      resolvedUserIdFromAuth = currentAuthUserId;
       try {
-        resolvedUserIdFromAuth = await ref.read(userIdProvider.future);
+        resolvedUserIdFromAuth = await ref
+            .read(userIdProvider.future)
+            .timeout(const Duration(seconds: 2));
       } catch (_) {
         // Fall back to temp ID logic below.
       }
@@ -479,21 +483,30 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // This prevents duplicates on logout→login→re-sync because remote
       // hydration will find the activities in Supabase.
       if (result.hasNewWorkouts || result.updated > 0) {
-        try {
-          final uploadResult =
-              await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+        if (_isUsingTempUserId) {
           if (kDebugMode) {
-            if (uploadResult.success) {
-              print(
-                  '☁️ Uploaded ${uploadResult.count} synced activities to Supabase');
-            } else {
-              print(
-                  '⚠️ Upload to Supabase failed: ${uploadResult.error}');
-            }
+            print(
+              '⏸️ Skipping Supabase activity upload during onboarding (temp user ID)',
+            );
           }
-        } catch (e) {
-          if (kDebugMode) {
-            print('⚠️ Failed to upload synced activities: $e');
+        } else {
+          try {
+            final uploadResult = await _activitiesRepo.uploadDirtyRecords(
+              _currentUserId!,
+            );
+            if (kDebugMode) {
+              if (uploadResult.success) {
+                print(
+                  '☁️ Uploaded ${uploadResult.count} synced activities to Supabase',
+                );
+              } else {
+                print('⚠️ Upload to Supabase failed: ${uploadResult.error}');
+              }
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('⚠️ Failed to upload synced activities: $e');
+            }
           }
         }
       }
@@ -742,21 +755,30 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // hydration will find the activities in Supabase.
       if (result.workoutResult.hasNewWorkouts ||
           result.workoutResult.updated > 0) {
-        try {
-          final uploadResult =
-              await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+        if (_isUsingTempUserId) {
           if (kDebugMode) {
-            if (uploadResult.success) {
-              print(
-                  '☁️ Uploaded ${uploadResult.count} synced activities to Supabase');
-            } else {
-              print(
-                  '⚠️ Upload to Supabase failed: ${uploadResult.error}');
-            }
+            print(
+              '⏸️ Skipping Supabase activity upload during onboarding (temp user ID)',
+            );
           }
-        } catch (e) {
-          if (kDebugMode) {
-            print('⚠️ Failed to upload synced activities: $e');
+        } else {
+          try {
+            final uploadResult = await _activitiesRepo.uploadDirtyRecords(
+              _currentUserId!,
+            );
+            if (kDebugMode) {
+              if (uploadResult.success) {
+                print(
+                  '☁️ Uploaded ${uploadResult.count} synced activities to Supabase',
+                );
+              } else {
+                print('⚠️ Upload to Supabase failed: ${uploadResult.error}');
+              }
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('⚠️ Failed to upload synced activities: $e');
+            }
           }
         }
       }

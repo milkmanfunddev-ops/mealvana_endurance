@@ -55,4 +55,4 @@ final class ActivitiesRepositoryProvider
 }
 
 String _$activitiesRepositoryHash() =>
-    r'7272fffbbf3190d1169c2c2f54375821befc0102';
+    r'fe1347b8c1b2946213d28bfeaf2f720a42725e59';

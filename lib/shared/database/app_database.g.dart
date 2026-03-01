@@ -26037,6 +26037,521 @@ class TemplatesTableCompanion extends UpdateCompanion<TemplateEntry> {
   }
 }
 
+class $TpWritebackTableTable extends TpWritebackTable
+    with TableInfo<$TpWritebackTableTable, TpWritebackEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TpWritebackTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activityIdMeta = const VerificationMeta(
+    'activityId',
+  );
+  @override
+  late final GeneratedColumn<String> activityId = GeneratedColumn<String>(
+    'activity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tpWorkoutIdMeta = const VerificationMeta(
+    'tpWorkoutId',
+  );
+  @override
+  late final GeneratedColumn<int> tpWorkoutId = GeneratedColumn<int>(
+    'tp_workout_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _planHashMeta = const VerificationMeta(
+    'planHash',
+  );
+  @override
+  late final GeneratedColumn<String> planHash = GeneratedColumn<String>(
+    'plan_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pushedAtMeta = const VerificationMeta(
+    'pushedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> pushedAt = GeneratedColumn<DateTime>(
+    'pushed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    activityId,
+    tpWorkoutId,
+    planHash,
+    pushedAt,
+    status,
+    lastError,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'tp_writeback_log';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TpWritebackEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('activity_id')) {
+      context.handle(
+        _activityIdMeta,
+        activityId.isAcceptableOrUnknown(data['activity_id']!, _activityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_activityIdMeta);
+    }
+    if (data.containsKey('tp_workout_id')) {
+      context.handle(
+        _tpWorkoutIdMeta,
+        tpWorkoutId.isAcceptableOrUnknown(
+          data['tp_workout_id']!,
+          _tpWorkoutIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_tpWorkoutIdMeta);
+    }
+    if (data.containsKey('plan_hash')) {
+      context.handle(
+        _planHashMeta,
+        planHash.isAcceptableOrUnknown(data['plan_hash']!, _planHashMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_planHashMeta);
+    }
+    if (data.containsKey('pushed_at')) {
+      context.handle(
+        _pushedAtMeta,
+        pushedAt.isAcceptableOrUnknown(data['pushed_at']!, _pushedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pushedAtMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TpWritebackEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TpWritebackEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      activityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_id'],
+      )!,
+      tpWorkoutId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tp_workout_id'],
+      )!,
+      planHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_hash'],
+      )!,
+      pushedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}pushed_at'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+    );
+  }
+
+  @override
+  $TpWritebackTableTable createAlias(String alias) {
+    return $TpWritebackTableTable(attachedDatabase, alias);
+  }
+}
+
+class TpWritebackEntry extends DataClass
+    implements Insertable<TpWritebackEntry> {
+  final String id;
+  final String userId;
+  final String activityId;
+  final int tpWorkoutId;
+  final String planHash;
+  final DateTime pushedAt;
+  final String status;
+  final String? lastError;
+  const TpWritebackEntry({
+    required this.id,
+    required this.userId,
+    required this.activityId,
+    required this.tpWorkoutId,
+    required this.planHash,
+    required this.pushedAt,
+    required this.status,
+    this.lastError,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['activity_id'] = Variable<String>(activityId);
+    map['tp_workout_id'] = Variable<int>(tpWorkoutId);
+    map['plan_hash'] = Variable<String>(planHash);
+    map['pushed_at'] = Variable<DateTime>(pushedAt);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    return map;
+  }
+
+  TpWritebackTableCompanion toCompanion(bool nullToAbsent) {
+    return TpWritebackTableCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      activityId: Value(activityId),
+      tpWorkoutId: Value(tpWorkoutId),
+      planHash: Value(planHash),
+      pushedAt: Value(pushedAt),
+      status: Value(status),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+    );
+  }
+
+  factory TpWritebackEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TpWritebackEntry(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      activityId: serializer.fromJson<String>(json['activityId']),
+      tpWorkoutId: serializer.fromJson<int>(json['tpWorkoutId']),
+      planHash: serializer.fromJson<String>(json['planHash']),
+      pushedAt: serializer.fromJson<DateTime>(json['pushedAt']),
+      status: serializer.fromJson<String>(json['status']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'activityId': serializer.toJson<String>(activityId),
+      'tpWorkoutId': serializer.toJson<int>(tpWorkoutId),
+      'planHash': serializer.toJson<String>(planHash),
+      'pushedAt': serializer.toJson<DateTime>(pushedAt),
+      'status': serializer.toJson<String>(status),
+      'lastError': serializer.toJson<String?>(lastError),
+    };
+  }
+
+  TpWritebackEntry copyWith({
+    String? id,
+    String? userId,
+    String? activityId,
+    int? tpWorkoutId,
+    String? planHash,
+    DateTime? pushedAt,
+    String? status,
+    Value<String?> lastError = const Value.absent(),
+  }) => TpWritebackEntry(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    activityId: activityId ?? this.activityId,
+    tpWorkoutId: tpWorkoutId ?? this.tpWorkoutId,
+    planHash: planHash ?? this.planHash,
+    pushedAt: pushedAt ?? this.pushedAt,
+    status: status ?? this.status,
+    lastError: lastError.present ? lastError.value : this.lastError,
+  );
+  TpWritebackEntry copyWithCompanion(TpWritebackTableCompanion data) {
+    return TpWritebackEntry(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      activityId: data.activityId.present
+          ? data.activityId.value
+          : this.activityId,
+      tpWorkoutId: data.tpWorkoutId.present
+          ? data.tpWorkoutId.value
+          : this.tpWorkoutId,
+      planHash: data.planHash.present ? data.planHash.value : this.planHash,
+      pushedAt: data.pushedAt.present ? data.pushedAt.value : this.pushedAt,
+      status: data.status.present ? data.status.value : this.status,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TpWritebackEntry(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('activityId: $activityId, ')
+          ..write('tpWorkoutId: $tpWorkoutId, ')
+          ..write('planHash: $planHash, ')
+          ..write('pushedAt: $pushedAt, ')
+          ..write('status: $status, ')
+          ..write('lastError: $lastError')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    activityId,
+    tpWorkoutId,
+    planHash,
+    pushedAt,
+    status,
+    lastError,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TpWritebackEntry &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.activityId == this.activityId &&
+          other.tpWorkoutId == this.tpWorkoutId &&
+          other.planHash == this.planHash &&
+          other.pushedAt == this.pushedAt &&
+          other.status == this.status &&
+          other.lastError == this.lastError);
+}
+
+class TpWritebackTableCompanion extends UpdateCompanion<TpWritebackEntry> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> activityId;
+  final Value<int> tpWorkoutId;
+  final Value<String> planHash;
+  final Value<DateTime> pushedAt;
+  final Value<String> status;
+  final Value<String?> lastError;
+  final Value<int> rowid;
+  const TpWritebackTableCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.activityId = const Value.absent(),
+    this.tpWorkoutId = const Value.absent(),
+    this.planHash = const Value.absent(),
+    this.pushedAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TpWritebackTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String userId,
+    required String activityId,
+    required int tpWorkoutId,
+    required String planHash,
+    required DateTime pushedAt,
+    required String status,
+    this.lastError = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       activityId = Value(activityId),
+       tpWorkoutId = Value(tpWorkoutId),
+       planHash = Value(planHash),
+       pushedAt = Value(pushedAt),
+       status = Value(status);
+  static Insertable<TpWritebackEntry> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? activityId,
+    Expression<int>? tpWorkoutId,
+    Expression<String>? planHash,
+    Expression<DateTime>? pushedAt,
+    Expression<String>? status,
+    Expression<String>? lastError,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (activityId != null) 'activity_id': activityId,
+      if (tpWorkoutId != null) 'tp_workout_id': tpWorkoutId,
+      if (planHash != null) 'plan_hash': planHash,
+      if (pushedAt != null) 'pushed_at': pushedAt,
+      if (status != null) 'status': status,
+      if (lastError != null) 'last_error': lastError,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TpWritebackTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<String>? activityId,
+    Value<int>? tpWorkoutId,
+    Value<String>? planHash,
+    Value<DateTime>? pushedAt,
+    Value<String>? status,
+    Value<String?>? lastError,
+    Value<int>? rowid,
+  }) {
+    return TpWritebackTableCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      activityId: activityId ?? this.activityId,
+      tpWorkoutId: tpWorkoutId ?? this.tpWorkoutId,
+      planHash: planHash ?? this.planHash,
+      pushedAt: pushedAt ?? this.pushedAt,
+      status: status ?? this.status,
+      lastError: lastError ?? this.lastError,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (activityId.present) {
+      map['activity_id'] = Variable<String>(activityId.value);
+    }
+    if (tpWorkoutId.present) {
+      map['tp_workout_id'] = Variable<int>(tpWorkoutId.value);
+    }
+    if (planHash.present) {
+      map['plan_hash'] = Variable<String>(planHash.value);
+    }
+    if (pushedAt.present) {
+      map['pushed_at'] = Variable<DateTime>(pushedAt.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TpWritebackTableCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('activityId: $activityId, ')
+          ..write('tpWorkoutId: $tpWorkoutId, ')
+          ..write('planHash: $planHash, ')
+          ..write('pushedAt: $pushedAt, ')
+          ..write('status: $status, ')
+          ..write('lastError: $lastError, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -26078,6 +26593,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TemplateFoodsTableTable templateFoodsTable =
       $TemplateFoodsTableTable(this);
   late final $TemplatesTableTable templatesTable = $TemplatesTableTable(this);
+  late final $TpWritebackTableTable tpWritebackTable = $TpWritebackTableTable(
+    this,
+  );
   late final UserDao userDao = UserDao(this as AppDatabase);
   late final FoodPreferencesDao foodPreferencesDao = FoodPreferencesDao(
     this as AppDatabase,
@@ -26112,6 +26630,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     coachMessagesTable,
     templateFoodsTable,
     templatesTable,
+    tpWritebackTable,
   ];
 }
 
@@ -37440,6 +37959,273 @@ typedef $$TemplatesTableTableProcessedTableManager =
       TemplateEntry,
       PrefetchHooks Function()
     >;
+typedef $$TpWritebackTableTableCreateCompanionBuilder =
+    TpWritebackTableCompanion Function({
+      Value<String> id,
+      required String userId,
+      required String activityId,
+      required int tpWorkoutId,
+      required String planHash,
+      required DateTime pushedAt,
+      required String status,
+      Value<String?> lastError,
+      Value<int> rowid,
+    });
+typedef $$TpWritebackTableTableUpdateCompanionBuilder =
+    TpWritebackTableCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<String> activityId,
+      Value<int> tpWorkoutId,
+      Value<String> planHash,
+      Value<DateTime> pushedAt,
+      Value<String> status,
+      Value<String?> lastError,
+      Value<int> rowid,
+    });
+
+class $$TpWritebackTableTableFilterComposer
+    extends Composer<_$AppDatabase, $TpWritebackTableTable> {
+  $$TpWritebackTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activityId => $composableBuilder(
+    column: $table.activityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tpWorkoutId => $composableBuilder(
+    column: $table.tpWorkoutId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get planHash => $composableBuilder(
+    column: $table.planHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get pushedAt => $composableBuilder(
+    column: $table.pushedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TpWritebackTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $TpWritebackTableTable> {
+  $$TpWritebackTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityId => $composableBuilder(
+    column: $table.activityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tpWorkoutId => $composableBuilder(
+    column: $table.tpWorkoutId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get planHash => $composableBuilder(
+    column: $table.planHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get pushedAt => $composableBuilder(
+    column: $table.pushedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TpWritebackTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TpWritebackTableTable> {
+  $$TpWritebackTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get activityId => $composableBuilder(
+    column: $table.activityId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tpWorkoutId => $composableBuilder(
+    column: $table.tpWorkoutId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get planHash =>
+      $composableBuilder(column: $table.planHash, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get pushedAt =>
+      $composableBuilder(column: $table.pushedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+}
+
+class $$TpWritebackTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TpWritebackTableTable,
+          TpWritebackEntry,
+          $$TpWritebackTableTableFilterComposer,
+          $$TpWritebackTableTableOrderingComposer,
+          $$TpWritebackTableTableAnnotationComposer,
+          $$TpWritebackTableTableCreateCompanionBuilder,
+          $$TpWritebackTableTableUpdateCompanionBuilder,
+          (
+            TpWritebackEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $TpWritebackTableTable,
+              TpWritebackEntry
+            >,
+          ),
+          TpWritebackEntry,
+          PrefetchHooks Function()
+        > {
+  $$TpWritebackTableTableTableManager(
+    _$AppDatabase db,
+    $TpWritebackTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TpWritebackTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TpWritebackTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TpWritebackTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> activityId = const Value.absent(),
+                Value<int> tpWorkoutId = const Value.absent(),
+                Value<String> planHash = const Value.absent(),
+                Value<DateTime> pushedAt = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TpWritebackTableCompanion(
+                id: id,
+                userId: userId,
+                activityId: activityId,
+                tpWorkoutId: tpWorkoutId,
+                planHash: planHash,
+                pushedAt: pushedAt,
+                status: status,
+                lastError: lastError,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                required String userId,
+                required String activityId,
+                required int tpWorkoutId,
+                required String planHash,
+                required DateTime pushedAt,
+                required String status,
+                Value<String?> lastError = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TpWritebackTableCompanion.insert(
+                id: id,
+                userId: userId,
+                activityId: activityId,
+                tpWorkoutId: tpWorkoutId,
+                planHash: planHash,
+                pushedAt: pushedAt,
+                status: status,
+                lastError: lastError,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TpWritebackTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TpWritebackTableTable,
+      TpWritebackEntry,
+      $$TpWritebackTableTableFilterComposer,
+      $$TpWritebackTableTableOrderingComposer,
+      $$TpWritebackTableTableAnnotationComposer,
+      $$TpWritebackTableTableCreateCompanionBuilder,
+      $$TpWritebackTableTableUpdateCompanionBuilder,
+      (
+        TpWritebackEntry,
+        BaseReferences<_$AppDatabase, $TpWritebackTableTable, TpWritebackEntry>,
+      ),
+      TpWritebackEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -37496,4 +38282,6 @@ class $AppDatabaseManager {
       $$TemplateFoodsTableTableTableManager(_db, _db.templateFoodsTable);
   $$TemplatesTableTableTableManager get templatesTable =>
       $$TemplatesTableTableTableManager(_db, _db.templatesTable);
+  $$TpWritebackTableTableTableManager get tpWritebackTable =>
+      $$TpWritebackTableTableTableManager(_db, _db.tpWritebackTable);
 }

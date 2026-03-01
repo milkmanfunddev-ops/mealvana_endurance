@@ -13,11 +13,7 @@ abstract class AppLogger {
     StackTrace? stackTrace,
   });
 
-  void info(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-  });
+  void info(String message, {String? context, Map<String, dynamic>? data});
 
   void warning(
     String message, {
@@ -97,27 +93,34 @@ class PrettyAppLogger implements AppLogger {
     Level? baseLevel,
     bool enableFileOutput = false,
     Logger? logger,
-  })  : _logger = logger ??
-            Logger(
-              level: _resolveLevel(baseLevel),
-              printer: PrettyPrinter(
-                methodCount: 2,
-                errorMethodCount: 8,
-                lineLength: 120,
-                colors: true,
-                printEmojis: true,
-                dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-              ),
-              filter: ProductionLogFilter(),
-            ),
-        _enableFileOutput = enableFileOutput;
+  }) : _logger =
+           logger ??
+           Logger(
+             level: _resolveLevel(baseLevel),
+             printer: PrettyPrinter(
+               // Keep output compact in dev: stack-frame banners for every log
+               // create excessive noise and bury real signal.
+               methodCount: 0,
+               errorMethodCount: 4,
+               lineLength: 120,
+               colors: true,
+               printEmojis: true,
+               dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+             ),
+             filter: ProductionLogFilter(),
+           ),
+       _enableFileOutput = enableFileOutput;
 
   final Logger _logger;
   final bool _enableFileOutput;
 
   static Level _resolveLevel(Level? baseLevel) {
     if (kDebugMode) {
-      return baseLevel ?? Level.debug;
+      if (baseLevel != null) return baseLevel;
+      // Opt-in verbose logging during development:
+      // flutter run --dart-define=VERBOSE_APP_LOGS=true
+      const verboseLogs = bool.fromEnvironment('VERBOSE_APP_LOGS');
+      return verboseLogs ? Level.debug : Level.warning;
     }
     return baseLevel != null && baseLevel.index > Level.info.index
         ? baseLevel
@@ -143,17 +146,8 @@ class PrettyAppLogger implements AppLogger {
   }
 
   @override
-  void info(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-  }) {
-    _logWithContext(
-      Level.info,
-      message,
-      context: context,
-      data: data,
-    );
+  void info(String message, {String? context, Map<String, dynamic>? data}) {
+    _logWithContext(Level.info, message, context: context, data: data);
   }
 
   @override
@@ -228,12 +222,7 @@ class PrettyAppLogger implements AppLogger {
     if (duration != null) data['duration_ms'] = duration.inMilliseconds;
 
     if (error != null) {
-      this.error(
-        message,
-        context: 'API',
-        data: data,
-        error: error,
-      );
+      this.error(message, context: 'API', data: data, error: error);
     } else if (statusCode != null && statusCode >= 400) {
       warning(message, context: 'API', data: data);
     } else {
@@ -257,12 +246,7 @@ class PrettyAppLogger implements AppLogger {
     if (duration != null) logData['duration_ms'] = duration.inMilliseconds;
 
     if (error != null) {
-      this.error(
-        message,
-        context: 'DATABASE',
-        data: logData,
-        error: error,
-      );
+      this.error(message, context: 'DATABASE', data: logData, error: error);
     } else {
       debug(message, context: 'DATABASE', data: logData);
     }
@@ -355,21 +339,28 @@ class PrettyAppLogger implements AppLogger {
     final effectiveStackTrace = shouldIncludeStackTrace ? stackTrace : null;
 
     try {
-      _logger.log(level, payload, error: error, stackTrace: effectiveStackTrace);
+      _logger.log(
+        level,
+        payload,
+        error: error,
+        stackTrace: effectiveStackTrace,
+      );
     } catch (e) {
       // Fallback if logger itself fails - silently ignore to avoid infinite recursion
     }
 
     // Capture to debug log storage for in-app viewing
     try {
-      DebugLogStorage().addLog(DebugLogEntry(
-        timestamp: DateTime.now(),
-        level: _convertLevel(level),
-        message: message,
-        context: context,
-        data: data,
-        error: error,
-      ));
+      DebugLogStorage().addLog(
+        DebugLogEntry(
+          timestamp: DateTime.now(),
+          level: _convertLevel(level),
+          message: message,
+          context: context,
+          data: data,
+          error: error,
+        ),
+      );
     } catch (e) {
       // Don't let debug logging break the app - silently ignore
     }
@@ -403,70 +394,96 @@ class NoopAppLogger implements AppLogger {
   const NoopAppLogger();
 
   @override
-  void analytics(String message, {String? event, Map<String, dynamic>? properties}) {}
+  void analytics(
+    String message, {
+    String? event,
+    Map<String, dynamic>? properties,
+  }) {}
 
   @override
-  void api(String message,
-      {String? endpoint,
-      int? statusCode,
-      Map<String, dynamic>? requestData,
-      Map<String, dynamic>? responseData,
-      Duration? duration,
-      dynamic error}) {}
+  void api(
+    String message, {
+    String? endpoint,
+    int? statusCode,
+    Map<String, dynamic>? requestData,
+    Map<String, dynamic>? responseData,
+    Duration? duration,
+    dynamic error,
+  }) {}
 
   @override
-  void database(String message,
-      {String? operation,
-      String? table,
-      Map<String, dynamic>? data,
-      Duration? duration,
-      dynamic error}) {}
+  void database(
+    String message, {
+    String? operation,
+    String? table,
+    Map<String, dynamic>? data,
+    Duration? duration,
+    dynamic error,
+  }) {}
 
   @override
-  void debug(String message,
-      {String? context,
-      Map<String, dynamic>? data,
-      dynamic error,
-      StackTrace? stackTrace}) {}
+  void debug(
+    String message, {
+    String? context,
+    Map<String, dynamic>? data,
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {}
 
   @override
-  void error(String message,
-      {String? context,
-      Map<String, dynamic>? data,
-      dynamic error,
-      StackTrace? stackTrace}) {}
+  void error(
+    String message, {
+    String? context,
+    Map<String, dynamic>? data,
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {}
 
   @override
-  void fatal(String message,
-      {String? context,
-      Map<String, dynamic>? data,
-      dynamic error,
-      StackTrace? stackTrace}) {}
+  void fatal(
+    String message, {
+    String? context,
+    Map<String, dynamic>? data,
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {}
 
   @override
   void info(String message, {String? context, Map<String, dynamic>? data}) {}
 
   @override
-  void navigation(String message,
-      {String? from, String? to, Map<String, dynamic>? parameters}) {}
+  void navigation(
+    String message, {
+    String? from,
+    String? to,
+    Map<String, dynamic>? parameters,
+  }) {}
 
   @override
-  void nutritionPlan(String message,
-      {String? planId,
-      String? phase,
-      Map<String, dynamic>? data,
-      dynamic error}) {}
+  void nutritionPlan(
+    String message, {
+    String? planId,
+    String? phase,
+    Map<String, dynamic>? data,
+    dynamic error,
+  }) {}
 
   @override
-  void userAction(String message,
-      {String? action, String? screen, Map<String, dynamic>? data}) {}
+  void userAction(
+    String message, {
+    String? action,
+    String? screen,
+    Map<String, dynamic>? data,
+  }) {}
 
   @override
-  void warning(String message,
-      {String? context,
-      Map<String, dynamic>? data,
-      dynamic error,
-      StackTrace? stackTrace}) {}
+  void warning(
+    String message, {
+    String? context,
+    Map<String, dynamic>? data,
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {}
 }
 
 /// Filter to reduce logs in production builds.
@@ -476,7 +493,9 @@ class ProductionLogFilter extends LogFilter {
     if (kReleaseMode) {
       return event.level.index >= Level.info.index;
     }
-    return true;
+    // In debug mode, respect the Logger's configured level
+    // (default: warning unless VERBOSE_APP_LOGS=true)
+    return event.level.index >= (level ?? Level.warning).index;
   }
 }
 
