@@ -473,10 +473,13 @@ class VersionCheckService {
     required int remoteSchemaVersion,
   }) {
     // Check app version first (higher priority)
+    // Strip pre-release suffixes (e.g. "1.15.1-dev" → "1.15.1") so that
+    // debug/profile builds are treated as the release version.
     final current = Version.parse(currentVersion);
+    final currentBase = Version(current.major, current.minor, current.patch);
     final required = Version.parse(minAppVersion);
 
-    if (current < required) {
+    if (currentBase < required) {
       return VersionCheckResult.updateRequired(
         currentVersion: currentVersion,
         requiredVersion: minAppVersion,
