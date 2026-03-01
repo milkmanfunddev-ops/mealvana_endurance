@@ -22,6 +22,9 @@ import '../../features/onboarding/presentation/screens/swimming_details_screen.d
 import '../../features/auth/presentation/screens/post_onboarding_auth_screen.dart';
 import '../../features/auth/presentation/screens/email_signup_screen.dart';
 import '../../features/auth/presentation/screens/email_login_screen.dart';
+import '../../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/presentation/screens/verify_reset_code_screen.dart';
+import '../../features/auth/presentation/screens/set_new_password_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/activity_detail_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/adjust_macros_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
@@ -35,6 +38,7 @@ import '../../features/settings/presentation/screens/food_preferences_hub_screen
 import '../../features/settings/presentation/screens/sport_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/settings/presentation/screens/connected_apps_screen.dart';
+import '../../features/settings/presentation/screens/nutrition_targets_screen.dart';
 import '../core/screen_mode.dart';
 import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
 import '../../features/user_journal/presentation/screens/plan_how_well_screen.dart';
@@ -214,6 +218,29 @@ class AppRouter {
         path: '/auth/email-login',
         name: 'auth-email-login',
         builder: (context, state) => const EmailLoginScreen(),
+      ),
+
+      // Password Recovery Flow
+      GoRoute(
+        path: '/auth/forgot-password',
+        name: 'auth-forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+
+      GoRoute(
+        path: '/auth/verify-reset-code',
+        name: 'auth-verify-reset-code',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final email = extra?['email'] as String? ?? '';
+          return VerifyResetCodeScreen(email: email);
+        },
+      ),
+
+      GoRoute(
+        path: '/auth/set-new-password',
+        name: 'auth-set-new-password',
+        builder: (context, state) => const SetNewPasswordScreen(),
       ),
 
       // REDIRECTED: Old routes now point to NewActivityScreen (multi-sport Kyle design)
@@ -427,6 +454,13 @@ class AppRouter {
         path: '/settings/sport-preferences-hub',
         name: 'settings-sport-preferences-hub',
         builder: (context, state) => const SportPreferencesHubScreen(),
+      ),
+
+      // Nutrition Targets - User-configured default macro target overrides
+      GoRoute(
+        path: '/settings/nutrition-targets',
+        name: 'settings-nutrition-targets',
+        builder: (context, state) => const NutritionTargetsScreen(),
       ),
 
       // Food Preferences Consolidated Screen - All food-related settings in one place (DEPRECATED - kept for backward compatibility)

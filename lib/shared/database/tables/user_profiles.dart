@@ -123,6 +123,10 @@ class UserProfilesTable extends Table {
       .withDefault(const Constant('imperial'))
       .named('unit_system')();
 
+  /// User-configured nutrition target overrides stored as JSON.
+  /// Null means "use algorithm defaults" for all fields.
+  TextColumn get nutritionTargetOverrides => text().nullable().named('nutrition_target_overrides')();
+
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
   BoolColumn get needsUpload => boolean().withDefault(const Constant(false)).named('needs_upload')();

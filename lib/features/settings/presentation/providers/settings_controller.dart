@@ -10,6 +10,7 @@ import '../../../auth/domain/user_preferences.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
+import '../../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../onboarding/domain/dietary_preference.dart';
 import '../../../onboarding/domain/allergy.dart';
 import '../../../coach_mode/data/coach_repository.dart';
@@ -215,6 +216,8 @@ class SettingsController extends _$SettingsController {
       // Optional name fields for coach mode athlete identification
       firstName: displayProfile?.firstName,
       lastName: displayProfile?.lastName,
+      // Nutrition target overrides
+      nutritionTargetOverrides: displayProfile?.nutritionTargetOverrides,
     );
   }
 
@@ -463,6 +466,74 @@ class SettingsController extends _$SettingsController {
     await _saveProfile();
   }
 
+  /// Save nutrition target overrides (null clears all overrides).
+  /// Bypasses _saveProfile() to handle the null/clearing case directly,
+  /// since copyWith with `??` would preserve existing values when null is passed.
+  Future<void> saveNutritionTargetOverrides(NutritionTargetOverrides? overrides) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = await AsyncValue.guard(() async {
+      final userRepository = await _userRepository;
+      final existingProfile = await userRepository.getCurrentUser();
+
+      if (existingProfile == null) {
+        throw Exception('No user profile found to update.');
+      }
+
+      // Use a sentinel empty override to distinguish "set to null" from "don't change"
+      // We create the profile with a non-null value first, then null it out manually
+      final updatedProfile = UserProfile(
+        id: existingProfile.id,
+        deviceId: existingProfile.deviceId,
+        authUserId: existingProfile.authUserId,
+        authProvider: existingProfile.authProvider,
+        isAnonymous: existingProfile.isAnonymous,
+        gender: existingProfile.gender,
+        birthday: existingProfile.birthday,
+        heightFeet: existingProfile.heightFeet,
+        heightInches: existingProfile.heightInches,
+        weightPounds: existingProfile.weightPounds,
+        runsWithWaterBottle: existingProfile.runsWithWaterBottle,
+        createdAt: existingProfile.createdAt,
+        updatedAt: DateTime.now(),
+        gutTraining: existingProfile.gutTraining,
+        sweatRate: existingProfile.sweatRate,
+        onboardingCompleted: existingProfile.onboardingCompleted,
+        appVersion: existingProfile.appVersion,
+        swipeHintShown: existingProfile.swipeHintShown,
+        unitSystem: existingProfile.unitSystem,
+        giSensitivity: existingProfile.giSensitivity,
+        ftpWatts: existingProfile.ftpWatts,
+        typicalBikeBottles: existingProfile.typicalBikeBottles,
+        hasAeroBottle: existingProfile.hasAeroBottle,
+        hasBentoBox: existingProfile.hasBentoBox,
+        cssPacePer100mSeconds: existingProfile.cssPacePer100mSeconds,
+        typicalWetsuit: existingProfile.typicalWetsuit,
+        typicalSwimCapType: existingProfile.typicalSwimCapType,
+        defaultRunningPaceMinPerMile: existingProfile.defaultRunningPaceMinPerMile,
+        defaultCyclingSpeedMph: existingProfile.defaultCyclingSpeedMph,
+        defaultSwimmingPacePer100Sec: existingProfile.defaultSwimmingPacePer100Sec,
+        dietaryPreference: existingProfile.dietaryPreference,
+        allergies: existingProfile.allergies,
+        senderName: existingProfile.senderName,
+        firstName: existingProfile.firstName,
+        lastName: existingProfile.lastName,
+        nutritionTargetOverrides: overrides, // Explicitly set (can be null)
+      );
+
+      await userRepository.updateUserProfile(updatedProfile);
+
+      ref.invalidate(currentUserProvider);
+
+      return currentState.copyWith(
+        nutritionTargetOverrides: overrides,
+        isSaving: false,
+        errorMessage: null,
+      );
+    });
+  }
+
   /// Save profile changes (both local and Supabase)
   Future<void> _saveProfile() async {
     final currentState = state.value;
@@ -499,6 +570,8 @@ class SettingsController extends _$SettingsController {
         // Optional name fields for coach mode athlete identification
         firstName: currentState.firstName ?? existingProfile.firstName,
         lastName: currentState.lastName ?? existingProfile.lastName,
+        // Nutrition target overrides
+        nutritionTargetOverrides: currentState.nutritionTargetOverrides ?? existingProfile.nutritionTargetOverrides,
       );
 
       await userRepository.updateUserProfile(updatedProfile);

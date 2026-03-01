@@ -1,6 +1,7 @@
 import 'package:mealvana_endurance/features/onboarding/domain/dietary_preference.dart';
 import 'package:mealvana_endurance/features/onboarding/domain/allergy.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
 
 /// Domain models for user authentication and preferences
 /// Removed Hive dependencies as part of migration to Drift database
@@ -81,6 +82,9 @@ class UserProfile {
   final String? firstName;
   final String? lastName;
 
+  // Nutrition target overrides - user-configured default macro targets
+  final NutritionTargetOverrides? nutritionTargetOverrides;
+
   UserProfile({
     required this.id,
     required this.deviceId,
@@ -123,6 +127,8 @@ class UserProfile {
     // User identity
     this.firstName,
     this.lastName,
+    // Nutrition target overrides
+    this.nutritionTargetOverrides,
   });
 
   /// Returns the best available display name for the user.
@@ -281,6 +287,11 @@ class UserProfile {
       // User identity
       firstName: json['first_name'] as String?,
       lastName: json['last_name'] as String?,
+      // Nutrition target overrides
+      nutritionTargetOverrides: json['nutrition_target_overrides'] != null
+          ? NutritionTargetOverrides.fromJson(
+              json['nutrition_target_overrides'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -317,6 +328,8 @@ class UserProfile {
       // User identity
       'first_name': firstName,
       'last_name': lastName,
+      // Nutrition target overrides
+      'nutrition_target_overrides': nutritionTargetOverrides?.toJson(),
       // Note: is_coach is NOT synced to Supabase - coach status lives in coaches table
       // Note: swipe_hint_shown, gi_sensitivity, typical_bike_bottles, has_aero_bottle,
       // has_bento_box, typical_wetsuit, typical_swim_cap_type are Drift-only fields
@@ -362,6 +375,8 @@ class UserProfile {
     // User identity
     String? firstName,
     String? lastName,
+    // Nutrition target overrides
+    NutritionTargetOverrides? nutritionTargetOverrides,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -401,6 +416,8 @@ class UserProfile {
       // User identity
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
+      // Nutrition target overrides
+      nutritionTargetOverrides: nutritionTargetOverrides ?? this.nutritionTargetOverrides,
     );
   }
 }

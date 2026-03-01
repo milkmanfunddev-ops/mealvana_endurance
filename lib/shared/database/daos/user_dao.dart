@@ -3,6 +3,7 @@ import '../app_database.dart';
 import '../tables/user_profiles.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart' as run_params;
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart' as domain;
+import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../features/onboarding/domain/dietary_preference.dart';
 import '../../../features/onboarding/domain/allergy.dart';
 
@@ -126,6 +127,8 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         // Optional name fields for coach mode athlete identification
         firstName: Value(profile.firstName),
         lastName: Value(profile.lastName),
+        // Nutrition target overrides (JSON string)
+        nutritionTargetOverrides: Value(profile.nutritionTargetOverrides?.toJsonString()),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -177,6 +180,8 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         // Optional name fields for coach mode athlete identification
         firstName: Value(profile.firstName),
         lastName: Value(profile.lastName),
+        // Nutrition target overrides (JSON string)
+        nutritionTargetOverrides: Value(profile.nutritionTargetOverrides?.toJsonString()),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -295,6 +300,10 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       // Optional name fields for coach mode athlete identification
       firstName: dbUser.firstName,
       lastName: dbUser.lastName,
+      // Nutrition target overrides
+      nutritionTargetOverrides: NutritionTargetOverrides.fromJsonString(
+        dbUser.nutritionTargetOverrides,
+      ),
     );
   }
 }

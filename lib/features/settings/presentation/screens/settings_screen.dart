@@ -549,6 +549,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: AppSpacing.sm),
 
+          // Nutrition Targets - Default macro target overrides
+          _buildQuickLink(
+            context: context,
+            icon: FontAwesomeIcons.bullseye,
+            title: 'Nutrition Targets',
+            subtitle: 'Set default macro targets',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_nutrition_targets_tapped');
+              context.push('/settings/nutrition-targets');
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
           // Connected Apps (Final Surge, TrainingPeaks, Strava integrations)
           _buildQuickLink(
             context: context,

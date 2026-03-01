@@ -517,6 +517,17 @@ class $UserProfilesTableTable extends UserProfilesTable
     requiredDuringInsert: false,
     defaultValue: const Constant('imperial'),
   );
+  static const VerificationMeta _nutritionTargetOverridesMeta =
+      const VerificationMeta('nutritionTargetOverrides');
+  @override
+  late final GeneratedColumn<String> nutritionTargetOverrides =
+      GeneratedColumn<String>(
+        'nutrition_target_overrides',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _needsUploadMeta = const VerificationMeta(
     'needsUpload',
   );
@@ -576,6 +587,7 @@ class $UserProfilesTableTable extends UserProfilesTable
     dietaryPreference,
     allergies,
     unitSystem,
+    nutritionTargetOverrides,
     needsUpload,
   ];
   @override
@@ -918,6 +930,15 @@ class $UserProfilesTableTable extends UserProfilesTable
         unitSystem.isAcceptableOrUnknown(data['unit_system']!, _unitSystemMeta),
       );
     }
+    if (data.containsKey('nutrition_target_overrides')) {
+      context.handle(
+        _nutritionTargetOverridesMeta,
+        nutritionTargetOverrides.isAcceptableOrUnknown(
+          data['nutrition_target_overrides']!,
+          _nutritionTargetOverridesMeta,
+        ),
+      );
+    }
     if (data.containsKey('needs_upload')) {
       context.handle(
         _needsUploadMeta,
@@ -1107,6 +1128,10 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.string,
         data['${effectivePrefix}unit_system'],
       )!,
+      nutritionTargetOverrides: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nutrition_target_overrides'],
+      ),
       needsUpload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}needs_upload'],
@@ -1234,6 +1259,10 @@ class UserProfileEntry extends DataClass
   /// Default: imperial (US-centric app)
   final String unitSystem;
 
+  /// User-configured nutrition target overrides stored as JSON.
+  /// Null means "use algorithm defaults" for all fields.
+  final String? nutritionTargetOverrides;
+
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
   final bool needsUpload;
@@ -1280,6 +1309,7 @@ class UserProfileEntry extends DataClass
     this.dietaryPreference,
     required this.allergies,
     required this.unitSystem,
+    this.nutritionTargetOverrides,
     required this.needsUpload,
   });
   @override
@@ -1371,6 +1401,11 @@ class UserProfileEntry extends DataClass
     }
     map['allergies'] = Variable<String>(allergies);
     map['unit_system'] = Variable<String>(unitSystem);
+    if (!nullToAbsent || nutritionTargetOverrides != null) {
+      map['nutrition_target_overrides'] = Variable<String>(
+        nutritionTargetOverrides,
+      );
+    }
     map['needs_upload'] = Variable<bool>(needsUpload);
     return map;
   }
@@ -1451,6 +1486,9 @@ class UserProfileEntry extends DataClass
           : Value(dietaryPreference),
       allergies: Value(allergies),
       unitSystem: Value(unitSystem),
+      nutritionTargetOverrides: nutritionTargetOverrides == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nutritionTargetOverrides),
       needsUpload: Value(needsUpload),
     );
   }
@@ -1535,6 +1573,9 @@ class UserProfileEntry extends DataClass
       ),
       allergies: serializer.fromJson<String>(json['allergies']),
       unitSystem: serializer.fromJson<String>(json['unitSystem']),
+      nutritionTargetOverrides: serializer.fromJson<String?>(
+        json['nutritionTargetOverrides'],
+      ),
       needsUpload: serializer.fromJson<bool>(json['needsUpload']),
     );
   }
@@ -1594,6 +1635,9 @@ class UserProfileEntry extends DataClass
       'dietaryPreference': serializer.toJson<String?>(dietaryPreference),
       'allergies': serializer.toJson<String>(allergies),
       'unitSystem': serializer.toJson<String>(unitSystem),
+      'nutritionTargetOverrides': serializer.toJson<String?>(
+        nutritionTargetOverrides,
+      ),
       'needsUpload': serializer.toJson<bool>(needsUpload),
     };
   }
@@ -1641,6 +1685,7 @@ class UserProfileEntry extends DataClass
     Value<String?> dietaryPreference = const Value.absent(),
     String? allergies,
     String? unitSystem,
+    Value<String?> nutritionTargetOverrides = const Value.absent(),
     bool? needsUpload,
   }) => UserProfileEntry(
     id: id ?? this.id,
@@ -1694,6 +1739,9 @@ class UserProfileEntry extends DataClass
         : this.dietaryPreference,
     allergies: allergies ?? this.allergies,
     unitSystem: unitSystem ?? this.unitSystem,
+    nutritionTargetOverrides: nutritionTargetOverrides.present
+        ? nutritionTargetOverrides.value
+        : this.nutritionTargetOverrides,
     needsUpload: needsUpload ?? this.needsUpload,
   );
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
@@ -1804,6 +1852,9 @@ class UserProfileEntry extends DataClass
       unitSystem: data.unitSystem.present
           ? data.unitSystem.value
           : this.unitSystem,
+      nutritionTargetOverrides: data.nutritionTargetOverrides.present
+          ? data.nutritionTargetOverrides.value
+          : this.nutritionTargetOverrides,
       needsUpload: data.needsUpload.present
           ? data.needsUpload.value
           : this.needsUpload,
@@ -1859,6 +1910,7 @@ class UserProfileEntry extends DataClass
           ..write('dietaryPreference: $dietaryPreference, ')
           ..write('allergies: $allergies, ')
           ..write('unitSystem: $unitSystem, ')
+          ..write('nutritionTargetOverrides: $nutritionTargetOverrides, ')
           ..write('needsUpload: $needsUpload')
           ..write(')'))
         .toString();
@@ -1908,6 +1960,7 @@ class UserProfileEntry extends DataClass
     dietaryPreference,
     allergies,
     unitSystem,
+    nutritionTargetOverrides,
     needsUpload,
   ]);
   @override
@@ -1958,6 +2011,7 @@ class UserProfileEntry extends DataClass
           other.dietaryPreference == this.dietaryPreference &&
           other.allergies == this.allergies &&
           other.unitSystem == this.unitSystem &&
+          other.nutritionTargetOverrides == this.nutritionTargetOverrides &&
           other.needsUpload == this.needsUpload);
 }
 
@@ -2004,6 +2058,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<String?> dietaryPreference;
   final Value<String> allergies;
   final Value<String> unitSystem;
+  final Value<String?> nutritionTargetOverrides;
   final Value<bool> needsUpload;
   final Value<int> rowid;
   const UserProfilesTableCompanion({
@@ -2049,6 +2104,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.dietaryPreference = const Value.absent(),
     this.allergies = const Value.absent(),
     this.unitSystem = const Value.absent(),
+    this.nutritionTargetOverrides = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2095,6 +2151,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.dietaryPreference = const Value.absent(),
     this.allergies = const Value.absent(),
     this.unitSystem = const Value.absent(),
+    this.nutritionTargetOverrides = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2142,6 +2199,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<String>? dietaryPreference,
     Expression<String>? allergies,
     Expression<String>? unitSystem,
+    Expression<String>? nutritionTargetOverrides,
     Expression<bool>? needsUpload,
     Expression<int>? rowid,
   }) {
@@ -2203,6 +2261,8 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       if (dietaryPreference != null) 'dietary_preference': dietaryPreference,
       if (allergies != null) 'allergies': allergies,
       if (unitSystem != null) 'unit_system': unitSystem,
+      if (nutritionTargetOverrides != null)
+        'nutrition_target_overrides': nutritionTargetOverrides,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2251,6 +2311,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Value<String?>? dietaryPreference,
     Value<String>? allergies,
     Value<String>? unitSystem,
+    Value<String?>? nutritionTargetOverrides,
     Value<bool>? needsUpload,
     Value<int>? rowid,
   }) {
@@ -2304,6 +2365,8 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       dietaryPreference: dietaryPreference ?? this.dietaryPreference,
       allergies: allergies ?? this.allergies,
       unitSystem: unitSystem ?? this.unitSystem,
+      nutritionTargetOverrides:
+          nutritionTargetOverrides ?? this.nutritionTargetOverrides,
       needsUpload: needsUpload ?? this.needsUpload,
       rowid: rowid ?? this.rowid,
     );
@@ -2458,6 +2521,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     if (unitSystem.present) {
       map['unit_system'] = Variable<String>(unitSystem.value);
     }
+    if (nutritionTargetOverrides.present) {
+      map['nutrition_target_overrides'] = Variable<String>(
+        nutritionTargetOverrides.value,
+      );
+    }
     if (needsUpload.present) {
       map['needs_upload'] = Variable<bool>(needsUpload.value);
     }
@@ -2516,6 +2584,7 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           ..write('dietaryPreference: $dietaryPreference, ')
           ..write('allergies: $allergies, ')
           ..write('unitSystem: $unitSystem, ')
+          ..write('nutritionTargetOverrides: $nutritionTargetOverrides, ')
           ..write('needsUpload: $needsUpload, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -26090,6 +26159,7 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
       Value<String?> dietaryPreference,
       Value<String> allergies,
       Value<String> unitSystem,
+      Value<String?> nutritionTargetOverrides,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -26137,6 +26207,7 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
       Value<String?> dietaryPreference,
       Value<String> allergies,
       Value<String> unitSystem,
+      Value<String?> nutritionTargetOverrides,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -26362,6 +26433,11 @@ class $$UserProfilesTableTableFilterComposer
 
   ColumnFilters<String> get unitSystem => $composableBuilder(
     column: $table.unitSystem,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nutritionTargetOverrides => $composableBuilder(
+    column: $table.nutritionTargetOverrides,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -26591,6 +26667,11 @@ class $$UserProfilesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get nutritionTargetOverrides => $composableBuilder(
+    column: $table.nutritionTargetOverrides,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => ColumnOrderings(column),
@@ -26798,6 +26879,11 @@ class $$UserProfilesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get nutritionTargetOverrides => $composableBuilder(
+    column: $table.nutritionTargetOverrides,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => column,
@@ -26888,6 +26974,7 @@ class $$UserProfilesTableTableTableManager
                 Value<String?> dietaryPreference = const Value.absent(),
                 Value<String> allergies = const Value.absent(),
                 Value<String> unitSystem = const Value.absent(),
+                Value<String?> nutritionTargetOverrides = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion(
@@ -26933,6 +27020,7 @@ class $$UserProfilesTableTableTableManager
                 dietaryPreference: dietaryPreference,
                 allergies: allergies,
                 unitSystem: unitSystem,
+                nutritionTargetOverrides: nutritionTargetOverrides,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),
@@ -26982,6 +27070,7 @@ class $$UserProfilesTableTableTableManager
                 Value<String?> dietaryPreference = const Value.absent(),
                 Value<String> allergies = const Value.absent(),
                 Value<String> unitSystem = const Value.absent(),
+                Value<String?> nutritionTargetOverrides = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion.insert(
@@ -27027,6 +27116,7 @@ class $$UserProfilesTableTableTableManager
                 dietaryPreference: dietaryPreference,
                 allergies: allergies,
                 unitSystem: unitSystem,
+                nutritionTargetOverrides: nutritionTargetOverrides,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),

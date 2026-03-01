@@ -10,6 +10,7 @@ import '../../../../shared/providers/user_id_provider.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/intensity_distribution.dart';
 import '../../domain/macro_targets.dart';
+import '../../domain/nutrition_target_overrides.dart';
 import '../../data/macro_repository.dart';
 import '../../application/macro_generation_service.dart';
 import '../../application/brick_macro_service.dart';
@@ -460,7 +461,13 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         // Get the generated macro targets from cache to track analytics
         final repository = ref.read(macroRepositoryProvider);
-        final macroTargets = await repository.getCachedMacroTargets();
+        var macroTargets = await repository.getCachedMacroTargets();
+
+        // Apply user profile nutrition target overrides (if any)
+        if (macroTargets != null) {
+          macroTargets = await _maybeApplyOverrides(macroTargets);
+          await repository.saveMacroTargets(macroTargets);
+        }
 
         // Update state to not generating and include macro targets with finalActivityId
         return currentState.copyWith(
@@ -585,7 +592,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         );
 
         // Call the service
-        final macroTargets = await macroService.generateCyclingMacros(
+        var macroTargets = await macroService.generateCyclingMacros(
           activityId: activityId,
           deviceId: deviceId,
           distanceMiles: distanceMiles,
@@ -601,6 +608,9 @@ class MacroTargetsController extends _$MacroTargetsController {
           isFasted: isFasted,
           intensity: intensity,
         );
+
+        // Apply user profile nutrition target overrides (if any)
+        macroTargets = await _maybeApplyOverrides(macroTargets);
 
         return currentState.copyWith(
           isGeneratingMacros: false,
@@ -949,7 +959,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         );
 
         // Call the service
-        final macroTargets = await macroService.generateSwimmingMacros(
+        var macroTargets = await macroService.generateSwimmingMacros(
           activityId: activityId,
           deviceId: deviceId,
           distanceMeters: distanceMeters,
@@ -961,6 +971,9 @@ class MacroTargetsController extends _$MacroTargetsController {
           waterTempC: waterTempC,
           intensity: intensity,
         );
+
+        // Apply user profile nutrition target overrides (if any)
+        macroTargets = await _maybeApplyOverrides(macroTargets);
 
         return currentState.copyWith(
           isGeneratingMacros: false,
@@ -1115,13 +1128,16 @@ class MacroTargetsController extends _$MacroTargetsController {
         );
 
         // Call the service
-        final macroTargets = await brickMacroService.generateBrickMacros(
+        var macroTargets = await brickMacroService.generateBrickMacros(
           activityId: activityId,
           deviceId: deviceId,
           segments: segments,
           segmentOrder: segmentOrder,
           isFasted: isFasted,
         );
+
+        // Apply user profile nutrition target overrides (if any)
+        macroTargets = await _maybeApplyOverrides(macroTargets);
 
         return currentState.copyWith(
           isGeneratingMacros: false,
@@ -1450,6 +1466,8 @@ class MacroTargetsController extends _$MacroTargetsController {
           allergies: allergies,
           likedFoods: likedFoods,
           dislikedFoods: dislikedFoods,
+          durationMinutes: (macroTargets.metrics.durationH * 60).round(),
+          gutTrainingLevel: userProfile?.gutTraining.name,
         );
 
         // Track successful plan creation (the service handles whether it's LLM or algorithmic)
@@ -1579,6 +1597,111 @@ class MacroTargetsController extends _$MacroTargetsController {
       DebugLogger.error('Failed to cleanup draft activity: $e');
       // Don't rethrow - cleanup failure is acceptable
     }
+  }
+
+  /// Apply user profile nutrition target overrides to generated macro targets.
+  /// Non-null override fields replace the algorithm-generated values.
+  /// During-activity rate overrides are multiplied by duration to compute totals.
+  MacroTargets _applyUserOverrides(
+    MacroTargets targets,
+    NutritionTargetOverrides overrides,
+  ) {
+    final clamped = NutritionTargetGuardrails.clampAll(overrides);
+    final durationH = targets.metrics.durationH;
+    final modifiedFields = <String>[...targets.modifiedFields];
+
+    // Pre-activity overrides
+    var preRun = targets.preRun;
+    if (clamped.pre != null) {
+      final pre = clamped.pre!;
+      if (pre.carbsG != null) {
+        preRun = preRun.copyWith(carbsG: pre.carbsG);
+        modifiedFields.add('preRunCarbs');
+      }
+      if (pre.proteinG != null) {
+        preRun = preRun.copyWith(proteinG: pre.proteinG);
+        modifiedFields.add('preRunProtein');
+      }
+      if (pre.fatG != null) {
+        preRun = preRun.copyWith(fatCapG: pre.fatG);
+        modifiedFields.add('preRunFatCap');
+      }
+      if (pre.sodiumMg != null) {
+        preRun = preRun.copyWith(sodiumMg: pre.sodiumMg);
+        modifiedFields.add('preRunSodium');
+      }
+      if (pre.fluidMl != null) {
+        preRun = preRun.copyWith(fluidsMl: pre.fluidMl);
+        modifiedFields.add('preRunFluids');
+      }
+    }
+
+    // During-activity overrides (rates → totals using duration)
+    var duringRun = targets.duringRun;
+    if (clamped.during != null) {
+      final during = clamped.during!;
+      if (during.carbRateGPerH != null) {
+        duringRun = duringRun.copyWith(
+          carbRateGPerH: during.carbRateGPerH,
+          carbTotalG: during.carbRateGPerH! * durationH,
+        );
+        modifiedFields.add('duringRunCarbRate');
+      }
+      if (during.sodiumRateMgPerH != null) {
+        duringRun = duringRun.copyWith(
+          sodiumRateMgPerH: during.sodiumRateMgPerH,
+          sodiumTotalMg: during.sodiumRateMgPerH! * durationH,
+        );
+        modifiedFields.add('duringRunSodiumRate');
+      }
+      if (during.fluidRateMlPerH != null) {
+        duringRun = duringRun.copyWith(
+          fluidRateMlPerH: during.fluidRateMlPerH,
+          fluidTotalMl: during.fluidRateMlPerH! * durationH,
+        );
+        modifiedFields.add('duringRunFluidRate');
+      }
+    }
+
+    // Post-activity overrides
+    var postRun = targets.postRun;
+    if (clamped.post != null) {
+      final post = clamped.post!;
+      if (post.carbsG != null) {
+        postRun = postRun.copyWith(carbsG: post.carbsG);
+        modifiedFields.add('postRunCarbs');
+      }
+      if (post.proteinG != null) {
+        postRun = postRun.copyWith(proteinG: post.proteinG);
+        modifiedFields.add('postRunProtein');
+      }
+      if (post.sodiumMg != null) {
+        postRun = postRun.copyWith(sodiumMg: post.sodiumMg);
+        modifiedFields.add('postRunSodium');
+      }
+      if (post.fluidMl != null) {
+        postRun = postRun.copyWith(fluidsMl: post.fluidMl);
+        modifiedFields.add('postRunFluids');
+      }
+    }
+
+    return targets.copyWith(
+      preRun: preRun,
+      duringRun: duringRun,
+      postRun: postRun,
+      isUserModified: modifiedFields.isNotEmpty,
+      modifiedFields: modifiedFields.toSet().toList(), // deduplicate
+    );
+  }
+
+  /// Load user profile overrides and apply them to macro targets if present.
+  /// Returns the (potentially modified) macro targets.
+  Future<MacroTargets> _maybeApplyOverrides(MacroTargets macroTargets) async {
+    final user = await _authService.getCurrentUser();
+    if (user?.nutritionTargetOverrides?.hasAnyOverride == true) {
+      return _applyUserOverrides(macroTargets, user!.nutritionTargetOverrides!);
+    }
+    return macroTargets;
   }
 
   /// Helper method to get current value of a field

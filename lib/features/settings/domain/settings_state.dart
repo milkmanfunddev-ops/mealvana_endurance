@@ -1,5 +1,6 @@
 import '../../auth/domain/user_preferences.dart';
 import '../../nutrition_plan/domain/run_parameters.dart';
+import '../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../onboarding/domain/dietary_preference.dart';
 import '../../onboarding/domain/allergy.dart';
 
@@ -73,6 +74,9 @@ class SettingsState {
   final String? firstName;
   final String? lastName;
 
+  // Nutrition target overrides
+  final NutritionTargetOverrides? nutritionTargetOverrides;
+
   /// Generate a short, shareable athlete code from the user ID
   /// Format: ATH-XXXXXXXX (first 8 chars of UUID, uppercase)
   /// Returns null if no userId
@@ -139,6 +143,7 @@ class SettingsState {
     this.isCoach = false,
     this.firstName,
     this.lastName,
+    this.nutritionTargetOverrides,
     this.accountSectionTitle = 'Account',
     this.accountStatusAnonymous = 'Not signed in',
     this.accountStatusAuthenticated = 'Signed in',
@@ -194,6 +199,7 @@ class SettingsState {
     bool? isCoach,
     String? firstName,
     String? lastName,
+    NutritionTargetOverrides? nutritionTargetOverrides,
     String? accountSectionTitle,
     String? accountStatusAnonymous,
     String? accountStatusAuthenticated,
@@ -248,6 +254,7 @@ class SettingsState {
       isCoach: isCoach ?? this.isCoach,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
+      nutritionTargetOverrides: nutritionTargetOverrides ?? this.nutritionTargetOverrides,
       accountSectionTitle: accountSectionTitle ?? this.accountSectionTitle,
       accountStatusAnonymous: accountStatusAnonymous ?? this.accountStatusAnonymous,
       accountStatusAuthenticated: accountStatusAuthenticated ?? this.accountStatusAuthenticated,

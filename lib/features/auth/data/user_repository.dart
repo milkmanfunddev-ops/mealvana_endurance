@@ -3,10 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
 import '../../onboarding/domain/dietary_preference.dart';
 import '../../onboarding/domain/allergy.dart';
+import '../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/sync/immediate_remote_write_service.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../shared/data/syncable_repository.dart';
 
@@ -19,11 +21,13 @@ class UserRepository with SyncableRepository {
     required this.database,
     required this.supabase,
     required this.sentry,
+    required this.immediateRemoteWriteService,
   });
 
   final AppDatabase database;
   final SupabaseClient supabase;
   final SentryReporter sentry;
+  final ImmediateRemoteWriteService immediateRemoteWriteService;
 
   // ========== SyncableRepository Implementation ==========
 
@@ -50,6 +54,18 @@ class UserRepository with SyncableRepository {
 
       // Parse user profile from Supabase response
       final userProfile = _parseUserFromSupabase(response, userId);
+
+      final localProfile = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).getSingleOrNull();
+      if (localProfile?.needsUpload == true) {
+        sentry.addBreadcrumb(
+          message: 'Skipped remote user overwrite for dirty local profile',
+          category: 'sync',
+          data: {'user_id': userId},
+        );
+        return SyncResult.successful(0);
+      }
 
       // Save to local Drift database
       await saveUserProfile(userProfile);
@@ -80,10 +96,11 @@ class UserRepository with SyncableRepository {
     try {
       // Query Drift for user profile with needs_upload = true
       // Use multiple where clauses (Drift AND logic)
-      final dirtyUser = await (database.select(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId))
-            ..where((t) => t.needsUpload.equals(true)))
-          .getSingleOrNull();
+      final dirtyUser =
+          await (database.select(database.userProfilesTable)
+                ..where((t) => t.id.equals(userId))
+                ..where((t) => t.needsUpload.equals(true)))
+              .getSingleOrNull();
 
       if (dirtyUser == null) {
         // No dirty records to upload
@@ -94,15 +111,14 @@ class UserRepository with SyncableRepository {
       final userProfile = _convertToDomainUserProfile(dirtyUser);
 
       // Upload to Supabase
-      await supabase.from('users').upsert(
-        userProfile.toJson(),
-        onConflict: 'id',
-      );
+      await supabase
+          .from('users')
+          .upsert(userProfile.toJson(), onConflict: 'id');
 
       // Clear dirty flag in local database
-      await database.update(database.userProfilesTable).replace(
-            dirtyUser.copyWith(needsUpload: false),
-          );
+      await database
+          .update(database.userProfilesTable)
+          .replace(dirtyUser.copyWith(needsUpload: false));
 
       sentry.addBreadcrumb(
         message: 'Uploaded dirty user profile to Supabase',
@@ -153,7 +169,7 @@ class UserRepository with SyncableRepository {
       // Convert null to DietaryPreference.none for UI
       dietaryPreference:
           DietaryPreference.fromDbValue(dbUser.dietaryPreference) ??
-              DietaryPreference.none,
+          DietaryPreference.none,
       allergies: Allergy.fromDbArray(dbUser.allergies),
       // Optional name fields for coach mode athlete identification
       firstName: dbUser.firstName,
@@ -165,7 +181,10 @@ class UserRepository with SyncableRepository {
 
   /// Save user profile
   /// [needsUpload] - If true, marks profile for background upload to Supabase (for new registrations)
-  Future<void> saveUserProfile(UserProfile profile, {bool needsUpload = false}) async {
+  Future<void> saveUserProfile(
+    UserProfile profile, {
+    bool needsUpload = false,
+  }) async {
     try {
       await database.userDao.saveUserProfile(profile, needsUpload: needsUpload);
       sentry.addBreadcrumb(
@@ -224,14 +243,26 @@ class UserRepository with SyncableRepository {
 
   /// Update user profile
   /// [needsUpload] - If true, marks profile for background upload to Supabase (for onboarding updates)
-  Future<void> updateUserProfile(UserProfile profile, {bool needsUpload = false}) async {
+  Future<void> updateUserProfile(
+    UserProfile profile, {
+    bool needsUpload = false,
+  }) async {
     try {
       final updatedProfile = profile.copyWith(updatedAt: DateTime.now());
-      await database.userDao.updateUserProfile(updatedProfile, needsUpload: needsUpload);
+      await database.userDao.updateUserProfile(
+        updatedProfile,
+        needsUpload: needsUpload,
+      );
 
       // Skip immediate Supabase sync if marked for background upload
       if (!needsUpload) {
-        await _syncUserProfileToSupabase(updatedProfile);
+        await immediateRemoteWriteService.run(
+          repository: repositoryKey,
+          operation: 'update_profile',
+          recordId: updatedProfile.id,
+          method: 'UPSERT',
+          write: () => _upsertUserProfileToSupabase(updatedProfile),
+        );
       }
 
       sentry.addBreadcrumb(
@@ -277,43 +308,37 @@ class UserRepository with SyncableRepository {
       // Save to local database
       await updateUserProfile(updatedProfile);
 
-      // Sync to Supabase
-      try {
-        final updateData = {
+      // Sync to Supabase (best effort; local update already succeeded)
+      final updateData = {
+        'auth_provider': authProvider,
+        'is_anonymous': isAnonymous,
+        'updated_at': updatedProfile.updatedAt.toIso8601String(),
+      };
+
+      // Only include auth_user_id if provided
+      if (authUserId != null) {
+        updateData['auth_user_id'] = authUserId;
+      }
+
+      await immediateRemoteWriteService.run(
+        repository: repositoryKey,
+        operation: 'update_auth_provider',
+        recordId: currentUser.id,
+        method: 'UPDATE',
+        write: () =>
+            supabase.from('users').update(updateData).eq('id', currentUser.id),
+      );
+
+      sentry.addBreadcrumb(
+        message: 'Auth provider updated successfully',
+        category: 'auth',
+        data: {
+          'user_id': currentUser.id,
           'auth_provider': authProvider,
           'is_anonymous': isAnonymous,
-          'updated_at': updatedProfile.updatedAt.toIso8601String(),
-        };
-
-        // Only include auth_user_id if provided
-        if (authUserId != null) {
-          updateData['auth_user_id'] = authUserId;
-        }
-
-        await supabase
-            .from('users')
-            .update(updateData)
-            .eq('id', currentUser.id);
-
-        sentry.addBreadcrumb(
-          message: 'Auth provider updated successfully',
-          category: 'auth',
-          data: {
-            'user_id': currentUser.id,
-            'auth_provider': authProvider,
-            'is_anonymous': isAnonymous,
-            'auth_user_id_updated': authUserId != null,
-          },
-        );
-      } catch (e, stackTrace) {
-        // Log but don't throw - local update succeeded
-        await sentry.reportNetworkError(
-          e,
-          url: 'supabase:users:update',
-          method: 'UPDATE',
-          stackTrace: stackTrace,
-        );
-      }
+          'auth_user_id_updated': authUserId != null,
+        },
+      );
     } catch (e, stackTrace) {
       await sentry.reportDatabaseError(
         e,
@@ -394,8 +419,14 @@ class UserRepository with SyncableRepository {
   /// Remove food preferences by source
   /// Used when allergies or dietary preferences are removed to undo auto-avoids
   /// Returns the number of preferences removed
-  Future<int> removeFoodPreferencesBySource(String userId, String source) async {
-    return await database.foodPreferencesDao.removeFoodPreferencesBySource(userId, source);
+  Future<int> removeFoodPreferencesBySource(
+    String userId,
+    String source,
+  ) async {
+    return await database.foodPreferencesDao.removeFoodPreferencesBySource(
+      userId,
+      source,
+    );
   }
 
   /// Get food preferences with their sources for a user
@@ -410,7 +441,9 @@ class UserRepository with SyncableRepository {
 
   /// Get stored slider levels for each food preference
   Future<Map<String, int>> getFoodPreferenceLevels(String userId) async {
-    return await database.foodPreferencesDao.getUserFoodPreferenceLevels(userId);
+    return await database.foodPreferencesDao.getUserFoodPreferenceLevels(
+      userId,
+    );
   }
 
   /// Update a single food preference
@@ -448,7 +481,10 @@ class UserRepository with SyncableRepository {
           .eq('user_id', userId)
           .eq('is_deleted', false);
 
-      await database.foodsDao.replaceUserFoods(userId, List<Map<String, dynamic>>.from(response));
+      await database.foodsDao.replaceUserFoods(
+        userId,
+        List<Map<String, dynamic>>.from(response),
+      );
     } catch (e, stackTrace) {
       await sentry.reportNetworkError(
         e,
@@ -527,8 +563,12 @@ class UserRepository with SyncableRepository {
       }
 
       // Sync to Supabase (best effort - don't throw on failure)
-      try {
-        await supabase.from('users').upsert({
+      await immediateRemoteWriteService.run(
+        repository: repositoryKey,
+        operation: 'reset_anonymous_user',
+        recordId: newAnonymousUserId,
+        method: 'UPSERT',
+        write: () => supabase.from('users').upsert({
           'id': newAnonymousUserId,
           'device_id': newAnonymousUserId,
           'auth_provider': 'anonymous',
@@ -543,16 +583,8 @@ class UserRepository with SyncableRepository {
           'onboarding_completed': newProfile.onboardingCompleted,
           'created_at': newProfile.createdAt.toIso8601String(),
           'updated_at': newProfile.updatedAt.toIso8601String(),
-        });
-      } catch (e, stackTrace) {
-        // Log but don't throw - local save succeeded
-        await sentry.reportNetworkError(
-          e,
-          url: 'supabase:users:upsert',
-          method: 'UPSERT',
-          stackTrace: stackTrace,
-        );
-      }
+        }),
+      );
 
       sentry.addBreadcrumb(
         message: 'Reset to new anonymous user after sign-out',
@@ -664,6 +696,18 @@ class UserRepository with SyncableRepository {
           .maybeSingle();
 
       if (response != null) {
+        final localProfile = await (database.select(
+          database.userProfilesTable,
+        )..where((t) => t.id.equals(userId))).getSingleOrNull();
+        if (localProfile?.needsUpload == true) {
+          sentry.addBreadcrumb(
+            message: 'Skipped remote user overwrite for dirty local profile',
+            category: 'sync',
+            data: {'user_id': userId},
+          );
+          return _convertToDomainUserProfile(localProfile!);
+        }
+
         final user = _parseUserFromSupabase(response, userId);
         await saveUserProfile(user);
         return user;
@@ -718,8 +762,9 @@ class UserRepository with SyncableRepository {
       if (sliderLevels.isEmpty &&
           userResponse != null &&
           userResponse['food_preferences'] is Map<String, dynamic>) {
-        final metadata =
-            Map<String, dynamic>.from(userResponse['food_preferences']);
+        final metadata = Map<String, dynamic>.from(
+          userResponse['food_preferences'],
+        );
         metadata.forEach((foodName, raw) {
           if (raw is Map<String, dynamic>) {
             final slider = raw['slider_level'];
@@ -733,7 +778,8 @@ class UserRepository with SyncableRepository {
       // SAFETY CHECK: Don't wipe local data if server returned empty
       // This prevents data loss from RLS issues, network problems, or timing issues
       if (preferences.isEmpty) {
-        final localPrefs = await database.foodPreferencesDao.getUserFoodPreferences(userId);
+        final localPrefs = await database.foodPreferencesDao
+            .getUserFoodPreferences(userId);
         if (localPrefs.isNotEmpty) {
           DebugLogger.warning(
             'Server returned empty food_preferences but local has ${localPrefs.length} items - keeping local data',
@@ -852,8 +898,17 @@ class UserRepository with SyncableRepository {
       typicalSwimCapType: userData['typical_swim_cap_type'] as String?,
       // Dietary preference and allergies (already parsed by UserProfile.fromJson in some paths)
       // Convert null to DietaryPreference.none for consistency (database stores null, domain uses none)
-      dietaryPreference: DietaryPreference.fromDbValue(userData['dietary_preference'] as String?) ?? DietaryPreference.none,
+      dietaryPreference:
+          DietaryPreference.fromDbValue(
+            userData['dietary_preference'] as String?,
+          ) ??
+          DietaryPreference.none,
       allergies: _parseAllergiesFromSupabase(userData['allergies']),
+      // Nutrition target overrides
+      nutritionTargetOverrides: userData['nutrition_target_overrides'] != null
+          ? NutritionTargetOverrides.fromJson(
+              userData['nutrition_target_overrides'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -881,17 +936,8 @@ class UserRepository with SyncableRepository {
     return [];
   }
 
-  Future<void> _syncUserProfileToSupabase(UserProfile profile) async {
-    try {
-      await supabase.from('users').upsert(profile.toJson());
-    } catch (e, stackTrace) {
-      await sentry.reportNetworkError(
-        e,
-        url: 'supabase:users:upsert',
-        method: 'UPSERT',
-        stackTrace: stackTrace,
-      );
-    }
+  Future<void> _upsertUserProfileToSupabase(UserProfile profile) async {
+    await supabase.from('users').upsert(profile.toJson());
   }
 
   /// Check if a user has any data worth migrating (activities, events, etc.)
@@ -946,7 +992,7 @@ class UserRepository with SyncableRepository {
         method: 'GET',
         stackTrace: stackTrace,
       );
-      rethrow;  // Let caller decide how to handle this error
+      rethrow; // Let caller decide how to handle this error
     }
   }
 
@@ -980,7 +1026,8 @@ class UserRepository with SyncableRepository {
       } catch (e) {
         // FAIL SAFE: Assume data exists to prevent data loss on network error
         sentry.addBreadcrumb(
-          message: 'Error checking OAuth user data - assuming exists to prevent data loss',
+          message:
+              'Error checking OAuth user data - assuming exists to prevent data loss',
           category: 'auth',
           data: {'error': e.toString()},
         );
@@ -993,7 +1040,8 @@ class UserRepository with SyncableRepository {
         // - Anonymous user has test/onboarding data from new device (e.g., 1 test activity)
         // - CORRECT BEHAVIOR: Keep OAuth data, discard anonymous data
         sentry.addBreadcrumb(
-          message: 'OAuth user exists on server - preserving existing data, discarding anonymous data',
+          message:
+              'OAuth user exists on server - preserving existing data, discarding anonymous data',
           category: 'auth',
           data: {
             'oauth_user_id': toOAuthUserId,
@@ -1015,7 +1063,8 @@ class UserRepository with SyncableRepository {
         await saveUserProfile(oauthProfile);
 
         sentry.addBreadcrumb(
-          message: 'Cleared anonymous data - OAuth user data will sync from server',
+          message:
+              'Cleared anonymous data - OAuth user data will sync from server',
           category: 'auth',
           data: {
             'oauth_user_id': toOAuthUserId,
@@ -1064,7 +1113,8 @@ class UserRepository with SyncableRepository {
         );
 
         sentry.addBreadcrumb(
-          message: 'Successfully migrated anonymous user data to new OAuth user',
+          message:
+              'Successfully migrated anonymous user data to new OAuth user',
           category: 'auth',
           data: {
             'from_user_id': fromAnonymousUserId,
@@ -1087,10 +1137,7 @@ class UserRepository with SyncableRepository {
   /// This must be called AFTER migrating child table data to free up the device_id
   Future<void> _deleteAnonymousUserFromSupabase(String anonymousUserId) async {
     try {
-      await supabase
-          .from('users')
-          .delete()
-          .eq('id', anonymousUserId);
+      await supabase.from('users').delete().eq('id', anonymousUserId);
 
       sentry.addBreadcrumb(
         message: 'Deleted anonymous user from Supabase',
@@ -1100,7 +1147,8 @@ class UserRepository with SyncableRepository {
     } catch (e, stackTrace) {
       // Log but don't throw - user may not exist in Supabase
       sentry.addBreadcrumb(
-        message: 'Failed to delete anonymous user from Supabase (may not exist)',
+        message:
+            'Failed to delete anonymous user from Supabase (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -1129,7 +1177,8 @@ class UserRepository with SyncableRepository {
         'id': oauthUserId,
         'device_id': anonymousProfile.deviceId,
         'auth_user_id': oauthUserId,
-        'auth_provider': authProvider, // ✅ Uses parameter (apple, google, email)
+        'auth_provider':
+            authProvider, // ✅ Uses parameter (apple, google, email)
         'is_anonymous': false, // ✅ Always set to false for OAuth users
         'gender': anonymousProfile.gender.name,
         'birthday': anonymousProfile.birthday.toIso8601String().split('T')[0],
@@ -1156,10 +1205,7 @@ class UserRepository with SyncableRepository {
       sentry.addBreadcrumb(
         message: 'Upserted OAuth user in Supabase with anonymous profile data',
         category: 'auth',
-        data: {
-          'oauth_user_id': oauthUserId,
-          'auth_provider': authProvider,
-        },
+        data: {'oauth_user_id': oauthUserId, 'auth_provider': authProvider},
       );
     } catch (e, stackTrace) {
       await sentry.reportNetworkError(
@@ -1182,10 +1228,7 @@ class UserRepository with SyncableRepository {
     // ============ EVENTS ============
     // Events have UNIQUE constraint on (user_id, event_date, event_name) - delete OAuth's first
     try {
-      await supabase
-          .from('events')
-          .delete()
-          .eq('user_id', toUserId);
+      await supabase.from('events').delete().eq('user_id', toUserId);
     } catch (e) {
       sentry.addBreadcrumb(
         message: 'Failed to delete OAuth user events (may not exist)',
@@ -1209,10 +1252,7 @@ class UserRepository with SyncableRepository {
     // ============ ACTIVITIES ============
     // Activities have UNIQUE constraint on (user_id, scheduled_date) - delete OAuth's first
     try {
-      await supabase
-          .from('activities')
-          .delete()
-          .eq('user_id', toUserId);
+      await supabase.from('activities').delete().eq('user_id', toUserId);
     } catch (e) {
       sentry.addBreadcrumb(
         message: 'Failed to delete OAuth user activities (may not exist)',
@@ -1236,10 +1276,7 @@ class UserRepository with SyncableRepository {
     // ============ FOOD PREFERENCES ============
     // Food preferences have UNIQUE constraint on (user_id, food_name) - delete OAuth's first
     try {
-      await supabase
-          .from('food_preferences')
-          .delete()
-          .eq('user_id', toUserId);
+      await supabase.from('food_preferences').delete().eq('user_id', toUserId);
     } catch (e) {
       sentry.addBreadcrumb(
         message: 'Failed to delete OAuth user food_preferences (may not exist)',
@@ -1263,10 +1300,7 @@ class UserRepository with SyncableRepository {
     // ============ USER FOODS ============
     // User foods have UNIQUE constraint on (user_id, food_name) - delete OAuth's first
     try {
-      await supabase
-          .from('user_foods')
-          .delete()
-          .eq('user_id', toUserId);
+      await supabase.from('user_foods').delete().eq('user_id', toUserId);
     } catch (e) {
       sentry.addBreadcrumb(
         message: 'Failed to delete OAuth user user_foods (may not exist)',
@@ -1298,7 +1332,8 @@ class UserRepository with SyncableRepository {
           .eq('user_id', toUserId);
     } catch (e) {
       sentry.addBreadcrumb(
-        message: 'Failed to delete OAuth user carb_loading_plans (may not exist)',
+        message:
+            'Failed to delete OAuth user carb_loading_plans (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
@@ -1363,10 +1398,9 @@ class UserRepository with SyncableRepository {
       );
 
       // Delete anonymous user's events
-      await database.customStatement(
-        'DELETE FROM events WHERE user_id = ?',
-        [anonymousUserId],
-      );
+      await database.customStatement('DELETE FROM events WHERE user_id = ?', [
+        anonymousUserId,
+      ]);
 
       // Delete anonymous user's food preferences
       await database.customStatement(
@@ -1384,7 +1418,8 @@ class UserRepository with SyncableRepository {
       // Delete child tables first (carb_loading_day_meals -> carb_loading_days -> carb_loading_plans)
 
       // Step 1: Delete carb_loading_day_meals via carb_loading_days via carb_loading_plans
-      await database.customStatement('''
+      await database.customStatement(
+        '''
         DELETE FROM carb_loading_day_meals
         WHERE carb_loading_day_id IN (
           SELECT id FROM carb_loading_days
@@ -1392,15 +1427,20 @@ class UserRepository with SyncableRepository {
             SELECT id FROM carb_loading_plans WHERE user_id = ?
           )
         )
-      ''', [anonymousUserId]);
+      ''',
+        [anonymousUserId],
+      );
 
       // Step 2: Delete carb_loading_days via carb_loading_plans
-      await database.customStatement('''
+      await database.customStatement(
+        '''
         DELETE FROM carb_loading_days
         WHERE carb_loading_plan_id IN (
           SELECT id FROM carb_loading_plans WHERE user_id = ?
         )
-      ''', [anonymousUserId]);
+      ''',
+        [anonymousUserId],
+      );
 
       // Step 3: Delete carb_loading_plans
       await database.customStatement(
@@ -1415,10 +1455,9 @@ class UserRepository with SyncableRepository {
       );
 
       // Delete anonymous user profile
-      await database.customStatement(
-        'DELETE FROM users WHERE id = ?',
-        [anonymousUserId],
-      );
+      await database.customStatement('DELETE FROM users WHERE id = ?', [
+        anonymousUserId,
+      ]);
     });
 
     sentry.addBreadcrumb(
@@ -1454,7 +1493,8 @@ class UserRepository with SyncableRepository {
       bool dataMigrated = false;
 
       // Determine if we need to migrate data
-      final needsMigration = previousUserId != null &&
+      final needsMigration =
+          previousUserId != null &&
           previousUserId != newUserId &&
           wasAnonymous &&
           !preservedUserId;
@@ -1550,9 +1590,8 @@ class UserRepository with SyncableRepository {
       bool dataMigrated = false;
 
       // Check if we need to migrate data from anonymous user
-      final needsMigration = previousUserId != null &&
-          previousUserId != newUserId &&
-          wasAnonymous;
+      final needsMigration =
+          previousUserId != null && previousUserId != newUserId && wasAnonymous;
 
       if (needsMigration) {
         // Check if the anonymous user actually has data worth migrating
@@ -1594,7 +1633,8 @@ class UserRepository with SyncableRepository {
           } catch (e) {
             if (e.toString().contains('No current user found')) {
               sentry.addBreadcrumb(
-                message: 'User missing during auth update - treating as fresh login',
+                message:
+                    'User missing during auth update - treating as fresh login',
                 category: 'auth',
               );
               await _handleFreshLogin(newUserId, authProvider);
@@ -1663,7 +1703,8 @@ class UserRepository with SyncableRepository {
       // This avoids calling updateAuthProvider() which does a getCurrentUser() lookup
       // that can fail if authUserId doesn't match the new session yet
       final updatedProfile = remoteProfile.copyWith(
-        authUserId: userId, // Ensure authUserId matches current Supabase session
+        authUserId:
+            userId, // Ensure authUserId matches current Supabase session
         authProvider: authProvider,
         isAnonymous: false,
         updatedAt: DateTime.now(),
@@ -1714,24 +1755,20 @@ class UserRepository with SyncableRepository {
       await saveUserProfile(newProfile);
 
       // 🔧 FIX: Also create profile in Supabase to ensure sync works
-      try {
-        await supabase.from('users').upsert(
-          newProfile.toJson(),
-          onConflict: 'id',
-        );
-
+      final uploaded = await immediateRemoteWriteService.run(
+        repository: repositoryKey,
+        operation: 'fresh_login_profile_create',
+        recordId: userId,
+        method: 'UPSERT',
+        write: () => supabase
+            .from('users')
+            .upsert(newProfile.toJson(), onConflict: 'id'),
+      );
+      if (uploaded) {
         sentry.addBreadcrumb(
           message: 'Created user profile in Supabase for fresh login',
           category: 'auth',
           data: {'user_id': userId},
-        );
-      } catch (e, stackTrace) {
-        // Log but don't throw - local profile exists, user can continue
-        await sentry.reportNetworkError(
-          e,
-          url: 'supabase:users:upsert',
-          method: 'UPSERT',
-          stackTrace: stackTrace,
         );
       }
     }
@@ -1745,6 +1782,14 @@ Future<UserRepository> userRepository(Ref ref) async {
   final database = ref.watch(appDatabaseProvider);
   final sentry = ref.watch(sentryReporterProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
+  final immediateRemoteWriteService = ref.watch(
+    immediateRemoteWriteServiceProvider,
+  );
 
-  return UserRepository(database: database, supabase: supabase, sentry: sentry);
+  return UserRepository(
+    database: database,
+    supabase: supabase,
+    sentry: sentry,
+    immediateRemoteWriteService: immediateRemoteWriteService,
+  );
 }
