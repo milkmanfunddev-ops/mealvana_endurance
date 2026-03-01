@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../theme/kyle_design/app_colors.dart';
 import '../../domain/coach_message.dart';
 
-/// A chat message bubble widget for displaying messages in the chat screen
-/// Follows Material Design 3 patterns for chat UI
+/// A chat message bubble widget with purple-themed styling
+/// Uses AppColors for consistent branding with the app theme
 class ChatMessageBubble extends StatelessWidget {
   const ChatMessageBubble({
     super.key,
@@ -20,10 +21,8 @@ class ChatMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         mainAxisAlignment:
             isFromCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -33,11 +32,14 @@ class ChatMessageBubble extends StatelessWidget {
           if (!isFromCurrentUser) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: theme.colorScheme.surfaceContainerHigh,
-              child: Icon(
-                Icons.person,
-                size: 18,
-                color: theme.colorScheme.onSurface,
+              backgroundColor: AppColors.electrolyte,
+              child: Text(
+                _getInitials(senderName),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.blackberryDark,
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -47,13 +49,13 @@ class ChatMessageBubble extends StatelessWidget {
           Flexible(
             child: Container(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.85,
+                maxWidth: MediaQuery.of(context).size.width * 0.70,
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: isFromCurrentUser
-                    ? theme.colorScheme.primaryContainer
-                    : const Color(0xFFD92D20), // Coral/red for coach messages - contrasts with purple background
+                    ? AppColors.blackberryLight
+                    : AppColors.inputBackground,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -70,9 +72,10 @@ class ChatMessageBubble extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Text(
                         senderName,
-                        style: theme.textTheme.labelSmall?.copyWith(
+                        style: const TextStyle(
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white.withOpacity(0.9),
+                          color: AppColors.electrolyte,
                         ),
                       ),
                     ),
@@ -80,10 +83,11 @@ class ChatMessageBubble extends StatelessWidget {
                   // Message text
                   Text(
                     message.messageText,
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: TextStyle(
+                      fontSize: 14,
                       color: isFromCurrentUser
-                          ? theme.colorScheme.onPrimaryContainer
-                          : Colors.white,
+                          ? AppColors.cream
+                          : AppColors.textDark,
                     ),
                   ),
 
@@ -94,17 +98,15 @@ class ChatMessageBubble extends StatelessWidget {
                     children: [
                       Text(
                         _formatTime(message.createdAt),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: (isFromCurrentUser
-                                  ? theme.colorScheme.onPrimaryContainer
-                                  : Colors.white)
-                              .withOpacity(0.7),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textDarkSecondary.withOpacity(0.7),
                         ),
                       ),
                       // Status indicator for sent messages
                       if (isFromCurrentUser) ...[
                         const SizedBox(width: 4),
-                        _buildStatusIcon(theme),
+                        _buildStatusIcon(),
                       ],
                     ],
                   ),
@@ -120,12 +122,21 @@ class ChatMessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusIcon(ThemeData theme) {
-    final color = theme.colorScheme.onPrimaryContainer.withOpacity(0.7);
+  String _getInitials(String name) {
+    if (name.isEmpty) return '?';
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+  }
+
+  Widget _buildStatusIcon() {
+    const color = AppColors.textDarkSecondary;
 
     switch (message.status) {
       case MessageStatus.sending:
-        return SizedBox(
+        return const SizedBox(
           width: 12,
           height: 12,
           child: CircularProgressIndicator(
@@ -134,16 +145,16 @@ class ChatMessageBubble extends StatelessWidget {
           ),
         );
       case MessageStatus.sent:
-        return Icon(
+        return const Icon(
           Icons.done,
           size: 14,
           color: color,
         );
       case MessageStatus.failed:
-        return Icon(
+        return const Icon(
           Icons.error_outline,
           size: 14,
-          color: theme.colorScheme.error,
+          color: AppColors.dragonfruit,
         );
     }
   }
@@ -162,7 +173,6 @@ class ChatMessageBubble extends StatelessWidget {
     } else if (messageDate == yesterday) {
       return 'Yesterday $time';
     } else if (now.difference(date).inDays < 7) {
-      // Show day name for messages within the last week
       const dayNames = [
         'Monday',
         'Tuesday',
@@ -174,7 +184,6 @@ class ChatMessageBubble extends StatelessWidget {
       ];
       return '${dayNames[date.weekday - 1]} $time';
     } else {
-      // Show full date for older messages
       return '${date.day}/${date.month}/${date.year} $time';
     }
   }

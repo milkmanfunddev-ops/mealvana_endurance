@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../theme/kyle_design/app_colors.dart';
+
 /// Text input field with send button for the chat screen
-/// Follows Material Design 3 patterns for chat input
+/// Uses AppColors for consistent theming
 class ChatInputField extends StatelessWidget {
   const ChatInputField({
     super.key,
@@ -18,15 +20,13 @@ class ChatInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Container(
       padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+      decoration: const BoxDecoration(
+        color: AppColors.blackberry,
         border: Border(
           top: BorderSide(
-            color: theme.colorScheme.outlineVariant,
+            color: AppColors.blackberryLight,
           ),
         ),
       ),
@@ -43,14 +43,18 @@ class ChatInputField extends StatelessWidget {
                 maxLines: 4,
                 minLines: 1,
                 enabled: !isSending,
+                style: const TextStyle(color: AppColors.textDark),
                 decoration: InputDecoration(
                   hintText: hintText,
+                  hintStyle: TextStyle(
+                    color: AppColors.textDarkSecondary.withOpacity(0.5),
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest,
+                  fillColor: AppColors.inputBackground,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
@@ -67,6 +71,10 @@ class ChatInputField extends StatelessWidget {
 
             // Send button
             IconButton.filled(
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.orange,
+                foregroundColor: Colors.white,
+              ),
               onPressed: isSending
                   ? null
                   : () {
@@ -75,12 +83,12 @@ class ChatInputField extends StatelessWidget {
                       }
                     },
               icon: isSending
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: theme.colorScheme.onPrimary,
+                        color: Colors.white,
                       ),
                     )
                   : const Icon(Icons.send),
