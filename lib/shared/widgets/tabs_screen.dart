@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -49,8 +50,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     final myCoachesState = ref.watch(myCoachesControllerProvider);
     final hasCoaches = myCoachesState.value?.hasCoaches ?? false;
 
-    // Show coach tab if user is a coach OR has coaches
-    final showCoachTab = isCoach || hasCoaches;
+    // Show coach tab if user is a coach OR has coaches (web only for coaches)
+    final showCoachTab = kIsWeb ? (isCoach || hasCoaches) : hasCoaches;
 
     // Build the list of screens dynamically
     // If user is a coach, show coach dashboard; if athlete with coaches, show my coaches

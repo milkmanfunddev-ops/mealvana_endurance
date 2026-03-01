@@ -54,6 +54,7 @@ import '../../features/pro_version/presentation/screens/pro_version_screen.dart'
 import '../screens/food_detail_screen.dart';
 // Coach mode screens
 import '../../features/coach_mode/presentation/screens/coach_dashboard_screen.dart';
+import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/coach_mode/presentation/screens/athlete_detail_screen.dart';
 import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
 import '../../features/coach_mode/presentation/screens/athlete_feedback_screen.dart';
@@ -665,23 +666,19 @@ class AppRouter {
       // Mobile-only: /my-coaches, /coach-directory, /athlete/feedback (athlete features)
       // ============================================================================
 
-      // Coach Dashboard - Main hub for coaches to manage athletes (WEB ONLY)
+      // Coach Portal - Unified full-screen dashboard for coaches (WEB ONLY)
       GoRoute(
         path: '/coach',
         name: 'coach-dashboard',
         redirect: (context, state) => kIsWeb ? null : '/settings',
-        builder: (context, state) => const CoachDashboardScreen(),
+        builder: (context, state) => const CoachPortalScreen(),
       ),
 
-      // Athlete Detail - View athlete's activities and add feedback (WEB ONLY)
+      // Athlete Detail - Redirect to portal (handled within portal now)
       GoRoute(
         path: '/coach/athlete/:relationshipId',
         name: 'coach-athlete-detail',
-        redirect: (context, state) => kIsWeb ? null : '/settings',
-        builder: (context, state) {
-          final relationshipId = state.pathParameters['relationshipId']!;
-          return AthleteDetailScreen(relationshipId: relationshipId);
-        },
+        redirect: (context, state) => '/coach',
       ),
 
       // My Coaches - Athlete's view of connected coaches (MOBILE ONLY)
