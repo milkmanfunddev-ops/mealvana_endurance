@@ -21,8 +21,13 @@ import '../../application/nutrition_plan_service.dart';
 import '../../data/nutrition_plan_repository.dart';
 import '../../data/template_foods_repository.dart';
 import '../../../../shared/providers/user_id_provider.dart';
+import '../../domain/carb_adjustment_level.dart';
+import '../../domain/nutrition_target_overrides.dart';
+import '../../../settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
+import '../../../activities/presentation/providers/activities_controller.dart';
+import '../../../calendar/presentation/providers/calendar_controller.dart';
 import 'activity_detail_state.dart';
 
 part 'activity_detail_controller.g.dart';
@@ -260,6 +265,104 @@ class ActivityDetailController extends _$ActivityDetailController {
     });
   }
 
+  /// Apply carb feedback adjustment to the user's nutrition target overrides.
+  ///
+  /// This modifies `nutrition_target_overrides.during.carbRateGPerH` by
+  /// multiplying the current rate by [level.adjustmentFactor].
+  /// "Just Right" is a no-op.
+  Future<void> applyCarbFeedbackAdjustment(CarbAdjustmentLevel level) async {
+    // "Just Right" means no change
+    if (level == CarbAdjustmentLevel.justRight) return;
+
+    try {
+      final user = await _authService.getCurrentUser();
+      if (user == null) {
+        _logger.warning('Cannot apply carb feedback: no user');
+        return;
+      }
+
+      // Determine the base carb rate:
+      // 1. If user has an existing during carb override, use that
+      // 2. Otherwise, derive from this activity's during section
+      double baseRate;
+      final existingOverride =
+          user.nutritionTargetOverrides?.during?.carbRateGPerH;
+
+      if (existingOverride != null) {
+        baseRate = existingOverride;
+      } else {
+        // Derive from the current activity's during section carbsTarget / duration
+        final currentState = state.value;
+        final plan = currentState?.nutritionPlan;
+        final durationMinutes =
+            currentState?.activity?.durationMinutes?.toDouble();
+
+        if (plan != null && durationMinutes != null && durationMinutes > 0) {
+          final duringSection = plan.sections.firstWhere(
+            (s) =>
+                s.id.contains('during'),
+            orElse: () => plan.sections.first,
+          );
+          final totalCarbs = duringSection.carbsTarget ?? 0;
+          baseRate = totalCarbs / (durationMinutes / 60.0);
+        } else {
+          // No plan data available, skip adjustment
+          _logger.warning('Cannot apply carb feedback: no carb rate available');
+          return;
+        }
+      }
+
+      // Apply adjustment factor and clamp to guardrails (0-120 g/hr)
+      final newRate = (baseRate * level.adjustmentFactor).clamp(
+        NutritionTargetGuardrails.duringMinCarbRateGPerH,
+        NutritionTargetGuardrails.duringMaxCarbRateGPerH,
+      );
+
+      // Build updated overrides
+      final currentOverrides = user.nutritionTargetOverrides ??
+          const NutritionTargetOverrides();
+      final updatedOverrides = currentOverrides.copyWith(
+        during: () => DuringActivityOverrides(
+          carbRateGPerH: newRate,
+          sodiumRateMgPerH:
+              currentOverrides.during?.sodiumRateMgPerH,
+          fluidRateMlPerH:
+              currentOverrides.during?.fluidRateMlPerH,
+        ),
+      );
+
+      // Save via settings controller
+      final settingsController =
+          ref.read(settingsControllerProvider.notifier);
+      await settingsController.saveNutritionTargetOverrides(updatedOverrides);
+
+      _logger.info(
+        'Carb feedback applied',
+        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        data: {
+          'level': level.name,
+          'baseRate': baseRate,
+          'newRate': newRate,
+          'factor': level.adjustmentFactor,
+        },
+      );
+
+      _trackAnalytics('carb_feedback_applied', {
+        'activity_id': activityId,
+        'level': level.name,
+        'adjustment_factor': level.adjustmentFactor,
+        'base_rate': baseRate,
+        'new_rate': newRate,
+      });
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Error applying carb feedback',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
   /// Update workout notes for a completed activity
   Future<void> updateWorkoutNotes(String? notes) async {
     final currentState = state.value;
@@ -294,14 +397,54 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   /// Update scheduled date/time
+  /// Auto-saves to database and invalidates activities list and calendar
   Future<void> updateScheduledDateTime(DateTime newDateTime) async {
     final currentState = state.value;
-    if (currentState == null) return;
+    if (currentState == null || currentState.activity == null) return;
 
-    state = AsyncData(currentState.copyWith(
-      scheduledDateTime: newDateTime,
-      hasUnsavedChanges: true,
-    ));
+    try {
+      final user = await _authService.getCurrentUser();
+      if (user == null || user.id.isEmpty) {
+        _logger.warning('Cannot update schedule: user not authenticated');
+        return;
+      }
+
+      // Update the activity with the new scheduled date/time
+      final updatedActivity = currentState.activity!.copyWith(
+        scheduledDateTime: newDateTime,
+        updatedAt: DateTime.now(),
+      );
+
+      // Update local state immediately for UI responsiveness
+      state = AsyncData(currentState.copyWith(
+        scheduledDateTime: newDateTime,
+        activity: updatedActivity,
+        hasUnsavedChanges: false,
+      ));
+
+      // Save to database
+      await _activitiesService.updateActivity(
+        deviceId: user.id,
+        activity: updatedActivity,
+      );
+
+      // Invalidate activities list and calendar so they reflect the new date
+      ref.invalidate(activitiesControllerProvider);
+      ref.invalidate(calendarControllerProvider);
+
+      _logger.info('Schedule updated and saved',
+        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        data: {
+          'activityId': activityId,
+          'newDateTime': newDateTime.toIso8601String(),
+        },
+      );
+    } catch (e, stackTrace) {
+      _logger.error('Error updating scheduled date/time',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   /// Update reminder settings

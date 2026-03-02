@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../widgets/activity_detail/completion_dialog.dart';
+import '../widgets/activity_detail/post_workout_feedback_dialog.dart';
 import '../widgets/activity_detail/brick_completion_dialog.dart';
+import '../../domain/carb_adjustment_level.dart';
 import '../widgets/activity_detail/macro_summary_row.dart';
 import '../widgets/activity_detail/dismissible_food_item.dart';
 import '../widgets/activity_detail/single_sport_hero_image.dart';
@@ -824,9 +825,25 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           );
         }
 
-        // Use standard dialog for single-sport workouts
-        return CompletionDialog(
-          onComplete: (rating, notes) async {
+        // Compute during-activity carb rate for feedback section
+        double? duringCarbRateGPerH;
+        if (state.nutritionPlan != null) {
+          final duringSection = state.nutritionPlan!.sections
+              .where((s) => s.id.contains('during'))
+              .firstOrNull;
+          final durationMinutes = activity?.durationMinutes?.toDouble();
+          if (duringSection?.carbsTarget != null &&
+              durationMinutes != null &&
+              durationMinutes > 0) {
+            duringCarbRateGPerH =
+                duringSection!.carbsTarget! / (durationMinutes / 60.0);
+          }
+        }
+
+        // Use post-workout feedback dialog for single-sport workouts
+        return PostWorkoutFeedbackDialog(
+          duringCarbRateGPerH: duringCarbRateGPerH,
+          onComplete: (rating, notes, carbAdjustment) async {
             Navigator.of(dialogContext).pop();
             await _handleCompletion(
               context,
@@ -834,6 +851,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               rating,
               notes,
               isBrick: false,
+              carbAdjustment: carbAdjustment,
             );
           },
         );
@@ -848,6 +866,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     int rating,
     String? notes, {
     required bool isBrick,
+    CarbAdjustmentLevel? carbAdjustment,
   }) async {
     final controller = _getControllerNotifier();
 
@@ -856,12 +875,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       textNotes: notes,
     );
 
+    // Apply carb feedback adjustment if provided (non-brick only)
+    if (carbAdjustment != null && !isBrick) {
+      await controller.applyCarbFeedbackAdjustment(carbAdjustment);
+    }
+
     controller.trackEvent('workout_completed', {
       'activity_id': state.activity?.id,
       'rating': rating,
       'has_notes': notes?.isNotEmpty ?? false,
       'is_coach_view': widget.isCoachView,
       'is_brick': isBrick,
+      if (carbAdjustment != null) 'carb_adjustment': carbAdjustment.name,
     });
 
     if (mounted) {
