@@ -541,6 +541,9 @@ class CoachRepository with SyncableRepository {
       final now = DateTime.now();
 
       // Insert into Supabase first (for cross-device sync)
+      // Coach-initiated relationships are immediately active (no confirmation needed)
+      final isCoachInitiated = requestedBy == 'coach';
+      final status = isCoachInitiated ? 'active' : 'pending';
       final uploaded = await _immediateRemoteWriteService.run(
         repository: 'coach_athlete_relationships',
         operation: 'create',
@@ -550,9 +553,10 @@ class CoachRepository with SyncableRepository {
           'id': id,
           'coach_user_id': coachUserId,
           'athlete_user_id': athleteUserId,
-          'status': 'pending',
+          'status': status,
           'requested_by': requestedBy,
           'requested_at': now.toIso8601String(),
+          if (isCoachInitiated) 'accepted_at': now.toIso8601String(),
           'created_at': now.toIso8601String(),
           'updated_at': now.toIso8601String(),
         }),
@@ -568,8 +572,10 @@ class CoachRepository with SyncableRepository {
         id: id,
         coachUserId: coachUserId,
         athleteUserId: athleteUserId,
+        status: Value(status),
         requestedBy: requestedBy,
         requestedAt: Value(now),
+        acceptedAt: Value(isCoachInitiated ? now : null),
         createdAt: Value(now),
         updatedAt: Value(now),
       );
@@ -582,9 +588,12 @@ class CoachRepository with SyncableRepository {
         id: id,
         coachUserId: coachUserId,
         athleteUserId: athleteUserId,
-        status: RelationshipStatus.pending,
+        status: isCoachInitiated
+            ? RelationshipStatus.active
+            : RelationshipStatus.pending,
         requestedBy: requestedBy,
         requestedAt: now,
+        acceptedAt: isCoachInitiated ? now : null,
         createdAt: now,
         updatedAt: now,
       );
@@ -1252,7 +1261,7 @@ class CoachRepository with SyncableRepository {
       if (heightInches != null) updates['height_inches'] = heightInches;
       if (runsWithWaterBottle != null)
         updates['runs_with_water_bottle'] = runsWithWaterBottle;
-      if (gutTraining != null) updates['gut_training'] = gutTraining;
+      if (gutTraining != null) updates['gut_training_level'] = gutTraining;
       if (gender != null) updates['gender'] = gender;
       if (giSensitivity != null) updates['gi_sensitivity'] = giSensitivity;
 

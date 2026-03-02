@@ -720,6 +720,15 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                             itemCount: _eventSearchResults.length,
                             itemBuilder: (context, index) {
                               final event = _eventSearchResults[index];
+                              // Build subtitle with location and date
+                              final subtitleParts = <String>[];
+                              if (event.city != null || event.state != null || event.location != null) {
+                                subtitleParts.add(event.formattedLocation);
+                              }
+                              if (event.eventDate != null) {
+                                subtitleParts.add(DateFormat('MMM d, yyyy').format(event.eventDate!));
+                              }
+                              final subtitle = subtitleParts.isNotEmpty ? subtitleParts.join(' - ') : null;
                               return ListTile(
                                 dense: true,
                                 leading: Icon(
@@ -735,6 +744,16 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                                subtitle: subtitle != null
+                                    ? Text(
+                                        subtitle,
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      )
+                                    : null,
                                 onTap: () => _selectActiveComEvent(event),
                               );
                             },

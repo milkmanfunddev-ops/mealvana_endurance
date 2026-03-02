@@ -168,13 +168,24 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
       );
       final qtyStr = _formatQuantityNumber(roundedQty);
       final tail = _parseQuantityTail(rawQuantity);
+
+      // Separate any add-on suffix (e.g., "+ 1 Electrolyte Tablet") from
+      // the main quantity tail so the food name is still resolved correctly.
+      String addOnSuffix = '';
+      String mainTail = tail;
+      final plusMatch = RegExp(r'\+\s*\d').firstMatch(tail);
+      if (plusMatch != null) {
+        addOnSuffix = ' ${tail.substring(plusMatch.start).trim()}';
+        mainTail = tail.substring(0, plusMatch.start).trim();
+      }
+
       final hasUsefulTail =
-          tail.isNotEmpty && !tail.toLowerCase().startsWith('x ');
+          mainTail.isNotEmpty && !mainTail.toLowerCase().startsWith('x ');
 
       if (hasUsefulTail) {
-        description = '$qtyStr ${_simplifyName(tail)}';
+        description = '$qtyStr ${_simplifyName(mainTail)}$addOnSuffix';
       } else {
-        description = '$qtyStr ${_resolveSimpleFoodName(roundedQty)}';
+        description = '$qtyStr ${_resolveSimpleFoodName(roundedQty)}$addOnSuffix';
       }
     } else if (rawQuantity.isEmpty) {
       description = _resolveSimpleFoodName(1.0);
@@ -225,13 +236,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
   double _roundFriendlyQuantity(double value, {required bool isIndivisible}) {
     if (value <= 0) return isIndivisible ? 1.0 : 0.5;
     if (isIndivisible) return value.round().toDouble();
-
-    final half = (value * 2).round() / 2;
-    final third = (value * 3).round() / 3;
-    final halfDiff = (value - half).abs();
-    final thirdDiff = (value - third).abs();
-    final rounded = thirdDiff + 0.08 < halfDiff ? third : half;
-    return (rounded * 100).round() / 100;
+    return (value * 2).round() / 2; // Snap to nearest 0.5
   }
 
   String _formatQuantityNumber(double value) {

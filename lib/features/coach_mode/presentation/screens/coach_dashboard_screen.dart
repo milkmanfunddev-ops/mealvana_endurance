@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/coach_dashboard_controller.dart';
 import '../widgets/athlete_card.dart';
-import '../widgets/pending_request_card.dart';
 
 /// Coach Dashboard Screen - main hub for coaches to manage athletes
 class CoachDashboardScreen extends ConsumerWidget {
@@ -92,39 +91,6 @@ class CoachDashboardScreen extends ConsumerWidget {
             child: _buildStatsHeader(context, state),
           ),
 
-          // Pending requests section
-          if (state.hasPendingRequests) ...[
-            SliverToBoxAdapter(
-              child: _buildSectionHeader(
-                context,
-                'Pending Requests',
-                count: state.pendingRequests.length,
-                icon: Icons.pending_actions,
-              ),
-            ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final request = state.pendingRequests[index];
-                  return PendingRequestCard(
-                    relationship: request,
-                    onAccept: () {
-                      ref
-                          .read(coachDashboardControllerProvider.notifier)
-                          .acceptRequest(request.id);
-                    },
-                    onDecline: () {
-                      ref
-                          .read(coachDashboardControllerProvider.notifier)
-                          .declineRequest(request.id);
-                    },
-                  );
-                },
-                childCount: state.pendingRequests.length,
-              ),
-            ),
-          ],
-
           // Active athletes section
           SliverToBoxAdapter(
             child: _buildSectionHeader(
@@ -195,12 +161,6 @@ class CoachDashboardScreen extends ConsumerWidget {
             state.athleteCount.toString(),
             'Athletes',
             Icons.people,
-          ),
-          _buildStatItem(
-            context,
-            state.pendingRequests.length.toString(),
-            'Pending',
-            Icons.pending,
           ),
         ],
       ),

@@ -248,7 +248,7 @@ Deno.test('formatQuantity - formats friendly fractions', () => {
   assertEquals(formatQuantity(1), '1');
   assertEquals(formatQuantity(1.5), '1 1/2');
   assertEquals(formatQuantity(2), '2');
-  assertEquals(formatQuantity(0.33), '1/3');
+  assertEquals(formatQuantity(0.33), '0.3'); // No longer uses 1/3 fractions
 });
 
 // ============================================================================

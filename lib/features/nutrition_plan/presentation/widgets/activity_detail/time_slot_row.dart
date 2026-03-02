@@ -181,6 +181,8 @@ class TimeSlotRow extends StatelessWidget {
     }
 
     // Pair electrolytes with liquids in the same slot for a cleaner timeline.
+    // Electrolyte info goes in the title (e.g., "2 cups Sports Drink + 1 Electrolyte Tablet")
+    // and the subtitle keeps just the carb info (e.g., "28 g carbs").
     if (liquidIndices.isNotEmpty && electrolyteIndices.isNotEmpty) {
       final electrolyteSummary = _buildElectrolyteSummary(
         electrolyteIndices.map((idx) => entries[idx]).toList(),
@@ -188,11 +190,12 @@ class TimeSlotRow extends StatelessWidget {
       if (electrolyteSummary.isNotEmpty) {
         final firstLiquidIdx = liquidIndices.first;
         final firstLiquid = entries[firstLiquidIdx];
+        final updatedFood = _withQuantitySuffix(
+          firstLiquid.displayFood,
+          '+ $electrolyteSummary',
+        );
         entries[firstLiquidIdx] = firstLiquid.copyWith(
-          subtitle: _joinSubtitles(
-            firstLiquid.subtitle,
-            '+ $electrolyteSummary',
-          ),
+          displayFood: updatedFood,
         );
       }
 
@@ -253,12 +256,6 @@ class TimeSlotRow extends StatelessWidget {
     final carbs = displayFood.nutritionalInfo?.carbs ?? 0;
     if (carbs <= 0) return null;
     return '$carbs g carbs';
-  }
-
-  String? _joinSubtitles(String? a, String? b) {
-    if (a == null || a.isEmpty) return b;
-    if (b == null || b.isEmpty) return a;
-    return '$a • $b';
   }
 
   double _parseQuantity(String quantity) {
@@ -357,10 +354,7 @@ class TimeSlotRow extends StatelessWidget {
     );
 
     if (entry.isSecondary) {
-      return Padding(
-        padding: const EdgeInsets.only(left: AppSpacing.lg),
-        child: Opacity(opacity: 0.92, child: child),
-      );
+      return const SizedBox.shrink();
     }
 
     return LongPressDraggable<TimeSlotAssignment>(
@@ -395,6 +389,30 @@ class TimeSlotRow extends StatelessWidget {
           Expanded(child: child),
         ],
       ),
+    );
+  }
+
+  /// Creates a display copy of FoodItemData with a suffix appended to the quantity string.
+  /// E.g., "2 cups Sports Drink" + "+ 1 Electrolyte Tablet" → "2 cups Sports Drink + 1 Electrolyte Tablet"
+  FoodItemData _withQuantitySuffix(FoodItemData food, String suffix) {
+    return FoodItemData(
+      id: food.id,
+      name: food.name,
+      quantity: '${food.quantity} $suffix',
+      imageAddress: food.imageAddress,
+      description: food.description,
+      timing: food.timing,
+      nutritionalInfo: food.nutritionalInfo,
+      instructions: food.instructions,
+      displayName: food.displayName,
+      displayNamePlural: food.displayNamePlural,
+      displayOverride: food.displayOverride,
+      servingSize: food.servingSize,
+      isDrink: food.isDrink,
+      isIndivisible: food.isIndivisible,
+      templateId: food.templateId,
+      scaleMultiplier: food.scaleMultiplier,
+      timingCategory: food.timingCategory,
     );
   }
 

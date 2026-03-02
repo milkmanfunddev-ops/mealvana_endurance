@@ -156,6 +156,10 @@ class RootAppWidget extends ConsumerWidget {
 
 /// Listens to GoRouter route changes and wraps content with
 /// ResponsiveContentWrapper, passing isFullWidth for coach portal routes.
+///
+/// Uses the full route match list to detect if /coach is anywhere in the
+/// navigation stack. This ensures screens pushed from the coach portal
+/// (e.g. /distancepacegut, /events/create, /plan) remain full-width.
 class _RouteAwareWrapper extends StatelessWidget {
   const _RouteAwareWrapper({
     required this.goRouter,
@@ -165,14 +169,27 @@ class _RouteAwareWrapper extends StatelessWidget {
   final GoRouter goRouter;
   final Widget child;
 
+  bool _isCoachSession() {
+    try {
+      final matches = goRouter.routerDelegate.currentConfiguration.matches;
+      return matches.any((match) {
+        final route = match.route;
+        if (route is GoRoute) {
+          return route.path == '/coach';
+        }
+        return false;
+      });
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: goRouter.routeInformationProvider,
       builder: (context, _) {
-        final path =
-            goRouter.routeInformationProvider.value.uri.path;
-        final isCoachPortal = kIsWeb && path.startsWith('/coach');
+        final isCoachPortal = kIsWeb && _isCoachSession();
         return ResponsiveContentWrapper(
           isFullWidth: isCoachPortal,
           child: child,

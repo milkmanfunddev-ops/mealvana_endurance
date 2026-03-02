@@ -532,31 +532,33 @@ class MacroTargetsController extends _$MacroTargetsController {
         final estimatedDurationMinutes = (distance * paceMinutes).round();
 
         String finalActivityId = activityId ?? '';
-        final activitiesController = ref.read(
-          activitiesControllerProvider.notifier,
-        );
+        final activitiesService = ref.read(activitiesServiceProvider);
 
         if (finalActivityId.isEmpty) {
-          finalActivityId = await activitiesController.createActivity(
+          final createdActivity = await activitiesService.createActivity(
+            deviceId: deviceId,
+            userId: deviceId,
+            forUserId: forUserId,
+            activityType: ActivityType.running,
             title: ActivityTitleFormatter.formatRunningTitle(distance),
             scheduledDateTime: scheduledDateTime,
-            forUserId:
-                forUserId, // NEW: Pass through forUserId for coach-created activities
-            activityType: ActivityType.running,
             distanceMiles: distance,
             durationMinutes: estimatedDurationMinutes,
             paceTargetMinutesPerMile: paceMinutes,
-            intensityLevel: domain.IntensityLevel.moderate, // Default
+            intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeRunMinutes,
             notes: 'Draft activity - nutrition plan being generated',
           );
+          finalActivityId = createdActivity.id;
         } else {
-          final existingActivity = await activitiesController.getActivityById(
+          final existingActivity = await activitiesService.getActivityById(
+            deviceId,
             finalActivityId,
           );
           if (existingActivity != null) {
-            await activitiesController.updateActivity(
-              existingActivity.copyWith(
+            await activitiesService.updateActivity(
+              deviceId: deviceId,
+              activity: existingActivity.copyWith(
                 title: ActivityTitleFormatter.formatRunningTitle(distance),
                 activityType: ActivityType.running,
                 scheduledDateTime: scheduledDateTime,
@@ -690,17 +692,16 @@ class MacroTargetsController extends _$MacroTargetsController {
         );
 
         String finalActivityId = activityId ?? '';
-        final activitiesController = ref.read(
-          activitiesControllerProvider.notifier,
-        );
+        final activitiesService = ref.read(activitiesServiceProvider);
 
         if (finalActivityId.isEmpty) {
-          finalActivityId = await activitiesController.createActivity(
+          final createdActivity = await activitiesService.createActivity(
+            deviceId: deviceId,
+            userId: deviceId,
+            forUserId: forUserId,
+            activityType: ActivityType.cycling,
             title: ActivityTitleFormatter.formatCyclingTitle(distanceMiles),
             scheduledDateTime: scheduledDateTime,
-            forUserId:
-                forUserId, // NEW: Pass through forUserId for coach-created activities
-            activityType: ActivityType.cycling,
             distanceMiles: distanceMiles,
             cyclingSpeedMph: speedMph,
             cyclingTerrain: terrain,
@@ -708,17 +709,20 @@ class MacroTargetsController extends _$MacroTargetsController {
             cyclingElevationGainFt: elevationGainFt,
             cyclingSessionGoal: sessionGoal,
             intensityTarget: intensityTarget,
-            intensityLevel: domain.IntensityLevel.moderate, // Default
+            intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeMinutes,
             notes: 'Draft cycling activity - nutrition plan being generated',
           );
+          finalActivityId = createdActivity.id;
         } else {
-          final existingActivity = await activitiesController.getActivityById(
+          final existingActivity = await activitiesService.getActivityById(
+            deviceId,
             finalActivityId,
           );
           if (existingActivity != null) {
-            await activitiesController.updateActivity(
-              existingActivity.copyWith(
+            await activitiesService.updateActivity(
+              deviceId: deviceId,
+              activity: existingActivity.copyWith(
                 title: ActivityTitleFormatter.formatCyclingTitle(distanceMiles),
                 activityType: ActivityType.cycling,
                 scheduledDateTime: scheduledDateTime,
@@ -1147,33 +1151,35 @@ class MacroTargetsController extends _$MacroTargetsController {
         );
 
         String finalActivityId = activityId ?? '';
-        final activitiesController = ref.read(
-          activitiesControllerProvider.notifier,
-        );
+        final activitiesService = ref.read(activitiesServiceProvider);
 
         if (finalActivityId.isEmpty) {
-          finalActivityId = await activitiesController.createActivity(
+          final createdActivity = await activitiesService.createActivity(
+            deviceId: deviceId,
+            userId: deviceId,
+            forUserId: forUserId,
+            activityType: ActivityType.swimming,
             title: ActivityTitleFormatter.formatSwimmingTitle(distanceMeters),
             scheduledDateTime: scheduledDateTime,
-            forUserId:
-                forUserId, // NEW: Pass through forUserId for coach-created activities
-            activityType: ActivityType.swimming,
             distanceMiles: distanceMiles,
             swimmingPacePer100mSeconds: paceSecondsper100m,
             swimmingPoolOrOpenWater: poolOrOpenWater,
             swimmingWaterTempC: waterTempC,
             intensityTarget: intensityTarget,
-            intensityLevel: domain.IntensityLevel.moderate, // Default
+            intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeMinutes,
             notes: 'Draft swimming activity - nutrition plan being generated',
           );
+          finalActivityId = createdActivity.id;
         } else {
-          final existingActivity = await activitiesController.getActivityById(
+          final existingActivity = await activitiesService.getActivityById(
+            deviceId,
             finalActivityId,
           );
           if (existingActivity != null) {
-            await activitiesController.updateActivity(
-              existingActivity.copyWith(
+            await activitiesService.updateActivity(
+              deviceId: deviceId,
+              activity: existingActivity.copyWith(
                 title: ActivityTitleFormatter.formatSwimmingTitle(
                   distanceMeters,
                 ),
@@ -1327,9 +1333,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         );
 
         String finalActivityId = activityId ?? '';
-        final activitiesController = ref.read(
-          activitiesControllerProvider.notifier,
-        );
+        final activitiesService = ref.read(activitiesServiceProvider);
 
         if (finalActivityId.isEmpty) {
           // Build brick title (e.g., "SWIM/RUN BRICK")
@@ -1341,18 +1345,22 @@ class MacroTargetsController extends _$MacroTargetsController {
             '🧱 DEBUG: segmentOrder=$segmentOrder, totalDurationMinutes=$totalDurationMinutes',
           );
 
-          finalActivityId = await activitiesController.createActivity(
-            title: brickTitle,
-            scheduledDateTime: scheduledDateTime,
+          final createdActivity = await activitiesService.createActivity(
+            deviceId: deviceId,
+            userId: deviceId,
             forUserId: forUserId,
             activityType: ActivityType.brick,
-            intensityLevel: domain.IntensityLevel.moderate, // Default
+            title: brickTitle,
+            scheduledDateTime: scheduledDateTime,
+            intensityLevel: domain.IntensityLevel.moderate,
             durationMinutes: totalDurationMinutes,
             brickMetadata: brickMetadata,
             notes: 'Draft brick activity - nutrition plan being generated',
           );
+          finalActivityId = createdActivity.id;
         } else {
-          final existingActivity = await activitiesController.getActivityById(
+          final existingActivity = await activitiesService.getActivityById(
+            deviceId,
             finalActivityId,
           );
           if (existingActivity != null) {
@@ -1368,8 +1376,9 @@ class MacroTargetsController extends _$MacroTargetsController {
                 .map((s) => s.toUpperCase())
                 .join('/');
             final brickTitle = '$sportNames BRICK';
-            await activitiesController.updateActivity(
-              existingActivity.copyWith(
+            await activitiesService.updateActivity(
+              deviceId: deviceId,
+              activity: existingActivity.copyWith(
                 title: brickTitle,
                 activityType: ActivityType.brick,
                 scheduledDateTime: scheduledDateTime,
@@ -1792,9 +1801,6 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         // Get the existing draft activity and update it
         try {
-          final activitiesController = ref.read(
-            activitiesControllerProvider.notifier,
-          );
           final userId = await ref.read(userIdProvider.future);
           final activitiesService = ref.read(activitiesServiceProvider);
           final existingActivity = await activitiesService.getActivityById(
@@ -1822,7 +1828,10 @@ class MacroTargetsController extends _$MacroTargetsController {
             updatedAt: DateTime.now(),
           );
 
-          await activitiesController.updateActivity(updatedActivity);
+          await activitiesService.updateActivity(
+            deviceId: userId,
+            activity: updatedActivity,
+          );
 
           // Fire-and-forget write-back to TrainingPeaks (never blocks plan creation)
           unawaited(
@@ -1917,9 +1926,10 @@ class MacroTargetsController extends _$MacroTargetsController {
       );
 
       if (activity != null && activity.status == domain.ActivityStatus.draft) {
-        await ref
-            .read(activitiesControllerProvider.notifier)
-            .deleteActivity(activityId);
+        await activitiesService.deleteActivity(
+          deviceId: userId,
+          activityId: activityId,
+        );
       }
     } catch (e) {
       DebugLogger.error('Failed to cleanup draft activity: $e');

@@ -185,13 +185,6 @@ class PortalSidebar extends ConsumerWidget {
                 count: state.athleteCount,
                 color: AppColors.electrolyte,
               ),
-              const SizedBox(width: 8),
-              if (state.hasPendingRequests)
-                _StatBadge(
-                  label: 'Pending',
-                  count: state.pendingRequests.length,
-                  color: AppColors.orange,
-                ),
             ],
           ),
         ),
@@ -243,37 +236,6 @@ class PortalSidebar extends ConsumerWidget {
             ),
           ),
 
-        // Pending requests section
-        if (state.hasPendingRequests) ...[
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text(
-              'PENDING (${state.pendingRequests.length})',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textDarkSecondary.withOpacity(0.6),
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-          ...state.pendingRequests.map(
-            (request) => _PendingRequestItem(
-              relationship: request,
-              onAccept: () {
-                ref
-                    .read(coachDashboardControllerProvider.notifier)
-                    .acceptRequest(request.id);
-              },
-              onDecline: () {
-                ref
-                    .read(coachDashboardControllerProvider.notifier)
-                    .declineRequest(request.id);
-              },
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -283,18 +245,17 @@ class PortalSidebar extends ConsumerWidget {
     WidgetRef ref,
     CoachDashboardState state,
   ) async {
-    final connectedAthleteIds = state.activeAthletes
-        .map((relationship) => relationship.athleteUserId)
-        .toSet();
-    final pendingAthleteIds = state.pendingRequests
-        .map((relationship) => relationship.athleteUserId)
-        .toSet();
+    final connectedAthleteIds = {
+      ...state.activeAthletes
+          .map((relationship) => relationship.athleteUserId),
+      ...state.pendingRequests
+          .map((relationship) => relationship.athleteUserId),
+    };
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => _AthleteSearchDialog(
         connectedAthleteIds: connectedAthleteIds,
-        pendingAthleteIds: pendingAthleteIds,
         onInviteSuccess: () {
           ref.read(coachDashboardControllerProvider.notifier).refresh();
         },
@@ -305,12 +266,10 @@ class PortalSidebar extends ConsumerWidget {
 
 class _AthleteSearchDialog extends ConsumerStatefulWidget {
   final Set<String> connectedAthleteIds;
-  final Set<String> pendingAthleteIds;
   final VoidCallback onInviteSuccess;
 
   const _AthleteSearchDialog({
     required this.connectedAthleteIds,
-    required this.pendingAthleteIds,
     required this.onInviteSuccess,
   });
 
@@ -401,21 +360,21 @@ class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
       if (relationship != null) {
         MealvanaSnackbar.showSuccess(
           context,
-          'Invite sent to ${athlete.displayName}',
+          '${athlete.displayName} added as athlete',
         );
         widget.onInviteSuccess();
         Navigator.of(context).pop();
       } else {
         MealvanaSnackbar.showError(
           context,
-          'Unable to send invite. This user may already be connected.',
+          'Unable to add athlete. This user may already be connected.',
         );
       }
     } catch (_) {
       if (!mounted) return;
       MealvanaSnackbar.showError(
         context,
-        'Failed to send invite. Please try again.',
+        'Failed to add athlete. Please try again.',
       );
     } finally {
       if (mounted) {
@@ -560,7 +519,6 @@ class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
       itemBuilder: (context, index) {
         final athlete = _results[index];
         final isConnected = widget.connectedAthleteIds.contains(athlete.userId);
-        final isPending = widget.pendingAthleteIds.contains(athlete.userId);
         final isInviting = _invitingUserIds.contains(athlete.userId);
         final subtitle = athlete.email?.trim().isNotEmpty == true
             ? athlete.email!
@@ -606,8 +564,6 @@ class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
                   label: 'Connected',
                   color: AppColors.electrolyte,
                 )
-              : isPending
-              ? const _StatusTag(label: 'Pending', color: AppColors.orange)
               : SizedBox(
                   height: 30,
                   child: FilledButton(
@@ -858,116 +814,3 @@ class _AthleteListItem extends StatelessWidget {
   }
 }
 
-/// Pending request item for sidebar
-class _PendingRequestItem extends StatelessWidget {
-  final CoachAthleteRelationship relationship;
-  final VoidCallback onAccept;
-  final VoidCallback onDecline;
-
-  const _PendingRequestItem({
-    required this.relationship,
-    required this.onAccept,
-    required this.onDecline,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isFromCoach = relationship.requestedBy == 'coach';
-    final name =
-        relationship.athleteDisplayName ??
-        'Athlete ${relationship.athleteUserId.substring(0, 8)}';
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: AppColors.blackberryLight.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.orange.withOpacity(0.3)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: AppColors.orange.withOpacity(0.2),
-                  child: Icon(
-                    isFromCoach ? Icons.arrow_forward : Icons.arrow_back,
-                    size: 14,
-                    color: AppColors.orange,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.cream,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            if (!isFromCoach) ...[
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  SizedBox(
-                    height: 28,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textDarkSecondary,
-                        side: const BorderSide(
-                          color: AppColors.textDarkSecondary,
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        textStyle: const TextStyle(fontSize: 11),
-                      ),
-                      onPressed: onDecline,
-                      child: const Text('Decline'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 28,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.electrolyte,
-                        foregroundColor: AppColors.blackberryDark,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        textStyle: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      onPressed: onAccept,
-                      child: const Text('Accept'),
-                    ),
-                  ),
-                ],
-              ),
-            ] else
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'Waiting for response',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontStyle: FontStyle.italic,
-                    color: AppColors.textDarkSecondary.withOpacity(0.6),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}

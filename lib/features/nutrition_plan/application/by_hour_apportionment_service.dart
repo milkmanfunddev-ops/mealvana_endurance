@@ -128,7 +128,7 @@ class ByHourApportionmentService {
     }
 
     // Phase 3: QUICK_CONSUME — gels/chews after quiet zone, spaced by gut training
-    // Distribute by time (not front-loading by quantity) so carbs are spread across the effort.
+    // Interleave different food types across minutes for even hourly carb distribution.
     if (quickItems.isNotEmpty) {
       final interval = _gelIntervalMinutes(gutTraining);
       final endCutoff = durationMinutes - _endCutoffMinutes;
@@ -138,9 +138,14 @@ class ByHourApportionmentService {
       for (int m = _quietZoneMinutes; m <= endCutoff; m += interval) {
         placementMinutes.add(m);
       }
-      final trimmedPlacementMinutes = _omitLastAllowedPlacement(placementMinutes);
+      final trimmedPlacementMinutes = _omitLastAllowedPlacement(
+        placementMinutes,
+      );
 
       if (trimmedPlacementMinutes.isNotEmpty) {
+        // Build per-food placement queues
+        final perFoodIds = <List<String>>[];
+        final perFoodQtys = <List<double>>[];
         for (final food in quickItems) {
           final originalQty = _parseQuantity(food);
           final placementCount = _eventPlacementCount(
@@ -149,27 +154,54 @@ class ByHourApportionmentService {
             minIncrement: _quickIncrement,
             isIndivisible: food.isIndivisible,
           );
-          final selectedMinutes = _selectEvenlySpacedMinutes(
-            trimmedPlacementMinutes,
-            placementCount,
-          );
           final splitQuantities = food.isIndivisible
               ? List<double>.filled(placementCount, 1.0)
               : _splitSipQuantity(
                   originalQty: originalQty,
                   placementCount: placementCount,
                 );
+          perFoodIds.add(List<String>.filled(placementCount, food.id));
+          perFoodQtys.add(splitQuantities);
+        }
 
-          for (int i = 0; i < selectedMinutes.length; i++) {
-            assignments.add(
-              TimeSlotAssignment(
-                foodItemId: food.id,
-                timeSlot: _minuteToTimeSlot(selectedMinutes[i]),
-                adjustedQuantity: splitQuantities[i],
-                timingCategory: TimingCategory.quickConsume,
-              ),
-            );
+        // Interleave: round-robin across food types so different foods
+        // spread across different hours instead of clustering at the same minutes.
+        final interleavedIds = <String>[];
+        final interleavedQtys = <double>[];
+        int maxLen = 0;
+        for (final q in perFoodQtys) {
+          if (q.length > maxLen) maxLen = q.length;
+        }
+        for (int round = 0; round < maxLen; round++) {
+          for (int f = 0; f < perFoodIds.length; f++) {
+            if (round < perFoodIds[f].length) {
+              interleavedIds.add(perFoodIds[f][round]);
+              interleavedQtys.add(perFoodQtys[f][round]);
+            }
           }
+        }
+
+        // Select evenly-spaced minutes for all placements
+        final totalPlacements = interleavedIds.length;
+        final selectedMinutes =
+            totalPlacements <= trimmedPlacementMinutes.length
+                ? _selectEvenlySpacedMinutes(
+                    trimmedPlacementMinutes,
+                    totalPlacements,
+                  )
+                : List<int>.from(trimmedPlacementMinutes);
+
+        for (int i = 0; i < interleavedIds.length; i++) {
+          assignments.add(
+            TimeSlotAssignment(
+              foodItemId: interleavedIds[i],
+              timeSlot: _minuteToTimeSlot(
+                selectedMinutes[i % selectedMinutes.length],
+              ),
+              adjustedQuantity: interleavedQtys[i],
+              timingCategory: TimingCategory.quickConsume,
+            ),
+          );
         }
       }
     }
@@ -604,10 +636,9 @@ class ByHourApportionmentService {
     if (extraUnits < 0) extraUnits = 0;
     if (extraUnits > placementCount) extraUnits = placementCount;
 
-    // Add remaining half-servings to later placements.
+    // Distribute remaining half-servings starting from earliest placements.
     for (int i = 0; i < extraUnits; i++) {
-      final idx = placementCount - 1 - i;
-      quantities[idx] = _roundQuantity(quantities[idx] + _sipIncrement);
+      quantities[i] = _roundQuantity(quantities[i] + _sipIncrement);
     }
 
     return quantities;
@@ -688,15 +719,7 @@ class ByHourApportionmentService {
 
   static double _roundToFriendlyIncrement(double value) {
     if (value <= 0) return 0;
-
-    final halfStep = (value / _sipIncrement).round() * _sipIncrement;
-    final thirdStep = (value * 3).round() / 3;
-    final halfDiff = (value - halfStep).abs();
-    final thirdDiff = (value - thirdStep).abs();
-
-    // Prefer halves by default; use thirds only when meaningfully closer.
-    final rounded = thirdDiff + 0.08 < halfDiff ? thirdStep : halfStep;
-    return _roundQuantity(rounded);
+    return (value / _sipIncrement).round() * _sipIncrement; // Snap to nearest 0.5
   }
 
   static double _roundQuantity(double value) => (value * 100).round() / 100;

@@ -23,9 +23,7 @@ import { type TemplateFoodItem, type ScaledFood, type ScalingResult, type SubPha
  * These are the "nice" quantities users see (e.g., 0.5, 1, 1.5, 2).
  */
 const FRIENDLY_FRACTIONS = [
-  0.25, 0.33, 0.5, 0.67, 0.75, 1.0,
-  1.25, 1.33, 1.5, 1.67, 1.75, 2.0,
-  2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0,
+  0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0,
 ];
 
 /**
@@ -53,21 +51,13 @@ function snapToFriendly(value: number): number {
  */
 export function formatQuantity(value: number): string {
   if (value === 0) return '0';
-  if (value === 0.25) return '1/4';
-  if (value === 0.33) return '1/3';
   if (value === 0.5) return '1/2';
-  if (value === 0.67) return '2/3';
-  if (value === 0.75) return '3/4';
   if (Number.isInteger(value)) return value.toString();
 
   const whole = Math.floor(value);
   const frac = value - whole;
 
-  if (Math.abs(frac - 0.25) < 0.05) return `${whole} 1/4`;
-  if (Math.abs(frac - 0.33) < 0.05) return `${whole} 1/3`;
   if (Math.abs(frac - 0.5) < 0.05) return `${whole} 1/2`;
-  if (Math.abs(frac - 0.67) < 0.05) return `${whole} 2/3`;
-  if (Math.abs(frac - 0.75) < 0.05) return `${whole} 3/4`;
 
   return value.toFixed(1);
 }
