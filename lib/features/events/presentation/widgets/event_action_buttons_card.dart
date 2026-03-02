@@ -111,16 +111,16 @@ class EventActionButtonsCard extends ConsumerWidget {
             icon: event.hasCarbLoading ? FontAwesomeIcons.pen : FontAwesomeIcons.plus,
           ),
 
-          const SizedBox(height: AppSpacing.md),
+          // const SizedBox(height: AppSpacing.md),
 
-          // Info text
-          Text(
-            'Create a nutrition plan for race day, or set up a multi-day carb loading protocol to maximize your glycogen stores.',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
+          // // Info text
+          // Text(
+          //   'Create a nutrition plan for race day, or set up a multi-day carb loading protocol to maximize your glycogen stores.',
+          //   style: AppTextStyles.bodyMedium.copyWith(
+          //     color: Theme.of(context).colorScheme.onSurfaceVariant,
+          //   ),
+          //   textAlign: TextAlign.center,
+          // ),
         ],
       ),
     );

@@ -751,6 +751,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   String _buildCollapsedFoodSummaryLabel(FoodItemData food) {
     final qty = _parseLeadingQuantity(food.quantity);
+
+    // If the quantity string already has a multi-word tail (e.g. "2 cups Oatmeal"),
+    // use it directly — the enrichment already built the proper label.
+    final tailMatch = RegExp(r'^[\d.]+\s*(.*)$').firstMatch(food.quantity.trim());
+    final tail = tailMatch?.group(1)?.trim() ?? '';
+    if (qty != null && tail.contains(' ')) {
+      if ((qty - 1.0).abs() < 0.01) {
+        return _simplifyFoodName(tail);
+      }
+      return '${_formatQuantity(qty)} ${_simplifyFoodName(tail)}';
+    }
+
     final singular = _simplifyFoodName(food.displayName ?? food.name);
     final plural = _simplifyFoodName(
       food.displayNamePlural ??

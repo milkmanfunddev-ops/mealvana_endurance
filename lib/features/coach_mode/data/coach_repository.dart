@@ -1923,30 +1923,48 @@ class CoachRepository with SyncableRepository {
       final safeQuery = normalizedQuery.replaceAll(',', ' ');
       final clampedLimit = limit.clamp(1, 50).toInt();
 
-      // Split query into individual words so "test User" matches
-      // first_name="test" + last_name="User" (each word searched separately).
-      // Also keep the full query for sender_name and email matching.
+      // Split query into individual words for flexible matching.
       final words = safeQuery
           .split(RegExp(r'\s+'))
           .where((w) => w.isNotEmpty)
           .toList();
 
       final filterParts = <String>[];
+
+      if (words.length >= 2) {
+        // Multi-word query: match first+last name combination in both orders.
+        // e.g. "Lee Martin" → first_name~Lee AND last_name~Martin, OR reversed.
+        final first = '%${words.first}%';
+        final last = '%${words.sublist(1).join(' ')}%';
+        filterParts
+            .add('and(first_name.ilike.$first,last_name.ilike.$last)');
+        filterParts
+            .add('and(first_name.ilike.$last,last_name.ilike.$first)');
+      }
+
+      // Also match each word individually against first_name and last_name
       for (final word in words) {
         final wc = '%$word%';
         filterParts.add('first_name.ilike.$wc');
         filterParts.add('last_name.ilike.$wc');
       }
-      // Also match the full query against sender_name and email
-      final fullWildcard = '%$safeQuery%';
-      filterParts.add('sender_name.ilike.$fullWildcard');
+
+      // Match full query against sender_name (only for single-word queries
+      // since multi-word values in PostgREST or() filters can cause parse errors).
+      if (words.length == 1) {
+        filterParts.add('sender_name.ilike.%$safeQuery%');
+      }
 
       List<dynamic> response;
 
       // Try with email first. Some environments may not have an `email` column
       // in public.users, so fall back to name-only search if that fails.
+      final hasEmailFilter = words.length == 1;
       try {
-        filterParts.add('email.ilike.$fullWildcard');
+        // Only add email filter for single-word queries (spaces break or() parsing)
+        if (hasEmailFilter) {
+          filterParts.add('email.ilike.%$safeQuery%');
+        }
         response = await _supabase
             .from('users')
             .select('id, first_name, last_name, sender_name, email')
@@ -1961,8 +1979,10 @@ class CoachRepository with SyncableRepository {
           rethrow;
         }
 
-        // Remove the email filter part and retry without email column
-        filterParts.removeLast();
+        // Remove the email filter part (if added) and retry without email column
+        if (hasEmailFilter) {
+          filterParts.removeLast();
+        }
         response = await _supabase
             .from('users')
             .select('id, first_name, last_name, sender_name')

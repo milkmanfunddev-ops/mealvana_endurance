@@ -216,10 +216,55 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
     final singularRaw = widget.food.displayName?.isNotEmpty == true
         ? widget.food.displayName!
         : widget.food.name;
+
+    // If we have servingSize with a unit (e.g. "1 cup cooked"), use unit + food name
+    // instead of naively pluralizing (avoids "Oatmeals", "Honeys", "Milks").
+    if (quantity != 1) {
+      final unitLabel = _extractUnitFromServingSize();
+      if (unitLabel != null) {
+        return '$unitLabel ${_simplifyName(singularRaw)}';
+      }
+    }
+
     final pluralRaw = widget.food.displayNamePlural?.isNotEmpty == true
         ? widget.food.displayNamePlural!
         : _pluralize(singularRaw);
     return _simplifyName(quantity == 1 ? singularRaw : pluralRaw);
+  }
+
+  /// Extract the measurement unit from servingSize (e.g. "1 cup cooked" → "cups").
+  /// Returns the pluralized unit if recognized, null otherwise.
+  String? _extractUnitFromServingSize() {
+    final servingSize = widget.food.servingSize;
+    if (servingSize == null || servingSize.isEmpty) return null;
+
+    // Extract first word after the leading number
+    final match = RegExp(r'^[\d.]+\s+(\S+)').firstMatch(servingSize.trim());
+    final unit = match?.group(1)?.trim();
+    if (unit == null) return null;
+
+    // Only return recognized measurement units
+    const knownUnits = {
+      'cup', 'cups', 'tbsp', 'tsp', 'oz', 'ml', 'g', 'mg', 'kg', 'l',
+      'slice', 'slices', 'piece', 'pieces', 'scoop', 'scoops',
+      'tablespoon', 'tablespoons', 'teaspoon', 'teaspoons',
+      'packet', 'packets', 'serving', 'servings',
+    };
+    if (!knownUnits.contains(unit.toLowerCase())) return null;
+    return _pluralizeUnit(unit);
+  }
+
+  static String _pluralizeUnit(String unit) {
+    final lower = unit.toLowerCase().trim();
+    if (const {'tbsp', 'tsp', 'oz', 'ml', 'g', 'mg', 'kg', 'l', 'fl oz'}
+        .contains(lower)) {
+      return unit;
+    }
+    if (lower.endsWith('s')) return unit;
+    if (lower.endsWith('ch') || lower.endsWith('sh') || lower.endsWith('x')) {
+      return '${unit}es';
+    }
+    return '${unit}s';
   }
 
   String _pluralize(String value) {

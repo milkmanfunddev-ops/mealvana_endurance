@@ -466,18 +466,12 @@ class BeforeSubPhase {
           final numericQty = match != null
               ? double.tryParse(match.group(1)!)
               : null;
+          final tail = match?.group(2)?.trim() ?? '';
+
           final baseName = _simplifyName(f.displayName ?? f.name);
-          final pluralName = _simplifyName(
-            f.displayNamePlural ??
-                (baseName.toLowerCase().endsWith('s')
-                    ? baseName
-                    : '${baseName}s'),
-          );
 
           if (numericQty == null) return baseName;
-          if ((numericQty - 1.0).abs() < 0.01) {
-            return baseName;
-          }
+
           final qtyStr = (numericQty - numericQty.roundToDouble()).abs() < 0.01
               ? numericQty.round().toString()
               : numericQty.toStringAsFixed(
@@ -485,6 +479,22 @@ class BeforeSubPhase {
                       ? 1
                       : 2,
                 );
+
+          if ((numericQty - 1.0).abs() < 0.01) {
+            return tail.isNotEmpty ? _simplifyName(tail) : baseName;
+          }
+
+          // If quantity has a multi-word tail (e.g. "cups Oatmeal"), use it
+          if (tail.contains(' ')) {
+            return '$qtyStr ${_simplifyName(tail)}';
+          }
+
+          final pluralName = _simplifyName(
+            f.displayNamePlural ??
+                (baseName.toLowerCase().endsWith('s')
+                    ? baseName
+                    : '${baseName}s'),
+          );
           return '$qtyStr $pluralName';
         })
         .join(' + ');

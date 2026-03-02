@@ -233,11 +233,57 @@ class PortalSidebar extends ConsumerWidget {
                     .read(coachPortalControllerProvider.notifier)
                     .selectAthlete(athlete.id);
               },
+              onRemove: () => _confirmRemoveAthlete(context, ref, athlete),
             ),
           ),
 
       ],
     );
+  }
+
+  Future<void> _confirmRemoveAthlete(
+    BuildContext context,
+    WidgetRef ref,
+    CoachAthleteRelationship athlete,
+  ) async {
+    final name =
+        athlete.athleteDisplayName ??
+        'Athlete ${athlete.athleteUserId.substring(0, 8)}';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.blackberry,
+        title: const Text(
+          'Remove Athlete',
+          style: TextStyle(color: AppColors.cream),
+        ),
+        content: Text(
+          'Are you sure you want to remove $name? '
+          'You will no longer have access to their data.',
+          style: const TextStyle(color: AppColors.textDarkSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref
+          .read(coachDashboardControllerProvider.notifier)
+          .archiveAthlete(athlete.id);
+      if (context.mounted) {
+        MealvanaSnackbar.showSuccess(context, '$name removed');
+      }
+    }
   }
 
   Future<void> _showAthleteSearchDialog(
@@ -732,11 +778,13 @@ class _AthleteListItem extends StatelessWidget {
   final CoachAthleteRelationship relationship;
   final bool isSelected;
   final VoidCallback onTap;
+  final VoidCallback onRemove;
 
   const _AthleteListItem({
     required this.relationship,
     required this.isSelected,
     required this.onTap,
+    required this.onRemove,
   });
 
   @override
@@ -796,6 +844,22 @@ class _AthleteListItem extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+              ),
+              SizedBox(
+                width: 28,
+                height: 28,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  iconSize: 16,
+                  tooltip: 'Remove athlete',
+                  icon: Icon(
+                    Icons.close,
+                    color: isSelected
+                        ? AppColors.textDarkSecondary
+                        : AppColors.textDarkSecondary.withOpacity(0.5),
+                  ),
+                  onPressed: onRemove,
                 ),
               ),
             ],

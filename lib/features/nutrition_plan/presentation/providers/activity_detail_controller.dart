@@ -543,11 +543,20 @@ class ActivityDetailController extends _$ActivityDetailController {
           carbsPerServing: tf.carbsG ?? 0,
         );
 
+        // If quantity is a bare number (no unit tail), rebuild it with the
+        // serving unit from template_foods so the display reads e.g.
+        // "2 cups Oatmeal" instead of "2 Oatmeals".
+        final enrichedQuantity = _enrichQuantityWithUnit(
+          food.quantity,
+          tf.servingUnit,
+          food.name,
+        );
+
         return _normalizeFoodQuantity(
           FoodItemData(
             id: food.id,
             name: food.name,
-            quantity: food.quantity,
+            quantity: enrichedQuantity,
             imageAddress: food.imageAddress ?? tf.imageAddress,
             description: food.description ?? tf.description,
             timing: food.timing,
@@ -588,6 +597,50 @@ class ActivityDetailController extends _$ActivityDetailController {
       _logger.warning('Failed to enrich food items from template_foods: $e');
       return plan;
     }
+  }
+
+  /// Rebuild a bare-number quantity string (e.g. "2") to include the serving
+  /// unit and food name (e.g. "2 cups Oatmeal").
+  ///
+  /// If the quantity already has a tail (e.g. "2 cups Oatmeal") or no unit is
+  /// available, the original string is returned unchanged.
+  String _enrichQuantityWithUnit(
+    String rawQuantity,
+    String? servingUnit,
+    String foodName,
+  ) {
+    if (servingUnit == null || servingUnit.isEmpty) return rawQuantity;
+
+    final trimmed = rawQuantity.trim();
+    final numericQty = _parseLeadingQuantity(trimmed);
+    if (numericQty == null) return rawQuantity;
+
+    // Check if there's already a tail (unit/descriptor) after the number
+    final tailMatch = RegExp(r'^[\d.]+\s*(.*)$').firstMatch(trimmed);
+    final tail = tailMatch?.group(1)?.trim() ?? '';
+    if (tail.isNotEmpty) return rawQuantity;
+
+    // Quantity is bare — rebuild with unit + food name
+    final qtyStr = _formatQuantity(numericQty);
+    final unit = numericQty != 1
+        ? _pluralizeUnit(servingUnit)
+        : servingUnit;
+    return '$qtyStr $unit $foodName';
+  }
+
+  /// Simple unit pluralization for common serving units.
+  static String _pluralizeUnit(String unit) {
+    final lower = unit.toLowerCase().trim();
+    // Abbreviations don't change
+    if (const {'tbsp', 'tsp', 'oz', 'ml', 'g', 'mg', 'kg', 'l', 'fl oz'}
+        .contains(lower)) {
+      return unit;
+    }
+    if (lower.endsWith('s')) return unit;
+    if (lower.endsWith('ch') || lower.endsWith('sh') || lower.endsWith('x')) {
+      return '${unit}es';
+    }
+    return '${unit}s';
   }
 
   // ============================================================================
@@ -1027,10 +1080,21 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   String _buildQuantityLabel(FoodItemData item, double quantity) {
     final qtyStr = _formatQuantity(quantity);
+
+    // Prefer the existing quantity tail if it already contains unit info
+    // (e.g. "2 cups Oatmeal" → tail = "cups Oatmeal").
     final existingTailMatch = RegExp(
       r'^[\d.]+\s*(.*)$',
     ).firstMatch(item.quantity.trim());
     final existingTail = existingTailMatch?.group(1)?.trim();
+
+    // If the existing tail has multiple words (unit + name), preserve it
+    // since enrichment already built the proper "unit foodName" string.
+    if (existingTail != null &&
+        existingTail.isNotEmpty &&
+        existingTail.contains(' ')) {
+      return '$qtyStr ${_stripParenthetical(existingTail)}'.trim();
+    }
 
     String label;
     if (quantity != 1 && item.displayNamePlural?.isNotEmpty == true) {

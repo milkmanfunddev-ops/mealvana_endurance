@@ -593,7 +593,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           // Coach Mode - show different options for coaches vs athletes
-          // _buildCoachModeLink(context),
+          const SizedBox(height: AppSpacing.sm),
+          _buildCoachModeLink(context),
         ],
       ),
     );
