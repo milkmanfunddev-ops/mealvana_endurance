@@ -3,8 +3,12 @@
 /// Derived from template_foods DB fields (productType, isElectrolyte, isLiquid).
 /// Controls placement rules: quiet zone, spacing, end cutoff, etc.
 enum TimingCategory {
-  /// Liquids sipped throughout the hour (sports drinks, water)
+  /// Zero/low-carb liquids sipped throughout the hour (water)
   sipThroughout,
+
+  /// Carb-contributing liquids (sports drink) — placed like sipThroughout
+  /// at :00, but displayed as fuel with a carb badge in the timeline.
+  fuelDrink,
 
   /// Quick-consume items (gels, chews) - placed after quiet zone
   quickConsume,
@@ -17,22 +21,25 @@ enum TimingCategory {
 
   /// Derive timing category from template_foods DB fields.
   ///
-  /// Priority: Supplements first, then liquids, then electrolytes,
-  /// then gels/chews, then everything else.
+  /// Priority: Supplements first, then liquids (fuel_drink vs sip_throughout),
+  /// then electrolytes, then gels/chews, then everything else.
   static TimingCategory fromFoodProperties({
     required bool isLiquid,
     required String productType,
     required bool isElectrolyte,
+    double carbsPerServing = 0,
   }) {
     // Supplements (tablet/shot/salt) are discrete electrolyte events.
     if (productType == 'supplement') {
       return TimingCategory.electrolyte;
     }
-    // Liquids are sipped throughout.
+    // Liquids: fuel_drink if >5g carbs, sip_throughout otherwise.
     if (isLiquid ||
         productType == 'sports_drink' ||
         productType == 'beverage') {
-      return TimingCategory.sipThroughout;
+      return carbsPerServing > 5
+          ? TimingCategory.fuelDrink
+          : TimingCategory.sipThroughout;
     }
     // Non-supplement electrolyte items.
     if (isElectrolyte) return TimingCategory.electrolyte;
@@ -229,6 +236,8 @@ TimingCategory? _timingCategoryFromJson(String? value) {
   switch (value) {
     case 'sip_throughout':
       return TimingCategory.sipThroughout;
+    case 'fuel_drink':
+      return TimingCategory.fuelDrink;
     case 'quick_consume':
       return TimingCategory.quickConsume;
     case 'slow_consume':

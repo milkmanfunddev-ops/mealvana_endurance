@@ -262,9 +262,8 @@ class TimeSlotRow extends StatelessWidget {
 
 /// Individual food item within a time slot.
 ///
-/// Shows the food with an optional "Sip throughout hour" subtitle for drinks,
-/// and a "Hard to eat while running" badge for slow-consume foods during runs.
-/// Wraps DismissibleFoodItem for swipe-to-delete/swap functionality.
+/// Shows the food with an optional carb badge for fuel drinks (sports drink),
+/// and wraps DismissibleFoodItem for swipe-to-delete/swap functionality.
 class _TimeSlotFoodItem extends StatelessWidget {
   const _TimeSlotFoodItem({
     required this.food,
@@ -289,31 +288,49 @@ class _TimeSlotFoodItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isFuelDrink = assignment.timingCategory == TimingCategory.fuelDrink;
+    final carbGrams = food.nutritionalInfo?.carbs ?? 0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DismissibleFoodItem(
-          food: food,
-          category: category,
-          onSwap: () => onSwapFood(food.id, food.name, category),
-          onDelete: () => onDeleteFood(food.id, category),
-          onQuantityChange: (newQuantity) =>
-              onUpdateQuantity(food.id, category, newQuantity),
-          useImperial: useImperial,
-        ),
-        if (assignment.isSipThroughout) ...[
-          Padding(
-            padding: const EdgeInsets.only(left: AppSpacing.sm, top: 2),
-            child: Text(
-              'Sip throughout hour',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: sectionColor.withValues(alpha: 0.7),
-                fontSize: 11,
-                fontStyle: FontStyle.italic,
+        Row(
+          children: [
+            Expanded(
+              child: DismissibleFoodItem(
+                food: food,
+                category: category,
+                onSwap: () => onSwapFood(food.id, food.name, category),
+                onDelete: () => onDeleteFood(food.id, category),
+                onQuantityChange: (newQuantity) =>
+                    onUpdateQuantity(food.id, category, newQuantity),
+                useImperial: useImperial,
               ),
             ),
-          ),
-        ],
+            // Carb badge for fuel drinks (sports drink etc.)
+            if (isFuelDrink && carbGrams > 0) ...[
+              const SizedBox(width: AppSpacing.xs),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: sectionColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${carbGrams}g carbs',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: sectionColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ],
     );
   }

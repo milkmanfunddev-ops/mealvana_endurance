@@ -507,6 +507,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           isLiquid: tf.isLiquid ?? false,
           productType: tf.productType ?? 'real_food',
           isElectrolyte: tf.isElectrolyte ?? false,
+          carbsPerServing: tf.carbsG ?? 0,
         );
 
         return FoodItemData(
@@ -623,7 +624,8 @@ class ActivityDetailController extends _$ActivityDetailController {
       productType: productType,
       isElectrolyte: false,
     );
-    final isDrink = timingCategory == TimingCategory.sipThroughout;
+    final isDrink = timingCategory == TimingCategory.sipThroughout ||
+        timingCategory == TimingCategory.fuelDrink;
 
     return FoodItemData(
       id: const Uuid().v4(),

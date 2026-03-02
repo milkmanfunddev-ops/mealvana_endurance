@@ -48,6 +48,8 @@ class ByHourApportionmentService {
       final category = _resolveTimingCategory(food);
       switch (category) {
         case TimingCategory.sipThroughout:
+        case TimingCategory.fuelDrink:
+          // fuelDrink is placed like sipThroughout (at :00) but tagged differently for UI
           sipItems.add(food);
         case TimingCategory.electrolyte:
           electrolyteItems.add(food);
@@ -58,7 +60,7 @@ class ByHourApportionmentService {
       }
     }
 
-    // Phase 1: SIP_THROUGHOUT — drinks at :00 every hour from minute 0
+    // Phase 1: SIP_THROUGHOUT + FUEL_DRINK — drinks at :00 every hour from minute 0
     // Enforce minimum 0.5 per hour; reduce placement count if needed
     for (final drink in sipItems) {
       final originalQty = _parseQuantity(drink);
@@ -67,6 +69,10 @@ class ByHourApportionmentService {
         originalQty: originalQty,
         placementCount: placementCount,
       );
+
+      // Preserve the resolved timing category for UI display
+      final drinkCategory = _resolveTimingCategory(drink);
+      final isSip = drinkCategory != TimingCategory.fuelDrink;
 
       // Spread placements evenly across available hours
       final hourStep = placementCount < totalHours
@@ -78,9 +84,9 @@ class ByHourApportionmentService {
           TimeSlotAssignment(
             foodItemId: drink.id,
             timeSlot: TimeSlot(hourIndex: h, slotIndex: 0),
-            isSipThroughout: true,
+            isSipThroughout: isSip,
             adjustedQuantity: splitQuantities[i],
-            timingCategory: TimingCategory.sipThroughout,
+            timingCategory: drinkCategory,
           ),
         );
       }
@@ -324,12 +330,14 @@ class ByHourApportionmentService {
 
     switch (category) {
       case TimingCategory.sipThroughout:
+      case TimingCategory.fuelDrink:
         // Split across all hours at :00, enforce minimum 0.5 per hour
         final placementCount = _sipPlacementCount(originalQty, totalHours);
         final splitQuantities = _splitSipQuantity(
           originalQty: originalQty,
           placementCount: placementCount,
         );
+        final isSip = category != TimingCategory.fuelDrink;
         final hourStep = placementCount < totalHours
             ? (totalHours / placementCount).floor()
             : 1;
@@ -339,7 +347,7 @@ class ByHourApportionmentService {
             TimeSlotAssignment(
               foodItemId: food.id,
               timeSlot: TimeSlot(hourIndex: h, slotIndex: 0),
-              isSipThroughout: true,
+              isSipThroughout: isSip,
               adjustedQuantity: splitQuantities[i],
               timingCategory: category,
             ),
@@ -462,7 +470,8 @@ class ByHourApportionmentService {
     int totalHours,
   ) {
     final category = _resolveTimingCategory(food);
-    if (category == TimingCategory.sipThroughout) {
+    if (category == TimingCategory.sipThroughout ||
+        category == TimingCategory.fuelDrink) {
       return TimeSlot(hourIndex: hourIndex, slotIndex: 0);
     }
 

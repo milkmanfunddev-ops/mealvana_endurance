@@ -37,7 +37,7 @@ export interface Food {
   product_type?: string;
 }
 
-export type TimingCategory = 'sip_throughout' | 'quick_consume' | 'slow_consume' | 'electrolyte';
+export type TimingCategory = 'sip_throughout' | 'fuel_drink' | 'quick_consume' | 'slow_consume' | 'electrolyte';
 
 export interface FoodResult {
   food_id: string;
@@ -66,12 +66,18 @@ export interface FoodResult {
 
 /**
  * Derive timing category from food properties.
- * Priority: supplements > liquids > electrolytes > gels/chews > everything else.
+ * Priority: supplements > liquids (fuel_drink vs sip_throughout) > electrolytes > gels/chews > everything else.
+ *
+ * fuel_drink: liquids with >5g carbs per serving (e.g. sports drink).
+ *   Placed like sip_throughout (distributed at :00) but displayed as fuel with carb badge.
+ * sip_throughout: zero/low-carb liquids (e.g. water).
  */
 export function deriveTimingCategory(food: Food): TimingCategory {
   // Supplement items are discrete electrolyte events, not sip-throughout drinks.
   if (food.product_type === 'supplement') return 'electrolyte';
-  if (food.is_liquid) return 'sip_throughout';
+  if (food.is_liquid) {
+    return food.per_serving.carbs_g > 5 ? 'fuel_drink' : 'sip_throughout';
+  }
   if (food.is_electrolyte) return 'electrolyte';
   if (food.product_type === 'gel' || food.product_type === 'chew') return 'quick_consume';
   return 'slow_consume';

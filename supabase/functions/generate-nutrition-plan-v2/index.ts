@@ -430,6 +430,8 @@ function generateByHourData(
     const tc = food.timing_category ?? 'slow_consume';
     switch (tc) {
       case 'sip_throughout':
+      case 'fuel_drink':
+        // fuel_drink is placed like sip_throughout (at :00) but tagged differently for UI
         sipItems.push(food);
         break;
       case 'electrolyte':
@@ -444,7 +446,7 @@ function generateByHourData(
     }
   }
 
-  // Phase 1: SIP_THROUGHOUT — drinks at :00 every hour
+  // Phase 1: SIP_THROUGHOUT + FUEL_DRINK — drinks at :00 every hour
   for (const drink of sipItems) {
     const originalQty = drink.quantity;
     const placementCount = sipPlacementCount(originalQty, totalHours);
@@ -453,14 +455,19 @@ function generateByHourData(
       ? Math.floor(totalHours / placementCount)
       : 1;
 
+    // Preserve the original timing category for UI display
+    const tc = drink.timing_category ?? 'sip_throughout';
+    const assignmentCategory = tc === 'fuel_drink' ? 'fuelDrink' : 'sipThroughout';
+    const isSip = tc !== 'fuel_drink';
+
     for (let i = 0; i < placementCount; i++) {
       const h = Math.min(i * hourStep, totalHours - 1);
       assignments.push({
         foodItemId: drink.food_id,
         timeSlot: { hourIndex: h, slotIndex: 0 },
-        isSipThroughout: true,
+        isSipThroughout: isSip,
         adjustedQuantity: splitQuantities[i],
-        timingCategory: 'sipThroughout',
+        timingCategory: assignmentCategory,
       });
     }
   }
@@ -746,6 +753,27 @@ async function generateLPPhase(
 
   console.log(`[PLAN-V2] ${phase}: ${foods.length} foods available`);
 
+  // Hydration strategy: filter food pool based on carb demand per hour
+  if (isDuringPhase && durationMinutes && durationMinutes > 0) {
+    const durationHours = durationMinutes / 60;
+    const carbsPerHour = targets.carbs_g / durationHours;
+
+    if (carbsPerHour <= 30) {
+      // Low carb demand: remove sports drink, let electrolyte+water handle hydration
+      const before = foods.length;
+      foods = foods.filter(f => {
+        const tc = deriveTimingCategory(f);
+        return tc !== 'fuel_drink';
+      });
+      if (foods.length < before) {
+        console.log(`[PLAN-V2] Hydration strategy: electrolyte_water (removed ${before - foods.length} fuel drinks, carbsPerHour=${carbsPerHour.toFixed(1)})`);
+      }
+    } else if (carbsPerHour > 60) {
+      console.log(`[PLAN-V2] Hydration strategy: sports_drink (high carb demand, carbsPerHour=${carbsPerHour.toFixed(1)})`);
+    }
+    // carbsPerHour 30-60: 'auto' — no filtering, let LP decide
+  }
+
   const sportConfig = getSportConfig(activityType);
   const phaseConfig = sportConfig.phases[phase];
 
@@ -765,6 +793,7 @@ async function generateLPPhase(
     selectionPenalty: isDuringPhase ? 1.0 : 0.1,
     maxElectrolyteSupplements: isDuringPhase && activityType === 'running' ? 1 : undefined,
     enforceWaterMin: isDuringPhase,
+    randomVariance: isDuringPhase,
   };
 
   // Build and solve LP model

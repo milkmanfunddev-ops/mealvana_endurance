@@ -1,6 +1,6 @@
 // Domain models for the By-Hour nutrition view.
 // Maps food items from a during-activity section into 15-minute time slots
-// grouped by hour. Drinks span the full hour at :00 with "Sip throughout hour".
+// grouped by hour. Drinks appear at :00 inline with other food items.
 
 import 'food_item_data.dart';
 

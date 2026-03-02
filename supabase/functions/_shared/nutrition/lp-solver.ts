@@ -26,6 +26,7 @@ export function buildLPModel(
     selectionPenalty?: number;
     maxElectrolyteSupplements?: number;
     enforceWaterMin?: boolean;
+    randomVariance?: boolean;
   },
 ): LPModel {
   const effectiveWeights = { ...weights, ...(weightOverrides ?? {}) };
@@ -141,6 +142,12 @@ export function buildLPModel(
     // Penalize high water content foods in pre-run
     if (phase === 'before' && food.per_serving.water_ml > 300) {
       score -= 3;
+    }
+
+    // Add random jitter for variety — non-liked foods get ±15% score perturbation
+    if (options?.randomVariance && food.preference_score < 200) {
+      const jitter = (Math.random() - 0.5) * 0.3 * Math.abs(score);
+      score += jitter;
     }
 
     const variable: Record<string, number> = {
