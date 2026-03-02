@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:wiredash/wiredash.dart';
 import '../../theme/kyle_design/app_theme.dart';
 import '../../theme/kyle_design/theme_provider.dart';
@@ -82,7 +84,10 @@ class RootAppWidget extends ConsumerWidget {
                   return AppStartupWidget(
                     // Pass router child back when initialization is complete
                     // Wrapped with ResponsiveContentWrapper for web/iPad support
-                    onLoaded: (_) => ResponsiveContentWrapper(child: child!),
+                    onLoaded: (_) => _RouteAwareWrapper(
+                      goRouter: goRouter,
+                      child: child!,
+                    ),
                   );
                 },
               ),
@@ -107,7 +112,10 @@ class RootAppWidget extends ConsumerWidget {
                 routerConfig: goRouter,
                 builder: (context, child) {
                   return AppStartupWidget(
-                    onLoaded: (_) => ResponsiveContentWrapper(child: child!),
+                    onLoaded: (_) => _RouteAwareWrapper(
+                      goRouter: goRouter,
+                      child: child!,
+                    ),
                   );
                 },
               ),
@@ -131,7 +139,10 @@ class RootAppWidget extends ConsumerWidget {
                 routerConfig: goRouter,
                 builder: (context, child) {
                   return AppStartupWidget(
-                    onLoaded: (_) => ResponsiveContentWrapper(child: child!),
+                    onLoaded: (_) => _RouteAwareWrapper(
+                      goRouter: goRouter,
+                      child: child!,
+                    ),
                   );
                 },
               ),
@@ -143,3 +154,30 @@ class RootAppWidget extends ConsumerWidget {
   }
 }
 
+/// Listens to GoRouter route changes and wraps content with
+/// ResponsiveContentWrapper, passing isFullWidth for coach portal routes.
+class _RouteAwareWrapper extends StatelessWidget {
+  const _RouteAwareWrapper({
+    required this.goRouter,
+    required this.child,
+  });
+
+  final GoRouter goRouter;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: goRouter.routeInformationProvider,
+      builder: (context, _) {
+        final path =
+            goRouter.routeInformationProvider.value.uri.path;
+        final isCoachPortal = kIsWeb && path.startsWith('/coach');
+        return ResponsiveContentWrapper(
+          isFullWidth: isCoachPortal,
+          child: child,
+        );
+      },
+    );
+  }
+}

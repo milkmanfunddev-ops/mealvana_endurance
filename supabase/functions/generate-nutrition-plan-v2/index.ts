@@ -210,8 +210,8 @@ async function generateBeforePhase(
 
   console.log(`[PLAN-V2] After filtering: ${filteredTemplates.length} templates, ${filteredDrinks.length} drinks`);
 
-  // 6. Select template chain (sodium tiebreaker picks lowest-sodium non-conflicting template)
-  const templateChain = selectTemplateChain(filteredTemplates, activeSubPhases);
+  // 6. Select template chain (fit-aware: prefers templates whose base carbs naturally match the target)
+  const templateChain = selectTemplateChain(filteredTemplates, activeSubPhases, subPhaseTargets);
 
   // 7. Build has_liquid_base phase set (skip drink assignment for these)
   const hasLiquidBasePhases = new Set<SubPhaseType>();

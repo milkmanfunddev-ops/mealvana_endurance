@@ -77,12 +77,22 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
 
     return Column(
       children: [
-        // Month/Year title with optional Today button
+        // Month/Year title with nav arrows and optional Today button
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Previous week arrow
+              GestureDetector(
+                onTap: _goToPreviousWeek,
+                child: Icon(
+                  Icons.chevron_left,
+                  size: 24,
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
+                ),
+              ),
+              const SizedBox(width: 8),
               // Month/Year title (tappable for date picker)
               GestureDetector(
                 onTap: () => _showDatePicker(context),
@@ -94,6 +104,16 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
                     fontWeight: FontWeight.w700,
                   ),
                   textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Next week arrow
+              GestureDetector(
+                onTap: _goToNextWeek,
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 24,
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
                 ),
               ),
               // Today button - only shown when not on current week
@@ -257,6 +277,20 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
       });
       _pageController.jumpToPage(_initialPage);
     }
+  }
+
+  void _goToPreviousWeek() {
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _goToNextWeek() {
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _goToToday() {

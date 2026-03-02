@@ -1,399 +1,492 @@
-Restarted application in 1,619ms.
-flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-flutter: ✅ Schema validation passed (22 tables verified)
-flutter: PushNotificationService: Initialized with app ID: 335e597f...
-flutter: PushNotificationService: Logged in user: 9CD41B7E-ECD3-4BDD-8474-8BE8A3E4A16B
-flutter: PushNotificationService: Permission granted
-flutter: 🔄 Integration sync skipped (training_peaks) - data is fresh
-flutter: 🔄 Integration sync skipped (training_peaks) - data is fresh
-flutter: 🔑 ConnectTrainingController: Using real user ID: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter:    (user profile exists: true, onboardingCompleted: true)
-flutter:    (auth user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, resolved user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1)
-flutter: 🔑 ConnectTrainingController: Using real user ID: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter:    (user profile exists: true, onboardingCompleted: true)
-flutter:    (auth user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, resolved user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1)
-flutter: 🔄 Starting TrainingPeaks sync...
-flutter: 🔄 Starting full TrainingPeaks sync...
-flutter: 🔄 Starting TrainingPeaks workout sync for user 607f9dd5-6fa7-48ee-a628-720d4a0506a1
-flutter:    ✅ Athlete zones are fresh (0h old)
-flutter:    Fetched 10 workouts from TrainingPeaks
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout keys: [LastModifiedDate, Id, AthleteId, WorkoutType, Title, WorkoutDay, StartTime, StartTimePlanned, Completed, Distance, DistancePlanned, DistanceCustomized, TotalTime, TotalTimePlanned, HeartRateMinimum, HeartRateMaximum, HeartRateAverage, Calories, CaloriesPlanned, TssActual, TssPlanned, TssCalculationMethod, IF, IFPlanned, VelocityAverage, VelocityPlanned, VelocityMaximum, NormalizedSpeed, NormalizedPower, PowerAverage, PowerMaximum, Energy, EnergyPlanned, ElevationGain, ElevationGainPlanned, ElevationLoss, ElevationMinimum, ElevationAverage, ElevationMaximum, TorqueAverage, TorqueMaximum, TempMin, TempAvg, TempMax, CadenceAverage, CadenceMaximum, Url]
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout data:
-flutter:    LastModifiedDate: 2026-02-17T09:50:01.25
-flutter:    Id: 3585291920
-flutter:    AthleteId: 2687398
-flutter:    WorkoutType: Run
-flutter:    Title: Long Run
-flutter:    WorkoutDay: 2026-03-01T00:00:00
-flutter:    Completed: false
-flutter:    TotalTimePlanned: 1.75
-flutter:    TssCalculationMethod: Undefined
-flutter:    Url: https://bnc.lt/JVxd/Z3Y12w9bOq?user=2687398&athlete=2687398&workout=3585291920&op=viewWorkout&env=uat
-flutter: 🔍 TP DURATION DEBUG:
-flutter:    TotalTime raw value: null (type: Null)
-flutter:    TotalTimePlanned raw value: 1.75 (type: double)
-flutter:    All time-related keys: (StartTime, StartTimePlanned, TotalTime, TotalTimePlanned)
-flutter:    StartTime: null
-flutter:    StartTimePlanned: null
-flutter:    TotalTime: null
-flutter:    TotalTimePlanned: 1.75
-flutter: 🔍 TP DISTANCE DEBUG:
-flutter:    Distance raw value: null (type: Null)
-flutter:    DistancePlanned raw value: null (type: Null)
-flutter:    All distance-related keys: (Distance, DistancePlanned, DistanceCustomized)
-flutter:    Distance: null
-flutter:    DistancePlanned: null
-flutter:    DistanceCustomized: null
-flutter: 🔍 TP INTENSITY DEBUG - Checking for structured workout data
-flutter:    📊 Athlete zones available for precision mapping
-flutter:    ✅ Inferred from title/tags keywords ("Long Run"): IntensityDistribution(conversational: 80%, tempo: 15%, allOut: 5%)
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout keys: [LastModifiedDate, Id, AthleteId, WorkoutType, Title, WorkoutDay, StartTime, StartTimePlanned, Completed, Distance, DistancePlanned, DistanceCustomized, TotalTime, TotalTimePlanned, HeartRateMinimum, HeartRateMaximum, HeartRateAverage, Calories, CaloriesPlanned, TssActual, TssPlanned, TssCalculationMethod, IF, IFPlanned, VelocityAverage, VelocityPlanned, VelocityMaximum, NormalizedSpeed, NormalizedPower, PowerAverage, PowerMaximum, Energy, EnergyPlanned, ElevationGain, ElevationGainPlanned, ElevationLoss, ElevationMinimum, ElevationAverage, ElevationMaximum, TorqueAverage, TorqueMaximum, TempMin, TempAvg, TempMax, CadenceAverage, CadenceMaximum, Url]
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout data:
-flutter:    LastModifiedDate: 2026-02-17T09:44:19.79
-flutter:    Id: 3585293133
-flutter:    AthleteId: 2687398
-flutter:    WorkoutType: Run
-flutter:    Title: Group run
-flutter:    WorkoutDay: 2026-03-02T00:00:00
-flutter:    Completed: false
-flutter:    TotalTimePlanned: 1.0
-flutter:    TssCalculationMethod: Undefined
-flutter:    Url: https://bnc.lt/JVxd/Z3Y12w9bOq?user=2687398&athlete=2687398&workout=3585293133&op=viewWorkout&env=uat
-flutter: 🔍 TP DURATION DEBUG:
-flutter:    TotalTime raw value: null (type: Null)
-flutter:    TotalTimePlanned raw value: 1.0 (type: double)
-flutter:    All time-related keys: (StartTime, StartTimePlanned, TotalTime, TotalTimePlanned)
-flutter:    StartTime: null
-flutter:    StartTimePlanned: null
-flutter:    TotalTime: null
-flutter:    TotalTimePlanned: 1.0
-flutter: 🔍 TP DISTANCE DEBUG:
-flutter:    Distance raw value: null (type: Null)
-flutter:    DistancePlanned raw value: null (type: Null)
-flutter:    All distance-related keys: (Distance, DistancePlanned, DistanceCustomized)
-flutter:    Distance: null
-flutter:    DistancePlanned: null
-flutter:    DistanceCustomized: null
-flutter: 🔍 TP INTENSITY DEBUG - Checking for structured workout data
-flutter:    📊 Athlete zones available for precision mapping
-flutter:    ⚠️ No intensity distribution data available
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout keys: [LastModifiedDate, Id, AthleteId, WorkoutType, Title, WorkoutDay, StartTime, StartTimePlanned, Completed, Distance, DistancePlanned, DistanceCustomized, TotalTime, TotalTimePlanned, HeartRateMinimum, HeartRateMaximum, HeartRateAverage, Calories, CaloriesPlanned, TssActual, TssPlanned, TssCalculationMethod, IF, IFPlanned, VelocityAverage, VelocityPlanned, VelocityMaximum, NormalizedSpeed, NormalizedPower, PowerAverage, PowerMaximum, Energy, EnergyPlanned, ElevationGain, ElevationGainPlanned, ElevationLoss, ElevationMinimum, ElevationAverage, ElevationMaximum, TorqueAverage, TorqueMaximum, TempMin, TempAvg, TempMax, CadenceAverage, CadenceMaximum, Description, Url]
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout data:
-flutter:    LastModifiedDate: 2026-02-17T09:46:19.49
-flutter:    Id: 3585298017
-flutter:    AthleteId: 2687398
-flutter:    WorkoutType: Bike
-flutter:    Title: Speed Skill Trainer or road--Spin-ups
-flutter:    WorkoutDay: 2026-03-04T00:00:00
-flutter:    Completed: false
-flutter:    TotalTimePlanned: 0.75
-flutter:    TssCalculationMethod: Undefined
-flutter:    Description: Spin-ups. Slowly spin-up to max rpm over 30 seconds. When you begin to bounce, back off and then hold it for several seconds. Recover completely and repeat several times. Stay RELAXED!
-flutter:    Url: https://bnc.lt/JVxd/Z3Y12w9bOq?user=2687398&athlete=2687398&workout=3585298017&op=viewWorkout&env=uat
-flutter: 🔍 TP DURATION DEBUG:
-flutter:    TotalTime raw value: null (type: Null)
-flutter:    TotalTimePlanned raw value: 0.75 (type: double)
-flutter:    All time-related keys: (StartTime, StartTimePlanned, TotalTime, TotalTimePlanned)
-flutter:    StartTime: null
-flutter:    StartTimePlanned: null
-flutter:    TotalTime: null
-flutter:    TotalTimePlanned: 0.75
-flutter: 🔍 TP DISTANCE DEBUG:
-flutter:    Distance raw value: null (type: Null)
-flutter:    DistancePlanned raw value: null (type: Null)
-flutter:    All distance-related keys: (Distance, DistancePlanned, DistanceCustomized)
-flutter:    Distance: null
-flutter:    DistancePlanned: null
-flutter:    DistanceCustomized: null
-flutter: 🔍 TP INTENSITY DEBUG - Checking for structured workout data
-flutter:    📊 Athlete zones available for precision mapping
-flutter:    ✅ Inferred from title/tags keywords ("Speed Skill Trainer or road--Spin-ups"): IntensityDistribution(conversational: 40%, tempo: 30%, allOut: 30%)
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout keys: [LastModifiedDate, Id, AthleteId, WorkoutType, Title, WorkoutDay, StartTime, StartTimePlanned, Completed, Distance, DistancePlanned, DistanceCustomized, TotalTime, TotalTimePlanned, HeartRateMinimum, HeartRateMaximum, HeartRateAverage, Calories, CaloriesPlanned, TssActual, TssPlanned, TssCalculationMethod, IF, IFPlanned, VelocityAverage, VelocityPlanned, VelocityMaximum, NormalizedSpeed, NormalizedPower, PowerAverage, PowerMaximum, Energy, EnergyPlanned, ElevationGain, ElevationGainPlanned, ElevationLoss, ElevationMinimum, ElevationAverage, ElevationMaximum, TorqueAverage, TorqueMaximum, TempMin, TempAvg, TempMax, CadenceAverage, CadenceMaximum, Description, Url]
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout data:
-flutter:    LastModifiedDate: 2026-02-17T09:50:36.683
-flutter:    Id: 3585304046
-flutter:    AthleteId: 2687398
-flutter:    WorkoutType: Swim
-flutter:    Title: 1x200, 1x150, 1x100, 2x50 (1400)
-flutter:    WorkoutDay: 2026-03-04T00:00:00
-flutter:    Completed: false
-flutter:    DistancePlanned: 1280.1600341796875
-flutter:    TotalTimePlanned: 0.5833333333333334
-flutter:    TssPlanned: 73.6
-flutter:    TssCalculationMethod: Undefined
-flutter:    IFPlanned: 1.0805178794743142
-flutter:    VelocityPlanned: 0.609599999073408
-flutter:    Description: Warm up:
-200 swim
-100 kick
-100 pull
-8 x 50 drill (10)
-Main Set:
-1 x 200 (10)
-1 x 150 (10)
-1 x 100 (10)
-1 x 50 fast (30)
-100 C.D. (Choice)
-1400
-flutter:    Url: https://bnc.lt/JVxd/Z3Y12w9bOq?user=2687398&athlete=2687398&workout=3585304046&op=viewWorkout&env=uat
-flutter: 🔍 TP DURATION DEBUG:
-flutter:    TotalTime raw value: null (type: Null)
-flutter:    TotalTimePlanned raw value: 0.5833333333333334 (type: double)
-flutter:    All time-related keys: (StartTime, StartTimePlanned, TotalTime, TotalTimePlanned)
-flutter:    StartTime: null
-flutter:    StartTimePlanned: null
-flutter:    TotalTime: null
-flutter:    TotalTimePlanned: 0.5833333333333334
-flutter: 🔍 TP DISTANCE DEBUG:
-flutter:    Distance raw value: null (type: Null)
-flutter:    DistancePlanned raw value: 1280.1600341796875 (type: double)
-flutter:    All distance-related keys: (Distance, DistancePlanned, DistanceCustomized)
-flutter:    Distance: null
-flutter:    DistancePlanned: 1280.1600341796875
-flutter:    DistanceCustomized: null
-flutter: 🔍 TP INTENSITY DEBUG - Checking for structured workout data
-flutter:    📊 Athlete zones available for precision mapping
-flutter:    ✅ Inferred from IF (1.0805178794743142): IntensityDistribution(conversational: 10%, tempo: 30%, allOut: 60%)
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout keys: [LastModifiedDate, Id, AthleteId, WorkoutType, Title, WorkoutDay, StartTime, StartTimePlanned, Completed, Distance, DistancePlanned, DistanceCustomized, TotalTime, TotalTimePlanned, HeartRateMinimum, HeartRateMaximum, HeartRateAverage, Calories, CaloriesPlanned, TssActual, TssPlanned, TssCalculationMethod, IF, IFPlanned, VelocityAverage, VelocityPlanned, VelocityMaximum, NormalizedSpeed, NormalizedPower, PowerAverage, PowerMaximum, Energy, EnergyPlanned, ElevationGain, ElevationGainPlanned, ElevationLoss, ElevationMinimum, ElevationAverage, ElevationMaximum, TorqueAverage, TorqueMaximum, TempMin, TempAvg, TempMax, CadenceAverage, CadenceMaximum, Description, Url]
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout data:
-flutter:    LastModifiedDate: 2026-02-17T09:48:08.647
-flutter:    Id: 3585300586
-flutter:    AthleteId: 2687398
-flutter:    WorkoutType: Bike
-flutter:    Title: Rolling terrain
-flutter:    WorkoutDay: 2026-03-05T00:00:00
-flutter:    Completed: false
-flutter:    TotalTimePlanned: 1.5
-flutter:    TssCalculationMethod: Undefined
-flutter:    Description: if sunny how about an easy ride at Oak Mtn
-flutter:    Url: https://bnc.lt/JVxd/Z3Y12w9bOq?user=2687398&athlete=2687398&workout=3585300586&op=viewWorkout&env=uat
-flutter: 🔍 TP DURATION DEBUG:
-flutter:    TotalTime raw value: null (type: Null)
-flutter:    TotalTimePlanned raw value: 1.5 (type: double)
-flutter:    All time-related keys: (StartTime, StartTimePlanned, TotalTime, TotalTimePlanned)
-flutter:    StartTime: null
-flutter:    StartTimePlanned: null
-flutter:    TotalTime: null
-flutter:    TotalTimePlanned: 1.5
-flutter: 🔍 TP DISTANCE DEBUG:
-flutter:    Distance raw value: null (type: Null)
-flutter:    DistancePlanned raw value: null (type: Null)
-flutter:    All distance-related keys: (Distance, DistancePlanned, DistanceCustomized)
-flutter:    Distance: null
-flutter:    DistancePlanned: null
-flutter:    DistanceCustomized: null
-flutter: 🔍 TP INTENSITY DEBUG - Checking for structured workout data
-flutter:    📊 Athlete zones available for precision mapping
-flutter:    ⚠️ No intensity distribution data available
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout keys: [LastModifiedDate, Id, AthleteId, WorkoutType, Title, WorkoutDay, StartTime, StartTimePlanned, Completed, Distance, DistancePlanned, DistanceCustomized, TotalTime, TotalTimePlanned, HeartRateMinimum, HeartRateMaximum, HeartRateAverage, Calories, CaloriesPlanned, TssActual, TssPlanned, TssCalculationMethod, IF, IFPlanned, VelocityAverage, VelocityPlanned, VelocityMaximum, NormalizedSpeed, NormalizedPower, PowerAverage, PowerMaximum, Energy, EnergyPlanned, ElevationGain, ElevationGainPlanned, ElevationLoss, ElevationMinimum, ElevationAverage, ElevationMaximum, TorqueAverage, TorqueMaximum, TempMin, TempAvg, TempMax, CadenceAverage, CadenceMaximum, Url]
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout data:
-flutter:    LastModifiedDate: 2026-02-17T09:46:57.417
-flutter:    Id: 3585299091
-flutter:    AthleteId: 2687398
-flutter:    WorkoutType: Swim
-flutter:    Title: Masters swim ENJOY
-flutter:    WorkoutDay: 2026-03-06T00:00:00
-flutter:    Completed: false
-flutter:    DistancePlanned: 2011.6800537109375
-flutter:    TotalTimePlanned: 0.75
-flutter:    TssPlanned: 58.54
-flutter:    TssCalculationMethod: Undefined
-flutter:    VelocityPlanned: 0.7450666655341655
-flutter:    Url: https://bnc.lt/JVxd/Z3Y12w9bOq?user=2687398&athlete=2687398&workout=3585299091&op=viewWorkout&env=uat
-flutter: 🔍 TP DURATION DEBUG:
-flutter:    TotalTime raw value: null (type: Null)
-flutter:    TotalTimePlanned raw value: 0.75 (type: double)
-flutter:    All time-related keys: (StartTime, StartTimePlanned, TotalTime, TotalTimePlanned)
-flutter:    StartTime: null
-flutter:    StartTimePlanned: null
-flutter:    TotalTime: null
-flutter:    TotalTimePlanned: 0.75
-flutter: 🔍 TP DISTANCE DEBUG:
-flutter:    Distance raw value: null (type: Null)
-flutter:    DistancePlanned raw value: 2011.6800537109375 (type: double)
-flutter:    All distance-related keys: (Distance, DistancePlanned, DistanceCustomized)
-flutter:    Distance: null
-flutter:    DistancePlanned: 2011.6800537109375
-flutter:    DistanceCustomized: null
-flutter: 🔍 TP INTENSITY DEBUG - Checking for structured workout data
-flutter:    📊 Athlete zones available for precision mapping
-flutter:    ⚠️ No intensity distribution data available
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout keys: [LastModifiedDate, Id, AthleteId, WorkoutType, Title, WorkoutDay, StartTime, StartTimePlanned, Completed, Distance, DistancePlanned, DistanceCustomized, TotalTime, TotalTimePlanned, HeartRateMinimum, HeartRateMaximum, HeartRateAverage, Calories, CaloriesPlanned, TssActual, TssPlanned, TssCalculationMethod, IF, IFPlanned, VelocityAverage, VelocityPlanned, VelocityMaximum, NormalizedSpeed, NormalizedPower, PowerAverage, PowerMaximum, Energy, EnergyPlanned, ElevationGain, ElevationGainPlanned, ElevationLoss, ElevationMinimum, ElevationAverage, ElevationMaximum, TorqueAverage, TorqueMaximum, TempMin, TempAvg, TempMax, CadenceAverage, CadenceMaximum, Description, PreActivityComment, Url]
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout data:
-flutter:    LastModifiedDate: 2026-02-17T09:50:56.843
-flutter:    Id: 3585304908
-flutter:    AthleteId: 2687398
-flutter:    WorkoutType: Strength
-flutter:    Title: AA Legs 1.b
-flutter:    WorkoutDay: 2026-03-06T00:00:00
-flutter:    StartTimePlanned: 2026-03-06T12:15:00
-flutter:    Completed: false
-flutter:    TotalTimePlanned: 0.75
-flutter:    TssCalculationMethod: Undefined
-flutter:    Description: wu: 10 min ; High Step Ups; (shoulder shrugs) Single leg hip thrust (back on bench) (arm curls) Elevated lateral lunge; (tricep ext); elevated single leg bridge; (chest and lats) calf raises; (core) adductor and abductor
-flutter:    PreActivityComment: try to alternate with upper body; 2-3 sets of 12-15 reps
-flutter:    Url: https://bnc.lt/JVxd/Z3Y12w9bOq?user=2687398&athlete=2687398&workout=3585304908&op=viewWorkout&env=uat
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout keys: [LastModifiedDate, Id, AthleteId, WorkoutType, Title, WorkoutDay, StartTime, StartTimePlanned, Completed, Distance, DistancePlanned, DistanceCustomized, TotalTime, TotalTimePlanned, HeartRateMinimum, HeartRateMaximum, HeartRateAverage, Calories, CaloriesPlanned, TssActual, TssPlanned, TssCalculationMethod, IF, IFPlanned, VelocityAverage, VelocityPlanned, VelocityMaximum, NormalizedSpeed, NormalizedPower, PowerAverage, PowerMaximum, Energy, EnergyPlanned, ElevationGain, ElevationGainPlanned, ElevationLoss, ElevationMinimum, ElevationAverage, ElevationMaximum, TorqueAverage, TorqueMaximum, TempMin, TempAvg, TempMax, CadenceAverage, CadenceMaximum, Description, Url]
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout data:
-flutter:    LastModifiedDate: 2026-02-17T09:48:41.957
-flutter:    Id: 3585301476
-flutter:    AthleteId: 2687398
-flutter:    WorkoutType: Bike
-flutter:    Title: NP-3: Steady with 10 second bursts
-flutter:    WorkoutDay: 2026-03-07T00:00:00
-flutter:    Completed: false
-flutter:    TotalTimePlanned: 2.3333333333333335
-flutter:    TssPlanned: 102.09
-flutter:    TssCalculationMethod: Undefined
-flutter:    IFPlanned: 0.6616366941807311
-flutter:    Description: Warm up for 30 minutes in zone 1 and 2. Then ride 1 hour in zone 2- 3 with 10 second out of the saddle bursts at 120% FTP. You can shift up to 2 times during the burst to build speed. Keep cadence high! Then go into 1.5 hrs at 2z/3z Cool down for 30 minutes in 1 and 2 zones.
-flutter:    Url: https://bnc.lt/JVxd/Z3Y12w9bOq?user=2687398&athlete=2687398&workout=3585301476&op=viewWorkout&env=uat
-flutter: 🔍 TP DURATION DEBUG:
-flutter:    TotalTime raw value: null (type: Null)
-flutter:    TotalTimePlanned raw value: 2.3333333333333335 (type: double)
-flutter:    All time-related keys: (StartTime, StartTimePlanned, TotalTime, TotalTimePlanned)
-flutter:    StartTime: null
-flutter:    StartTimePlanned: null
-flutter:    TotalTime: null
-flutter:    TotalTimePlanned: 2.3333333333333335
-flutter: 🔍 TP DISTANCE DEBUG:
-flutter:    Distance raw value: null (type: Null)
-flutter:    DistancePlanned raw value: null (type: Null)
-flutter:    All distance-related keys: (Distance, DistancePlanned, DistanceCustomized)
-flutter:    Distance: null
-flutter:    DistancePlanned: null
-flutter:    DistanceCustomized: null
-flutter: 🔍 TP INTENSITY DEBUG - Checking for structured workout data
-flutter:    📊 Athlete zones available for precision mapping
-flutter:    ✅ Inferred from IF (0.6616366941807311): IntensityDistribution(conversational: 95%, tempo: 5%, allOut: 0%)
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout keys: [LastModifiedDate, Id, AthleteId, WorkoutType, Title, WorkoutDay, StartTime, StartTimePlanned, Completed, Distance, DistancePlanned, DistanceCustomized, TotalTime, TotalTimePlanned, HeartRateMinimum, HeartRateMaximum, HeartRateAverage, Calories, CaloriesPlanned, TssActual, TssPlanned, TssCalculationMethod, IF, IFPlanned, VelocityAverage, VelocityPlanned, VelocityMaximum, NormalizedSpeed, NormalizedPower, PowerAverage, PowerMaximum, Energy, EnergyPlanned, ElevationGain, ElevationGainPlanned, ElevationLoss, ElevationMinimum, ElevationAverage, ElevationMaximum, TorqueAverage, TorqueMaximum, TempMin, TempAvg, TempMax, CadenceAverage, CadenceMaximum, Url]
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout data:
-flutter:    LastModifiedDate: 2026-02-17T09:48:41.947
-flutter:    Id: 3585301475
-flutter:    AthleteId: 2687398
-flutter:    WorkoutType: Run
-flutter:    Title: off the Bike
-flutter:    WorkoutDay: 2026-03-07T00:00:00
-flutter:    Completed: false
-flutter:    TotalTimePlanned: 0.25
-flutter:    TssCalculationMethod: Undefined
-flutter:    Url: https://bnc.lt/JVxd/Z3Y12w9bOq?user=2687398&athlete=2687398&workout=3585301475&op=viewWorkout&env=uat
-flutter: 🔍 TP DURATION DEBUG:
-flutter:    TotalTime raw value: null (type: Null)
-flutter:    TotalTimePlanned raw value: 0.25 (type: double)
-flutter:    All time-related keys: (StartTime, StartTimePlanned, TotalTime, TotalTimePlanned)
-flutter:    StartTime: null
-flutter:    StartTimePlanned: null
-flutter:    TotalTime: null
-flutter:    TotalTimePlanned: 0.25
-flutter: 🔍 TP DISTANCE DEBUG:
-flutter:    Distance raw value: null (type: Null)
-flutter:    DistancePlanned raw value: null (type: Null)
-flutter:    All distance-related keys: (Distance, DistancePlanned, DistanceCustomized)
-flutter:    Distance: null
-flutter:    DistancePlanned: null
-flutter:    DistanceCustomized: null
-flutter: 🔍 TP INTENSITY DEBUG - Checking for structured workout data
-flutter:    📊 Athlete zones available for precision mapping
-flutter:    ⚠️ No intensity distribution data available
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout keys: [LastModifiedDate, Id, AthleteId, WorkoutType, Title, WorkoutDay, StartTime, StartTimePlanned, Completed, Distance, DistancePlanned, DistanceCustomized, TotalTime, TotalTimePlanned, HeartRateMinimum, HeartRateMaximum, HeartRateAverage, Calories, CaloriesPlanned, TssActual, TssPlanned, TssCalculationMethod, IF, IFPlanned, VelocityAverage, VelocityPlanned, VelocityMaximum, NormalizedSpeed, NormalizedPower, PowerAverage, PowerMaximum, Energy, EnergyPlanned, ElevationGain, ElevationGainPlanned, ElevationLoss, ElevationMinimum, ElevationAverage, ElevationMaximum, TorqueAverage, TorqueMaximum, TempMin, TempAvg, TempMax, CadenceAverage, CadenceMaximum, Description, Url]
-flutter: 🔍 TP TRANSFORM DEBUG - Raw workout data:
-flutter:    LastModifiedDate: 2026-02-17T09:49:48.307
-flutter:    Id: 3585303033
-flutter:    AthleteId: 2687398
-flutter:    WorkoutType: Run
-flutter:    Title: Long Run conversational pace
-flutter:    WorkoutDay: 2026-03-08T00:00:00
-flutter:    Completed: false
-flutter:    DistancePlanned: 16093.4453125
-flutter:    TotalTimePlanned: 1.3333335717547405
-flutter:    TssCalculationMethod: Undefined
-flutter:    VelocityPlanned: 3.352800437741625
-flutter:    Description: Enjoy and easy pace run on rolling terrain
-flutter:    Url: https://bnc.lt/JVxd/Z3Y12w9bOq?user=2687398&athlete=2687398&workout=3585303033&op=viewWorkout&env=uat
-flutter: 🔍 TP DURATION DEBUG:
-flutter:    TotalTime raw value: null (type: Null)
-flutter:    TotalTimePlanned raw value: 1.3333335717547405 (type: double)
-flutter:    All time-related keys: (StartTime, StartTimePlanned, TotalTime, TotalTimePlanned)
-flutter:    StartTime: null
-flutter:    StartTimePlanned: null
-flutter:    TotalTime: null
-flutter:    TotalTimePlanned: 1.3333335717547405
-flutter: 🔍 TP DISTANCE DEBUG:
-flutter:    Distance raw value: null (type: Null)
-flutter:    DistancePlanned raw value: 16093.4453125 (type: double)
-flutter:    All distance-related keys: (Distance, DistancePlanned, DistanceCustomized)
-flutter:    Distance: null
-flutter:    DistancePlanned: 16093.4453125
-flutter:    DistanceCustomized: null
-flutter: 🔍 TP INTENSITY DEBUG - Checking for structured workout data
-flutter:    📊 Athlete zones available for precision mapping
-flutter:    ✅ Inferred from title/tags keywords ("Long Run conversational pace"): IntensityDistribution(conversational: 80%, tempo: 15%, allOut: 5%)
-flutter:    Transformed 9 workouts (filtered 1)
-flutter:    Found 40 local TrainingPeaks activities
-flutter:    🔄 UPDATED (minor): Long Run
-flutter:    ✅ UNCHANGED: Group run
-flutter:    ✅ UNCHANGED: Speed Skill Trainer or road--Spin-ups
-flutter:    ✅ UNCHANGED: 1x200, 1x150, 1x100, 2x50 (1400)
-flutter:    ✅ UNCHANGED: Rolling terrain
-flutter:    ✅ UNCHANGED: Masters swim ENJOY
-flutter:    ✅ UNCHANGED: NP-3: Steady with 10 second bursts
-flutter:    ✅ UNCHANGED: off the Bike
-flutter:    ✅ UNCHANGED: Long Run conversational pace
-flutter:    Change detection: SyncChangeResult(new: 0, updated: 1, deleted: 31, unchanged: 8)
-flutter:    ↻ Updated: Long Run (needsRefresh: false)
-flutter:    🗑️ Soft-deleted: 3a5c8c9e-f8de-4fad-ab1b-6a832de3f8b0
-flutter:    🗑️ Soft-deleted: aa2a82b7-b1f2-4ac7-a23b-868ba3a229a6
-flutter:    🗑️ Soft-deleted: 3583c977-17f1-49b7-a922-e04511ae7a52
-flutter:    🗑️ Soft-deleted: 1b172127-a3c6-4698-8c83-4ebe05c251db
-flutter:    🗑️ Soft-deleted: a5e4f8ab-0530-4abf-8d70-cd2e0cd0fca9
-flutter:    🗑️ Soft-deleted: e9407701-be51-41cb-9a7d-dfc8633ca4e6
-flutter:    🗑️ Soft-deleted: 7136ebc5-b753-468f-acc0-c6c98016de9f
-flutter:    🗑️ Soft-deleted: bec03095-5d90-4d63-a093-251767339ae5
-flutter:    🗑️ Soft-deleted: e1d23985-e89b-4c2f-b4de-4c518152bfb7
-flutter:    🗑️ Soft-deleted: cc88898f-3dda-4695-9606-384e10f169ae
-flutter:    🗑️ Soft-deleted: 0e96d027-c107-4bf7-83ac-9662120287f3
-flutter:    🗑️ Soft-deleted: 4e4b0a1f-e53a-44ba-98ad-f8a197e4b7e3
-flutter:    🗑️ Soft-deleted: 554cf731-c904-4968-8e92-505cfde37e4a
-flutter:    🗑️ Soft-deleted: 7f5744ef-963f-4e9a-a519-287efd464ed7
-flutter:    🗑️ Soft-deleted: 66c29c1a-6cc9-41ed-8b32-60773c8200de
-flutter:    🗑️ Soft-deleted: d4cfc1be-fa9c-4f72-b1cd-e6d77c5b7a19
-flutter:    🗑️ Soft-deleted: 6d868cc2-e8be-44b3-b3bf-e86fd88ef357
-flutter:    🗑️ Soft-deleted: 8e45a6db-eb6d-47a9-b7bd-9d6bda167a7a
-flutter:    🗑️ Soft-deleted: 7ebaaa48-3fef-4921-bca4-9935ac4990dd
-flutter:    🗑️ Soft-deleted: c0f7aab0-07c1-4e00-bafa-2cbf160af37b
-flutter:    🗑️ Soft-deleted: 53a7ed9d-6e87-40dd-92d0-7eb0467d2981
-flutter:    🗑️ Soft-deleted: b04a0af1-1719-4621-9ece-b1fd850553a5
-flutter:    🗑️ Soft-deleted: 93eb2359-cf1a-4e67-9b8f-b212400a3711
-flutter:    🗑️ Soft-deleted: 204b1a30-43d8-4191-a434-45254c7249c5
-flutter:    🗑️ Soft-deleted: 6321cf35-ffff-4db9-8a49-ae4fe93e518c
-flutter:    🗑️ Soft-deleted: b9f3c7f5-fa4b-4c0a-acec-96f987bd8604
-flutter:    🗑️ Soft-deleted: 689a719d-1971-4fd7-b15b-9e2b736803b1
-flutter:    🗑️ Soft-deleted: 943bc700-7ac9-4216-b463-1f031aa349f8
-flutter:    🗑️ Soft-deleted: 9dde36c4-6468-47e3-a010-447a2380c736
-flutter:    🗑️ Soft-deleted: 4631685e-11dc-402e-979d-10ea005ab0d5
-flutter:    🗑️ Soft-deleted: d73675a8-4820-4832-8bec-114462c2c38a
-flutter: ✅ Workout sync complete: 0 new, 1 updated, 31 deleted, 8 unchanged, 1 filtered
-flutter: 🔄 Fetching all events from TrainingPeaks (90 day range)...
-flutter: 🔍 Searching for events from 2026-03-01 to 2026-05-30 (90 days)
-flutter:    Found event: BEST Camp on 2026-03-01
-flutter:    Found event: Ironman Chattanooga 70.3 on 2026-05-17
-flutter: ✅ Found 2 total events in 90 day range
-flutter: ✅ Found event: BEST Camp
-flutter:    Type: RoadRunning
-flutter:    Date: 2026-03-01 00:00:00.000
-flutter: ✅ Found event: Ironman Chattanooga 70.3
-flutter:    Type: Triathlon
-flutter:    Date: 2026-05-17 00:00:00.000
-flutter: ✅ Total events found: 2
-flutter: ☁️ Uploaded 0 synced activities to Supabase
-flutter: 💾 Checking TrainingPeaks event: BEST Camp
-flutter:    ⏭️ Event already exists, skipping: BEST Camp
-flutter: 💾 Checking TrainingPeaks event: Ironman Chattanooga 70.3
-flutter:    ⏭️ Event already exists, skipping: Ironman Chattanooga 70.3
-flutter: ✅ Event sync complete: 0 new, 2 existing
-flutter: 🔄 Activities, calendar, and events providers invalidated
-flutter: ✅ TrainingPeaks sync complete: 0 workouts imported
-flutter: ✅ Loading snackbar dismissed
-flutter: 🔍 Checking context.mounted: true
-flutter: 📊 State after sync - errorMessage: null, count: 0
+vercel.live/_next-live/feedback/feedback.js:1  Failed to load resource: net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep
+manifest.json:1  Failed to load resource: the server responded with a status of 401 ()
+(index):1 Manifest fetch from https://mealvanaendurancecoachmode-1vvgwrnqg-lee-martins-projects.vercel.app/manifest.json failed, code 401
+browser.sentry-cdn.com/9.40.0/bundle.tracing.min.js:1  Failed to load resource: net::ERR_BLOCKED_BY_CLIENT
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 17:26:29.805 (+0:00:00.001000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [AUTH_LISTENER] AuthListenerService initialized - listening for auth state changes
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 17:26:29.824 (+0:00:00.020000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [AUTH_LISTENER] Auth state changed
+main.dart.js:55367 │ 💡 Data: {event: initialSession, has_session: false, user_id: null}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 17:26:30.780 (+0:00:00.976000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [VERSION_CHECK] Version check passed - continuing with normal startup
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+sendEvents:1  Failed to load resource: the server responded with a status of 400 ()
+api.wiredash.io/sdk/ping:1  Failed to load resource: the server responded with a status of 400 ()
+sendEvents:1  Failed to load resource: the server responded with a status of 400 ()
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:38.317 (+3:52:08.513000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [AUTH] Post-onboarding auth: Starting email sign in
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:38.318 (+3:52:08.514000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [EMAIL_AUTH] Starting email sign in
+main.dart.js:55367 │ 💡 Data: {email_length: 13}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:38.318 (+3:52:08.514000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [EMAIL_AUTH] Capturing user state before sign-in
+main.dart.js:55367 │ 💡 Data: {previous_user_id: null, was_anonymous: false}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:39.652 (+3:52:09.848000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [EMAIL_AUTH] Email sign in successful
+main.dart.js:55367 │ 💡 Data: {user_id: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, email: test@test.com}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:39.653 (+3:52:09.849000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [AUTH_LISTENER] Auth state changed
+main.dart.js:55367 │ 💡 Data: {event: signedIn, has_session: true, user_id: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:39.654 (+3:52:09.850000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [AUTH_LISTENER] User signed in - triggering background sync
+main.dart.js:55367 │ 💡 Data: {user_id: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:39.738 (+3:52:09.934000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [AUTH_LISTENER] User has not completed onboarding - skipping sync
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:40.655 (+3:52:10.851000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [EMAIL_AUTH] Invalidated userIdProvider after sign-in
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:40.656 (+3:52:10.852000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [EMAIL_AUTH] Sign-in completion handled
+main.dart.js:55367 │ 💡 Data: {data_migrated: false}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:40.656 (+3:52:10.852000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [EMAIL_AUTH] Triggering post-sign-in sync
+main.dart.js:55367 │ 💡 Data: {user_id: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:44.982 (+3:52:15.178000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Synced coach record to local DB
+main.dart.js:55367 │ 💡 Data: {coach_id: 722e60ad-47d0-4141-857b-4169b1b4c98d, user_id: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, status: approved}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:44.990 (+3:52:15.186000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Synced 1 coach-athlete relationships
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:44.991 (+3:52:15.187000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [EMAIL_AUTH] Post-sign-in sync completed
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:44.991 (+3:52:15.187000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [AUTH] Post-onboarding auth: Email sign in successful
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:45.065 (+3:52:15.261000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [SYNC_COORDINATOR] Repository synced successfully
+main.dart.js:55367 │ 💡 Data: {repoKey: users}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:45.065 (+3:52:15.261000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [SYNC_COORDINATOR] Repository synced successfully
+main.dart.js:55367 │ 💡 Data: {repoKey: users}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:45.065 (+3:52:15.261000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [SYNC_COORDINATOR] Repository synced successfully
+main.dart.js:55367 │ 💡 Data: {repoKey: events}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:45.065 (+3:52:15.261000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [SYNC_COORDINATOR] Repository synced successfully
+main.dart.js:55367 │ 💡 Data: {repoKey: users}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:45.079 (+3:52:15.275000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITIES_REPOSITORY] Syncing activities from Supabase
+main.dart.js:55367 │ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:45.080 (+3:52:15.276000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITIES_REPOSITORY] Syncing activities from Supabase
+main.dart.js:55367 │ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:45.796 (+3:52:15.992000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITIES_REPOSITORY] Activities synced successfully
+main.dart.js:55367 │ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, count: 201}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:45.797 (+3:52:15.993000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [SYNC_COORDINATOR] Repository synced successfully
+main.dart.js:55367 │ 💡 Data: {repoKey: activities}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:45.800 (+3:52:15.996000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_REPOSITORY] Synced 1 athlete profiles from Supabase
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:45.875 (+3:52:16.071000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITIES_REPOSITORY] Activities synced successfully
+main.dart.js:55367 │ 💡 Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, count: 201}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:45.875 (+3:52:16.071000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [SYNC_COORDINATOR] Repository synced successfully
+main.dart.js:55367 │ 💡 Data: {repoKey: activities}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:51.544 (+3:52:21.740000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing data for athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:51.868 (+3:52:22.064000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing athlete profile: null null
+main.dart.js:55367 │ 💡 Data: {athlete_user_id: 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b, has_first_name: false, has_last_name: false}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:51.886 (+3:52:22.082000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITY_SYNC] Synced 1 athlete activities
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:51.886 (+3:52:22.082000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Successfully synced athlete data: profile=true, 0 events, 1 activities, 0 carb loading plans
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 🔍 DEBUG: Loading athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 🔍 DEBUG: Profile found: true
+main.dart.js:55367 🔍 DEBUG: First name: null
+main.dart.js:55367 🔍 DEBUG: Last name: null
+main.dart.js:55367 🔍 DEBUG: Display name: Athlete 31B63CB3
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:58.841 (+3:52:29.037000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing data for athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:58.992 (+3:52:29.188000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing athlete profile: null null
+main.dart.js:55367 │ 💡 Data: {athlete_user_id: 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b, has_first_name: false, has_last_name: false}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:59.019 (+3:52:29.215000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITY_SYNC] Synced 1 athlete activities
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:18:59.019 (+3:52:29.215000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Successfully synced athlete data: profile=true, 0 events, 1 activities, 0 carb loading plans
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 🔍 DEBUG: Loading athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 🔍 DEBUG: Profile found: true
+main.dart.js:55367 🔍 DEBUG: First name: null
+main.dart.js:55367 🔍 DEBUG: Last name: null
+main.dart.js:55367 🔍 DEBUG: Display name: Athlete 31B63CB3
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:04.439 (+3:52:34.635000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing data for athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:04.658 (+3:52:34.854000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing athlete profile: null null
+main.dart.js:55367 │ 💡 Data: {athlete_user_id: 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b, has_first_name: false, has_last_name: false}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:04.687 (+3:52:34.883000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITY_SYNC] Synced 1 athlete activities
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:04.687 (+3:52:34.883000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Successfully synced athlete data: profile=true, 0 events, 1 activities, 0 carb loading plans
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 🔍 DEBUG: Loading athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 🔍 DEBUG: Profile found: true
+main.dart.js:55367 🔍 DEBUG: First name: null
+main.dart.js:55367 🔍 DEBUG: Last name: null
+main.dart.js:55367 🔍 DEBUG: Display name: Athlete 31B63CB3
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:13.558 (+3:52:43.754000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing data for athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:13.704 (+3:52:43.900000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing athlete profile: null null
+main.dart.js:55367 │ 💡 Data: {athlete_user_id: 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b, has_first_name: false, has_last_name: false}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:13.722 (+3:52:43.918000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITY_SYNC] Synced 1 athlete activities
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:13.722 (+3:52:43.918000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Successfully synced athlete data: profile=true, 0 events, 1 activities, 0 carb loading plans
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 🔍 DEBUG: Loading athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 🔍 DEBUG: Profile found: true
+main.dart.js:55367 🔍 DEBUG: First name: null
+main.dart.js:55367 🔍 DEBUG: Last name: null
+main.dart.js:55367 🔍 DEBUG: Display name: Athlete 31B63CB3
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:19.587 (+3:52:49.783000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing data for athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:19.838 (+3:52:50.034000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing athlete profile: null null
+main.dart.js:55367 │ 💡 Data: {athlete_user_id: 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b, has_first_name: false, has_last_name: false}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:19.862 (+3:52:50.058000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITY_SYNC] Synced 1 athlete activities
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:19.862 (+3:52:50.058000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Successfully synced athlete data: profile=true, 0 events, 1 activities, 0 carb loading plans
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 🔍 DEBUG: Loading athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 🔍 DEBUG: Profile found: true
+main.dart.js:55367 🔍 DEBUG: First name: null
+main.dart.js:55367 🔍 DEBUG: Last name: null
+main.dart.js:55367 🔍 DEBUG: Display name: Athlete 31B63CB3
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:23.088 (+3:52:53.284000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_REPOSITORY] Setting up realtime subscription for conversation
+main.dart.js:55367 │ 💡 Data: {channelName: chat:607f9dd5-6fa7-48ee-a628-720d4a0506a1:31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b, coachUserId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, athleteUserId: 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:23.091 (+3:52:53.287000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_REPOSITORY] Realtime subscription created and subscribed
+main.dart.js:55367 │ 💡 Data: {channelName: chat:607f9dd5-6fa7-48ee-a628-720d4a0506a1:31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:30.083 (+3:53:00.279000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing data for athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:30.405 (+3:53:00.601000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing athlete profile: null null
+main.dart.js:55367 │ 💡 Data: {athlete_user_id: 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b, has_first_name: false, has_last_name: false}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:30.431 (+3:53:00.627000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITY_SYNC] Synced 1 athlete activities
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:30.431 (+3:53:00.627000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Successfully synced athlete data: profile=true, 0 events, 1 activities, 0 carb loading plans
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 🔍 DEBUG: Loading athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 🔍 DEBUG: Profile found: true
+main.dart.js:55367 🔍 DEBUG: First name: null
+main.dart.js:55367 🔍 DEBUG: Last name: null
+main.dart.js:55367 🔍 DEBUG: Display name: Athlete 31B63CB3
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:36.164 (+3:53:06.360000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing data for athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:36.469 (+3:53:06.665000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing athlete profile: null null
+main.dart.js:55367 │ 💡 Data: {athlete_user_id: 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b, has_first_name: false, has_last_name: false}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:36.493 (+3:53:06.689000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITY_SYNC] Synced 1 athlete activities
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:36.493 (+3:53:06.689000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Successfully synced athlete data: profile=true, 0 events, 1 activities, 0 carb loading plans
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 🔍 DEBUG: Loading athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 🔍 DEBUG: Profile found: true
+main.dart.js:55367 🔍 DEBUG: First name: null
+main.dart.js:55367 🔍 DEBUG: Last name: null
+main.dart.js:55367 🔍 DEBUG: Display name: Athlete 31B63CB3
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:40.992 (+3:53:11.188000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_REPOSITORY] Setting up realtime subscription for conversation
+main.dart.js:55367 │ 💡 Data: {channelName: chat:607f9dd5-6fa7-48ee-a628-720d4a0506a1:31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b, coachUserId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, athleteUserId: 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:40.993 (+3:53:11.189000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_REPOSITORY] Realtime subscription created and subscribed
+main.dart.js:55367 │ 💡 Data: {channelName: chat:607f9dd5-6fa7-48ee-a628-720d4a0506a1:31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:59.135 (+3:53:29.331000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing data for athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:59.285 (+3:53:29.481000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Syncing athlete profile: null null
+main.dart.js:55367 │ 💡 Data: {athlete_user_id: 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b, has_first_name: false, has_last_name: false}
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:59.313 (+3:53:29.509000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [ACTIVITY_SYNC] Synced 1 athlete activities
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 │ 21:19:59.313 (+3:53:29.509000)
+main.dart.js:55367 ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+main.dart.js:55367 │ 💡 [COACH_SYNC] Successfully synced athlete data: profile=true, 0 events, 1 activities, 0 carb loading plans
+main.dart.js:55367 └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+main.dart.js:55367 🔍 DEBUG: Loading athlete 31b63cb3-eb4a-471d-b182-2aa2cc2f1a1b
+main.dart.js:55367 🔍 DEBUG: Profile found: true
+main.dart.js:55367 🔍 DEBUG: First name: null
+main.dart.js:55367 🔍 DEBUG: Last name: null
+main.dart.js:55367 🔍 DEBUG: Display name: Athlete 31B63CB3
+manifest.json:1  Failed to load resource: the server responded with a status of 401 ()
+main.dart.js:148837  POST https://api.wiredash.io/sdk/sendEvents 400 (Bad Request)
+(anonymous) @ main.dart.js:148837
+(anonymous) @ main.dart.js:5717
+$2 @ main.dart.js:69308
+$1 @ main.dart.js:69302
+GF @ main.dart.js:70547
+$0 @ main.dart.js:69829
+LO @ main.dart.js:5884
+DJ @ main.dart.js:69735
+$0 @ main.dart.js:69792
+d51 @ main.dart.js:5916
+d5M @ main.dart.js:5918
+$1 @ main.dart.js:69247
+childList
+$1 @ main.dart.js:69254
+cJd @ main.dart.js:5923
+cmn @ main.dart.js:6043
+Dd @ main.dart.js:70555
+b4j @ main.dart.js:69751
+od @ main.dart.js:69749
+ea @ main.dart.js:69649
+eR @ main.dart.js:69650
+OA @ main.dart.js:55175
+(anonymous) @ main.dart.js:224719
+(anonymous) @ main.dart.js:5717
+$2 @ main.dart.js:69308
+h @ main.dart.js:5703
+HK @ main.dart.js:224727
+(anonymous) @ main.dart.js:225532
+(anonymous) @ main.dart.js:5717
+$2 @ main.dart.js:69308
+$1 @ main.dart.js:69302
+GF @ main.dart.js:70547
+$0 @ main.dart.js:69829
+LO @ main.dart.js:5884
+ue @ main.dart.js:69731
+$0 @ main.dart.js:69563
+$0 @ main.dart.js:69278
+setTimeout
+b3h @ main.dart.js:69263
+d21 @ main.dart.js:5697
+ctP @ main.dart.js:5693
+aiv @ main.dart.js:70556
+dr @ main.dart.js:5999
+k0 @ main.dart.js:5782
+(anonymous) @ main.dart.js:225530
+(anonymous) @ main.dart.js:5717
+$2 @ main.dart.js:69308
+h @ main.dart.js:5703
+bMt @ main.dart.js:225534
+iW @ main.dart.js:225524
+(anonymous) @ main.dart.js:225696
+(anonymous) @ main.dart.js:5717
+$2 @ main.dart.js:69308
+$1 @ main.dart.js:69302
+GF @ main.dart.js:70547
+$0 @ main.dart.js:69829
+LO @ main.dart.js:5884
+DJ @ main.dart.js:69735
+$0 @ main.dart.js:69792
+d51 @ main.dart.js:5916
+d5M @ main.dart.js:5918
+$1 @ main.dart.js:69247
+childList
+$1 @ main.dart.js:69254
+cJd @ main.dart.js:5923
+cmn @ main.dart.js:6043
+Dd @ main.dart.js:70555
+b4j @ main.dart.js:69751
+od @ main.dart.js:69749
+ea @ main.dart.js:69289
+f @ main.dart.js:5707
+(anonymous) @ main.dart.js:225737
+(anonymous) @ main.dart.js:5717
+$2 @ main.dart.js:69308
+h @ main.dart.js:5703
+bMv @ main.dart.js:225738
+iW @ main.dart.js:225730
+(anonymous) @ main.dart.js:225696
+(anonymous) @ main.dart.js:5717
+$2 @ main.dart.js:69308
+h @ main.dart.js:5703
+bzy @ main.dart.js:225721
+yg @ main.dart.js:225683
+(anonymous) @ main.dart.js:225680
+(anonymous) @ main.dart.js:5717
+$2 @ main.dart.js:69308
+h @ main.dart.js:5703
+a6g @ main.dart.js:225682
+$0 @ main.dart.js:227992
+ad @ main.dart.js:83539
+sl @ main.dart.js:83579
+$1 @ main.dart.js:224842

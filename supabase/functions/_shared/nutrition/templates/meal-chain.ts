@@ -11,7 +11,7 @@
  * - Layer 2: food_name overlap (except staples: banana, honey, maple_syrup)
  */
 
-import { type Template, type SubPhaseType } from './types.ts';
+import { type Template, type SubPhaseType, type SubPhaseTargets } from './types.ts';
 
 // ============================================================================
 // Constants
@@ -81,19 +81,32 @@ function hasConflict(
 // ============================================================================
 
 /**
+ * Calculate how far from 1.0x a template would need to scale to meet a carb target.
+ * Lower values = better fit (template naturally matches the target).
+ */
+function scalingDistance(template: Template, carbTarget: number): number {
+  if (carbTarget <= 0 || template.total_carbs_g <= 0) return 0;
+  const neededMultiplier = carbTarget / template.total_carbs_g;
+  return Math.abs(neededMultiplier - 1.0);
+}
+
+/**
  * Select templates for each active sub-phase using the meal chain algorithm.
  *
- * When multiple non-conflicting templates exist for a sub-phase, the one with
- * the lowest total sodium is preferred (sodium as tiebreaker — carbs are
- * optimized during scaling, so template selection prioritizes lower sodium).
+ * Templates are ranked by "natural fit" — how close their base carbs are to
+ * the sub-phase carb target. A template that needs 1.2x scaling is preferred
+ * over one that needs 3.5x scaling (which produces absurd quantities like
+ * "5 bananas"). Sodium is used as a secondary tiebreaker.
  *
  * @param availableTemplates - All templates filtered by diet/allergen
  * @param activeSubPhases - Which sub-phases need templates (e.g., ['meal', 'snack', 'top_up'])
+ * @param subPhaseTargets - Carb/macro targets per sub-phase (used for fit scoring)
  * @returns Map of sub-phase type to selected template (null if no valid template found)
  */
 export function selectTemplateChain(
   availableTemplates: Template[],
   activeSubPhases: SubPhaseType[],
+  subPhaseTargets?: Map<SubPhaseType, SubPhaseTargets>,
 ): Map<SubPhaseType, Template | null> {
   const result = new Map<SubPhaseType, Template | null>();
   const selectedTemplates: Template[] = [];
@@ -112,8 +125,9 @@ export function selectTemplateChain(
 
     const mealType = SUB_PHASE_TO_MEAL_TYPE[subPhase];
     const candidates = templatesByMealType.get(mealType) ?? [];
+    const carbTarget = subPhaseTargets?.get(subPhase)?.carbs_g ?? 0;
 
-    console.log(`[MEAL-CHAIN] Selecting for ${subPhase} (meal_type=${mealType}): ${candidates.length} candidates`);
+    console.log(`[MEAL-CHAIN] Selecting for ${subPhase} (meal_type=${mealType}, carbTarget=${carbTarget}g): ${candidates.length} candidates`);
 
     // Collect all non-conflicting candidates
     const nonConflicting: Template[] = [];
@@ -126,18 +140,43 @@ export function selectTemplateChain(
     let selected: Template | null = null;
 
     if (nonConflicting.length > 0) {
-      // Sodium tiebreaker: pick the non-conflicting template with lowest sodium
-      nonConflicting.sort((a, b) => a.total_sodium_mg - b.total_sodium_mg);
+      // Primary: best natural fit (closest to 1.0x scaling needed)
+      // Secondary: lowest sodium (tiebreaker when fit is similar)
+      nonConflicting.sort((a, b) => {
+        const aFit = scalingDistance(a, carbTarget);
+        const bFit = scalingDistance(b, carbTarget);
+
+        // If fit differs by more than 0.3x multiplier, prefer the better fit
+        if (Math.abs(aFit - bFit) > 0.3) {
+          return aFit - bFit;
+        }
+
+        // Similar fit: use sodium as tiebreaker
+        return a.total_sodium_mg - b.total_sodium_mg;
+      });
+
       selected = nonConflicting[0];
-      console.log(`[MEAL-CHAIN] Selected: ${selected.name} (${selected.base_category}, sodium=${selected.total_sodium_mg}mg) from ${nonConflicting.length} non-conflicting`);
+      const neededMult = carbTarget > 0 && selected.total_carbs_g > 0
+        ? (carbTarget / selected.total_carbs_g).toFixed(2)
+        : '1.00';
+      console.log(
+        `[MEAL-CHAIN] Selected: ${selected.name} (${selected.base_category}, ` +
+        `baseCarbs=${selected.total_carbs_g}g, neededScale=${neededMult}x, ` +
+        `sodium=${selected.total_sodium_mg}mg) from ${nonConflicting.length} non-conflicting`
+      );
       selectedTemplates.push(selected);
     } else {
       console.log(`[MEAL-CHAIN] No non-conflicting template found for ${subPhase}`);
-      // If no conflict-free option exists, pick the lowest-sodium candidate anyway
+      // If no conflict-free option exists, pick the best-fit candidate anyway
       if (candidates.length > 0) {
-        const sorted = [...candidates].sort((a, b) => a.total_sodium_mg - b.total_sodium_mg);
+        const sorted = [...candidates].sort((a, b) => {
+          const aFit = scalingDistance(a, carbTarget);
+          const bFit = scalingDistance(b, carbTarget);
+          if (Math.abs(aFit - bFit) > 0.3) return aFit - bFit;
+          return a.total_sodium_mg - b.total_sodium_mg;
+        });
         selected = sorted[0];
-        console.log(`[MEAL-CHAIN] Fallback to lowest-sodium: ${selected.name} (sodium=${selected.total_sodium_mg}mg)`);
+        console.log(`[MEAL-CHAIN] Fallback to best-fit: ${selected.name} (baseCarbs=${selected.total_carbs_g}g, sodium=${selected.total_sodium_mg}mg)`);
         selectedTemplates.push(selected);
       }
     }

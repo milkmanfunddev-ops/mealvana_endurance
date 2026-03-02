@@ -117,25 +117,12 @@ class ActivityScheduleInfo extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              ActivityDetailHelpers.formatDateShort(scheduledDateTime),
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 20,
-              ),
-            ),
-            if (onDateTap != null) ...[
-              const SizedBox(width: 4),
-              Icon(
-                Icons.edit,
-                size: 14,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ],
+        Text(
+          ActivityDetailHelpers.formatDateShort(scheduledDateTime),
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 20,
+          ),
         ),
       ],
     );
@@ -159,25 +146,12 @@ class ActivityScheduleInfo extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              ActivityDetailHelpers.formatTime(scheduledDateTime),
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 20,
-              ),
-            ),
-            if (onTimeTap != null) ...[
-              const SizedBox(width: 4),
-              Icon(
-                Icons.edit,
-                size: 14,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ],
+        Text(
+          ActivityDetailHelpers.formatTime(scheduledDateTime),
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 20,
+          ),
         ),
       ],
     );

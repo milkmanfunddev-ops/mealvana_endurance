@@ -1077,6 +1077,223 @@ class CoachRepository with SyncableRepository {
   }
 
   // ============================================================================
+  // COACH CREATE FOR ATHLETE (Activities, Events, Carb Loading)
+  // ============================================================================
+
+  /// Create an activity for an athlete directly in Supabase
+  /// Also inserts into local Drift database for immediate display
+  Future<String> createActivityForAthlete({
+    required String athleteUserId,
+    required String title,
+    required String activityType,
+    required DateTime scheduledDateTime,
+    int? durationMinutes,
+    double? distanceMiles,
+  }) async {
+    try {
+      final id = _uuid.v4();
+      final now = DateTime.now();
+
+      final activityData = {
+        'id': id,
+        'user_id': athleteUserId,
+        'title': title,
+        'activity_type': activityType,
+        'scheduled_date_time': scheduledDateTime.toIso8601String(),
+        'duration_minutes': durationMinutes,
+        'distance_miles': distanceMiles,
+        'needs_upload': false,
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      };
+
+      // Insert into Supabase first
+      await _supabase.from('activities').insert(activityData);
+
+      // Also insert into local Drift database for immediate display
+      await _database.into(_database.activitiesTable).insert(
+            ActivitiesTableCompanion.insert(
+              id: Value(id),
+              userId: athleteUserId,
+              title: title,
+              activityType: activityType,
+              scheduledDateTime: scheduledDateTime,
+              durationMinutes: Value(durationMinutes),
+              distanceMiles: Value(distanceMiles),
+              needsUpload: const Value(false),
+              createdAt: now,
+              updatedAt: now,
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+
+      _logger.info(
+        'Created activity for athlete',
+        context: 'COACH_REPOSITORY',
+        data: {'activityId': id, 'athleteUserId': athleteUserId},
+      );
+
+      return id;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to create activity for athlete',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Create an event for an athlete directly in Supabase
+  /// Also inserts into local Drift database for immediate display
+  Future<String> createEventForAthlete({
+    required String athleteUserId,
+    required String eventName,
+    required String eventType,
+    required DateTime eventDate,
+    String? eventSubtype,
+    String? location,
+    double? goalPaceMinutesPerMile,
+    int? goalTimeMinutes,
+  }) async {
+    try {
+      final id = _uuid.v4();
+      final now = DateTime.now();
+
+      final eventData = {
+        'id': id,
+        'user_id': athleteUserId,
+        'event_name': eventName,
+        'event_type': eventType,
+        'event_subtype': eventSubtype,
+        'event_date': eventDate.toIso8601String(),
+        'location': location,
+        'goal_pace_minutes_per_mile': goalPaceMinutesPerMile,
+        'goal_time_minutes': goalTimeMinutes,
+        'needs_upload': false,
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      };
+
+      // Insert into Supabase first
+      await _supabase.from('events').insert(eventData);
+
+      // Also insert into local Drift database for immediate display
+      await _database.into(_database.eventsTable).insert(
+            EventsTableCompanion.insert(
+              id: Value(id),
+              userId: athleteUserId,
+              eventType: eventType,
+              eventSubtype: Value(eventSubtype),
+              eventName: Value(eventName),
+              eventDate: Value(eventDate),
+              location: Value(location),
+              goalPaceMinutesPerMile: Value(goalPaceMinutesPerMile),
+              goalTimeMinutes: Value(goalTimeMinutes),
+              needsUpload: const Value(false),
+              createdAt: now,
+              updatedAt: now,
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+
+      _logger.info(
+        'Created event for athlete',
+        context: 'COACH_REPOSITORY',
+        data: {'eventId': id, 'athleteUserId': athleteUserId},
+      );
+
+      return id;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to create event for athlete',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  // ============================================================================
+  // ATHLETE PROFILE UPDATE (Coach editing athlete's profile)
+  // ============================================================================
+
+  /// Update an athlete's profile in Supabase users table
+  /// Only coaches with an active relationship can update athlete profiles
+  Future<void> updateAthleteProfile({
+    required String athleteUserId,
+    String? firstName,
+    String? lastName,
+    DateTime? birthday,
+    double? weightPounds,
+    int? heightFeet,
+    int? heightInches,
+    bool? runsWithWaterBottle,
+    String? gutTraining,
+    String? gender,
+    bool? giSensitivity,
+  }) async {
+    try {
+      final updates = <String, dynamic>{
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      if (firstName != null) updates['first_name'] = firstName;
+      if (lastName != null) updates['last_name'] = lastName;
+      if (birthday != null) updates['birthday'] = birthday.toIso8601String();
+      if (weightPounds != null) updates['weight_pounds'] = weightPounds;
+      if (heightFeet != null) updates['height_feet'] = heightFeet;
+      if (heightInches != null) updates['height_inches'] = heightInches;
+      if (runsWithWaterBottle != null) updates['runs_with_water_bottle'] = runsWithWaterBottle;
+      if (gutTraining != null) updates['gut_training'] = gutTraining;
+      if (gender != null) updates['gender'] = gender;
+      if (giSensitivity != null) updates['gi_sensitivity'] = giSensitivity;
+
+      // Update in Supabase
+      await _supabase
+          .from('users')
+          .update(updates)
+          .eq('id', athleteUserId);
+
+      // Also update local Drift database
+      await (_database.update(_database.userProfilesTable)
+            ..where((t) => t.id.equals(athleteUserId)))
+          .write(UserProfilesTableCompanion(
+        firstName: firstName != null ? Value(firstName) : const Value.absent(),
+        lastName: lastName != null ? Value(lastName) : const Value.absent(),
+        birthday: birthday != null ? Value(birthday) : const Value.absent(),
+        weightPounds: weightPounds != null ? Value(weightPounds) : const Value.absent(),
+        heightFeet: heightFeet != null ? Value(heightFeet) : const Value.absent(),
+        heightInches: heightInches != null ? Value(heightInches) : const Value.absent(),
+        runsWithWaterBottle: runsWithWaterBottle != null ? Value(runsWithWaterBottle) : const Value.absent(),
+        gutTrainingLevel: gutTraining != null ? Value(gutTraining) : const Value.absent(),
+        gender: gender != null ? Value(gender) : const Value.absent(),
+        updatedAt: Value(DateTime.now()),
+      ));
+
+      _logger.info(
+        'Updated athlete profile',
+        context: 'COACH_REPOSITORY',
+        data: {
+          'athleteUserId': athleteUserId,
+          'updatedFields': updates.keys.toList(),
+        },
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to update athlete profile',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'athleteUserId': athleteUserId},
+      );
+      rethrow;
+    }
+  }
+
+  // ============================================================================
   // MESSAGE OPERATIONS (bidirectional messaging)
   // ============================================================================
 

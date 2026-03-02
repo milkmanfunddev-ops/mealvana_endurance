@@ -7,14 +7,9 @@ import '../../features/calendar/presentation/providers/calendar_view_provider.da
 import '../../features/calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
-import '../../features/settings/presentation/providers/settings_controller.dart';
 import '../../theme/kyle_design/app_colors.dart';
 import 'kyle_design/navigation/floating_action_buttons_bar.dart';
 import 'sync_status_indicator.dart';
-
-import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
-import '../../features/coach_mode/presentation/screens/coach_dashboard_screen.dart';
-import '../../features/coach_mode/presentation/providers/my_coaches_controller.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
   const TabsScreen({
@@ -42,25 +37,14 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // Check if user is a coach (from settings controller)
-    final settingsAsync = ref.watch(settingsControllerProvider);
-    final isCoach = settingsAsync.asData?.value.isCoach ?? false;
-
-    // Check if user has active coaches (as an athlete)
-    final myCoachesState = ref.watch(myCoachesControllerProvider);
-    final hasCoaches = myCoachesState.value?.hasCoaches ?? false;
-
-    // Show coach tab if user is a coach OR has coaches (web only for coaches)
-    final showCoachTab = kIsWeb ? (isCoach || hasCoaches) : hasCoaches;
+    // Show coach tab on web only (navigates to full-screen coach portal)
+    final showCoachTab = kIsWeb;
 
     // Build the list of screens dynamically
-    // If user is a coach, show coach dashboard; if athlete with coaches, show my coaches
     final screens = [
       const ActivitiesListScreen(), // 0: Activities (Calendar)
       if (showCoachTab)
-        isCoach
-          ? const CoachDashboardScreen()  // Coach sees dashboard
-          : const MyCoachesScreen(),       // Athlete sees their coaches
+        const SizedBox(), // Web placeholder — coach icon navigates to /coach portal
       const EventsListScreen(), // 1 or 2: Events
       const SettingsScreen(), // 2 or 3: Settings
     ];
@@ -106,14 +90,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
               }
             },
             onCoachTap: () {
-              if (kIsWeb && isCoach) {
-                // Navigate directly to Coach Portal on web
-                context.go('/coach');
-              } else {
-                setState(() {
-                  _currentIndex = 1; // Coach tab is always at index 1 if visible
-                });
-              }
+              // Navigate to full-screen coach portal (web only)
+              context.go('/coach');
             },
             onEventsTap: () {
               setState(() {

@@ -55,14 +55,7 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="com.milkman.mealvanaendurance"/>
-      </intent-filter>
-      <!-- Dev scheme (for .dev flavor) -->
-      <intent-filter android:label="flutter_web_auth_2_dev">
-        <action android:name="android.intent.action.VIEW"/>
-        <category android:name="android.intent.category.DEFAULT"/>
-        <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="com.milkman.mealvanaendurance.dev"/>
+        <data android:scheme="${oauthCallbackScheme}"/>
       </intent-filter>
     </activity>
 

@@ -24,14 +24,14 @@ class TrainingPeaksOAuthService {
     bool useSandbox = true,
     String callbackUrlScheme = 'com.milkman.mealvanaendurance',
     List<String>? scopes,
-  })  : _apiClient = apiClient,
-        _repository = repository,
-        _clientId = clientId,
-        _oauthBaseUrl = useSandbox
-            ? 'https://oauth.sandbox.trainingpeaks.com'
-            : 'https://oauth.trainingpeaks.com',
-        _callbackUrlScheme = callbackUrlScheme,
-        _scopes = scopes ?? defaultScopes;
+  }) : _apiClient = apiClient,
+       _repository = repository,
+       _clientId = clientId,
+       _oauthBaseUrl = useSandbox
+           ? 'https://oauth.sandbox.trainingpeaks.com'
+           : 'https://oauth.trainingpeaks.com',
+       _callbackUrlScheme = callbackUrlScheme,
+       _scopes = scopes ?? defaultScopes;
 
   final TrainingPeaksApiClient _apiClient;
   final IntegrationsRepository _repository;
@@ -65,8 +65,8 @@ class TrainingPeaksOAuthService {
     // On web, use HTTPS callback URL pointing to auth.html
     // On mobile, use custom scheme
     final redirectUri = kIsWeb
-        ? '${Uri.base.origin}/auth.html'  // Web: https://domain.com/auth.html
-        : '$_callbackUrlScheme://callback';    // Mobile: com.milkman.mealvanaendurance://callback
+        ? '${Uri.base.origin}/auth.html' // Web: https://domain.com/auth.html
+        : '$_callbackUrlScheme://callback'; // Mobile: com.milkman.mealvanaendurance://callback
 
     final authUrl = Uri.parse('$_oauthBaseUrl/OAuth/Authorize').replace(
       queryParameters: {
@@ -87,8 +87,10 @@ class TrainingPeaksOAuthService {
     // On web, callbackUrlScheme should be the base URL (e.g., "https")
     // On mobile, it's the custom scheme (e.g., "com.milkman.mealvanaendurance")
     final callbackScheme = kIsWeb
-        ? Uri.base.scheme  // Web: "https" or "http"
-        : _callbackUrlScheme;  // Mobile: "com.milkman.mealvanaendurance"
+        ? Uri
+              .base
+              .scheme // Web: "https" or "http"
+        : _callbackUrlScheme; // Mobile: "com.milkman.mealvanaendurance"
 
     final result = await FlutterWebAuth2.authenticate(
       url: authUrl.toString(),
@@ -103,9 +105,19 @@ class TrainingPeaksOAuthService {
     final code = callbackUri.queryParameters['code'];
     final returnedState = callbackUri.queryParameters['state'];
 
+    if (kDebugMode) {
+      print('📥 TrainingPeaks callback received:');
+      print('   Raw callback: $result');
+      print('   Parsed URI: $callbackUri');
+      print('   Code param: $code');
+      print('   Code length: ${code?.length ?? 0}');
+    }
+
     // Validate state to prevent CSRF
     if (returnedState != state) {
-      throw TrainingPeaksOAuthException('State mismatch - possible CSRF attack');
+      throw TrainingPeaksOAuthException(
+        'State mismatch - possible CSRF attack',
+      );
     }
 
     if (code == null || code.isEmpty) {
@@ -121,7 +133,10 @@ class TrainingPeaksOAuthService {
     }
 
     // 5. Exchange code for access token
-    final tokenResponse = await _apiClient.exchangeCodeForToken(code, redirectUri);
+    final tokenResponse = await _apiClient.exchangeCodeForToken(
+      code,
+      redirectUri,
+    );
 
     if (kDebugMode) {
       print('✅ Token exchange successful');
@@ -129,7 +144,9 @@ class TrainingPeaksOAuthService {
     }
 
     // 6. Fetch athlete profile (TrainingPeaks doesn't include this in token response!)
-    final profile = await _apiClient.getAthleteProfile(tokenResponse.accessToken);
+    final profile = await _apiClient.getAthleteProfile(
+      tokenResponse.accessToken,
+    );
 
     if (kDebugMode) {
       print('✅ Athlete profile fetched');
@@ -182,7 +199,10 @@ class TrainingPeaksOAuthService {
   ///
   /// Returns the updated integration with fresh tokens, or null if refresh failed.
   Future<IntegrationModel?> refreshTokenIfNeeded(String userId) async {
-    final integration = await _repository.getIntegration(userId, 'training_peaks');
+    final integration = await _repository.getIntegration(
+      userId,
+      'training_peaks',
+    );
     if (integration == null || !integration.isActive) {
       return null;
     }
@@ -224,7 +244,9 @@ class TrainingPeaksOAuthService {
         updatedAt: DateTime.now(),
       );
 
-      final savedIntegration = await _repository.upsertIntegration(updatedIntegration);
+      final savedIntegration = await _repository.upsertIntegration(
+        updatedIntegration,
+      );
 
       if (kDebugMode) {
         print('✅ Token refreshed successfully');
@@ -254,7 +276,10 @@ class TrainingPeaksOAuthService {
   /// Use when the server returns 401 even though the local expiry looks valid.
   /// Returns the new access token, or null if refresh failed.
   Future<String?> forceRefreshToken(String userId) async {
-    final integration = await _repository.getIntegration(userId, 'training_peaks');
+    final integration = await _repository.getIntegration(
+      userId,
+      'training_peaks',
+    );
     if (integration == null || !integration.isActive) return null;
 
     final refreshToken = integration.refreshToken;
@@ -275,7 +300,9 @@ class TrainingPeaksOAuthService {
       await _repository.upsertIntegration(updatedIntegration);
 
       if (kDebugMode) {
-        print('✅ Force-refresh succeeded, new expiry: ${tokenResponse.expiresAt}');
+        print(
+          '✅ Force-refresh succeeded, new expiry: ${tokenResponse.expiresAt}',
+        );
       }
       return tokenResponse.accessToken;
     } on TrainingPeaksApiException catch (e) {
@@ -306,7 +333,10 @@ class TrainingPeaksOAuthService {
   /// then marks the integration as inactive.
   Future<void> disconnect(String userId, {bool revokeAccess = false}) async {
     if (revokeAccess) {
-      final integration = await _repository.getIntegration(userId, 'training_peaks');
+      final integration = await _repository.getIntegration(
+        userId,
+        'training_peaks',
+      );
       if (integration != null && integration.accessToken.isNotEmpty) {
         try {
           await _apiClient.deauthorize(integration.accessToken);
@@ -331,7 +361,10 @@ class TrainingPeaksOAuthService {
 
   /// Check if user has an active TrainingPeaks integration
   Future<bool> isConnected(String userId) async {
-    final integration = await _repository.getIntegration(userId, 'training_peaks');
+    final integration = await _repository.getIntegration(
+      userId,
+      'training_peaks',
+    );
     return integration?.isActive ?? false;
   }
 
@@ -342,7 +375,10 @@ class TrainingPeaksOAuthService {
 
   /// Check if the current token is valid (not expired)
   Future<bool> hasValidToken(String userId) async {
-    final integration = await _repository.getIntegration(userId, 'training_peaks');
+    final integration = await _repository.getIntegration(
+      userId,
+      'training_peaks',
+    );
     if (integration == null || !integration.isActive) {
       return false;
     }

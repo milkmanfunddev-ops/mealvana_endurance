@@ -47,11 +47,13 @@ android {
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
             resValue("string", "app_name", "Endurance Dev")
+            manifestPlaceholders["oauthCallbackScheme"] = "com.milkman.mealvanaendurance.dev"
         }
 
         create("prod") {
             dimension = "environment"
             resValue("string", "app_name", "Endurance")
+            manifestPlaceholders["oauthCallbackScheme"] = "com.milkman.mealvanaendurance"
         }
     }
 

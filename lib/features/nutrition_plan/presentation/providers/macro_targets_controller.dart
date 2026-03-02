@@ -5,6 +5,7 @@ import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../activities/domain/activity.dart' as domain;
+import '../../../activities/domain/activity_title_formatter.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../domain/run_parameters.dart';
@@ -536,7 +537,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         if (finalActivityId.isEmpty) {
           finalActivityId = await activitiesController.createActivity(
-            title: "$distance mi Run",
+            title: ActivityTitleFormatter.formatRunningTitle(distance),
             scheduledDateTime: scheduledDateTime,
             forUserId:
                 forUserId, // NEW: Pass through forUserId for coach-created activities
@@ -554,7 +555,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           if (existingActivity != null) {
             await activitiesController.updateActivity(
               existingActivity.copyWith(
-                title: "$distance mi Run",
+                title: ActivityTitleFormatter.formatRunningTitle(distance),
                 activityType: ActivityType.running,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distance,
@@ -692,7 +693,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         if (finalActivityId.isEmpty) {
           finalActivityId = await activitiesController.createActivity(
-            title: "$distanceMiles mi Ride",
+            title: ActivityTitleFormatter.formatCyclingTitle(distanceMiles),
             scheduledDateTime: scheduledDateTime,
             forUserId:
                 forUserId, // NEW: Pass through forUserId for coach-created activities
@@ -715,7 +716,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           if (existingActivity != null) {
             await activitiesController.updateActivity(
               existingActivity.copyWith(
-                title: "$distanceMiles mi Ride",
+                title: ActivityTitleFormatter.formatCyclingTitle(distanceMiles),
                 activityType: ActivityType.cycling,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,
@@ -1149,7 +1150,7 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         if (finalActivityId.isEmpty) {
           finalActivityId = await activitiesController.createActivity(
-            title: "$distanceMeters m Swim",
+            title: ActivityTitleFormatter.formatSwimmingTitle(distanceMeters),
             scheduledDateTime: scheduledDateTime,
             forUserId:
                 forUserId, // NEW: Pass through forUserId for coach-created activities
@@ -1170,7 +1171,9 @@ class MacroTargetsController extends _$MacroTargetsController {
           if (existingActivity != null) {
             await activitiesController.updateActivity(
               existingActivity.copyWith(
-                title: "$distanceMeters m Swim",
+                title: ActivityTitleFormatter.formatSwimmingTitle(
+                  distanceMeters,
+                ),
                 activityType: ActivityType.swimming,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,

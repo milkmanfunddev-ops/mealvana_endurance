@@ -870,12 +870,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   }) async {
     final controller = _getControllerNotifier();
 
-    await controller.completeActivity(
-      overallSatisfaction: rating,
-      textNotes: notes,
-    );
-
-    // Apply carb feedback adjustment if provided (non-brick only)
+    // Apply carb feedback adjustment and track analytics BEFORE
+    // completing activity, because completeActivity() calls
+    // ref.invalidateSelf() which disposes the provider and makes
+    // subsequent ref usage throw UnmountedRefException.
     if (carbAdjustment != null && !isBrick) {
       await controller.applyCarbFeedbackAdjustment(carbAdjustment);
     }
@@ -888,6 +886,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       'is_brick': isBrick,
       if (carbAdjustment != null) 'carb_adjustment': carbAdjustment.name,
     });
+
+    await controller.completeActivity(
+      overallSatisfaction: rating,
+      textNotes: notes,
+    );
 
     if (mounted) {
       final message = isBrick

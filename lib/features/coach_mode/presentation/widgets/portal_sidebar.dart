@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../domain/coach_athlete_relationship.dart';
@@ -36,6 +37,20 @@ class PortalSidebar extends ConsumerWidget {
               ),
               error: (error, _) => _buildErrorView(context, error.toString(), ref),
               data: (state) => _buildAthletesList(context, ref, state, portalState),
+            ),
+          ),
+
+          // Back to App button at bottom of sidebar
+          const Divider(color: AppColors.blackberryLight, height: 1),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textDarkSecondary,
+              ),
+              icon: const Icon(Icons.arrow_back, size: 16),
+              label: const Text('Back to App', style: TextStyle(fontSize: 13)),
+              onPressed: () => context.go('/main'),
             ),
           ),
         ],

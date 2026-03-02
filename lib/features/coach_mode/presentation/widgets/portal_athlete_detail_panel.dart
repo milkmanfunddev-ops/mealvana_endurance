@@ -9,9 +9,14 @@ import '../../../calendar/presentation/providers/calendar_view_provider.dart';
 import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/athlete_detail_controller.dart';
 import '../screens/coach_chat_screen.dart';
+import 'create_activity_dialog.dart';
+import 'create_event_dialog.dart';
+import 'portal_athlete_profile_form.dart';
 
 /// Right panel showing athlete details within the coach portal
 class PortalAthleteDetailPanel extends ConsumerStatefulWidget {
@@ -220,266 +225,193 @@ class _PortalAthleteDetailPanelState
   }
 
   Widget _buildProfileTab(AthleteDetailState state) {
-    final profile = state.athleteProfile;
-
-    if (profile == null) {
-      return _buildEmptyView(
-        'No Profile Data',
-        'Profile information is not available yet. Try refreshing.',
-        Icons.person_off,
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildInfoCard(
-          'Personal Information',
-          Icons.person,
-          [
-            _ProfileRow('Name', profile.displayName),
-            if (profile.firstName != null)
-              _ProfileRow('First Name', profile.firstName!),
-            if (profile.lastName != null)
-              _ProfileRow('Last Name', profile.lastName!),
-            _ProfileRow('Gender', profile.gender.name.toUpperCase()),
-            _ProfileRow('Birthday', _formatDate(profile.birthday)),
-            _ProfileRow(
-              'Height',
-              '${profile.heightFeet}\'${profile.heightInches}"',
-            ),
-            _ProfileRow(
-              'Weight',
-              '${profile.weightPounds.toStringAsFixed(1)} lbs',
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildInfoCard(
-          'Training Preferences',
-          Icons.fitness_center,
-          [
-            _ProfileRow(
-              'Runs with Water Bottle',
-              profile.runsWithWaterBottle ? 'Yes' : 'No',
-            ),
-            _ProfileRow(
-              'Gut Training Level',
-              profile.gutTraining.name.toUpperCase(),
-            ),
-            if (profile.giSensitivity != null)
-              _ProfileRow(
-                'GI Sensitivity',
-                profile.giSensitivity! ? 'Yes' : 'No',
-              ),
-          ],
-        ),
-        if (profile.ftpWatts != null ||
-            profile.typicalBikeBottles != null) ...[
-          const SizedBox(height: 16),
-          _buildInfoCard(
-            'Cycling Details',
-            Icons.directions_bike,
-            [
-              if (profile.ftpWatts != null)
-                _ProfileRow('FTP', '${profile.ftpWatts} watts'),
-              if (profile.typicalBikeBottles != null)
-                _ProfileRow('Bike Bottles', '${profile.typicalBikeBottles}'),
-              if (profile.hasAeroBottle != null)
-                _ProfileRow('Has Aero Bottle', profile.hasAeroBottle! ? 'Yes' : 'No'),
-              if (profile.hasBentoBox != null)
-                _ProfileRow('Has Bento Box', profile.hasBentoBox! ? 'Yes' : 'No'),
-            ],
-          ),
-        ],
-        if (profile.cssPacePer100mSeconds != null) ...[
-          const SizedBox(height: 16),
-          _buildInfoCard(
-            'Swimming Details',
-            Icons.pool,
-            [
-              _ProfileRow('CSS Pace', '${profile.cssPacePer100mSeconds}s per 100m'),
-              if (profile.typicalWetsuit != null)
-                _ProfileRow('Wetsuit', profile.typicalWetsuit! ? 'Yes' : 'No'),
-              if (profile.typicalSwimCapType != null)
-                _ProfileRow('Swim Cap', profile.typicalSwimCapType!),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildInfoCard(String title, IconData icon, List<_ProfileRow> rows) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.blackberry,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.blackberryLight),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: AppColors.electrolyte, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.cream,
-                ),
-              ),
-            ],
-          ),
-          const Divider(color: AppColors.blackberryLight, height: 24),
-          ...rows.map((row) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 140,
-                      child: Text(
-                        row.label,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        row.value,
-                        style: const TextStyle(
-                          color: AppColors.cream,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-        ],
-      ),
+    return PortalAthleteProfileForm(
+      key: ValueKey('profile_${state.relationship.athleteUserId}'),
+      relationshipId: widget.relationshipId,
+      profile: state.athleteProfile,
+      athleteUserId: state.relationship.athleteUserId,
     );
   }
 
   Widget _buildEventsTab(AthleteDetailState state) {
-    if (state.events.isEmpty) {
-      return _buildEmptyView(
-        'No Events',
-        'This athlete has no upcoming events.',
-        Icons.calendar_today,
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: state.events.length,
-      itemBuilder: (context, index) {
-        final event = state.events[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.blackberry,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.blackberryLight),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.event, color: AppColors.electrolyte, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
+      children: [
+        if (state.events.isEmpty)
+          _buildEmptyView(
+            'No Events',
+            'This athlete has no upcoming events.',
+            Icons.calendar_today,
+          )
+        else
+          ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: state.events.length,
+            itemBuilder: (context, index) {
+              final event = state.events[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.blackberry,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.blackberryLight),
+                ),
+                child: Row(
                   children: [
-                    Text(
-                      event.eventName ?? 'Unnamed Event',
-                      style: const TextStyle(
-                        color: AppColors.cream,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      event.eventDate != null
-                          ? _formatDate(event.eventDate!)
-                          : 'No Date',
-                      style: const TextStyle(
-                        color: AppColors.textDarkSecondary,
-                        fontSize: 12,
+                    const Icon(Icons.event, color: AppColors.electrolyte, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            event.eventName ?? 'Unnamed Event',
+                            style: const TextStyle(
+                              color: AppColors.cream,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            event.eventDate != null
+                                ? _formatDate(event.eventDate!)
+                                : 'No Date',
+                            style: const TextStyle(
+                              color: AppColors.textDarkSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
-        );
-      },
+        // Create event FAB
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton(
+            heroTag: 'createEvent',
+            mini: true,
+            backgroundColor: AppColors.electrolyte,
+            foregroundColor: AppColors.blackberryDark,
+            onPressed: () => _showCreateEventDialog(state),
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildCarbLoadingTab(AthleteDetailState state) {
-    if (state.carbLoadingPlans.isEmpty) {
-      return _buildEmptyView(
-        'No Carb Loading Plans',
-        'This athlete has no active carb loading plans.',
-        Icons.restaurant,
-      );
-    }
+  Future<void> _showCreateEventDialog(AthleteDetailState state) async {
+    final result = await showDialog<CreateEventResult>(
+      context: context,
+      builder: (_) => const CreateEventDialog(),
+    );
+    if (result == null) return;
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: state.carbLoadingPlans.length,
-      itemBuilder: (context, index) {
-        final plan = state.carbLoadingPlans[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.blackberry,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.blackberryLight),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.restaurant_menu, color: AppColors.electrolyte, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    try {
+      await ref.read(coachServiceProvider).createEventForAthlete(
+            athleteUserId: state.relationship.athleteUserId,
+            eventName: result.eventName,
+            eventType: result.eventType,
+            eventDate: result.eventDate,
+            eventSubtype: result.eventSubtype,
+            location: result.location,
+            goalTimeMinutes: result.goalTimeMinutes,
+          );
+      if (mounted) {
+        MealvanaSnackbar.showSuccess(context, 'Event created');
+        ref
+            .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
+            .refresh();
+      }
+    } catch (e) {
+      if (mounted) {
+        MealvanaSnackbar.showError(context, 'Failed to create event');
+      }
+    }
+  }
+
+  Widget _buildCarbLoadingTab(AthleteDetailState state) {
+    return Stack(
+      children: [
+        if (state.carbLoadingPlans.isEmpty)
+          _buildEmptyView(
+            'No Carb Loading Plans',
+            'This athlete has no active carb loading plans.',
+            Icons.restaurant,
+          )
+        else
+          ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: state.carbLoadingPlans.length,
+            itemBuilder: (context, index) {
+              final plan = state.carbLoadingPlans[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.blackberry,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.blackberryLight),
+                ),
+                child: Row(
                   children: [
-                    Text(
-                      '${plan.raceDistance.displayName} - ${_formatDate(plan.raceDate)}',
-                      style: const TextStyle(
-                        color: AppColors.cream,
-                        fontWeight: FontWeight.w500,
+                    const Icon(Icons.restaurant_menu, color: AppColors.electrolyte, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${plan.raceDistance.displayName} - ${_formatDate(plan.raceDate)}',
+                            style: const TextStyle(
+                              color: AppColors.cream,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            '${plan.dailyCarbTargetG}g carbs/day',
+                            style: const TextStyle(
+                              color: AppColors.textDarkSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      '${plan.dailyCarbTargetG}g carbs/day',
-                      style: const TextStyle(
-                        color: AppColors.textDarkSecondary,
-                        fontSize: 12,
-                      ),
+                    Icon(
+                      plan.isActive ? Icons.check_circle : Icons.pause_circle,
+                      color: plan.isActive ? AppColors.electrolyte : AppColors.inactive,
+                      size: 20,
                     ),
                   ],
                 ),
-              ),
-              Icon(
-                plan.isActive ? Icons.check_circle : Icons.pause_circle,
-                color: plan.isActive ? AppColors.electrolyte : AppColors.inactive,
-                size: 20,
-              ),
-            ],
+              );
+            },
           ),
-        );
-      },
+        // Create carb loading plan FAB
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton(
+            heroTag: 'createCarbLoading',
+            mini: true,
+            backgroundColor: AppColors.electrolyte,
+            foregroundColor: AppColors.blackberryDark,
+            onPressed: () {
+              MealvanaSnackbar.showInfo(
+                context,
+                'Carb loading plan creation coming soon. Create an event first, then generate from the event detail.',
+              );
+            },
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ],
     );
   }
 
@@ -492,51 +424,97 @@ class _PortalAthleteDetailPanelState
     }).toList()
       ..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
 
-    return Column(
+    return Stack(
       children: [
-        const SizedBox(height: 4),
-        CalendarViewToggle(
-          selectedMode: calendarMode,
-          onModeChanged: (mode) {
-            ref.read(calendarViewProvider.notifier).setView(mode);
-          },
+        Column(
+          children: [
+            const SizedBox(height: 4),
+            CalendarViewToggle(
+              selectedMode: calendarMode,
+              onModeChanged: (mode) {
+                ref.read(calendarViewProvider.notifier).setView(mode);
+              },
+            ),
+            const SizedBox(height: 8),
+            if (calendarMode == CalendarViewMode.week)
+              CalendarWeekViewKyle(
+                selectedDate: _selectedDate,
+                onDateSelected: (date) {
+                  setState(() {
+                    _selectedDate = date;
+                  });
+                },
+                dayIndicators: dayIndicators,
+              )
+            else
+              CalendarMonthViewKyle(
+                selectedDate: _selectedDate,
+                onDateSelected: (date) {
+                  setState(() {
+                    _selectedDate = date;
+                  });
+                },
+                dayIndicators: dayIndicators,
+              ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: selectedDateActivities.isEmpty
+                  ? _buildEmptyActivitiesForDate()
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: selectedDateActivities.length,
+                      itemBuilder: (context, index) {
+                        final activity = selectedDateActivities[index];
+                        return _buildActivityItem(activity);
+                      },
+                    ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        if (calendarMode == CalendarViewMode.week)
-          CalendarWeekViewKyle(
-            selectedDate: _selectedDate,
-            onDateSelected: (date) {
-              setState(() {
-                _selectedDate = date;
-              });
-            },
-            dayIndicators: dayIndicators,
-          )
-        else
-          CalendarMonthViewKyle(
-            selectedDate: _selectedDate,
-            onDateSelected: (date) {
-              setState(() {
-                _selectedDate = date;
-              });
-            },
-            dayIndicators: dayIndicators,
+        // Create activity FAB
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton(
+            heroTag: 'createActivity',
+            mini: true,
+            backgroundColor: AppColors.electrolyte,
+            foregroundColor: AppColors.blackberryDark,
+            onPressed: () => _showCreateActivityDialog(state),
+            child: const Icon(Icons.add),
           ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: selectedDateActivities.isEmpty
-              ? _buildEmptyActivitiesForDate()
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: selectedDateActivities.length,
-                  itemBuilder: (context, index) {
-                    final activity = selectedDateActivities[index];
-                    return _buildActivityItem(activity);
-                  },
-                ),
         ),
       ],
     );
+  }
+
+  Future<void> _showCreateActivityDialog(AthleteDetailState state) async {
+    final result = await showDialog<CreateActivityResult>(
+      context: context,
+      builder: (_) => CreateActivityDialog(initialDate: _selectedDate),
+    );
+    if (result == null) return;
+
+    try {
+      await ref.read(coachServiceProvider).createActivityForAthlete(
+            athleteUserId: state.relationship.athleteUserId,
+            title: result.title,
+            activityType: result.activityType,
+            scheduledDateTime: result.scheduledDateTime,
+            durationMinutes: result.durationMinutes,
+            distanceMiles: result.distanceMiles,
+          );
+      if (mounted) {
+        MealvanaSnackbar.showSuccess(context, 'Activity created');
+        ref
+            .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
+            .refresh();
+      }
+    } catch (e) {
+      if (mounted) {
+        MealvanaSnackbar.showError(context, 'Failed to create activity');
+      }
+    }
   }
 
   Widget _buildActivityItem(Activity activity) {
@@ -693,11 +671,4 @@ class _PortalAthleteDetailPanelState
     }
     return parts[0].isNotEmpty ? parts[0][0].toUpperCase() : '?';
   }
-}
-
-class _ProfileRow {
-  final String label;
-  final String value;
-
-  const _ProfileRow(this.label, this.value);
 }

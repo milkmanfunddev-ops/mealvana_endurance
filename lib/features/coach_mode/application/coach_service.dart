@@ -314,6 +314,116 @@ class CoachService {
   }
 
   // ============================================================================
+  // COACH CREATE FOR ATHLETE (Activities, Events)
+  // ============================================================================
+
+  /// Create an activity for an athlete
+  Future<String> createActivityForAthlete({
+    required String athleteUserId,
+    required String title,
+    required String activityType,
+    required DateTime scheduledDateTime,
+    int? durationMinutes,
+    double? distanceMiles,
+  }) async {
+    try {
+      return await _repository.createActivityForAthlete(
+        athleteUserId: athleteUserId,
+        title: title,
+        activityType: activityType,
+        scheduledDateTime: scheduledDateTime,
+        durationMinutes: durationMinutes,
+        distanceMiles: distanceMiles,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to create activity for athlete',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Create an event for an athlete
+  Future<String> createEventForAthlete({
+    required String athleteUserId,
+    required String eventName,
+    required String eventType,
+    required DateTime eventDate,
+    String? eventSubtype,
+    String? location,
+    double? goalPaceMinutesPerMile,
+    int? goalTimeMinutes,
+  }) async {
+    try {
+      return await _repository.createEventForAthlete(
+        athleteUserId: athleteUserId,
+        eventName: eventName,
+        eventType: eventType,
+        eventDate: eventDate,
+        eventSubtype: eventSubtype,
+        location: location,
+        goalPaceMinutesPerMile: goalPaceMinutesPerMile,
+        goalTimeMinutes: goalTimeMinutes,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to create event for athlete',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  // ============================================================================
+  // ATHLETE PROFILE MANAGEMENT (Coach perspective)
+  // ============================================================================
+
+  /// Update an athlete's profile (coach can set name, biometrics, etc.)
+  /// Requires active coach-athlete relationship
+  Future<void> updateAthleteProfile({
+    required String athleteUserId,
+    String? firstName,
+    String? lastName,
+    DateTime? birthday,
+    double? weightPounds,
+    int? heightFeet,
+    int? heightInches,
+    bool? runsWithWaterBottle,
+    String? gutTraining,
+    String? gender,
+    bool? giSensitivity,
+  }) async {
+    try {
+      await _repository.updateAthleteProfile(
+        athleteUserId: athleteUserId,
+        firstName: firstName,
+        lastName: lastName,
+        birthday: birthday,
+        weightPounds: weightPounds,
+        heightFeet: heightFeet,
+        heightInches: heightInches,
+        runsWithWaterBottle: runsWithWaterBottle,
+        gutTraining: gutTraining,
+        gender: gender,
+        giSensitivity: giSensitivity,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to update athlete profile',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  // ============================================================================
   // COACH MANAGEMENT (Athlete perspective)
   // ============================================================================
 

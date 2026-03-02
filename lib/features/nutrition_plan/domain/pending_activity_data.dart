@@ -1,5 +1,6 @@
 import '../../../shared/domain/activity_type.dart';
 import '../../activities/domain/activity.dart';
+import '../../activities/domain/activity_title_formatter.dart';
 
 /// Pending activity data (not yet created in database).
 ///
@@ -63,7 +64,7 @@ class PendingActivityData {
     String? notes,
   }) {
     return PendingActivityData(
-      title: '${distanceMiles.toStringAsFixed(1)} mi Run',
+      title: ActivityTitleFormatter.formatRunningTitle(distanceMiles),
       scheduledDateTime: scheduledDateTime,
       activityType: ActivityType.running,
       distanceMiles: distanceMiles,
@@ -89,7 +90,7 @@ class PendingActivityData {
     String? notes,
   }) {
     return PendingActivityData(
-      title: '${distanceMiles.toStringAsFixed(1)} mi Ride',
+      title: ActivityTitleFormatter.formatCyclingTitle(distanceMiles),
       scheduledDateTime: scheduledDateTime,
       activityType: ActivityType.cycling,
       distanceMiles: distanceMiles,
@@ -120,7 +121,7 @@ class PendingActivityData {
     String? notes,
   }) {
     return PendingActivityData(
-      title: '${distanceMeters}m Swim',
+      title: ActivityTitleFormatter.formatSwimmingTitle(distanceMeters),
       scheduledDateTime: scheduledDateTime,
       activityType: ActivityType.swimming,
       distanceMiles: distanceMeters * 0.000621371, // Convert meters to miles

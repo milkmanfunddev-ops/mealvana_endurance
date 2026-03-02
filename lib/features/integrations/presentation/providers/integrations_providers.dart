@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -26,13 +28,19 @@ Future<PackageInfo> packageInfo(Ref ref) async {
 
 /// Base callback URL scheme for OAuth
 const _baseCallbackScheme = 'com.milkman.mealvanaendurance';
+const _androidDevCallbackScheme = 'com.milkman.mealvanaendurance.dev';
 
-/// Get the callback URL scheme for OAuth
-/// Note: We use the same callback scheme for both dev and prod because
-/// Final Surge only has one registered app ("mealvana") with a single
-/// whitelisted callback URL. Using different schemes per environment
-/// would cause "invalid callback URL" errors.
-String _getCallbackScheme(bool isDev) {
+/// Final Surge keeps a single callback scheme across environments due provider constraints.
+String _getFinalSurgeCallbackScheme() {
+  return _baseCallbackScheme;
+}
+
+/// TrainingPeaks uses a flavor-specific scheme on Android to avoid dev/prod collisions
+/// when both app variants are installed on the same device.
+String _getTrainingPeaksCallbackScheme(bool isDev) {
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android && isDev) {
+    return _androidDevCallbackScheme;
+  }
   return _baseCallbackScheme;
 }
 
@@ -72,7 +80,7 @@ FinalSurgeOAuthService finalSurgeOAuthService(Ref ref) {
     apiClient: apiClient,
     repository: repository,
     clientId: config.finalSurgeClientId,
-    callbackUrlScheme: _getCallbackScheme(config.isDevelopment),
+    callbackUrlScheme: _getFinalSurgeCallbackScheme(),
   );
 }
 
@@ -106,30 +114,23 @@ FinalSurgeSyncService finalSurgeSyncService(Ref ref) {
 
 /// Provider to get Final Surge integration for a user
 @riverpod
-Future<IntegrationModel?> finalSurgeIntegration(
-  Ref ref,
-  String userId,
-) async {
+Future<IntegrationModel?> finalSurgeIntegration(Ref ref, String userId) async {
   final repository = ref.watch(integrationsRepositoryProvider);
   return repository.getIntegration(userId, 'final_surge');
 }
 
 /// Provider to check if Final Surge is connected
 @riverpod
-Future<bool> isFinalSurgeConnected(
-  Ref ref,
-  String userId,
-) async {
-  final integration = await ref.watch(finalSurgeIntegrationProvider(userId).future);
+Future<bool> isFinalSurgeConnected(Ref ref, String userId) async {
+  final integration = await ref.watch(
+    finalSurgeIntegrationProvider(userId).future,
+  );
   return integration?.isActive ?? false;
 }
 
 /// Provider for all user integrations
 @riverpod
-Future<List<IntegrationModel>> userIntegrations(
-  Ref ref,
-  String userId,
-) async {
+Future<List<IntegrationModel>> userIntegrations(Ref ref, String userId) async {
   final repository = ref.watch(integrationsRepositoryProvider);
   return repository.getIntegrationsForUser(userId);
 }
@@ -169,7 +170,7 @@ Future<TrainingPeaksOAuthService> trainingPeaksOAuthService(Ref ref) async {
     repository: repository,
     clientId: config.trainingPeaksClientId,
     useSandbox: config.trainingPeaksUseSandbox,
-    callbackUrlScheme: _getCallbackScheme(config.isDevelopment),
+    callbackUrlScheme: _getTrainingPeaksCallbackScheme(config.isDevelopment),
   );
 }
 
@@ -203,10 +204,9 @@ Future<IntegrationModel?> trainingPeaksIntegration(
 
 /// Provider to check if TrainingPeaks is connected
 @riverpod
-Future<bool> isTrainingPeaksConnected(
-  Ref ref,
-  String userId,
-) async {
-  final integration = await ref.watch(trainingPeaksIntegrationProvider(userId).future);
+Future<bool> isTrainingPeaksConnected(Ref ref, String userId) async {
+  final integration = await ref.watch(
+    trainingPeaksIntegrationProvider(userId).future,
+  );
   return integration?.isActive ?? false;
 }

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/coach_dashboard_controller.dart';
 import '../providers/coach_portal_controller.dart';
@@ -49,51 +47,7 @@ class CoachPortalScreen extends ConsumerWidget {
 
           // Right panel
           Expanded(
-            child: Column(
-              children: [
-                // Top bar
-                _buildTopBar(context, ref),
-
-                // Content area
-                Expanded(
-                  child: _buildRightPanel(portalState),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopBar(BuildContext context, WidgetRef ref) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: AppColors.blackberry,
-      child: Row(
-        children: [
-          const Spacer(),
-          // Refresh button
-          IconButton(
-            icon: const Icon(Icons.refresh, size: 20),
-            color: AppColors.textDarkSecondary,
-            tooltip: 'Refresh all data',
-            onPressed: () {
-              ref.read(coachDashboardControllerProvider.notifier).refresh();
-            },
-          ),
-          const SizedBox(width: 4),
-          // Logout / Back to app
-          TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.textDarkSecondary,
-            ),
-            icon: const Icon(Icons.arrow_back, size: 16),
-            label: const Text('Back to App', style: TextStyle(fontSize: 13)),
-            onPressed: () {
-              context.go('/main');
-            },
+            child: _buildRightPanel(portalState),
           ),
         ],
       ),

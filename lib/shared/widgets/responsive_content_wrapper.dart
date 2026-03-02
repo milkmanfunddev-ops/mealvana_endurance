@@ -21,6 +21,7 @@ class ResponsiveContentWrapper extends StatelessWidget {
     this.maxContentWidth = 750,
     this.breakpoint = 750,
     this.backgroundColor,
+    this.isFullWidth = false,
   });
 
   /// The child widget to wrap
@@ -38,37 +39,40 @@ class ResponsiveContentWrapper extends StatelessWidget {
   /// If null, uses the scaffold background color from theme.
   final Color? backgroundColor;
 
+  /// When true, skips all constraints and returns child as-is.
+  /// Used for full-screen pages like the coach portal on web.
+  final bool isFullWidth;
+
   @override
   Widget build(BuildContext context) {
-    // On web, allow full-width layout (no max-width constraint)
-    if (kIsWeb) {
+    // Full-width mode skips all constraints (e.g., coach portal)
+    if (isFullWidth) {
       return child;
     }
 
-    // On native (iPad), apply constraints for large screens
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isLargeScreen = constraints.maxWidth > breakpoint;
+    // Use MediaQuery instead of LayoutBuilder to get the actual device width.
+    // LayoutBuilder can return normalized widths from ScreenUtilInit, making
+    // large screens appear as ~393px. MediaQuery gives the real device width.
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isLargeScreen = screenWidth > breakpoint;
 
-        // On mobile-sized screens, return child as-is
-        if (!isLargeScreen) {
-          return child;
-        }
+    // On mobile-sized screens, return child as-is
+    if (!isLargeScreen) {
+      return child;
+    }
 
-        // On large screens (iPad), center the content with max-width constraint
-        final bgColor =
-            backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
+    // On large screens, center the content with max-width constraint
+    final bgColor =
+        backgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
 
-        return ColoredBox(
-          color: bgColor,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxContentWidth),
-              child: child,
-            ),
-          ),
-        );
-      },
+    return ColoredBox(
+      color: bgColor,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxContentWidth),
+          child: child,
+        ),
+      ),
     );
   }
 }

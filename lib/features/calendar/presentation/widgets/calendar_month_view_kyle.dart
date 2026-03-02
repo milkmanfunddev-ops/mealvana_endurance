@@ -79,12 +79,22 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
 
     return Column(
       children: [
-        // Month/Year title with optional Today button
+        // Month/Year title with nav arrows and optional Today button
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Previous month arrow
+              GestureDetector(
+                onTap: _goToPreviousMonth,
+                child: Icon(
+                  Icons.chevron_left,
+                  size: 24,
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
+                ),
+              ),
+              const SizedBox(width: 8),
               // Month/Year title (tappable for date picker)
               GestureDetector(
                 onTap: () => _showDatePicker(context),
@@ -96,6 +106,16 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
                     fontWeight: FontWeight.w700,
                   ),
                   textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Next month arrow
+              GestureDetector(
+                onTap: _goToNextMonth,
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 24,
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
                 ),
               ),
               // Today button - only shown when not on current month
@@ -293,6 +313,20 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
       });
       _pageController.jumpToPage(_initialPage);
     }
+  }
+
+  void _goToPreviousMonth() {
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _goToNextMonth() {
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _goToToday() {
