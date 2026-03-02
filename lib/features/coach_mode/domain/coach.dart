@@ -15,7 +15,8 @@ enum CoachSpecialization {
       CoachSpecialization.swimming => 'swimming',
       CoachSpecialization.triathlon => 'triathlon',
       CoachSpecialization.nutrition => 'nutrition',
-      CoachSpecialization.strengthAndConditioning => 'strength_and_conditioning',
+      CoachSpecialization.strengthAndConditioning =>
+        'strength_and_conditioning',
       CoachSpecialization.mentalPerformance => 'mental_performance',
     };
   }
@@ -40,7 +41,8 @@ enum CoachSpecialization {
       'swimming' => CoachSpecialization.swimming,
       'triathlon' => CoachSpecialization.triathlon,
       'nutrition' => CoachSpecialization.nutrition,
-      'strength_and_conditioning' => CoachSpecialization.strengthAndConditioning,
+      'strength_and_conditioning' =>
+        CoachSpecialization.strengthAndConditioning,
       'mental_performance' => CoachSpecialization.mentalPerformance,
       _ => null,
     };
@@ -207,4 +209,42 @@ class CoachInfo {
 
   @override
   int get hashCode => userId.hashCode;
+}
+
+/// Athlete search result used when coaches search users by name/email.
+class AthleteSearchResult {
+  final String userId;
+  final String? firstName;
+  final String? lastName;
+  final String? senderName;
+  final String? email;
+
+  const AthleteSearchResult({
+    required this.userId,
+    this.firstName,
+    this.lastName,
+    this.senderName,
+    this.email,
+  });
+
+  /// Best available display name with user-id fallback.
+  String get displayName {
+    final hasFirst = firstName != null && firstName!.trim().isNotEmpty;
+    final hasLast = lastName != null && lastName!.trim().isNotEmpty;
+
+    if (hasFirst && hasLast) {
+      return '${firstName!.trim()} ${lastName!.trim()}';
+    }
+    if (hasFirst) {
+      return firstName!.trim();
+    }
+    if (hasLast) {
+      return lastName!.trim();
+    }
+    if (senderName != null && senderName!.trim().isNotEmpty) {
+      return senderName!.trim();
+    }
+
+    return 'Athlete ${userId.replaceAll('-', '').substring(0, 8).toUpperCase()}';
+  }
 }

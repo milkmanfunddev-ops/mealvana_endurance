@@ -36,13 +36,18 @@ class TimeSlotRow extends StatelessWidget {
   final bool useImperial;
   final bool isLastInHour;
   final ActivityType activityType;
-  final void Function(String foodId, String foodName, String category) onSwapFood;
+  final void Function(String foodId, String foodName, String category)
+  onSwapFood;
   final void Function(String foodId, String category) onDeleteFood;
   final void Function(String foodId, String category, double newQuantity)
-      onUpdateQuantity;
+  onUpdateQuantity;
   final void Function(
-          String foodId, String category, TimeSlot sourceTimeSlot, TimeSlot newTimeSlot)
-      onMoveFoodToTimeSlot;
+    String foodId,
+    String category,
+    TimeSlot sourceTimeSlot,
+    TimeSlot newTimeSlot,
+  )
+  onMoveFoodToTimeSlot;
 
   @override
   Widget build(BuildContext context) {
@@ -89,8 +94,9 @@ class TimeSlotRow extends StatelessWidget {
                       style: AppTextStyles.bodySmall.copyWith(
                         color: timeColor,
                         fontSize: 13,
-                        fontWeight:
-                            hasItems ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: hasItems
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -113,10 +119,9 @@ class TimeSlotRow extends StatelessWidget {
                         Expanded(
                           child: Container(
                             width: 1,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.15),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.15),
                           ),
                         ),
                     ],
@@ -138,36 +143,169 @@ class TimeSlotRow extends StatelessWidget {
   }
 
   Widget _buildFoodItems(BuildContext context) {
+    final entries = _buildSlotEntries();
     return Column(
-      children: assignments.map((assignment) {
-        final food = foodMap[assignment.foodItemId];
-        if (food == null) return const SizedBox.shrink();
-
-        // If adjustedQuantity is set, create a display copy with scaled values
-        final displayFood = _adjustFoodForDisplay(food, assignment);
-
+      children: entries.map((entry) {
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-          child: _buildDraggableFoodItem(context, assignment, displayFood),
+          child: _buildDraggableFoodItem(context, entry),
         );
       }).toList(),
     );
   }
 
+  List<_SlotFoodEntry> _buildSlotEntries() {
+    final entries = <_SlotFoodEntry>[];
+    final liquidIndices = <int>[];
+    final electrolyteIndices = <int>[];
+
+    for (final assignment in assignments) {
+      final sourceFood = foodMap[assignment.foodItemId];
+      if (sourceFood == null) continue;
+
+      final displayFood = _adjustFoodForDisplay(sourceFood, assignment);
+      final subtitle = _buildCarbSubtitle(assignment, sourceFood, displayFood);
+      final entry = _SlotFoodEntry(
+        assignment: assignment,
+        sourceFood: sourceFood,
+        displayFood: displayFood,
+        subtitle: subtitle,
+      );
+      entries.add(entry);
+
+      if (_isHydrationAssignment(assignment, sourceFood)) {
+        liquidIndices.add(entries.length - 1);
+      } else if (_isElectrolyteAssignment(assignment, sourceFood)) {
+        electrolyteIndices.add(entries.length - 1);
+      }
+    }
+
+    // Pair electrolytes with liquids in the same slot for a cleaner timeline.
+    if (liquidIndices.isNotEmpty && electrolyteIndices.isNotEmpty) {
+      final electrolyteSummary = _buildElectrolyteSummary(
+        electrolyteIndices.map((idx) => entries[idx]).toList(),
+      );
+      if (electrolyteSummary.isNotEmpty) {
+        final firstLiquidIdx = liquidIndices.first;
+        final firstLiquid = entries[firstLiquidIdx];
+        entries[firstLiquidIdx] = firstLiquid.copyWith(
+          subtitle: _joinSubtitles(
+            firstLiquid.subtitle,
+            '+ $electrolyteSummary',
+          ),
+        );
+      }
+
+      for (final idx in electrolyteIndices) {
+        entries[idx] = entries[idx].copyWith(isSecondary: true);
+      }
+    }
+
+    return entries;
+  }
+
+  bool _isHydrationAssignment(
+    TimeSlotAssignment assignment,
+    FoodItemData food,
+  ) {
+    final timing = assignment.timingCategory ?? food.timingCategory;
+    return timing == TimingCategory.sipThroughout ||
+        timing == TimingCategory.fuelDrink ||
+        food.isDrink;
+  }
+
+  bool _isElectrolyteAssignment(
+    TimeSlotAssignment assignment,
+    FoodItemData food,
+  ) {
+    final timing = assignment.timingCategory ?? food.timingCategory;
+    return timing == TimingCategory.electrolyte;
+  }
+
+  String _buildElectrolyteSummary(List<_SlotFoodEntry> electrolyteEntries) {
+    if (electrolyteEntries.isEmpty) return '';
+    final parts = electrolyteEntries.map((entry) {
+      final qty = _formatQuantity(_parseQuantity(entry.displayFood.quantity));
+      final simpleName = _simplifyName(
+        entry.displayFood.displayName ?? entry.displayFood.name,
+      );
+      return '$qty ${_pluralize(simpleName, _parseQuantity(entry.displayFood.quantity))}';
+    }).toList();
+    return parts.join(' + ');
+  }
+
+  bool _isFuelAssignment(TimeSlotAssignment assignment, FoodItemData food) {
+    final timing = assignment.timingCategory ?? food.timingCategory;
+    return timing == TimingCategory.fuelDrink ||
+        timing == TimingCategory.quickConsume;
+  }
+
+  String? _buildCarbSubtitle(
+    TimeSlotAssignment assignment,
+    FoodItemData sourceFood,
+    FoodItemData displayFood,
+  ) {
+    final isHydrationOrFuel =
+        _isHydrationAssignment(assignment, sourceFood) ||
+        _isFuelAssignment(assignment, sourceFood);
+    if (!isHydrationOrFuel) return null;
+
+    final carbs = displayFood.nutritionalInfo?.carbs ?? 0;
+    if (carbs <= 0) return null;
+    return '$carbs g carbs';
+  }
+
+  String? _joinSubtitles(String? a, String? b) {
+    if (a == null || a.isEmpty) return b;
+    if (b == null || b.isEmpty) return a;
+    return '$a • $b';
+  }
+
+  double _parseQuantity(String quantity) {
+    final match = RegExp(r'^([\d.]+)').firstMatch(quantity);
+    return match != null ? (double.tryParse(match.group(1)!) ?? 1.0) : 1.0;
+  }
+
+  String _formatQuantity(double value) {
+    if ((value - value.roundToDouble()).abs() < 0.01) {
+      return value.round().toString();
+    }
+    if ((value * 10 - (value * 10).round()).abs() < 0.01) {
+      return value.toStringAsFixed(1);
+    }
+    return value.toStringAsFixed(2);
+  }
+
+  String _simplifyName(String raw) {
+    var simplified = raw.replaceAll(RegExp(r'\s*\([^)]*\)'), '');
+    simplified = simplified.trim();
+    return simplified.isEmpty ? raw : simplified;
+  }
+
+  String _pluralize(String name, double quantity) {
+    if (quantity == 1) return name;
+    if (name.endsWith('s')) return name;
+    return '${name}s';
+  }
+
   /// Creates a display copy of FoodItemData with adjusted quantity and scaled nutrition.
-  FoodItemData _adjustFoodForDisplay(FoodItemData food, TimeSlotAssignment assignment) {
+  FoodItemData _adjustFoodForDisplay(
+    FoodItemData food,
+    TimeSlotAssignment assignment,
+  ) {
     if (assignment.adjustedQuantity == null) return food;
 
     final originalQty = ByHourApportionmentService.parseQuantity(food);
     if (originalQty <= 0) return food;
 
-    final adjustedQty = assignment.adjustedQuantity!;
+    final adjustedQty = _roundFriendlyQuantity(
+      assignment.adjustedQuantity!,
+      isIndivisible: food.isIndivisible,
+    );
     final scale = adjustedQty / originalQty;
 
     // Build adjusted quantity string
-    final qtyStr = adjustedQty == adjustedQty.roundToDouble() && adjustedQty >= 1
-        ? adjustedQty.toInt().toString()
-        : adjustedQty.toStringAsFixed(1);
+    final qtyStr = _formatQuantity(adjustedQty);
 
     // Extract the unit part from the original quantity string
     final unitMatch = RegExp(r'^[\d.]+\s*(.*)$').firstMatch(food.quantity);
@@ -204,24 +342,29 @@ class TimeSlotRow extends StatelessWidget {
     );
   }
 
-  Widget _buildDraggableFoodItem(
-    BuildContext context,
-    TimeSlotAssignment assignment,
-    FoodItemData food,
-  ) {
+  Widget _buildDraggableFoodItem(BuildContext context, _SlotFoodEntry entry) {
     final child = _TimeSlotFoodItem(
-      food: food,
-      assignment: assignment,
+      sourceFood: entry.sourceFood,
+      displayFood: entry.displayFood,
+      assignment: entry.assignment,
       category: category,
       sectionColor: sectionColor,
       useImperial: useImperial,
+      subtitle: entry.subtitle,
       onSwapFood: onSwapFood,
       onDeleteFood: onDeleteFood,
       onUpdateQuantity: onUpdateQuantity,
     );
 
+    if (entry.isSecondary) {
+      return Padding(
+        padding: const EdgeInsets.only(left: AppSpacing.lg),
+        child: Opacity(opacity: 0.92, child: child),
+      );
+    }
+
     return LongPressDraggable<TimeSlotAssignment>(
-      data: assignment,
+      data: entry.assignment,
       delay: const Duration(milliseconds: 300),
       hapticFeedbackOnStart: true,
       feedback: Material(
@@ -235,10 +378,7 @@ class TimeSlotRow extends StatelessWidget {
           ),
         ),
       ),
-      childWhenDragging: Opacity(
-        opacity: 0.3,
-        child: child,
-      ),
+      childWhenDragging: Opacity(opacity: 0.3, child: child),
       child: Row(
         children: [
           // 6-dot drag handle
@@ -247,16 +387,27 @@ class TimeSlotRow extends StatelessWidget {
             child: Icon(
               Icons.drag_indicator,
               size: 16,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurfaceVariant
-                  .withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
           ),
           Expanded(child: child),
         ],
       ),
     );
+  }
+
+  double _roundFriendlyQuantity(double value, {required bool isIndivisible}) {
+    if (value <= 0) return isIndivisible ? 1 : 0.5;
+    if (isIndivisible) return value.round().clamp(1, 999).toDouble();
+
+    final half = (value * 2).round() / 2;
+    final third = (value * 3).round() / 3;
+    final halfDiff = (value - half).abs();
+    final thirdDiff = (value - third).abs();
+    final rounded = thirdDiff + 0.08 < halfDiff ? third : half;
+    return (rounded * 100).round() / 100;
   }
 }
 
@@ -266,72 +417,98 @@ class TimeSlotRow extends StatelessWidget {
 /// and wraps DismissibleFoodItem for swipe-to-delete/swap functionality.
 class _TimeSlotFoodItem extends StatelessWidget {
   const _TimeSlotFoodItem({
-    required this.food,
+    required this.sourceFood,
+    required this.displayFood,
     required this.assignment,
     required this.category,
     required this.sectionColor,
     required this.useImperial,
+    this.subtitle,
     required this.onSwapFood,
     required this.onDeleteFood,
     required this.onUpdateQuantity,
   });
 
-  final FoodItemData food;
+  final FoodItemData sourceFood;
+  final FoodItemData displayFood;
   final TimeSlotAssignment assignment;
   final String category;
   final Color sectionColor;
   final bool useImperial;
-  final void Function(String foodId, String foodName, String category) onSwapFood;
+  final String? subtitle;
+  final void Function(String foodId, String foodName, String category)
+  onSwapFood;
   final void Function(String foodId, String category) onDeleteFood;
   final void Function(String foodId, String category, double newQuantity)
-      onUpdateQuantity;
+  onUpdateQuantity;
 
   @override
   Widget build(BuildContext context) {
-    final isFuelDrink = assignment.timingCategory == TimingCategory.fuelDrink;
-    final carbGrams = food.nutritionalInfo?.carbs ?? 0;
+    final currentSlotQty =
+        assignment.adjustedQuantity ??
+        ByHourApportionmentService.parseQuantity(sourceFood);
+    final originalTotalQty = ByHourApportionmentService.parseQuantity(
+      sourceFood,
+    );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: DismissibleFoodItem(
-                food: food,
-                category: category,
-                onSwap: () => onSwapFood(food.id, food.name, category),
-                onDelete: () => onDeleteFood(food.id, category),
-                onQuantityChange: (newQuantity) =>
-                    onUpdateQuantity(food.id, category, newQuantity),
-                useImperial: useImperial,
-              ),
-            ),
-            // Carb badge for fuel drinks (sports drink etc.)
-            if (isFuelDrink && carbGrams > 0) ...[
-              const SizedBox(width: AppSpacing.xs),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: sectionColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${carbGrams}g carbs',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: sectionColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ],
+    return DismissibleFoodItem(
+      food: displayFood,
+      category: category,
+      onSwap: () => onSwapFood(sourceFood.id, sourceFood.name, category),
+      onDelete: () => onDeleteFood(sourceFood.id, category),
+      subtitleOverride: subtitle,
+      onQuantityChange: (newSlotQuantity) {
+        final delta = newSlotQuantity - currentSlotQty;
+        final rawTotal = originalTotalQty + delta;
+        final minQty = sourceFood.isIndivisible ? 1.0 : 0.5;
+        final bounded = rawTotal < minQty ? minQty : rawTotal;
+        final normalized = sourceFood.isIndivisible
+            ? bounded.round().toDouble()
+            : _roundFriendlyQuantity(bounded);
+        onUpdateQuantity(sourceFood.id, category, normalized);
+      },
+      useImperial: useImperial,
+    );
+  }
+
+  double _roundFriendlyQuantity(double value) {
+    final half = (value * 2).round() / 2;
+    final third = (value * 3).round() / 3;
+    final halfDiff = (value - half).abs();
+    final thirdDiff = (value - third).abs();
+    final rounded = thirdDiff + 0.08 < halfDiff ? third : half;
+    return (rounded * 100).round() / 100;
+  }
+}
+
+class _SlotFoodEntry {
+  const _SlotFoodEntry({
+    required this.assignment,
+    required this.sourceFood,
+    required this.displayFood,
+    this.subtitle,
+    this.isSecondary = false,
+  });
+
+  final TimeSlotAssignment assignment;
+  final FoodItemData sourceFood;
+  final FoodItemData displayFood;
+  final String? subtitle;
+  final bool isSecondary;
+
+  _SlotFoodEntry copyWith({
+    TimeSlotAssignment? assignment,
+    FoodItemData? sourceFood,
+    FoodItemData? displayFood,
+    String? subtitle,
+    bool? isSecondary,
+  }) {
+    return _SlotFoodEntry(
+      assignment: assignment ?? this.assignment,
+      sourceFood: sourceFood ?? this.sourceFood,
+      displayFood: displayFood ?? this.displayFood,
+      subtitle: subtitle ?? this.subtitle,
+      isSecondary: isSecondary ?? this.isSecondary,
     );
   }
 }

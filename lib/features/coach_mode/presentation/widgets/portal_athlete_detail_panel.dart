@@ -10,22 +10,16 @@ import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
-import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/athlete_detail_controller.dart';
 import '../screens/coach_chat_screen.dart';
-import 'create_activity_dialog.dart';
-import 'create_event_dialog.dart';
 import 'portal_athlete_profile_form.dart';
 
 /// Right panel showing athlete details within the coach portal
 class PortalAthleteDetailPanel extends ConsumerStatefulWidget {
   final String relationshipId;
 
-  const PortalAthleteDetailPanel({
-    super.key,
-    required this.relationshipId,
-  });
+  const PortalAthleteDetailPanel({super.key, required this.relationshipId});
 
   @override
   ConsumerState<PortalAthleteDetailPanel> createState() =>
@@ -61,7 +55,11 @@ class _PortalAthleteDetailPanelState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.dragonfruit),
+            const Icon(
+              Icons.error_outline,
+              size: 48,
+              color: AppColors.dragonfruit,
+            ),
             const SizedBox(height: 16),
             Text(
               error,
@@ -70,11 +68,16 @@ class _PortalAthleteDetailPanelState
             ),
             const SizedBox(height: 16),
             TextButton.icon(
-              style: TextButton.styleFrom(foregroundColor: AppColors.electrolyte),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.electrolyte,
+              ),
               onPressed: () {
                 ref
-                    .read(athleteDetailControllerProvider(widget.relationshipId)
-                        .notifier)
+                    .read(
+                      athleteDetailControllerProvider(
+                        widget.relationshipId,
+                      ).notifier,
+                    )
                     .refresh();
               },
               icon: const Icon(Icons.refresh),
@@ -108,7 +111,10 @@ class _PortalAthleteDetailPanelState
                   icon: const Icon(Icons.calendar_today, size: 18),
                   text: 'Events (${state.events.length})',
                 ),
-                const Tab(icon: Icon(Icons.restaurant, size: 18), text: 'Carb Loading'),
+                const Tab(
+                  icon: Icon(Icons.restaurant, size: 18),
+                  text: 'Carb Loading',
+                ),
                 Tab(
                   icon: const Icon(Icons.directions_run, size: 18),
                   text: 'Activities (${state.activities.length})',
@@ -143,7 +149,8 @@ class _PortalAthleteDetailPanelState
     if (athleteProfile != null) {
       athleteName = athleteProfile.displayName;
     } else {
-      athleteName = relationship.athleteDisplayName ??
+      athleteName =
+          relationship.athleteDisplayName ??
           'Athlete ${relationship.athleteUserId.substring(0, 8)}...';
     }
 
@@ -188,8 +195,11 @@ class _PortalAthleteDetailPanelState
             tooltip: 'Refresh athlete data',
             onPressed: () {
               ref
-                  .read(athleteDetailControllerProvider(widget.relationshipId)
-                      .notifier)
+                  .read(
+                    athleteDetailControllerProvider(
+                      widget.relationshipId,
+                    ).notifier,
+                  )
                   .refresh();
             },
           ),
@@ -258,7 +268,11 @@ class _PortalAthleteDetailPanelState
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.event, color: AppColors.electrolyte, size: 20),
+                    const Icon(
+                      Icons.event,
+                      color: AppColors.electrolyte,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -297,7 +311,7 @@ class _PortalAthleteDetailPanelState
             mini: true,
             backgroundColor: AppColors.electrolyte,
             foregroundColor: AppColors.blackberryDark,
-            onPressed: () => _showCreateEventDialog(state),
+            onPressed: () => _navigateToCreateEvent(state),
             child: const Icon(Icons.add),
           ),
         ),
@@ -305,33 +319,18 @@ class _PortalAthleteDetailPanelState
     );
   }
 
-  Future<void> _showCreateEventDialog(AthleteDetailState state) async {
-    final result = await showDialog<CreateEventResult>(
-      context: context,
-      builder: (_) => const CreateEventDialog(),
+  Future<void> _navigateToCreateEvent(AthleteDetailState state) async {
+    final result = await context.push(
+      '/events/create',
+      extra: {'forUserId': state.relationship.athleteUserId},
     );
-    if (result == null) return;
+    if (!mounted) return;
 
-    try {
-      await ref.read(coachServiceProvider).createEventForAthlete(
-            athleteUserId: state.relationship.athleteUserId,
-            eventName: result.eventName,
-            eventType: result.eventType,
-            eventDate: result.eventDate,
-            eventSubtype: result.eventSubtype,
-            location: result.location,
-            goalTimeMinutes: result.goalTimeMinutes,
-          );
-      if (mounted) {
-        MealvanaSnackbar.showSuccess(context, 'Event created');
-        ref
-            .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
-            .refresh();
-      }
-    } catch (e) {
-      if (mounted) {
-        MealvanaSnackbar.showError(context, 'Failed to create event');
-      }
+    if (result is Map && result['success'] == true) {
+      MealvanaSnackbar.showSuccess(context, 'Event created');
+      ref
+          .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
+          .refresh();
     }
   }
 
@@ -360,7 +359,11 @@ class _PortalAthleteDetailPanelState
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.restaurant_menu, color: AppColors.electrolyte, size: 20),
+                    const Icon(
+                      Icons.restaurant_menu,
+                      color: AppColors.electrolyte,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -385,7 +388,9 @@ class _PortalAthleteDetailPanelState
                     ),
                     Icon(
                       plan.isActive ? Icons.check_circle : Icons.pause_circle,
-                      color: plan.isActive ? AppColors.electrolyte : AppColors.inactive,
+                      color: plan.isActive
+                          ? AppColors.electrolyte
+                          : AppColors.inactive,
                       size: 20,
                     ),
                   ],
@@ -419,10 +424,11 @@ class _PortalAthleteDetailPanelState
     final calendarMode = ref.watch(calendarViewProvider);
     final dayIndicators = _buildDayIndicatorsMap(state);
 
-    final selectedDateActivities = state.activities.where((activity) {
-      return _isSameDay(activity.scheduledDateTime, _selectedDate);
-    }).toList()
-      ..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
+    final selectedDateActivities =
+        state.activities.where((activity) {
+            return _isSameDay(activity.scheduledDateTime, _selectedDate);
+          }).toList()
+          ..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
 
     return Stack(
       children: [
@@ -480,7 +486,7 @@ class _PortalAthleteDetailPanelState
             mini: true,
             backgroundColor: AppColors.electrolyte,
             foregroundColor: AppColors.blackberryDark,
-            onPressed: () => _showCreateActivityDialog(state),
+            onPressed: () => _navigateToCreateActivity(state),
             child: const Icon(Icons.add),
           ),
         ),
@@ -488,42 +494,28 @@ class _PortalAthleteDetailPanelState
     );
   }
 
-  Future<void> _showCreateActivityDialog(AthleteDetailState state) async {
-    final result = await showDialog<CreateActivityResult>(
-      context: context,
-      builder: (_) => CreateActivityDialog(initialDate: _selectedDate),
+  Future<void> _navigateToCreateActivity(AthleteDetailState state) async {
+    await context.push(
+      '/distancepacegut',
+      extra: {
+        'forUserId': state.relationship.athleteUserId,
+        'initialDate': _selectedDate,
+      },
     );
-    if (result == null) return;
+    if (!mounted) return;
 
-    try {
-      await ref.read(coachServiceProvider).createActivityForAthlete(
-            athleteUserId: state.relationship.athleteUserId,
-            title: result.title,
-            activityType: result.activityType,
-            scheduledDateTime: result.scheduledDateTime,
-            durationMinutes: result.durationMinutes,
-            distanceMiles: result.distanceMiles,
-          );
-      if (mounted) {
-        MealvanaSnackbar.showSuccess(context, 'Activity created');
-        ref
-            .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
-            .refresh();
-      }
-    } catch (e) {
-      if (mounted) {
-        MealvanaSnackbar.showError(context, 'Failed to create activity');
-      }
-    }
+    ref
+        .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
+        .refresh();
   }
 
   Widget _buildActivityItem(Activity activity) {
     return GestureDetector(
       onTap: () {
-        context.push('/plan', extra: {
-          'activityId': activity.id,
-          'isCoachView': true,
-        });
+        context.push(
+          '/plan',
+          extra: {'activityId': activity.id, 'isCoachView': true},
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
@@ -535,7 +527,11 @@ class _PortalAthleteDetailPanelState
         ),
         child: Row(
           children: [
-            const Icon(Icons.directions_run, color: AppColors.electrolyte, size: 20),
+            const Icon(
+              Icons.directions_run,
+              color: AppColors.electrolyte,
+              size: 20,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -558,7 +554,11 @@ class _PortalAthleteDetailPanelState
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textDarkSecondary, size: 20),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textDarkSecondary,
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -567,13 +567,12 @@ class _PortalAthleteDetailPanelState
 
   Widget _buildChatTab(AthleteDetailState state) {
     // Embed the chat screen inline within the portal
-    return CoachChatScreen(
-      relationshipId: widget.relationshipId,
-    );
+    return CoachChatScreen(relationshipId: widget.relationshipId);
   }
 
   Map<DateTime, Set<DayIndicatorType>> _buildDayIndicatorsMap(
-      AthleteDetailState state) {
+    AthleteDetailState state,
+  ) {
     final map = <DateTime, Set<DayIndicatorType>>{};
 
     for (final activity in state.activities) {

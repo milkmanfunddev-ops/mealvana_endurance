@@ -20,6 +20,7 @@ class ByHourApportionmentService {
 
   /// Friendly increment for sip-throughout liquids.
   static const double _sipIncrement = 0.5;
+  static const double _quickIncrement = 0.5;
 
   /// Generate by-hour assignments for a list of food items.
   ///
@@ -127,7 +128,7 @@ class ByHourApportionmentService {
     }
 
     // Phase 3: QUICK_CONSUME — gels/chews after quiet zone, spaced by gut training
-    // Place 1 whole unit per time slot, up to total quantity per food
+    // Distribute by time (not front-loading by quantity) so carbs are spread across the effort.
     if (quickItems.isNotEmpty) {
       final interval = _gelIntervalMinutes(gutTraining);
       final endCutoff = durationMinutes - _endCutoffMinutes;
@@ -137,32 +138,38 @@ class ByHourApportionmentService {
       for (int m = _quietZoneMinutes; m <= endCutoff; m += interval) {
         placementMinutes.add(m);
       }
+      final trimmedPlacementMinutes = _omitLastAllowedPlacement(placementMinutes);
 
-      if (placementMinutes.isNotEmpty) {
-        // Track remaining quantity per food
-        final remainingQty = <String, double>{};
+      if (trimmedPlacementMinutes.isNotEmpty) {
         for (final food in quickItems) {
-          final qty = _parseQuantity(food);
-          remainingQty[food.id] = qty < 1 ? 1.0 : qty;
-        }
-
-        // Round-robin across gel items, placing 1 unit each
-        for (int i = 0; i < placementMinutes.length; i++) {
-          final food = quickItems[i % quickItems.length];
-          final remaining = remainingQty[food.id] ?? 0;
-          if (remaining <= 0) continue;
-
-          final minute = placementMinutes[i];
-          final slot = _minuteToTimeSlot(minute);
-          assignments.add(
-            TimeSlotAssignment(
-              foodItemId: food.id,
-              timeSlot: slot,
-              adjustedQuantity: 1.0,
-              timingCategory: TimingCategory.quickConsume,
-            ),
+          final originalQty = _parseQuantity(food);
+          final placementCount = _eventPlacementCount(
+            originalQty: originalQty,
+            availableSlots: trimmedPlacementMinutes.length,
+            minIncrement: _quickIncrement,
+            isIndivisible: food.isIndivisible,
           );
-          remainingQty[food.id] = remaining - 1;
+          final selectedMinutes = _selectEvenlySpacedMinutes(
+            trimmedPlacementMinutes,
+            placementCount,
+          );
+          final splitQuantities = food.isIndivisible
+              ? List<double>.filled(placementCount, 1.0)
+              : _splitSipQuantity(
+                  originalQty: originalQty,
+                  placementCount: placementCount,
+                );
+
+          for (int i = 0; i < selectedMinutes.length; i++) {
+            assignments.add(
+              TimeSlotAssignment(
+                foodItemId: food.id,
+                timeSlot: _minuteToTimeSlot(selectedMinutes[i]),
+                adjustedQuantity: splitQuantities[i],
+                timingCategory: TimingCategory.quickConsume,
+              ),
+            );
+          }
         }
       }
     }
@@ -263,7 +270,10 @@ class ByHourApportionmentService {
         final scale = totalAssigned > 0 ? currentQty / totalAssigned : 1.0;
         updatedAssignments = updatedAssignments.map((a) {
           if (a.foodItemId == food.id && a.adjustedQuantity != null) {
-            return a.copyWith(adjustedQuantity: a.adjustedQuantity! * scale);
+            final scaledQty = a.adjustedQuantity! * scale;
+            return a.copyWith(
+              adjustedQuantity: _normalizeAssignmentQuantity(food, scaledQty),
+            );
           }
           return a;
         }).toList();
@@ -381,27 +391,41 @@ class ByHourApportionmentService {
         }
 
       case TimingCategory.quickConsume:
-        // Place 1 whole unit per time slot, up to total quantity
+        // Distribute by time across available slots to avoid front-loading.
         final interval = _gelIntervalMinutes(gutTraining);
         final endCutoff = durationMinutes - _endCutoffMinutes;
         final placements = <int>[];
         for (int m = _quietZoneMinutes; m <= endCutoff; m += interval) {
           placements.add(m);
         }
-        if (placements.isNotEmpty) {
-          final wholeQty = originalQty < 1 ? 1.0 : originalQty;
-          var remaining = wholeQty;
-          for (final m in placements) {
-            if (remaining <= 0) break;
+        final trimmedPlacements = _omitLastAllowedPlacement(placements);
+        if (trimmedPlacements.isNotEmpty) {
+          final placementCount = _eventPlacementCount(
+            originalQty: originalQty,
+            availableSlots: trimmedPlacements.length,
+            minIncrement: _quickIncrement,
+            isIndivisible: food.isIndivisible,
+          );
+          final selectedPlacements = _selectEvenlySpacedMinutes(
+            trimmedPlacements,
+            placementCount,
+          );
+          final splitQuantities = food.isIndivisible
+              ? List<double>.filled(placementCount, 1.0)
+              : _splitSipQuantity(
+                  originalQty: originalQty,
+                  placementCount: placementCount,
+                );
+
+          for (int i = 0; i < selectedPlacements.length; i++) {
             assignments.add(
               TimeSlotAssignment(
                 foodItemId: food.id,
-                timeSlot: _minuteToTimeSlot(m),
-                adjustedQuantity: 1.0,
+                timeSlot: _minuteToTimeSlot(selectedPlacements[i]),
+                adjustedQuantity: splitQuantities[i],
                 timingCategory: category,
               ),
             );
-            remaining -= 1;
           }
         }
 
@@ -589,7 +613,93 @@ class ByHourApportionmentService {
     return quantities;
   }
 
-  static double _roundQuantity(double value) => (value * 10).round() / 10;
+  static int _eventPlacementCount({
+    required double originalQty,
+    required int availableSlots,
+    required double minIncrement,
+    required bool isIndivisible,
+  }) {
+    if (availableSlots <= 0) return 0;
+    final qty = originalQty < 1 ? 1.0 : originalQty;
+    if (isIndivisible) {
+      return qty.round().clamp(1, availableSlots);
+    }
+
+    var placementCount = availableSlots;
+    final perSlotQty = qty / placementCount;
+    if (perSlotQty < minIncrement) {
+      placementCount = (qty / minIncrement).floor().clamp(1, availableSlots);
+    }
+    return placementCount;
+  }
+
+  static List<int> _selectEvenlySpacedMinutes(List<int> minutes, int count) {
+    if (count <= 0 || minutes.isEmpty) return const [];
+    if (count >= minutes.length) return List<int>.from(minutes);
+    if (count == 1) return [minutes.first];
+
+    final selectedIndices = <int>[];
+    final used = <int>{};
+    final maxIndex = minutes.length - 1;
+
+    for (int i = 0; i < count; i++) {
+      var idx = ((i * maxIndex) / (count - 1)).round();
+      if (!used.contains(idx)) {
+        used.add(idx);
+        selectedIndices.add(idx);
+        continue;
+      }
+
+      // Resolve collisions from rounding by expanding outward.
+      var offset = 1;
+      var placed = false;
+      while (!placed) {
+        final left = idx - offset;
+        final right = idx + offset;
+        if (left >= 0 && !used.contains(left)) {
+          used.add(left);
+          selectedIndices.add(left);
+          placed = true;
+        } else if (right <= maxIndex && !used.contains(right)) {
+          used.add(right);
+          selectedIndices.add(right);
+          placed = true;
+        } else {
+          offset++;
+        }
+      }
+    }
+
+    selectedIndices.sort();
+    return selectedIndices.map((idx) => minutes[idx]).toList();
+  }
+
+  static List<int> _omitLastAllowedPlacement(List<int> placements) {
+    if (placements.length <= 1) return placements;
+    return placements.sublist(0, placements.length - 1);
+  }
+
+  static double _normalizeAssignmentQuantity(FoodItemData food, double value) {
+    if (food.isIndivisible) {
+      return value.round().clamp(1, 999).toDouble();
+    }
+    return _roundToFriendlyIncrement(value);
+  }
+
+  static double _roundToFriendlyIncrement(double value) {
+    if (value <= 0) return 0;
+
+    final halfStep = (value / _sipIncrement).round() * _sipIncrement;
+    final thirdStep = (value * 3).round() / 3;
+    final halfDiff = (value - halfStep).abs();
+    final thirdDiff = (value - thirdStep).abs();
+
+    // Prefer halves by default; use thirds only when meaningfully closer.
+    final rounded = thirdDiff + 0.08 < halfDiff ? thirdStep : halfStep;
+    return _roundQuantity(rounded);
+  }
+
+  static double _roundQuantity(double value) => (value * 100).round() / 100;
 
   static double _parseQuantity(FoodItemData food) {
     final match = RegExp(r'^([\d.]+)').firstMatch(food.quantity);

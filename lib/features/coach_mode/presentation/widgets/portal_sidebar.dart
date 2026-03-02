@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../application/coach_service.dart';
+import '../../domain/coach.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/coach_dashboard_controller.dart';
 import '../providers/coach_portal_controller.dart';
@@ -35,8 +40,10 @@ class PortalSidebar extends ConsumerWidget {
               loading: () => const Center(
                 child: CircularProgressIndicator(color: AppColors.electrolyte),
               ),
-              error: (error, _) => _buildErrorView(context, error.toString(), ref),
-              data: (state) => _buildAthletesList(context, ref, state, portalState),
+              error: (error, _) =>
+                  _buildErrorView(context, error.toString(), ref),
+              data: (state) =>
+                  _buildAthletesList(context, ref, state, portalState),
             ),
           ),
 
@@ -61,23 +68,16 @@ class PortalSidebar extends ConsumerWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-      child: const Row(
-        children: [
-          Icon(
-            Icons.sports,
-            color: AppColors.electrolyte,
-            size: 28,
+      child: const Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'Coach Portal',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.cream,
           ),
-          SizedBox(width: 12),
-          Text(
-            'Coach Portal',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.cream,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -129,12 +129,19 @@ class PortalSidebar extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: AppColors.dragonfruit, size: 32),
+          const Icon(
+            Icons.error_outline,
+            color: AppColors.dragonfruit,
+            size: 32,
+          ),
           const SizedBox(height: 8),
           Text(
             error,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
+            style: const TextStyle(
+              color: AppColors.textDarkSecondary,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 12),
           TextButton.icon(
@@ -190,6 +197,26 @@ class PortalSidebar extends ConsumerWidget {
         ),
 
         const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.electrolyte,
+                side: const BorderSide(color: AppColors.blackberryLight),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onPressed: () => _showAthleteSearchDialog(context, ref, state),
+              icon: const Icon(Icons.person_search, size: 16),
+              label: const Text('Add Athlete'),
+            ),
+          ),
+        ),
 
         // Active athletes
         if (state.activeAthletes.isEmpty)
@@ -204,16 +231,17 @@ class PortalSidebar extends ConsumerWidget {
             ),
           )
         else
-          ...state.activeAthletes.map((athlete) => _AthleteListItem(
-                relationship: athlete,
-                isSelected:
-                    portalState.selectedRelationshipId == athlete.id,
-                onTap: () {
-                  ref
-                      .read(coachPortalControllerProvider.notifier)
-                      .selectAthlete(athlete.id);
-                },
-              )),
+          ...state.activeAthletes.map(
+            (athlete) => _AthleteListItem(
+              relationship: athlete,
+              isSelected: portalState.selectedRelationshipId == athlete.id,
+              onTap: () {
+                ref
+                    .read(coachPortalControllerProvider.notifier)
+                    .selectAthlete(athlete.id);
+              },
+            ),
+          ),
 
         // Pending requests section
         if (state.hasPendingRequests) ...[
@@ -230,21 +258,424 @@ class PortalSidebar extends ConsumerWidget {
               ),
             ),
           ),
-          ...state.pendingRequests.map((request) => _PendingRequestItem(
-                relationship: request,
-                onAccept: () {
-                  ref
-                      .read(coachDashboardControllerProvider.notifier)
-                      .acceptRequest(request.id);
-                },
-                onDecline: () {
-                  ref
-                      .read(coachDashboardControllerProvider.notifier)
-                      .declineRequest(request.id);
-                },
-              )),
+          ...state.pendingRequests.map(
+            (request) => _PendingRequestItem(
+              relationship: request,
+              onAccept: () {
+                ref
+                    .read(coachDashboardControllerProvider.notifier)
+                    .acceptRequest(request.id);
+              },
+              onDecline: () {
+                ref
+                    .read(coachDashboardControllerProvider.notifier)
+                    .declineRequest(request.id);
+              },
+            ),
+          ),
         ],
       ],
+    );
+  }
+
+  Future<void> _showAthleteSearchDialog(
+    BuildContext context,
+    WidgetRef ref,
+    CoachDashboardState state,
+  ) async {
+    final connectedAthleteIds = state.activeAthletes
+        .map((relationship) => relationship.athleteUserId)
+        .toSet();
+    final pendingAthleteIds = state.pendingRequests
+        .map((relationship) => relationship.athleteUserId)
+        .toSet();
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => _AthleteSearchDialog(
+        connectedAthleteIds: connectedAthleteIds,
+        pendingAthleteIds: pendingAthleteIds,
+        onInviteSuccess: () {
+          ref.read(coachDashboardControllerProvider.notifier).refresh();
+        },
+      ),
+    );
+  }
+}
+
+class _AthleteSearchDialog extends ConsumerStatefulWidget {
+  final Set<String> connectedAthleteIds;
+  final Set<String> pendingAthleteIds;
+  final VoidCallback onInviteSuccess;
+
+  const _AthleteSearchDialog({
+    required this.connectedAthleteIds,
+    required this.pendingAthleteIds,
+    required this.onInviteSuccess,
+  });
+
+  @override
+  ConsumerState<_AthleteSearchDialog> createState() =>
+      _AthleteSearchDialogState();
+}
+
+class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  final Set<String> _invitingUserIds = <String>{};
+  Timer? _debounce;
+
+  List<AthleteSearchResult> _results = const [];
+  bool _isSearching = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchInputChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchInputChanged);
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchInputChanged() {
+    _debounce?.cancel();
+    final query = _searchController.text.trim();
+
+    if (query.length < 2) {
+      setState(() {
+        _results = const [];
+        _isSearching = false;
+        _error = null;
+      });
+      return;
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      _search(query);
+    });
+  }
+
+  Future<void> _search(String query) async {
+    setState(() {
+      _isSearching = true;
+      _error = null;
+    });
+
+    try {
+      final results = await ref
+          .read(coachServiceProvider)
+          .searchAthletesByNameOrEmail(query, limit: 25);
+
+      if (!mounted) return;
+      setState(() {
+        _results = results;
+        _isSearching = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSearching = false;
+        _error = 'Search failed. Please try again.';
+      });
+    }
+  }
+
+  Future<void> _inviteAthlete(AthleteSearchResult athlete) async {
+    if (_invitingUserIds.contains(athlete.userId)) return;
+
+    setState(() {
+      _invitingUserIds.add(athlete.userId);
+    });
+
+    try {
+      final relationship = await ref
+          .read(coachServiceProvider)
+          .inviteAthlete(athleteUserId: athlete.userId);
+      if (!mounted) return;
+
+      if (relationship != null) {
+        MealvanaSnackbar.showSuccess(
+          context,
+          'Invite sent to ${athlete.displayName}',
+        );
+        widget.onInviteSuccess();
+        Navigator.of(context).pop();
+      } else {
+        MealvanaSnackbar.showError(
+          context,
+          'Unable to send invite. This user may already be connected.',
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      MealvanaSnackbar.showError(
+        context,
+        'Failed to send invite. Please try again.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _invitingUserIds.remove(athlete.userId);
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.blackberry,
+      titlePadding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
+      contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      title: Row(
+        children: [
+          const Expanded(
+            child: Text(
+              'Add Athlete',
+              style: TextStyle(
+                color: AppColors.cream,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, color: AppColors.textDarkSecondary),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 460,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Search by athlete name or email',
+              style: TextStyle(
+                color: AppColors.textDarkSecondary,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _searchController,
+              autofocus: true,
+              style: const TextStyle(color: AppColors.cream, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Start typing a name or email...',
+                hintStyle: TextStyle(
+                  color: AppColors.textDarkSecondary.withOpacity(0.7),
+                ),
+                prefixIcon: const Icon(Icons.search, color: AppColors.inactive),
+                suffixIcon: _isSearching
+                    ? const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.electrolyte,
+                          ),
+                        ),
+                      )
+                    : null,
+                filled: true,
+                fillColor: AppColors.blackberryDark,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: AppColors.blackberryLight,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                    color: AppColors.blackberryLight,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: AppColors.electrolyte),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(
+                    color: AppColors.dragonfruit,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            Flexible(child: _buildResultsView()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultsView() {
+    final query = _searchController.text.trim();
+    if (query.length < 2) {
+      return const Center(
+        child: Text(
+          'Type at least 2 characters to search.',
+          style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
+        ),
+      );
+    }
+
+    if (_isSearching && _results.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.electrolyte),
+      );
+    }
+
+    if (_results.isEmpty) {
+      return const Center(
+        child: Text(
+          'No users found.',
+          style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      itemCount: _results.length,
+      separatorBuilder: (_, __) =>
+          const Divider(color: AppColors.blackberryLight, height: 1),
+      itemBuilder: (context, index) {
+        final athlete = _results[index];
+        final isConnected = widget.connectedAthleteIds.contains(athlete.userId);
+        final isPending = widget.pendingAthleteIds.contains(athlete.userId);
+        final isInviting = _invitingUserIds.contains(athlete.userId);
+        final subtitle = athlete.email?.trim().isNotEmpty == true
+            ? athlete.email!
+            : null;
+
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: 2,
+          ),
+          leading: CircleAvatar(
+            radius: 16,
+            backgroundColor: AppColors.blackberryLight,
+            child: Text(
+              _getInitials(athlete.displayName),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.cream,
+              ),
+            ),
+          ),
+          title: Text(
+            athlete.displayName,
+            style: const TextStyle(
+              color: AppColors.cream,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: subtitle != null
+              ? Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AppColors.textDarkSecondary,
+                    fontSize: 11,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                )
+              : null,
+          trailing: isConnected
+              ? const _StatusTag(
+                  label: 'Connected',
+                  color: AppColors.electrolyte,
+                )
+              : isPending
+              ? const _StatusTag(label: 'Pending', color: AppColors.orange)
+              : SizedBox(
+                  height: 30,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.electrolyte,
+                      foregroundColor: AppColors.blackberryDark,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      textStyle: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    onPressed: isInviting
+                        ? null
+                        : () => _inviteAthlete(athlete),
+                    child: isInviting
+                        ? const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.blackberryDark,
+                            ),
+                          )
+                        : const Text('Add'),
+                  ),
+                ),
+        );
+      },
+    );
+  }
+
+  String _getInitials(String name) {
+    final parts = name
+        .trim()
+        .split(' ')
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    if (parts.isEmpty) return '?';
+    return parts[0][0].toUpperCase();
+  }
+}
+
+class _StatusTag extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _StatusTag({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }
@@ -285,7 +716,9 @@ class _NavItem extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected ? AppColors.cream : AppColors.textDarkSecondary,
+                  color: isSelected
+                      ? AppColors.cream
+                      : AppColors.textDarkSecondary,
                 ),
               ),
             ],
@@ -330,10 +763,7 @@ class _StatBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 11,
-              color: color.withOpacity(0.8),
-            ),
+            style: TextStyle(fontSize: 11, color: color.withOpacity(0.8)),
           ),
         ],
       ),
@@ -355,7 +785,8 @@ class _AthleteListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = relationship.athleteDisplayName ??
+    final name =
+        relationship.athleteDisplayName ??
         'Athlete ${relationship.athleteUserId.substring(0, 8)}';
 
     return Material(
@@ -369,8 +800,9 @@ class _AthleteListItem extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 16,
-                backgroundColor:
-                    isSelected ? AppColors.electrolyte : AppColors.inputBackground,
+                backgroundColor: isSelected
+                    ? AppColors.electrolyte
+                    : AppColors.inputBackground,
                 child: Text(
                   _getInitials(name),
                   style: TextStyle(
@@ -391,8 +823,9 @@ class _AthleteListItem extends StatelessWidget {
                       name,
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                         color: isSelected
                             ? AppColors.cream
                             : AppColors.textDarkSecondary,
@@ -440,7 +873,8 @@ class _PendingRequestItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isFromCoach = relationship.requestedBy == 'coach';
-    final name = relationship.athleteDisplayName ??
+    final name =
+        relationship.athleteDisplayName ??
         'Athlete ${relationship.athleteUserId.substring(0, 8)}';
 
     return Padding(
@@ -450,9 +884,7 @@ class _PendingRequestItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.blackberryLight.withOpacity(0.5),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: AppColors.orange.withOpacity(0.3),
-          ),
+          border: Border.all(color: AppColors.orange.withOpacity(0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,7 +924,9 @@ class _PendingRequestItem extends StatelessWidget {
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textDarkSecondary,
-                        side: const BorderSide(color: AppColors.textDarkSecondary),
+                        side: const BorderSide(
+                          color: AppColors.textDarkSecondary,
+                        ),
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         textStyle: const TextStyle(fontSize: 11),
                       ),
@@ -508,7 +942,10 @@ class _PendingRequestItem extends StatelessWidget {
                         backgroundColor: AppColors.electrolyte,
                         foregroundColor: AppColors.blackberryDark,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                        textStyle: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       onPressed: onAccept,
                       child: const Text('Accept'),

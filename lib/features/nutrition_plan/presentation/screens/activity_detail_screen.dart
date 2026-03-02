@@ -19,6 +19,7 @@ import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../providers/activity_detail_controller.dart';
 import '../../domain/nutrition_plan.dart';
+import '../../domain/food_item_data.dart';
 import '../../domain/run_parameters.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../../activities/domain/activity.dart';
@@ -325,8 +326,12 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           distanceMiles: activity?.distanceMiles,
           durationMinutes: activity?.durationMinutes,
           paceTargetMinutesPerMile: activity?.paceTargetMinutesPerMile,
-          onDateTap: widget.isCoachView ? null : () => _showDatePicker(context, state),
-          onTimeTap: widget.isCoachView ? null : () => _showTimePicker(context, state),
+          onDateTap: widget.isCoachView
+              ? null
+              : () => _showDatePicker(context, state),
+          onTimeTap: widget.isCoachView
+              ? null
+              : () => _showTimePicker(context, state),
         ),
       ],
     );
@@ -536,7 +541,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               onScaleSubPhase: (subPhaseIndex, foodIndex, newQuantity) {
                 final controller = _getControllerNotifier();
                 controller.updateSubPhaseQuantityWithScaling(
-                  subPhaseIndex, foodIndex, newQuantity,
+                  subPhaseIndex,
+                  foodIndex,
+                  newQuantity,
                 );
               },
               onAddFood: (cat) => _addFood(context, cat),
@@ -613,11 +620,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final settings = ref.watch(settingsControllerProvider).value;
     final useImperial = settings?.preferredDistanceUnit == DistanceUnit.miles;
 
-    final isExpanded = _expandedSections[category] ?? true;
+    final isExpanded = _expandedSections[category] ?? false;
 
-    // Auto-generate template summary from food names
     final foodSummary = section.foodItems
-        .map((f) => f.displayName ?? f.name)
+        .map(_buildCollapsedFoodSummaryLabel)
         .join(' + ');
 
     return Container(
@@ -697,7 +703,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                   category: category,
                   onSwap: () =>
                       _swapFood(context, state, food.id, food.name, category),
-                  onDelete: () => _deleteFood(context, state, food.id, category),
+                  onDelete: () =>
+                      _deleteFood(context, state, food.id, category),
                   onQuantityChange: (newQuantity) => _updateFoodQuantity(
                     context,
                     state,
@@ -719,6 +726,39 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         ],
       ),
     );
+  }
+
+  String _buildCollapsedFoodSummaryLabel(FoodItemData food) {
+    final qty = _parseLeadingQuantity(food.quantity);
+    final singular = _simplifyFoodName(food.displayName ?? food.name);
+    final plural = _simplifyFoodName(
+      food.displayNamePlural ??
+          (singular.toLowerCase().endsWith('s') ? singular : '${singular}s'),
+    );
+
+    if (qty == null || (qty - 1.0).abs() < 0.01) return singular;
+    final label = qty > 1 ? plural : singular;
+    return '${_formatQuantity(qty)} $label';
+  }
+
+  double? _parseLeadingQuantity(String raw) {
+    final match = RegExp(r'^([\d.]+)').firstMatch(raw.trim());
+    if (match == null) return null;
+    return double.tryParse(match.group(1)!);
+  }
+
+  String _formatQuantity(double value) {
+    if ((value - value.roundToDouble()).abs() < 0.01) {
+      return value.round().toString();
+    }
+    if ((value * 10 - (value * 10).round()).abs() < 0.01) {
+      return value.toStringAsFixed(1);
+    }
+    return value.toStringAsFixed(2);
+  }
+
+  String _simplifyFoodName(String raw) {
+    return raw.replaceAll(RegExp(r'\s*\([^)]*\)'), '').trim();
   }
 
   Widget _buildActionButtons(BuildContext context, ActivityDetailState state) {
@@ -972,7 +1012,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     );
   }
 
-  Future<void> _showDatePicker(BuildContext context, ActivityDetailState state) async {
+  Future<void> _showDatePicker(
+    BuildContext context,
+    ActivityDetailState state,
+  ) async {
     final currentDate = state.scheduledDateTime ?? DateTime.now();
     final picked = await showDatePicker(
       context: context,
@@ -982,15 +1025,21 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     );
     if (picked != null && mounted) {
       final newDateTime = DateTime(
-        picked.year, picked.month, picked.day,
-        currentDate.hour, currentDate.minute,
+        picked.year,
+        picked.month,
+        picked.day,
+        currentDate.hour,
+        currentDate.minute,
       );
       final controller = _getControllerNotifier();
       await controller.updateScheduledDateTime(newDateTime);
     }
   }
 
-  Future<void> _showTimePicker(BuildContext context, ActivityDetailState state) async {
+  Future<void> _showTimePicker(
+    BuildContext context,
+    ActivityDetailState state,
+  ) async {
     final currentDate = state.scheduledDateTime ?? DateTime.now();
     final picked = await showTimePicker(
       context: context,
@@ -998,8 +1047,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     );
     if (picked != null && mounted) {
       final newDateTime = DateTime(
-        currentDate.year, currentDate.month, currentDate.day,
-        picked.hour, picked.minute,
+        currentDate.year,
+        currentDate.month,
+        currentDate.day,
+        picked.hour,
+        picked.minute,
       );
       final controller = _getControllerNotifier();
       await controller.updateScheduledDateTime(newDateTime);

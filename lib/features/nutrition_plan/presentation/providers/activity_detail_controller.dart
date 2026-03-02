@@ -41,7 +41,8 @@ part 'activity_detail_controller.g.dart';
 @riverpod
 class ActivityDetailController extends _$ActivityDetailController {
   AppLogger get _logger => ref.read(appLoggerProvider);
-  ActivitiesService get _activitiesService => ref.read(activitiesServiceProvider);
+  ActivitiesService get _activitiesService =>
+      ref.read(activitiesServiceProvider);
   AuthService get _authService => ref.read(authServiceProvider);
 
   /// When set, the next food added via reapportion will be placed only in this hour.
@@ -76,7 +77,10 @@ class ActivityDetailController extends _$ActivityDetailController {
       },
     );
 
-    final activity = await _activitiesService.getActivityById(userId, activityId);
+    final activity = await _activitiesService.getActivityById(
+      userId,
+      activityId,
+    );
 
     if (activity == null) {
       _logger.error(
@@ -99,14 +103,19 @@ class ActivityDetailController extends _$ActivityDetailController {
         _cachedGutTraining = profile.gutTraining;
       }
     } catch (e) {
-      _logger.warning('Failed to load gut training, using default moderate: $e');
+      _logger.warning(
+        'Failed to load gut training, using default moderate: $e',
+      );
     }
 
     // Load nutrition plan from activity's nutritionPlanData field
     NutritionPlan? nutritionPlan;
     try {
       final repository = await _nutritionPlanRepository;
-      nutritionPlan = await repository.getNutritionPlanByActivityId(userId, activityId);
+      nutritionPlan = await repository.getNutritionPlanByActivityId(
+        userId,
+        activityId,
+      );
       if (nutritionPlan != null) {
         _logger.info('Loaded nutrition plan for activity: ${nutritionPlan.id}');
         // Enrich food items with displayNamePlural/servingSize from template_foods
@@ -188,7 +197,10 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   /// Save nutrition plan to activity's nutritionPlanData field
-  Future<void> _saveNutritionPlanToActivity(String activityId, NutritionPlan plan) async {
+  Future<void> _saveNutritionPlanToActivity(
+    String activityId,
+    NutritionPlan plan,
+  ) async {
     try {
       final user = await _authService.getCurrentUser();
       if (user == null) {
@@ -197,7 +209,10 @@ class ActivityDetailController extends _$ActivityDetailController {
       }
 
       // Get the activity
-      final activity = await _activitiesService.getActivityById(user.id, activityId);
+      final activity = await _activitiesService.getActivityById(
+        user.id,
+        activityId,
+      );
       if (activity == null) {
         _logger.warning('Cannot save nutrition plan: activity not found');
         return;
@@ -294,13 +309,12 @@ class ActivityDetailController extends _$ActivityDetailController {
         // Derive from the current activity's during section carbsTarget / duration
         final currentState = state.value;
         final plan = currentState?.nutritionPlan;
-        final durationMinutes =
-            currentState?.activity?.durationMinutes?.toDouble();
+        final durationMinutes = currentState?.activity?.durationMinutes
+            ?.toDouble();
 
         if (plan != null && durationMinutes != null && durationMinutes > 0) {
           final duringSection = plan.sections.firstWhere(
-            (s) =>
-                s.id.contains('during'),
+            (s) => s.id.contains('during'),
             orElse: () => plan.sections.first,
           );
           final totalCarbs = duringSection.carbsTarget ?? 0;
@@ -319,21 +333,18 @@ class ActivityDetailController extends _$ActivityDetailController {
       );
 
       // Build updated overrides
-      final currentOverrides = user.nutritionTargetOverrides ??
-          const NutritionTargetOverrides();
+      final currentOverrides =
+          user.nutritionTargetOverrides ?? const NutritionTargetOverrides();
       final updatedOverrides = currentOverrides.copyWith(
         during: () => DuringActivityOverrides(
           carbRateGPerH: newRate,
-          sodiumRateMgPerH:
-              currentOverrides.during?.sodiumRateMgPerH,
-          fluidRateMlPerH:
-              currentOverrides.during?.fluidRateMlPerH,
+          sodiumRateMgPerH: currentOverrides.during?.sodiumRateMgPerH,
+          fluidRateMlPerH: currentOverrides.during?.fluidRateMlPerH,
         ),
       );
 
       // Save via settings controller
-      final settingsController =
-          ref.read(settingsControllerProvider.notifier);
+      final settingsController = ref.read(settingsControllerProvider.notifier);
       await settingsController.saveNutritionTargetOverrides(updatedOverrides);
 
       _logger.info(
@@ -366,13 +377,18 @@ class ActivityDetailController extends _$ActivityDetailController {
   /// Update workout notes for a completed activity
   Future<void> updateWorkoutNotes(String? notes) async {
     final currentState = state.value;
-    if (currentState == null || currentState.activity == null || currentState.completion == null) return;
+    if (currentState == null ||
+        currentState.activity == null ||
+        currentState.completion == null)
+      return;
 
     state = await AsyncValue.guard(() async {
       try {
         final user = await _authService.getCurrentUser();
         if (user == null || user.id.isEmpty) {
-          throw Exception('Cannot update workout notes: user not authenticated');
+          throw Exception(
+            'Cannot update workout notes: user not authenticated',
+          );
         }
 
         // Update activity with new completion notes
@@ -416,11 +432,13 @@ class ActivityDetailController extends _$ActivityDetailController {
       );
 
       // Update local state immediately for UI responsiveness
-      state = AsyncData(currentState.copyWith(
-        scheduledDateTime: newDateTime,
-        activity: updatedActivity,
-        hasUnsavedChanges: false,
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          scheduledDateTime: newDateTime,
+          activity: updatedActivity,
+          hasUnsavedChanges: false,
+        ),
+      );
 
       // Save to database
       await _activitiesService.updateActivity(
@@ -432,7 +450,8 @@ class ActivityDetailController extends _$ActivityDetailController {
       ref.invalidate(activitiesControllerProvider);
       ref.invalidate(calendarControllerProvider);
 
-      _logger.info('Schedule updated and saved',
+      _logger.info(
+        'Schedule updated and saved',
         context: 'ACTIVITY_DETAIL_CONTROLLER',
         data: {
           'activityId': activityId,
@@ -440,7 +459,8 @@ class ActivityDetailController extends _$ActivityDetailController {
         },
       );
     } catch (e, stackTrace) {
-      _logger.error('Error updating scheduled date/time',
+      _logger.error(
+        'Error updating scheduled date/time',
         error: e,
         stackTrace: stackTrace,
       );
@@ -459,10 +479,9 @@ class ActivityDetailController extends _$ActivityDetailController {
       reminderRecurring: reminder?.recurring ?? false,
     );
 
-    state = AsyncData(currentState.copyWith(
-      activity: updatedActivity,
-      hasUnsavedChanges: true,
-    ));
+    state = AsyncData(
+      currentState.copyWith(activity: updatedActivity, hasUnsavedChanges: true),
+    );
   }
 
   /// Mark that the nutrition plan has unsaved changes
@@ -487,7 +506,9 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// Enrich food items in a nutrition plan with displayNamePlural and servingSize
   /// from the local template_foods table.
-  Future<NutritionPlan> _enrichFoodItemsFromTemplateFoods(NutritionPlan plan) async {
+  Future<NutritionPlan> _enrichFoodItemsFromTemplateFoods(
+    NutritionPlan plan,
+  ) async {
     try {
       final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
       final allTemplateFoods = await templateFoodsRepo.getAllTemplateFoods();
@@ -500,7 +521,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       FoodItemData enrichFood(FoodItemData food) {
         final tf = foodLookup[food.id];
-        if (tf == null) return food;
+        if (tf == null) return _normalizeFoodQuantity(food);
 
         // Derive timingCategory from template_foods DB fields
         final derivedTimingCategory = TimingCategory.fromFoodProperties(
@@ -510,23 +531,29 @@ class ActivityDetailController extends _$ActivityDetailController {
           carbsPerServing: tf.carbsG ?? 0,
         );
 
-        return FoodItemData(
-          id: food.id,
-          name: food.name,
-          quantity: food.quantity,
-          imageAddress: food.imageAddress ?? tf.imageAddress,
-          description: food.description ?? tf.description,
-          timing: food.timing,
-          nutritionalInfo: food.nutritionalInfo,
-          instructions: food.instructions,
-          displayName: food.displayName ?? tf.displayName,
-          displayNamePlural: food.displayNamePlural ?? tf.displayNamePlural,
-          displayOverride: food.displayOverride,
-          servingSize: food.servingSize ?? tf.servingSize,
-          isDrink: food.isDrink,
-          templateId: food.templateId,
-          scaleMultiplier: food.scaleMultiplier,
-          timingCategory: food.timingCategory ?? derivedTimingCategory,
+        return _normalizeFoodQuantity(
+          FoodItemData(
+            id: food.id,
+            name: food.name,
+            quantity: food.quantity,
+            imageAddress: food.imageAddress ?? tf.imageAddress,
+            description: food.description ?? tf.description,
+            timing: food.timing,
+            nutritionalInfo: food.nutritionalInfo,
+            instructions: food.instructions,
+            displayName: food.displayName ?? tf.displayName,
+            displayNamePlural: food.displayNamePlural ?? tf.displayNamePlural,
+            displayOverride: food.displayOverride,
+            servingSize: food.servingSize ?? tf.servingSize,
+            isDrink:
+                food.isDrink ||
+                derivedTimingCategory == TimingCategory.sipThroughout ||
+                derivedTimingCategory == TimingCategory.fuelDrink,
+            templateId: food.templateId,
+            scaleMultiplier: food.scaleMultiplier,
+            timingCategory: food.timingCategory ?? derivedTimingCategory,
+            isIndivisible: food.isIndivisible,
+          ),
         );
       }
 
@@ -559,7 +586,11 @@ class ActivityDetailController extends _$ActivityDetailController {
   ///
   /// Supports all activity types: running, cycling, swimming, brick
   /// Categories: 'before_run', 'during_run', 'during_swim', 'during_cycling', 'transition', 'after_run'
-  bool _categoryMatchesSection(String category, String sectionId, String sectionTitle) {
+  bool _categoryMatchesSection(
+    String category,
+    String sectionId,
+    String sectionTitle,
+  ) {
     final categoryLower = category.toLowerCase();
     final sectionIdLower = sectionId.toLowerCase();
     final titleLower = sectionTitle.toLowerCase();
@@ -569,7 +600,8 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     // Handle transition category (brick-specific)
     if (categoryLower == 'transition') {
-      return sectionIdLower.startsWith('t') && sectionIdLower.length <= 2; // T1, T2
+      return sectionIdLower.startsWith('t') &&
+          sectionIdLower.length <= 2; // T1, T2
     }
 
     // Handle sport-specific during categories (brick workouts)
@@ -577,7 +609,8 @@ class ActivityDetailController extends _$ActivityDetailController {
       final sportSuffix = categoryLower.replaceFirst('during_', '');
 
       // Must be a during section
-      if (!sectionIdLower.contains('during') && !titleLower.startsWith('during')) {
+      if (!sectionIdLower.contains('during') &&
+          !titleLower.startsWith('during')) {
         return false;
       }
 
@@ -585,14 +618,20 @@ class ActivityDetailController extends _$ActivityDetailController {
       if (sportSuffix == 'swim' || sportSuffix == 'swimming') {
         return titleLower.contains('swim');
       }
-      if (sportSuffix == 'cycling' || sportSuffix == 'bike' || sportSuffix == 'ride') {
-        return titleLower.contains('bike') || titleLower.contains('cycle') || titleLower.contains('ride');
+      if (sportSuffix == 'cycling' ||
+          sportSuffix == 'bike' ||
+          sportSuffix == 'ride') {
+        return titleLower.contains('bike') ||
+            titleLower.contains('cycle') ||
+            titleLower.contains('ride');
       }
       if (sportSuffix == 'run' || sportSuffix == 'running') {
         // For 'during_run', match any during section that contains 'run' OR
         // any during section that doesn't contain swim/bike/cycle (backward compat)
         return titleLower.contains('run') ||
-               (!titleLower.contains('swim') && !titleLower.contains('bike') && !titleLower.contains('cycle'));
+            (!titleLower.contains('swim') &&
+                !titleLower.contains('bike') &&
+                !titleLower.contains('cycle'));
       }
     }
 
@@ -601,13 +640,15 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     // Flexible prefix matching for before/after
     if (phasePrefix == 'before') {
-      return sectionIdLower.contains('before') || titleLower.startsWith('before');
+      return sectionIdLower.contains('before') ||
+          titleLower.startsWith('before');
     }
     if (phasePrefix == 'after') {
       return sectionIdLower.contains('after') || titleLower.startsWith('after');
     }
     if (phasePrefix == 'during') {
-      return sectionIdLower.contains('during') || titleLower.startsWith('during');
+      return sectionIdLower.contains('during') ||
+          titleLower.startsWith('during');
     }
 
     return false;
@@ -619,32 +660,39 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     // Derive timing category from product type for proper by-hour placement
     final String productType = (food.productTypeId as String?) ?? 'real_food';
+    final isLiquid = _isLikelyLiquidFood(food, productType);
+    final isElectrolyte = _isLikelyElectrolyteFood(food, productType);
     final timingCategory = TimingCategory.fromFoodProperties(
-      isLiquid: false, // User-added foods from picker are not liquids
+      isLiquid: isLiquid,
       productType: productType,
-      isElectrolyte: false,
+      isElectrolyte: isElectrolyte,
+      carbsPerServing: (food.carbsPerServing as num?)?.toDouble() ?? 0,
     );
-    final isDrink = timingCategory == TimingCategory.sipThroughout ||
+    final isDrink =
+        timingCategory == TimingCategory.sipThroughout ||
         timingCategory == TimingCategory.fuelDrink;
 
-    return FoodItemData(
-      id: const Uuid().v4(),
-      name: food.name,
-      quantity: food.generateQuantityDisplay(customAmount: customAmount),
-      imageAddress: food.imageAddress,
-      description: food.description,
-      instructions: food.instructions,
-      displayName: food.displayName,
-      displayNamePlural: food.displayNamePlural,
-      isDrink: isDrink,
-      timingCategory: timingCategory,
-      nutritionalInfo: NutritionalInfo(
-        calories: ((food.caloriesPerServing ?? 0) * multiplier).toInt(),
-        carbs: ((food.carbsPerServing ?? 0) * multiplier).toInt(),
-        protein: ((food.proteinPerServing ?? 0) * multiplier).toInt(),
-        fat: ((food.fatPerServing ?? 0) * multiplier).toInt(),
-        sodium: ((food.sodiumMg ?? 0) * multiplier).toInt(),
-        fluids: ((food.fluidMlPerServing ?? 0) * multiplier),
+    return _normalizeFoodQuantity(
+      FoodItemData(
+        id: const Uuid().v4(),
+        name: food.name,
+        quantity: food.generateQuantityDisplay(customAmount: customAmount),
+        imageAddress: food.imageAddress,
+        description: food.description,
+        instructions: food.instructions,
+        displayName: food.displayName,
+        displayNamePlural: food.displayNamePlural,
+        isIndivisible: isElectrolyte || productType == 'supplement',
+        isDrink: isDrink,
+        timingCategory: timingCategory,
+        nutritionalInfo: NutritionalInfo(
+          calories: ((food.caloriesPerServing ?? 0) * multiplier).toInt(),
+          carbs: ((food.carbsPerServing ?? 0) * multiplier).toInt(),
+          protein: ((food.proteinPerServing ?? 0) * multiplier).toInt(),
+          fat: ((food.fatPerServing ?? 0) * multiplier).toInt(),
+          sodium: ((food.sodiumMg ?? 0) * multiplier).toInt(),
+          fluids: ((food.fluidMlPerServing ?? 0) * multiplier),
+        ),
       ),
     );
   }
@@ -659,7 +707,8 @@ class ActivityDetailController extends _$ActivityDetailController {
   /// [operationName] - Name of the operation for logging
   Future<void> _updateSectionFoods({
     required String category,
-    required List<FoodItemData> Function(List<FoodItemData> currentItems) transform,
+    required List<FoodItemData> Function(List<FoodItemData> currentItems)
+    transform,
     required String operationName,
   }) async {
     final currentState = state.value;
@@ -690,7 +739,8 @@ class ActivityDetailController extends _$ActivityDetailController {
           ByHourData? updatedByHour = section.byHourData;
           if (updatedByHour != null) {
             final service = ByHourApportionmentService();
-            final activityType = currentState.activity?.activityType ?? ActivityType.running;
+            final activityType =
+                currentState.activity?.activityType ?? ActivityType.running;
             updatedByHour = service.reapportion(
               existing: updatedByHour,
               currentFoodItems: updatedItems,
@@ -715,34 +765,46 @@ class ActivityDetailController extends _$ActivityDetailController {
       );
 
       // Update state first for immediate UI feedback
-      state = AsyncData(currentState.copyWith(
-        nutritionPlan: updatedPlan,
-        hasUnsavedChanges: false,
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          nutritionPlan: updatedPlan,
+          hasUnsavedChanges: false,
+        ),
+      );
 
       // Auto-save to prevent data loss on provider rebuild (e.g., navigation)
       final activity = currentState.activity;
       if (activity != null) {
         await _saveNutritionPlanToActivity(activity.id, updatedPlan);
-        _logger.info('$operationName: Auto-saved nutrition plan to prevent data loss');
+        _logger.info(
+          '$operationName: Auto-saved nutrition plan to prevent data loss',
+        );
       }
 
-      _logger.info('$operationName SUCCESS',
+      _logger.info(
+        '$operationName SUCCESS',
         context: 'ActivityDetailController',
-        data: {
-          'category': category,
-          'updatedPlanId': updatedPlan.id,
-        },
+        data: {'category': category, 'updatedPlanId': updatedPlan.id},
       );
     } catch (error, stackTrace) {
-      _logger.error('Error in $operationName', error: error, stackTrace: stackTrace);
+      _logger.error(
+        'Error in $operationName',
+        error: error,
+        stackTrace: stackTrace,
+      );
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
   /// Swap a food item in the nutrition plan
-  Future<void> swapFoodItem(String oldFoodId, dynamic newFood, String category, {double? customAmount}) async {
-    _logger.info('swapFoodItem ENTRY',
+  Future<void> swapFoodItem(
+    String oldFoodId,
+    dynamic newFood,
+    String category, {
+    double? customAmount,
+  }) async {
+    _logger.info(
+      'swapFoodItem ENTRY',
       context: 'ActivityDetailController',
       data: {
         'oldFoodId': oldFoodId,
@@ -765,8 +827,13 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   /// Add a food item to the nutrition plan
-  Future<void> addFoodItem(dynamic food, String category, {double? customAmount}) async {
-    _logger.info('addFoodItem ENTRY',
+  Future<void> addFoodItem(
+    dynamic food,
+    String category, {
+    double? customAmount,
+  }) async {
+    _logger.info(
+      'addFoodItem ENTRY',
       context: 'ActivityDetailController',
       data: {
         'foodName': food?.name ?? 'null',
@@ -778,18 +845,19 @@ class ActivityDetailController extends _$ActivityDetailController {
     await _updateSectionFoods(
       category: category,
       operationName: 'addFoodItem',
-      transform: (items) => [...items, _createFoodItemData(food, customAmount: customAmount)],
+      transform: (items) => [
+        ...items,
+        _createFoodItemData(food, customAmount: customAmount),
+      ],
     );
   }
 
   /// Delete a food item from the nutrition plan
   Future<void> deleteFoodItem(String foodId, String category) async {
-    _logger.info('deleteFoodItem ENTRY',
+    _logger.info(
+      'deleteFoodItem ENTRY',
       context: 'ActivityDetailController',
-      data: {
-        'foodId': foodId,
-        'category': category,
-      },
+      data: {'foodId': foodId, 'category': category},
     );
 
     await _updateSectionFoods(
@@ -800,8 +868,13 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   /// Update the quantity of an existing food item
-  Future<void> updateFoodQuantity(String foodId, String category, double newQuantity) async {
-    _logger.info('updateFoodQuantity ENTRY',
+  Future<void> updateFoodQuantity(
+    String foodId,
+    String category,
+    double newQuantity,
+  ) async {
+    _logger.info(
+      'updateFoodQuantity ENTRY',
       context: 'ActivityDetailController',
       data: {
         'foodId': foodId,
@@ -815,61 +888,210 @@ class ActivityDetailController extends _$ActivityDetailController {
       operationName: 'updateFoodQuantity',
       transform: (items) => items.map((item) {
         if (item.id == foodId) {
+          final currentQuantity = _parseLeadingQuantity(item.quantity) ?? 1.0;
+          final normalizedQty = _roundFriendlyQuantity(
+            newQuantity,
+            isIndivisible: item.isIndivisible,
+          );
+          final scaleFactor = currentQuantity > 0
+              ? normalizedQty / currentQuantity
+              : 1.0;
+          final newQuantityDisplay = _buildQuantityLabel(item, normalizedQty);
+
           final currentNutrition = item.nutritionalInfo;
-          if (currentNutrition != null) {
-            // Extract the current quantity
-            final currentQuantityMatch = RegExp(r'^([\d.]+)').firstMatch(item.quantity);
-            final currentQuantity = currentQuantityMatch != null
-                ? double.tryParse(currentQuantityMatch.group(1)!) ?? 1.0
-                : 1.0;
+          final scaledNutrition = currentNutrition != null
+              ? NutritionalInfo(
+                  calories: currentNutrition.calories != null
+                      ? (currentNutrition.calories! * scaleFactor).round()
+                      : null,
+                  carbs: currentNutrition.carbs != null
+                      ? (currentNutrition.carbs! * scaleFactor).round()
+                      : null,
+                  protein: currentNutrition.protein != null
+                      ? (currentNutrition.protein! * scaleFactor).round()
+                      : null,
+                  fat: currentNutrition.fat != null
+                      ? (currentNutrition.fat! * scaleFactor).round()
+                      : null,
+                  sodium: currentNutrition.sodium != null
+                      ? (currentNutrition.sodium! * scaleFactor).round()
+                      : null,
+                  fluids: currentNutrition.fluids != null
+                      ? currentNutrition.fluids! * scaleFactor
+                      : null,
+                )
+              : null;
 
-            final scaleFactor = newQuantity / currentQuantity;
-
-            // Generate new quantity display string
-            final quantityStr = newQuantity == newQuantity.toInt()
-                ? newQuantity.toInt().toString()
-                : newQuantity.toStringAsFixed(1);
-            final isPlural = newQuantity != 1.0;
-
-            String displayName;
-            if (isPlural && item.displayNamePlural?.isNotEmpty == true) {
-              displayName = item.displayNamePlural!;
-            } else if (item.displayName?.isNotEmpty == true) {
-              displayName = item.displayName!;
-            } else {
-              displayName = item.name;
-            }
-
-            final newQuantityDisplay = '$quantityStr $displayName';
-
-            return FoodItemData(
-              id: item.id,
-              name: item.name,
-              quantity: newQuantityDisplay,
-              imageAddress: item.imageAddress,
-              instructions: item.instructions,
-              description: item.description,
-              displayName: item.displayName,
-              displayNamePlural: item.displayNamePlural,
-              displayOverride: item.displayOverride,
-              servingSize: item.servingSize,
-              isDrink: item.isDrink,
-              templateId: item.templateId,
-              scaleMultiplier: item.scaleMultiplier,
-              timingCategory: item.timingCategory,
-              nutritionalInfo: NutritionalInfo(
-                calories: (currentNutrition.calories! * scaleFactor).round(),
-                carbs: (currentNutrition.carbs! * scaleFactor).round(),
-                protein: (currentNutrition.protein! * scaleFactor).round(),
-                fat: (currentNutrition.fat! * scaleFactor).round(),
-                sodium: (currentNutrition.sodium! * scaleFactor).round(),
-                fluids: currentNutrition.fluids! * scaleFactor,
-              ),
-            );
-          }
+          return FoodItemData(
+            id: item.id,
+            name: item.name,
+            quantity: newQuantityDisplay,
+            imageAddress: item.imageAddress,
+            instructions: item.instructions,
+            description: item.description,
+            displayName: item.displayName,
+            displayNamePlural: item.displayNamePlural,
+            displayOverride: item.displayOverride,
+            servingSize: item.servingSize,
+            isDrink: item.isDrink,
+            isIndivisible: item.isIndivisible,
+            templateId: item.templateId,
+            scaleMultiplier: item.scaleMultiplier,
+            timingCategory: item.timingCategory,
+            nutritionalInfo: scaledNutrition,
+          );
         }
         return item;
       }).toList(),
+    );
+  }
+
+  bool _isLikelyLiquidFood(dynamic food, String productType) {
+    final normalizedType = productType.toLowerCase();
+    if (normalizedType == 'sports_drink' || normalizedType == 'beverage') {
+      return true;
+    }
+
+    final fluidMl = (food.fluidMlPerServing as num?)?.toDouble() ?? 0;
+    if (fluidMl > 0) return true;
+
+    final searchable = [
+      food.name,
+      food.displayName,
+      food.description,
+    ].whereType<String>().join(' ').toLowerCase();
+    return searchable.contains('drink') ||
+        searchable.contains('water') ||
+        searchable.contains('juice') ||
+        searchable.contains('smoothie') ||
+        searchable.contains('shake');
+  }
+
+  bool _isLikelyElectrolyteFood(dynamic food, String productType) {
+    if (productType.toLowerCase() == 'supplement') return true;
+    final searchable = [
+      food.name,
+      food.displayName,
+      food.description,
+    ].whereType<String>().join(' ').toLowerCase();
+    return searchable.contains('electrolyte') ||
+        searchable.contains('liquid iv') ||
+        searchable.contains('salt') ||
+        searchable.contains('sodium') ||
+        searchable.contains('pickle juice');
+  }
+
+  double? _parseLeadingQuantity(String rawQuantity) {
+    final match = RegExp(r'^([\d.]+)').firstMatch(rawQuantity.trim());
+    if (match == null) return null;
+    return double.tryParse(match.group(1)!);
+  }
+
+  String _formatQuantity(double value) {
+    if ((value - value.roundToDouble()).abs() < 0.01) {
+      return value.round().toString();
+    }
+    if ((value * 10 - (value * 10).round()).abs() < 0.01) {
+      return value.toStringAsFixed(1);
+    }
+    return value.toStringAsFixed(2);
+  }
+
+  String _stripParenthetical(String value) {
+    return value.replaceAll(RegExp(r'\s*\([^)]*\)'), '').trim();
+  }
+
+  double _roundFriendlyQuantity(double value, {required bool isIndivisible}) {
+    if (value <= 0) return isIndivisible ? 1.0 : 0.5;
+    if (isIndivisible) return value.round().toDouble();
+
+    final half = (value * 2).round() / 2;
+    final third = (value * 3).round() / 3;
+    final halfDiff = (value - half).abs();
+    final thirdDiff = (value - third).abs();
+    final rounded = thirdDiff + 0.08 < halfDiff ? third : half;
+    return (rounded * 100).round() / 100;
+  }
+
+  String _buildQuantityLabel(FoodItemData item, double quantity) {
+    final qtyStr = _formatQuantity(quantity);
+    final existingTailMatch = RegExp(
+      r'^[\d.]+\s*(.*)$',
+    ).firstMatch(item.quantity.trim());
+    final existingTail = existingTailMatch?.group(1)?.trim();
+
+    String label;
+    if (quantity != 1 && item.displayNamePlural?.isNotEmpty == true) {
+      label = _stripParenthetical(item.displayNamePlural!);
+    } else if (item.displayName?.isNotEmpty == true) {
+      label = _stripParenthetical(item.displayName!);
+    } else if (existingTail != null && existingTail.isNotEmpty) {
+      label = _stripParenthetical(existingTail);
+    } else {
+      label = _stripParenthetical(item.name);
+    }
+
+    if (quantity != 1 &&
+        item.displayNamePlural?.isEmpty != false &&
+        !label.contains(' ') &&
+        !label.toLowerCase().endsWith('s')) {
+      label = '${label}s';
+    }
+
+    return '$qtyStr $label'.trim();
+  }
+
+  FoodItemData _normalizeFoodQuantity(FoodItemData food) {
+    final currentQuantity = _parseLeadingQuantity(food.quantity);
+    if (currentQuantity == null) return food;
+
+    final normalizedQuantity = _roundFriendlyQuantity(
+      currentQuantity,
+      isIndivisible: food.isIndivisible,
+    );
+    if ((normalizedQuantity - currentQuantity).abs() < 0.01) return food;
+
+    final newLabel = _buildQuantityLabel(food, normalizedQuantity);
+    final scaleFactor = currentQuantity > 0
+        ? normalizedQuantity / currentQuantity
+        : 1.0;
+    final info = food.nutritionalInfo;
+
+    return FoodItemData(
+      id: food.id,
+      name: food.name,
+      quantity: newLabel,
+      imageAddress: food.imageAddress,
+      description: food.description,
+      timing: food.timing,
+      nutritionalInfo: info != null
+          ? NutritionalInfo(
+              calories: info.calories != null
+                  ? (info.calories! * scaleFactor).round()
+                  : null,
+              carbs: info.carbs != null
+                  ? (info.carbs! * scaleFactor).round()
+                  : null,
+              protein: info.protein != null
+                  ? (info.protein! * scaleFactor).round()
+                  : null,
+              fat: info.fat != null ? (info.fat! * scaleFactor).round() : null,
+              sodium: info.sodium != null
+                  ? (info.sodium! * scaleFactor).round()
+                  : null,
+              fluids: info.fluids != null ? info.fluids! * scaleFactor : null,
+            )
+          : null,
+      instructions: food.instructions,
+      displayName: food.displayName,
+      displayNamePlural: food.displayNamePlural,
+      displayOverride: food.displayOverride,
+      servingSize: food.servingSize,
+      isDrink: food.isDrink,
+      isIndivisible: food.isIndivisible,
+      templateId: food.templateId,
+      scaleMultiplier: food.scaleMultiplier,
+      timingCategory: food.timingCategory,
     );
   }
 
@@ -886,7 +1108,9 @@ class ActivityDetailController extends _$ActivityDetailController {
   ) async {
     final currentState = state.value;
     if (currentState?.nutritionPlan == null) {
-      _logger.warning('Cannot updateSubPhaseQuantityWithScaling: no nutrition plan');
+      _logger.warning(
+        'Cannot updateSubPhaseQuantityWithScaling: no nutrition plan',
+      );
       return;
     }
 
@@ -898,7 +1122,9 @@ class ActivityDetailController extends _$ActivityDetailController {
       final updatedSections = currentPlan.sections.map((section) {
         if (_categoryMatchesSection('before_run', section.id, section.title) &&
             section.hasSubPhases) {
-          final updatedSubPhases = section.subPhases!.asMap().entries.map((entry) {
+          final updatedSubPhases = section.subPhases!.asMap().entries.map((
+            entry,
+          ) {
             if (entry.key == subPhaseIndex) {
               final subPhase = entry.value;
               // Apply proportional scaling to all items in this sub-phase
@@ -921,19 +1147,24 @@ class ActivityDetailController extends _$ActivityDetailController {
         updatedAt: DateTime.now(),
       );
 
-      state = AsyncData(currentState.copyWith(
-        nutritionPlan: updatedPlan,
-        hasUnsavedChanges: false,
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          nutritionPlan: updatedPlan,
+          hasUnsavedChanges: false,
+        ),
+      );
 
       // Auto-save
       final activity = currentState.activity;
       if (activity != null) {
         await _saveNutritionPlanToActivity(activity.id, updatedPlan);
-        _logger.info('updateSubPhaseQuantityWithScaling: Auto-saved nutrition plan');
+        _logger.info(
+          'updateSubPhaseQuantityWithScaling: Auto-saved nutrition plan',
+        );
       }
 
-      _logger.info('updateSubPhaseQuantityWithScaling SUCCESS',
+      _logger.info(
+        'updateSubPhaseQuantityWithScaling SUCCESS',
         context: 'ActivityDetailController',
         data: {
           'subPhaseIndex': subPhaseIndex,
@@ -942,8 +1173,11 @@ class ActivityDetailController extends _$ActivityDetailController {
         },
       );
     } catch (error, stackTrace) {
-      _logger.error('Error in updateSubPhaseQuantityWithScaling',
-          error: error, stackTrace: stackTrace);
+      _logger.error(
+        'Error in updateSubPhaseQuantityWithScaling',
+        error: error,
+        stackTrace: stackTrace,
+      );
       state = AsyncValue.error(error, stackTrace);
     }
   }
@@ -962,7 +1196,10 @@ class ActivityDetailController extends _$ActivityDetailController {
   ///
   /// [category] - The section category (e.g., 'during_run', 'during_bike')
   /// [durationMinutes] - Duration of the during phase in minutes
-  Future<void> initializeByHourData(String category, int durationMinutes) async {
+  Future<void> initializeByHourData(
+    String category,
+    int durationMinutes,
+  ) async {
     final currentState = state.value;
     if (currentState?.nutritionPlan == null) return;
 
@@ -978,7 +1215,8 @@ class ActivityDetailController extends _$ActivityDetailController {
     if (targetSection.byHourData != null) return;
 
     final service = ByHourApportionmentService();
-    final activityType = currentState.activity?.activityType ?? ActivityType.running;
+    final activityType =
+        currentState.activity?.activityType ?? ActivityType.running;
     final byHourData = service.apportion(
       foodItems: targetSection.foodItems,
       durationMinutes: durationMinutes,
@@ -1008,7 +1246,8 @@ class ActivityDetailController extends _$ActivityDetailController {
       await _saveNutritionPlanToActivity(activity.id, updatedPlan);
     }
 
-    _logger.info('initializeByHourData SUCCESS',
+    _logger.info(
+      'initializeByHourData SUCCESS',
       context: 'ActivityDetailController',
       data: {
         'category': category,
@@ -1081,7 +1320,8 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     try {
       final nutritionService = ref.read(nutritionPlanServiceProvider);
-      final updatedActivity = await nutritionService.regenerateForScheduleChange(activity);
+      final updatedActivity = await nutritionService
+          .regenerateForScheduleChange(activity);
 
       // Refresh controller data from database
       ref.invalidateSelf();

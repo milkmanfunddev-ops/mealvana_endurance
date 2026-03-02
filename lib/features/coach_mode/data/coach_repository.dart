@@ -1111,7 +1111,9 @@ class CoachRepository with SyncableRepository {
       await _supabase.from('activities').insert(activityData);
 
       // Also insert into local Drift database for immediate display
-      await _database.into(_database.activitiesTable).insert(
+      await _database
+          .into(_database.activitiesTable)
+          .insert(
             ActivitiesTableCompanion.insert(
               id: Value(id),
               userId: athleteUserId,
@@ -1180,7 +1182,9 @@ class CoachRepository with SyncableRepository {
       await _supabase.from('events').insert(eventData);
 
       // Also insert into local Drift database for immediate display
-      await _database.into(_database.eventsTable).insert(
+      await _database
+          .into(_database.eventsTable)
+          .insert(
             EventsTableCompanion.insert(
               id: Value(id),
               userId: athleteUserId,
@@ -1246,32 +1250,44 @@ class CoachRepository with SyncableRepository {
       if (weightPounds != null) updates['weight_pounds'] = weightPounds;
       if (heightFeet != null) updates['height_feet'] = heightFeet;
       if (heightInches != null) updates['height_inches'] = heightInches;
-      if (runsWithWaterBottle != null) updates['runs_with_water_bottle'] = runsWithWaterBottle;
+      if (runsWithWaterBottle != null)
+        updates['runs_with_water_bottle'] = runsWithWaterBottle;
       if (gutTraining != null) updates['gut_training'] = gutTraining;
       if (gender != null) updates['gender'] = gender;
       if (giSensitivity != null) updates['gi_sensitivity'] = giSensitivity;
 
       // Update in Supabase
-      await _supabase
-          .from('users')
-          .update(updates)
-          .eq('id', athleteUserId);
+      await _supabase.from('users').update(updates).eq('id', athleteUserId);
 
       // Also update local Drift database
-      await (_database.update(_database.userProfilesTable)
-            ..where((t) => t.id.equals(athleteUserId)))
-          .write(UserProfilesTableCompanion(
-        firstName: firstName != null ? Value(firstName) : const Value.absent(),
-        lastName: lastName != null ? Value(lastName) : const Value.absent(),
-        birthday: birthday != null ? Value(birthday) : const Value.absent(),
-        weightPounds: weightPounds != null ? Value(weightPounds) : const Value.absent(),
-        heightFeet: heightFeet != null ? Value(heightFeet) : const Value.absent(),
-        heightInches: heightInches != null ? Value(heightInches) : const Value.absent(),
-        runsWithWaterBottle: runsWithWaterBottle != null ? Value(runsWithWaterBottle) : const Value.absent(),
-        gutTrainingLevel: gutTraining != null ? Value(gutTraining) : const Value.absent(),
-        gender: gender != null ? Value(gender) : const Value.absent(),
-        updatedAt: Value(DateTime.now()),
-      ));
+      await (_database.update(
+        _database.userProfilesTable,
+      )..where((t) => t.id.equals(athleteUserId))).write(
+        UserProfilesTableCompanion(
+          firstName: firstName != null
+              ? Value(firstName)
+              : const Value.absent(),
+          lastName: lastName != null ? Value(lastName) : const Value.absent(),
+          birthday: birthday != null ? Value(birthday) : const Value.absent(),
+          weightPounds: weightPounds != null
+              ? Value(weightPounds)
+              : const Value.absent(),
+          heightFeet: heightFeet != null
+              ? Value(heightFeet)
+              : const Value.absent(),
+          heightInches: heightInches != null
+              ? Value(heightInches)
+              : const Value.absent(),
+          runsWithWaterBottle: runsWithWaterBottle != null
+              ? Value(runsWithWaterBottle)
+              : const Value.absent(),
+          gutTrainingLevel: gutTraining != null
+              ? Value(gutTraining)
+              : const Value.absent(),
+          gender: gender != null ? Value(gender) : const Value.absent(),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
 
       _logger.info(
         'Updated athlete profile',
@@ -1866,6 +1882,78 @@ class CoachRepository with SyncableRepository {
   // ============================================================================
   // USER PROFILE OPERATIONS (for coach mode)
   // ============================================================================
+
+  /// Search users to add as athletes by name/email.
+  ///
+  /// Returns broad results from `users` so coaches can initiate relationships.
+  /// Excludes the current coach user ID from the result set.
+  Future<List<AthleteSearchResult>> searchAthletesByNameOrEmail({
+    required String query,
+    required String currentUserId,
+    int limit = 20,
+  }) async {
+    try {
+      final normalizedQuery = query.trim();
+      if (normalizedQuery.isEmpty) return const [];
+
+      // PostgREST `or` filter expression.
+      // Commas are separators in the expression, so strip from user input.
+      final safeQuery = normalizedQuery.replaceAll(',', ' ');
+      final wildcard = '%$safeQuery%';
+      final clampedLimit = limit.clamp(1, 50).toInt();
+
+      List<dynamic> response;
+
+      // Try with email first. Some environments may not have an `email` column
+      // in public.users, so fall back to name-only search if that fails.
+      try {
+        response = await _supabase
+            .from('users')
+            .select('id, first_name, last_name, sender_name, email')
+            .or(
+              'first_name.ilike.$wildcard,last_name.ilike.$wildcard,sender_name.ilike.$wildcard,email.ilike.$wildcard',
+            )
+            .neq('id', currentUserId)
+            .limit(clampedLimit);
+      } on PostgrestException catch (e) {
+        final message = e.message.toLowerCase();
+        final referencesMissingEmailColumn =
+            message.contains('column') && message.contains('email');
+        if (!referencesMissingEmailColumn) {
+          rethrow;
+        }
+
+        response = await _supabase
+            .from('users')
+            .select('id, first_name, last_name, sender_name')
+            .or(
+              'first_name.ilike.$wildcard,last_name.ilike.$wildcard,sender_name.ilike.$wildcard',
+            )
+            .neq('id', currentUserId)
+            .limit(clampedLimit);
+      }
+
+      return response.map((row) {
+        final data = row as Map<String, dynamic>;
+        return AthleteSearchResult(
+          userId: data['id'] as String,
+          firstName: data['first_name'] as String?,
+          lastName: data['last_name'] as String?,
+          senderName: data['sender_name'] as String?,
+          email: data['email'] as String?,
+        );
+      }).toList();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to search athletes by name/email',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'query': query},
+      );
+      return const [];
+    }
+  }
 
   /// Look up a user ID by their athlete code
   /// Athlete code format: ATH-XXXXXXXX (first 8 chars of UUID, uppercase, no hyphens)

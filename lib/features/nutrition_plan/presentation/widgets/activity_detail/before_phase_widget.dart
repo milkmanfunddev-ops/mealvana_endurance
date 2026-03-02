@@ -28,11 +28,15 @@ class BeforePhaseWidget extends StatefulWidget {
   final Color sectionColor;
   final String sectionTitle;
   final bool useImperial;
-  final void Function(String foodId, String foodName, String category) onSwapFood;
+  final void Function(String foodId, String foodName, String category)
+  onSwapFood;
   final void Function(String foodId, String category) onDeleteFood;
-  final void Function(String foodId, String category, double newQuantity) onUpdateQuantity;
+  final void Function(String foodId, String category, double newQuantity)
+  onUpdateQuantity;
+
   /// Proportional scaling callback: (subPhaseIndex, foodIndex, newQuantity)
-  final void Function(int subPhaseIndex, int foodIndex, double newQuantity) onScaleSubPhase;
+  final void Function(int subPhaseIndex, int foodIndex, double newQuantity)
+  onScaleSubPhase;
   final void Function(String category) onAddFood;
   final bool showSwipeHint;
 
@@ -41,16 +45,14 @@ class BeforePhaseWidget extends StatefulWidget {
 }
 
 class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
-  /// Track which sub-phases are expanded (all start expanded)
+  /// Track which sub-phases are expanded (all start collapsed).
   late Map<int, bool> _expandedState;
 
   @override
   void initState() {
     super.initState();
     final subPhaseCount = widget.section.subPhases?.length ?? 0;
-    _expandedState = {
-      for (int i = 0; i < subPhaseCount; i++) i: true,
-    };
+    _expandedState = {for (int i = 0; i < subPhaseCount; i++) i: false};
   }
 
   @override
@@ -140,7 +142,7 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
     int index,
     BeforeSubPhase subPhase,
   ) {
-    final isExpanded = _expandedState[index] ?? true;
+    final isExpanded = _expandedState[index] ?? false;
 
     return Container(
       decoration: BoxDecoration(
@@ -188,12 +190,15 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                             fontSize: 16,
                           ),
                         ),
-                        if (!isExpanded && subPhase.templateSummary.isNotEmpty) ...[
+                        if (!isExpanded &&
+                            subPhase.templateSummary.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(
                             subPhase.templateSummary,
                             style: AppTextStyles.smallLabel.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                               fontSize: 11,
                             ),
                             maxLines: 1,
@@ -237,17 +242,16 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                       child: DismissibleFoodItem(
                         food: food,
                         category: 'before_run',
-                        onSwap: () => widget.onSwapFood(
-                          food.id, food.name, 'before_run',
-                        ),
-                        onDelete: () => widget.onDeleteFood(
-                          food.id, 'before_run',
-                        ),
-                        onQuantityChange: (newQuantity) =>
-                            widget.onScaleSubPhase(
-                          index, foodIndex, newQuantity,
-                        ),
-                        showSwipeHint: widget.showSwipeHint && index == 0 && foodIndex == 0,
+                        onSwap: () =>
+                            widget.onSwapFood(food.id, food.name, 'before_run'),
+                        onDelete: () =>
+                            widget.onDeleteFood(food.id, 'before_run'),
+                        onQuantityChange: (newQuantity) => widget
+                            .onScaleSubPhase(index, foodIndex, newQuantity),
+                        showSwipeHint:
+                            widget.showSwipeHint &&
+                            index == 0 &&
+                            foodIndex == 0,
                         useImperial: widget.useImperial,
                       ),
                     );

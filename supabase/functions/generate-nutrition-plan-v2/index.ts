@@ -346,6 +346,7 @@ interface ByHourData {
 const QUIET_ZONE_MINUTES = 30;
 const END_CUTOFF_MINUTES = 15;
 const SIP_INCREMENT = 0.5;
+const QUICK_INCREMENT = 0.5;
 
 function gelIntervalMinutes(gutTrainingLevel: string): number {
   switch (gutTrainingLevel) {
@@ -395,6 +396,75 @@ function splitSipQuantity(originalQty: number, placementCount: number): number[]
   }
 
   return quantities;
+}
+
+function eventPlacementCount(
+  originalQty: number,
+  availableSlots: number,
+  minIncrement: number,
+  isIndivisible: boolean,
+): number {
+  if (availableSlots <= 0) return 0;
+  const qty = originalQty < 1 ? 1 : originalQty;
+
+  if (isIndivisible) {
+    return Math.min(availableSlots, Math.max(1, Math.round(qty)));
+  }
+
+  let placementCount = availableSlots;
+  const perSlotQty = qty / placementCount;
+  if (perSlotQty < minIncrement) {
+    placementCount = Math.min(
+      availableSlots,
+      Math.max(1, Math.floor(qty / minIncrement)),
+    );
+  }
+  return placementCount;
+}
+
+function selectEvenlySpacedMinutes(minutes: number[], count: number): number[] {
+  if (count <= 0 || minutes.length === 0) return [];
+  if (count >= minutes.length) return [...minutes];
+  if (count === 1) return [minutes[0]];
+
+  const selectedIdx: number[] = [];
+  const used = new Set<number>();
+  const maxIndex = minutes.length - 1;
+
+  for (let i = 0; i < count; i++) {
+    let idx = Math.round((i * maxIndex) / (count - 1));
+    if (!used.has(idx)) {
+      used.add(idx);
+      selectedIdx.push(idx);
+      continue;
+    }
+
+    let offset = 1;
+    let placed = false;
+    while (!placed) {
+      const left = idx - offset;
+      const right = idx + offset;
+      if (left >= 0 && !used.has(left)) {
+        used.add(left);
+        selectedIdx.push(left);
+        placed = true;
+      } else if (right <= maxIndex && !used.has(right)) {
+        used.add(right);
+        selectedIdx.push(right);
+        placed = true;
+      } else {
+        offset += 1;
+      }
+    }
+  }
+
+  selectedIdx.sort((a, b) => a - b);
+  return selectedIdx.map((idx) => minutes[idx]);
+}
+
+function omitLastAllowedPlacement(minutes: number[]): number[] {
+  if (minutes.length <= 1) return minutes;
+  return minutes.slice(0, minutes.length - 1);
 }
 
 /**
@@ -501,6 +571,7 @@ function generateByHourData(
   }
 
   // Phase 3: QUICK_CONSUME — gels/chews after quiet zone, spaced by gut training
+  // Distribute by time to avoid early front-loading.
   if (quickItems.length > 0) {
     const interval = gelIntervalMinutes(gutTrainingLevel);
     const endCutoff = durationMinutes - END_CUTOFF_MINUTES;
@@ -509,29 +580,34 @@ function generateByHourData(
     for (let m = QUIET_ZONE_MINUTES; m <= endCutoff; m += interval) {
       placementMinutes.push(m);
     }
+    const trimmedPlacementMinutes = omitLastAllowedPlacement(placementMinutes);
 
-    if (placementMinutes.length > 0) {
-      // Track remaining quantity per food (indivisible items use whole units)
-      const remainingQty: Record<string, number> = {};
+    if (trimmedPlacementMinutes.length > 0) {
       for (const food of quickItems) {
-        const qty = food.is_indivisible ? Math.max(1, Math.round(food.quantity)) : food.quantity;
-        remainingQty[food.food_id] = qty < 1 ? 1 : qty;
-      }
+        const originalQty = food.quantity;
+        const placementCount = eventPlacementCount(
+          originalQty,
+          trimmedPlacementMinutes.length,
+          QUICK_INCREMENT,
+          food.is_indivisible === true,
+        );
+        const selectedMinutes = selectEvenlySpacedMinutes(
+          trimmedPlacementMinutes,
+          placementCount,
+        );
+        const splitQuantities = food.is_indivisible
+          ? Array.from({ length: placementCount }, () => 1.0)
+          : splitSipQuantity(originalQty, placementCount);
 
-      for (let i = 0; i < placementMinutes.length; i++) {
-        const food = quickItems[i % quickItems.length];
-        const remaining = remainingQty[food.food_id] ?? 0;
-        if (remaining <= 0) continue;
-
-        const minute = placementMinutes[i];
-        assignments.push({
-          foodItemId: food.food_id,
-          timeSlot: minuteToTimeSlot(minute),
-          isSipThroughout: false,
-          adjustedQuantity: 1.0,
-          timingCategory: 'quickConsume',
-        });
-        remainingQty[food.food_id] = remaining - 1;
+        for (let i = 0; i < selectedMinutes.length; i++) {
+          assignments.push({
+            foodItemId: food.food_id,
+            timeSlot: minuteToTimeSlot(selectedMinutes[i]),
+            isSipThroughout: false,
+            adjustedQuantity: splitQuantities[i],
+            timingCategory: 'quickConsume',
+          });
+        }
       }
     }
   }
@@ -611,6 +687,9 @@ async function postProcessDuringPhase(
   const totals = calculateTotals(resultFoods);
   const sodiumDeficit = targets.sodium_mg - totals.sodium_mg;
   const deficitPercent = targets.sodium_mg > 0 ? sodiumDeficit / targets.sodium_mg : 0;
+  const existingElectrolyteIndex = resultFoods.findIndex(
+    (f) => f.is_electrolyte === true || f.timing_category === 'electrolyte',
+  );
 
   console.log(
     `[POST-PROCESS-DURING] Totals: sodium=${totals.sodium_mg.toFixed(0)}mg, ` +
@@ -623,17 +702,56 @@ async function postProcessDuringPhase(
     return resultFoods;
   }
 
-  // Skip if already at max food items
-  if (resultFoods.length >= maxFoodsAllowed) {
+  // Skip if already at max food items and we can't edit an existing electrolyte item.
+  if (resultFoods.length >= maxFoodsAllowed && existingElectrolyteIndex < 0) {
     console.log(`[POST-PROCESS-DURING] Already ${resultFoods.length} foods, skipping electrolyte addition`);
     return resultFoods;
   }
 
-  // Check if there's already an electrolyte item
-  const hasElectrolyte = resultFoods.some(f => f.is_electrolyte === true);
-  if (hasElectrolyte) {
-    console.log(`[POST-PROCESS-DURING] Already has electrolyte item, skipping`);
-    return resultFoods;
+  // If an electrolyte already exists, top it up first instead of skipping.
+  if (existingElectrolyteIndex >= 0) {
+    const existing = resultFoods[existingElectrolyteIndex];
+    const currentServings = Math.max(1, existing.quantity || 1);
+    const sodiumPerServing = existing.sodium_mg / currentServings;
+
+    if (sodiumPerServing > 0) {
+      let additionalServings = sodiumDeficit / sodiumPerServing;
+      const isIndivisible = existing.is_indivisible ?? true;
+      additionalServings = isIndivisible
+        ? Math.max(1, Math.round(additionalServings))
+        : roundToIncrement(additionalServings);
+
+      const maxSodiumAllowed = targets.sodium_mg * 1.1;
+      const maxAdditionalForCap = (maxSodiumAllowed - totals.sodium_mg) / sodiumPerServing;
+      const cappedAdditional = isIndivisible
+        ? Math.max(0, Math.floor(maxAdditionalForCap))
+        : roundToIncrement(Math.max(0, maxAdditionalForCap));
+      additionalServings = Math.min(additionalServings, cappedAdditional);
+
+      if (additionalServings > 0) {
+        const nextServings = currentServings + additionalServings;
+        const perServingCarbs = existing.carbs_grams / currentServings;
+        const perServingProtein = existing.protein_grams / currentServings;
+        const perServingFat = existing.fat_grams / currentServings;
+        const perServingFluids = existing.fluids_ml / currentServings;
+        const perServingCalories = existing.calories / currentServings;
+
+        const updated = {
+          ...existing,
+          quantity: nextServings,
+          carbs_grams: existing.carbs_grams + perServingCarbs * additionalServings,
+          protein_grams: existing.protein_grams + perServingProtein * additionalServings,
+          fat_grams: existing.fat_grams + perServingFat * additionalServings,
+          sodium_mg: existing.sodium_mg + sodiumPerServing * additionalServings,
+          fluids_ml: existing.fluids_ml + perServingFluids * additionalServings,
+          calories: Math.round(existing.calories + perServingCalories * additionalServings),
+        } as FoodResult;
+
+        const updatedFoods = [...resultFoods];
+        updatedFoods[existingElectrolyteIndex] = updated;
+        return updatedFoods;
+      }
+    }
   }
 
   // Fetch electrolyte foods

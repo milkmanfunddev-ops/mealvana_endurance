@@ -31,10 +31,10 @@ class CoachService {
     required AppDatabase database,
     required AppLogger logger,
     required SupabaseClient supabase,
-  })  : _repository = repository,
-        _database = database,
-        _logger = logger,
-        _supabase = supabase;
+  }) : _repository = repository,
+       _database = database,
+       _logger = logger,
+       _supabase = supabase;
 
   final CoachRepository _repository;
   final AppDatabase _database;
@@ -146,15 +146,43 @@ class CoachService {
       if (!isCoach) return [];
 
       final all = await _repository.getRelationshipsForCoach(profile.id);
-      return all
-          .where((r) => r.status == RelationshipStatus.pending)
-          .toList();
+      return all.where((r) => r.status == RelationshipStatus.pending).toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get pending requests',
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,
+      );
+      return [];
+    }
+  }
+
+  /// Search users to add as athletes by name/email.
+  Future<List<AthleteSearchResult>> searchAthletesByNameOrEmail(
+    String query, {
+    int limit = 20,
+  }) async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) return [];
+
+      // Check coaches table for approved status
+      final isCoach = await _repository.isUserApprovedCoach(profile.id);
+      if (!isCoach) return [];
+
+      return await _repository.searchAthletesByNameOrEmail(
+        query: query,
+        currentUserId: profile.id,
+        limit: limit,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to search athletes by name/email',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'query': query},
       );
       return [];
     }
@@ -187,7 +215,9 @@ class CoachService {
       }
 
       // Look up the athlete by their code
-      final athleteUserId = await _repository.findUserIdByAthleteCode(athleteCode);
+      final athleteUserId = await _repository.findUserIdByAthleteCode(
+        athleteCode,
+      );
       if (athleteUserId == null) {
         _logger.warning(
           'Athlete not found by code',
@@ -434,9 +464,7 @@ class CoachService {
       if (profile == null) return [];
 
       final all = await _repository.getRelationshipsForAthlete(profile.id);
-      return all
-          .where((r) => r.status == RelationshipStatus.active)
-          .toList();
+      return all.where((r) => r.status == RelationshipStatus.active).toList();
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get coaches',
@@ -456,9 +484,11 @@ class CoachService {
 
       final all = await _repository.getRelationshipsForAthlete(profile.id);
       return all
-          .where((r) =>
-              r.status == RelationshipStatus.pending &&
-              r.requestedBy == 'coach')
+          .where(
+            (r) =>
+                r.status == RelationshipStatus.pending &&
+                r.requestedBy == 'coach',
+          )
           .toList();
     } catch (e, stackTrace) {
       _logger.error(
@@ -741,7 +771,8 @@ class CoachService {
 
   /// Get a relationship by ID (works for both coach and athlete perspective)
   Future<CoachAthleteRelationship?> getRelationshipById(
-      String relationshipId) async {
+    String relationshipId,
+  ) async {
     try {
       return await _repository.getRelationshipById(relationshipId);
     } catch (e, stackTrace) {
@@ -881,7 +912,9 @@ class CoachService {
       if (profile == null) return;
 
       // Get all relationships where user is athlete
-      final relationships = await _repository.getRelationshipsForAthlete(profile.id);
+      final relationships = await _repository.getRelationshipsForAthlete(
+        profile.id,
+      );
 
       // Extract unique coach user IDs
       final coachUserIds = relationships
@@ -916,7 +949,9 @@ class CoachService {
       if (!isCoach) return;
 
       // Get all relationships where user is coach
-      final relationships = await _repository.getRelationshipsForCoach(profile.id);
+      final relationships = await _repository.getRelationshipsForCoach(
+        profile.id,
+      );
 
       // Extract unique athlete user IDs
       final athleteUserIds = relationships
@@ -965,7 +1000,8 @@ class CoachService {
 
   /// Unsubscribe from relationship changes
   Future<void> unsubscribeFromRelationshipChanges(
-      RealtimeChannel channel) async {
+    RealtimeChannel channel,
+  ) async {
     await _repository.unsubscribeFromRelationshipChanges(channel);
   }
 

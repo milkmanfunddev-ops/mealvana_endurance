@@ -529,6 +529,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           scheduledTime.hour,
           scheduledTime.minute,
         );
+        final estimatedDurationMinutes = (distance * paceMinutes).round();
 
         String finalActivityId = activityId ?? '';
         final activitiesController = ref.read(
@@ -543,6 +544,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 forUserId, // NEW: Pass through forUserId for coach-created activities
             activityType: ActivityType.running,
             distanceMiles: distance,
+            durationMinutes: estimatedDurationMinutes,
             paceTargetMinutesPerMile: paceMinutes,
             intensityLevel: domain.IntensityLevel.moderate, // Default
             timeBeforeMinutes: timeBeforeRunMinutes,
@@ -559,6 +561,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 activityType: ActivityType.running,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distance,
+                durationMinutes: estimatedDurationMinutes,
                 paceTargetMinutesPerMile: paceMinutes,
                 timeBeforeMinutes: timeBeforeRunMinutes,
                 notes: 'Draft activity - nutrition plan being generated',
@@ -1717,9 +1720,10 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         // Get hoursBefore from the draft activity's timeBeforeMinutes
         double hoursBefore = 2.0; // default fallback
+        domain.Activity? draftActivity;
         if (currentStateValue?.activityId != null) {
           final activitiesService = ref.read(activitiesServiceProvider);
-          final draftActivity = await activitiesService.getActivityById(
+          draftActivity = await activitiesService.getActivityById(
             userId,
             currentStateValue!.activityId!,
           );
@@ -1727,6 +1731,13 @@ class MacroTargetsController extends _$MacroTargetsController {
             hoursBefore = draftActivity!.timeBeforeMinutes! / 60.0;
           }
         }
+        final draftDurationMinutes = draftActivity?.durationMinutes;
+        final macroDurationMinutes = (macroTargets.metrics.durationH * 60)
+            .round();
+        final resolvedDurationMinutes =
+            (draftDurationMinutes != null && draftDurationMinutes > 0)
+            ? draftDurationMinutes
+            : macroDurationMinutes;
 
         // Get dietary preferences and food preferences
         final dietaryPreference = userProfile?.dietaryPreference?.dbValue;
@@ -1750,7 +1761,7 @@ class MacroTargetsController extends _$MacroTargetsController {
               allergies: allergies,
               likedFoods: likedFoods,
               dislikedFoods: dislikedFoods,
-              durationMinutes: (macroTargets.metrics.durationH * 60).round(),
+              durationMinutes: resolvedDurationMinutes,
               gutTrainingLevel: userProfile?.gutTraining.name,
             );
 
@@ -1803,6 +1814,10 @@ class MacroTargetsController extends _$MacroTargetsController {
             status:
                 domain.ActivityStatus.planned, // Promote from draft to planned
             nutritionPlanData: nutritionPlan.toJson(),
+            durationMinutes: resolvedDurationMinutes,
+            paceTargetMinutesPerMile:
+                macroTargets.metrics.paceMinPerMile ??
+                existingActivity.paceTargetMinutesPerMile,
             notes: 'Finalized nutrition plan',
             updatedAt: DateTime.now(),
           );

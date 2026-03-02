@@ -17,6 +17,7 @@ class ExpandableFoodItemWidget extends StatefulWidget {
     this.onQuantityChange,
     this.showSwipeHint = false,
     this.useImperial = true,
+    this.subtitleOverride,
   });
 
   final FoodItemData food;
@@ -28,12 +29,15 @@ class ExpandableFoodItemWidget extends StatefulWidget {
   final Function(double)? onQuantityChange;
   final bool showSwipeHint;
   final bool useImperial;
+  final String? subtitleOverride;
 
   @override
-  State<ExpandableFoodItemWidget> createState() => _ExpandableFoodItemWidgetState();
+  State<ExpandableFoodItemWidget> createState() =>
+      _ExpandableFoodItemWidgetState();
 }
 
-class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> with SingleTickerProviderStateMixin {
+class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
+    with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late double _quantity;
   late final AnimationController _swipeHintController;
@@ -56,27 +60,30 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
     _swipeHintOffset = TweenSequence<double>([
       // Swipe left to show "Delete" button
       TweenSequenceItem(
-        tween: Tween(begin: 0.0, end: -80.0).chain(CurveTween(curve: Curves.easeOutCubic)),
+        tween: Tween(
+          begin: 0.0,
+          end: -80.0,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
         weight: 25,
       ),
       // Pause on Delete to let user see it
-      TweenSequenceItem(
-        tween: ConstantTween(-80.0),
-        weight: 15,
-      ),
+      TweenSequenceItem(tween: ConstantTween(-80.0), weight: 15),
       // Swipe right to show "Swap" button
       TweenSequenceItem(
-        tween: Tween(begin: -80.0, end: 80.0).chain(CurveTween(curve: Curves.easeInOutCubic)),
+        tween: Tween(
+          begin: -80.0,
+          end: 80.0,
+        ).chain(CurveTween(curve: Curves.easeInOutCubic)),
         weight: 25,
       ),
       // Pause on Swap to let user see it
-      TweenSequenceItem(
-        tween: ConstantTween(80.0),
-        weight: 15,
-      ),
+      TweenSequenceItem(tween: ConstantTween(80.0), weight: 15),
       // Return to center
       TweenSequenceItem(
-        tween: Tween(begin: 80.0, end: 0.0).chain(CurveTween(curve: Curves.easeInCubic)),
+        tween: Tween(
+          begin: 80.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeInCubic)),
         weight: 20,
       ),
     ]).animate(_swipeHintController);
@@ -91,7 +98,9 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
     super.didUpdateWidget(oldWidget);
     // Re-sync _quantity when food data changes externally (e.g., summary view update)
     if (widget.food.quantity != oldWidget.food.quantity) {
-      final quantityMatch = RegExp(r'^([\d.]+)').firstMatch(widget.food.quantity);
+      final quantityMatch = RegExp(
+        r'^([\d.]+)',
+      ).firstMatch(widget.food.quantity);
       _quantity = quantityMatch != null
           ? double.tryParse(quantityMatch.group(1)!) ?? 1.0
           : 1.0;
@@ -123,7 +132,10 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
   String _convertToMetric(String description) {
     // Pattern: number + unit (cups, oz, fl oz)
     final cupsPattern = RegExp(r'(\d+\.?\d*)\s*cups?', caseSensitive: false);
-    final ozPattern = RegExp(r'(\d+\.?\d*)\s*(fl\s*oz|oz)', caseSensitive: false);
+    final ozPattern = RegExp(
+      r'(\d+\.?\d*)\s*(fl\s*oz|oz)',
+      caseSensitive: false,
+    );
 
     var result = description;
 
@@ -143,43 +155,31 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
   }
 
   /// Build a human-readable quantity description
-  /// Priority: displayNamePlural > servingSize > raw quantity
+  /// Uses quantity-first phrasing with simplified food names.
   String _buildQuantityDescription() {
-    final qty = widget.food.quantity;
-    final numericQty = double.tryParse(qty);
-    final displayPlural = widget.food.displayNamePlural;
-    final servingSize = widget.food.servingSize;
+    final rawQuantity = widget.food.quantity.trim();
+    final numericQty = _parseLeadingQuantity(rawQuantity);
+    String description = rawQuantity;
 
-    String description;
+    if (numericQty != null) {
+      final roundedQty = _roundFriendlyQuantity(
+        numericQty,
+        isIndivisible: widget.food.isIndivisible,
+      );
+      final qtyStr = _formatQuantityNumber(roundedQty);
+      final tail = _parseQuantityTail(rawQuantity);
+      final hasUsefulTail =
+          tail.isNotEmpty && !tail.toLowerCase().startsWith('x ');
 
-    // Priority 1: displayNamePlural available (e.g., "3 cups Sports Drink")
-    if (displayPlural != null && displayPlural.isNotEmpty && numericQty != null) {
-      final qtyStr = numericQty == numericQty.roundToDouble()
-          ? numericQty.round().toString()
-          : numericQty.toStringAsFixed(1);
-      description = '$qtyStr $displayPlural';
-    }
-    // Priority 2: servingSize available (e.g., "1 medium banana", "2 x 1 slice")
-    else if (servingSize != null && servingSize.isNotEmpty) {
-      if (numericQty != null && numericQty == 1.0) {
-        description = servingSize;
-      } else if (numericQty != null) {
-        final qtyStr = numericQty == numericQty.roundToDouble()
-            ? numericQty.round().toString()
-            : numericQty.toStringAsFixed(1);
-        description = '$qtyStr x $servingSize';
+      if (hasUsefulTail) {
+        description = '$qtyStr ${_simplifyName(tail)}';
       } else {
-        description = servingSize;
+        description = '$qtyStr ${_resolveSimpleFoodName(roundedQty)}';
       }
-    }
-    // Priority 3: fallback to raw quantity (only if it looks informative)
-    else if (numericQty != null) {
-      final qtyStr = numericQty == numericQty.roundToDouble()
-          ? numericQty.round().toString()
-          : numericQty.toStringAsFixed(1);
-      description = '$qtyStr serving${numericQty != 1.0 ? 's' : ''}';
+    } else if (rawQuantity.isEmpty) {
+      description = _resolveSimpleFoodName(1.0);
     } else {
-      description = qty;
+      description = _simplifyName(rawQuantity);
     }
 
     // Convert to metric if user prefers metric
@@ -188,6 +188,60 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
     }
 
     return description;
+  }
+
+  double? _parseLeadingQuantity(String raw) {
+    final match = RegExp(r'^([\d.]+)').firstMatch(raw);
+    if (match == null) return null;
+    return double.tryParse(match.group(1)!);
+  }
+
+  String _parseQuantityTail(String raw) {
+    final match = RegExp(r'^[\d.]+\s*(.*)$').firstMatch(raw);
+    return (match?.group(1) ?? '').trim();
+  }
+
+  String _resolveSimpleFoodName(double quantity) {
+    final singularRaw = widget.food.displayName?.isNotEmpty == true
+        ? widget.food.displayName!
+        : widget.food.name;
+    final pluralRaw = widget.food.displayNamePlural?.isNotEmpty == true
+        ? widget.food.displayNamePlural!
+        : _pluralize(singularRaw);
+    return _simplifyName(quantity == 1 ? singularRaw : pluralRaw);
+  }
+
+  String _pluralize(String value) {
+    final trimmed = value.trim();
+    if (trimmed.toLowerCase().endsWith('s')) return trimmed;
+    return '${trimmed}s';
+  }
+
+  String _simplifyName(String value) {
+    final noParen = value.replaceAll(RegExp(r'\s*\([^)]*\)'), '');
+    return noParen.trim();
+  }
+
+  double _roundFriendlyQuantity(double value, {required bool isIndivisible}) {
+    if (value <= 0) return isIndivisible ? 1.0 : 0.5;
+    if (isIndivisible) return value.round().toDouble();
+
+    final half = (value * 2).round() / 2;
+    final third = (value * 3).round() / 3;
+    final halfDiff = (value - half).abs();
+    final thirdDiff = (value - third).abs();
+    final rounded = thirdDiff + 0.08 < halfDiff ? third : half;
+    return (rounded * 100).round() / 100;
+  }
+
+  String _formatQuantityNumber(double value) {
+    if ((value - value.roundToDouble()).abs() < 0.01) {
+      return value.round().toString();
+    }
+    if ((value * 10 - (value * 10).round()).abs() < 0.01) {
+      return value.toStringAsFixed(1);
+    }
+    return value.toStringAsFixed(2);
   }
 
   @override
@@ -227,32 +281,39 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
 
                   const SizedBox(width: AppSpacing.md),
 
-                  // Food name and quantity description
+                  // Quantity-first title and optional explanatory subtitle
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.food.name,
+                          _buildQuantityDescription(),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(
-                          _buildQuantityDescription(),
-                          style: AppTextStyles.smallLabel.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        if (widget.subtitleOverride != null &&
+                            widget.subtitleOverride!.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.xxs),
+                          Text(
+                            widget.subtitleOverride!,
+                            style: AppTextStyles.smallLabel.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
 
                   // Chevron icon
                   Icon(
-                    _isExpanded ? FontAwesomeIcons.chevronUp : FontAwesomeIcons.chevronDown,
+                    _isExpanded
+                        ? FontAwesomeIcons.chevronUp
+                        : FontAwesomeIcons.chevronDown,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -281,10 +342,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
                       ),
                       Container(
                         decoration: BoxDecoration(
-                          border: Border.all(
-                            color: AppColors.orange,
-                            width: 2,
-                          ),
+                          border: Border.all(color: AppColors.orange, width: 2),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -299,9 +357,15 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
                               ),
                               onPressed: () {
                                 setState(() {
-                                  if (_quantity > 0.5) {
-                                    _quantity -= 0.5;
-                                    widget.onQuantityChange?.call(_quantity);
+                                  final step = widget.food.isIndivisible
+                                      ? 1.0
+                                      : 0.5;
+                                  if (_quantity > step) {
+                                    _quantity -= step;
+                                    final updated = widget.food.isIndivisible
+                                        ? _quantity.round().toDouble()
+                                        : _quantity;
+                                    widget.onQuantityChange?.call(updated);
                                   }
                                 });
                               },
@@ -309,7 +373,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
 
                             // Quantity display
                             Text(
-                              _quantity.toStringAsFixed(1),
+                              _formatQuantityNumber(_quantity),
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.bold,
@@ -325,8 +389,14 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
                               ),
                               onPressed: () {
                                 setState(() {
-                                  _quantity += 0.5;
-                                  widget.onQuantityChange?.call(_quantity);
+                                  final step = widget.food.isIndivisible
+                                      ? 1.0
+                                      : 0.5;
+                                  _quantity += step;
+                                  final updated = widget.food.isIndivisible
+                                      ? _quantity.round().toDouble()
+                                      : _quantity;
+                                  widget.onQuantityChange?.call(updated);
                                 });
                               },
                             ),
@@ -351,7 +421,10 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.3),
                       borderRadius: AppRadius.smRadius,
                     ),
                     child: Row(
@@ -359,7 +432,8 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
                       children: [
                         _buildNutritionItem(
                           context: context,
-                          value: '${widget.food.nutritionalInfo?.calories?.toInt() ?? 0}',
+                          value:
+                              '${widget.food.nutritionalInfo?.calories?.toInt() ?? 0}',
                           label: 'CALORIES',
                         ),
                         _buildNutritionItem(
@@ -369,7 +443,8 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
                         ),
                         _buildNutritionItem(
                           context: context,
-                          value: '${widget.food.nutritionalInfo?.protein ?? 0}g',
+                          value:
+                              '${widget.food.nutritionalInfo?.protein ?? 0}g',
                           label: 'PROTEIN',
                         ),
                         _buildNutritionItem(
@@ -435,7 +510,9 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: offset < 0 ? AppColors.electrolyte : Colors.transparent,
+                    color: offset < 0
+                        ? AppColors.electrolyte
+                        : Colors.transparent,
                     borderRadius: AppRadius.smRadius,
                   ),
                   child: offset < 0
@@ -466,7 +543,9 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget> wit
                   alignment: Alignment.centerLeft,
                   padding: const EdgeInsets.only(left: AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: offset > 0 ? AppColors.dragonfruit : Colors.transparent,
+                    color: offset > 0
+                        ? AppColors.dragonfruit
+                        : Colors.transparent,
                     borderRadius: AppRadius.smRadius,
                   ),
                   child: offset > 0

@@ -126,16 +126,6 @@ class _DuringPhaseSectionWidgetState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(context),
-          if (widget.subtitle != null && !_showByHour) ...[
-            const SizedBox(height: AppSpacing.xxs),
-            Text(
-              widget.subtitle!,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
           const SizedBox(height: AppSpacing.md),
           MacroSummaryRow(
             foods: widget.section.foodItems,

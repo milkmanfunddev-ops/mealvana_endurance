@@ -35,8 +35,9 @@ class NutritionPlan {
   final DateTime? runDateTime; // Scheduled run date and time
   final int? planRating; // 1=Could be better, 2=Neutral, 3=Satisfied
   final String? journalNotes; // User's feedback notes about the plan
-  final String? activityId; // Foreign key to activities table (calendar integration - UUID)
-  
+  final String?
+  activityId; // Foreign key to activities table (calendar integration - UUID)
+
   // Versioning fields
   final int version;
   final String? lastModifiedBy; // device_id of the modifier
@@ -138,7 +139,8 @@ class NutritionPlan {
           ? DateTime.parse(json['updatedAt'])
           : null,
       isDeleted: json['isDeleted'] as bool? ?? false,
-      conflictResolution: json['conflictResolution'] as String? ?? 'last_write_wins',
+      conflictResolution:
+          json['conflictResolution'] as String? ?? 'last_write_wins',
     );
   }
 
@@ -167,7 +169,10 @@ class NutritionPlan {
       if (planData['sections'] is List) {
         try {
           sections = (planData['sections'] as List<dynamic>)
-              .map((section) => PlanSection.fromJson(section as Map<String, dynamic>))
+              .map(
+                (section) =>
+                    PlanSection.fromJson(section as Map<String, dynamic>),
+              )
               .toList();
         } catch (e) {
           DebugLogger.error('Error parsing sections from sections array: $e');
@@ -188,62 +193,92 @@ class NutritionPlan {
 
             for (final key in ['meal', 'snack', 'top_up']) {
               if (beforeMap[key] is Map) {
-                subPhases.add(BeforeSubPhase.fromJson(beforeMap[key] as Map<String, dynamic>));
+                subPhases.add(
+                  BeforeSubPhase.fromJson(
+                    beforeMap[key] as Map<String, dynamic>,
+                  ),
+                );
               }
             }
 
-            parsedSections.add(PlanSection(
-              id: 'before_run',
-              title: 'Before Run',
-              subtitle: 'Pre-workout nutrition',
-              foodItems: const [], // Foods live in sub-phases
-              subPhases: subPhases,
-            ));
+            parsedSections.add(
+              PlanSection(
+                id: 'before_run',
+                title: 'Before Run',
+                subtitle: 'Pre-workout nutrition',
+                foodItems: const [], // Foods live in sub-phases
+                subPhases: subPhases,
+              ),
+            );
           } else if (plan['before'] is List) {
             // V1 format: before is a flat list of food items
-            parsedSections.add(PlanSection.fromEdgeFunctionJson('before_run', plan['before'] as List<dynamic>));
+            parsedSections.add(
+              PlanSection.fromEdgeFunctionJson(
+                'before_run',
+                plan['before'] as List<dynamic>,
+              ),
+            );
           }
 
           // Parse "during" section — V2 may return Map {foods, by_hour_data} or List
           if (plan['during'] is Map) {
             final duringMap = plan['during'] as Map<String, dynamic>;
             final duringFoods = duringMap['foods'] as List<dynamic>? ?? [];
-            final section = PlanSection.fromEdgeFunctionJson('during_run', duringFoods);
+            final section = PlanSection.fromEdgeFunctionJson(
+              'during_run',
+              duringFoods,
+            );
             // Parse byHourData if server provided it
-            final byHourJson = duringMap['by_hour_data'] as Map<String, dynamic>?;
+            final byHourJson =
+                duringMap['by_hour_data'] as Map<String, dynamic>?;
             if (byHourJson != null) {
-              parsedSections.add(section.copyWith(
-                byHourData: ByHourData.fromJson(byHourJson),
-              ));
+              parsedSections.add(
+                section.copyWith(byHourData: ByHourData.fromJson(byHourJson)),
+              );
             } else {
               parsedSections.add(section);
             }
           } else if (plan['during'] is List) {
             // Backward compat: plain array of food items
-            parsedSections.add(PlanSection.fromEdgeFunctionJson('during_run', plan['during'] as List<dynamic>));
+            parsedSections.add(
+              PlanSection.fromEdgeFunctionJson(
+                'during_run',
+                plan['during'] as List<dynamic>,
+              ),
+            );
           }
 
           // Parse "after" section
           if (plan['after'] is List) {
-            parsedSections.add(PlanSection.fromEdgeFunctionJson('after_run', plan['after'] as List<dynamic>));
+            parsedSections.add(
+              PlanSection.fromEdgeFunctionJson(
+                'after_run',
+                plan['after'] as List<dynamic>,
+              ),
+            );
           }
 
           // Apply per-phase targets from macro_targets (snake_case from V2 edge function)
-          final macroTargetsMap = planData['macro_targets'] as Map<String, dynamic>?;
+          final macroTargetsMap =
+              planData['macro_targets'] as Map<String, dynamic>?;
           if (macroTargetsMap != null) {
             sections = parsedSections.map((section) {
               Map<String, dynamic>? phaseTargets;
               if (section.id == 'before_run') {
-                phaseTargets = macroTargetsMap['pre_run'] as Map<String, dynamic>?;
+                phaseTargets =
+                    macroTargetsMap['pre_run'] as Map<String, dynamic>?;
               } else if (section.id == 'during_run') {
-                phaseTargets = macroTargetsMap['during_run'] as Map<String, dynamic>?;
+                phaseTargets =
+                    macroTargetsMap['during_run'] as Map<String, dynamic>?;
               } else if (section.id == 'after_run') {
-                phaseTargets = macroTargetsMap['post_run'] as Map<String, dynamic>?;
+                phaseTargets =
+                    macroTargetsMap['post_run'] as Map<String, dynamic>?;
               }
               if (phaseTargets != null) {
                 return section.copyWith(
                   carbsTarget: (phaseTargets['carbs_g'] as num?)?.toDouble(),
-                  proteinTarget: (phaseTargets['protein_g'] as num?)?.toDouble(),
+                  proteinTarget: (phaseTargets['protein_g'] as num?)
+                      ?.toDouble(),
                   fatTarget: (phaseTargets['fat_g'] as num?)?.toDouble(),
                   sodiumTarget: (phaseTargets['sodium_mg'] as num?)?.toDouble(),
                   fluidsTarget: (phaseTargets['water_ml'] as num?)?.toDouble(),
@@ -254,9 +289,13 @@ class NutritionPlan {
           } else {
             sections = parsedSections;
           }
-          DebugLogger.info('✅ Parsed ${sections.length} sections from Edge Function format');
+          DebugLogger.info(
+            '✅ Parsed ${sections.length} sections from Edge Function format',
+          );
         } catch (e) {
-          DebugLogger.error('Error parsing sections from Edge Function format: $e');
+          DebugLogger.error(
+            'Error parsing sections from Edge Function format: $e',
+          );
           sections = [];
         }
       }
@@ -266,25 +305,39 @@ class NutritionPlan {
     PlanMacroSummary? macroTargets;
     if (planData != null && planData['macroTargets'] is Map) {
       try {
-        macroTargets = PlanMacroSummary.fromJson(planData['macroTargets'] as Map<String, dynamic>);
+        macroTargets = PlanMacroSummary.fromJson(
+          planData['macroTargets'] as Map<String, dynamic>,
+        );
       } catch (e) {
         DebugLogger.error('Error parsing macroTargets: $e');
         macroTargets = null;
       }
     }
     // Fallback: build PlanMacroSummary from snake_case macro_targets (V2 edge function)
-    if (macroTargets == null && planData != null && planData['macro_targets'] is Map) {
+    if (macroTargets == null &&
+        planData != null &&
+        planData['macro_targets'] is Map) {
       try {
         final mt = planData['macro_targets'] as Map<String, dynamic>;
         final pre = mt['pre_run'] as Map<String, dynamic>? ?? {};
         final during = mt['during_run'] as Map<String, dynamic>? ?? {};
         final post = mt['post_run'] as Map<String, dynamic>? ?? {};
         // Sum across all phases for the overall summary
-        final totalCarbs = ((pre['carbs_g'] as num?) ?? 0) + ((during['carbs_g'] as num?) ?? 0) + ((post['carbs_g'] as num?) ?? 0);
-        final totalProtein = ((pre['protein_g'] as num?) ?? 0) + ((post['protein_g'] as num?) ?? 0);
-        final totalFat = ((pre['fat_g'] as num?) ?? 0) + ((post['fat_g'] as num?) ?? 0);
-        final totalSodium = ((pre['sodium_mg'] as num?) ?? 0) + ((during['sodium_mg'] as num?) ?? 0) + ((post['sodium_mg'] as num?) ?? 0);
-        final totalCalories = (totalCarbs * 4 + totalProtein * 4 + totalFat * 9).round();
+        final totalCarbs =
+            ((pre['carbs_g'] as num?) ?? 0) +
+            ((during['carbs_g'] as num?) ?? 0) +
+            ((post['carbs_g'] as num?) ?? 0);
+        final totalProtein =
+            ((pre['protein_g'] as num?) ?? 0) +
+            ((post['protein_g'] as num?) ?? 0);
+        final totalFat =
+            ((pre['fat_g'] as num?) ?? 0) + ((post['fat_g'] as num?) ?? 0);
+        final totalSodium =
+            ((pre['sodium_mg'] as num?) ?? 0) +
+            ((during['sodium_mg'] as num?) ?? 0) +
+            ((post['sodium_mg'] as num?) ?? 0);
+        final totalCalories = (totalCarbs * 4 + totalProtein * 4 + totalFat * 9)
+            .round();
         macroTargets = PlanMacroSummary(
           calories: totalCalories,
           carbs: totalCarbs.round(),
@@ -302,14 +355,20 @@ class NutritionPlan {
       name: json['plan_name'] as String,
       sections: sections,
       macroTargets: macroTargets,
-      totalCalories: json['total_calories'] is num ? (json['total_calories'] as num).toInt() : null,
+      totalCalories: json['total_calories'] is num
+          ? (json['total_calories'] as num).toInt()
+          : null,
       notes: json['notes'] as String?,
       runDateTime: json['run_date_time'] is String
           ? DateTime.tryParse(json['run_date_time'])
           : null,
-      planRating: json['plan_rating'] is num ? (json['plan_rating'] as num).toInt() : null,
+      planRating: json['plan_rating'] is num
+          ? (json['plan_rating'] as num).toInt()
+          : null,
       journalNotes: json['journal_notes'] as String?,
-      activityId: _parseActivityId(json['activity_id'] ?? planData?['activityId']),
+      activityId: _parseActivityId(
+        json['activity_id'] ?? planData?['activityId'],
+      ),
       version: json['version'] is num ? (json['version'] as num).toInt() : 1,
       lastModifiedBy: json['last_modified_by'] as String?,
       clientUpdatedAt: json['client_updated_at'] is String
@@ -321,8 +380,11 @@ class NutritionPlan {
       updatedAt: json['updated_at'] is String
           ? DateTime.tryParse(json['updated_at'])
           : null,
-      isDeleted: json['is_deleted'] is bool ? json['is_deleted'] as bool : false,
-      conflictResolution: json['conflict_resolution'] as String? ?? 'last_write_wins',
+      isDeleted: json['is_deleted'] is bool
+          ? json['is_deleted'] as bool
+          : false,
+      conflictResolution:
+          json['conflict_resolution'] as String? ?? 'last_write_wins',
     );
   }
 
@@ -394,49 +456,92 @@ class BeforeSubPhase {
 
   /// Auto-generated summary of foods in this sub-phase (for collapsed display)
   String get templateSummary {
-    if (templateName != null && templateName!.isNotEmpty) {
-      return templateName!;
-    }
-    if (foodItems.isEmpty) return '';
-    return foodItems.map((f) {
-      final qty = f.quantity;
-      final name = f.displayName ?? f.name;
-      // If quantity is just a number, prefix it; otherwise use as-is
-      final numericQty = double.tryParse(qty);
-      if (numericQty != null && numericQty == 1.0) {
-        return name;
-      }
-      return '$qty $name';
-    }).join(' + ');
+    if (foodItems.isEmpty) return templateName ?? '';
+
+    return foodItems
+        .map((f) {
+          final match = RegExp(
+            r'^([\d.]+)\s*(.*)$',
+          ).firstMatch(f.quantity.trim());
+          final numericQty = match != null
+              ? double.tryParse(match.group(1)!)
+              : null;
+          final baseName = _simplifyName(f.displayName ?? f.name);
+          final pluralName = _simplifyName(
+            f.displayNamePlural ??
+                (baseName.toLowerCase().endsWith('s')
+                    ? baseName
+                    : '${baseName}s'),
+          );
+
+          if (numericQty == null) return baseName;
+          if ((numericQty - 1.0).abs() < 0.01) {
+            return baseName;
+          }
+          final qtyStr = (numericQty - numericQty.roundToDouble()).abs() < 0.01
+              ? numericQty.round().toString()
+              : numericQty.toStringAsFixed(
+                  (numericQty * 10 - (numericQty * 10).round()).abs() < 0.01
+                      ? 1
+                      : 2,
+                );
+          return '$qtyStr $pluralName';
+        })
+        .join(' + ');
+  }
+
+  static String _simplifyName(String raw) {
+    return raw.replaceAll(RegExp(r'\s*\([^)]*\)'), '').trim();
   }
 
   factory BeforeSubPhase.fromJson(Map<String, dynamic> json) {
     return BeforeSubPhase(
-      subPhaseType: json['sub_phase_type'] as String? ?? json['subPhaseType'] as String,
-      foodItems: (json['foods'] as List<dynamic>? ?? json['foodItems'] as List<dynamic>? ?? [])
-          .map((item) {
-            if (item is Map<String, dynamic>) {
-              // Check if it's edge function format (has food_id) or standard format
-              if (item.containsKey('food_id')) {
-                return FoodItemData.fromEdgeFunctionJson(item);
-              }
-              return FoodItemData.fromJson(item);
-            }
-            return FoodItemData(id: '', name: 'Unknown', quantity: '0');
-          })
-          .toList(),
-      carbsTarget: (json['targets'] is Map ? (json['targets']['carbs_g'] as num?)?.toDouble() : null)
-          ?? (json['carbsTarget'] as num?)?.toDouble(),
-      proteinTarget: (json['targets'] is Map ? (json['targets']['protein_g'] as num?)?.toDouble() : null)
-          ?? (json['proteinTarget'] as num?)?.toDouble(),
-      fatTarget: (json['targets'] is Map ? (json['targets']['fat_g'] as num?)?.toDouble() : null)
-          ?? (json['fatTarget'] as num?)?.toDouble(),
-      sodiumTarget: (json['targets'] is Map ? (json['targets']['sodium_mg'] as num?)?.toDouble() : null)
-          ?? (json['sodiumTarget'] as num?)?.toDouble(),
-      fluidsTarget: (json['targets'] is Map ? (json['targets']['water_ml'] as num?)?.toDouble() : null)
-          ?? (json['fluidsTarget'] as num?)?.toDouble(),
-      templateId: json['template_id'] as String? ?? json['templateId'] as String?,
-      templateName: json['template_name'] as String? ?? json['templateName'] as String?,
+      subPhaseType:
+          json['sub_phase_type'] as String? ?? json['subPhaseType'] as String,
+      foodItems:
+          (json['foods'] as List<dynamic>? ??
+                  json['foodItems'] as List<dynamic>? ??
+                  [])
+              .map((item) {
+                if (item is Map<String, dynamic>) {
+                  // Check if it's edge function format (has food_id) or standard format
+                  if (item.containsKey('food_id')) {
+                    return FoodItemData.fromEdgeFunctionJson(item);
+                  }
+                  return FoodItemData.fromJson(item);
+                }
+                return FoodItemData(id: '', name: 'Unknown', quantity: '0');
+              })
+              .toList(),
+      carbsTarget:
+          (json['targets'] is Map
+              ? (json['targets']['carbs_g'] as num?)?.toDouble()
+              : null) ??
+          (json['carbsTarget'] as num?)?.toDouble(),
+      proteinTarget:
+          (json['targets'] is Map
+              ? (json['targets']['protein_g'] as num?)?.toDouble()
+              : null) ??
+          (json['proteinTarget'] as num?)?.toDouble(),
+      fatTarget:
+          (json['targets'] is Map
+              ? (json['targets']['fat_g'] as num?)?.toDouble()
+              : null) ??
+          (json['fatTarget'] as num?)?.toDouble(),
+      sodiumTarget:
+          (json['targets'] is Map
+              ? (json['targets']['sodium_mg'] as num?)?.toDouble()
+              : null) ??
+          (json['sodiumTarget'] as num?)?.toDouble(),
+      fluidsTarget:
+          (json['targets'] is Map
+              ? (json['targets']['water_ml'] as num?)?.toDouble()
+              : null) ??
+          (json['fluidsTarget'] as num?)?.toDouble(),
+      templateId:
+          json['template_id'] as String? ?? json['templateId'] as String?,
+      templateName:
+          json['template_name'] as String? ?? json['templateName'] as String?,
     );
   }
 
@@ -479,7 +584,8 @@ class BeforeSubPhase {
   }
 
   @override
-  String toString() => 'BeforeSubPhase($subPhaseType, items: ${foodItems.length})';
+  String toString() =>
+      'BeforeSubPhase($subPhaseType, items: ${foodItems.length})';
 }
 
 /// Section within a nutrition plan (Before/During/After Run)
@@ -540,8 +646,9 @@ class PlanSection {
     // Parse byHourData if present
     ByHourData? byHourData;
     if (json['byHourData'] is Map<String, dynamic>) {
-      byHourData =
-          ByHourData.fromJson(json['byHourData'] as Map<String, dynamic>);
+      byHourData = ByHourData.fromJson(
+        json['byHourData'] as Map<String, dynamic>,
+      );
     }
 
     return PlanSection(
@@ -549,7 +656,8 @@ class PlanSection {
       title: json['title'] as String,
       subtitle: json['subtitle'] as String?,
       timing: json['timing'] as String?,
-      foodItems: (json['foodItems'] as List<dynamic>?)
+      foodItems:
+          (json['foodItems'] as List<dynamic>?)
               ?.map((item) => FoodItemData.fromJson(item))
               .toList() ??
           [],
@@ -575,7 +683,6 @@ class PlanSection {
 
     final Map<String, String> sectionSubtitles = {
       'before_run': '30-60 min before',
-      'during_run': 'Every 45-60 minutes',
       'after_run': 'Within 30 minutes',
     };
 
@@ -585,7 +692,10 @@ class PlanSection {
       subtitle: sectionSubtitles[sectionId],
       timing: null,
       foodItems: items
-          .map((item) => FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>))
+          .map(
+            (item) =>
+                FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -603,7 +713,8 @@ class PlanSection {
       'carbsTarget': carbsTarget,
       'sodiumTarget': sodiumTarget,
       'fluidsTarget': fluidsTarget,
-      if (subPhases != null) 'subPhases': subPhases!.map((sp) => sp.toJson()).toList(),
+      if (subPhases != null)
+        'subPhases': subPhases!.map((sp) => sp.toJson()).toList(),
       if (byHourData != null) 'byHourData': byHourData!.toJson(),
     };
   }
@@ -649,8 +760,12 @@ class PlanSection {
     List<FoodItemData>? foodItems,
   }) {
     // Default values based on section type
-    double? defaultProtein, defaultFat, defaultCarbs, defaultSodium, defaultFluids;
-    
+    double? defaultProtein,
+        defaultFat,
+        defaultCarbs,
+        defaultSodium,
+        defaultFluids;
+
     switch (id) {
       case 'before-run':
       case 'pre-run':
@@ -772,7 +887,8 @@ class PlanMacroSummary {
   }
 
   @override
-  String toString() => 'PlanMacroSummary(cal: $calories, carbs: ${carbs}g, protein: ${protein}g, fat: ${fat}g)';
+  String toString() =>
+      'PlanMacroSummary(cal: $calories, carbs: ${carbs}g, protein: ${protein}g, fat: ${fat}g)';
 }
 
 /// Result of a versioned operation that may have conflicts

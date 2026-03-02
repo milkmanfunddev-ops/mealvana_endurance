@@ -81,7 +81,9 @@ class _PortalAthleteProfileFormState
       final heightFeet = int.tryParse(_heightFeetController.text);
       final heightInches = int.tryParse(_heightInchesController.text);
 
-      await ref.read(coachServiceProvider).updateAthleteProfile(
+      await ref
+          .read(coachServiceProvider)
+          .updateAthleteProfile(
             athleteUserId: widget.athleteUserId,
             firstName: _firstNameController.text.trim().isNotEmpty
                 ? _firstNameController.text.trim()
@@ -104,7 +106,8 @@ class _PortalAthleteProfileFormState
         // Refresh athlete detail data
         ref
             .read(
-                athleteDetailControllerProvider(widget.relationshipId).notifier)
+              athleteDetailControllerProvider(widget.relationshipId).notifier,
+            )
             .refresh();
       }
     } catch (e) {
@@ -122,69 +125,76 @@ class _PortalAthleteProfileFormState
       padding: const EdgeInsets.all(16),
       children: [
         // Personal Information
-        _buildSectionCard(
-          'Personal Information',
-          Icons.person,
-          [
-            _buildTextField('First Name', _firstNameController),
-            _buildTextField('Last Name', _lastNameController),
-            _buildGenderDropdown(),
-            _buildBirthdayPicker(),
-            _buildTextField('Height (ft)', _heightFeetController,
-                keyboardType: TextInputType.number),
-            _buildTextField('Height (in)', _heightInchesController,
-                keyboardType: TextInputType.number),
-            _buildTextField('Weight (lbs)', _weightController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true)),
-          ],
-        ),
+        _buildSectionCard('Personal Information', Icons.person, [
+          _buildTextField('First Name', _firstNameController),
+          _buildTextField('Last Name', _lastNameController),
+          _buildGenderDropdown(),
+          _buildBirthdayPicker(),
+          _buildTextField(
+            'Height (ft)',
+            _heightFeetController,
+            keyboardType: TextInputType.number,
+          ),
+          _buildTextField(
+            'Height (in)',
+            _heightInchesController,
+            keyboardType: TextInputType.number,
+          ),
+          _buildTextField(
+            'Weight (lbs)',
+            _weightController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+        ]),
         const SizedBox(height: 16),
 
         // Training Preferences
-        _buildSectionCard(
-          'Training Preferences',
-          Icons.fitness_center,
-          [
-            _buildSwitchRow('Runs with Water Bottle', _runsWithWaterBottle,
-                (val) {
-              setState(() => _runsWithWaterBottle = val);
-            }),
-            _buildGutTrainingDropdown(),
-            _buildGiSensitivityDropdown(),
-          ],
-        ),
+        _buildSectionCard('Training Preferences', Icons.fitness_center, [
+          _buildSwitchRow('Runs with Water Bottle', _runsWithWaterBottle, (
+            val,
+          ) {
+            setState(() => _runsWithWaterBottle = val);
+          }),
+          _buildGutTrainingDropdown(),
+          _buildGiSensitivityDropdown(),
+        ]),
         const SizedBox(height: 24),
 
         // Save button
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.electrolyte,
-              foregroundColor: AppColors.blackberryDark,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+        Align(
+          alignment: Alignment.centerRight,
+          child: SizedBox(
+            height: 48,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.electrolyte,
+                foregroundColor: AppColors.blackberryDark,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
+              onPressed: _isSaving ? null : _saveProfile,
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.blackberryDark,
+                      ),
+                    )
+                  : const Text(
+                      'Save Profile',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
-            onPressed: _isSaving ? null : _saveProfile,
-            child: _isSaving
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.blackberryDark,
-                    ),
-                  )
-                : const Text(
-                    'Save Profile',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
           ),
         ),
         const SizedBox(height: 16),
@@ -192,8 +202,7 @@ class _PortalAthleteProfileFormState
     );
   }
 
-  Widget _buildSectionCard(
-      String title, IconData icon, List<Widget> children) {
+  Widget _buildSectionCard(String title, IconData icon, List<Widget> children) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -252,24 +261,27 @@ class _PortalAthleteProfileFormState
               style: const TextStyle(color: AppColors.cream, fontSize: 13),
               decoration: InputDecoration(
                 isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 filled: true,
                 fillColor: AppColors.blackberryDark,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide:
-                      const BorderSide(color: AppColors.blackberryLight),
+                  borderSide: const BorderSide(
+                    color: AppColors.blackberryLight,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide:
-                      const BorderSide(color: AppColors.blackberryLight),
+                  borderSide: const BorderSide(
+                    color: AppColors.blackberryLight,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide:
-                      const BorderSide(color: AppColors.electrolyte),
+                  borderSide: const BorderSide(color: AppColors.electrolyte),
                 ),
               ),
             ),
@@ -280,29 +292,27 @@ class _PortalAthleteProfileFormState
   }
 
   Widget _buildGenderDropdown() {
-    return _buildDropdownRow(
-      'Gender',
-      _gender,
-      ['male', 'female', 'other'],
-      (val) => setState(() => _gender = val!),
-    );
+    return _buildDropdownRow('Gender', _gender, [
+      'male',
+      'female',
+      'other',
+    ], (val) => setState(() => _gender = val!));
   }
 
   Widget _buildGutTrainingDropdown() {
-    return _buildDropdownRow(
-      'Gut Training',
-      _gutTraining,
-      ['low', 'moderate', 'high'],
-      (val) => setState(() => _gutTraining = val!),
-    );
+    return _buildDropdownRow('Gut Training', _gutTraining, [
+      'low',
+      'moderate',
+      'high',
+    ], (val) => setState(() => _gutTraining = val!));
   }
 
   Widget _buildGiSensitivityDropdown() {
     final value = _giSensitivity == null
         ? 'unknown'
         : _giSensitivity!
-            ? 'yes'
-            : 'no';
+        ? 'yes'
+        : 'no';
 
     return _buildDropdownRow(
       'GI Sensitivity',
@@ -354,13 +364,14 @@ class _PortalAthleteProfileFormState
                   value: value,
                   isExpanded: true,
                   dropdownColor: AppColors.blackberry,
-                  style:
-                      const TextStyle(color: AppColors.cream, fontSize: 13),
+                  style: const TextStyle(color: AppColors.cream, fontSize: 13),
                   items: options
-                      .map((o) => DropdownMenuItem(
-                            value: o,
-                            child: Text(o[0].toUpperCase() + o.substring(1)),
-                          ))
+                      .map(
+                        (o) => DropdownMenuItem(
+                          value: o,
+                          child: Text(o[0].toUpperCase() + o.substring(1)),
+                        ),
+                      )
                       .toList(),
                   onChanged: onChanged,
                 ),
@@ -373,28 +384,42 @@ class _PortalAthleteProfileFormState
   }
 
   Widget _buildSwitchRow(
-      String label, bool value, ValueChanged<bool> onChanged) {
+    String label,
+    bool value,
+    ValueChanged<bool> onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                color: AppColors.textDarkSecondary,
-                fontSize: 13,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.blackberryDark,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.blackberryLight),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textDarkSecondary,
+                  fontSize: 13,
+                ),
               ),
             ),
-          ),
-          Switch(
-            value: value,
-            activeTrackColor: AppColors.electrolyte,
-            onChanged: onChanged,
-          ),
-        ],
+            Switch(
+              value: value,
+              activeThumbColor: AppColors.blackberryDark,
+              activeTrackColor: AppColors.electrolyte,
+              inactiveThumbColor: AppColors.textDarkSecondary,
+              inactiveTrackColor: AppColors.blackberryLight,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              onChanged: onChanged,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -441,7 +466,9 @@ class _PortalAthleteProfileFormState
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.blackberryDark,
                   borderRadius: BorderRadius.circular(8),
