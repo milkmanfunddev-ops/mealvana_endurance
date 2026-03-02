@@ -476,10 +476,16 @@ class ByHourApportionmentService {
     }
 
     // For non-drinks: pick the preferred slot with fewest items
+    // Match the slot count logic in ByHourData.lastHourSlotCount:
+    // only show slots where at least 15 min (END_CUTOFF) remains after slot start
     final lastHourRemainder = durationMinutes % 60;
-    final lastHourSlotCount = lastHourRemainder == 0
-        ? 4
-        : (lastHourRemainder / 15).ceil().clamp(1, 4);
+    final int lastHourSlotCount;
+    if (lastHourRemainder == 0) {
+      lastHourSlotCount = 4;
+    } else {
+      final usable = lastHourRemainder - _endCutoffMinutes;
+      lastHourSlotCount = usable <= 0 ? 1 : (usable ~/ 15) + 1;
+    }
     final maxSlots = hourIndex == totalHours - 1 ? lastHourSlotCount : 4;
 
     final preferredSlotOrder = [1, 2, 3, 0];

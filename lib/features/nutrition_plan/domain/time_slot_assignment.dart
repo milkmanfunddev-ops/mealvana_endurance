@@ -147,11 +147,18 @@ class ByHourData {
   int get totalHours =>
       (durationMinutes / 60).ceil().clamp(1, double.infinity).toInt();
 
-  /// Number of 15-minute slots in the last hour (if partial)
+  /// Number of 15-minute slots in the last hour (if partial).
+  ///
+  /// Only shows slots where food can meaningfully be scheduled.
+  /// Hides trailing slots that fall within the end-cutoff zone (last 15 min)
+  /// where no food would be placed by the apportionment algorithm.
   int get lastHourSlotCount {
     final remainder = durationMinutes % 60;
     if (remainder == 0) return 4; // Full hour
-    return (remainder / 15).ceil().clamp(1, 4);
+    // Only show slots where at least END_CUTOFF (15 min) remains after slot start
+    final usableMinutes = remainder - 15;
+    if (usableMinutes <= 0) return 1; // Always show :00 for drinks
+    return (usableMinutes ~/ 15) + 1;
   }
 
   /// Number of slots for a given hour index
