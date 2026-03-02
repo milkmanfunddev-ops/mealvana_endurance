@@ -1055,10 +1055,7 @@ class CoachRepository with SyncableRepository {
         if (id == null) continue;
 
         // Update existing local user_profiles (only name fields)
-        // We use UPDATE instead of INSERT because athlete profiles belong to
-        // other users/devices and don't have a deviceId relevant to this device.
-        // If the profile doesn't exist locally, we skip it (no error).
-        await (_database.update(
+        final rowsAffected = await (_database.update(
           _database.userProfilesTable,
         )..where((t) => t.id.equals(id))).write(
           UserProfilesTableCompanion(
@@ -1068,6 +1065,22 @@ class CoachRepository with SyncableRepository {
             updatedAt: Value(DateTime.now()),
           ),
         );
+
+        // If profile doesn't exist locally, create a minimal one with name data
+        // This is needed because the LEFT OUTER JOIN in getActiveRelationshipsForCoach
+        // returns null when the profile row is missing, causing "Athlete XXXXX" fallback
+        if (rowsAffected == 0) {
+          await _database.into(_database.userProfilesTable).insert(
+            UserProfilesTableCompanion.insert(
+              id: id,
+              deviceId: id,
+              firstName: Value(r['first_name'] as String?),
+              lastName: Value(r['last_name'] as String?),
+              senderName: Value(r['sender_name'] as String?),
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+        }
       }
 
       _logger.info(
@@ -1908,20 +1921,36 @@ class CoachRepository with SyncableRepository {
       // PostgREST `or` filter expression.
       // Commas are separators in the expression, so strip from user input.
       final safeQuery = normalizedQuery.replaceAll(',', ' ');
-      final wildcard = '%$safeQuery%';
       final clampedLimit = limit.clamp(1, 50).toInt();
+
+      // Split query into individual words so "test User" matches
+      // first_name="test" + last_name="User" (each word searched separately).
+      // Also keep the full query for sender_name and email matching.
+      final words = safeQuery
+          .split(RegExp(r'\s+'))
+          .where((w) => w.isNotEmpty)
+          .toList();
+
+      final filterParts = <String>[];
+      for (final word in words) {
+        final wc = '%$word%';
+        filterParts.add('first_name.ilike.$wc');
+        filterParts.add('last_name.ilike.$wc');
+      }
+      // Also match the full query against sender_name and email
+      final fullWildcard = '%$safeQuery%';
+      filterParts.add('sender_name.ilike.$fullWildcard');
 
       List<dynamic> response;
 
       // Try with email first. Some environments may not have an `email` column
       // in public.users, so fall back to name-only search if that fails.
       try {
+        filterParts.add('email.ilike.$fullWildcard');
         response = await _supabase
             .from('users')
             .select('id, first_name, last_name, sender_name, email')
-            .or(
-              'first_name.ilike.$wildcard,last_name.ilike.$wildcard,sender_name.ilike.$wildcard,email.ilike.$wildcard',
-            )
+            .or(filterParts.join(','))
             .neq('id', currentUserId)
             .limit(clampedLimit);
       } on PostgrestException catch (e) {
@@ -1932,12 +1961,12 @@ class CoachRepository with SyncableRepository {
           rethrow;
         }
 
+        // Remove the email filter part and retry without email column
+        filterParts.removeLast();
         response = await _supabase
             .from('users')
             .select('id, first_name, last_name, sender_name')
-            .or(
-              'first_name.ilike.$wildcard,last_name.ilike.$wildcard,sender_name.ilike.$wildcard',
-            )
+            .or(filterParts.join(','))
             .neq('id', currentUserId)
             .limit(clampedLimit);
       }

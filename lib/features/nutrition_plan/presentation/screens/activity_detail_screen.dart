@@ -163,10 +163,31 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          Text(
-            widget.isNewActivity ? 'New Activity' : 'Activity Details',
-            style: AppTextStyles.sectionTitle.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
+          Expanded(
+            child: Consumer(
+              builder: (context, ref, _) {
+                final asyncState = widget.isCoachView
+                    ? ref.watch(coachActivityDetailControllerProvider(widget.activityId))
+                    : ref.watch(activityDetailControllerProvider(
+                        activityId: widget.activityId,
+                        isNewActivity: widget.isNewActivity,
+                      ));
+                final eventName = asyncState.whenOrNull(
+                  data: (data) {
+                    if (data is ActivityDetailState) return data.eventName;
+                    return null;
+                  },
+                );
+                final title = eventName ??
+                    (widget.isNewActivity ? 'New Activity' : 'Activity Details');
+                return Text(
+                  title,
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                );
+              },
             ),
           ),
         ],

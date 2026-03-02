@@ -171,14 +171,12 @@ class _RouteAwareWrapper extends StatelessWidget {
 
   bool _isCoachSession() {
     try {
-      final matches = goRouter.routerDelegate.currentConfiguration.matches;
-      return matches.any((match) {
-        final route = match.route;
-        if (route is GoRoute) {
-          return route.path == '/coach';
-        }
-        return false;
-      });
+      // Use routeInformationProvider.value directly instead of
+      // routerDelegate.currentConfiguration.matches. The delegate may not
+      // have processed the new route yet when ListenableBuilder fires,
+      // causing isFullWidth to be false on page refresh at /coach.
+      final path = goRouter.routeInformationProvider.value.uri.path;
+      return path == '/coach' || path.startsWith('/coach/');
     } catch (_) {
       return false;
     }

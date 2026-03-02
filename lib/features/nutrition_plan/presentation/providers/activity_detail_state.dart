@@ -13,6 +13,7 @@ class ActivityDetailState {
     this.isCompleting = false,
     this.hasUnsavedChanges = false,
     this.isNewActivity = false,
+    this.eventName,
     this.error,
   });
 
@@ -24,6 +25,7 @@ class ActivityDetailState {
   final bool isCompleting;
   final bool hasUnsavedChanges; // Tracks if nutrition plan has been modified
   final bool isNewActivity; // True if this is the first time viewing after creation
+  final String? eventName; // Event name from linked event (reverse lookup)
   final String? error;
 
   bool get hasActivity => activity != null;
@@ -38,6 +40,7 @@ class ActivityDetailState {
     bool? isCompleting,
     bool? hasUnsavedChanges,
     bool? isNewActivity,
+    String? eventName,
     String? error,
   }) {
     return ActivityDetailState(
@@ -49,6 +52,7 @@ class ActivityDetailState {
       isCompleting: isCompleting ?? this.isCompleting,
       hasUnsavedChanges: hasUnsavedChanges ?? this.hasUnsavedChanges,
       isNewActivity: isNewActivity ?? this.isNewActivity,
+      eventName: eventName ?? this.eventName,
       error: error ?? this.error,
     );
   }

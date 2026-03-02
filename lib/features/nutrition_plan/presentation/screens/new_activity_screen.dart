@@ -65,6 +65,10 @@ class NewActivityScreen extends ConsumerStatefulWidget {
     // Shared parameters
     this.intensityTarget,
     this.timeBeforeMinutes,
+    // Brick event subtype distances (from triathlon/duathlon/multisport events)
+    this.brickSwimDistanceMeters,
+    this.brickBikeDistanceMiles,
+    this.brickRunDistanceMiles,
   });
 
   final DateTime? initialDate;
@@ -93,6 +97,11 @@ class NewActivityScreen extends ConsumerStatefulWidget {
   // Shared parameters
   final String? intensityTarget;
   final int? timeBeforeMinutes;
+
+  // Brick event subtype distances (from triathlon/duathlon/multisport events)
+  final double? brickSwimDistanceMeters;
+  final double? brickBikeDistanceMiles;
+  final double? brickRunDistanceMiles;
 
   @override
   ConsumerState<NewActivityScreen> createState() => _NewActivityScreenState();
@@ -314,22 +323,42 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     }
   }
 
-  /// Initialize brick controller from existing brick activity
-  /// Loads the activity by ID and populates the form with brick metadata
+  /// Initialize brick controller from existing brick activity or event subtype distances
+  ///
+  /// Priority:
+  /// 1. If activityId exists → load existing brick metadata
+  /// 2. If event subtype distances exist → pre-populate from event (triathlon/duathlon)
+  /// 3. Otherwise → start fresh with defaults
   void _initializeBrickController() {
-    if (widget.activityId == null) {
+    if (widget.activityId != null) {
       DebugLogger.info(
-        '🧱 NEW ACTIVITY: No activityId for brick - starting fresh',
+        '🧱 NEW ACTIVITY: Loading existing brick activity: ${widget.activityId}',
+      );
+      _loadExistingBrickActivity();
+      return;
+    }
+
+    // Check if we have event subtype distances to pre-populate
+    final hasEventDistances = widget.brickSwimDistanceMeters != null ||
+        widget.brickBikeDistanceMiles != null ||
+        widget.brickRunDistanceMiles != null;
+
+    if (hasEventDistances) {
+      DebugLogger.info(
+        '🧱 NEW ACTIVITY: Initializing brick from event subtype distances',
+      );
+      final brickController = ref.read(brickInputControllerProvider.notifier);
+      brickController.initializeFromEventSubtype(
+        swimMeters: widget.brickSwimDistanceMeters,
+        bikeMiles: widget.brickBikeDistanceMiles,
+        runMiles: widget.brickRunDistanceMiles,
       );
       return;
     }
 
     DebugLogger.info(
-      '🧱 NEW ACTIVITY: Loading existing brick activity: ${widget.activityId}',
+      '🧱 NEW ACTIVITY: No activityId or event distances for brick - starting fresh',
     );
-
-    // Load the activity asynchronously and initialize the form
-    _loadExistingBrickActivity();
   }
 
   /// Load existing brick activity data and populate the form

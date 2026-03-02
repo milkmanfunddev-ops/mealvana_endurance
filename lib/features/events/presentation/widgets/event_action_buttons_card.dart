@@ -11,6 +11,7 @@ import '../../../carb_loading/presentation/screens/carb_loading_protocol_selecti
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../domain/event.dart';
 import '../providers/events_controller.dart';
 
@@ -61,18 +62,34 @@ class EventActionButtonsCard extends ConsumerWidget {
                 final scheduledDateTime = activity?.scheduledDateTime ??
                     (event.startTime != null ? DateTime.parse(event.startTime!) : DateTime.now());
 
+                final activityType = _getActivityTypeForNavigation(event);
                 final distanceMiles = activity?.distanceMiles ?? _getEventDistanceMiles(event);
+                final eventSubtype = _getEventSubtype(event);
 
-                context.push(
-                  '/distance-pace-gut-entry',
-                  extra: {
-                    'initialDate': scheduledDateTime,
-                    'distance': distanceMiles,
-                    'goalPace': event.goalPaceMinutesPerMile,
-                    'activityId': activity?.id, // Pass existing activity ID if any
-                    'eventId': event.id, // Pass event ID to link back after creation
-                  },
-                );
+                final extras = <String, dynamic>{
+                  'initialDate': scheduledDateTime,
+                  'distance': distanceMiles,
+                  'goalPace': event.goalPaceMinutesPerMile,
+                  'activityId': activity?.id, // Pass existing activity ID if any
+                  'eventId': event.id, // Pass event ID to link back after creation
+                  'activityType': activityType,
+                  'eventName': event.eventName, // Pass event name for activity title
+                };
+
+                // For brick events, pass individual leg distances from EventSubtype
+                if (activityType == 'brick' && eventSubtype != null) {
+                  if (eventSubtype.swimDistanceMeters != null) {
+                    extras['brickSwimDistanceMeters'] = eventSubtype.swimDistanceMeters;
+                  }
+                  if (eventSubtype.bikeDistanceMiles != null) {
+                    extras['brickBikeDistanceMiles'] = eventSubtype.bikeDistanceMiles;
+                  }
+                  if (eventSubtype.runDistanceMiles != null) {
+                    extras['brickRunDistanceMiles'] = eventSubtype.runDistanceMiles;
+                  }
+                }
+
+                context.push('/distance-pace-gut-entry', extra: extras);
               }
             },
             text: event.activityId != null ? 'View Nutrition Plan' : 'Create Nutrition Plan',
@@ -119,6 +136,35 @@ class EventActionButtonsCard extends ConsumerWidget {
     );
 
     return eventSubtype?.totalDistanceMiles;
+  }
+
+  /// Map event type to the correct NewActivityScreen tab
+  ///
+  /// Single-sport events map directly; multi-sport events (triathlon,
+  /// duathlon, multisport) map to the brick tab.
+  String _getActivityTypeForNavigation(Event event) {
+    switch (event.eventType) {
+      case ActivityType.running:
+        return 'running';
+      case ActivityType.cycling:
+        return 'cycling';
+      case ActivityType.swimming:
+        return 'swimming';
+      case ActivityType.triathlon:
+      case ActivityType.duathlon:
+      case ActivityType.multisport:
+      case ActivityType.brick:
+        return 'brick';
+    }
+  }
+
+  /// Look up the EventSubtype for this event (if available)
+  EventSubtype? _getEventSubtype(Event event) {
+    if (event.eventSubtype == null) return null;
+    return EventSubtype.findByName(
+      event.eventType.dbValue,
+      event.eventSubtype!,
+    );
   }
 
   /// Handle carb loading plan creation or update

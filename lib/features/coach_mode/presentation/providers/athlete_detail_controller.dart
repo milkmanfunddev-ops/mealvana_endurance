@@ -110,19 +110,10 @@ class AthleteDetailController extends _$AthleteDetailController {
       // Load athlete profile by user ID
       final athleteProfile = await db.userDao.getUserProfileById(relationship.athleteUserId);
 
-      // Debug logging
-      print('🔍 DEBUG: Loading athlete ${relationship.athleteUserId}');
-      print('🔍 DEBUG: Profile found: ${athleteProfile != null}');
-      if (athleteProfile != null) {
-        print('🔍 DEBUG: First name: ${athleteProfile.firstName}');
-        print('🔍 DEBUG: Last name: ${athleteProfile.lastName}');
-        print('🔍 DEBUG: Display name: ${athleteProfile.displayName}');
-      }
-
       // Load athlete events using Drift select syntax
       final eventEntries = await (db.select(db.eventsTable)
             ..where((t) => t.userId.equals(relationship.athleteUserId))
-            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+            ..orderBy([(t) => OrderingTerm.asc(t.eventDate)]))
           .get();
       final events = eventEntries.map((e) => _mapEventEntry(e)).toList();
 
@@ -328,6 +319,12 @@ class AthleteDetailController extends _$AthleteDetailController {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
+      // Invalidate the cached sync provider to force a fresh sync
+      ref.invalidate(athleteDataSyncProvider(
+        currentState.relationship.id,
+        currentState.relationship.athleteUserId,
+      ));
+
       // Trigger on-demand sync for this athlete from Supabase
       await ref.read(
         athleteDataSyncProvider(

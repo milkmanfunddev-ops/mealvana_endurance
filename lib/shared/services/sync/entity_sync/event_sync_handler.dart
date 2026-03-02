@@ -52,6 +52,11 @@ class EventSyncHandler {
           eventName: Value(data['event_name'] as String?),
           location: Value(data['location'] as String?),
           registrationUrl: Value(data['registration_url'] as String?),
+          eventDate: Value(
+            data['event_date'] != null
+                ? DateTime.parse(data['event_date'] as String)
+                : null,
+          ),
           startTime: Value(data['start_time'] as String?),
           goalTimeMinutes: Value(data['goal_time_minutes'] as int?),
           goalPaceMinutesPerMile: Value((data['goal_pace_minutes_per_mile'] as num?)?.toDouble()),
@@ -123,6 +128,7 @@ class EventSyncHandler {
       'event_name': event.eventName,
       'location': event.location,
       'registration_url': event.registrationUrl,
+      'event_date': event.eventDate?.toIso8601String(),
       'start_time': event.startTime,
       'goal_time_minutes': event.goalTimeMinutes,
       'goal_pace_minutes_per_mile': event.goalPaceMinutesPerMile,

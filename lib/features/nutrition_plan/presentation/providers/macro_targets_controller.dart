@@ -534,13 +534,27 @@ class MacroTargetsController extends _$MacroTargetsController {
         String finalActivityId = activityId ?? '';
         final activitiesService = ref.read(activitiesServiceProvider);
 
+        // Look up event name when eventId is provided
+        String? eventName;
+        if (eventId != null) {
+          try {
+            final eventsRepo = ref.read(eventsRepositoryProvider);
+            final event = await eventsRepo.getEventById(deviceId, eventId);
+            eventName = event?.eventName;
+          } catch (e) {
+            DebugLogger.warning('Failed to look up event name: $e');
+          }
+        }
+
+        final activityTitle = eventName ?? ActivityTitleFormatter.formatRunningTitle(distance);
+
         if (finalActivityId.isEmpty) {
           final createdActivity = await activitiesService.createActivity(
             deviceId: deviceId,
             userId: deviceId,
             forUserId: forUserId,
             activityType: ActivityType.running,
-            title: ActivityTitleFormatter.formatRunningTitle(distance),
+            title: activityTitle,
             scheduledDateTime: scheduledDateTime,
             distanceMiles: distance,
             durationMinutes: estimatedDurationMinutes,
@@ -559,7 +573,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             await activitiesService.updateActivity(
               deviceId: deviceId,
               activity: existingActivity.copyWith(
-                title: ActivityTitleFormatter.formatRunningTitle(distance),
+                title: activityTitle,
                 activityType: ActivityType.running,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distance,
@@ -694,13 +708,27 @@ class MacroTargetsController extends _$MacroTargetsController {
         String finalActivityId = activityId ?? '';
         final activitiesService = ref.read(activitiesServiceProvider);
 
+        // Look up event name when eventId is provided
+        String? eventName;
+        if (eventId != null) {
+          try {
+            final eventsRepo = ref.read(eventsRepositoryProvider);
+            final event = await eventsRepo.getEventById(deviceId, eventId);
+            eventName = event?.eventName;
+          } catch (e) {
+            DebugLogger.warning('Failed to look up event name: $e');
+          }
+        }
+
+        final activityTitle = eventName ?? ActivityTitleFormatter.formatCyclingTitle(distanceMiles);
+
         if (finalActivityId.isEmpty) {
           final createdActivity = await activitiesService.createActivity(
             deviceId: deviceId,
             userId: deviceId,
             forUserId: forUserId,
             activityType: ActivityType.cycling,
-            title: ActivityTitleFormatter.formatCyclingTitle(distanceMiles),
+            title: activityTitle,
             scheduledDateTime: scheduledDateTime,
             distanceMiles: distanceMiles,
             cyclingSpeedMph: speedMph,
@@ -723,7 +751,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             await activitiesService.updateActivity(
               deviceId: deviceId,
               activity: existingActivity.copyWith(
-                title: ActivityTitleFormatter.formatCyclingTitle(distanceMiles),
+                title: activityTitle,
                 activityType: ActivityType.cycling,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,
@@ -1153,13 +1181,27 @@ class MacroTargetsController extends _$MacroTargetsController {
         String finalActivityId = activityId ?? '';
         final activitiesService = ref.read(activitiesServiceProvider);
 
+        // Look up event name when eventId is provided
+        String? eventName;
+        if (eventId != null) {
+          try {
+            final eventsRepo = ref.read(eventsRepositoryProvider);
+            final event = await eventsRepo.getEventById(deviceId, eventId);
+            eventName = event?.eventName;
+          } catch (e) {
+            DebugLogger.warning('Failed to look up event name: $e');
+          }
+        }
+
+        final activityTitle = eventName ?? ActivityTitleFormatter.formatSwimmingTitle(distanceMeters);
+
         if (finalActivityId.isEmpty) {
           final createdActivity = await activitiesService.createActivity(
             deviceId: deviceId,
             userId: deviceId,
             forUserId: forUserId,
             activityType: ActivityType.swimming,
-            title: ActivityTitleFormatter.formatSwimmingTitle(distanceMeters),
+            title: activityTitle,
             scheduledDateTime: scheduledDateTime,
             distanceMiles: distanceMiles,
             swimmingPacePer100mSeconds: paceSecondsper100m,
@@ -1180,9 +1222,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             await activitiesService.updateActivity(
               deviceId: deviceId,
               activity: existingActivity.copyWith(
-                title: ActivityTitleFormatter.formatSwimmingTitle(
-                  distanceMeters,
-                ),
+                title: activityTitle,
                 activityType: ActivityType.swimming,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,
@@ -1335,10 +1375,22 @@ class MacroTargetsController extends _$MacroTargetsController {
         String finalActivityId = activityId ?? '';
         final activitiesService = ref.read(activitiesServiceProvider);
 
+        // Look up event name when eventId is provided
+        String? eventName;
+        if (eventId != null) {
+          try {
+            final eventsRepo = ref.read(eventsRepositoryProvider);
+            final event = await eventsRepo.getEventById(deviceId, eventId);
+            eventName = event?.eventName;
+          } catch (e) {
+            DebugLogger.warning('Failed to look up event name: $e');
+          }
+        }
+
         if (finalActivityId.isEmpty) {
-          // Build brick title (e.g., "SWIM/RUN BRICK")
+          // Build brick title (e.g., "SWIM/RUN BRICK") or use event name
           final sportNames = segmentOrder.map((s) => s.toUpperCase()).join('/');
-          final brickTitle = '$sportNames BRICK';
+          final brickTitle = eventName ?? '$sportNames BRICK';
 
           DebugLogger.info('🧱 DEBUG: Creating draft brick activity');
           DebugLogger.info(

@@ -675,6 +675,138 @@ class BrickInputController extends _$BrickInputController {
     return '${sportNames.join('/')} BRICK';
   }
 
+  /// Initialize form from event subtype distances (triathlon/duathlon/multisport)
+  ///
+  /// Determines which sports to include based on which distances are non-null,
+  /// sets the distances with default paces/speeds, and uses byPace mode so
+  /// duration auto-computes from distance/pace.
+  void initializeFromEventSubtype({
+    double? swimMeters,
+    double? bikeMiles,
+    double? runMiles,
+  }) {
+    DebugLogger.info('🧱 BRICK CONTROLLER: Initializing from event subtype '
+        '(swim=${swimMeters}m, bike=${bikeMiles}mi, run=${runMiles}mi)');
+
+    final defaultIntensity = IntensityDistribution.defaultDistribution();
+
+    // Determine which sports to include based on provided distances
+    final selectedSports = <String>{};
+    final sportOrder = <String>[];
+
+    // Build sport order based on typical event structure
+    if (swimMeters != null) {
+      selectedSports.add('swimming');
+      sportOrder.add('swimming');
+    }
+    if (bikeMiles != null) {
+      selectedSports.add('cycling');
+      sportOrder.add('cycling');
+    }
+    if (runMiles != null) {
+      selectedSports.add('running');
+      sportOrder.add('running');
+    }
+
+    // Must have at least 2 sports for a brick
+    if (selectedSports.length < 2) {
+      DebugLogger.warning('🧱 BRICK CONTROLLER: Not enough sports from event subtype, keeping defaults');
+      return;
+    }
+
+    // Create segment inputs with event distances + default paces
+    final segmentInputs = <String, BrickSegmentInput>{};
+    int order = 1;
+
+    if (selectedSports.contains('swimming')) {
+      const defaultPace = 120; // 2:00 per 100m
+      final duration = ((swimMeters! / 100) * (defaultPace / 60)).round();
+      final preMinutes = (recommendedHoursBefore(
+        ActivityType.swimming, defaultIntensity, durationMinutes: duration,
+      ) * 60).round();
+
+      segmentInputs['swimming'] = BrickSegmentInput(
+        sport: 'swimming',
+        order: order++,
+        intensityDistribution: defaultIntensity,
+        durationPaceMode: DurationPaceMode.byPace,
+        poolOrOpenWater: 'open_water',
+        waterTempC: 20.0,
+        distanceMeters: swimMeters,
+        pacePer100mSeconds: defaultPace,
+        sessionGoal: 'endurance',
+        deckTemperature: 22.0,
+        deckHumidity: 50.0,
+        preActivityMinutes: preMinutes,
+        durationMinutes: duration,
+      );
+    }
+
+    if (selectedSports.contains('cycling')) {
+      const defaultSpeed = 18.0; // 18 mph
+      final duration = ((bikeMiles! / defaultSpeed) * 60).round();
+      final preMinutes = (recommendedHoursBefore(
+        ActivityType.cycling, defaultIntensity, durationMinutes: duration,
+      ) * 60).round();
+
+      segmentInputs['cycling'] = BrickSegmentInput(
+        sport: 'cycling',
+        order: order++,
+        intensityDistribution: defaultIntensity,
+        durationPaceMode: DurationPaceMode.byPace,
+        terrain: 'flat_outdoor',
+        indoorOutdoor: 'outdoor',
+        distanceMiles: bikeMiles,
+        speedMph: defaultSpeed,
+        sessionGoal: 'endurance',
+        temperatureC: 20.0,
+        humidityPct: 50.0,
+        windCondition: 'still',
+        sunExposure: 'mixed',
+        preActivityMinutes: preMinutes,
+        durationMinutes: duration,
+      );
+    }
+
+    if (selectedSports.contains('running')) {
+      const defaultPace = 9.0; // 9:00/mile
+      final duration = (runMiles! * defaultPace).round();
+      final preMinutes = (recommendedHoursBefore(
+        ActivityType.running, defaultIntensity, durationMinutes: duration,
+      ) * 60).round();
+
+      segmentInputs['running'] = BrickSegmentInput(
+        sport: 'running',
+        order: order++,
+        intensityDistribution: defaultIntensity,
+        durationPaceMode: DurationPaceMode.byPace,
+        distanceMiles: runMiles,
+        paceMinutesPerMile: defaultPace,
+        temperatureC: 20.0,
+        humidityPct: 50.0,
+        preActivityMinutes: preMinutes,
+        durationMinutes: duration,
+      );
+    }
+
+    state = BrickFormState(
+      selectedSports: selectedSports,
+      sportOrder: sportOrder,
+      segmentInputs: segmentInputs,
+      preActivityMinutes: _recommendedPreActivityMinutes(
+        selectedSports: selectedSports,
+        segmentInputs: segmentInputs,
+      ),
+      preActivityMinutesManuallySet: false,
+      isFasted: false,
+      selectedDate: state.selectedDate,
+      selectedTime: state.selectedTime,
+    );
+
+    DebugLogger.info('🧱 BRICK CONTROLLER: Initialized from event subtype with '
+        '${selectedSports.length} sports in order: $sportOrder');
+  }
+
   /// Initialize form from existing brick metadata
   /// Called when opening an existing brick activity that needs a nutrition plan
   void initializeFromBrickMetadata(BrickMetadata metadata, DateTime activityDate) {

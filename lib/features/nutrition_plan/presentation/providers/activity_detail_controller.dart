@@ -28,6 +28,7 @@ import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/presentation/providers/calendar_controller.dart';
+import '../../../events/data/events_repository.dart';
 import 'activity_detail_state.dart';
 
 part 'activity_detail_controller.g.dart';
@@ -125,6 +126,16 @@ class ActivityDetailController extends _$ActivityDetailController {
       _logger.error('Error loading nutrition plan for activity', error: e);
     }
 
+    // Reverse-lookup event name from linked event
+    String? eventName;
+    try {
+      final eventsRepo = ref.read(eventsRepositoryProvider);
+      final event = await eventsRepo.getEventForActivity(activityId);
+      eventName = event?.eventName;
+    } catch (e) {
+      _logger.warning('Failed to look up event for activity: $e');
+    }
+
     // Load completion if exists
     ActivityCompletion? completion;
     if (activity.isCompleted && activity.completedAt != null) {
@@ -150,6 +161,7 @@ class ActivityDetailController extends _$ActivityDetailController {
       completion: completion,
       scheduledDateTime: activity.scheduledDateTime,
       isNewActivity: isNewActivity,
+      eventName: eventName,
     );
   }
 

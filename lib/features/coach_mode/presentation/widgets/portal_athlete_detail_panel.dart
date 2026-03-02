@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -434,7 +435,7 @@ class _PortalAthleteDetailPanelState
       children: [
         Column(
           children: [
-            const SizedBox(height: 4),
+            SizedBox(height: kIsWeb ? 20 : 4),
             CalendarViewToggle(
               selectedMode: calendarMode,
               onModeChanged: (mode) {

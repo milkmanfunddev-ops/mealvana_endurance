@@ -273,6 +273,10 @@ class AppRouter {
             // Shared parameters
             intensityTarget: extra?['intensityTarget'] as String?,
             timeBeforeMinutes: extra?['timeBeforeMinutes'] as int?,
+            // Brick event subtype distances
+            brickSwimDistanceMeters: extra?['brickSwimDistanceMeters'] as double?,
+            brickBikeDistanceMiles: extra?['brickBikeDistanceMiles'] as double?,
+            brickRunDistanceMiles: extra?['brickRunDistanceMiles'] as double?,
           );
         },
       ),
@@ -306,6 +310,10 @@ class AppRouter {
             // Shared parameters
             intensityTarget: extra?['intensityTarget'] as String?,
             timeBeforeMinutes: extra?['timeBeforeMinutes'] as int?,
+            // Brick event subtype distances
+            brickSwimDistanceMeters: extra?['brickSwimDistanceMeters'] as double?,
+            brickBikeDistanceMiles: extra?['brickBikeDistanceMiles'] as double?,
+            brickRunDistanceMiles: extra?['brickRunDistanceMiles'] as double?,
           );
         },
       ),

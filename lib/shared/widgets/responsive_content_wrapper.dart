@@ -18,7 +18,7 @@ class ResponsiveContentWrapper extends StatelessWidget {
   const ResponsiveContentWrapper({
     super.key,
     required this.child,
-    this.maxContentWidth = 750,
+    this.maxContentWidth = 480,
     this.breakpoint = 750,
     this.backgroundColor,
     this.isFullWidth = false,
