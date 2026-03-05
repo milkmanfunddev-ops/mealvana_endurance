@@ -14,14 +14,15 @@
  */
 
 import { roundToIncrement } from '../utils.ts';
-import type {
-  Food,
-  FoodResult,
-  MacroTargets,
-  ActivityType,
-  TimingCategory,
+import {
+  type Food,
+  type FoodResult,
+  type MacroTargets,
+  type ActivityType,
+  type TimingCategory,
+  deriveTimingCategory,
 } from './types.ts';
-import { deriveTimingCategory, calculateTotals } from './food-utils.ts';
+import { calculateTotals } from './food-utils.ts';
 import { PREFERENCE_SCORE_MAP } from './constants.ts';
 
 // ============================================================================
