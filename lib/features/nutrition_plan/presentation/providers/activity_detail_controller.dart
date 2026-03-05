@@ -1344,6 +1344,9 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// Initialize byHourData for a during-activity section on first toggle.
   ///
+  /// Drinks and electrolytes are auto-placed in the global sip section
+  /// (hourIndex == -1). Non-drink foods are left unassigned in the tray.
+  ///
   /// [category] - The section category (e.g., 'during_run', 'during_bike')
   /// [durationMinutes] - Duration of the during phase in minutes
   Future<void> initializeByHourData(
@@ -1364,10 +1367,11 @@ class ActivityDetailController extends _$ActivityDetailController {
     // Already initialized - skip
     if (targetSection.byHourData != null) return;
 
-    // Create empty buckets for user-driven placement (no auto-apportionment)
-    final byHourData = ByHourData(
+    // Initialize with global sip section: drinks/electrolytes auto-placed,
+    // non-drink foods left in unassigned tray
+    final byHourData = ByHourSyncService.initializeByHourWithGlobalSip(
+      summaryFoods: targetSection.foodItems,
       durationMinutes: durationMinutes,
-      assignments: [],
     );
 
     final updatedSections = currentPlan.sections.map((section) {
@@ -1397,6 +1401,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         'category': category,
         'durationMinutes': durationMinutes,
         'assignmentCount': byHourData.assignments.length,
+        'globalSipCount': byHourData.globalSipAssignments.length,
       },
     );
   }
@@ -1531,6 +1536,114 @@ class ActivityDetailController extends _$ActivityDetailController {
         }
 
         return section.copyWith(byHourData: updatedByHour);
+      }
+      return section;
+    }).toList();
+
+    final updatedPlan = currentPlan.copyWith(
+      sections: updatedSections,
+      updatedAt: DateTime.now(),
+    );
+
+    state = AsyncData(currentState.copyWith(nutritionPlan: updatedPlan));
+
+    final activity = currentState.activity;
+    if (activity != null) {
+      await _saveNutritionPlanToActivity(activity.id, updatedPlan);
+    }
+  }
+
+  /// Adjust a food's slot quantity by [delta], drawing from or returning to unassigned.
+  ///
+  /// If all unassigned qty is depleted, the summary total is increased.
+  /// If slot qty reaches 0, the assignment is removed entirely.
+  Future<void> adjustSlotQuantity(
+    String foodId,
+    String category,
+    TimeSlot slot,
+    double delta,
+  ) async {
+    final currentState = state.value;
+    if (currentState?.nutritionPlan == null) return;
+
+    final currentPlan = currentState!.nutritionPlan!;
+
+    final updatedSections = currentPlan.sections.map((section) {
+      if (_categoryMatchesSection(category, section.id, section.title) &&
+          section.byHourData != null) {
+        final food = section.foodItems.firstWhere(
+          (f) => f.id == foodId,
+          orElse: () => section.foodItems.first,
+        );
+        final summaryQty = ByHourSyncService.parseQuantity(food);
+
+        final result = ByHourSyncService.adjustSlotQuantity(
+          existing: section.byHourData!,
+          foodId: foodId,
+          slot: slot,
+          delta: delta,
+          summaryQty: summaryQty,
+          isIndivisible: food.isIndivisible,
+        );
+
+        if (result.needsSummaryIncrease) {
+          // Increase summary quantity by step size to accommodate the slot increase
+          final stepSize = food.isIndivisible ? 1.0 : 0.5;
+          final newSummaryQty = summaryQty + stepSize;
+          final newLabel = _buildQuantityLabel(food, newSummaryQty);
+          final scaleFactor = summaryQty > 0 ? newSummaryQty / summaryQty : 1.0;
+          final ni = food.nutritionalInfo;
+
+          final updatedFood = FoodItemData(
+            id: food.id,
+            name: food.name,
+            quantity: newLabel,
+            imageAddress: food.imageAddress,
+            description: food.description,
+            timing: food.timing,
+            instructions: food.instructions,
+            displayName: food.displayName,
+            displayNamePlural: food.displayNamePlural,
+            displayOverride: food.displayOverride,
+            servingSize: food.servingSize,
+            isDrink: food.isDrink,
+            isIndivisible: food.isIndivisible,
+            templateId: food.templateId,
+            scaleMultiplier: food.scaleMultiplier,
+            timingCategory: food.timingCategory,
+            nutritionalInfo: ni != null
+                ? NutritionalInfo(
+                    calories: ni.calories != null
+                        ? (ni.calories! * scaleFactor).round()
+                        : null,
+                    carbs: ni.carbs != null
+                        ? (ni.carbs! * scaleFactor).round()
+                        : null,
+                    protein: ni.protein != null
+                        ? (ni.protein! * scaleFactor).round()
+                        : null,
+                    fat: ni.fat != null
+                        ? (ni.fat! * scaleFactor).round()
+                        : null,
+                    sodium: ni.sodium != null
+                        ? (ni.sodium! * scaleFactor).round()
+                        : null,
+                    fluids: ni.fluids != null
+                        ? ni.fluids! * scaleFactor
+                        : null,
+                  )
+                : null,
+          );
+
+          return section.copyWith(
+            foodItems: section.foodItems.map((f) {
+              return f.id == foodId ? updatedFood : f;
+            }).toList(),
+            byHourData: result.data,
+          );
+        }
+
+        return section.copyWith(byHourData: result.data);
       }
       return section;
     }).toList();

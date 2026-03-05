@@ -512,6 +512,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           final controller = _getControllerNotifier();
           controller.removeFoodFromSlot(foodId, cat, slot);
         },
+        onAdjustSlotQuantity: (foodId, cat, slot, delta) {
+          final controller = _getControllerNotifier();
+          controller.adjustSlotQuantity(foodId, cat, slot, delta);
+        },
         showSwipeHint: _consumeSwipeHint(),
       );
     }
@@ -622,6 +626,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               onRemoveFoodFromSlot: (foodId, cat, slot) {
                 final controller = _getControllerNotifier();
                 controller.removeFoodFromSlot(foodId, cat, slot);
+              },
+              onAdjustSlotQuantity: (foodId, cat, slot, delta) {
+                final controller = _getControllerNotifier();
+                controller.adjustSlotQuantity(foodId, cat, slot, delta);
               },
               showSwipeHint: _consumeSwipeHint(),
             ),

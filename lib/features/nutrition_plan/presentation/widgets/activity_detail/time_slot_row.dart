@@ -5,7 +5,7 @@ import '../../../application/by_hour_apportionment_service.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/time_slot_assignment.dart';
 import '../../../domain/unassigned_tray_item.dart';
-import 'dismissible_food_item.dart';
+import 'placed_slot_food_widget.dart';
 
 /// A single time slot row in the By Hour timeline.
 ///
@@ -31,6 +31,7 @@ class TimeSlotRow extends StatelessWidget {
     this.selectedFoodId,
     this.onPlaceFromTray,
     this.onRemoveFromSlot,
+    this.onAdjustSlotQuantity,
   });
 
   final TimeSlot timeSlot;
@@ -63,6 +64,10 @@ class TimeSlotRow extends StatelessWidget {
 
   /// Called when a food is removed from this slot (swipe-to-dismiss).
   final void Function(String foodId, TimeSlot slot)? onRemoveFromSlot;
+
+  /// Called to adjust a placed food's slot quantity by delta.
+  final void Function(String foodId, TimeSlot slot, double delta)?
+      onAdjustSlotQuantity;
 
   @override
   Widget build(BuildContext context) {
@@ -403,24 +408,32 @@ class TimeSlotRow extends StatelessWidget {
   }
 
   Widget _buildDraggableFoodItem(BuildContext context, _SlotFoodEntry entry) {
-    final child = _TimeSlotFoodItem(
-      sourceFood: entry.sourceFood,
-      displayFood: entry.displayFood,
-      assignment: entry.assignment,
-      category: category,
-      sectionColor: sectionColor,
-      useImperial: useImperial,
-      subtitle: entry.subtitle,
-      onSwapFood: onSwapFood,
-      onDeleteFood: onDeleteFood,
-      onUpdateQuantity: onUpdateQuantity,
-    );
-
     if (entry.isSecondary) {
       return const SizedBox.shrink();
     }
 
-    Widget draggable = LongPressDraggable<TimeSlotAssignment>(
+    // Use PlacedSlotFoodWidget for compact inline display with +/- and unassign
+    final placedWidget = PlacedSlotFoodWidget(
+      food: entry.displayFood,
+      assignment: entry.assignment,
+      sectionColor: sectionColor,
+      onAdjustQuantity: (delta) {
+        onAdjustSlotQuantity?.call(
+          entry.assignment.foodItemId,
+          entry.assignment.timeSlot,
+          delta,
+        );
+      },
+      onUnassign: () {
+        onRemoveFromSlot?.call(
+          entry.assignment.foodItemId,
+          entry.assignment.timeSlot,
+        );
+      },
+    );
+
+    // Wrap with LongPressDraggable for slot-to-slot moves
+    return LongPressDraggable<TimeSlotAssignment>(
       data: entry.assignment,
       delay: const Duration(milliseconds: 300),
       hapticFeedbackOnStart: true,
@@ -431,11 +444,11 @@ class TimeSlotRow extends StatelessWidget {
           opacity: 0.85,
           child: SizedBox(
             width: MediaQuery.of(context).size.width * 0.6,
-            child: child,
+            child: placedWidget,
           ),
         ),
       ),
-      childWhenDragging: Opacity(opacity: 0.3, child: child),
+      childWhenDragging: Opacity(opacity: 0.3, child: placedWidget),
       child: Row(
         children: [
           // 6-dot drag handle
@@ -449,37 +462,10 @@ class TimeSlotRow extends StatelessWidget {
               ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
           ),
-          Expanded(child: child),
+          Expanded(child: placedWidget),
         ],
       ),
     );
-
-    // Wrap with Dismissible to return food to tray on swipe
-    if (onRemoveFromSlot != null) {
-      draggable = Dismissible(
-        key: ValueKey(
-            '${entry.assignment.foodItemId}_${entry.assignment.timeSlot.hourIndex}_${entry.assignment.timeSlot.slotIndex}'),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: AppSpacing.md),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.08),
-            borderRadius: AppRadius.smRadius,
-          ),
-          child: const Icon(Icons.undo, size: 18, color: Colors.red),
-        ),
-        onDismissed: (_) {
-          onRemoveFromSlot!(
-            entry.assignment.foodItemId,
-            entry.assignment.timeSlot,
-          );
-        },
-        child: draggable,
-      );
-    }
-
-    return draggable;
   }
 
   /// Creates a display copy of FoodItemData with a suffix appended to the quantity string.
@@ -510,76 +496,6 @@ class TimeSlotRow extends StatelessWidget {
     if (value <= 0) return isIndivisible ? 1 : 0.5;
     if (isIndivisible) return value.round().clamp(1, 999).toDouble();
 
-    final half = (value * 2).round() / 2;
-    final third = (value * 3).round() / 3;
-    final halfDiff = (value - half).abs();
-    final thirdDiff = (value - third).abs();
-    final rounded = thirdDiff + 0.08 < halfDiff ? third : half;
-    return (rounded * 100).round() / 100;
-  }
-}
-
-/// Individual food item within a time slot.
-///
-/// Shows the food with an optional carb badge for fuel drinks (sports drink),
-/// and wraps DismissibleFoodItem for swipe-to-delete/swap functionality.
-class _TimeSlotFoodItem extends StatelessWidget {
-  const _TimeSlotFoodItem({
-    required this.sourceFood,
-    required this.displayFood,
-    required this.assignment,
-    required this.category,
-    required this.sectionColor,
-    required this.useImperial,
-    this.subtitle,
-    required this.onSwapFood,
-    required this.onDeleteFood,
-    required this.onUpdateQuantity,
-  });
-
-  final FoodItemData sourceFood;
-  final FoodItemData displayFood;
-  final TimeSlotAssignment assignment;
-  final String category;
-  final Color sectionColor;
-  final bool useImperial;
-  final String? subtitle;
-  final void Function(String foodId, String foodName, String category)
-  onSwapFood;
-  final void Function(String foodId, String category) onDeleteFood;
-  final void Function(String foodId, String category, double newQuantity)
-  onUpdateQuantity;
-
-  @override
-  Widget build(BuildContext context) {
-    final currentSlotQty =
-        assignment.adjustedQuantity ??
-        ByHourApportionmentService.parseQuantity(sourceFood);
-    final originalTotalQty = ByHourApportionmentService.parseQuantity(
-      sourceFood,
-    );
-
-    return DismissibleFoodItem(
-      food: displayFood,
-      category: category,
-      onSwap: () => onSwapFood(sourceFood.id, sourceFood.name, category),
-      onDelete: () => onDeleteFood(sourceFood.id, category),
-      subtitleOverride: subtitle,
-      onQuantityChange: (newSlotQuantity) {
-        final delta = newSlotQuantity - currentSlotQty;
-        final rawTotal = originalTotalQty + delta;
-        final minQty = sourceFood.isIndivisible ? 1.0 : 0.5;
-        final bounded = rawTotal < minQty ? minQty : rawTotal;
-        final normalized = sourceFood.isIndivisible
-            ? bounded.round().toDouble()
-            : _roundFriendlyQuantity(bounded);
-        onUpdateQuantity(sourceFood.id, category, normalized);
-      },
-      useImperial: useImperial,
-    );
-  }
-
-  double _roundFriendlyQuantity(double value) {
     final half = (value * 2).round() / 2;
     final third = (value * 3).round() / 3;
     final halfDiff = (value - half).abs();

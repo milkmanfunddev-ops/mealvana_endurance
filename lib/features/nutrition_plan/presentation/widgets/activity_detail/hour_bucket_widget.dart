@@ -4,8 +4,6 @@ import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../application/by_hour_apportionment_service.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/time_slot_assignment.dart';
-import '../../../domain/unassigned_tray_item.dart';
-import 'sip_throughout_row.dart';
 import 'time_slot_row.dart';
 
 /// Collapsible hour bucket showing time-slotted food items.
@@ -30,6 +28,7 @@ class HourBucketWidget extends StatefulWidget {
     this.selectedFoodId,
     this.onPlaceFromTray,
     this.onRemoveFromSlot,
+    this.onAdjustSlotQuantity,
   });
 
   final int hourIndex;
@@ -62,6 +61,10 @@ class HourBucketWidget extends StatefulWidget {
 
   /// Called when a food is removed from a slot.
   final void Function(String foodId, TimeSlot slot)? onRemoveFromSlot;
+
+  /// Called to adjust a placed food's slot quantity by delta.
+  final void Function(String foodId, TimeSlot slot, double delta)?
+      onAdjustSlotQuantity;
 
   @override
   State<HourBucketWidget> createState() => _HourBucketWidgetState();
@@ -106,11 +109,6 @@ class _HourBucketWidgetState extends State<HourBucketWidget> {
   Widget build(BuildContext context) {
     final macros = _macros;
     final hourLabel = 'Hour ${widget.hourIndex + 1}';
-
-    // Separate sip-throughout assignments from regular slot assignments
-    final sipAssignments = widget.assignments
-        .where((a) => a.isSipThroughout && a.timeSlot.slotIndex == 0)
-        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,20 +156,9 @@ class _HourBucketWidgetState extends State<HourBucketWidget> {
           height: 1,
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
         ),
-        // Expanded content
+        // Expanded content (sip-throughout is now global, not per-hour)
         if (_isExpanded) ...[
           const SizedBox(height: AppSpacing.sm),
-          // Sip Throughout row at top of each hour
-          SipThroughoutRow(
-            hourIndex: widget.hourIndex,
-            sipAssignments: sipAssignments,
-            foodMap: widget.foodMap,
-            sectionColor: widget.sectionColor,
-            category: widget.category,
-            selectedFoodId: widget.selectedFoodId,
-            onPlaceFromTray: widget.onPlaceFromTray,
-            onRemoveFromSlot: widget.onRemoveFromSlot,
-          ),
           _buildTimeSlotTimeline(context, widget.assignments),
           const SizedBox(height: AppSpacing.sm),
         ],
@@ -204,10 +191,10 @@ class _HourBucketWidgetState extends State<HourBucketWidget> {
     BuildContext context,
     List<TimeSlotAssignment> assignments,
   ) {
-    // Build slots starting from :15 (slot 1) since :00 sip items are in SipThroughoutRow
+    // Build all slots starting from :00 (sip-throughout is now global)
     final slots = <Widget>[];
 
-    for (int slotIdx = 1; slotIdx < widget.slotCount; slotIdx++) {
+    for (int slotIdx = 0; slotIdx < widget.slotCount; slotIdx++) {
       final slot = TimeSlot(hourIndex: widget.hourIndex, slotIndex: slotIdx);
       final slotAssignments = assignments
           .where((a) => a.timeSlot.slotIndex == slotIdx)
@@ -232,35 +219,7 @@ class _HourBucketWidgetState extends State<HourBucketWidget> {
           selectedFoodId: widget.selectedFoodId,
           onPlaceFromTray: widget.onPlaceFromTray,
           onRemoveFromSlot: widget.onRemoveFromSlot,
-        ),
-      );
-    }
-
-    // Also show non-sip items at :00 (slot 0) if any
-    final slot0NonSipAssignments = assignments
-        .where((a) =>
-            a.timeSlot.slotIndex == 0 && !a.isSipThroughout)
-        .toList();
-    if (slot0NonSipAssignments.isNotEmpty) {
-      final slot0 = TimeSlot(hourIndex: widget.hourIndex, slotIndex: 0);
-      slots.insert(
-        0,
-        TimeSlotRow(
-          timeSlot: slot0,
-          assignments: slot0NonSipAssignments,
-          foodMap: widget.foodMap,
-          sectionColor: widget.sectionColor,
-          category: widget.category,
-          useImperial: widget.useImperial,
-          isLastInHour: widget.slotCount <= 1,
-          activityType: widget.activityType,
-          onSwapFood: widget.onSwapFood,
-          onDeleteFood: widget.onDeleteFood,
-          onUpdateQuantity: widget.onUpdateQuantity,
-          onMoveFoodToTimeSlot: widget.onMoveFoodToTimeSlot,
-          selectedFoodId: widget.selectedFoodId,
-          onPlaceFromTray: widget.onPlaceFromTray,
-          onRemoveFromSlot: widget.onRemoveFromSlot,
+          onAdjustSlotQuantity: widget.onAdjustSlotQuantity,
         ),
       );
     }

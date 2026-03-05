@@ -167,7 +167,15 @@ class ByHourData {
     return lastHourSlotCount;
   }
 
-  /// Get assignments for a specific hour
+  /// Get global sip-throughout assignments (hourIndex == -1).
+  /// These are drinks and electrolytes that apply across all hours.
+  List<TimeSlotAssignment> get globalSipAssignments {
+    return assignments
+        .where((a) => a.timeSlot.hourIndex == -1)
+        .toList();
+  }
+
+  /// Get assignments for a specific hour (excludes global sip items)
   List<TimeSlotAssignment> assignmentsForHour(int hourIndex) {
     return assignments
         .where((a) => a.timeSlot.hourIndex == hourIndex)

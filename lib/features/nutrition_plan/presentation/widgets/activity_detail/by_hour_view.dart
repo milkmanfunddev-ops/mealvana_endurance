@@ -4,14 +4,16 @@ import '../../../application/by_hour_sync_service.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/time_slot_assignment.dart';
-import '../../../domain/unassigned_tray_item.dart';
+import 'global_sip_section_widget.dart';
 import 'hour_bucket_widget.dart';
 import 'unassigned_tray_widget.dart';
 
-/// Renders the By-Hour view with an unassigned tray at top and hour buckets below.
+/// Renders the By-Hour view with global sip section, unassigned tray, and hour buckets.
 ///
-/// The tray is derived (summary qty − assigned qty) and shown when items exist.
-/// Users place foods manually via tap-to-place or drag-and-drop.
+/// Layout:
+/// 1. Global Sip Throughout (drinks + electrolytes, hourIndex == -1)
+/// 2. Unassigned Tray (non-drink foods only)
+/// 3. Hour buckets (Hour 1, Hour 2, ...)
 class ByHourView extends StatefulWidget {
   const ByHourView({
     super.key,
@@ -26,6 +28,7 @@ class ByHourView extends StatefulWidget {
     required this.onMoveFoodToTimeSlot,
     required this.onPlaceFoodInSlot,
     required this.onRemoveFoodFromSlot,
+    this.onAdjustSlotQuantity,
     this.activityType = ActivityType.running,
   });
 
@@ -51,6 +54,11 @@ class ByHourView extends StatefulWidget {
   final void Function(String foodId, String category, TimeSlot slot)
       onRemoveFoodFromSlot;
 
+  /// Called to adjust a placed food's slot quantity by delta.
+  final void Function(
+      String foodId, String category, TimeSlot slot, double delta)?
+      onAdjustSlotQuantity;
+
   @override
   State<ByHourView> createState() => _ByHourViewState();
 }
@@ -67,11 +75,18 @@ class _ByHourViewState extends State<ByHourView> {
       for (final food in widget.section.foodItems) food.id: food,
     };
 
-    // Derive unassigned tray items
+    // Get global sip assignments (hourIndex == -1)
+    final globalSipAssignments = widget.byHourData.globalSipAssignments;
+
+    // Derive unassigned tray items — exclude foods that are in global sip
+    final globalSipFoodIds = globalSipAssignments
+        .map((a) => a.foodItemId)
+        .toSet();
+
     final unassignedItems = ByHourSyncService.calculateUnassignedItems(
       summaryFoods: widget.section.foodItems,
       byHourData: widget.byHourData,
-    );
+    ).where((item) => !globalSipFoodIds.contains(item.foodId)).toList();
 
     // Clear selection if selected food is no longer in tray
     if (_selectedFoodId != null &&
@@ -83,7 +98,24 @@ class _ByHourViewState extends State<ByHourView> {
 
     return Column(
       children: [
-        // Unassigned tray at top
+        // Global Sip Throughout section
+        GlobalSipSectionWidget(
+          sipAssignments: globalSipAssignments,
+          foodMap: foodMap,
+          sectionColor: widget.sectionColor,
+          onAdjustSlotQuantity: (foodId, slot, delta) {
+            widget.onAdjustSlotQuantity?.call(
+              foodId,
+              widget.category,
+              slot,
+              delta,
+            );
+          },
+          onUnassignFood: (foodId, slot) {
+            widget.onRemoveFoodFromSlot(foodId, widget.category, slot);
+          },
+        ),
+        // Unassigned tray (non-drink foods only)
         UnassignedTrayWidget(
           items: unassignedItems,
           sectionColor: widget.sectionColor,

@@ -205,6 +205,114 @@ class ByHourSyncService {
     return remaining <= 0.01 && assignedQty <= 0.01;
   }
 
+  /// Initialize by-hour data with global sip section.
+  ///
+  /// Categorizes each food by timing category:
+  /// - sipThroughout / fuelDrink / electrolyte → assign to global sip (hourIndex: -1)
+  /// - quickConsume / slowConsume → leave unassigned (tray)
+  static ByHourData initializeByHourWithGlobalSip({
+    required List<FoodItemData> summaryFoods,
+    required int durationMinutes,
+  }) {
+    final assignments = <TimeSlotAssignment>[];
+
+    for (final food in summaryFoods) {
+      final timing = resolveTimingCategory(food);
+      final isSipType = timing == TimingCategory.sipThroughout ||
+          timing == TimingCategory.fuelDrink ||
+          timing == TimingCategory.electrolyte;
+
+      if (isSipType) {
+        final qty = parseQuantity(food);
+        assignments.add(TimeSlotAssignment(
+          foodItemId: food.id,
+          timeSlot: const TimeSlot(hourIndex: -1, slotIndex: 0),
+          adjustedQuantity: qty,
+          timingCategory: timing,
+          isSipThroughout: true,
+        ));
+      }
+      // Non-sip foods are left unassigned (they appear in the tray automatically)
+    }
+
+    return ByHourData(
+      durationMinutes: durationMinutes,
+      assignments: assignments,
+    );
+  }
+
+  /// Adjust a food's slot quantity by [delta], drawing from or returning to unassigned.
+  ///
+  /// - delta > 0: increases slot assignment; if no unassigned qty left,
+  ///   returns null to signal the controller should increase the summary total.
+  /// - delta < 0: decreases slot assignment; returns qty to tray.
+  ///   If slot qty reaches 0, removes the assignment entirely.
+  ///
+  /// Returns the updated ByHourData, or null if the summary total needs increasing.
+  static ({ByHourData data, bool needsSummaryIncrease}) adjustSlotQuantity({
+    required ByHourData existing,
+    required String foodId,
+    required TimeSlot slot,
+    required double delta,
+    required double summaryQty,
+    required bool isIndivisible,
+  }) {
+    final stepSize = isIndivisible ? 1.0 : 0.5;
+
+    // Find the existing assignment for this food in this slot
+    final assignmentIndex = existing.assignments.indexWhere(
+      (a) => a.foodItemId == foodId && a.timeSlot == slot,
+    );
+
+    if (assignmentIndex == -1 && delta <= 0) {
+      // Nothing to decrease
+      return (data: existing, needsSummaryIncrease: false);
+    }
+
+    final currentSlotQty = assignmentIndex >= 0
+        ? (existing.assignments[assignmentIndex].adjustedQuantity ?? 0)
+        : 0.0;
+
+    final newSlotQty = _snapToStep(currentSlotQty + delta, stepSize);
+
+    if (newSlotQty <= 0.01) {
+      // Remove the assignment entirely
+      final updated = existing.assignments.toList();
+      if (assignmentIndex >= 0) updated.removeAt(assignmentIndex);
+      return (
+        data: existing.copyWith(assignments: updated),
+        needsSummaryIncrease: false,
+      );
+    }
+
+    // Check if we need more from summary
+    final totalAssigned = existing.assignments
+        .where((a) => a.foodItemId == foodId)
+        .fold<double>(0, (sum, a) => sum + (a.adjustedQuantity ?? 0));
+    final newTotalAssigned = totalAssigned - currentSlotQty + newSlotQty;
+    final needsIncrease = newTotalAssigned > summaryQty + 0.01;
+
+    // Update or create the assignment
+    final updated = existing.assignments.toList();
+    if (assignmentIndex >= 0) {
+      updated[assignmentIndex] = updated[assignmentIndex].copyWith(
+        adjustedQuantity: newSlotQty,
+      );
+    } else {
+      updated.add(TimeSlotAssignment(
+        foodItemId: foodId,
+        timeSlot: slot,
+        adjustedQuantity: newSlotQty,
+        isSipThroughout: slot.hourIndex == -1,
+      ));
+    }
+
+    return (
+      data: existing.copyWith(assignments: updated),
+      needsSummaryIncrease: needsIncrease,
+    );
+  }
+
   static double _roundQuantity(double value) => (value * 100).round() / 100;
 
   static double _snapToStep(double value, double step) {
