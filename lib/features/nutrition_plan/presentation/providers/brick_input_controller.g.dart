@@ -69,7 +69,7 @@ final class BrickInputControllerProvider
 }
 
 String _$brickInputControllerHash() =>
-    r'00686806aa6d1ae1fe76ca7ce7ee6e12056621e5';
+    r'71b11cb1f547a456995bf3bf92282c4fac727cb2';
 
 /// Brick Input Controller
 ///
