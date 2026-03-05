@@ -5,6 +5,7 @@ import '../../../../../core/utils/debug_logger.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../activities/domain/activity.dart';
+import '../../../domain/food_item_data.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/time_slot_assignment.dart';
 import 'dismissible_food_item.dart';
@@ -25,9 +26,10 @@ class BrickNutritionSections extends StatelessWidget {
     required this.onSwapFood,
     required this.onDeleteFood,
     required this.onUpdateQuantity,
-    this.onAddFoodToHour,
     this.onInitializeByHour,
     this.onMoveFoodToTimeSlot,
+    this.onPlaceFoodInSlot,
+    this.onRemoveFoodFromSlot,
     this.showSwipeHint = false,
     this.useImperial = false,
   });
@@ -38,10 +40,13 @@ class BrickNutritionSections extends StatelessWidget {
   final Function(String foodId, String foodName, String category) onSwapFood;
   final Function(String foodId, String category) onDeleteFood;
   final Function(String foodId, String category, double newQuantity) onUpdateQuantity;
-  final void Function(String category, int hourIndex)? onAddFoodToHour;
   final void Function(String category, int durationMinutes)? onInitializeByHour;
   final void Function(
           String foodId, String category, TimeSlot sourceTimeSlot, TimeSlot newTimeSlot)? onMoveFoodToTimeSlot;
+  final void Function(String foodId, String category, TimeSlot slot, double qty,
+      TimingCategory? timingCategory, bool isSipThroughout)? onPlaceFoodInSlot;
+  final void Function(String foodId, String category, TimeSlot slot)?
+      onRemoveFoodFromSlot;
   final bool showSwipeHint;
   final bool useImperial;
 
@@ -179,11 +184,10 @@ class BrickNutritionSections extends StatelessWidget {
           onUpdateQuantity: (foodId, cat, newQuantity) =>
               onUpdateQuantity(foodId, cat, newQuantity),
           onAddFood: (cat) => onAddFood(cat),
-          onAddFoodToHour: onAddFoodToHour != null
-              ? (cat, hourIndex) => onAddFoodToHour!(cat, hourIndex)
-              : null,
           onInitializeByHour: onInitializeByHour!,
           onMoveFoodToTimeSlot: onMoveFoodToTimeSlot!,
+          onPlaceFoodInSlot: onPlaceFoodInSlot!,
+          onRemoveFoodFromSlot: onRemoveFoodFromSlot!,
           showSwipeHint: showSwipeHint,
         );
       }

@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/two_option_pill_slider.dart';
 import '../../../../../shared/domain/activity_type.dart';
+import '../../../domain/food_item_data.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/time_slot_assignment.dart';
 import 'macro_summary_row.dart';
@@ -30,9 +31,10 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
     required this.onDeleteFood,
     required this.onUpdateQuantity,
     required this.onAddFood,
-    this.onAddFoodToHour,
     required this.onInitializeByHour,
     required this.onMoveFoodToTimeSlot,
+    required this.onPlaceFoodInSlot,
+    required this.onRemoveFoodFromSlot,
     this.subtitle,
     this.sportIcon,
     this.sportIconColor,
@@ -58,9 +60,6 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
       onUpdateQuantity;
   final void Function(String category) onAddFood;
 
-  /// Called when "ADD TO HOUR X" is pressed in By Hour view
-  final void Function(String category, int hourIndex)? onAddFoodToHour;
-
   /// Called on first toggle to By Hour to initialize byHourData
   final void Function(String category, int durationMinutes) onInitializeByHour;
 
@@ -68,6 +67,14 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
   final void Function(
           String foodId, String category, TimeSlot sourceTimeSlot, TimeSlot newTimeSlot)
       onMoveFoodToTimeSlot;
+
+  /// Called when a food is placed from the unassigned tray into a slot.
+  final void Function(String foodId, String category, TimeSlot slot, double qty,
+      TimingCategory? timingCategory, bool isSipThroughout) onPlaceFoodInSlot;
+
+  /// Called when a food is removed from a slot (returns to tray).
+  final void Function(String foodId, String category, TimeSlot slot)
+      onRemoveFoodFromSlot;
 
   final bool showSwipeHint;
 
@@ -84,16 +91,7 @@ class _DuringPhaseSectionWidgetState
   @override
   void initState() {
     super.initState();
-    // Default to By Hour for activities >= 60 min
-    if (widget.durationMinutes >= 60) {
-      _showByHour = true;
-      // If byHourData doesn't exist yet, trigger initialization after build
-      if (widget.section.byHourData == null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          widget.onInitializeByHour(widget.category, widget.durationMinutes);
-        });
-      }
-    }
+    // _showByHour defaults to false — user toggles to By Hour manually
   }
 
   bool get _canShowByHour => widget.durationMinutes >= 60;
@@ -239,8 +237,9 @@ class _DuringPhaseSectionWidgetState
       onSwapFood: widget.onSwapFood,
       onDeleteFood: widget.onDeleteFood,
       onUpdateQuantity: widget.onUpdateQuantity,
-      onAddFood: widget.onAddFoodToHour ?? (cat, _) => widget.onAddFood(cat),
       onMoveFoodToTimeSlot: widget.onMoveFoodToTimeSlot,
+      onPlaceFoodInSlot: widget.onPlaceFoodInSlot,
+      onRemoveFoodFromSlot: widget.onRemoveFoodFromSlot,
     );
   }
 }

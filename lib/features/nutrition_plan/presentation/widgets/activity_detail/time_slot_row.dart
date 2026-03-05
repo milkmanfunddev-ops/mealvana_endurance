@@ -4,13 +4,15 @@ import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../application/by_hour_apportionment_service.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/time_slot_assignment.dart';
+import '../../../domain/unassigned_tray_item.dart';
 import 'dismissible_food_item.dart';
 
 /// A single time slot row in the By Hour timeline.
 ///
 /// Shows: time label (e.g., "0:15") + dot + vertical line + food item(s).
 /// Empty slots show just the time label and dot (with lighter styling).
-/// Serves as a DragTarget for drag-and-drop reordering.
+/// Serves as a DragTarget for both slot-to-slot moves and tray-to-slot drops.
+/// Supports tap-to-place when a food is selected in the tray.
 class TimeSlotRow extends StatelessWidget {
   const TimeSlotRow({
     super.key,
@@ -26,6 +28,9 @@ class TimeSlotRow extends StatelessWidget {
     required this.onUpdateQuantity,
     required this.onMoveFoodToTimeSlot,
     this.activityType = ActivityType.running,
+    this.selectedFoodId,
+    this.onPlaceFromTray,
+    this.onRemoveFromSlot,
   });
 
   final TimeSlot timeSlot;
@@ -49,6 +54,16 @@ class TimeSlotRow extends StatelessWidget {
   )
   onMoveFoodToTimeSlot;
 
+  /// Currently selected food ID for tap-to-place mode.
+  final String? selectedFoodId;
+
+  /// Called when a food is placed from tray (tap or drop).
+  final void Function(String foodId, TimeSlot slot, double qty,
+      TimingCategory? timingCategory, bool isSipThroughout)? onPlaceFromTray;
+
+  /// Called when a food is removed from this slot (swipe-to-dismiss).
+  final void Function(String foodId, TimeSlot slot)? onRemoveFromSlot;
+
   @override
   Widget build(BuildContext context) {
     final hasItems = assignments.isNotEmpty;
@@ -59,82 +74,130 @@ class TimeSlotRow extends StatelessWidget {
         ? sectionColor
         : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3);
 
-    return DragTarget<TimeSlotAssignment>(
-      onWillAcceptWithDetails: (details) => true,
+    final hasTapTarget = selectedFoodId != null && !hasItems;
+
+    return DragTarget<Object>(
+      onWillAcceptWithDetails: (details) {
+        return details.data is TimeSlotAssignment || details.data is TrayDragData;
+      },
       onAcceptWithDetails: (details) {
-        final draggedAssignment = details.data;
-        onMoveFoodToTimeSlot(
-          draggedAssignment.foodItemId,
-          category,
-          draggedAssignment.timeSlot,
-          timeSlot,
-        );
+        final data = details.data;
+        if (data is TimeSlotAssignment) {
+          onMoveFoodToTimeSlot(
+            data.foodItemId,
+            category,
+            data.timeSlot,
+            timeSlot,
+          );
+        } else if (data is TrayDragData) {
+          onPlaceFromTray?.call(
+            data.foodId,
+            timeSlot,
+            data.quantity,
+            data.timingCategory,
+            false,
+          );
+        }
       },
       builder: (context, candidateData, rejectedData) {
         final isDropTarget = candidateData.isNotEmpty;
 
-        return Container(
-          decoration: isDropTarget
-              ? BoxDecoration(
-                  color: sectionColor.withValues(alpha: 0.08),
-                  borderRadius: AppRadius.smRadius,
-                )
+        return GestureDetector(
+          onTap: hasTapTarget
+              ? () {
+                  final food = foodMap[selectedFoodId];
+                  if (food != null) {
+                    final stepSize = food.isIndivisible ? 1.0 : 0.5;
+                    final timingCategory =
+                        ByHourApportionmentService.resolveTimingCategory(food);
+                    onPlaceFromTray?.call(
+                      selectedFoodId!,
+                      timeSlot,
+                      stepSize,
+                      timingCategory,
+                      false,
+                    );
+                  }
+                }
               : null,
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Time label
-                SizedBox(
-                  width: 44,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      timeSlot.displayLabel,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: timeColor,
-                        fontSize: 13,
-                        fontWeight: hasItems
-                            ? FontWeight.w600
-                            : FontWeight.normal,
+          child: Container(
+            decoration: isDropTarget || hasTapTarget
+                ? BoxDecoration(
+                    color: sectionColor.withValues(alpha: isDropTarget ? 0.08 : 0.04),
+                    borderRadius: AppRadius.smRadius,
+                  )
+                : null,
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Time label
+                  SizedBox(
+                    width: 44,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        timeSlot.displayLabel,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: timeColor,
+                          fontSize: 13,
+                          fontWeight: hasItems
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // Dot + vertical line
-                SizedBox(
-                  width: 20,
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 12),
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: dotColor,
-                        ),
-                      ),
-                      if (!isLastInHour)
-                        Expanded(
-                          child: Container(
-                            width: 1,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.15),
+                  // Dot + vertical line
+                  SizedBox(
+                    width: 20,
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 12),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: dotColor,
                           ),
                         ),
-                    ],
+                        if (!isLastInHour)
+                          Expanded(
+                            child: Container(
+                              width: 1,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.15),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                // Food items
-                Expanded(
-                  child: hasItems
-                      ? _buildFoodItems(context)
-                      : const SizedBox(height: 32),
-                ),
-              ],
+                  const SizedBox(width: AppSpacing.xs),
+                  // Food items
+                  Expanded(
+                    child: hasItems
+                        ? _buildFoodItems(context)
+                        : SizedBox(
+                            height: 32,
+                            child: hasTapTarget
+                                ? Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Tap to place',
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: sectionColor.withValues(alpha: 0.5),
+                                        fontSize: 11,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -357,7 +420,7 @@ class TimeSlotRow extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return LongPressDraggable<TimeSlotAssignment>(
+    Widget draggable = LongPressDraggable<TimeSlotAssignment>(
       data: entry.assignment,
       delay: const Duration(milliseconds: 300),
       hapticFeedbackOnStart: true,
@@ -390,6 +453,33 @@ class TimeSlotRow extends StatelessWidget {
         ],
       ),
     );
+
+    // Wrap with Dismissible to return food to tray on swipe
+    if (onRemoveFromSlot != null) {
+      draggable = Dismissible(
+        key: ValueKey(
+            '${entry.assignment.foodItemId}_${entry.assignment.timeSlot.hourIndex}_${entry.assignment.timeSlot.slotIndex}'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: AppSpacing.md),
+          decoration: BoxDecoration(
+            color: Colors.red.withValues(alpha: 0.08),
+            borderRadius: AppRadius.smRadius,
+          ),
+          child: const Icon(Icons.undo, size: 18, color: Colors.red),
+        ),
+        onDismissed: (_) {
+          onRemoveFromSlot!(
+            entry.assignment.foodItemId,
+            entry.assignment.timeSlot,
+          );
+        },
+        child: draggable,
+      );
+    }
+
+    return draggable;
   }
 
   /// Creates a display copy of FoodItemData with a suffix appended to the quantity string.

@@ -9,7 +9,7 @@ import '../../domain/nutrition_plan.dart';
 import '../../domain/food_item_data.dart';
 import '../../domain/time_slot_assignment.dart';
 import '../../application/proportional_scaling_service.dart';
-import '../../application/by_hour_apportionment_service.dart';
+import '../../application/by_hour_sync_service.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -45,9 +45,6 @@ class ActivityDetailController extends _$ActivityDetailController {
   ActivitiesService get _activitiesService =>
       ref.read(activitiesServiceProvider);
   AuthService get _authService => ref.read(authServiceProvider);
-
-  /// When set, the next food added via reapportion will be placed only in this hour.
-  int? _pendingAddFoodHourIndex;
 
   /// Cached gut training level from user profile, loaded in build().
   GutTraining _cachedGutTraining = GutTraining.moderate;
@@ -872,17 +869,31 @@ class ActivityDetailController extends _$ActivityDetailController {
           // Keep byHourData in sync when food items change
           ByHourData? updatedByHour = section.byHourData;
           if (updatedByHour != null) {
-            final service = ByHourApportionmentService();
-            final activityType =
-                currentState.activity?.activityType ?? ActivityType.running;
-            updatedByHour = service.reapportion(
-              existing: updatedByHour,
-              currentFoodItems: updatedItems,
-              targetHourIndex: _pendingAddFoodHourIndex,
-              gutTraining: _cachedGutTraining,
-              activityType: activityType,
-            );
-            _pendingAddFoodHourIndex = null;
+            final currentIds = updatedItems.map((f) => f.id).toSet();
+            final assignedIds =
+                updatedByHour.assignments.map((a) => a.foodItemId).toSet();
+
+            // Remove assignments for deleted foods
+            for (final removedId in assignedIds.difference(currentIds)) {
+              updatedByHour = ByHourSyncService.removeFoodAssignments(
+                existing: updatedByHour!,
+                removedFoodId: removedId,
+              );
+            }
+
+            // Adjust assignments for quantity changes
+            for (final food in updatedItems) {
+              if (assignedIds.contains(food.id)) {
+                final newQty = ByHourSyncService.parseQuantity(food);
+                updatedByHour =
+                    ByHourSyncService.adjustAssignmentsForQuantityChange(
+                  existing: updatedByHour!,
+                  foodId: food.id,
+                  newQty: newQty,
+                  isIndivisible: food.isIndivisible,
+                );
+              }
+            }
           }
 
           return section.copyWith(
@@ -1327,12 +1338,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     }
   }
 
-  /// Set the target hour index for the next food add operation.
-  /// Called before navigating to food picker from "ADD TO HOUR X".
-  void setPendingAddFoodHourIndex(int? hourIndex) {
-    _pendingAddFoodHourIndex = hourIndex;
-  }
-
   // ============================================================================
   // BY-HOUR VIEW METHODS
   // ============================================================================
@@ -1439,6 +1444,104 @@ class ActivityDetailController extends _$ActivityDetailController {
     state = AsyncData(currentState.copyWith(nutritionPlan: updatedPlan));
 
     // Auto-save
+    final activity = currentState.activity;
+    if (activity != null) {
+      await _saveNutritionPlanToActivity(activity.id, updatedPlan);
+    }
+  }
+
+  /// Place a food from the unassigned tray into a specific time slot.
+  Future<void> placeFoodInSlot(
+    String foodId,
+    String category,
+    TimeSlot targetSlot,
+    double quantity, {
+    TimingCategory? timingCategory,
+    bool isSipThroughout = false,
+  }) async {
+    final currentState = state.value;
+    if (currentState?.nutritionPlan == null) return;
+
+    final currentPlan = currentState!.nutritionPlan!;
+
+    final updatedSections = currentPlan.sections.map((section) {
+      if (_categoryMatchesSection(category, section.id, section.title) &&
+          section.byHourData != null) {
+        final updatedByHour = ByHourSyncService.placeFoodInSlot(
+          existing: section.byHourData!,
+          foodId: foodId,
+          targetSlot: targetSlot,
+          quantity: quantity,
+          timingCategory: timingCategory,
+          isSipThroughout: isSipThroughout,
+        );
+        return section.copyWith(byHourData: updatedByHour);
+      }
+      return section;
+    }).toList();
+
+    final updatedPlan = currentPlan.copyWith(
+      sections: updatedSections,
+      updatedAt: DateTime.now(),
+    );
+
+    state = AsyncData(currentState.copyWith(nutritionPlan: updatedPlan));
+
+    final activity = currentState.activity;
+    if (activity != null) {
+      await _saveNutritionPlanToActivity(activity.id, updatedPlan);
+    }
+  }
+
+  /// Remove a food from a time slot, returning it to the unassigned tray.
+  ///
+  /// If the food has zero remaining tray quantity AND zero assignments after
+  /// removal, it is auto-removed from the Summary food list.
+  Future<void> removeFoodFromSlot(
+    String foodId,
+    String category,
+    TimeSlot sourceSlot,
+  ) async {
+    final currentState = state.value;
+    if (currentState?.nutritionPlan == null) return;
+
+    final currentPlan = currentState!.nutritionPlan!;
+
+    final updatedSections = currentPlan.sections.map((section) {
+      if (_categoryMatchesSection(category, section.id, section.title) &&
+          section.byHourData != null) {
+        final updatedByHour = ByHourSyncService.removeFoodFromSlot(
+          existing: section.byHourData!,
+          foodId: foodId,
+          sourceSlot: sourceSlot,
+        );
+
+        // Check if food should be auto-removed from Summary
+        if (ByHourSyncService.shouldAutoRemoveFromSummary(
+          summaryFoods: section.foodItems,
+          byHourData: updatedByHour,
+          foodId: foodId,
+        )) {
+          return section.copyWith(
+            foodItems: section.foodItems
+                .where((f) => f.id != foodId)
+                .toList(),
+            byHourData: updatedByHour,
+          );
+        }
+
+        return section.copyWith(byHourData: updatedByHour);
+      }
+      return section;
+    }).toList();
+
+    final updatedPlan = currentPlan.copyWith(
+      sections: updatedSections,
+      updatedAt: DateTime.now(),
+    );
+
+    state = AsyncData(currentState.copyWith(nutritionPlan: updatedPlan));
+
     final activity = currentState.activity;
     if (activity != null) {
       await _saveNutritionPlanToActivity(activity.id, updatedPlan);

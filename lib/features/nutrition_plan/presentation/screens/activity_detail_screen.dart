@@ -492,11 +492,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             _deleteFood(context, state, foodId, category),
         onUpdateQuantity: (foodId, category, newQuantity) =>
             _updateFoodQuantity(context, state, foodId, category, newQuantity),
-        onAddFoodToHour: (cat, hourIndex) {
-          final controller = _getControllerNotifier();
-          controller.setPendingAddFoodHourIndex(hourIndex);
-          _addFood(context, cat);
-        },
         onInitializeByHour: (cat, duration) {
           final controller = _getControllerNotifier();
           controller.initializeByHourData(cat, duration);
@@ -504,6 +499,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         onMoveFoodToTimeSlot: (foodId, cat, sourceSlot, newSlot) {
           final controller = _getControllerNotifier();
           controller.moveFoodToTimeSlot(foodId, cat, sourceSlot, newSlot);
+        },
+        onPlaceFoodInSlot: (foodId, cat, slot, qty, timingCategory, isSip) {
+          final controller = _getControllerNotifier();
+          controller.placeFoodInSlot(
+            foodId, cat, slot, qty,
+            timingCategory: timingCategory,
+            isSipThroughout: isSip,
+          );
+        },
+        onRemoveFoodFromSlot: (foodId, cat, slot) {
+          final controller = _getControllerNotifier();
+          controller.removeFoodFromSlot(foodId, cat, slot);
         },
         showSwipeHint: _consumeSwipeHint(),
       );
@@ -596,11 +603,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               onUpdateQuantity: (foodId, cat, newQuantity) =>
                   _updateFoodQuantity(context, state, foodId, cat, newQuantity),
               onAddFood: (cat) => _addFood(context, cat),
-              onAddFoodToHour: (cat, hourIndex) {
-                final controller = _getControllerNotifier();
-                controller.setPendingAddFoodHourIndex(hourIndex);
-                _addFood(context, cat);
-              },
               onInitializeByHour: (cat, duration) {
                 final controller = _getControllerNotifier();
                 controller.initializeByHourData(cat, duration);
@@ -608,6 +610,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               onMoveFoodToTimeSlot: (foodId, cat, sourceSlot, newSlot) {
                 final controller = _getControllerNotifier();
                 controller.moveFoodToTimeSlot(foodId, cat, sourceSlot, newSlot);
+              },
+              onPlaceFoodInSlot: (foodId, cat, slot, qty, timingCategory, isSip) {
+                final controller = _getControllerNotifier();
+                controller.placeFoodInSlot(
+                  foodId, cat, slot, qty,
+                  timingCategory: timingCategory,
+                  isSipThroughout: isSip,
+                );
+              },
+              onRemoveFoodFromSlot: (foodId, cat, slot) {
+                final controller = _getControllerNotifier();
+                controller.removeFoodFromSlot(foodId, cat, slot);
               },
               showSwipeHint: _consumeSwipeHint(),
             ),
@@ -796,7 +810,14 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
   Widget _buildActionButtons(BuildContext context, ActivityDetailState state) {
     if (state.isCompleted) {
-      return ActivityCompletedBadge(completion: state.completion);
+      final controller = _getControllerNotifier();
+      return ActivityCompletedCard(
+        completion: state.completion,
+        rating: state.activity?.completionRating,
+        notes: state.activity?.completionNotes,
+        onRatingChanged: (rating) => controller.updateCompletionRating(rating),
+        onNotesChanged: (notes) => controller.updateWorkoutNotes(notes),
+      );
     }
 
     // Coach view: Only show Save button (for saving feedback/notes)

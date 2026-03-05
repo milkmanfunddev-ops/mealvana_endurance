@@ -4,12 +4,14 @@ import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../application/by_hour_apportionment_service.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/time_slot_assignment.dart';
+import '../../../domain/unassigned_tray_item.dart';
+import 'sip_throughout_row.dart';
 import 'time_slot_row.dart';
 
 /// Collapsible hour bucket showing time-slotted food items.
 ///
 /// Collapsed view: "Hour 1  Xg carbs . Xmg sodium" with chevron
-/// Expanded view: Timeline of TimeSlotRows (drinks at :00, food at :15/:30/:45) + "ADD TO HOUR X" button
+/// Expanded view: SipThroughoutRow + Timeline of TimeSlotRows
 class HourBucketWidget extends StatefulWidget {
   const HourBucketWidget({
     super.key,
@@ -23,9 +25,11 @@ class HourBucketWidget extends StatefulWidget {
     required this.onSwapFood,
     required this.onDeleteFood,
     required this.onUpdateQuantity,
-    required this.onAddFood,
     required this.onMoveFoodToTimeSlot,
     this.activityType = ActivityType.running,
+    this.selectedFoodId,
+    this.onPlaceFromTray,
+    this.onRemoveFromSlot,
   });
 
   final int hourIndex;
@@ -41,7 +45,6 @@ class HourBucketWidget extends StatefulWidget {
   final void Function(String foodId, String category) onDeleteFood;
   final void Function(String foodId, String category, double newQuantity)
   onUpdateQuantity;
-  final void Function(String category, int hourIndex) onAddFood;
   final void Function(
     String foodId,
     String category,
@@ -49,6 +52,16 @@ class HourBucketWidget extends StatefulWidget {
     TimeSlot newTimeSlot,
   )
   onMoveFoodToTimeSlot;
+
+  /// Currently selected food ID for tap-to-place mode.
+  final String? selectedFoodId;
+
+  /// Called when a food is placed from tray (tap or drop).
+  final void Function(String foodId, TimeSlot slot, double qty,
+      TimingCategory? timingCategory, bool isSipThroughout)? onPlaceFromTray;
+
+  /// Called when a food is removed from a slot.
+  final void Function(String foodId, TimeSlot slot)? onRemoveFromSlot;
 
   @override
   State<HourBucketWidget> createState() => _HourBucketWidgetState();
@@ -82,7 +95,6 @@ class _HourBucketWidgetState extends State<HourBucketWidget> {
   }
 
   /// Returns the scaling factor for an assignment's nutritional values.
-  /// When adjustedQuantity is set, scales relative to the food's original quantity.
   double _quantityScale(FoodItemData food, TimeSlotAssignment assignment) {
     if (assignment.adjustedQuantity == null) return 1.0;
     final originalQty = ByHourApportionmentService.parseQuantity(food);
@@ -95,55 +107,72 @@ class _HourBucketWidgetState extends State<HourBucketWidget> {
     final macros = _macros;
     final hourLabel = 'Hour ${widget.hourIndex + 1}';
 
+    // Separate sip-throughout assignments from regular slot assignments
+    final sipAssignments = widget.assignments
+        .where((a) => a.isSipThroughout && a.timeSlot.slotIndex == 0)
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Hour header row (always visible)
-        InkWell(
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            child: Row(
-              children: [
-                Text(
-                  hourLabel,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+        // Hour header row (always visible) — auto-expand on drag hover
+        DragTarget<Object>(
+          onWillAcceptWithDetails: (details) {
+            if (!_isExpanded) {
+              setState(() => _isExpanded = true);
+            }
+            return false; // Don't accept here — let child slots handle it
+          },
+          builder: (context, _, __) {
+            return InkWell(
+              onTap: () => setState(() => _isExpanded = !_isExpanded),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: Row(
+                  children: [
+                    Text(
+                      hourLabel,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: _buildMacroSummaryInline(context, macros)),
+                    Icon(
+                      _isExpanded
+                          ? Icons.keyboard_arrow_down
+                          : Icons.keyboard_arrow_right,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      size: 20,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(child: _buildMacroSummaryInline(context, macros)),
-                Icon(
-                  _isExpanded
-                      ? Icons.keyboard_arrow_down
-                      : Icons.keyboard_arrow_right,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
         // Divider under header
         Divider(
           height: 1,
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
         ),
-        // Expanded content: all items in unified timeline (drinks at :00, food at :15/:30/:45)
+        // Expanded content
         if (_isExpanded) ...[
           const SizedBox(height: AppSpacing.sm),
-          _buildTimeSlotTimeline(context, widget.assignments),
-          const SizedBox(height: AppSpacing.sm),
-          // ADD TO HOUR X button
-          Center(
-            child: KyleAddFoodButton(
-              text: 'ADD TO HOUR ${widget.hourIndex + 1}',
-              onPressed: () =>
-                  widget.onAddFood(widget.category, widget.hourIndex),
-            ),
+          // Sip Throughout row at top of each hour
+          SipThroughoutRow(
+            hourIndex: widget.hourIndex,
+            sipAssignments: sipAssignments,
+            foodMap: widget.foodMap,
+            sectionColor: widget.sectionColor,
+            category: widget.category,
+            selectedFoodId: widget.selectedFoodId,
+            onPlaceFromTray: widget.onPlaceFromTray,
+            onRemoveFromSlot: widget.onRemoveFromSlot,
           ),
+          _buildTimeSlotTimeline(context, widget.assignments),
           const SizedBox(height: AppSpacing.sm),
         ],
       ],
@@ -162,7 +191,7 @@ class _HourBucketWidgetState extends State<HourBucketWidget> {
         style: dotStyle,
         children: [
           TextSpan(text: '${macros.carbs}g carbs'),
-          TextSpan(text: '  \u00B7  '),
+          const TextSpan(text: '  \u00B7  '),
           TextSpan(text: '${macros.sodium}mg sodium'),
         ],
       ),
@@ -175,10 +204,10 @@ class _HourBucketWidgetState extends State<HourBucketWidget> {
     BuildContext context,
     List<TimeSlotAssignment> assignments,
   ) {
-    // Build all slots for this hour
+    // Build slots starting from :15 (slot 1) since :00 sip items are in SipThroughoutRow
     final slots = <Widget>[];
 
-    for (int slotIdx = 0; slotIdx < widget.slotCount; slotIdx++) {
+    for (int slotIdx = 1; slotIdx < widget.slotCount; slotIdx++) {
       final slot = TimeSlot(hourIndex: widget.hourIndex, slotIndex: slotIdx);
       final slotAssignments = assignments
           .where((a) => a.timeSlot.slotIndex == slotIdx)
@@ -200,6 +229,38 @@ class _HourBucketWidgetState extends State<HourBucketWidget> {
           onDeleteFood: widget.onDeleteFood,
           onUpdateQuantity: widget.onUpdateQuantity,
           onMoveFoodToTimeSlot: widget.onMoveFoodToTimeSlot,
+          selectedFoodId: widget.selectedFoodId,
+          onPlaceFromTray: widget.onPlaceFromTray,
+          onRemoveFromSlot: widget.onRemoveFromSlot,
+        ),
+      );
+    }
+
+    // Also show non-sip items at :00 (slot 0) if any
+    final slot0NonSipAssignments = assignments
+        .where((a) =>
+            a.timeSlot.slotIndex == 0 && !a.isSipThroughout)
+        .toList();
+    if (slot0NonSipAssignments.isNotEmpty) {
+      final slot0 = TimeSlot(hourIndex: widget.hourIndex, slotIndex: 0);
+      slots.insert(
+        0,
+        TimeSlotRow(
+          timeSlot: slot0,
+          assignments: slot0NonSipAssignments,
+          foodMap: widget.foodMap,
+          sectionColor: widget.sectionColor,
+          category: widget.category,
+          useImperial: widget.useImperial,
+          isLastInHour: widget.slotCount <= 1,
+          activityType: widget.activityType,
+          onSwapFood: widget.onSwapFood,
+          onDeleteFood: widget.onDeleteFood,
+          onUpdateQuantity: widget.onUpdateQuantity,
+          onMoveFoodToTimeSlot: widget.onMoveFoodToTimeSlot,
+          selectedFoodId: widget.selectedFoodId,
+          onPlaceFromTray: widget.onPlaceFromTray,
+          onRemoveFromSlot: widget.onRemoveFromSlot,
         ),
       );
     }
