@@ -359,4 +359,38 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
       return currentState.copyWith(isCompleting: false, activity: completedActivity);
     });
   }
+
+  /// Update completion rating for a completed activity (coach view)
+  Future<void> updateCompletionRating(int rating) async {
+    final currentState = state.value;
+    if (currentState == null || currentState.activity == null) return;
+
+    state = await AsyncValue.guard(() async {
+      final updatedActivity = currentState.activity!.copyWith(
+        completionRating: rating,
+      );
+
+      final repository = ref.read(activitiesRepositoryProvider);
+      await repository.updateRemoteActivity(updatedActivity);
+
+      return currentState.copyWith(activity: updatedActivity);
+    });
+  }
+
+  /// Update workout notes for a completed activity (coach view)
+  Future<void> updateWorkoutNotes(String? notes) async {
+    final currentState = state.value;
+    if (currentState == null || currentState.activity == null) return;
+
+    state = await AsyncValue.guard(() async {
+      final updatedActivity = currentState.activity!.copyWith(
+        completionNotes: notes,
+      );
+
+      final repository = ref.read(activitiesRepositoryProvider);
+      await repository.updateRemoteActivity(updatedActivity);
+
+      return currentState.copyWith(activity: updatedActivity);
+    });
+  }
 }

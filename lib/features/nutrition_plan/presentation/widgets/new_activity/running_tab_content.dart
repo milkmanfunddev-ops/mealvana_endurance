@@ -101,42 +101,42 @@ class RunningTabContent extends ConsumerWidget {
         ),
 
         // Zone-based pace hint
-        if (formState.zoneSuggestedPace != null) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.electrolyte.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: AppColors.electrolyte.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      FontAwesomeIcons.heartPulse,
-                      size: 10,
-                      color: AppColors.electrolyteDark,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Pace from Training Peaks zones',
-                      style: AppTextStyles.smallLabel.copyWith(
-                        color: AppColors.electrolyteDark,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+        // if (formState.zoneSuggestedPace != null) ...[
+        //   const SizedBox(height: AppSpacing.xs),
+        //   Row(
+        //     children: [
+        //       Container(
+        //         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        //         decoration: BoxDecoration(
+        //           color: AppColors.electrolyte.withValues(alpha: 0.15),
+        //           borderRadius: BorderRadius.circular(6),
+        //           border: Border.all(
+        //             color: AppColors.electrolyte.withValues(alpha: 0.4),
+        //           ),
+        //         ),
+        //         child: Row(
+        //           mainAxisSize: MainAxisSize.min,
+        //           children: [
+        //             Icon(
+        //               FontAwesomeIcons.heartPulse,
+        //               size: 10,
+        //               color: AppColors.electrolyteDark,
+        //             ),
+        //             const SizedBox(width: 4),
+        //             Text(
+        //               'Pace from Training Peaks zones',
+        //               style: AppTextStyles.smallLabel.copyWith(
+        //                 color: AppColors.electrolyteDark,
+        //                 fontSize: 10,
+        //                 fontWeight: FontWeight.w600,
+        //               ),
+        //             ),
+        //           ],
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ],
 
         const SizedBox(height: AppSpacing.xl),
 

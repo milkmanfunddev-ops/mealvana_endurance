@@ -30,6 +30,7 @@ class BrickNutritionSections extends StatelessWidget {
     this.onMoveFoodToTimeSlot,
     this.onPlaceFoodInSlot,
     this.onRemoveFoodFromSlot,
+    this.onAdjustSlotQuantity,
     this.showSwipeHint = false,
     this.useImperial = false,
   });
@@ -47,6 +48,9 @@ class BrickNutritionSections extends StatelessWidget {
       TimingCategory? timingCategory, bool isSipThroughout)? onPlaceFoodInSlot;
   final void Function(String foodId, String category, TimeSlot slot)?
       onRemoveFoodFromSlot;
+  final void Function(
+      String foodId, String category, TimeSlot slot, double delta)?
+      onAdjustSlotQuantity;
   final bool showSwipeHint;
   final bool useImperial;
 
@@ -188,6 +192,7 @@ class BrickNutritionSections extends StatelessWidget {
           onMoveFoodToTimeSlot: onMoveFoodToTimeSlot!,
           onPlaceFoodInSlot: onPlaceFoodInSlot!,
           onRemoveFoodFromSlot: onRemoveFoodFromSlot!,
+          onAdjustSlotQuantity: onAdjustSlotQuantity,
           showSwipeHint: showSwipeHint,
         );
       }

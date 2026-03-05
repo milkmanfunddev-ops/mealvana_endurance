@@ -238,8 +238,11 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
     final servingSize = widget.food.servingSize;
     if (servingSize == null || servingSize.isEmpty) return null;
 
-    // Extract first word after the leading number
-    final match = RegExp(r'^[\d.]+\s+(\S+)').firstMatch(servingSize.trim());
+    // Match leading number (digits, fractions like 1/2, or Unicode fractions
+    // like ½, ¼, ¾, or mixed like "1½") followed by the unit word
+    final match = RegExp(
+      r'^[\d./½¼¾⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]+\s+(\S+)',
+    ).firstMatch(servingSize.trim());
     final unit = match?.group(1)?.trim();
     if (unit == null) return null;
 
@@ -249,6 +252,8 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
       'slice', 'slices', 'piece', 'pieces', 'scoop', 'scoops',
       'tablespoon', 'tablespoons', 'teaspoon', 'teaspoons',
       'packet', 'packets', 'serving', 'servings',
+      'pouch', 'pouches', 'bottle', 'bottles', 'shot', 'shots',
+      'bar', 'bars', 'waffle', 'waffles', 'sheet', 'sheets',
     };
     if (!knownUnits.contains(unit.toLowerCase())) return null;
     return _pluralizeUnit(unit);
@@ -268,9 +273,11 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
   }
 
   String _pluralize(String value) {
-    final trimmed = value.trim();
-    if (trimmed.toLowerCase().endsWith('s')) return trimmed;
-    return '${trimmed}s';
+    // Strip parenthetical content first to avoid bugs like
+    // "Dates (Medjool)" → "Dates (Medjool)s" → "Datess"
+    final simplified = value.replaceAll(RegExp(r'\s*\([^)]*\)'), '').trim();
+    if (simplified.toLowerCase().endsWith('s')) return simplified;
+    return '${simplified}s';
   }
 
   String _simplifyName(String value) {
