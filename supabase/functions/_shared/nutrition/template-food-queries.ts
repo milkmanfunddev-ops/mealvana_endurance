@@ -212,8 +212,8 @@ export async function getTemplateFoodsForPhase(
       const isDefaultDuring = f.default_during === true;
       const isEssential = f.is_essential === true;
 
-      // Never filter out user foods as disliked
-      if (isDisliked && !isUserFood) {
+      // Never filter out user foods or essential foods (e.g. water) as disliked
+      if (isDisliked && !isUserFood && !isEssential) {
         console.log(`[TMPL-FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`);
         return false;
       }

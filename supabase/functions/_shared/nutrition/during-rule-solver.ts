@@ -59,6 +59,7 @@ function categorizeFood(food: Food): ProductCategory {
   if (pt === 'gel' || pt === 'chew' || pt === 'drink_mix') return 'primary_carb';
   if (pt === 'sports_drink') return 'sports_drink';
   if (pt === 'bar') return 'bike_solid';
+  if (pt === 'beverage') return 'hydration';
   if (pt === 'supplement') return 'electrolyte';
 
   // Derived: if liquid with significant carbs → sports_drink
@@ -105,10 +106,19 @@ function sortByPreference(foods: Food[]): Food[] {
   });
 }
 
-/** Pick the best food from a list by preference. Returns null if empty. */
-function pickBest(foods: Food[]): Food | null {
+/** Pick a food using weighted random among equally-preferred items.
+ *  Preserves preference ordering (liked > willing > neutral) but randomizes
+ *  among foods with the same preference score for variety. */
+function pickWeighted(foods: Food[]): Food | null {
   if (foods.length === 0) return null;
-  return sortByPreference(foods)[0];
+  if (foods.length === 1) return foods[0];
+  const sorted = sortByPreference(foods);
+  const bestScore = sorted[0].preference_score;
+  const topTier = sorted.filter(f => f.preference_score === bestScore);
+  if (topTier.length > 1) {
+    return topTier[Math.floor(Math.random() * topTier.length)];
+  }
+  return sorted[0];
 }
 
 /** Clamp servings to [min, max], respecting indivisibility */
@@ -204,12 +214,12 @@ export function generateDuringPhaseRuleBased(
   // Running: ONE of gel/chew/drink_mix (mixing constraint)
   // Cycling: can combine freely
 
-  const primaryCarb = pickBest(categorized.primary_carb);
+  const primaryCarb = pickWeighted(categorized.primary_carb);
 
   if (primaryCarb && carbTarget > 0) {
     // Determine carb share for primary source
     // If sports drink is also selected, split: 70% primary, 30% sports drink
-    const sportsDrink = pickBest(categorized.sports_drink);
+    const sportsDrink = pickWeighted(categorized.sports_drink);
     const hasSportsDrink = sportsDrink !== null && sportsDrink.per_serving.carbs_g > 0;
     const primaryShare = hasSportsDrink ? 0.7 : 1.0;
 
@@ -229,7 +239,7 @@ export function generateDuringPhaseRuleBased(
   }
 
   // ---- STEP 2: Sports drink (remaining carb share + fluid) ----
-  const sportsDrink = pickBest(categorized.sports_drink);
+  const sportsDrink = pickWeighted(categorized.sports_drink);
   if (sportsDrink && carbTarget > 0) {
     const remainingCarbs = Math.max(0, carbTarget - carbsAssigned);
 
@@ -254,7 +264,7 @@ export function generateDuringPhaseRuleBased(
     // Add bike solids for sustained energy; use remaining carb gap
     const remainingCarbs = Math.max(0, carbTarget - carbsAssigned);
     if (remainingCarbs > 10) {
-      const bikeSolid = pickBest(categorized.bike_solid);
+      const bikeSolid = pickWeighted(categorized.bike_solid);
       if (bikeSolid && bikeSolid.per_serving.carbs_g > 0) {
         let bsServings = remainingCarbs / bikeSolid.per_serving.carbs_g;
         bsServings = clampServings(bsServings, bikeSolid);
@@ -275,7 +285,7 @@ export function generateDuringPhaseRuleBased(
   // ---- STEP 4: Hydration (water to meet fluid target) ----
   const remainingFluid = Math.max(0, fluidTarget - fluidAssigned);
   if (remainingFluid > 0) {
-    const waterFood = pickBest(categorized.hydration);
+    const waterFood = pickWeighted(categorized.hydration);
     if (waterFood && waterFood.per_serving.water_ml > 0) {
       let waterServings = remainingFluid / waterFood.per_serving.water_ml;
       waterServings = clampServings(waterServings, waterFood);
@@ -308,13 +318,9 @@ export function generateDuringPhaseRuleBased(
       let elecServings = remainingSodium / electrolyte.per_serving.sodium_mg;
       elecServings = clampServings(elecServings, electrolyte);
 
-      // Cap to avoid overshooting sodium by more than 10%
-      const maxSodiumAllowed = sodiumTarget * 1.1;
-      const maxServingsForCap = (maxSodiumAllowed - sodiumAssigned) / electrolyte.per_serving.sodium_mg;
-      const cappedServings = electrolyte.is_indivisible
-        ? Math.max(1, Math.floor(maxServingsForCap))
-        : roundToIncrement(Math.max(0.5, maxServingsForCap));
-      elecServings = Math.min(elecServings, cappedServings);
+      // No artificial sodium cap — clampServings() + max_servings_during
+      // already constrain the maximum. The previous 10% cap was too
+      // restrictive for long activities needing high sodium.
 
       if (elecServings > 0) {
         const elecResult = buildFoodResult(electrolyte, elecServings);
