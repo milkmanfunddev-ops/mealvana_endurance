@@ -1553,6 +1553,49 @@ class ActivityDetailController extends _$ActivityDetailController {
     }
   }
 
+  /// Move a portion of a sip-throughout food from global sip into a specific hour slot.
+  ///
+  /// Atomically decreases the global sip qty and places it in [targetSlot].
+  Future<void> moveSipFoodToSlot(
+    String foodId,
+    String category,
+    TimeSlot targetSlot,
+    double quantity, {
+    TimingCategory? timingCategory,
+  }) async {
+    final currentState = state.value;
+    if (currentState?.nutritionPlan == null) return;
+
+    final currentPlan = currentState!.nutritionPlan!;
+
+    final updatedSections = currentPlan.sections.map((section) {
+      if (_categoryMatchesSection(category, section.id, section.title) &&
+          section.byHourData != null) {
+        final updatedByHour = ByHourSyncService.moveSipFoodToSlot(
+          existing: section.byHourData!,
+          foodId: foodId,
+          targetSlot: targetSlot,
+          quantity: quantity,
+          timingCategory: timingCategory,
+        );
+        return section.copyWith(byHourData: updatedByHour);
+      }
+      return section;
+    }).toList();
+
+    final updatedPlan = currentPlan.copyWith(
+      sections: updatedSections,
+      updatedAt: DateTime.now(),
+    );
+
+    state = AsyncData(currentState.copyWith(nutritionPlan: updatedPlan));
+
+    final activity = currentState.activity;
+    if (activity != null) {
+      await _saveNutritionPlanToActivity(activity.id, updatedPlan);
+    }
+  }
+
   /// Adjust a food's slot quantity by [delta], drawing from or returning to unassigned.
   ///
   /// If all unassigned qty is depleted, the summary total is increased.

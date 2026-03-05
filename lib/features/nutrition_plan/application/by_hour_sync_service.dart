@@ -313,6 +313,58 @@ class ByHourSyncService {
     );
   }
 
+  /// Move a portion of a sip-throughout food into a specific hour slot.
+  ///
+  /// Atomically decreases the global sip assignment (hourIndex == -1) by
+  /// [quantity] and creates/increments an assignment at [targetSlot].
+  /// If the sip assignment reaches zero, it is removed entirely.
+  static ByHourData moveSipFoodToSlot({
+    required ByHourData existing,
+    required String foodId,
+    required TimeSlot targetSlot,
+    required double quantity,
+    TimingCategory? timingCategory,
+  }) {
+    const sipSlot = TimeSlot(hourIndex: -1, slotIndex: 0);
+    final updated = <TimeSlotAssignment>[];
+
+    // 1. Decrease global sip assignment by quantity
+    for (final a in existing.assignments) {
+      if (a.foodItemId == foodId && a.timeSlot == sipSlot) {
+        final currentQty = a.adjustedQuantity ?? 0;
+        final newQty = _roundQuantity(currentQty - quantity);
+        if (newQty > 0.01) {
+          updated.add(a.copyWith(adjustedQuantity: newQty));
+        }
+        // If newQty <= 0, drop the sip assignment
+      } else {
+        updated.add(a);
+      }
+    }
+
+    // 2. Add/increment assignment in target slot
+    final existingIdx = updated.indexWhere(
+      (a) => a.foodItemId == foodId && a.timeSlot == targetSlot,
+    );
+
+    if (existingIdx >= 0) {
+      final current = updated[existingIdx];
+      final newQty =
+          _roundQuantity((current.adjustedQuantity ?? 0) + quantity);
+      updated[existingIdx] = current.copyWith(adjustedQuantity: newQty);
+    } else {
+      updated.add(TimeSlotAssignment(
+        foodItemId: foodId,
+        timeSlot: targetSlot,
+        adjustedQuantity: quantity,
+        timingCategory: timingCategory,
+        isSipThroughout: false,
+      ));
+    }
+
+    return existing.copyWith(assignments: updated);
+  }
+
   static double _roundQuantity(double value) => (value * 100).round() / 100;
 
   static double _snapToStep(double value, double step) {

@@ -29,6 +29,7 @@ class ByHourView extends StatefulWidget {
     required this.onPlaceFoodInSlot,
     required this.onRemoveFoodFromSlot,
     this.onAdjustSlotQuantity,
+    this.onMoveSipFoodToSlot,
     this.activityType = ActivityType.running,
   });
 
@@ -59,12 +60,23 @@ class ByHourView extends StatefulWidget {
       String foodId, String category, TimeSlot slot, double delta)?
       onAdjustSlotQuantity;
 
+  /// Called when a sip food is moved from global sip into a specific hour slot.
+  final void Function(String foodId, String category, TimeSlot targetSlot,
+      double qty, TimingCategory? timingCategory)? onMoveSipFoodToSlot;
+
   @override
   State<ByHourView> createState() => _ByHourViewState();
 }
 
 class _ByHourViewState extends State<ByHourView> {
-  String? _selectedFoodId;
+  /// Selected food from the unassigned tray.
+  String? _selectedTrayFoodId;
+
+  /// Selected food from the global sip section.
+  String? _selectedSipFoodId;
+
+  /// Combined selected food ID (mutually exclusive between tray and sip).
+  String? get _selectedFoodId => _selectedTrayFoodId ?? _selectedSipFoodId;
 
   @override
   Widget build(BuildContext context) {
@@ -88,11 +100,19 @@ class _ByHourViewState extends State<ByHourView> {
       byHourData: widget.byHourData,
     ).where((item) => !globalSipFoodIds.contains(item.foodId)).toList();
 
-    // Clear selection if selected food is no longer in tray
-    if (_selectedFoodId != null &&
-        !unassignedItems.any((item) => item.foodId == _selectedFoodId)) {
+    // Clear tray selection if selected food is no longer in tray
+    if (_selectedTrayFoodId != null &&
+        !unassignedItems.any((item) => item.foodId == _selectedTrayFoodId)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _selectedFoodId = null);
+        if (mounted) setState(() => _selectedTrayFoodId = null);
+      });
+    }
+
+    // Clear sip selection if selected food is no longer in sip
+    if (_selectedSipFoodId != null &&
+        !globalSipAssignments.any((a) => a.foodItemId == _selectedSipFoodId)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _selectedSipFoodId = null);
       });
     }
 
@@ -103,6 +123,13 @@ class _ByHourViewState extends State<ByHourView> {
           sipAssignments: globalSipAssignments,
           foodMap: foodMap,
           sectionColor: widget.sectionColor,
+          selectedFoodId: _selectedSipFoodId,
+          onSelectFood: (foodId) {
+            setState(() {
+              _selectedSipFoodId = foodId;
+              _selectedTrayFoodId = null; // clear tray selection
+            });
+          },
           onAdjustSlotQuantity: (foodId, slot, delta) {
             widget.onAdjustSlotQuantity?.call(
               foodId,
@@ -119,9 +146,12 @@ class _ByHourViewState extends State<ByHourView> {
         UnassignedTrayWidget(
           items: unassignedItems,
           sectionColor: widget.sectionColor,
-          selectedFoodId: _selectedFoodId,
+          selectedFoodId: _selectedTrayFoodId,
           onSelectFood: (foodId) {
-            setState(() => _selectedFoodId = foodId);
+            setState(() {
+              _selectedTrayFoodId = foodId;
+              _selectedSipFoodId = null; // clear sip selection
+            });
           },
           foodMap: foodMap,
         ),
@@ -145,19 +175,42 @@ class _ByHourViewState extends State<ByHourView> {
             onMoveFoodToTimeSlot: widget.onMoveFoodToTimeSlot,
             selectedFoodId: _selectedFoodId,
             onPlaceFromTray: (foodId, slot, qty, timingCategory, isSip) {
-              widget.onPlaceFoodInSlot(
-                foodId,
-                widget.category,
-                slot,
-                qty,
-                timingCategory,
-                isSip,
-              );
-              // Clear selection after placement
-              setState(() => _selectedFoodId = null);
+              // Check if the food is from global sip section
+              if (globalSipFoodIds.contains(foodId) &&
+                  widget.onMoveSipFoodToSlot != null) {
+                widget.onMoveSipFoodToSlot!(
+                  foodId,
+                  widget.category,
+                  slot,
+                  qty,
+                  timingCategory,
+                );
+              } else {
+                widget.onPlaceFoodInSlot(
+                  foodId,
+                  widget.category,
+                  slot,
+                  qty,
+                  timingCategory,
+                  isSip,
+                );
+              }
+              // Clear both selections after placement
+              setState(() {
+                _selectedTrayFoodId = null;
+                _selectedSipFoodId = null;
+              });
             },
             onRemoveFromSlot: (foodId, slot) {
               widget.onRemoveFoodFromSlot(foodId, widget.category, slot);
+            },
+            onAdjustSlotQuantity: (foodId, slot, delta) {
+              widget.onAdjustSlotQuantity?.call(
+                foodId,
+                widget.category,
+                slot,
+                delta,
+              );
             },
           );
         }),

@@ -36,6 +36,7 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
     required this.onPlaceFoodInSlot,
     required this.onRemoveFoodFromSlot,
     this.onAdjustSlotQuantity,
+    this.onMoveSipFoodToSlot,
     this.subtitle,
     this.sportIcon,
     this.sportIconColor,
@@ -81,6 +82,10 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
   final void Function(
       String foodId, String category, TimeSlot slot, double delta)?
       onAdjustSlotQuantity;
+
+  /// Called when a sip food is moved from global sip into a specific hour slot.
+  final void Function(String foodId, String category, TimeSlot targetSlot,
+      double qty, TimingCategory? timingCategory)? onMoveSipFoodToSlot;
 
   final bool showSwipeHint;
 
@@ -247,6 +252,7 @@ class _DuringPhaseSectionWidgetState
       onPlaceFoodInSlot: widget.onPlaceFoodInSlot,
       onRemoveFoodFromSlot: widget.onRemoveFoodFromSlot,
       onAdjustSlotQuantity: widget.onAdjustSlotQuantity,
+      onMoveSipFoodToSlot: widget.onMoveSipFoodToSlot,
     );
   }
 }

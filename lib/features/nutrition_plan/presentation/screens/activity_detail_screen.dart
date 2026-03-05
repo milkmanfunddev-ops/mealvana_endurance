@@ -516,6 +516,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           final controller = _getControllerNotifier();
           controller.adjustSlotQuantity(foodId, cat, slot, delta);
         },
+        onMoveSipFoodToSlot: (foodId, cat, slot, qty, timingCategory) {
+          final controller = _getControllerNotifier();
+          controller.moveSipFoodToSlot(foodId, cat, slot, qty,
+              timingCategory: timingCategory);
+        },
         showSwipeHint: _consumeSwipeHint(),
       );
     }
@@ -630,6 +635,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               onAdjustSlotQuantity: (foodId, cat, slot, delta) {
                 final controller = _getControllerNotifier();
                 controller.adjustSlotQuantity(foodId, cat, slot, delta);
+              },
+              onMoveSipFoodToSlot: (foodId, cat, slot, qty, timingCategory) {
+                final controller = _getControllerNotifier();
+                controller.moveSipFoodToSlot(foodId, cat, slot, qty,
+                    timingCategory: timingCategory);
               },
               showSwipeHint: _consumeSwipeHint(),
             ),
