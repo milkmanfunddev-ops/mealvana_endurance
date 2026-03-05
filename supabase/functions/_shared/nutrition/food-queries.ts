@@ -193,6 +193,7 @@ export async function getFoodsForPhase(
           calories: safe(f.calories_per_serving),
         },
         serving_amount: f.serving_amount,
+        min_servings: 1.0,
         max_servings: maxServings,
         preference_score,
         is_electrolyte: f.is_electrolyte || false,
@@ -308,6 +309,7 @@ export async function getElectrolyteFoods(
           calories: 0,
         },
         serving_amount: e.serving_amount,
+        min_servings: 1.0,
         max_servings: DEFAULT_MAX_SERVINGS,
         preference_score: 50,
         is_electrolyte: true,
@@ -362,6 +364,7 @@ export async function getEssentialFoods(
         water_ml: f.fluid_ml_per_serving || 0,
       },
       serving_amount: f.serving_amount,
+      min_servings: 1.0,
       max_servings: 10, // Higher limit for essential foods like water
       preference_score: 50,
       is_essential: true,

@@ -424,6 +424,42 @@ class ActivityDetailController extends _$ActivityDetailController {
     });
   }
 
+  /// Update completion rating for a completed activity
+  Future<void> updateCompletionRating(int rating) async {
+    final currentState = state.value;
+    if (currentState == null ||
+        currentState.activity == null ||
+        currentState.completion == null)
+      return;
+
+    state = await AsyncValue.guard(() async {
+      try {
+        final user = await _authService.getCurrentUser();
+        if (user == null || user.id.isEmpty) {
+          throw Exception(
+            'Cannot update completion rating: user not authenticated',
+          );
+        }
+
+        final updatedActivity = currentState.activity!.copyWith(
+          completionRating: rating,
+        );
+
+        await _activitiesService.updateActivity(
+          deviceId: user.id,
+          activity: updatedActivity,
+        );
+
+        ref.invalidateSelf();
+
+        return currentState;
+      } catch (error) {
+        _logger.error('Error updating completion rating', error: error);
+        rethrow;
+      }
+    });
+  }
+
   /// Update scheduled date/time
   /// Auto-saves to database and invalidates activities list and calendar
   Future<void> updateScheduledDateTime(DateTime newDateTime) async {
@@ -550,6 +586,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           food.quantity,
           tf.servingUnit,
           food.name,
+          servingSize: tf.servingSize,
         );
 
         return _normalizeFoodQuantity(
@@ -607,9 +644,16 @@ class ActivityDetailController extends _$ActivityDetailController {
   String _enrichQuantityWithUnit(
     String rawQuantity,
     String? servingUnit,
-    String foodName,
-  ) {
-    if (servingUnit == null || servingUnit.isEmpty) return rawQuantity;
+    String foodName, {
+    String? servingSize,
+  }) {
+    // Determine the unit — prefer explicit servingUnit, fallback to parsing
+    // the unit from servingSize (e.g. "½ cup dry (~40g)" → "cup")
+    String? resolvedUnit = servingUnit;
+    if ((resolvedUnit == null || resolvedUnit.isEmpty) && servingSize != null) {
+      resolvedUnit = _parseUnitFromServingSize(servingSize);
+    }
+    if (resolvedUnit == null || resolvedUnit.isEmpty) return rawQuantity;
 
     final trimmed = rawQuantity.trim();
     final numericQty = _parseLeadingQuantity(trimmed);
@@ -623,9 +667,34 @@ class ActivityDetailController extends _$ActivityDetailController {
     // Quantity is bare — rebuild with unit + food name
     final qtyStr = _formatQuantity(numericQty);
     final unit = numericQty != 1
-        ? _pluralizeUnit(servingUnit)
-        : servingUnit;
+        ? _pluralizeUnit(resolvedUnit)
+        : resolvedUnit;
     return '$qtyStr $unit $foodName';
+  }
+
+  /// Parse a measurement unit from a servingSize string.
+  /// Handles unicode fractions (½, ¼, etc.) and regular numbers.
+  /// Returns the raw unit string if recognized, null otherwise.
+  static String? _parseUnitFromServingSize(String servingSize) {
+    final trimmed = servingSize.trim();
+    // Match leading number (digit, unicode fraction, or mixed like "1½")
+    // then whitespace, then capture the unit word
+    final match = RegExp(
+      r'^[\d./½¼¾⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]+\s+(\S+)',
+    ).firstMatch(trimmed);
+    final unit = match?.group(1)?.trim();
+    if (unit == null) return null;
+
+    const knownUnits = {
+      'cup', 'cups', 'tbsp', 'tsp', 'oz', 'ml', 'g', 'mg', 'kg', 'l',
+      'slice', 'slices', 'piece', 'pieces', 'scoop', 'scoops',
+      'tablespoon', 'tablespoons', 'teaspoon', 'teaspoons',
+      'packet', 'packets', 'serving', 'servings',
+      'pouch', 'pouches', 'bottle', 'bottles', 'shot', 'shots',
+      'bar', 'bars', 'waffle', 'waffles', 'sheet', 'sheets',
+    };
+    if (!knownUnits.contains(unit.toLowerCase())) return null;
+    return unit;
   }
 
   /// Simple unit pluralization for common serving units.
@@ -1290,17 +1359,11 @@ class ActivityDetailController extends _$ActivityDetailController {
     // Already initialized - skip
     if (targetSection.byHourData != null) return;
 
-    final service = ByHourApportionmentService();
-    final activityType =
-        currentState.activity?.activityType ?? ActivityType.running;
-    final byHourData = service.apportion(
-      foodItems: targetSection.foodItems,
+    // Create empty buckets for user-driven placement (no auto-apportionment)
+    final byHourData = ByHourData(
       durationMinutes: durationMinutes,
-      gutTraining: _cachedGutTraining,
-      activityType: activityType,
+      assignments: [],
     );
-
-    if (byHourData == null) return;
 
     final updatedSections = currentPlan.sections.map((section) {
       if (_categoryMatchesSection(category, section.id, section.title)) {

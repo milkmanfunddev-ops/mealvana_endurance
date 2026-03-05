@@ -77,6 +77,7 @@ export async function getTemplateFoodsForPhase(
       calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
       serving_amount, serving_size, serving_unit, serving_qualifier,
       max_servings_before, max_servings_during, max_servings_after,
+      min_servings_during,
       is_electrolyte, to_exclude_from_solver, is_essential, is_indivisible,
       categories, activity_types, is_liquid, product_type, default_during
     `;
@@ -256,6 +257,9 @@ export async function getTemplateFoodsForPhase(
       const waterMl = isUserFood ? safe(f.fluid_ml_per_serving as number) : safe(f.fluid_ml as number);
       const calories = isUserFood ? safe(f.calories_per_serving as number) : safe(f.calories as number);
 
+      // min_servings_during defaults to 1.0 for template foods, 0.5 for user foods
+      const minServings = isUserFood ? 0.5 : ((f.min_servings_during as number) ?? 1.0);
+
       return {
         id: f.id as string,
         name: f.name as string,
@@ -275,6 +279,7 @@ export async function getTemplateFoodsForPhase(
           calories: calories,
         },
         serving_amount: (f.serving_amount as number) ?? null,
+        min_servings: minServings,
         max_servings: maxServings,
         preference_score,
         is_electrolyte: (f.is_electrolyte as boolean) || false,
@@ -345,6 +350,7 @@ export async function getTemplateElectrolyteFoods(
         calories: 0,
       },
       serving_amount: (e.serving_amount as number) ?? null,
+      min_servings: 1.0,
       max_servings: DEFAULT_MAX_SERVINGS,
       preference_score: 50,
       is_electrolyte: true,
@@ -396,6 +402,7 @@ export async function getTemplateEssentialFoods(
       water_ml: safe(f.fluid_ml as number),
     },
     serving_amount: (f.serving_amount as number) ?? null,
+    min_servings: 1.0,
     max_servings: 10,
     preference_score: 50,
     is_essential: true,

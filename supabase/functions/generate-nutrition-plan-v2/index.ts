@@ -44,6 +44,9 @@ import {
 // v2 food queries — queries template_foods table (not legacy foods table)
 import { getTemplateFoodsForPhase, getTemplateElectrolyteFoods } from '../_shared/nutrition/template-food-queries.ts';
 
+// Rule-based during solver (replaces LP for during phase)
+import { generateDuringPhaseRuleBased } from '../_shared/nutrition/during-rule-solver.ts';
+
 // Template system modules
 import {
   type Template,
@@ -468,6 +471,9 @@ function omitLastAllowedPlacement(minutes: number[]): number[] {
 }
 
 /**
+ * @deprecated No longer used for during phase (rule solver returns no by-hour data).
+ * Kept for potential future use. Client creates empty buckets for user-driven placement.
+ *
  * Generate by-hour time slot assignments for during-phase foods.
  *
  * Same 4-phase algorithm as client-side ByHourApportionmentService:
@@ -669,6 +675,9 @@ function generateByHourData(
 // ============================================================================
 
 /**
+ * @deprecated No longer used for during phase (rule solver handles electrolytes inline).
+ * Kept for potential future use.
+ *
  * Post-process during-phase results to fill sodium deficit with electrolyte supplements.
  *
  * Pass 1 (LP solver) focuses on carbs + preference with reduced sodium weight.
@@ -993,6 +1002,69 @@ async function generateLPPhase(
 }
 
 // ============================================================================
+// During Phase (Rule-Based)
+// ============================================================================
+
+/**
+ * Generate during-phase food selection using deterministic rules.
+ * Swimming returns empty immediately. Run/bike use the rule solver.
+ * No server-side by-hour apportionment (client creates empty buckets).
+ */
+async function generateDuringPhase(
+  supabase: ReturnType<typeof createServiceClient>,
+  targets: MacroTargets,
+  activityType: ActivityType,
+  likedFoods?: string[],
+  willingToTryFoods?: string[],
+  dislikedFoods?: string[],
+  deviceId?: string,
+): Promise<LPPhaseResult> {
+  // Swimming: no during-phase nutrition
+  if (activityType === 'swimming') {
+    console.log('[PLAN-V2] Swimming activity — skipping during phase');
+    return { foods: [], by_hour_data: null };
+  }
+
+  console.log(`[PLAN-V2] Generating during phase via rule solver (${activityType})`);
+
+  // Get foods from template_foods table
+  let foods = await getTemplateFoodsForPhase(
+    supabase,
+    'during',
+    activityType,
+    likedFoods,
+    willingToTryFoods,
+    dislikedFoods,
+    deviceId,
+    false,
+  );
+
+  if (foods.length === 0) {
+    console.log('[PLAN-V2] No during foods found, trying expanded pool');
+    foods = await getTemplateFoodsForPhase(
+      supabase,
+      'during',
+      activityType,
+      likedFoods,
+      willingToTryFoods,
+      dislikedFoods,
+      deviceId,
+      true,
+    );
+  }
+
+  if (foods.length === 0) {
+    console.log('[PLAN-V2] No during foods available at all');
+    return { foods: [] };
+  }
+
+  const result = generateDuringPhaseRuleBased(foods, targets, activityType);
+
+  // No server-side by-hour data — client creates empty buckets
+  return { foods: result.foods, by_hour_data: null };
+}
+
+// ============================================================================
 // Main Handler
 // ============================================================================
 
@@ -1025,19 +1097,16 @@ serve(async (req) => {
       // Before: template-based
       generateBeforePhase(supabase, input),
 
-      // During: LP-based (with by-hour data generation)
+      // During: rule-based solver (no server-side by-hour apportionment)
       input.macro_targets.during_run
-        ? generateLPPhase(
+        ? generateDuringPhase(
             supabase,
-            'during',
             input.macro_targets.during_run,
             activityType,
             input.liked_foods,
             input.willing_to_try_foods,
             input.disliked_foods,
             input.device_id,
-            input.duration_minutes,
-            input.gut_training_level,
           )
         : Promise.resolve({ foods: [] } as LPPhaseResult),
 

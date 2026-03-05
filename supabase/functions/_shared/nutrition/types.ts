@@ -27,6 +27,7 @@ export interface Food {
   serving_qualifier?: string | null;
   per_serving: FoodNutrition;
   serving_amount: number | null;
+  min_servings: number;
   max_servings: number;
   preference_score: number;
   is_electrolyte: boolean;

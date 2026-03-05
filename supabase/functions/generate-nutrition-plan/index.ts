@@ -641,6 +641,7 @@ async function getTransitionFoods(
           calories: safe(f.calories_per_serving),
         },
         serving_amount: f.serving_amount,
+        min_servings: 1.0,
         max_servings: f.max_servings_during ?? DEFAULT_MAX_SERVINGS,
         preference_score,
         is_electrolyte: f.is_electrolyte || false,
