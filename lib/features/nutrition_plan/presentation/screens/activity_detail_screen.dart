@@ -15,6 +15,7 @@ import '../widgets/activity_detail/brick_nutrition_sections.dart';
 import '../widgets/activity_detail/before_phase_widget.dart';
 import '../widgets/activity_detail/during_phase_section_widget.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/app_date_picker.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../providers/activity_detail_controller.dart';
@@ -1089,7 +1090,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     ActivityDetailState state,
   ) async {
     final currentDate = state.scheduledDateTime ?? DateTime.now();
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
       initialDate: currentDate,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),

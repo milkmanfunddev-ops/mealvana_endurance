@@ -853,12 +853,21 @@ class ActivityDetailController extends _$ActivityDetailController {
     state = AsyncData(currentState.copyWith(hasUnsavedChanges: true));
 
     try {
+      // Parse sub-phase target from category (e.g., 'before_run:snack' → sectionCategory='before_run', subPhaseType='snack')
+      final parts = category.split(':');
+      final sectionCategory = parts[0];
+      final targetSubPhaseType = parts.length > 1 ? parts[1] : null;
+
       // Update sections, using copyWith to preserve all section properties (including targets)
       final updatedSections = currentPlan.sections.map((section) {
-        if (_categoryMatchesSection(category, section.id, section.title)) {
-          // If the section has sub-phases (V2 template plans), apply transform to each sub-phase's foods
+        if (_categoryMatchesSection(sectionCategory, section.id, section.title)) {
+          // If the section has sub-phases (V2 template plans), apply transform to targeted sub-phase only
           if (section.hasSubPhases) {
             final updatedSubPhases = section.subPhases!.map((subPhase) {
+              // Only apply transform to the targeted sub-phase, or all if no target specified
+              if (targetSubPhaseType != null && subPhase.subPhaseType != targetSubPhaseType) {
+                return subPhase;
+              }
               final updatedItems = transform(subPhase.foodItems);
               return subPhase.copyWith(foodItems: updatedItems);
             }).toList();
@@ -1629,12 +1638,29 @@ class ActivityDetailController extends _$ActivityDetailController {
           isIndivisible: food.isIndivisible,
         );
 
+        // Determine if summary food needs updating:
+        // 1. needsSummaryIncrease: incrementing beyond available unassigned
+        // 2. Sip item decrement: reduce summary to match new sip total
+        double? newSummaryQty;
         if (result.needsSummaryIncrease) {
-          // Increase summary quantity by step size to accommodate the slot increase
           final stepSize = food.isIndivisible ? 1.0 : 0.5;
-          final newSummaryQty = summaryQty + stepSize;
+          newSummaryQty = summaryQty + stepSize;
+        } else if (slot.hourIndex == -1 && delta < 0) {
+          // Sip item decrement: sync summary qty to new sip total
+          final newSipQty = result.data.assignments
+              .where((a) =>
+                  a.foodItemId == foodId && a.timeSlot.hourIndex == -1)
+              .fold<double>(
+                  0, (sum, a) => sum + (a.adjustedQuantity ?? 0));
+          if (newSipQty < summaryQty - 0.01) {
+            newSummaryQty = newSipQty;
+          }
+        }
+
+        if (newSummaryQty != null) {
           final newLabel = _buildQuantityLabel(food, newSummaryQty);
-          final scaleFactor = summaryQty > 0 ? newSummaryQty / summaryQty : 1.0;
+          final scaleFactor =
+              summaryQty > 0 ? newSummaryQty / summaryQty : 1.0;
           final ni = food.nutritionalInfo;
 
           final updatedFood = FoodItemData(

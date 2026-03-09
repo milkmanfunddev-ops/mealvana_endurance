@@ -372,6 +372,15 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
                   ),
                 ],
               ),
+              const SizedBox(height: AppSpacing.sm),
+              KyleSecondaryButton(
+                text: 'Create Manually',
+                icon: FontAwesomeIcons.plus,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _openCreateFoodScreen();
+                },
+              ),
             ],
           ),
         ),
@@ -427,6 +436,15 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
                 onPressed: () {
                   Navigator.of(context).pop();
                   _resetScanning();
+                },
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              KyleSecondaryButton(
+                text: 'Create Manually',
+                icon: FontAwesomeIcons.plus,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _openCreateFoodScreen();
                 },
               ),
             ],
@@ -499,6 +517,56 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         ),
       ),
     );
+  }
+
+  /// Open create food screen with empty form
+  Future<void> _openCreateFoodScreen() async {
+    final uuid = DateTime.now().millisecondsSinceEpoch.toString();
+    final result = await Navigator.push<dynamic>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FoodDetailScreen(
+          foodData: FoodDetailData(
+            id: uuid,
+            name: '',
+            categoryIds: [1, 2, 3],
+          ),
+          mode: FoodDetailMode.createNew,
+          screenContext: FoodDetailContext.addFood,
+          showCategories: true,
+          showProductType: true,
+        ),
+      ),
+    );
+
+    if (result != null && result is FoodDetailResult && mounted) {
+      // Create Food object from the result and pop back
+      final food = Food(
+        id: result.foodId.isEmpty ? uuid : result.foodId,
+        name: result.name,
+        categories: result.categoryIds.map((id) {
+          switch (id) {
+            case 1: return 'before_run';
+            case 2: return 'during_run';
+            case 3: return 'after_run';
+            default: return 'before_run';
+          }
+        }).toList(),
+        servingSize: result.servingSize,
+        servingAmount: result.servingAmount,
+        servingUnit: result.servingUnit,
+        carbsPerServing: result.carbsPerServing,
+        proteinPerServing: result.proteinPerServing,
+        fatPerServing: result.fatPerServing,
+        sodiumMg: result.sodiumMg,
+        caloriesPerServing: result.caloriesPerServing,
+        fluidMlPerServing: result.fluidMlPerServing,
+        productTypeId: result.productType,
+        beforeRunSuitable: result.categoryIds.contains(1),
+        duringRunSuitable: result.categoryIds.contains(2),
+      );
+      context.pop(food);
+    }
   }
 
   void _resetScanning() {

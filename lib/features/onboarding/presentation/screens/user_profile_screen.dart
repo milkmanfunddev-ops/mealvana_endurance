@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
-import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
+import '../../../../shared/widgets/birth_year_picker.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../providers/onboarding_controller.dart';
 import '../widgets/onboarding_widgets.dart';
@@ -654,7 +654,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Birthday',
+          'Birth Year',
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
@@ -664,7 +664,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         const SizedBox(height: AppSpacing.sm),
 
         InkWell(
-          onTap: _selectBirthday,
+          onTap: _selectBirthYear,
           borderRadius: AppRadius.inputRadius,
           child: Container(
             padding: const EdgeInsets.symmetric(
@@ -689,8 +689,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 Expanded(
                   child: Text(
                     _selectedBirthday != null
-                        ? '${_selectedBirthday!.month}/${_selectedBirthday!.day}/${_selectedBirthday!.year}'
-                        : 'Select your birthday',
+                        ? '${_selectedBirthday!.year}'
+                        : 'Select your birth year',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: _selectedBirthday != null
                           ? Theme.of(context).colorScheme.onSurface
@@ -846,17 +846,15 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     );
   }
 
-  void _selectBirthday() async {
-    final picked = await showAppDatePicker(
+  void _selectBirthYear() async {
+    final year = await showBirthYearPicker(
       context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 30)),
-      firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
-      lastDate: DateTime.now().subtract(const Duration(days: 365 * 16)),
+      initialYear: _selectedBirthday?.year,
     );
 
-    if (picked != null) {
+    if (year != null) {
       setState(() {
-        _selectedBirthday = picked;
+        _selectedBirthday = DateTime(year, 1, 1);
       });
     }
   }

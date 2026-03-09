@@ -233,6 +233,8 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                   ...subPhase.foodItems.asMap().entries.map((entry) {
                     final foodIndex = entry.key;
                     final food = entry.value;
+                    // Use sub-phase-specific category to target the correct sub-phase
+                    final subCategory = 'before_run:${subPhase.subPhaseType}';
                     return Padding(
                       padding: EdgeInsets.only(
                         bottom: foodIndex < subPhase.foodItems.length - 1
@@ -241,11 +243,11 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                       ),
                       child: DismissibleFoodItem(
                         food: food,
-                        category: 'before_run',
+                        category: subCategory,
                         onSwap: () =>
-                            widget.onSwapFood(food.id, food.name, 'before_run'),
+                            widget.onSwapFood(food.id, food.name, subCategory),
                         onDelete: () =>
-                            widget.onDeleteFood(food.id, 'before_run'),
+                            widget.onDeleteFood(food.id, subCategory),
                         onQuantityChange: (newQuantity) => widget
                             .onScaleSubPhase(index, foodIndex, newQuantity),
                         showSwipeHint:
@@ -259,7 +261,7 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                   const SizedBox(height: AppSpacing.sm),
                   KyleAddFoodButton(
                     text: 'ADD FOOD',
-                    onPressed: () => widget.onAddFood('before_run'),
+                    onPressed: () => widget.onAddFood('before_run:${subPhase.subPhaseType}'),
                   ),
                 ],
               ),

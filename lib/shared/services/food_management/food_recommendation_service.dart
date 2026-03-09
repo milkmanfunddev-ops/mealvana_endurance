@@ -149,8 +149,8 @@ class FoodRecommendationService {
 
   /// Filter foods by category/timing suitability using categories array
   List<Food> _filterByCategory(List<Food> foods, String category) {
-    // Normalize the category string to match database values
-    String normalizedCategory = category.toLowerCase();
+    // Strip sub-phase suffix (e.g., 'before_run:snack' → 'before_run')
+    String normalizedCategory = category.split(':').first.toLowerCase();
     if (normalizedCategory == 'before') normalizedCategory = 'before_run';
     if (normalizedCategory == 'during') normalizedCategory = 'during_run';
     if (normalizedCategory == 'after') normalizedCategory = 'after_run';

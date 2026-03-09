@@ -116,6 +116,89 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     ref.read(swapFoodControllerProvider(_params).notifier).clearOpenFoodFactsResults();
   }
 
+  /// Open create food screen with empty form
+  Future<void> _openCreateFoodScreen() async {
+    final uuid = DateTime.now().millisecondsSinceEpoch.toString();
+    // Determine pre-selected categories based on current section
+    final baseCategory = widget.category.split(':').first;
+    final preSelectedCategories = <int>[
+      if (baseCategory == 'before_run') 1,
+      if (baseCategory == 'during_run') 2,
+      if (baseCategory == 'after_run') 3,
+      if (baseCategory != 'before_run' && baseCategory != 'during_run' && baseCategory != 'after_run') ...[1, 2, 3],
+    ];
+
+    final result = await Navigator.push<dynamic>(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => FoodDetailScreen(
+          foodData: FoodDetailData(
+            id: uuid,
+            name: '',
+            categoryIds: preSelectedCategories,
+          ),
+          mode: FoodDetailMode.createNew,
+          screenContext: FoodDetailContext.addFood,
+          preSelectedCategories: preSelectedCategories,
+          showCategories: true,
+          showProductType: true,
+        ),
+      ),
+    );
+
+    if (result != null && result is FoodDetailResult && mounted) {
+      setState(() { _isSavingScannedFood = true; });
+
+      try {
+        final categoryStrings = result.categoryIds.map((id) {
+          switch (id) {
+            case 1: return 'before_run';
+            case 2: return 'during_run';
+            case 3: return 'after_run';
+            default: return 'before_run';
+          }
+        }).toList();
+
+        final food = Food(
+          id: result.foodId.isEmpty ? uuid : result.foodId,
+          name: result.name,
+          categories: categoryStrings,
+          servingSize: result.servingSize,
+          servingAmount: result.servingAmount,
+          servingUnit: result.servingUnit,
+          carbsPerServing: result.carbsPerServing,
+          proteinPerServing: result.proteinPerServing,
+          fatPerServing: result.fatPerServing,
+          sodiumMg: result.sodiumMg,
+          caloriesPerServing: result.caloriesPerServing,
+          fluidMlPerServing: result.fluidMlPerServing,
+          productTypeId: result.productType,
+          beforeRunSuitable: result.categoryIds.contains(1),
+          duringRunSuitable: result.categoryIds.contains(2),
+        );
+
+        // Save to user_foods
+        final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+        await userFoodCrudService.saveUserFood(food, result.categoryIds);
+
+        // Refresh and auto-select
+        ref.invalidate(swapFoodControllerProvider(_params));
+
+        if (mounted) {
+          MealvanaSnackbar.showSuccess(context, 'Custom food created!');
+        }
+      } catch (e) {
+        if (mounted) {
+          MealvanaSnackbar.showError(context, 'Failed to save food: $e');
+        }
+      } finally {
+        if (mounted) {
+          setState(() { _isSavingScannedFood = false; });
+        }
+      }
+    }
+  }
+
   Future<void> _onBarcodeScan() async {
     // Navigate to barcode scanner
     final result = await context.pushNamed<dynamic>(
@@ -334,7 +417,9 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   int _categoryToId(String category) {
-    switch (category) {
+    // Strip sub-phase suffix (e.g., 'before_run:snack' → 'before_run')
+    final baseCategory = category.split(':').first;
+    switch (baseCategory) {
       case 'before_run':
         return 1;
       case 'during_run':
@@ -589,6 +674,28 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                     ),
                   ),
                 ],
+
+                // Create custom food button
+                const SizedBox(height: AppSpacing.xs),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: _openCreateFoodScreen,
+                    icon: const Icon(
+                      FontAwesomeIcons.plus,
+                      size: AppIconSizes.sm,
+                      color: AppColors.orange,
+                    ),
+                    label: const Text(
+                      'Create Custom Food',
+                      style: TextStyle(
+                        fontFamily: 'Apercu',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.orange,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

@@ -715,6 +715,100 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     }
   }
 
+  /// Open create food screen with empty form
+  Future<void> _openCreateFoodScreen() async {
+    final uuid = const Uuid().v4();
+
+    final result = await Navigator.push<dynamic>(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => FoodDetailScreen(
+          foodData: FoodDetailData(
+            id: uuid,
+            name: '',
+            categoryIds: [1, 2, 3],
+          ),
+          mode: FoodDetailMode.createNew,
+          screenContext: FoodDetailContext.foodPreferences,
+          showCategories: true,
+          showProductType: true,
+        ),
+      ),
+    );
+
+    if (result != null && result is FoodDetailResult && mounted) {
+      try {
+        final categoryStrings = result.categoryIds.map((id) {
+          switch (id) {
+            case 1: return 'before_run';
+            case 2: return 'during_run';
+            case 3: return 'after_run';
+            default: return 'before_run';
+          }
+        }).toList();
+
+        final food = Food(
+          id: result.foodId.isEmpty ? uuid : result.foodId,
+          name: result.name,
+          categories: categoryStrings,
+          servingSize: result.servingSize,
+          servingAmount: result.servingAmount,
+          servingUnit: result.servingUnit,
+          carbsPerServing: result.carbsPerServing,
+          proteinPerServing: result.proteinPerServing,
+          fatPerServing: result.fatPerServing,
+          sodiumMg: result.sodiumMg,
+          caloriesPerServing: result.caloriesPerServing,
+          fluidMlPerServing: result.fluidMlPerServing,
+          productTypeId: result.productType,
+          beforeRunSuitable: result.categoryIds.contains(1),
+          duringRunSuitable: result.categoryIds.contains(2),
+        );
+
+        // Save to user_foods
+        final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+        await userFoodCrudService.saveUserFood(food, result.categoryIds);
+
+        // Convert Food to FoodItem for the list
+        final foodItem = FoodItem(
+          id: food.id,
+          name: food.name,
+          categories: categoryStrings.map((cat) {
+            switch (cat) {
+              case 'before_run': return FoodCategory.beforeRun;
+              case 'during_run': return FoodCategory.duringRun;
+              case 'after_run': return FoodCategory.afterRun;
+              default: return FoodCategory.beforeRun;
+            }
+          }).toList(),
+          carbsPerServing: food.carbsPerServing,
+          proteinPerServing: food.proteinPerServing,
+          fatPerServing: food.fatPerServing,
+          sodiumMg: food.sodiumMg,
+          caloriesPerServing: food.caloriesPerServing,
+          fluidMlPerServing: food.fluidMlPerServing,
+          productTypeId: food.productTypeId,
+          beforeRunSuitable: food.beforeRunSuitable,
+          duringRunSuitable: food.duringRunSuitable,
+        );
+
+        // Add to user foods list and set neutral preference
+        setState(() {
+          _userFoods.insert(0, foodItem);
+          _sliderLevels[food.id] = 2; // Neutral default
+        });
+
+        if (mounted) {
+          MealvanaSnackbar.showSuccess(context, 'Custom food created!');
+        }
+      } catch (e) {
+        if (mounted) {
+          MealvanaSnackbar.showError(context, 'Failed to save food: $e');
+        }
+      }
+    }
+  }
+
   Future<void> _handleBarcodeScan() async {
     try {
       // Navigate to barcode scanner screen
@@ -858,6 +952,28 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                       ),
                     ),
                   ],
+
+                  // Create custom food button
+                  const SizedBox(height: AppSpacing.xs),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: _openCreateFoodScreen,
+                      icon: const Icon(
+                        FontAwesomeIcons.plus,
+                        size: 14,
+                        color: AppColors.orange,
+                      ),
+                      label: const Text(
+                        'Create Custom Food',
+                        style: TextStyle(
+                          fontFamily: 'Apercu',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.orange,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
 

@@ -87,17 +87,16 @@ class IntegrationModel {
   double? get providerAthleteWeightLbs =>
       providerAthleteWeightKg != null ? providerAthleteWeightKg! * 2.20462 : null;
 
-  /// Birthday as DateTime (defaults to 1st of the month since Training Peaks only provides YYYY-MM)
+  /// Birthday as DateTime (year only - defaults to Jan 1 since only birth year is used for calculations)
   DateTime? get providerAthleteBirthday {
     if (providerAthleteBirthMonth == null || providerAthleteBirthMonth!.isEmpty) {
       return null;
     }
     try {
       final parts = providerAthleteBirthMonth!.split('-');
-      if (parts.length >= 2) {
+      if (parts.isNotEmpty) {
         final year = int.parse(parts[0]);
-        final month = int.parse(parts[1]);
-        return DateTime(year, month, 1); // Default to 1st of month
+        return DateTime(year, 1, 1); // Year only
       }
     } catch (_) {
       // Invalid format

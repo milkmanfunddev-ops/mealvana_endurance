@@ -5,9 +5,6 @@ import '../providers/onboarding_controller.dart';
 import '../widgets/page_keep_alive_wrapper.dart';
 import 'user_profile_screen.dart';
 import 'sports_selection_screen.dart';
-import 'running_details_screen.dart';
-import 'cycling_details_screen.dart';
-import 'swimming_details_screen.dart';
 import 'dietary_preference_screen.dart';
 import 'allergies_screen.dart';
 import 'food_preferences_v2_screen.dart';
@@ -79,32 +76,10 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
         ),
       ),
 
-      // 3-5. Dynamic Sport Details (based on sports selected in step 2)
-      if (selectedSports.contains('running'))
-        PageKeepAliveWrapper(
-          child: RunningDetailsScreen(
-            onContinue: _nextPage,
-            onBack: _previousPage,
-          ),
-        ),
+      // Sport detail pages skipped for v1.16 - fields left null/unset
+      // Running/Cycling/Swimming detail screens are preserved but not shown
 
-      if (selectedSports.contains('cycling'))
-        PageKeepAliveWrapper(
-          child: CyclingDetailsScreen(
-            onContinue: _nextPage,
-            onBack: _previousPage,
-          ),
-        ),
-
-      if (selectedSports.contains('swimming'))
-        PageKeepAliveWrapper(
-          child: SwimmingDetailsScreen(
-            onContinue: _nextPage,
-            onBack: _previousPage,
-          ),
-        ),
-
-      // 6. Dietary Preference
+      // 4. Dietary Preference
       PageKeepAliveWrapper(
         child: DietaryPreferenceScreen(
           onContinue: _nextPage,

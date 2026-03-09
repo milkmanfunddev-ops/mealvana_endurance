@@ -1,10 +1,11 @@
+import 'package:calendar_date_picker2/calendar_date_picker2.dart' hide SelectableDayPredicate;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' hide TextDirection;
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
-/// Global wrapper for showDatePicker to ensure consistent styling and fix accessibility issues
-/// (specifically truncated year in header on smaller screens)
+/// Global wrapper for date picking to ensure consistent styling.
+///
+/// Uses `calendar_date_picker2` for better UX (easy year/month navigation).
 Future<DateTime?> showAppDatePicker({
   required BuildContext context,
   required DateTime initialDate,
@@ -33,108 +34,69 @@ Future<DateTime?> showAppDatePicker({
   ValueChanged<DatePickerEntryMode>? onDatePickerModeChange,
   Icon? switchToInputEntryModeIcon,
   Icon? switchToCalendarEntryModeIcon,
-  CalendarDelegate<DateTime> calendarDelegate = const AppDatePickerDelegate(),
+  // Kept for API compat but unused with calendar_date_picker2
+  dynamic calendarDelegate,
   TransitionBuilder? builder,
-}) {
+}) async {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
-  
-  // Define the header style with a much smaller font to ensure year visibility
-  // Using 16px Apercu (standard font) instead of Sansita (display font)
-  final headerStyle = AppTextStyles.datePickerHeader.copyWith(
-    fontSize: 16, 
-    fontFamily: AppTextStyles.apercu, 
-    color: isDark ? AppColors.textDark : AppColors.textLight,
-    letterSpacing: -0.5,
-  );
 
-  Widget themedBuilder(BuildContext context, Widget? child) {
-    final themedChild = Theme(
-      data: theme.copyWith(
-        textTheme: theme.textTheme.copyWith(
-          headlineLarge: headerStyle, // Used for the selected date in header
-          headlineMedium: headerStyle,
-          displayLarge: headerStyle,
-        ),
-        datePickerTheme: theme.datePickerTheme.copyWith(
-          headerHeadlineStyle: headerStyle,
-          headerHelpStyle: AppTextStyles.smallLabel.copyWith(
-            color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
-          ),
-          weekdayStyle: AppTextStyles.calendarDayLetter.copyWith(
-            color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
-          ),
-          dayStyle: AppTextStyles.calendarDay.copyWith(
-            color: isDark ? AppColors.textDark : AppColors.textLight,
-          ),
-          yearStyle: AppTextStyles.calendarDay.copyWith(
-            color: isDark ? AppColors.textDark : AppColors.textLight,
-          ),
-          backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-          surfaceTintColor: Colors.transparent,
-          headerForegroundColor: isDark ? AppColors.textDark : AppColors.textLight,
-          headerBackgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-        ),
-      ),
-      child: child!,
-    );
+  final bgColor = isDark ? AppColors.blackberry : AppColors.cream;
+  final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+  final secondaryColor = isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
 
-    return builder != null ? builder(context, themedChild) : themedChild;
-  }
-
-  return showDatePicker(
-    context: context,
-    initialDate: initialDate,
+  final config = CalendarDatePicker2WithActionButtonsConfig(
+    calendarType: CalendarDatePicker2Type.single,
     firstDate: firstDate,
     lastDate: lastDate,
-    currentDate: currentDate,
-    initialEntryMode: initialEntryMode,
-    selectableDayPredicate: selectableDayPredicate,
-    helpText: helpText,
-    cancelText: cancelText,
-    confirmText: confirmText,
-    locale: locale,
-    barrierDismissible: barrierDismissible,
-    barrierColor: barrierColor,
-    barrierLabel: barrierLabel,
-    useRootNavigator: useRootNavigator,
-    routeSettings: routeSettings,
-    textDirection: textDirection,
-    builder: themedBuilder,
-    initialDatePickerMode: initialDatePickerMode,
-    errorFormatText: errorFormatText,
-    errorInvalidText: errorInvalidText,
-    fieldHintText: fieldHintText,
-    fieldLabelText: fieldLabelText,
-    keyboardType: keyboardType,
-    anchorPoint: anchorPoint,
-    onDatePickerModeChange: onDatePickerModeChange,
-    switchToInputEntryModeIcon: switchToInputEntryModeIcon,
-    switchToCalendarEntryModeIcon: switchToCalendarEntryModeIcon,
-    calendarDelegate: calendarDelegate,
+    currentDate: currentDate ?? DateTime.now(),
+    selectedDayHighlightColor: AppColors.orange,
+    selectedDayTextStyle: AppTextStyles.bodyMedium.copyWith(
+      color: AppColors.cream,
+      fontWeight: FontWeight.w600,
+    ),
+    todayTextStyle: AppTextStyles.bodyMedium.copyWith(
+      color: AppColors.orange,
+      fontWeight: FontWeight.w600,
+    ),
+    dayTextStyle: AppTextStyles.bodyMedium.copyWith(color: textColor),
+    weekdayLabelTextStyle: AppTextStyles.smallLabel.copyWith(
+      color: secondaryColor,
+      fontWeight: FontWeight.w600,
+    ),
+    controlsTextStyle: AppTextStyles.subtitle.copyWith(
+      color: textColor,
+      fontSize: 16,
+    ),
+    yearTextStyle: AppTextStyles.bodyMedium.copyWith(color: textColor),
+    selectedYearTextStyle: AppTextStyles.bodyMedium.copyWith(
+      color: AppColors.cream,
+      fontWeight: FontWeight.w600,
+    ),
+    okButtonTextStyle: AppTextStyles.bodyMedium.copyWith(
+      color: AppColors.orange,
+      fontWeight: FontWeight.w600,
+    ),
+    cancelButtonTextStyle: AppTextStyles.bodyMedium.copyWith(
+      color: secondaryColor,
+    ),
+    okButton: confirmText != null ? Text(confirmText) : null,
+    cancelButton: cancelText != null ? Text(cancelText) : null,
   );
-}
 
-/// Places the year first and shortens labels so the year is always visible, even with large fonts.
-class AppDatePickerDelegate extends GregorianCalendarDelegate {
-  const AppDatePickerDelegate();
+  final results = await showCalendarDatePicker2Dialog(
+    context: context,
+    config: config,
+    dialogSize: const Size(325, 400),
+    value: [initialDate],
+    borderRadius: BorderRadius.circular(15),
+    dialogBackgroundColor: bgColor,
+    barrierDismissible: barrierDismissible,
+    useRootNavigator: useRootNavigator,
+  );
 
-  String _locale() {
-    final locale = Intl.getCurrentLocale();
-    return locale.isEmpty ? 'en' : locale;
+  if (results != null && results.isNotEmpty && results.first != null) {
+    return results.first;
   }
-
-  @override
-  String formatMediumDate(DateTime date, MaterialLocalizations localizations) {
-    final year = localizations.formatYear(date);
-    final monthDay = DateFormat.MMMd(_locale()).format(date);
-    return '$year $monthDay';
-  }
-
-  @override
-  String formatMonthYear(DateTime date, MaterialLocalizations localizations) {
-    final year = localizations.formatYear(date);
-    final month = DateFormat.MMM(_locale()).format(date);
-    return '$year $month';
-  }
+  return null;
 }
