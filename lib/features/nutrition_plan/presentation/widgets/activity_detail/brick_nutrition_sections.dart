@@ -8,6 +8,7 @@ import '../../../../activities/domain/activity.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/time_slot_assignment.dart';
+import 'before_phase_widget.dart';
 import 'dismissible_food_item.dart';
 import 'during_phase_section_widget.dart';
 import 'macro_summary_row.dart';
@@ -32,6 +33,7 @@ class BrickNutritionSections extends StatelessWidget {
     this.onRemoveFoodFromSlot,
     this.onAdjustSlotQuantity,
     this.onMoveSipFoodToSlot,
+    this.onScaleSubPhase,
     this.showSwipeHint = false,
     this.useImperial = false,
   });
@@ -54,6 +56,8 @@ class BrickNutritionSections extends StatelessWidget {
       onAdjustSlotQuantity;
   final void Function(String foodId, String category, TimeSlot targetSlot,
       double qty, TimingCategory? timingCategory)? onMoveSipFoodToSlot;
+  final void Function(int subPhaseIndex, int foodIndex, double newQuantity)?
+      onScaleSubPhase;
   final bool showSwipeHint;
   final bool useImperial;
 
@@ -169,6 +173,25 @@ class BrickNutritionSections extends StatelessWidget {
       );
     }
 
+    // For before sections with sub-phases, use BeforePhaseWidget
+    if (section.hasSubPhases && section.id.startsWith('before')) {
+      return BeforePhaseWidget(
+        section: section,
+        sectionColor: sectionColor,
+        sectionTitle: displayTitle.toUpperCase(),
+        useImperial: useImperial,
+        categoryPrefix: 'before',
+        onSwapFood: (foodId, foodName, cat) =>
+            onSwapFood(foodId, foodName, cat),
+        onDeleteFood: (foodId, cat) => onDeleteFood(foodId, cat),
+        onUpdateQuantity: (foodId, cat, newQuantity) =>
+            onUpdateQuantity(foodId, cat, newQuantity),
+        onScaleSubPhase: onScaleSubPhase!,
+        onAddFood: (cat) => onAddFood(cat),
+        showSwipeHint: showSwipeHint,
+      );
+    }
+
     // For during sections (not swim), use DuringPhaseSectionWidget if by-hour callbacks available
     if (isDuring &&
         !isSwimming &&
@@ -226,16 +249,16 @@ class BrickNutritionSections extends StatelessWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          MacroSummaryRow(
-            foods: section.foodItems,
-            section: section,
-            category: category,
-            useImperial: useImperial,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          if (isSwimming && section.foodItems.isEmpty)
-            _buildNoFoodsDuringSwimMessage(context)
-          else
+          if (_isEmptyNutritionSection(section, isSwimming, isTransition)) ...[
+            _buildQuickTransitionMessage(context, section, isTransition),
+          ] else ...[
+            MacroSummaryRow(
+              foods: section.foodItems,
+              section: section,
+              category: category,
+              useImperial: useImperial,
+            ),
+            const SizedBox(height: AppSpacing.md),
             ...section.foodItems.asMap().entries.map((entry) {
               final index = entry.key;
               final food = entry.value;
@@ -254,6 +277,7 @@ class BrickNutritionSections extends StatelessWidget {
                 ),
               );
             }),
+          ],
           const SizedBox(height: AppSpacing.md),
           KyleAddFoodButton(
             text: 'ADD FOOD',
@@ -331,12 +355,37 @@ class BrickNutritionSections extends StatelessWidget {
     );
   }
 
-  /// Build "No foods during swim" message
-  Widget _buildNoFoodsDuringSwimMessage(BuildContext context) {
+  /// Check if a section should show an informational message instead of macro targets.
+  /// True for: swim sections with no foods, or transition sections with 0g carb targets and no foods.
+  bool _isEmptyNutritionSection(PlanSection section, bool isSwimming, bool isTransition) {
+    if (isSwimming && section.foodItems.isEmpty) return true;
+    if (isTransition && section.foodItems.isEmpty) {
+      // Check if targets are all zero (quick transition)
+      final carbTarget = section.carbsTarget ?? 0;
+      if (carbTarget == 0) return true;
+    }
+    return false;
+  }
+
+  /// Build informational message for sections that don't need nutrition
+  Widget _buildQuickTransitionMessage(BuildContext context, PlanSection section, bool isTransition) {
+    String message;
+    if (isTransition) {
+      // Determine transition type from section ID
+      final transitionNumber = int.tryParse(section.id.replaceAll(RegExp(r'[^0-9]'), ''));
+      if (transitionNumber == 1) {
+        message = 'Quick transition - start fueling on the bike';
+      } else {
+        message = 'Quick transition - fuel at first aid station';
+      }
+    } else {
+      message = 'No foods recommended - mouth rinse only';
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       child: Text(
-        'No foods recommended - mouth rinse only',
+        message,
         style: AppTextStyles.bodyMedium.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontStyle: FontStyle.italic,
@@ -359,8 +408,8 @@ class BrickNutritionSections extends StatelessWidget {
     final idLower = section.id.toLowerCase();
     final titleLower = section.title.toLowerCase();
 
-    if (idLower.startsWith('before') || titleLower.startsWith('before')) return 'before_run';
-    if (idLower.startsWith('after') || titleLower.startsWith('after')) return 'after_run';
+    if (idLower.startsWith('before') || titleLower.startsWith('before')) return 'before';
+    if (idLower.startsWith('after') || titleLower.startsWith('after')) return 'after';
     if (idLower.startsWith('t') || titleLower.startsWith('transition')) return 'transition';
 
     if (isDuring) {

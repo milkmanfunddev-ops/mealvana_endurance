@@ -51,6 +51,7 @@ class BrickMacroService {
     required List<BrickSegment> segments,
     required List<String> segmentOrder,
     required bool isFasted,
+    required int preActivityMinutes,
   }) async {
     DebugLogger.info('🧱 BRICK MACRO SERVICE: generateBrickMacros called - ${segments.length} segments');
 
@@ -65,6 +66,7 @@ class BrickMacroService {
         segments: segments,
         segmentOrder: segmentOrder,
         isFasted: isFasted,
+        preActivityMinutes: preActivityMinutes,
       );
 
       DebugLogger.info('🧱 BRICK MACRO SERVICE: Calling generate-macros edge function...');
@@ -151,6 +153,7 @@ class BrickMacroService {
     required List<BrickSegment> segments,
     required List<String> segmentOrder,
     required bool isFasted,
+    required int preActivityMinutes,
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
@@ -190,8 +193,7 @@ class BrickMacroService {
       'sweat_sodium': 'medium',
       'drink_sodium_mg_per_l': 500,
       'optional_sweat_rate_lph': null,
-      // V3 params - brick uses default values
-      'hours_before': 2.5,
+      'hours_before': preActivityMinutes / 60.0,
       'is_fasted': isFasted,
       'intensity_distribution': {
         'zone_low': 0.7,

@@ -1065,12 +1065,48 @@ async function generateDuringPhase(
 }
 
 // ============================================================================
+// Transition Targets (Distance-Based)
+// ============================================================================
+
+/**
+ * Get distance-based transition nutrition targets.
+ * Research-backed values vary by total brick duration:
+ * - Sprint (<90 min): 0/0/0 (quick transition, no nutrition needed)
+ * - Olympic (90-180 min): 0/0/50ml (sip of water only)
+ * - Half Ironman (180-420 min): T1=25g/150mg/150ml, T2=10g/100mg/100ml
+ * - Ironman (420+ min): T1=30g/200mg/200ml, T2=25g/150mg/150ml
+ */
+function getTransitionTargets(
+  segments: Array<{ sport: string; duration_minutes: number; macro_targets: MacroTargets }>,
+  transitionIndex: number,
+): MacroTargets {
+  const totalDurationMinutes = segments.reduce((sum, s) => sum + s.duration_minutes, 0);
+
+  if (totalDurationMinutes < 90) {
+    return { carbs_g: 0, sodium_mg: 0, water_ml: 0 };
+  }
+  if (totalDurationMinutes < 180) {
+    return { carbs_g: 0, sodium_mg: 0, water_ml: 50 };
+  }
+  if (totalDurationMinutes < 420) {
+    return transitionIndex === 0
+      ? { carbs_g: 25, sodium_mg: 150, water_ml: 150 }
+      : { carbs_g: 10, sodium_mg: 100, water_ml: 100 };
+  }
+  // Ironman (420+ min)
+  return transitionIndex === 0
+    ? { carbs_g: 30, sodium_mg: 200, water_ml: 200 }
+    : { carbs_g: 25, sodium_mg: 150, water_ml: 150 };
+}
+
+// ============================================================================
 // Transition Phase (Brick Workouts)
 // ============================================================================
 
 /**
  * Generate transition-phase food selection for brick workout T1/T2 phases.
  * Uses LP solver with small targets (quick-consume foods like gels, drinks).
+ * Skips food generation when all targets are 0 (sprint/olympic distance).
  */
 async function generateTransitionPhase(
   supabase: ReturnType<typeof createServiceClient>,
@@ -1082,6 +1118,12 @@ async function generateTransitionPhase(
   deviceId?: string,
 ): Promise<LPPhaseResult> {
   console.log(`[PLAN-V2-BRICK] Generating transition phase ${transitionName}: carbs=${targets.carbs_g}g, sodium=${targets.sodium_mg}mg, water=${targets.water_ml}ml`);
+
+  // Skip food generation when all targets are 0 (sprint/olympic distance)
+  if (targets.carbs_g === 0 && targets.sodium_mg === 0 && targets.water_ml === 0) {
+    console.log(`[PLAN-V2-BRICK] ${transitionName}: all targets are 0, returning empty foods`);
+    return { foods: [] };
+  }
 
   const foods = await getTransitionFoods(
     supabase,
@@ -1152,7 +1194,14 @@ async function handleBrickPlan(
   console.log(`[PLAN-V2-BRICK] Starting brick plan generation with ${segments.length} segments`);
 
   // 1. Generate before phase (shared across all segments — reuse standard logic)
+  console.log(`[PLAN-V2-BRICK] Before phase input: pre_run carbs=${input.macro_targets.pre_run?.carbs_g}, water=${input.macro_targets.pre_run?.water_ml}, hours_before=${input.hours_before}`);
   const beforeResult = await generateBeforePhase(supabase, input);
+  const beforeSubPhases = Object.keys(beforeResult);
+  const beforeFoodCount = beforeSubPhases.reduce((sum, key) => {
+    const sp = (beforeResult as Record<string, { foods?: unknown[] }>)[key];
+    return sum + (sp?.foods?.length ?? 0);
+  }, 0);
+  console.log(`[PLAN-V2-BRICK] Before phase result: sub-phases=[${beforeSubPhases.join(',')}], total foods=${beforeFoodCount}`);
 
   // 2. Generate during phase for each segment + transitions between them
   const duringSegments: Record<string, FoodResult[]> = {};
@@ -1197,11 +1246,7 @@ async function handleBrickPlan(
     // Generate transition after each segment (except the last)
     if (i < segments.length - 1) {
       const transitionName = `T${i + 1}`;
-      const transitionTargets: MacroTargets = {
-        carbs_g: 15,
-        sodium_mg: 100,
-        water_ml: 100,
-      };
+      const transitionTargets = getTransitionTargets(segments, i);
 
       transitionTargetsList.push({
         transition_name: transitionName,

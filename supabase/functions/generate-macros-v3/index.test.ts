@@ -961,8 +961,10 @@ describe('Brick Workout Support', () => {
     });
   });
 
-  describe('Transition Values', () => {
-    it('should have T1 transition with 20g carbs, 200ml water, 150mg sodium', async () => {
+  describe('Transition Values (Distance-Based)', () => {
+    it('should have Olympic-distance transitions for swimBikeRun (165 min total)', async () => {
+      // swimBikeRun = 30+75+60 = 165 min (Olympic range: 90-180 min)
+      // Olympic: T1 = 0g/0mg/50ml, T2 = 0g/0mg/50ml
       const { status, data } = await callEdgeFunction(brickFixtures.swimBikeRun);
 
       assertEquals(status, 200);
@@ -970,22 +972,17 @@ describe('Brick Workout Support', () => {
         (t: any) => t.transition_name === 'T1'
       );
       assertExists(t1);
-      assertEquals(t1.carbs_g, 20, 'T1 carbs should be 20g');
-      assertEquals(t1.water_ml, 200, 'T1 water should be 200ml');
-      assertEquals(t1.sodium_mg, 150, 'T1 sodium should be 150mg');
-    });
+      assertEquals(t1.carbs_g, 0, 'T1 carbs should be 0g (Olympic)');
+      assertEquals(t1.water_ml, 50, 'T1 water should be 50ml (Olympic)');
+      assertEquals(t1.sodium_mg, 0, 'T1 sodium should be 0mg (Olympic)');
 
-    it('should have T2 transition with 25g carbs, 150ml water, 100mg sodium', async () => {
-      const { status, data } = await callEdgeFunction(brickFixtures.swimBikeRun);
-
-      assertEquals(status, 200);
       const t2 = data.macros.phases.transitions.find(
         (t: any) => t.transition_name === 'T2'
       );
       assertExists(t2);
-      assertEquals(t2.carbs_g, 25, 'T2 carbs should be 25g');
-      assertEquals(t2.water_ml, 150, 'T2 water should be 150ml');
-      assertEquals(t2.sodium_mg, 100, 'T2 sodium should be 100mg');
+      assertEquals(t2.carbs_g, 0, 'T2 carbs should be 0g (Olympic)');
+      assertEquals(t2.water_ml, 50, 'T2 water should be 50ml (Olympic)');
+      assertEquals(t2.sodium_mg, 0, 'T2 sodium should be 0mg (Olympic)');
     });
   });
 

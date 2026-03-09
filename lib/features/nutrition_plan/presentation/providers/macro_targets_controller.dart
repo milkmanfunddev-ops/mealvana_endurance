@@ -1313,6 +1313,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     required DateTime scheduledDate,
     required TimeOfDay scheduledTime,
     required bool isFasted,
+    required int preActivityMinutes,
     String? activityId,
     String? eventId,
     String?
@@ -1407,6 +1408,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             intensityLevel: domain.IntensityLevel.moderate,
             durationMinutes: totalDurationMinutes,
             brickMetadata: brickMetadata,
+            timeBeforeMinutes: preActivityMinutes,
             notes: 'Draft brick activity - nutrition plan being generated',
           );
           finalActivityId = createdActivity.id;
@@ -1436,6 +1438,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 scheduledDateTime: scheduledDateTime,
                 brickMetadata: brickMetadata,
                 durationMinutes: totalDurationMinutes,
+                timeBeforeMinutes: preActivityMinutes,
                 notes: 'Draft brick activity - nutrition plan being generated',
               ),
             );
@@ -1457,6 +1460,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           segments: segments,
           segmentOrder: segmentOrder,
           isFasted: isFasted,
+          preActivityMinutes: preActivityMinutes,
         );
 
         // Apply user profile nutrition target overrides (if any)

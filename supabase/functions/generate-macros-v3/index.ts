@@ -963,9 +963,21 @@ function calculateBrickMacrosV3(input: MacroInputV3) {
 
   for (let i = 0; i < segments.length - 1; i++) {
     const transitionName = i === 0 ? 'T1' : 'T2';
-    const transitionCarbs = i === 0 ? 20 : 25;
-    const transitionSodium = i === 0 ? 150 : 100;
-    const transitionWater = i === 0 ? 200 : 150;
+
+    // Distance-based transition targets
+    let transitionCarbs: number, transitionSodium: number, transitionWater: number;
+    if (totalDurationMin < 90) {
+      transitionCarbs = 0; transitionSodium = 0; transitionWater = 0;
+    } else if (totalDurationMin < 180) {
+      transitionCarbs = 0; transitionSodium = 0; transitionWater = 50;
+    } else if (totalDurationMin < 420) {
+      if (i === 0) { transitionCarbs = 25; transitionSodium = 150; transitionWater = 150; }
+      else { transitionCarbs = 10; transitionSodium = 100; transitionWater = 100; }
+    } else {
+      // Ironman (420+ min)
+      if (i === 0) { transitionCarbs = 30; transitionSodium = 200; transitionWater = 200; }
+      else { transitionCarbs = 25; transitionSodium = 150; transitionWater = 150; }
+    }
 
     transitions.push({
       transition_name: transitionName,

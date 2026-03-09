@@ -249,9 +249,10 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           final selectedDate = brickController.state.selectedDate;
           final selectedTime = brickController.state.selectedTime;
           final isFasted = brickController.state.isFasted;
+          final preActivityMinutes = brickController.state.preActivityMinutes;
 
           DebugLogger.info(
-            '🎮 COORDINATOR: Got ${segments.length} brick segments, calling macroTargetsController...',
+            '🎮 COORDINATOR: Got ${segments.length} brick segments (preActivityMinutes=$preActivityMinutes), calling macroTargetsController...',
           );
           await ref
               .read(macroTargetsControllerProvider.notifier)
@@ -261,6 +262,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
                 scheduledDate: selectedDate,
                 scheduledTime: selectedTime,
                 isFasted: isFasted,
+                preActivityMinutes: preActivityMinutes,
                 activityId: activityId,
                 eventId: eventId,
                 forUserId: forUserId,
