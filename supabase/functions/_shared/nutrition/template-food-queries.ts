@@ -21,6 +21,29 @@ import { PREFERENCE_SCORE_MAP, DEFAULT_MAX_SERVINGS, getCategoryForPhase } from 
 import { matchesPreference, buildPreferenceSet } from './food-utils.ts';
 
 /**
+ * Resolve composite activity types to their constituent sports for
+ * activity_types column filtering. Brick/triathlon/etc. aren't stored
+ * in the activity_types array — the individual sports are.
+ */
+function resolveActivityTypesFilter(activityType: ActivityType): string {
+  const COMPOSITE_SPORTS: Record<string, string[]> = {
+    brick: ['running', 'cycling', 'swimming'],
+    triathlon: ['running', 'cycling', 'swimming'],
+    duathlon: ['running', 'cycling'],
+    multisport: ['running', 'cycling', 'swimming'],
+  };
+
+  const sports = COMPOSITE_SPORTS[activityType];
+  if (sports) {
+    // Build OR filter that matches any constituent sport
+    const overlapClauses = sports.map(s => `activity_types.ov.{${s}}`).join(',');
+    return `activity_types.is.null,${overlapClauses}`;
+  }
+
+  return `activity_types.is.null,activity_types.ov.{${activityType}}`;
+}
+
+/**
  * Build a Supabase category filter for the given categories
  * Uses the categories array column with overlaps operator
  */
@@ -68,7 +91,9 @@ export async function getTemplateFoodsForPhase(
   const categories = getCategoryForPhase(phase, activityType);
   const categoryFilter = buildCategoryFilter(categories);
 
-  console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Filtering template_foods for categories: ${categories.join(', ')}, activity_type: ${activityType}`);
+  // Resolve composite types (brick/triathlon/etc.) to constituent sports
+  const activityFilter = resolveActivityTypesFilter(activityType);
+  console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Filtering template_foods for categories: ${categories.join(', ')}, activity_type: ${activityType}, filter: ${activityFilter}`);
 
   // STEP 1: Get foods from template_foods table
   let templateFoods: Record<string, unknown>[] = [];
@@ -98,7 +123,7 @@ export async function getTemplateFoodsForPhase(
       .select(selectWithDefaultDuring)
       .eq('is_active', true)
       .filter('categories', 'ov', categoryFilter)
-      .or(`activity_types.is.null,activity_types.ov.{${activityType}}`);
+      .or(activityFilter);
     foodsData = data as Record<string, unknown>[] | null;
     foodsError = error;
   }
@@ -110,7 +135,7 @@ export async function getTemplateFoodsForPhase(
       .select(selectWithoutDefaultDuring)
       .eq('is_active', true)
       .filter('categories', 'ov', categoryFilter)
-      .or(`activity_types.is.null,activity_types.ov.{${activityType}}`);
+      .or(activityFilter);
     foodsData = fallback.data as Record<string, unknown>[] | null;
     foodsError = fallback.error;
   }
@@ -149,7 +174,7 @@ export async function getTemplateFoodsForPhase(
         .eq('user_id', userId)
         .eq('is_deleted', false)
         .filter('categories', 'ov', categoryFilter)
-        .or(`activity_types.is.null,activity_types.cs.{${activityType}}`);
+        .or(activityFilter);
 
       if (userFoodsError) {
         console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Error fetching user foods:`, userFoodsError);
@@ -171,7 +196,7 @@ export async function getTemplateFoodsForPhase(
         .eq('user_id', userId)
         .eq('is_deleted', false)
         .or(`categories.eq.{},categories.is.null`)
-        .or(`activity_types.is.null,activity_types.cs.{${activityType}}`);
+        .or(activityFilter);
 
       if (uncatError) {
         console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Error fetching uncategorized user foods:`, uncatError);
@@ -359,6 +384,146 @@ export async function getTemplateElectrolyteFoods(
       is_user_food: false,
       is_indivisible: true, // electrolyte items (tablets, etc.) are indivisible
     }));
+}
+
+/**
+ * Get transition foods from template_foods for brick workout T1/T2 phases.
+ * Queries foods with 'transition' category — these are quick-consume items
+ * (gels, sports drinks, water) suitable for brief transition periods.
+ * No activity_type filter — transition foods are universal across sports.
+ * Also includes user_foods with transition category if deviceId is provided.
+ */
+export async function getTransitionFoods(
+  supabase: SupabaseClient,
+  likedFoods?: string[],
+  willingToTryFoods?: string[],
+  dislikedFoods?: string[],
+  deviceId?: string,
+): Promise<Food[]> {
+  const likedSet = buildPreferenceSet(likedFoods);
+  const willTrySet = buildPreferenceSet(willingToTryFoods);
+  const dislikedSet = buildPreferenceSet(dislikedFoods);
+
+  // Fetch template_foods with 'transition' category
+  const { data: templateData, error: templateError } = await supabase
+    .from('template_foods')
+    .select(`
+      id, name, display_name, display_name_plural, image_address, description,
+      calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
+      serving_amount, serving_size, serving_unit, serving_qualifier,
+      max_servings_during,
+      is_electrolyte, to_exclude_from_solver, is_essential, is_indivisible,
+      is_liquid, product_type
+    `)
+    .eq('is_active', true)
+    .filter('categories', 'ov', '{transition}');
+
+  if (templateError) {
+    console.log('[TRANSITION-FOODS] Error fetching transition foods:', templateError);
+    return [];
+  }
+
+  const templateFoods = (templateData ?? []) as Record<string, unknown>[];
+  console.log(`[TRANSITION-FOODS] Found ${templateFoods.length} transition template foods`);
+
+  // Also fetch user_foods with transition category if deviceId provided
+  let userFoods: Record<string, unknown>[] = [];
+  if (deviceId) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('id')
+      .eq('device_id', deviceId)
+      .single();
+
+    const userId = userData?.id;
+    if (userId) {
+      const { data: userFoodData, error: userFoodError } = await supabase
+        .from('user_foods')
+        .select(`
+          id, name, display_name, display_name_plural, image_address, description,
+          calories_per_serving, carbs_per_serving, protein_per_serving,
+          fat_per_serving, sodium_mg, fluid_ml_per_serving,
+          serving_amount, product_type, serving_unit,
+          is_electrolyte, to_exclude_from_solver, is_deleted,
+          categories
+        `)
+        .eq('user_id', userId)
+        .eq('is_deleted', false)
+        .filter('categories', 'ov', '{transition}');
+
+      if (!userFoodError && userFoodData) {
+        userFoods = userFoodData as Record<string, unknown>[];
+        console.log(`[TRANSITION-FOODS] Found ${userFoods.length} transition user foods`);
+      }
+    }
+  }
+
+  // Combine and deduplicate
+  const allFoodsMap = new Map<string, { data: Record<string, unknown>; isUserFood: boolean }>();
+  for (const food of templateFoods) {
+    allFoodsMap.set(food.id as string, { data: food, isUserFood: false });
+  }
+  for (const food of userFoods) {
+    if (!allFoodsMap.has(food.id as string)) {
+      allFoodsMap.set(food.id as string, { data: food, isUserFood: true });
+    }
+  }
+
+  const allEntries = Array.from(allFoodsMap.values());
+
+  return allEntries
+    .filter(({ data: f, isUserFood }) => {
+      const isDisliked = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, dislikedSet);
+      const isEssential = f.is_essential === true;
+      if (isDisliked && !isUserFood && !isEssential) return false;
+      if (f.to_exclude_from_solver === true) return false;
+      return true;
+    })
+    .map(({ data: f, isUserFood }): Food => {
+      const isLiked = isUserFood || matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, likedSet);
+      const isWilling = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, willTrySet);
+
+      let preferenceCategory: 'liked' | 'willing' | 'essential' | 'neutral' = 'neutral';
+      if (isLiked) preferenceCategory = 'liked';
+      else if (isWilling) preferenceCategory = 'willing';
+
+      const carbsG = isUserFood ? safe(f.carbs_per_serving as number) : safe(f.carbs_g as number);
+      const proteinG = isUserFood ? safe(f.protein_per_serving as number) : safe(f.protein_g as number);
+      const fatG = isUserFood ? safe(f.fat_per_serving as number) : safe(f.fat_g as number);
+      const sodiumMg = safe(f.sodium_mg as number);
+      const waterMl = isUserFood ? safe(f.fluid_ml_per_serving as number) : safe(f.fluid_ml as number);
+      const calories = isUserFood ? safe(f.calories_per_serving as number) : safe(f.calories as number);
+
+      return {
+        id: f.id as string,
+        name: f.name as string,
+        display_name: (f.display_name as string) ?? null,
+        display_name_plural: (f.display_name_plural as string) ?? null,
+        description: (f.description as string) ?? null,
+        image_address: (f.image_address as string) ?? null,
+        serving_size: (f.serving_size as string) ?? null,
+        serving_unit: (f.serving_unit as string) ?? null,
+        serving_qualifier: null,
+        per_serving: {
+          carbs_g: carbsG,
+          protein_g: proteinG,
+          fat_g: fatG,
+          sodium_mg: sodiumMg,
+          water_ml: waterMl,
+          calories: calories,
+        },
+        serving_amount: (f.serving_amount as number) ?? null,
+        min_servings: 0.5,
+        max_servings: (f.max_servings_during as number) ?? DEFAULT_MAX_SERVINGS,
+        preference_score: PREFERENCE_SCORE_MAP[preferenceCategory],
+        is_electrolyte: (f.is_electrolyte as boolean) || false,
+        is_liquid: isUserFood ? false : ((f.is_liquid as boolean) || false),
+        is_essential: (f.is_essential as boolean) || false,
+        is_user_food: isUserFood,
+        is_indivisible: isUserFood ? false : ((f.is_indivisible as boolean) || false),
+        product_type: (f.product_type as string) ?? undefined,
+      };
+    });
 }
 
 /**

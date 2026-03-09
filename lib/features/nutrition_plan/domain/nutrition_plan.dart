@@ -183,6 +183,12 @@ class NutritionPlan {
       else if (planData['plan'] is Map) {
         try {
           final plan = planData['plan'] as Map<String, dynamic>;
+
+          // Detect brick workout V2 response (has during_segments instead of during)
+          if (plan.containsKey('during_segments')) {
+            sections = _parseBrickV2Plan(plan, planData);
+          } else {
+
           final List<PlanSection> parsedSections = [];
 
           // Parse "before" section - check for v2 sub-phase format vs v1 flat list
@@ -292,6 +298,8 @@ class NutritionPlan {
           DebugLogger.info(
             '✅ Parsed ${sections.length} sections from Edge Function format',
           );
+
+          } // end of non-brick else block
         } catch (e) {
           DebugLogger.error(
             'Error parsing sections from Edge Function format: $e',
@@ -320,12 +328,37 @@ class NutritionPlan {
       try {
         final mt = planData['macro_targets'] as Map<String, dynamic>;
         final pre = mt['pre_run'] as Map<String, dynamic>? ?? {};
-        final during = mt['during_run'] as Map<String, dynamic>? ?? {};
         final post = mt['post_run'] as Map<String, dynamic>? ?? {};
+
+        // Check for brick format with phases structure
+        num duringCarbs = 0;
+        num duringSodium = 0;
+        if (mt['phases'] is Map) {
+          final phases = mt['phases'] as Map<String, dynamic>;
+          // Sum across during_segments + transitions
+          final duringSegs = phases['during_segments'] as List<dynamic>? ?? [];
+          for (final seg in duringSegs) {
+            if (seg is Map<String, dynamic>) {
+              duringCarbs += (seg['carbs_g'] as num?) ?? 0;
+              duringSodium += (seg['sodium_mg'] as num?) ?? 0;
+            }
+          }
+          final trans = phases['transitions'] as List<dynamic>? ?? [];
+          for (final t in trans) {
+            if (t is Map<String, dynamic>) {
+              duringCarbs += (t['carbs_g'] as num?) ?? 0;
+              duringSodium += (t['sodium_mg'] as num?) ?? 0;
+            }
+          }
+        } else {
+          final during = mt['during_run'] as Map<String, dynamic>? ?? {};
+          duringCarbs = (during['carbs_g'] as num?) ?? 0;
+          duringSodium = (during['sodium_mg'] as num?) ?? 0;
+        }
+
         // Sum across all phases for the overall summary
         final totalCarbs =
-            ((pre['carbs_g'] as num?) ?? 0) +
-            ((during['carbs_g'] as num?) ?? 0) +
+            ((pre['carbs_g'] as num?) ?? 0) + duringCarbs +
             ((post['carbs_g'] as num?) ?? 0);
         final totalProtein =
             ((pre['protein_g'] as num?) ?? 0) +
@@ -333,8 +366,7 @@ class NutritionPlan {
         final totalFat =
             ((pre['fat_g'] as num?) ?? 0) + ((post['fat_g'] as num?) ?? 0);
         final totalSodium =
-            ((pre['sodium_mg'] as num?) ?? 0) +
-            ((during['sodium_mg'] as num?) ?? 0) +
+            ((pre['sodium_mg'] as num?) ?? 0) + duringSodium +
             ((post['sodium_mg'] as num?) ?? 0);
         final totalCalories = (totalCarbs * 4 + totalProtein * 4 + totalFat * 9)
             .round();
@@ -386,6 +418,190 @@ class NutritionPlan {
       conflictResolution:
           json['conflict_resolution'] as String? ?? 'last_write_wins',
     );
+  }
+
+  /// Parse brick V2 response into PlanSections.
+  /// Handles before (with sub-phases), during_segments, transitions, and after.
+  static List<PlanSection> _parseBrickV2Plan(
+    Map<String, dynamic> plan,
+    Map<String, dynamic> planData,
+  ) {
+    final sections = <PlanSection>[];
+    final macroTargetsMap =
+        planData['macro_targets'] as Map<String, dynamic>?;
+    final phases =
+        macroTargetsMap?['phases'] as Map<String, dynamic>?;
+
+    // 1. Before Brick — parse V2 sub-phases (meal/snack/top_up) or V1 flat list
+    if (plan['before'] is Map) {
+      final beforeMap = plan['before'] as Map<String, dynamic>;
+      final subPhases = <BeforeSubPhase>[];
+
+      for (final key in ['meal', 'snack', 'top_up']) {
+        if (beforeMap[key] is Map) {
+          subPhases.add(
+            BeforeSubPhase.fromJson(
+              beforeMap[key] as Map<String, dynamic>,
+            ),
+          );
+        }
+      }
+
+      // Apply before targets from phases or pre_run
+      final beforeTargets =
+          (phases?['before'] ?? macroTargetsMap?['pre_run'])
+              as Map<String, dynamic>?;
+
+      sections.add(PlanSection(
+        id: 'before_run',
+        title: 'Before Brick',
+        subtitle: 'Pre-workout nutrition',
+        foodItems: const [],
+        subPhases: subPhases,
+        carbsTarget: (beforeTargets?['carbs_g'] as num?)?.toDouble(),
+        proteinTarget: (beforeTargets?['protein_g'] as num?)?.toDouble(),
+        fatTarget: (beforeTargets?['fat_g'] as num?)?.toDouble(),
+        sodiumTarget: (beforeTargets?['sodium_mg'] as num?)?.toDouble(),
+        fluidsTarget: (beforeTargets?['water_ml'] as num?)?.toDouble(),
+      ));
+    } else if (plan['before'] is List) {
+      final beforeTargets =
+          (phases?['before'] ?? macroTargetsMap?['pre_run'])
+              as Map<String, dynamic>?;
+      sections.add(PlanSection(
+        id: 'before_run',
+        title: 'Before Brick',
+        subtitle: 'Pre-workout nutrition',
+        foodItems: (plan['before'] as List<dynamic>)
+            .map((item) =>
+                FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>))
+            .toList(),
+        carbsTarget: (beforeTargets?['carbs_g'] as num?)?.toDouble(),
+        proteinTarget: (beforeTargets?['protein_g'] as num?)?.toDouble(),
+        fatTarget: (beforeTargets?['fat_g'] as num?)?.toDouble(),
+        sodiumTarget: (beforeTargets?['sodium_mg'] as num?)?.toDouble(),
+        fluidsTarget: (beforeTargets?['water_ml'] as num?)?.toDouble(),
+      ));
+    }
+
+    // 2. During segments + interleaved transitions
+    final duringSegmentsData =
+        plan['during_segments'] as Map<String, dynamic>? ?? {};
+    final transitionsData =
+        plan['transitions'] as Map<String, dynamic>? ?? {};
+
+    // Build segment targets map from phases.during_segments
+    final segmentTargetsMap = <int, Map<String, dynamic>>{};
+    final segmentTargetsList =
+        phases?['during_segments'] as List<dynamic>? ?? [];
+    for (final seg in segmentTargetsList) {
+      if (seg is Map<String, dynamic>) {
+        final order = seg['segment_order'] as int?;
+        if (order != null) segmentTargetsMap[order] = seg;
+      }
+    }
+
+    // Build transition targets map from phases.transitions
+    final transitionTargetsMap = <String, Map<String, dynamic>>{};
+    final transitionTargetsList =
+        phases?['transitions'] as List<dynamic>? ?? [];
+    for (final t in transitionTargetsList) {
+      if (t is Map<String, dynamic>) {
+        final name = t['transition_name'] as String?;
+        if (name != null) transitionTargetsMap[name] = t;
+      }
+    }
+
+    int segmentIndex = 0;
+    for (final entry in duringSegmentsData.entries) {
+      final segmentOrder = entry.key;
+      final segmentItems = entry.value as List<dynamic>? ?? [];
+      final orderInt = int.tryParse(segmentOrder) ?? (segmentIndex + 1);
+
+      // Resolve sport display name from segment targets
+      final segTargets = segmentTargetsMap[orderInt];
+      final sport = segTargets?['sport'] as String? ?? 'unknown';
+      final sportName = _getSportDisplayName(sport);
+
+      final foodItems = segmentItems
+          .map((item) =>
+              FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>))
+          .toList();
+
+      sections.add(PlanSection(
+        id: 'during_segment_$segmentOrder',
+        title: 'During $sportName',
+        subtitle: null,
+        foodItems: foodItems,
+        carbsTarget: (segTargets?['carbs_g'] as num?)?.toDouble(),
+        sodiumTarget: (segTargets?['sodium_mg'] as num?)?.toDouble(),
+        fluidsTarget: (segTargets?['water_ml'] as num?)?.toDouble(),
+      ));
+
+      // Add transition after each segment (except the last)
+      final transitionKey = 'T${segmentIndex + 1}';
+      if (transitionsData.containsKey(transitionKey)) {
+        final transitionItems =
+            transitionsData[transitionKey] as List<dynamic>? ?? [];
+        final transTargets = transitionTargetsMap[transitionKey];
+
+        sections.add(PlanSection(
+          id: transitionKey,
+          title: 'Transition ($transitionKey)',
+          subtitle: 'Quick refuel between segments',
+          foodItems: transitionItems
+              .map((item) => FoodItemData.fromEdgeFunctionJson(
+                  item as Map<String, dynamic>))
+              .toList(),
+          carbsTarget: (transTargets?['carbs_g'] as num?)?.toDouble(),
+          sodiumTarget: (transTargets?['sodium_mg'] as num?)?.toDouble(),
+          fluidsTarget: (transTargets?['water_ml'] as num?)?.toDouble(),
+        ));
+      }
+
+      segmentIndex++;
+    }
+
+    // 3. After Brick
+    if (plan['after'] is List) {
+      final afterTargets =
+          (phases?['after'] ?? macroTargetsMap?['post_run'])
+              as Map<String, dynamic>?;
+
+      sections.add(PlanSection(
+        id: 'after_run',
+        title: 'After Brick',
+        subtitle: 'Within 30-60 minutes post-workout',
+        foodItems: (plan['after'] as List<dynamic>)
+            .map((item) =>
+                FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>))
+            .toList(),
+        carbsTarget: (afterTargets?['carbs_g'] as num?)?.toDouble(),
+        proteinTarget: (afterTargets?['protein_g'] as num?)?.toDouble(),
+        sodiumTarget: (afterTargets?['sodium_mg'] as num?)?.toDouble(),
+        fluidsTarget: (afterTargets?['water_ml'] as num?)?.toDouble(),
+      ));
+    }
+
+    DebugLogger.info(
+      'Parsed ${sections.length} sections from brick V2 format',
+    );
+
+    return sections;
+  }
+
+  /// Get display name for a sport type (used by brick V2 parsing)
+  static String _getSportDisplayName(String sport) {
+    switch (sport) {
+      case 'swimming':
+        return 'Swim';
+      case 'cycling':
+        return 'Bike';
+      case 'running':
+        return 'Run';
+      default:
+        return sport.substring(0, 1).toUpperCase() + sport.substring(1);
+    }
   }
 
   /// Convert to JSON for API calls

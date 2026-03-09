@@ -42,7 +42,7 @@ import {
 } from '../_shared/nutrition/index.ts';
 
 // v2 food queries — queries template_foods table (not legacy foods table)
-import { getTemplateFoodsForPhase, getTemplateElectrolyteFoods } from '../_shared/nutrition/template-food-queries.ts';
+import { getTemplateFoodsForPhase, getTemplateElectrolyteFoods, getTransitionFoods } from '../_shared/nutrition/template-food-queries.ts';
 
 // Rule-based during solver (replaces LP for during phase)
 import { generateDuringPhaseRuleBased } from '../_shared/nutrition/during-rule-solver.ts';
@@ -1065,6 +1065,210 @@ async function generateDuringPhase(
 }
 
 // ============================================================================
+// Transition Phase (Brick Workouts)
+// ============================================================================
+
+/**
+ * Generate transition-phase food selection for brick workout T1/T2 phases.
+ * Uses LP solver with small targets (quick-consume foods like gels, drinks).
+ */
+async function generateTransitionPhase(
+  supabase: ReturnType<typeof createServiceClient>,
+  transitionName: string,
+  targets: MacroTargets,
+  likedFoods?: string[],
+  willingToTryFoods?: string[],
+  dislikedFoods?: string[],
+  deviceId?: string,
+): Promise<LPPhaseResult> {
+  console.log(`[PLAN-V2-BRICK] Generating transition phase ${transitionName}: carbs=${targets.carbs_g}g, sodium=${targets.sodium_mg}mg, water=${targets.water_ml}ml`);
+
+  const foods = await getTransitionFoods(
+    supabase,
+    likedFoods,
+    willingToTryFoods,
+    dislikedFoods,
+    deviceId,
+  );
+
+  if (foods.length === 0) {
+    console.log(`[PLAN-V2-BRICK] No transition foods available for ${transitionName}`);
+    return { foods: [] };
+  }
+
+  console.log(`[PLAN-V2-BRICK] ${transitionName}: ${foods.length} transition foods available`);
+
+  // Use LP solver with 'during' phase weights (transition is similar to during)
+  const weights = getOptimizationWeights('running', 'during');
+  const modelOptions = {
+    maxFoodItems: 3,
+    maxServingsCap: 2,
+    selectionPenalty: 0.5,
+    enforceWaterMin: true,
+  };
+
+  const model = buildLPModel(
+    foods,
+    targets,
+    'during',
+    weights,
+    undefined,
+    undefined,
+    modelOptions,
+  );
+  const solution = solveLPModel(model, foods, 'during');
+
+  if (solution && solution.foods.length > 0) {
+    console.log(`[PLAN-V2-BRICK] ${transitionName} LP solved: ${solution.foods.length} foods`);
+    return { foods: solution.foods };
+  }
+
+  // Fallback to greedy
+  console.log(`[PLAN-V2-BRICK] ${transitionName} LP failed, using greedy fallback`);
+  const greedyResult = greedyFallback(foods, targets, 'during');
+  return { foods: greedyResult.foods };
+}
+
+// ============================================================================
+// Brick Workout Handler
+// ============================================================================
+
+/**
+ * Handle brick workout plan generation.
+ * Generates before (shared), per-segment during phases, transition phases, and after.
+ */
+async function handleBrickPlan(
+  supabase: ReturnType<typeof createServiceClient>,
+  input: PlanInputV2,
+  planId: string,
+): Promise<Response> {
+  const segments = input.brick_segments ?? [];
+  if (segments.length === 0) {
+    console.log('[PLAN-V2-BRICK] No brick_segments provided, falling back to standard plan');
+    // Fall through to standard generation handled by caller
+    throw new Error('No brick_segments provided for brick activity');
+  }
+
+  console.log(`[PLAN-V2-BRICK] Starting brick plan generation with ${segments.length} segments`);
+
+  // 1. Generate before phase (shared across all segments — reuse standard logic)
+  const beforeResult = await generateBeforePhase(supabase, input);
+
+  // 2. Generate during phase for each segment + transitions between them
+  const duringSegments: Record<string, FoodResult[]> = {};
+  const transitions: Record<string, FoodResult[]> = {};
+  const segmentTargetsList: Array<{ segment_order: number; sport: string; carbs_g: number; sodium_mg: number; water_ml: number }> = [];
+  const transitionTargetsList: Array<{ transition_name: string; carbs_g: number; sodium_mg: number; water_ml: number }> = [];
+
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i];
+    const segmentOrder = i + 1;
+    const sport = segment.sport as ActivityType;
+    const segmentTargets: MacroTargets = {
+      carbs_g: segment.macro_targets.carbs_g,
+      sodium_mg: segment.macro_targets.sodium_mg,
+      water_ml: segment.macro_targets.water_ml,
+    };
+
+    console.log(`[PLAN-V2-BRICK] Segment ${segmentOrder} (${sport}): carbs=${segmentTargets.carbs_g}g, sodium=${segmentTargets.sodium_mg}mg, water=${segmentTargets.water_ml}ml`);
+
+    // Track segment targets for response
+    segmentTargetsList.push({
+      segment_order: segmentOrder,
+      sport: segment.sport,
+      carbs_g: segmentTargets.carbs_g,
+      sodium_mg: segmentTargets.sodium_mg,
+      water_ml: segmentTargets.water_ml,
+    });
+
+    // Generate during phase for this segment
+    const duringResult = await generateDuringPhase(
+      supabase,
+      segmentTargets,
+      sport,
+      input.liked_foods,
+      input.willing_to_try_foods,
+      input.disliked_foods,
+      input.device_id,
+    );
+
+    duringSegments[String(segmentOrder)] = duringResult.foods;
+
+    // Generate transition after each segment (except the last)
+    if (i < segments.length - 1) {
+      const transitionName = `T${i + 1}`;
+      const transitionTargets: MacroTargets = {
+        carbs_g: 15,
+        sodium_mg: 100,
+        water_ml: 100,
+      };
+
+      transitionTargetsList.push({
+        transition_name: transitionName,
+        carbs_g: transitionTargets.carbs_g,
+        sodium_mg: transitionTargets.sodium_mg,
+        water_ml: transitionTargets.water_ml,
+      });
+
+      const transitionResult = await generateTransitionPhase(
+        supabase,
+        transitionName,
+        transitionTargets,
+        input.liked_foods,
+        input.willing_to_try_foods,
+        input.disliked_foods,
+        input.device_id,
+      );
+
+      transitions[transitionName] = transitionResult.foods;
+    }
+  }
+
+  // 3. Generate after phase (use 'running' activity type — brick recovery is run-like)
+  const afterResult = input.macro_targets.post_run
+    ? await generateLPPhase(
+        supabase,
+        'after',
+        input.macro_targets.post_run,
+        'running',
+        input.liked_foods,
+        input.willing_to_try_foods,
+        input.disliked_foods,
+        input.device_id,
+      )
+    : { foods: [] as FoodResult[] };
+
+  // 4. Build response matching V1 brick format
+  const response = {
+    success: true,
+    plan_id: planId,
+    activity_type: 'brick',
+    plan: {
+      before: beforeResult,
+      during_segments: duringSegments,
+      transitions: transitions,
+      after: afterResult.foods,
+    },
+    macro_targets: {
+      pre_run: input.macro_targets.pre_run,
+      during_run: input.macro_targets.during_run,
+      post_run: input.macro_targets.post_run,
+      activity_type: 'brick',
+      phases: {
+        before: input.macro_targets.pre_run,
+        during_segments: segmentTargetsList,
+        transitions: transitionTargetsList,
+        after: input.macro_targets.post_run,
+      },
+    },
+  };
+
+  console.log(`[PLAN-V2-BRICK] Brick plan generated successfully (plan_id=${planId}, segments=${segments.length}, transitions=${Object.keys(transitions).length})`);
+
+  return jsonResponse(response);
+}
+
+// ============================================================================
 // Main Handler
 // ============================================================================
 
@@ -1091,6 +1295,11 @@ serve(async (req) => {
     const planId = generateUUID();
 
     console.log(`[PLAN-V2] Starting plan generation (activity=${activityType}, hours_before=${input.hours_before})`);
+
+    // Brick workouts: route to dedicated handler
+    if (activityType === 'brick') {
+      return await handleBrickPlan(supabase, input, planId);
+    }
 
     // Generate all phases
     const [beforeResult, duringPhaseResult, afterPhaseResult] = await Promise.all([

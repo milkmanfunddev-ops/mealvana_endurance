@@ -461,6 +461,7 @@ class NutritionPlanService {
     List<String>? willingToTryFoods,
     int? durationMinutes,
     String? gutTrainingLevel,
+    BrickMetadata? brickMetadata,
   }) async {
     try {
       _logger.info('Generating plan via V2 template system', context: 'NUTRITION_PLAN_SERVICE');
@@ -502,6 +503,35 @@ class NutritionPlanService {
         if (gutTrainingLevel != null) 'gut_training_level': gutTrainingLevel,
       };
 
+      // Add brick_segments for brick workouts
+      if (macroTargets.activityType == ActivityType.brick &&
+          macroTargets.brickSegments != null &&
+          macroTargets.brickSegments!.isNotEmpty) {
+        final segments = macroTargets.brickSegments!;
+        final totalDurationMin = segments.fold<int>(
+          0,
+          (sum, s) => sum + s.durationMinutes,
+        );
+        final segmentCount = segments.length;
+
+        requestData['brick_segments'] = segments.map((segment) {
+          final durationRatio = totalDurationMin > 0
+              ? segment.durationMinutes / totalDurationMin
+              : 1.0 / segmentCount;
+          return {
+            'sport': segment.sport,
+            'duration_minutes': segment.durationMinutes,
+            'macro_targets': {
+              'carbs_g': macroTargets.duringRun.carbTotalG * durationRatio,
+              'sodium_mg':
+                  macroTargets.duringRun.sodiumTotalMg * durationRatio,
+              'water_ml':
+                  macroTargets.duringRun.fluidTotalMl * durationRatio,
+            },
+          };
+        }).toList();
+      }
+
       final response = await supabase.functions.invoke(
         'generate-nutrition-plan-v2',
         body: requestData,
@@ -539,6 +569,7 @@ class NutritionPlanService {
       return generatePlanFromMacrosWithFallback(
         macroTargets: macroTargets,
         activityId: activityId,
+        brickMetadata: brickMetadata,
         userId: userId,
       );
     }
