@@ -27,7 +27,7 @@ part 'version_check_service.g.dart';
 ///
 /// This service queries the app_config table in Supabase to determine if:
 /// 1. The app version meets the minimum required version
-/// 2. The local schema version matches the remote schema version
+/// 2. The local schema version is within the server-supported schema window
 ///
 /// Results are cached in SharedPreferences to handle network failures gracefully.
 @Riverpod(keepAlive: true)
@@ -56,6 +56,8 @@ class VersionCheckService {
   // SharedPreferences keys for caching
   static const _keyMinAppVersion = 'cached_min_app_version';
   static const _keyRemoteSchemaVersion = 'cached_remote_schema_version';
+  static const _keyMinSupportedSchemaVersion =
+      'cached_min_supported_schema_version';
   static const _keyCacheTimestamp = 'version_check_cache_timestamp';
 
   // Cache expiration: 24 hours
@@ -70,11 +72,11 @@ class VersionCheckService {
     required AppLogger logger,
     required DirtyRecordBackupService backupService,
     required Ref ref,
-  })  : _supabase = supabase,
-        _database = database,
-        _logger = logger,
-        _backupService = backupService,
-        _ref = ref;
+  }) : _supabase = supabase,
+       _database = database,
+       _logger = logger,
+       _backupService = backupService,
+       _ref = ref;
 
   /// Check app version and schema version against remote configuration
   ///
@@ -90,7 +92,13 @@ class VersionCheckService {
       final response = await _supabase
           .from('app_config')
           .select('key, value')
-          .inFilter('key', ['min_app_version', 'current_schema_version'])
+          .inFilter('key', [
+            'min_app_version',
+            'current_schema_version',
+            'latest_schema_version',
+            'min_supported_schema_version',
+            'min_supported_schema',
+          ])
           .timeout(_queryTimeout);
 
       // Parse response
@@ -100,16 +108,36 @@ class VersionCheckService {
       }
 
       final minAppVersion = config['min_app_version'];
-      final remoteSchemaVersionStr = config['current_schema_version'];
+      final latestSchemaVersionStr =
+          config['latest_schema_version'] ?? config['current_schema_version'];
+      final minSupportedSchemaVersionStr =
+          config['min_supported_schema_version'] ??
+          config['min_supported_schema'];
+      final compatibilityWindowEnabled =
+          minSupportedSchemaVersionStr != null ||
+          config.containsKey('latest_schema_version');
 
-      if (minAppVersion == null || remoteSchemaVersionStr == null) {
+      if (minAppVersion == null || latestSchemaVersionStr == null) {
         throw Exception('Missing required config keys in app_config table');
       }
 
-      final remoteSchemaVersion = int.parse(remoteSchemaVersionStr);
+      final latestSchemaVersion = int.parse(latestSchemaVersionStr);
+      final minSupportedSchemaVersion = minSupportedSchemaVersionStr != null
+          ? int.parse(minSupportedSchemaVersionStr)
+          : latestSchemaVersion;
+
+      if (minSupportedSchemaVersion > latestSchemaVersion) {
+        throw Exception(
+          'Invalid app_config: min_supported_schema_version cannot be greater than latest_schema_version',
+        );
+      }
 
       // Cache the results
-      await _cacheVersionInfo(minAppVersion, remoteSchemaVersion);
+      await _cacheVersionInfo(
+        minAppVersion,
+        latestSchemaVersion,
+        minSupportedSchemaVersion,
+      );
 
       // Get current app version
       final packageInfo = await PackageInfo.fromPlatform();
@@ -123,7 +151,9 @@ class VersionCheckService {
         currentVersion: currentVersion,
         minAppVersion: minAppVersion,
         localSchemaVersion: localSchemaVersion,
-        remoteSchemaVersion: remoteSchemaVersion,
+        latestSchemaVersion: latestSchemaVersion,
+        minSupportedSchemaVersion: minSupportedSchemaVersion,
+        compatibilityWindowEnabled: compatibilityWindowEnabled,
       );
     } catch (e) {
       // On failure, try to use cached result
@@ -160,18 +190,22 @@ class VersionCheckService {
           try {
             final result = await entry.value.uploadDirtyRecords(userId);
             if (!result.success) {
-              uploadErrors.add(UploadError(
-                repository: entry.key,
-                error: result.error ?? 'Upload failed',
-                timestamp: DateTime.now(),
-              ));
+              uploadErrors.add(
+                UploadError(
+                  repository: entry.key,
+                  error: result.error ?? 'Upload failed',
+                  timestamp: DateTime.now(),
+                ),
+              );
             }
           } catch (e) {
-            uploadErrors.add(UploadError(
-              repository: entry.key,
-              error: e.toString(),
-              timestamp: DateTime.now(),
-            ));
+            uploadErrors.add(
+              UploadError(
+                repository: entry.key,
+                error: e.toString(),
+                timestamp: DateTime.now(),
+              ),
+            );
           }
         }
 
@@ -189,7 +223,8 @@ class VersionCheckService {
             appVersion: packageInfo.version,
             schemaVersion: _database.schemaVersion,
             userId: userId,
-            dirtyRecords: {}, // Empty - records are safely stored locally with needs_upload=true
+            dirtyRecords:
+                {}, // Empty - records are safely stored locally with needs_upload=true
             uploadErrors: uploadErrors,
           );
 
@@ -215,10 +250,21 @@ class VersionCheckService {
       // would see stale-but-recent timestamps and skip syncing, leaving the DB empty.
       final prefs = await SharedPreferences.getInstance();
       const repoKeys = [
-        'users', 'foods', 'carb_loading_foods', 'activities', 'events',
-        'food_preferences', 'user_foods', 'coaches', 'coach_athlete_relationships',
-        'carb_loading_plans', 'carb_loading_days', 'carb_loading_day_meals',
-        'coach_messages', 'template_foods', 'templates',
+        'users',
+        'foods',
+        'carb_loading_foods',
+        'activities',
+        'events',
+        'food_preferences',
+        'user_foods',
+        'coaches',
+        'coach_athlete_relationships',
+        'carb_loading_plans',
+        'carb_loading_days',
+        'carb_loading_day_meals',
+        'coach_messages',
+        'template_foods',
+        'templates',
       ];
       for (final key in repoKeys) {
         await prefs.remove('${key}_last_sync');
@@ -254,7 +300,9 @@ class VersionCheckService {
       'events': _ref.read(eventsRepositoryProvider),
       'carb_loading': _ref.read(carbLoadingRepositoryProvider),
       'feedback': _ref.read(feedbackRepositoryProvider),
-      'food_preferences': await _ref.read(foodPreferencesRepositoryProvider.future),
+      'food_preferences': await _ref.read(
+        foodPreferencesRepositoryProvider.future,
+      ),
       'user_foods': await _ref.read(userFoodsRepositoryProvider.future),
     };
   }
@@ -264,7 +312,9 @@ class VersionCheckService {
     required String currentVersion,
     required String minAppVersion,
     required int localSchemaVersion,
-    required int remoteSchemaVersion,
+    required int latestSchemaVersion,
+    required int minSupportedSchemaVersion,
+    required bool compatibilityWindowEnabled,
   }) {
     // Check app version first (higher priority)
     // Strip pre-release suffixes (e.g. "1.15.1-dev" → "1.15.1") so that
@@ -280,11 +330,24 @@ class VersionCheckService {
       );
     }
 
-    // Check schema version
-    if (localSchemaVersion != remoteSchemaVersion) {
+    if (localSchemaVersion < latestSchemaVersion) {
+      if (compatibilityWindowEnabled) {
+        // Reject schemas below server minimum support window.
+        // Returning updateRequired here avoids delete/recreate loops for older apps.
+        if (localSchemaVersion < minSupportedSchemaVersion) {
+          return VersionCheckResult.updateRequired(
+            currentVersion: currentVersion,
+            requiredVersion: minAppVersion,
+          );
+        }
+
+        // Schema is behind latest but still within compatibility window.
+        return const VersionCheckResult.ok();
+      }
+
       return VersionCheckResult.resyncRequired(
         localSchemaVersion: localSchemaVersion,
-        remoteSchemaVersion: remoteSchemaVersion,
+        remoteSchemaVersion: latestSchemaVersion,
       );
     }
 
@@ -295,10 +358,15 @@ class VersionCheckService {
   Future<void> _cacheVersionInfo(
     String minAppVersion,
     int remoteSchemaVersion,
+    int minSupportedSchemaVersion,
   ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyMinAppVersion, minAppVersion);
     await prefs.setInt(_keyRemoteSchemaVersion, remoteSchemaVersion);
+    await prefs.setInt(
+      _keyMinSupportedSchemaVersion,
+      minSupportedSchemaVersion,
+    );
     await prefs.setInt(
       _keyCacheTimestamp,
       DateTime.now().millisecondsSinceEpoch,
@@ -324,11 +392,18 @@ class VersionCheckService {
     // Try to get cached values
     final cachedMinVersion = prefs.getString(_keyMinAppVersion);
     final cachedRemoteSchema = prefs.getInt(_keyRemoteSchemaVersion);
+    final cachedMinSupportedSchema = prefs.getInt(
+      _keyMinSupportedSchemaVersion,
+    );
 
     if (cachedMinVersion == null || cachedRemoteSchema == null) {
       // No cache available, return ok to allow app to start
       return const VersionCheckResult.ok();
     }
+
+    final minSupportedSchemaVersion =
+        cachedMinSupportedSchema ?? cachedRemoteSchema;
+    final compatibilityWindowEnabled = cachedMinSupportedSchema != null;
 
     // Get current app version
     final packageInfo = await PackageInfo.fromPlatform();
@@ -342,7 +417,9 @@ class VersionCheckService {
       currentVersion: currentVersion,
       minAppVersion: cachedMinVersion,
       localSchemaVersion: localSchemaVersion,
-      remoteSchemaVersion: cachedRemoteSchema,
+      latestSchemaVersion: cachedRemoteSchema,
+      minSupportedSchemaVersion: minSupportedSchemaVersion,
+      compatibilityWindowEnabled: compatibilityWindowEnabled,
     );
   }
 
@@ -351,6 +428,7 @@ class VersionCheckService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyMinAppVersion);
     await prefs.remove(_keyRemoteSchemaVersion);
+    await prefs.remove(_keyMinSupportedSchemaVersion);
     await prefs.remove(_keyCacheTimestamp);
   }
 }

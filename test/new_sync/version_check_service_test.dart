@@ -24,6 +24,12 @@ class FakeAppDatabase extends Fake implements AppDatabase {
   int get schemaVersion => 3;
 }
 
+/// Test double for AppDatabase with schema version 4
+class FakeAppDatabaseV4 extends Fake implements AppDatabase {
+  @override
+  int get schemaVersion => 4;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -77,6 +83,7 @@ void main() {
       SharedPreferences.setMockInitialValues({
         'cached_min_app_version': '1.12.0',
         'cached_remote_schema_version': 3,
+        'cached_min_supported_schema_version': 3,
         'version_check_cache_timestamp': DateTime.now().millisecondsSinceEpoch,
       });
 
@@ -104,6 +111,7 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('cached_min_app_version'), isNull);
       expect(prefs.getInt('cached_remote_schema_version'), isNull);
+      expect(prefs.getInt('cached_min_supported_schema_version'), isNull);
       expect(prefs.getInt('version_check_cache_timestamp'), isNull);
 
       container.dispose();
@@ -137,6 +145,145 @@ void main() {
       final database = FakeAppDatabase();
       expect(database.schemaVersion, 3);
     });
+
+    test(
+      'checkVersion returns ok from cache when schema is behind latest but within compatibility window',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'cached_min_app_version': '1.0.0',
+          'cached_remote_schema_version': 4,
+          'cached_min_supported_schema_version': 3,
+          'version_check_cache_timestamp':
+              DateTime.now().millisecondsSinceEpoch,
+        });
+
+        final mockSupabase = MockSupabaseClient();
+        final database = FakeAppDatabase(); // Local schema = 3
+        final mockLogger = MockAppLogger();
+        final mockBackupService = MockDirtyRecordBackupService();
+        final container = ProviderContainer();
+
+        final testProvider = Provider((ref) {
+          return VersionCheckService(
+            supabase: mockSupabase,
+            database: database,
+            logger: mockLogger,
+            backupService: mockBackupService,
+            ref: ref,
+          );
+        });
+        final service = container.read(testProvider);
+
+        final result = await service.checkVersion();
+        expect(result, isA<VersionCheckOk>());
+
+        container.dispose();
+      },
+    );
+
+    test(
+      'checkVersion returns updateRequired from cache when schema is below minimum supported',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'cached_min_app_version': '1.12.0',
+          'cached_remote_schema_version': 4,
+          'cached_min_supported_schema_version': 4,
+          'version_check_cache_timestamp':
+              DateTime.now().millisecondsSinceEpoch,
+        });
+
+        final mockSupabase = MockSupabaseClient();
+        final database = FakeAppDatabase(); // Local schema = 3
+        final mockLogger = MockAppLogger();
+        final mockBackupService = MockDirtyRecordBackupService();
+        final container = ProviderContainer();
+
+        final testProvider = Provider((ref) {
+          return VersionCheckService(
+            supabase: mockSupabase,
+            database: database,
+            logger: mockLogger,
+            backupService: mockBackupService,
+            ref: ref,
+          );
+        });
+        final service = container.read(testProvider);
+
+        final result = await service.checkVersion();
+        expect(result, isA<VersionCheckUpdateRequired>());
+
+        container.dispose();
+      },
+    );
+
+    test(
+      'checkVersion preserves strict behavior when compatibility key is missing',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'cached_min_app_version': '1.0.0',
+          'cached_remote_schema_version': 4,
+          'version_check_cache_timestamp':
+              DateTime.now().millisecondsSinceEpoch,
+        });
+
+        final mockSupabase = MockSupabaseClient();
+        final database = FakeAppDatabase(); // Local schema = 3
+        final mockLogger = MockAppLogger();
+        final mockBackupService = MockDirtyRecordBackupService();
+        final container = ProviderContainer();
+
+        final testProvider = Provider((ref) {
+          return VersionCheckService(
+            supabase: mockSupabase,
+            database: database,
+            logger: mockLogger,
+            backupService: mockBackupService,
+            ref: ref,
+          );
+        });
+        final service = container.read(testProvider);
+
+        final result = await service.checkVersion();
+        expect(result, isA<VersionCheckResyncRequired>());
+
+        container.dispose();
+      },
+    );
+
+    test(
+      'checkVersion returns ok when local schema is ahead of cached latest schema',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'cached_min_app_version': '1.0.0',
+          'cached_remote_schema_version': 3,
+          'cached_min_supported_schema_version': 3,
+          'version_check_cache_timestamp':
+              DateTime.now().millisecondsSinceEpoch,
+        });
+
+        final mockSupabase = MockSupabaseClient();
+        final database = FakeAppDatabaseV4(); // Local schema = 4
+        final mockLogger = MockAppLogger();
+        final mockBackupService = MockDirtyRecordBackupService();
+        final container = ProviderContainer();
+
+        final testProvider = Provider((ref) {
+          return VersionCheckService(
+            supabase: mockSupabase,
+            database: database,
+            logger: mockLogger,
+            backupService: mockBackupService,
+            ref: ref,
+          );
+        });
+        final service = container.read(testProvider);
+
+        final result = await service.checkVersion();
+        expect(result, isA<VersionCheckOk>());
+
+        container.dispose();
+      },
+    );
 
     // NOTE: Tests that require mocking the full Supabase fluent API chain
     // (checkVersion with various responses) are deferred to integration tests

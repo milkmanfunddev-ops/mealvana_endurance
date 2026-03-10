@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.15.0] - 2026-03-10
+
+### Added
+- **Redesigned During-Activity Nutrition**: Completely overhauled during-activity food selection with a new timeline UI and hour-by-hour nutrition view
+- **Template-Based Pre-Workout Nutrition**: New template system for pre-workout food planning with beverage handling and fluid tracking
+- **User-Driven Food Placement**: Replace auto-apportionment with an intuitive drag-to-hour and tap-to-place model for placing nutrition items
+- **Global Sip Section**: Add a dedicated section for sip-based items (sports drinks, water) with inline quantity adjustment
+- **Nutrition Target Overrides**: Users can now manually adjust their carb, protein, and hydration targets
+- **Graduated Pre-Activity Fueling**: Duration-aware pre-activity fueling window with smarter recommendations for shorter vs longer activities
+- **Post-Workout Carb Feedback Loop**: Track actual vs planned carb intake after workouts to improve future recommendations
+- **Brick Workout V2 Support**: Full brick workout support in the V2 edge function with transition phase nutrition planning
+- **V2 Nutrition Edge Function**: Unified food tables and next-generation nutrition plan generation engine
+- **Schema Compatibility Window**: Graceful schema migration with configurable compatibility windows to avoid forced upgrades
+
+### Changed
+- **Rule-Based During Algorithm**: Replaced the linear programming solver with a faster, more predictable deterministic rule-based algorithm
+- **Improved Brick Workout Accuracy**: Better nutrition calculations for multi-sport sessions with refined transition period handling
+- UI refinements and consistency updates across nutrition plan screens
+
+### Fixed
+- Fixed 8 critical bugs in the by-hour nutrition view including layout and data display issues
+- Fixed water filtering, sodium cap enforcement, and variety selection in the during-phase solver
+- Fixed trailing time slots appearing in partial hours where no food can be placed
+- Fixed version check incorrectly comparing pre-release suffixes
+- Fixed template food preference migration deduplication and integration test parsing
+- Fixed beverage handling and fluid tracking in template foods
+- Various stability and performance improvements
+
+---
+
 ## [2.0.0] - 2024-12-22
 
 ### Added
@@ -61,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Release Date | Highlights |
 |---------|--------------|------------|
+| 1.15.0  | Mar 2026     | Redesigned during-activity nutrition, template foods, user-driven placement |
 | 2.0.0   | Dec 2024     | Dietary preferences, allergies, enhanced sync |
 | 1.0.0   | Dec 2024     | Initial App Store release |
 
