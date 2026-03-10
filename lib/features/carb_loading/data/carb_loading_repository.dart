@@ -6,7 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sync/immediate_remote_write_service.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/data/syncable_repository.dart';
 
 part 'carb_loading_repository.g.dart';
@@ -22,11 +23,12 @@ class _CarbLoadingUpsertCount {
 
 @riverpod
 CarbLoadingRepository carbLoadingRepository(Ref ref) {
+  final deps = ref.read(appExternalDepsProvider);
   return CarbLoadingRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
-    immediateRemoteWriteService: ref.read(immediateRemoteWriteServiceProvider),
+    sentry: deps.sentry,
   );
 }
 
@@ -37,16 +39,16 @@ class CarbLoadingRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
-    required ImmediateRemoteWriteService immediateRemoteWriteService,
+    required SentryReporter sentry,
   }) : _supabase = supabase,
        _database = database,
        _logger = logger,
-       _immediateRemoteWriteService = immediateRemoteWriteService;
+       _sentry = sentry;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
-  final ImmediateRemoteWriteService _immediateRemoteWriteService;
+  final SentryReporter _sentry;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -404,15 +406,19 @@ class CarbLoadingRepository with SyncableRepository {
       }
 
       // Attempt background upload (non-blocking)
-      unawaited(
-        _immediateRemoteWriteService.run(
-          repository: repositoryKey,
-          operation: 'create',
-          recordId: planId,
-          method: 'UPSERT',
-          write: () => _uploadCarbLoadingPlanToSupabase(planId: planId),
-        ),
-      );
+      unawaited(() async {
+        try {
+          await _uploadCarbLoadingPlanToSupabase(planId: planId);
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Immediate upload failed; record stays dirty for retry',
+            context: 'CARB_LOADING_REPOSITORY',
+            error: e, stackTrace: stackTrace,
+            data: {'operation': 'create', 'recordId': planId},
+          );
+          _sentry.reportNetworkError(e, url: 'supabase:carb_loading_plans:create', method: 'UPSERT', stackTrace: stackTrace);
+        }
+      }());
 
       return createdPlan;
     } catch (e, stackTrace) {
@@ -482,17 +488,21 @@ class CarbLoadingRepository with SyncableRepository {
       }
 
       // Attempt background upload (non-blocking)
-      unawaited(
-        _immediateRemoteWriteService.run(
-          repository: repositoryKey,
-          operation: 'update_day',
-          recordId: carbLoadingDayId,
-          method: 'UPSERT',
-          write: () => _uploadCarbLoadingDayToSupabase(
+      unawaited(() async {
+        try {
+          await _uploadCarbLoadingDayToSupabase(
             carbLoadingDayId: carbLoadingDayId,
-          ),
-        ),
-      );
+          );
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Immediate upload failed; record stays dirty for retry',
+            context: 'CARB_LOADING_REPOSITORY',
+            error: e, stackTrace: stackTrace,
+            data: {'operation': 'update_day', 'recordId': carbLoadingDayId},
+          );
+          _sentry.reportNetworkError(e, url: 'supabase:carb_loading_days:update', method: 'UPSERT', stackTrace: stackTrace);
+        }
+      }());
 
       return updatedDay;
     } catch (e, stackTrace) {
@@ -531,15 +541,19 @@ class CarbLoadingRepository with SyncableRepository {
         )..where((tbl) => tbl.id.equals(planId))).go();
       });
 
-      unawaited(
-        _immediateRemoteWriteService.run(
-          repository: repositoryKey,
-          operation: 'delete',
-          recordId: planId,
-          method: 'DELETE',
-          write: () => _uploadCarbLoadingPlanDeletion(planId: planId),
-        ),
-      );
+      unawaited(() async {
+        try {
+          await _uploadCarbLoadingPlanDeletion(planId: planId);
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Immediate upload failed; record stays dirty for retry',
+            context: 'CARB_LOADING_REPOSITORY',
+            error: e, stackTrace: stackTrace,
+            data: {'operation': 'delete', 'recordId': planId},
+          );
+          _sentry.reportNetworkError(e, url: 'supabase:carb_loading_plans:delete', method: 'DELETE', stackTrace: stackTrace);
+        }
+      }());
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete carb loading plan',

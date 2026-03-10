@@ -7,10 +7,8 @@ import '../logging_service.dart';
 import '../sentry/sentry_reporter.dart';
 import '../analytics/analytics_tracker.dart';
 import '../sync/sync_coordinator.dart';
-import '../../database/database_provider.dart';
 import '../../providers/user_id_provider.dart';
 import '../../core/app_router.dart';
-import '../../../features/auth/data/user_repository.dart';
 import '../../../features/settings/presentation/providers/settings_controller.dart';
 import '../../../features/activities/presentation/providers/activities_controller.dart';
 import '../../../features/events/presentation/providers/events_controller.dart'
@@ -232,76 +230,15 @@ class AuthListenerService {
       data: {'user_id': userId, 'timestamp': DateTime.now().toIso8601String()},
     );
 
-    // Invalidate userIdProvider immediately so router can react
     _ref.invalidate(userIdProvider);
 
     _logger.info(
-      'User signed in - triggering background sync',
+      'User signed in - controllers will sync on demand via ensureSynced()',
       context: 'AUTH_LISTENER',
       data: {'user_id': userId},
     );
-
-    // Perform post-auth sync in background
-    unawaited(_performPostAuthSync(userId));
   }
 
-  /// Perform post-authentication sync operations in the background
-  Future<void> _performPostAuthSync(String userId) async {
-    // Check if user has completed onboarding before syncing
-    try {
-      final database = _ref.read(appDatabaseProvider);
-      final userProfile = await database.userDao.getCurrentUserProfile(
-        currentAuthUserId: userId,
-      );
-
-      if (userProfile == null || userProfile.onboardingCompleted != true) {
-        _logger.info(
-          'User has not completed onboarding - skipping sync',
-          context: 'AUTH_LISTENER',
-        );
-        return;
-      }
-    } catch (e) {
-      _logger.error(
-        'Error checking onboarding status, skipping sync',
-        context: 'AUTH_LISTENER',
-        error: e,
-      );
-      return;
-    }
-
-    try {
-      final userRepo = await _ref.read(userRepositoryProvider.future);
-
-      // Run network calls in parallel for faster sync
-      await Future.wait([
-        userRepo.fetchAndSaveRemoteProfile(userId),
-        userRepo.fetchAndCacheRemoteFoodPreferences(userId),
-        userRepo.syncUserFoodsFromSupabase(userId),
-      ]);
-
-      // Invalidate settings provider after profile is loaded
-      _ref.invalidate(settingsControllerProvider);
-    } catch (e) {
-      _logger.error(
-        'Failed to sync remote profile on sign in',
-        context: 'AUTH_LISTENER',
-        error: e,
-      );
-    }
-
-    // Trigger full sync for device-based users
-    try {
-      final syncCoordinator = _ref.read(syncCoordinatorProvider.notifier);
-      await syncCoordinator.sync(userId: userId, trigger: SyncTrigger.manual);
-    } catch (e) {
-      _logger.error(
-        'Full sync failed after auth',
-        context: 'AUTH_LISTENER',
-        error: e,
-      );
-    }
-  }
 
   /// Dispose of the auth listener
   void dispose() {

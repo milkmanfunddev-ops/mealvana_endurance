@@ -83,7 +83,7 @@ final class SyncCoordinatorProvider
   }
 }
 
-String _$syncCoordinatorHash() => r'29dca169944e64c936eecac1e927303422d0e6c1';
+String _$syncCoordinatorHash() => r'0e7910afd2189c32c5c3247d852e063b303a03fa';
 
 /// Centralized sync coordinator - SINGLE entry point for ALL sync operations
 ///

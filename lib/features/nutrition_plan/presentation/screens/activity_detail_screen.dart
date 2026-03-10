@@ -522,6 +522,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
           controller.moveSipFoodToSlot(foodId, cat, slot, qty,
               timingCategory: timingCategory);
         },
+        onScaleSubPhase: (subPhaseIndex, foodIndex, newQuantity) {
+          final controller = _getControllerNotifier();
+          controller.updateSubPhaseQuantityWithScaling(
+              subPhaseIndex, foodIndex, newQuantity);
+        },
         showSwipeHint: _consumeSwipeHint(),
       );
     }
@@ -791,7 +796,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     final tail = tailMatch?.group(1)?.trim() ?? '';
     if (qty != null && tail.contains(' ')) {
       if ((qty - 1.0).abs() < 0.01) {
-        return _simplifyFoodName(tail);
+        // For qty=1, prefer the clean food name over the tail which may
+        // include a serving unit prefix (e.g. "packet Energy Chews").
+        return _simplifyFoodName(food.displayName ?? food.name);
       }
       return '${_formatQuantity(qty)} ${_simplifyFoodName(tail)}';
     }

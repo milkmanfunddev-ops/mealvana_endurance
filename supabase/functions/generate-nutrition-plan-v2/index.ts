@@ -240,6 +240,20 @@ async function generateBeforePhase(
     hasLiquidBasePhases,
   );
 
+  // 8b. Fetch display_name_plural for all template_foods (templates only
+  // store display_name; the plural form lives in the template_foods table).
+  // This covers both template foods and drink-pool items in a single query.
+  const displayPluralMap = new Map<string, string>();
+  {
+    const { data: pluralRows } = await supabase
+      .from('template_foods')
+      .select('id, display_name_plural')
+      .eq('is_active', true);
+    for (const row of pluralRows ?? []) {
+      if (row.display_name_plural) displayPluralMap.set(row.id as string, row.display_name_plural as string);
+    }
+  }
+
   // 9. Scale templates and build sub-phase results
   const beforeResult: BeforePhaseResult = {};
 
@@ -282,6 +296,7 @@ async function generateBeforePhase(
         fluids_ml: isLiquid ? sf.fluids_ml : 0,
         calories: sf.calories,
         display_name: sf.display_name,
+        display_name_plural: displayPluralMap.get(sf.food_id) ?? undefined,
         serving_size: sf.serving_size,
         timing: getSubPhaseTimingLabel(subPhase, input.hours_before),
         is_drink: isLiquid,
@@ -299,6 +314,7 @@ async function generateBeforePhase(
     if (drink && !templateHasLiquid) {
       foodResults.push({
         ...drink,
+        display_name_plural: displayPluralMap.get(drink.id) ?? undefined,
         timing: getSubPhaseTimingLabel(subPhase, input.hours_before),
       });
     } else if (drink && templateHasLiquid) {

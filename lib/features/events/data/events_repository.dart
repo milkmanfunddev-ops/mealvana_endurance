@@ -7,7 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sync/immediate_remote_write_service.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../carb_loading/data/carb_loading_repository.dart';
@@ -17,12 +18,13 @@ part 'events_repository.g.dart';
 
 @riverpod
 EventsRepository eventsRepository(Ref ref) {
+  final deps = ref.read(appExternalDepsProvider);
   return EventsRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
     carbLoadingRepository: ref.read(carbLoadingRepositoryProvider),
-    immediateRemoteWriteService: ref.read(immediateRemoteWriteServiceProvider),
+    sentry: deps.sentry,
   );
 }
 
@@ -34,18 +36,18 @@ class EventsRepository implements SyncableRepository {
     required AppDatabase database,
     required AppLogger logger,
     required CarbLoadingRepository carbLoadingRepository,
-    required ImmediateRemoteWriteService immediateRemoteWriteService,
+    required SentryReporter sentry,
   }) : _supabase = supabase,
        _database = database,
        _logger = logger,
        _carbLoadingRepository = carbLoadingRepository,
-       _immediateRemoteWriteService = immediateRemoteWriteService;
+       _sentry = sentry;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
   final CarbLoadingRepository _carbLoadingRepository;
-  final ImmediateRemoteWriteService _immediateRemoteWriteService;
+  final SentryReporter _sentry;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -272,13 +274,19 @@ class EventsRepository implements SyncableRepository {
       var createdEvent = eventWithDirtyFlag.copyWith(id: generatedId);
 
       // Attempt upload immediately to sync with Supabase
-      final uploaded = await _immediateRemoteWriteService.run(
-        repository: repositoryKey,
-        operation: 'create',
-        recordId: createdEvent.id,
-        method: 'INSERT',
-        write: () => _uploadEventToSupabase(createdEvent, 'create'),
-      );
+      var uploaded = false;
+      try {
+        await _uploadEventToSupabase(createdEvent, 'create');
+        uploaded = true;
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate upload failed; record stays dirty for retry',
+          context: 'EVENTS_REPOSITORY',
+          error: e, stackTrace: stackTrace,
+          data: {'operation': 'create', 'recordId': createdEvent.id},
+        );
+        _sentry.reportNetworkError(e, url: 'supabase:events:create', method: 'INSERT', stackTrace: stackTrace);
+      }
       if (uploaded) {
         createdEvent = createdEvent.copyWith(
           needsUpload: false,
@@ -314,16 +322,20 @@ class EventsRepository implements SyncableRepository {
       // Save to Drift (will use existing ID for updates)
       await _saveToDrift(eventWithDirtyFlag);
 
-      // Attempt background upload (non-blocking)
-      unawaited(
-        _immediateRemoteWriteService.run(
-          repository: repositoryKey,
-          operation: 'update',
-          recordId: eventWithDirtyFlag.id,
-          method: 'UPSERT',
-          write: () => _uploadEventToSupabase(eventWithDirtyFlag, 'update'),
-        ),
-      );
+      // Attempt background upload (non-blocking) with logging
+      unawaited(() async {
+        try {
+          await _uploadEventToSupabase(eventWithDirtyFlag, 'update');
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Immediate upload failed; record stays dirty for retry',
+            context: 'EVENTS_REPOSITORY',
+            error: e, stackTrace: stackTrace,
+            data: {'operation': 'update', 'recordId': eventWithDirtyFlag.id},
+          );
+          _sentry.reportNetworkError(e, url: 'supabase:events:update', method: 'UPSERT', stackTrace: stackTrace);
+        }
+      }());
 
       return eventWithDirtyFlag;
     } catch (e, stackTrace) {
@@ -373,15 +385,19 @@ class EventsRepository implements SyncableRepository {
 
       // Attempt background upload (non-blocking)
       // Note: Supabase CASCADE will also delete the carb_loading_plan on the server
-      unawaited(
-        _immediateRemoteWriteService.run(
-          repository: repositoryKey,
-          operation: 'delete',
-          recordId: eventId,
-          method: 'DELETE',
-          write: () => _uploadEventDeletion(deviceId, eventId),
-        ),
-      );
+      unawaited(() async {
+        try {
+          await _uploadEventDeletion(deviceId, eventId);
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Immediate upload failed; record stays dirty for retry',
+            context: 'EVENTS_REPOSITORY',
+            error: e, stackTrace: stackTrace,
+            data: {'operation': 'delete', 'recordId': eventId},
+          );
+          _sentry.reportNetworkError(e, url: 'supabase:events:delete', method: 'DELETE', stackTrace: stackTrace);
+        }
+      }());
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete event',
@@ -724,22 +740,7 @@ class EventsRepository implements SyncableRepository {
 
   /// Parse database event_type string to ActivityType enum
   ActivityType _parseActivityType(String eventType) {
-    switch (eventType.toLowerCase()) {
-      case 'running':
-        return ActivityType.running;
-      case 'cycling':
-        return ActivityType.cycling;
-      case 'swimming':
-        return ActivityType.swimming;
-      case 'triathlon':
-      case 'duathlon':
-      case 'multisport':
-        // For multi-sport events, default to running for now
-        // TODO: Consider adding multi-sport types to ActivityType enum
-        return ActivityType.running;
-      default:
-        return ActivityType.running;
-    }
+    return ActivityType.fromDbValue(eventType);
   }
 
   /// Map Supabase JSON (snake_case) to Drift EventsTableCompanion

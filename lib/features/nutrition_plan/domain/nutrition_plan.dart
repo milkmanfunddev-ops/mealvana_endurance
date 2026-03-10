@@ -433,9 +433,16 @@ class NutritionPlan {
         macroTargetsMap?['phases'] as Map<String, dynamic>?;
 
     // 1. Before Brick — parse V2 sub-phases (meal/snack/top_up) or V1 flat list
+    DebugLogger.info(
+      'Brick V2: plan keys=${plan.keys.toList()}, before type=${plan['before'].runtimeType}',
+    );
     if (plan['before'] is Map) {
       final beforeMap = plan['before'] as Map<String, dynamic>;
       final subPhases = <BeforeSubPhase>[];
+
+      DebugLogger.info(
+        'Brick V2: before keys=${beforeMap.keys.toList()}',
+      );
 
       for (final key in ['meal', 'snack', 'top_up']) {
         if (beforeMap[key] is Map) {
@@ -453,7 +460,7 @@ class NutritionPlan {
               as Map<String, dynamic>?;
 
       sections.add(PlanSection(
-        id: 'before_run',
+        id: 'before',
         title: 'Before Brick',
         subtitle: 'Pre-workout nutrition',
         foodItems: const [],
@@ -469,7 +476,7 @@ class NutritionPlan {
           (phases?['before'] ?? macroTargetsMap?['pre_run'])
               as Map<String, dynamic>?;
       sections.add(PlanSection(
-        id: 'before_run',
+        id: 'before',
         title: 'Before Brick',
         subtitle: 'Pre-workout nutrition',
         foodItems: (plan['before'] as List<dynamic>)
@@ -569,7 +576,7 @@ class NutritionPlan {
               as Map<String, dynamic>?;
 
       sections.add(PlanSection(
-        id: 'after_run',
+        id: 'after',
         title: 'After Brick',
         subtitle: 'Within 30-60 minutes post-workout',
         foodItems: (plan['after'] as List<dynamic>)
@@ -584,7 +591,7 @@ class NutritionPlan {
     }
 
     DebugLogger.info(
-      'Parsed ${sections.length} sections from brick V2 format',
+      'Brick V2: ${sections.length} sections in order: ${sections.map((s) => s.title).toList()}',
     );
 
     return sections;
@@ -697,7 +704,9 @@ class BeforeSubPhase {
                 );
 
           if ((numericQty - 1.0).abs() < 0.01) {
-            return tail.isNotEmpty ? _simplifyName(tail) : baseName;
+            // For qty=1 prefer the clean food name (baseName) over the tail
+            // which may include a serving unit prefix (e.g. "packet Energy Chews").
+            return baseName;
           }
 
           // If quantity has a multi-word tail (e.g. "cups Oatmeal"), use it

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/feedback/data/feedback_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -14,11 +15,14 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockAppLogger extends Mock implements AppLogger {}
 
+class MockSentryReporter extends Mock implements SentryReporter {}
+
 void main() {
   late AppDatabase database;
   late FeedbackRepository repository;
   late MockSupabaseClient mockSupabase;
   late MockAppLogger mockLogger;
+  late MockSentryReporter mockSentry;
 
   const testUserId = 'test-user-123';
 
@@ -32,6 +36,7 @@ void main() {
     // Create mocks
     mockLogger = MockAppLogger();
     mockSupabase = MockSupabaseClient();
+    mockSentry = MockSentryReporter();
 
     // Set up logger to not throw on method calls
     when(() => mockLogger.info(any(),
@@ -54,7 +59,7 @@ void main() {
           data: any(named: 'data'),
         )).thenReturn(null);
 
-    repository = FeedbackRepository(database, mockLogger, mockSupabase);
+    repository = FeedbackRepository(database, mockLogger, mockSupabase, mockSentry);
   });
 
   tearDown(() async {

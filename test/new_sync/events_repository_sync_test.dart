@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/events/data/events_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/features/carb_loading/data/carb_loading_repository.dart';
 import 'package:drift/native.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,11 +14,14 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockAppLogger extends Mock implements AppLogger {}
 
+class MockSentryReporter extends Mock implements SentryReporter {}
+
 class MockCarbLoadingRepository extends Mock implements CarbLoadingRepository {}
 
 void main() {
   late AppDatabase database;
   late MockAppLogger mockLogger;
+  late MockSentryReporter mockSentry;
   late MockCarbLoadingRepository mockCarbLoadingRepository;
 
   const testUserId = 'test-user-123';
@@ -31,6 +35,7 @@ void main() {
 
     // Create mocks
     mockLogger = MockAppLogger();
+    mockSentry = MockSentryReporter();
     mockCarbLoadingRepository = MockCarbLoadingRepository();
 
     // Set up logger to not throw on method calls
@@ -67,6 +72,7 @@ void main() {
         database: database,
         logger: mockLogger,
         carbLoadingRepository: mockCarbLoadingRepository,
+        sentry: mockSentry,
       );
 
       expect(repository.repositoryKey, 'events');
@@ -79,6 +85,7 @@ void main() {
         database: database,
         logger: mockLogger,
         carbLoadingRepository: mockCarbLoadingRepository,
+        sentry: mockSentry,
       );
 
       expect(repository.dependencies, ['users']);
@@ -91,6 +98,7 @@ void main() {
         database: database,
         logger: mockLogger,
         carbLoadingRepository: mockCarbLoadingRepository,
+        sentry: mockSentry,
       );
 
       final isStale = await repository.isStale();
@@ -104,6 +112,7 @@ void main() {
         database: database,
         logger: mockLogger,
         carbLoadingRepository: mockCarbLoadingRepository,
+        sentry: mockSentry,
       );
 
       await repository.setLastSyncTime(DateTime.now());
@@ -119,6 +128,7 @@ void main() {
         database: database,
         logger: mockLogger,
         carbLoadingRepository: mockCarbLoadingRepository,
+        sentry: mockSentry,
       );
 
       final oldSync = DateTime.now().subtract(const Duration(hours: 25));
@@ -136,6 +146,7 @@ void main() {
         database: database,
         logger: mockLogger,
         carbLoadingRepository: mockCarbLoadingRepository,
+        sentry: mockSentry,
       );
 
       final timestamp = await repository.getLastSyncTime();
@@ -150,6 +161,7 @@ void main() {
         database: database,
         logger: mockLogger,
         carbLoadingRepository: mockCarbLoadingRepository,
+        sentry: mockSentry,
       );
 
       final now = DateTime.now();
@@ -170,6 +182,7 @@ void main() {
         database: database,
         logger: mockLogger,
         carbLoadingRepository: mockCarbLoadingRepository,
+        sentry: mockSentry,
       );
 
       // Act

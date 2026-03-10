@@ -105,6 +105,32 @@ class FoodItemData {
   /// Nullable for backward compat with old saved plans (falls back to isDrink heuristic).
   final TimingCategory? timingCategory;
 
+  /// Build a complete display string for this food at the given [qtyStr].
+  ///
+  /// Resolution order:
+  /// 1. [buildDisplayQuantity] — derives unit from [displayNamePlural]
+  /// 2. Tail extracted from the stored [quantity] field
+  /// 3. Fallback to [displayName] or [name]
+  ///
+  /// Example: `food.displayAtQuantity('0.5')` → `"0.5 packets Energy Chews"`
+  String displayAtQuantity(String qtyStr) {
+    final built = buildDisplayQuantity(
+      rawQty: qtyStr,
+      displayName: displayName ?? name,
+      displayNamePlural: displayNamePlural,
+    );
+    // If buildDisplayQuantity produced a full string (not just the number), use it.
+    if (built != qtyStr) return built;
+
+    // Fall back to tail from stored quantity
+    final match = RegExp(r'^[\d.]+\s+(.+)$').firstMatch(quantity);
+    final tail = match?.group(1)?.trim();
+    if (tail != null && tail.isNotEmpty) return '$qtyStr $tail';
+
+    // Last resort: just use display name
+    return '$qtyStr ${displayName ?? name}';
+  }
+
   /// Get the full image URL for this food item data
   /// Returns Open Food Facts URLs directly, or constructs S3 URL for other images
   String? get imageUrl {
@@ -157,6 +183,84 @@ class FoodItemData {
     );
   }
 
+  /// Build a self-contained display quantity string that includes the numeric
+  /// quantity, an optional serving-unit word, and the food name.
+  ///
+  /// Examples: "1 packet Energy Chews", "2 bottles Sports Drink", "0.5 cups Oatmeal".
+  ///
+  /// Resolution order:
+  /// 1. Explicit [servingUnit] → "$qty $servingUnit $displayName"
+  /// 2. Unit prefix extracted from [displayNamePlural] (e.g. "packets Energy Chews"
+  ///    ends with "Energy Chews" → unit = "packets") → singularised for qty == 1.
+  /// 3. Fallback → just the raw numeric string (widgets append displayName).
+  static String buildDisplayQuantity({
+    required String rawQty,
+    String? servingUnit,
+    String? displayName,
+    String? displayNamePlural,
+  }) {
+    // Path 1: Explicit serving unit
+    if (servingUnit != null && servingUnit.isNotEmpty && displayName != null) {
+      final cleanName = _stripParens(displayName);
+      return '$rawQty $servingUnit $cleanName';
+    }
+
+    // Path 2: Derive unit from displayNamePlural
+    if (displayNamePlural != null && displayName != null) {
+      final pluralTrimmed = displayNamePlural.trim();
+      // Strip parenthetical content from displayName for comparison.
+      // e.g. "Oatmeal (½ cup dry)" → "Oatmeal" so it matches "cups Oatmeal".
+      final nameClean = _stripParens(displayName);
+      final pluralLower = pluralTrimmed.toLowerCase();
+      final nameCleanLower = nameClean.toLowerCase();
+
+      // Check if plural has a unit prefix: "cups Oatmeal" ends with "Oatmeal"
+      if (pluralLower.endsWith(nameCleanLower) &&
+          pluralLower.length > nameCleanLower.length + 1) {
+        // Extract the unit and the clean food name from displayNamePlural.
+        // Using displayNamePlural's food name keeps parenthetical content out.
+        final unitPlural = pluralTrimmed
+            .substring(0, pluralTrimmed.length - nameClean.length)
+            .trim();
+        final foodName =
+            pluralTrimmed.substring(unitPlural.length).trim();
+        final numQty = double.tryParse(rawQty) ?? 1;
+
+        if ((numQty - 1.0).abs() < 0.01) {
+          // Singularise: "packets" → "packet", "bottles" → "bottle"
+          final unitSingular = unitPlural.endsWith('s') &&
+                  !unitPlural.endsWith('ss')
+              ? unitPlural.substring(0, unitPlural.length - 1)
+              : unitPlural;
+          return '$rawQty $unitSingular $foodName';
+        }
+        return '$rawQty $pluralTrimmed';
+      }
+    }
+
+    // Path 3: displayNamePlural is just a plural form (no unit prefix).
+    // e.g. "Energy Gels" for "Energy Gel", "Bananas" for "Banana"
+    // Path 2 misses these because "energy gels".endsWith("energy gel") is false.
+    if (displayNamePlural != null &&
+        displayNamePlural.isNotEmpty &&
+        displayName != null) {
+      final numQty = double.tryParse(rawQty) ?? 1;
+      if ((numQty - 1.0).abs() < 0.01) {
+        return '$rawQty ${_stripParens(displayName)}';
+      }
+      return '$rawQty ${_stripParens(displayNamePlural)}';
+    }
+
+    // Path 4: No display info available – return raw number only
+    return rawQty;
+  }
+
+  /// Strip parenthetical content from a string.
+  /// "Oatmeal (½ cup dry)" → "Oatmeal"
+  static String _stripParens(String value) {
+    return value.replaceAll(RegExp(r'\s*\([^)]*\)'), '').trim();
+  }
+
   /// Create FoodItemData from Edge Function JSON format
   factory FoodItemData.fromEdgeFunctionJson(Map<String, dynamic> json) {
     // Edge function returns: food_id, quantity, carbs_grams, protein_grams, fat_grams,
@@ -172,13 +276,29 @@ class FoodItemData {
       fluids: (json['fluids_ml'] as num?)?.toDouble(),
     );
 
+    // Build self-contained quantity string: "1 packet Energy Chews"
+    // Widgets display the tail (everything after the leading number) as-is,
+    // so it must include serving unit + food name.
+    final rawQty = json['quantity']?.toString() ?? '1';
+    final servingUnit = json['serving_unit'] as String?;
+    final displayName =
+        json['display_name'] as String? ?? json['food_name'] as String?;
+    final displayNamePlural = json['display_name_plural'] as String?;
+
+    final quantity = buildDisplayQuantity(
+      rawQty: rawQty,
+      servingUnit: servingUnit,
+      displayName: displayName,
+      displayNamePlural: displayNamePlural,
+    );
+
     return FoodItemData(
       id: json['food_id'] as String,
       name:
           json['display_name'] as String? ??
           json['food_name'] as String? ??
           'Unknown Food',
-      quantity: json['quantity']?.toString() ?? '1',
+      quantity: quantity,
       imageAddress: json['image_address'] as String?,
       description: json['description'] as String?,
       timing: json['timing'] as String?,

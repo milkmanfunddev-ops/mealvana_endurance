@@ -3,7 +3,7 @@ import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show HttpMethod;
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/sync/sync_coordinator.dart';
+import '../../../activities/data/activities_repository.dart';
 import '../../../auth/application/supabase_auth_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -13,7 +13,11 @@ import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../onboarding/domain/dietary_preference.dart';
 import '../../../onboarding/domain/allergy.dart';
+import '../../../carb_loading/data/carb_loading_repository.dart';
 import '../../../coach_mode/data/coach_repository.dart';
+import '../../../events/data/events_repository.dart';
+import '../../../feedback/data/feedback_repository.dart';
+import '../../../food_preferences/data/food_preferences_repository.dart';
 import '../../../nutrition_plan/presentation/providers/macro_targets_controller.dart';
 import '../../domain/settings_state.dart';
 
@@ -615,24 +619,21 @@ class SettingsController extends _$SettingsController {
     final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
     final analytics = ref.read(appExternalDepsProvider).analytics;
     final logger = ref.read(appExternalDepsProvider).logger;
-    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
     final prefs = ref.read(sharedPreferencesProvider);
 
     // Track sign out event
     await analytics.track('settings_sign_out_tapped');
 
-    // CRITICAL: Sync all local changes to Supabase BEFORE sign-out
+    // CRITICAL: Upload dirty records to Supabase BEFORE sign-out
     // This prevents data loss when local database is cleared
+    // No download needed - just upload dirty records directly per-repository
     final currentUser = supabaseClient.auth.currentUser;
     if (currentUser != null) {
       try {
-        await syncCoordinator.sync(
-          userId: currentUser.id,
-          trigger: SyncTrigger.preLogout,
-        );
+        await _uploadDirtyBeforeLogout(currentUser.id);
       } catch (e) {
         // Log error but continue with sign-out
-        logger.error('Pre-logout sync failed', context: 'SETTINGS', error: e);
+        logger.error('Pre-logout upload failed', context: 'SETTINGS', error: e);
       }
     }
 
@@ -643,6 +644,26 @@ class SettingsController extends _$SettingsController {
     // IMPORTANT: After this call, the auth listener will invalidate this controller
     // and GoRouter will navigate to /welcome. Do NOT access ref or state after this.
     await supabaseClient.auth.signOut();
+  }
+
+  /// Upload dirty records from all repositories before logout.
+  /// Uses Future.wait for parallel uploads - fast and targeted.
+  Future<void> _uploadDirtyBeforeLogout(String userId) async {
+    final activitiesRepo = ref.read(activitiesRepositoryProvider);
+    final eventsRepo = ref.read(eventsRepositoryProvider);
+    final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
+    final feedbackRepo = ref.read(feedbackRepositoryProvider);
+    final foodPrefsRepo = await ref.read(foodPreferencesRepositoryProvider.future);
+    final userRepo = await ref.read(userRepositoryProvider.future);
+
+    await Future.wait([
+      activitiesRepo.uploadDirtyRecords(userId),
+      eventsRepo.uploadDirtyRecords(userId),
+      carbLoadingRepo.uploadDirtyRecords(userId),
+      feedbackRepo.uploadDirtyRecords(userId),
+      foodPrefsRepo.uploadDirtyRecords(userId),
+      userRepo.uploadDirtyRecords(userId),
+    ]);
   }
 
   /// Delete the current user account

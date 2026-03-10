@@ -512,6 +512,15 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
                   ),
                 ],
               ),
+              const SizedBox(height: AppSpacing.sm),
+              KyleSecondaryButton(
+                text: 'Create Manually',
+                icon: FontAwesomeIcons.plus,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _openCreateFoodScreen();
+                },
+              ),
             ],
           ),
         ),

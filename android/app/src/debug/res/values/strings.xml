@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- DEBUG: Android Client ID for debug builds -->
-    <!-- SHA-1: 7F:E9:43:B8:CE:F8:13:E9:EA:4E:A0:C9:5A:3D:87:E8:25:04:80:B9 -->
+    <!-- SHA-1: D7:C7:4B:3A:51:09:0B:E4:8C:10:27:30:E9:3B:2B:D4:12:DF:01:70 -->
     <string name="default_android_client_id" translatable="false">171527646530-h7omr4i3lgseljh598sdfc1seiqd5eqj.apps.googleusercontent.com</string>
 </resources>

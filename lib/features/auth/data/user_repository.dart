@@ -8,7 +8,6 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
-import '../../../shared/services/sync/immediate_remote_write_service.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../shared/data/syncable_repository.dart';
 
@@ -21,13 +20,11 @@ class UserRepository with SyncableRepository {
     required this.database,
     required this.supabase,
     required this.sentry,
-    required this.immediateRemoteWriteService,
   });
 
   final AppDatabase database;
   final SupabaseClient supabase;
   final SentryReporter sentry;
-  final ImmediateRemoteWriteService immediateRemoteWriteService;
 
   // ========== SyncableRepository Implementation ==========
 
@@ -256,13 +253,16 @@ class UserRepository with SyncableRepository {
 
       // Skip immediate Supabase sync if marked for background upload
       if (!needsUpload) {
-        await immediateRemoteWriteService.run(
-          repository: repositoryKey,
-          operation: 'update_profile',
-          recordId: updatedProfile.id,
-          method: 'UPSERT',
-          write: () => _upsertUserProfileToSupabase(updatedProfile),
-        );
+        try {
+          await _upsertUserProfileToSupabase(updatedProfile);
+        } catch (e, stackTrace) {
+          sentry.addBreadcrumb(
+            message: 'Immediate upload failed; record stays dirty for retry',
+            category: 'sync',
+            data: {'operation': 'update_profile', 'recordId': updatedProfile.id},
+          );
+          await sentry.reportNetworkError(e, url: 'supabase:users:update_profile', method: 'UPSERT', stackTrace: stackTrace);
+        }
       }
 
       sentry.addBreadcrumb(
@@ -320,14 +320,16 @@ class UserRepository with SyncableRepository {
         updateData['auth_user_id'] = authUserId;
       }
 
-      await immediateRemoteWriteService.run(
-        repository: repositoryKey,
-        operation: 'update_auth_provider',
-        recordId: currentUser.id,
-        method: 'UPDATE',
-        write: () =>
-            supabase.from('users').update(updateData).eq('id', currentUser.id),
-      );
+      try {
+        await supabase.from('users').update(updateData).eq('id', currentUser.id);
+      } catch (e, stackTrace) {
+        sentry.addBreadcrumb(
+          message: 'Immediate upload failed; record stays dirty for retry',
+          category: 'sync',
+          data: {'operation': 'update_auth_provider', 'recordId': currentUser.id},
+        );
+        await sentry.reportNetworkError(e, url: 'supabase:users:update_auth_provider', method: 'UPDATE', stackTrace: stackTrace);
+      }
 
       sentry.addBreadcrumb(
         message: 'Auth provider updated successfully',
@@ -563,12 +565,8 @@ class UserRepository with SyncableRepository {
       }
 
       // Sync to Supabase (best effort - don't throw on failure)
-      await immediateRemoteWriteService.run(
-        repository: repositoryKey,
-        operation: 'reset_anonymous_user',
-        recordId: newAnonymousUserId,
-        method: 'UPSERT',
-        write: () => supabase.from('users').upsert({
+      try {
+        await supabase.from('users').upsert({
           'id': newAnonymousUserId,
           'device_id': newAnonymousUserId,
           'auth_provider': 'anonymous',
@@ -583,8 +581,15 @@ class UserRepository with SyncableRepository {
           'onboarding_completed': newProfile.onboardingCompleted,
           'created_at': newProfile.createdAt.toIso8601String(),
           'updated_at': newProfile.updatedAt.toIso8601String(),
-        }),
-      );
+        });
+      } catch (e, stackTrace) {
+        sentry.addBreadcrumb(
+          message: 'Immediate upload failed; record stays dirty for retry',
+          category: 'sync',
+          data: {'operation': 'reset_anonymous_user', 'recordId': newAnonymousUserId},
+        );
+        await sentry.reportNetworkError(e, url: 'supabase:users:reset_anonymous_user', method: 'UPSERT', stackTrace: stackTrace);
+      }
 
       sentry.addBreadcrumb(
         message: 'Reset to new anonymous user after sign-out',
@@ -1755,21 +1760,20 @@ class UserRepository with SyncableRepository {
       await saveUserProfile(newProfile);
 
       // 🔧 FIX: Also create profile in Supabase to ensure sync works
-      final uploaded = await immediateRemoteWriteService.run(
-        repository: repositoryKey,
-        operation: 'fresh_login_profile_create',
-        recordId: userId,
-        method: 'UPSERT',
-        write: () => supabase
-            .from('users')
-            .upsert(newProfile.toJson(), onConflict: 'id'),
-      );
-      if (uploaded) {
+      try {
+        await supabase.from('users').upsert(newProfile.toJson(), onConflict: 'id');
         sentry.addBreadcrumb(
           message: 'Created user profile in Supabase for fresh login',
           category: 'auth',
           data: {'user_id': userId},
         );
+      } catch (e, stackTrace) {
+        sentry.addBreadcrumb(
+          message: 'Immediate upload failed; record stays dirty for retry',
+          category: 'sync',
+          data: {'operation': 'fresh_login_profile_create', 'recordId': userId},
+        );
+        await sentry.reportNetworkError(e, url: 'supabase:users:fresh_login_profile_create', method: 'UPSERT', stackTrace: stackTrace);
       }
     }
   }
@@ -1782,14 +1786,10 @@ Future<UserRepository> userRepository(Ref ref) async {
   final database = ref.watch(appDatabaseProvider);
   final sentry = ref.watch(sentryReporterProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
-  final immediateRemoteWriteService = ref.watch(
-    immediateRemoteWriteServiceProvider,
-  );
 
   return UserRepository(
     database: database,
     supabase: supabase,
     sentry: sentry,
-    immediateRemoteWriteService: immediateRemoteWriteService,
   );
 }

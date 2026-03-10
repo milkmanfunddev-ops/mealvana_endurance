@@ -416,7 +416,8 @@ create table users
     unit_system                       text                     default 'imperial'::text,
     default_running_pace_min_per_mile real,
     default_cycling_speed_mph         real,
-    default_swimming_pace_per_100_sec integer
+    default_swimming_pace_per_100_sec integer,
+    nutrition_target_overrides        jsonb
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -466,6 +467,8 @@ comment on column users.default_running_pace_min_per_mile is 'User default runni
 comment on column users.default_cycling_speed_mph is 'User default cycling speed in miles per hour. Used to estimate workout duration from distance in new activity forms. Example: 18.5 mph.';
 
 comment on column users.default_swimming_pace_per_100_sec is 'User default swimming pace in seconds per 100 yards/meters. Used to estimate workout duration from distance in new activity forms. Example: 90 = 1:30 per 100 yards.';
+
+comment on column users.nutrition_target_overrides is 'User-configured nutrition target overrides. JSON with pre/during/post activity macro targets. Null = use algorithm defaults.';
 
 alter table users
     owner to postgres;
@@ -1432,7 +1435,10 @@ create table template_foods
     description            text,
     serving_amount         real,
     serving_unit           text,
-    serving_qualifier      text
+    serving_qualifier      text,
+    is_indivisible         boolean                  default false,
+    default_during         boolean                  default false             not null,
+    min_servings_during    numeric(4, 1)            default 1.0
 );
 
 comment on table template_foods is 'Food ingredient catalog for nutrition templates. Nutrition data from USDA FoodData Central.';
@@ -1446,6 +1452,10 @@ comment on column template_foods.digestion_speed is 'How quickly food digests: f
 comment on column template_foods.is_drink_pool is 'Whether this food is available in the drink selection pool';
 
 comment on column template_foods.drink_pool_phases is 'Which phases this drink can be selected for: meal, snack, top_up';
+
+comment on column template_foods.is_indivisible is 'Whether this food comes in discrete, sealed units that cannot be fractionally consumed (e.g., tablets, gel packets)';
+
+comment on column template_foods.default_during is 'Whether this food is part of the default during-activity recommendation set.';
 
 alter table template_foods
     owner to postgres;
@@ -1506,7 +1516,8 @@ create table templates
     created_at         timestamp with time zone default now(),
     updated_at         timestamp with time zone default now(),
     excluded_diets     text[]                   default '{}'::text[],
-    food_names         text[]                   default '{}'::text[]
+    food_names         text[]                   default '{}'::text[],
+    has_liquid_base    boolean                  default false
 );
 
 comment on table templates is 'Pre-workout nutrition templates with denormalized food data in JSONB. Each template is a curated food combination that scales to hit macro targets.';
@@ -1549,6 +1560,26 @@ grant delete, insert, references, select, trigger, truncate, update on templates
 grant delete, insert, references, select, trigger, truncate, update on templates to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on templates to service_role;
+
+create table education_content
+(
+    id               uuid                     default gen_random_uuid() not null
+        primary key,
+    title            text                                               not null,
+    description      text,
+    thumbnail_url    text,
+    video_url        text,
+    content_type     text                     default 'free'::text      not null,
+    duration_seconds integer,
+    sort_order       integer                  default 0                 not null,
+    is_published     boolean                  default false             not null,
+    tags             text[],
+    created_at       timestamp with time zone default now()             not null,
+    updated_at       timestamp with time zone default now()             not null
+);
+
+alter table education_content
+    owner to postgres;
 
 create view v_food_sport_phase_settings
             (food_id, food_name, display_name, product_type, sport, phase, effective_max_servings, is_suitable, notes,

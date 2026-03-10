@@ -50,6 +50,8 @@ import '../../features/carb_loading/domain/meal_type.dart';
 import '../widgets/tabs_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/events/presentation/screens/event_creation_screen.dart';
+import '../../features/education/presentation/screens/education_screen.dart';
+import '../../features/education/presentation/screens/video_player_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
 import '../screens/food_detail_screen.dart';
 // Coach mode screens
@@ -334,6 +336,9 @@ class AppRouter {
             case 'survey':
               initialTab = 2;
               break;
+            case 'learn':
+              initialTab = 2;
+              break;
             case 'settings':
               initialTab = 3;
               break;
@@ -395,6 +400,26 @@ class AppRouter {
         path: '/adjust-macros',
         name: 'adjust-macros',
         builder: (context, state) => const AdjustMacrosScreen(),
+      ),
+
+      // Education / Learn
+      GoRoute(
+        path: '/learn',
+        name: 'learn',
+        builder: (context, state) => const EducationScreen(),
+      ),
+
+      // Video Player
+      GoRoute(
+        path: '/learn/video',
+        name: 'learn-video',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return VideoPlayerScreen(
+            title: extra?['title'] as String? ?? '',
+            videoUrl: extra?['videoUrl'] as String? ?? '',
+          );
+        },
       ),
 
       // Events list

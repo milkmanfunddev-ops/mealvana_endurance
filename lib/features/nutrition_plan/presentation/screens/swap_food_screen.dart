@@ -6,13 +6,10 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/buttons/search_openfoodfacts_button.dart';
 import '../../../../shared/widgets/inputs/figma_search_bar.dart';
-import '../../../../shared/widgets/food_selection/recommended_alternatives.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
 import '../providers/swap_food_controller.dart';
-import '../providers/activity_detail_controller.dart';
 import '../../domain/food.dart';
 import '../../domain/food_item.dart';
-import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
@@ -85,19 +82,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
   String get _screenTitle => _isSwapping
       ? 'Swap ${widget.foodToSwapName ?? 'Food'}'
-      : 'Add Food to ${_getCategoryDisplayName()}';
-
-  String _getCategoryDisplayName() {
-    // Get activity type from ActivityDetailController for sport-specific labels
-    final activityDetailAsync = ref.read(
-      activityDetailControllerProvider(
-        activityId: widget.activityId,
-        isNewActivity: widget.isNewActivity,
-      ),
-    );
-    final activityType = activityDetailAsync.asData?.value.activity?.activityType ?? ActivityType.running;
-    return activityType.getSectionTitle(widget.category);
-  }
+      : 'Add Food';
 
   void _onSearchChanged(String query) {
     ref.read(swapFoodControllerProvider(_params).notifier).updateSearch(query);
@@ -122,10 +107,10 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     // Determine pre-selected categories based on current section
     final baseCategory = widget.category.split(':').first;
     final preSelectedCategories = <int>[
-      if (baseCategory == 'before_run') 1,
-      if (baseCategory == 'during_run') 2,
-      if (baseCategory == 'after_run') 3,
-      if (baseCategory != 'before_run' && baseCategory != 'during_run' && baseCategory != 'after_run') ...[1, 2, 3],
+      if (baseCategory.startsWith('before')) 1,
+      if (baseCategory.startsWith('during')) 2,
+      if (baseCategory.startsWith('after')) 3,
+      if (!baseCategory.startsWith('before') && !baseCategory.startsWith('during') && !baseCategory.startsWith('after')) ...[1, 2, 3],
     ];
 
     final result = await Navigator.push<dynamic>(
@@ -155,7 +140,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
             case 1: return 'before_run';
             case 2: return 'during_run';
             case 3: return 'after_run';
-            default: return 'before_run';
+            default: return 'before_run'; // DB categories remain *_run
           }
         }).toList();
 
@@ -181,8 +166,9 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
         await userFoodCrudService.saveUserFood(food, result.categoryIds);
 
-        // Refresh and auto-select
-        ref.invalidate(swapFoodControllerProvider(_params));
+        // Refresh foods and auto-expand My Foods section
+        await ref.read(swapFoodControllerProvider(_params).notifier)
+            .refreshFoods(expandMyFoods: true);
 
         if (mounted) {
           MealvanaSnackbar.showSuccess(context, 'Custom food created!');
@@ -222,16 +208,10 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
         // Convert category strings to category IDs for saving
         final categoryIds = food.categories.map((cat) {
-          switch (cat) {
-            case 'before_run':
-              return 1;
-            case 'during_run':
-              return 2;
-            case 'after_run':
-              return 3;
-            default:
-              return 1;
-          }
+          if (cat.startsWith('before')) return 1;
+          if (cat.startsWith('during')) return 2;
+          if (cat.startsWith('after')) return 3;
+          return 1;
         }).toList();
 
         // Save to user_foods table (offline-first) - same as Open Food Facts flow
@@ -241,7 +221,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         // Refresh controller state and auto-select the food after refresh completes
         // This prevents race condition where food disappears after being selected
         await ref.read(swapFoodControllerProvider(_params).notifier)
-            .refreshFoods(selectAfterRefresh: food);
+            .refreshFoods(selectAfterRefresh: food, expandMyFoods: true);
 
         _searchController.clear();
         _onSearchChanged('');
@@ -418,32 +398,20 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
   int _categoryToId(String category) {
     // Strip sub-phase suffix (e.g., 'before_run:snack' → 'before_run')
-    final baseCategory = category.split(':').first;
-    switch (baseCategory) {
-      case 'before_run':
-        return 1;
-      case 'during_run':
-        return 2;
-      case 'after_run':
-        return 3;
-      default:
-        return 1;
-    }
+    final base = category.split(':').first;
+    if (base.startsWith('before')) return 1;
+    if (base.startsWith('during')) return 2;
+    if (base.startsWith('after')) return 3;
+    return 1;
   }
 
   FoodItem _convertFoodToFoodItem(Food food) {
     // Convert List<String> categories to List<FoodCategory>
     final foodCategories = food.categories.map((cat) {
-      switch (cat) {
-        case 'before_run':
-          return FoodCategory.beforeRun;
-        case 'during_run':
-          return FoodCategory.duringRun;
-        case 'after_run':
-          return FoodCategory.afterRun;
-        default:
-          return FoodCategory.beforeRun; // Default fallback
-      }
+      if (cat.startsWith('before')) return FoodCategory.beforeRun;
+      if (cat.startsWith('during')) return FoodCategory.duringRun;
+      if (cat.startsWith('after')) return FoodCategory.afterRun;
+      return FoodCategory.beforeRun; // Default fallback
     }).toList();
 
     return FoodItem(
@@ -534,7 +502,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       // Refresh controller state and auto-select the food after refresh completes
       // This prevents race condition where food disappears after being selected
       await ref.read(swapFoodControllerProvider(_params).notifier)
-          .refreshFoods(selectAfterRefresh: food);
+          .refreshFoods(selectAfterRefresh: food, expandMyFoods: true);
 
       // Reset quantity after selection
       setState(() {
@@ -641,10 +609,8 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                   hintText: 'Search for food...',
                 ),
 
-                // "Search OpenFoodFacts" button (when 1-3 local results)
+                // "Search OpenFoodFacts" button (always shown when searching locally)
                 if (state.searchQuery.isNotEmpty &&
-                    state.searchResults.isNotEmpty &&
-                    state.searchResults.length < 4 &&
                     state.openFoodFactsResults.isEmpty &&
                     !state.isSearchingOpenFoodFacts)
                   SearchOpenFoodFactsButton(
@@ -751,19 +717,90 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
     // Show recommendations or search results
     if (state.searchQuery.isEmpty) {
-      // Show recommendations
-      return RecommendedAlternatives(
-        foods: state.recommendations,
-        onFoodSelected: _selectFood,
-        preferences: state.preferences,
-        title: _isSwapping ? 'Recommended Alternatives' : 'Recommended Foods',
-        userFoodIds: state.userFoodIds,
-        onEditUserFood: _showUserFoodEditSheet,
-      );
+      return _buildDefaultView(state);
     } else {
       // Show search results
       return _buildSearchResults(state);
     }
+  }
+
+  Widget _buildDefaultView(SwapFoodState state) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      children: [
+        // My Foods section (only if user has foods for this category)
+        if (state.userFoods.isNotEmpty) ...[
+          _buildMyFoodsSectionHeader(state),
+          if (state.isMyFoodsExpanded)
+            ...state.userFoods.map((food) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: _buildFoodCard(food),
+            )),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        // Recommended Foods header
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: Text(
+            _isSwapping ? 'Recommended Alternatives' : 'Recommended Foods',
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
+        // Recommended food items
+        ...state.recommendations.map((food) => Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          child: _buildFoodCard(food),
+        )),
+      ],
+    );
+  }
+
+  Widget _buildMyFoodsSectionHeader(SwapFoodState state) {
+    return InkWell(
+      onTap: () => ref.read(swapFoodControllerProvider(_params).notifier).toggleMyFoodsExpanded(),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Row(
+          children: [
+            Icon(
+              state.isMyFoodsExpanded
+                  ? FontAwesomeIcons.chevronDown
+                  : FontAwesomeIcons.chevronRight,
+              size: AppIconSizes.sm,
+              color: AppColors.orange,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              'My Foods',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.orange.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${state.userFoods.length}',
+                style: AppTextStyles.smallLabel.copyWith(
+                  color: AppColors.orange,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildSearchingIndicator() {
@@ -811,7 +848,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   Widget _buildSearchResults(SwapFoodState state) {
-    if (state.searchResults.isEmpty) {
+    if (state.searchResults.isEmpty && state.userFoods.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.xl),
@@ -837,16 +874,36 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       );
     }
 
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      itemCount: state.searchResults.length,
-      itemBuilder: (context, index) {
-        final food = state.searchResults[index];
-        return Padding(
+      children: [
+        // My Foods section (if matching user foods exist)
+        if (state.userFoods.isNotEmpty) ...[
+          _buildMyFoodsSectionHeader(state),
+          if (state.isMyFoodsExpanded)
+            ...state.userFoods.map((food) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: _buildFoodCard(food),
+            )),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        // Search Results header
+        if (state.searchResults.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Text(
+              'Search Results',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+        // Search result food cards
+        ...state.searchResults.map((food) => Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: _buildFoodCard(food),
-        );
-      },
+        )),
+      ],
     );
   }
 
@@ -995,29 +1052,17 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   String _categoryToLabel(String category) {
-    switch (category) {
-      case 'before_run':
-        return 'Before';
-      case 'during_run':
-        return 'During';
-      case 'after_run':
-        return 'After';
-      default:
-        return category;
-    }
+    if (category.startsWith('before')) return 'Before';
+    if (category.startsWith('during')) return 'During';
+    if (category.startsWith('after')) return 'After';
+    return category;
   }
 
   Color _getCategoryColor(String category) {
-    switch (category) {
-      case 'before_run':
-        return AppColors.electrolyte;
-      case 'during_run':
-        return AppColors.orange;
-      case 'after_run':
-        return AppColors.dragonfruit;
-      default:
-        return AppColors.cream;
-    }
+    if (category.startsWith('before')) return AppColors.electrolyte;
+    if (category.startsWith('during')) return AppColors.orange;
+    if (category.startsWith('after')) return AppColors.dragonfruit;
+    return AppColors.cream;
   }
 
   /// Show the edit screen for a user food

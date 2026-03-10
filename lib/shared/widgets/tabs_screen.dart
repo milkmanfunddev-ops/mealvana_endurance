@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/activities/presentation/screens/activities_list_screen.dart';
 import '../../features/calendar/presentation/providers/calendar_view_provider.dart';
 import '../../features/calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
@@ -46,7 +47,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       if (showCoachTab)
         const SizedBox(), // Web placeholder — coach icon navigates to /coach portal
       const EventsListScreen(), // 1 or 2: Events
-      const SettingsScreen(), // 2 or 3: Settings
+      const EducationScreen(), // 2 or 3: Learn
+      const SettingsScreen(), // 3 or 4: Settings
     ];
 
     // Adjust current index if it's out of bounds (safety check)
@@ -99,10 +101,16 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                 _currentIndex = showCoachTab ? 2 : 1;
               });
             },
+            onLearnTap: () {
+              setState(() {
+                // If coach tab is visible, Learn is at index 3, otherwise 2
+                _currentIndex = showCoachTab ? 3 : 2;
+              });
+            },
             onMenuTap: () {
               setState(() {
-                // If coach tab is visible, Settings is at index 3, otherwise 2
-                _currentIndex = showCoachTab ? 3 : 2;
+                // If coach tab is visible, Settings is at index 4, otherwise 3
+                _currentIndex = showCoachTab ? 4 : 3;
               });
             },
             onPlusTap: () {

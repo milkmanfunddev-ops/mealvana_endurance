@@ -297,10 +297,7 @@ class TimeSlotRow extends StatelessWidget {
     if (electrolyteEntries.isEmpty) return '';
     final parts = electrolyteEntries.map((entry) {
       final qty = _formatQuantity(_parseQuantity(entry.displayFood.quantity));
-      final simpleName = _simplifyName(
-        entry.displayFood.displayName ?? entry.displayFood.name,
-      );
-      return '$qty ${_pluralize(simpleName, _parseQuantity(entry.displayFood.quantity))}';
+      return entry.displayFood.displayAtQuantity(qty);
     }).toList();
     return parts.join(' + ');
   }
@@ -341,18 +338,6 @@ class TimeSlotRow extends StatelessWidget {
     return value.toStringAsFixed(2);
   }
 
-  String _simplifyName(String raw) {
-    var simplified = raw.replaceAll(RegExp(r'\s*\([^)]*\)'), '');
-    simplified = simplified.trim();
-    return simplified.isEmpty ? raw : simplified;
-  }
-
-  String _pluralize(String name, double quantity) {
-    if (quantity == 1) return name;
-    if (name.endsWith('s')) return name;
-    return '${name}s';
-  }
-
   /// Creates a display copy of FoodItemData with adjusted quantity and scaled nutrition.
   FoodItemData _adjustFoodForDisplay(
     FoodItemData food,
@@ -369,13 +354,9 @@ class TimeSlotRow extends StatelessWidget {
     );
     final scale = adjustedQty / originalQty;
 
-    // Build adjusted quantity string
+    // Build adjusted quantity string using centralized display logic
     final qtyStr = _formatQuantity(adjustedQty);
-
-    // Extract the unit part from the original quantity string
-    final unitMatch = RegExp(r'^[\d.]+\s*(.*)$').firstMatch(food.quantity);
-    final unit = unitMatch?.group(1) ?? '';
-    final adjustedQuantityStr = unit.isNotEmpty ? '$qtyStr $unit' : qtyStr;
+    final adjustedQuantityStr = food.displayAtQuantity(qtyStr);
 
     final ni = food.nutritionalInfo;
     return FoodItemData(

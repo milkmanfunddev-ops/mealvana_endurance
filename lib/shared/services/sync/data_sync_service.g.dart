@@ -49,4 +49,4 @@ final class DataSyncServiceProvider
   }
 }
 
-String _$dataSyncServiceHash() => r'fd3205d176c0807d673d2d639e4cd518552ef221';
+String _$dataSyncServiceHash() => r'02231127ab659fe10e22fae35a71e3496a2d73ab';

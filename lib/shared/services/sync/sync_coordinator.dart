@@ -6,6 +6,15 @@ import 'data_sync_service.dart';
 import '../../data/syncable_repository.dart';
 import '../app_external_deps.dart';
 
+// Repository imports for per-repo upload
+import '../../../features/activities/data/activities_repository.dart';
+import '../../../features/events/data/events_repository.dart';
+import '../../../features/carb_loading/data/carb_loading_repository.dart';
+import '../../../features/feedback/data/feedback_repository.dart';
+import '../../../features/food_preferences/data/food_preferences_repository.dart';
+import '../../../features/auth/data/user_repository.dart';
+import '../../../features/user_foods/data/user_foods_repository.dart';
+
 // Provider imports for invalidation
 import '../../../features/activities/presentation/providers/activities_controller.dart';
 import '../../../features/events/presentation/providers/events_controller.dart';
@@ -338,7 +347,10 @@ class SyncCoordinator extends _$SyncCoordinator {
     state = SyncState.syncing;
 
     try {
-      // Download fresh data from Supabase (includes upload-first gate)
+      // Step 1: Upload dirty records per-repository
+      await _uploadAllDirtyRecords(userId);
+
+      // Step 2: Download fresh data from Supabase
       final success = await _dataSyncService.syncAllData(userId);
 
       if (success) {
@@ -364,6 +376,46 @@ class SyncCoordinator extends _$SyncCoordinator {
     } finally {
       _syncInProgress = false;
       state = SyncState.idle;
+    }
+  }
+
+  /// Upload dirty records from all repositories before download.
+  /// Best-effort: logs failures but doesn't block download.
+  Future<void> _uploadAllDirtyRecords(String userId) async {
+    try {
+      final activitiesRepo = ref.read(activitiesRepositoryProvider);
+      final eventsRepo = ref.read(eventsRepositoryProvider);
+      final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
+      final feedbackRepo = ref.read(feedbackRepositoryProvider);
+      final foodPrefsRepo = await ref.read(foodPreferencesRepositoryProvider.future);
+      final userRepo = await ref.read(userRepositoryProvider.future);
+      final userFoodsRepo = await ref.read(userFoodsRepositoryProvider.future);
+
+      final results = await Future.wait([
+        activitiesRepo.uploadDirtyRecords(userId),
+        eventsRepo.uploadDirtyRecords(userId),
+        carbLoadingRepo.uploadDirtyRecords(userId),
+        feedbackRepo.uploadDirtyRecords(userId),
+        foodPrefsRepo.uploadDirtyRecords(userId),
+        userRepo.uploadDirtyRecords(userId),
+        userFoodsRepo.uploadDirtyRecords(userId),
+      ]);
+
+      final failedCount = results.where((r) => !r.success).length;
+      if (failedCount > 0) {
+        _logger.warning(
+          'Some dirty record uploads failed before download',
+          context: 'SYNC_COORDINATOR',
+          data: {'failedCount': failedCount, 'totalRepos': results.length},
+        );
+      }
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to upload dirty records before download',
+        context: 'SYNC_COORDINATOR',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 

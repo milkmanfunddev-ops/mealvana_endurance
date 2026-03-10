@@ -48,7 +48,7 @@ final class OAuthServiceProvider
   OAuthService create() => OAuthService();
 }
 
-String _$oAuthServiceHash() => r'425ee3f3d16482efa4c0e7a929bd0ce41ac9e513';
+String _$oAuthServiceHash() => r'46dfe06adb506f11dc65de74de71b5ad7707481b';
 
 /// Service for handling OAuth account linking via native SDKs
 /// Uses native Google Sign-In and Apple Sign-In packages

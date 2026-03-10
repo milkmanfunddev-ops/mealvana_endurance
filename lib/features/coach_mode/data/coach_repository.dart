@@ -8,7 +8,8 @@ import 'package:uuid/uuid.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sync/immediate_remote_write_service.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/coach.dart';
 import '../domain/coach_athlete_relationship.dart';
@@ -18,11 +19,12 @@ part 'coach_repository.g.dart';
 
 @riverpod
 CoachRepository coachRepository(Ref ref) {
+  final deps = ref.read(appExternalDepsProvider);
   return CoachRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
-    immediateRemoteWriteService: ref.read(immediateRemoteWriteServiceProvider),
+    sentry: deps.sentry,
   );
 }
 
@@ -35,16 +37,16 @@ class CoachRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
-    required ImmediateRemoteWriteService immediateRemoteWriteService,
+    required SentryReporter sentry,
   }) : _supabase = supabase,
        _database = database,
        _logger = logger,
-       _immediateRemoteWriteService = immediateRemoteWriteService;
+       _sentry = sentry;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
-  final ImmediateRemoteWriteService _immediateRemoteWriteService;
+  final SentryReporter _sentry;
 
   static const _uuid = Uuid();
 
@@ -544,12 +546,8 @@ class CoachRepository with SyncableRepository {
       // Coach-initiated relationships are immediately active (no confirmation needed)
       final isCoachInitiated = requestedBy == 'coach';
       final status = isCoachInitiated ? 'active' : 'pending';
-      final uploaded = await _immediateRemoteWriteService.run(
-        repository: 'coach_athlete_relationships',
-        operation: 'create',
-        recordId: id,
-        method: 'INSERT',
-        write: () => _supabase.from('coach_athlete_relationships').insert({
+      try {
+        await _supabase.from('coach_athlete_relationships').insert({
           'id': id,
           'coach_user_id': coachUserId,
           'athlete_user_id': athleteUserId,
@@ -559,9 +557,15 @@ class CoachRepository with SyncableRepository {
           if (isCoachInitiated) 'accepted_at': now.toIso8601String(),
           'created_at': now.toIso8601String(),
           'updated_at': now.toIso8601String(),
-        }),
-      );
-      if (!uploaded) {
+        });
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate upload failed; record stays dirty for retry',
+          context: 'COACH_REPOSITORY',
+          error: e, stackTrace: stackTrace,
+          data: {'operation': 'create', 'recordId': id},
+        );
+        _sentry.reportNetworkError(e, url: 'supabase:coach_athlete_relationships:create', method: 'INSERT', stackTrace: stackTrace);
         throw StateError(
           'Failed to create coach-athlete relationship remotely',
         );
@@ -617,21 +621,23 @@ class CoachRepository with SyncableRepository {
       final now = DateTime.now();
 
       // Update Supabase first (for cross-device sync)
-      final uploaded = await _immediateRemoteWriteService.run(
-        repository: 'coach_athlete_relationships',
-        operation: 'accept',
-        recordId: relationshipId,
-        method: 'UPDATE',
-        write: () => _supabase
+      try {
+        await _supabase
             .from('coach_athlete_relationships')
             .update({
               'status': 'active',
               'accepted_at': now.toIso8601String(),
               'updated_at': now.toIso8601String(),
             })
-            .eq('id', relationshipId),
-      );
-      if (!uploaded) {
+            .eq('id', relationshipId);
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate upload failed; record stays dirty for retry',
+          context: 'COACH_REPOSITORY',
+          error: e, stackTrace: stackTrace,
+          data: {'operation': 'accept', 'recordId': relationshipId},
+        );
+        _sentry.reportNetworkError(e, url: 'supabase:coach_athlete_relationships:accept', method: 'UPDATE', stackTrace: stackTrace);
         throw StateError(
           'Failed to accept coach-athlete relationship remotely',
         );
@@ -673,21 +679,23 @@ class CoachRepository with SyncableRepository {
       final now = DateTime.now();
 
       // Update Supabase first (for cross-device sync)
-      final uploaded = await _immediateRemoteWriteService.run(
-        repository: 'coach_athlete_relationships',
-        operation: 'decline',
-        recordId: relationshipId,
-        method: 'UPDATE',
-        write: () => _supabase
+      try {
+        await _supabase
             .from('coach_athlete_relationships')
             .update({
               'status': 'declined',
               'declined_at': now.toIso8601String(),
               'updated_at': now.toIso8601String(),
             })
-            .eq('id', relationshipId),
-      );
-      if (!uploaded) {
+            .eq('id', relationshipId);
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate upload failed; record stays dirty for retry',
+          context: 'COACH_REPOSITORY',
+          error: e, stackTrace: stackTrace,
+          data: {'operation': 'decline', 'recordId': relationshipId},
+        );
+        _sentry.reportNetworkError(e, url: 'supabase:coach_athlete_relationships:decline', method: 'UPDATE', stackTrace: stackTrace);
         throw StateError(
           'Failed to decline coach-athlete relationship remotely',
         );
@@ -729,21 +737,23 @@ class CoachRepository with SyncableRepository {
       final now = DateTime.now();
 
       // Update Supabase first (for cross-device sync)
-      final uploaded = await _immediateRemoteWriteService.run(
-        repository: 'coach_athlete_relationships',
-        operation: 'archive',
-        recordId: relationshipId,
-        method: 'UPDATE',
-        write: () => _supabase
+      try {
+        await _supabase
             .from('coach_athlete_relationships')
             .update({
               'status': 'archived',
               'archived_at': now.toIso8601String(),
               'updated_at': now.toIso8601String(),
             })
-            .eq('id', relationshipId),
-      );
-      if (!uploaded) {
+            .eq('id', relationshipId);
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate upload failed; record stays dirty for retry',
+          context: 'COACH_REPOSITORY',
+          error: e, stackTrace: stackTrace,
+          data: {'operation': 'archive', 'recordId': relationshipId},
+        );
+        _sentry.reportNetworkError(e, url: 'supabase:coach_athlete_relationships:archive', method: 'UPDATE', stackTrace: stackTrace);
         throw StateError(
           'Failed to archive coach-athlete relationship remotely',
         );
@@ -1554,12 +1564,8 @@ class CoachRepository with SyncableRepository {
       final now = DateTime.now().toUtc();
 
       // Insert into Supabase first (this triggers realtime for other party)
-      final uploaded = await _immediateRemoteWriteService.run(
-        repository: 'coach_messages',
-        operation: 'send_chat_message',
-        recordId: id,
-        method: 'INSERT',
-        write: () => _supabase.from('coach_messages').insert({
+      try {
+        await _supabase.from('coach_messages').insert({
           'id': id,
           'coach_user_id': coachUserId,
           'athlete_user_id': athleteUserId,
@@ -1569,9 +1575,15 @@ class CoachRepository with SyncableRepository {
           'created_at': now.toIso8601String(),
           'updated_at': now.toIso8601String(),
           // activity_id and nutrition_plan_id are NULL for general chat
-        }),
-      );
-      if (!uploaded) {
+        });
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate upload failed; record stays dirty for retry',
+          context: 'COACH_REPOSITORY',
+          error: e, stackTrace: stackTrace,
+          data: {'operation': 'send_chat_message', 'recordId': id},
+        );
+        _sentry.reportNetworkError(e, url: 'supabase:coach_messages:send_chat_message', method: 'INSERT', stackTrace: stackTrace);
         throw StateError('Failed to send chat message remotely');
       }
 
@@ -1790,12 +1802,8 @@ class CoachRepository with SyncableRepository {
       final now = DateTime.now().toUtc();
 
       // Insert into Supabase first (for cross-device sync and realtime)
-      final uploaded = await _immediateRemoteWriteService.run(
-        repository: 'coach_messages',
-        operation: 'send_message',
-        recordId: id,
-        method: 'INSERT',
-        write: () => _supabase.from('coach_messages').insert({
+      try {
+        await _supabase.from('coach_messages').insert({
           'id': id,
           'coach_user_id': coachUserId,
           'athlete_user_id': athleteUserId,
@@ -1806,9 +1814,15 @@ class CoachRepository with SyncableRepository {
           'is_read': false,
           'created_at': now.toIso8601String(),
           'updated_at': now.toIso8601String(),
-        }),
-      );
-      if (!uploaded) {
+        });
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate upload failed; record stays dirty for retry',
+          context: 'COACH_REPOSITORY',
+          error: e, stackTrace: stackTrace,
+          data: {'operation': 'send_message', 'recordId': id},
+        );
+        _sentry.reportNetworkError(e, url: 'supabase:coach_messages:send_message', method: 'INSERT', stackTrace: stackTrace);
         throw StateError('Failed to send message remotely');
       }
 
@@ -2178,12 +2192,8 @@ class CoachRepository with SyncableRepository {
       final now = DateTime.now();
 
       // Insert into Supabase coaches table
-      return await _immediateRemoteWriteService.run(
-        repository: repositoryKey,
-        operation: 'submit_application',
-        recordId: id,
-        method: 'INSERT',
-        write: () => _supabase.from('coaches').insert({
+      try {
+        await _supabase.from('coaches').insert({
           'id': id,
           'user_id': userId,
           'first_name': firstName,
@@ -2194,8 +2204,18 @@ class CoachRepository with SyncableRepository {
           'submitted_at': now.toIso8601String(),
           'created_at': now.toIso8601String(),
           'updated_at': now.toIso8601String(),
-        }),
-      );
+        });
+        return true;
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate upload failed; record stays dirty for retry',
+          context: 'COACH_REPOSITORY',
+          error: e, stackTrace: stackTrace,
+          data: {'operation': 'submit_application', 'recordId': id},
+        );
+        _sentry.reportNetworkError(e, url: 'supabase:coaches:submit_application', method: 'INSERT', stackTrace: stackTrace);
+        return false;
+      }
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to submit coach application',

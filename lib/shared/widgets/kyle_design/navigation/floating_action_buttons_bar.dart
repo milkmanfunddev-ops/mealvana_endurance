@@ -8,17 +8,16 @@ import '../buttons/circular_action_button.dart';
 /// A pill-shaped container with circular action buttons:
 /// - Calendar (left): Toggle calendar view
 /// - Coach (optional): Navigate to coach dashboard or my coaches
-/// - Events (center-left): Navigate to events list
-/// - Menu (center-right): Navigate to settings
-///
-/// Replaces the traditional bottom navigation bar with a more compact,
-/// modern floating design matching Kyle's UI specifications.
+/// - Events: Navigate to events list
+/// - Learn: Navigate to education/learn tab
+/// - Menu (right): Navigate to settings
 ///
 /// The `activeButton` parameter indicates which button should be highlighted:
 /// - 0: Calendar button (Activities screen)
 /// - 1: Coach button (Coach/My Coaches screen, if visible)
 /// - 1 or 2: Events button (Events screen)
-/// - 2 or 3: Menu button (Settings screen)
+/// - 2 or 3: Learn button (Education screen)
+/// - 3 or 4: Menu button (Settings screen)
 ///
 /// Example:
 /// ```dart
@@ -36,6 +35,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
     required this.onCalendarTap,
     required this.onCoachTap,
     required this.onEventsTap,
+    required this.onLearnTap,
     required this.onMenuTap,
     required this.onPlusTap,
     this.activeButton,
@@ -45,6 +45,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
   final VoidCallback onCalendarTap;
   final VoidCallback onCoachTap;
   final VoidCallback onEventsTap;
+  final VoidCallback onLearnTap;
   final VoidCallback onMenuTap;
   final VoidCallback onPlusTap;
   final int? activeButton;
@@ -115,12 +116,23 @@ class FloatingActionButtonsBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   CircularActionButton(
-                    icon: FontAwesomeIcons.ellipsis,
-                    onPressed: onMenuTap,
+                    icon: FontAwesomeIcons.graduationCap,
+                    onPressed: onLearnTap,
                     backgroundColor: activeButton == (showCoachTab ? 3 : 2)
                         ? activeBackground
                         : inactiveBackground,
                     iconColor: activeButton == (showCoachTab ? 3 : 2)
+                        ? AppColors.blackberry
+                        : (isDark ? AppColors.cream : AppColors.blackberry),
+                  ),
+                  const SizedBox(width: 8),
+                  CircularActionButton(
+                    icon: FontAwesomeIcons.ellipsis,
+                    onPressed: onMenuTap,
+                    backgroundColor: activeButton == (showCoachTab ? 4 : 3)
+                        ? activeBackground
+                        : inactiveBackground,
+                    iconColor: activeButton == (showCoachTab ? 4 : 3)
                         ? AppColors.blackberry
                         : (isDark ? AppColors.cream : AppColors.blackberry),
                   ),

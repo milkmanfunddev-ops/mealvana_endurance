@@ -2,7 +2,7 @@ name: mealvana_endurance
 description: "Personalized nutrition fueling plans for endurance athletes"
 publish_to: 'none'
 
-version: 1.15.1+68
+version: 1.15.1+70
 
 environment:
   sdk: ^3.8.1
@@ -90,7 +90,7 @@ dependencies:
   speech_to_text: ^7.0.0
 
   # Barcode Scanning
-  mobile_scanner: ^7.0.1
+  mobile_scanner: ^7.2.0
   
   # Font Awesome Icons
   font_awesome_flutter: ^10.6.0
@@ -98,6 +98,10 @@ dependencies:
   # PDF Generation
   pdf: ^3.11.1
   printing: ^5.13.3
+
+  # Video Player
+  video_player: ^2.9.2
+  chewie: ^1.8.5
 
   # Location Services
   geolocator: ^13.0.2

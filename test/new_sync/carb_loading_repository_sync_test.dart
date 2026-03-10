@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/carb_loading/data/carb_loading_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mocktail/mocktail.dart';
@@ -12,9 +13,12 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockAppLogger extends Mock implements AppLogger {}
 
+class MockSentryReporter extends Mock implements SentryReporter {}
+
 void main() {
   late AppDatabase database;
   late MockAppLogger mockLogger;
+  late MockSentryReporter mockSentry;
 
   const testUserId = 'test-user-123';
 
@@ -27,6 +31,7 @@ void main() {
 
     // Create mocks
     mockLogger = MockAppLogger();
+    mockSentry = MockSentryReporter();
 
     // Set up logger to not throw on method calls
     when(() => mockLogger.info(any(),
@@ -55,6 +60,7 @@ void main() {
         supabase: mockSupabase,
         database: database,
         logger: mockLogger,
+        sentry: mockSentry,
       );
 
       expect(repository.repositoryKey, 'carb_loading_plans');
@@ -66,6 +72,7 @@ void main() {
         supabase: mockSupabase,
         database: database,
         logger: mockLogger,
+        sentry: mockSentry,
       );
 
       expect(repository.dependencies, ['users', 'events']);
@@ -77,6 +84,7 @@ void main() {
         supabase: mockSupabase,
         database: database,
         logger: mockLogger,
+        sentry: mockSentry,
       );
 
       final isStale = await repository.isStale();
@@ -89,6 +97,7 @@ void main() {
         supabase: mockSupabase,
         database: database,
         logger: mockLogger,
+        sentry: mockSentry,
       );
 
       await repository.setLastSyncTime(DateTime.now());
@@ -103,6 +112,7 @@ void main() {
         supabase: mockSupabase,
         database: database,
         logger: mockLogger,
+        sentry: mockSentry,
       );
 
       final oldSync = DateTime.now().subtract(const Duration(hours: 25));
@@ -119,6 +129,7 @@ void main() {
         supabase: mockSupabase,
         database: database,
         logger: mockLogger,
+        sentry: mockSentry,
       );
 
       final timestamp = await repository.getLastSyncTime();
@@ -132,6 +143,7 @@ void main() {
         supabase: mockSupabase,
         database: database,
         logger: mockLogger,
+        sentry: mockSentry,
       );
 
       final now = DateTime.now();
@@ -151,6 +163,7 @@ void main() {
         supabase: mockSupabase,
         database: database,
         logger: mockLogger,
+        sentry: mockSentry,
       );
 
       // Act

@@ -89,7 +89,7 @@ class AppStartup extends _$AppStartup {
 
         // Perform schema resync: upload dirty records, delete database
         final resyncSuccess = await versionCheckService.performSchemaResync(
-          userId ?? 'anonymous',
+          userId,
         );
 
         if (!resyncSuccess) {

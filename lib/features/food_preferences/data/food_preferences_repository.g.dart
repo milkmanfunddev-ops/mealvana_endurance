@@ -53,4 +53,4 @@ final class FoodPreferencesRepositoryProvider
 }
 
 String _$foodPreferencesRepositoryHash() =>
-    r'cb5b5fd59051770dfd2b7360f8bf8ddaf3d60eb2';
+    r'fba8676db91984b559a9e4f4954b5cd37df4c71c';

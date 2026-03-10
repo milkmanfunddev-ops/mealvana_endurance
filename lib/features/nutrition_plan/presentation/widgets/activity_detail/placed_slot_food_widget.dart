@@ -42,12 +42,7 @@ class PlacedSlotFoodWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final carbs = food.nutritionalInfo?.carbs;
     final qtyStr = _formatQuantity(_slotQty);
-    final name = food.displayName ?? food.name;
-
-    // Extract unit from original quantity string
-    final unitMatch = RegExp(r'^[\d.]+\s*(.*)$').firstMatch(food.quantity);
-    final unit = unitMatch?.group(1)?.trim() ?? '';
-    final displayText = unit.isNotEmpty ? '$qtyStr $unit' : '$qtyStr $name';
+    final displayText = food.displayAtQuantity(qtyStr);
 
     return Dismissible(
       key: ValueKey(

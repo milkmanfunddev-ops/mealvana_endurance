@@ -14,6 +14,8 @@ import '../../../../shared/utils/search_strategy.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../../features/coach_mode/presentation/providers/coach_activity_detail_controller.dart';
+import '../../../../shared/services/sync/sync_coordinator.dart';
+import '../../../../features/user_foods/data/user_foods_repository.dart';
 
 part 'swap_food_controller.g.dart';
 
@@ -55,6 +57,9 @@ class SwapFoodState {
     this.openFoodFactsResults = const [],
     this.isSearchingOpenFoodFacts = false,
     this.userFoodIds = const {},
+    this.userFoods = const [],
+    this.allUserFoods = const [],
+    this.isMyFoodsExpanded = false,
   });
 
   final List<Food>
@@ -69,6 +74,9 @@ class SwapFoodState {
   openFoodFactsResults; // Open Food Facts search results (FoodSearchResult)
   final bool isSearchingOpenFoodFacts;
   final Set<String> userFoodIds; // Set of food IDs that are user-created foods
+  final List<Food> userFoods; // Category-filtered user foods (default) or search-filtered (during search)
+  final List<Food> allUserFoods; // All user foods unfiltered (for search)
+  final bool isMyFoodsExpanded; // Collapse/expand state for My Foods section
 
   SwapFoodState copyWith({
     List<Food>? recommendations,
@@ -82,6 +90,9 @@ class SwapFoodState {
     List<dynamic>? openFoodFactsResults,
     bool? isSearchingOpenFoodFacts,
     Set<String>? userFoodIds,
+    List<Food>? userFoods,
+    List<Food>? allUserFoods,
+    bool? isMyFoodsExpanded,
   }) {
     return SwapFoodState(
       recommendations: recommendations ?? this.recommendations,
@@ -97,6 +108,9 @@ class SwapFoodState {
       isSearchingOpenFoodFacts:
           isSearchingOpenFoodFacts ?? this.isSearchingOpenFoodFacts,
       userFoodIds: userFoodIds ?? this.userFoodIds,
+      userFoods: userFoods ?? this.userFoods,
+      allUserFoods: allUserFoods ?? this.allUserFoods,
+      isMyFoodsExpanded: isMyFoodsExpanded ?? this.isMyFoodsExpanded,
     );
   }
 }
@@ -141,15 +155,33 @@ class SwapFoodController extends _$SwapFoodController {
 
   Future<SwapFoodState> _loadFoodsForSwapping(SwapFoodParams params) async {
     try {
-      // Get current user's device ID and preferences
+      // Get current user's ID — uses Supabase auth session to find the correct
+      // local profile, matching how saveUserFood() stores the user_id.
       final authService = ref.read(authServiceProvider);
       final currentUser = await authService.getCurrentUser();
       final userId = currentUser?.id ?? 'unknown';
 
+      // Ensure user_foods are synced from remote (pulls down after re-login)
+      try {
+        final userFoodsRepo = await ref.read(userFoodsRepositoryProvider.future);
+        await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
+          'user_foods',
+          userId,
+          repository: userFoodsRepo,
+        );
+      } catch (e) {
+        _logger.warning(
+          'User foods sync failed, continuing with cached data',
+          context: 'SwapFoodController',
+          data: {'error': e.toString()},
+        );
+      }
+
       // Load user preferences
       final preferences = await authService.getFoodPreferences(userId) ?? {};
 
-      // Use recommendation service to get smart recommendations
+      // Use recommendation service to get smart recommendations (generic foods only)
+      // User foods are shown separately in the "My Foods" section
       final recommendationService = ref.read(foodRecommendationServiceProvider);
 
       final recommendations = await recommendationService.getRecommendations(
@@ -160,10 +192,10 @@ class SwapFoodController extends _$SwapFoodController {
             .category, // Always pass category for both add and swap scenarios
         preferences: preferences,
         maxResults: 10,
-        userId: userId,
+        // Don't pass userId - user foods are shown in "My Foods" section instead
       );
 
-      // Load all foods for search (generic + user foods) and collect user food IDs
+      // Load user foods separately for the "My Foods" section
       final userFoodService = ref.read(userFoodCrudServiceProvider);
       final userFoods = await userFoodService.getUserFoods(userId);
       final userFoodIds = userFoods.map((f) => f.id).toSet();
@@ -177,6 +209,8 @@ class SwapFoodController extends _$SwapFoodController {
         allFoodsForSearch: allFoods,
         preferences: preferences,
         userFoodIds: userFoodIds,
+        userFoods: userFoods, // Show all user foods regardless of category
+        allUserFoods: userFoods,
       );
     } catch (e) {
       _logger.error(
@@ -301,13 +335,22 @@ class SwapFoodController extends _$SwapFoodController {
     );
   }
 
+  /// Toggle the My Foods section expanded/collapsed state
+  void toggleMyFoodsExpanded() {
+    final currentState = state.value;
+    if (currentState == null) return;
+    state = AsyncValue.data(
+      currentState.copyWith(isMyFoodsExpanded: !currentState.isMyFoodsExpanded),
+    );
+  }
+
   /// Update search query and filter foods
   void updateSearch(String query) {
     final currentState = state.value;
     if (currentState == null) return;
 
     if (query.isEmpty) {
-      // No search - show recommendations
+      // No search - show recommendations, reset user foods to category-filtered
       _searchStrategy.cancelAutoSearch();
       state = AsyncValue.data(
         currentState.copyWith(
@@ -315,6 +358,8 @@ class SwapFoodController extends _$SwapFoodController {
           searchResults: currentState.recommendations,
           isSearching: false,
           openFoodFactsResults: [], // Clear OpenFoodFacts results
+          userFoods: currentState.allUserFoods, // Show all user foods regardless of category
+          isMyFoodsExpanded: false,
           // Keep selected food when clearing search
         ),
       );
@@ -341,10 +386,25 @@ class SwapFoodController extends _$SwapFoodController {
         return _matchesSearchTokens(searchText, queryTokens);
       }).toList();
 
+      // Filter user foods by search query (no category filter during search)
+      final filteredUserFoods = currentState.allUserFoods.where((food) {
+        final searchText = _normalizeSearchText(
+          [food.name, food.displayName, food.displayNamePlural, food.description, food.productTypeId]
+              .whereType<String>().join(' '),
+        );
+        return _matchesSearchTokens(searchText, queryTokens);
+      }).toList();
+
+      // Remove user food IDs from general search results to avoid duplicates
+      final filteredUserFoodIds = filteredUserFoods.map((f) => f.id).toSet();
+      final deduplicatedFiltered = filtered
+          .where((f) => !filteredUserFoodIds.contains(f.id))
+          .toList();
+
       // Apply preference-based sorting to search results
       final recommendationService = ref.read(foodRecommendationServiceProvider);
       final sortedResults = recommendationService.sortByPreferences(
-        filtered,
+        deduplicatedFiltered,
         currentState.preferences,
         maxResults: 20, // Allow more results for search
       );
@@ -356,21 +416,12 @@ class SwapFoodController extends _$SwapFoodController {
           isSearching: true,
           clearSelectedFood:
               true, // Clear selected food when starting new search
+          userFoods: filteredUserFoods,
+          isMyFoodsExpanded: filteredUserFoods.isNotEmpty,
         ),
       );
 
-      // Use search strategy to determine if we should auto-search OpenFoodFacts
-      if (_searchStrategy.shouldAutoSearch(sortedResults.length)) {
-        _searchStrategy.scheduleAutoSearch(
-          query: query,
-          getCurrentQuery: () => state.value?.searchQuery ?? '',
-          onSearch: (q) {
-            if (_isMounted) {
-              searchOpenFoodFacts(q);
-            }
-          },
-        );
-      }
+      // No auto-search of OpenFoodFacts - user taps the button manually
     }
   }
 
@@ -701,8 +752,9 @@ class SwapFoodController extends _$SwapFoodController {
   ///
   /// This method is called after adding a new user food (barcode scan or OpenFoodFacts import).
   /// If [selectAfterRefresh] is provided, the food will be selected after the rebuild completes.
+  /// If [expandMyFoods] is true, the My Foods section will be expanded after rebuild.
   /// This prevents race conditions where the food is selected before the state is rebuilt.
-  Future<void> refreshFoods({Food? selectAfterRefresh}) async {
+  Future<void> refreshFoods({Food? selectAfterRefresh, bool expandMyFoods = false}) async {
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -725,6 +777,16 @@ class SwapFoodController extends _$SwapFoodController {
     // Select food after rebuild if provided
     if (selectAfterRefresh != null && _isMounted) {
       selectFood(selectAfterRefresh);
+    }
+
+    // Expand My Foods section after rebuild if requested
+    if (expandMyFoods && _isMounted) {
+      final freshState = state.value;
+      if (freshState != null) {
+        state = AsyncValue.data(
+          freshState.copyWith(isMyFoodsExpanded: true),
+        );
+      }
     }
   }
 }

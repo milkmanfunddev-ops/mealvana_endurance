@@ -6,7 +6,6 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
-import '../../../shared/services/sync/immediate_remote_write_service.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../auth/domain/user_preferences.dart';
 
@@ -19,13 +18,11 @@ class FoodPreferencesRepository with SyncableRepository {
     required this.database,
     required this.supabase,
     required this.sentry,
-    required this.immediateRemoteWriteService,
   });
 
   final AppDatabase database;
   final SupabaseClient supabase;
   final SentryReporter sentry;
-  final ImmediateRemoteWriteService immediateRemoteWriteService;
 
   // ========== SyncableRepository Implementation ==========
 
@@ -195,15 +192,18 @@ class FoodPreferencesRepository with SyncableRepository {
       // For local user edits, attempt immediate remote write.
       // Skip for mergeMode sync pulls to avoid upload loops.
       if (!mergeMode) {
-        unawaited(
-          immediateRemoteWriteService.run(
-            repository: repositoryKey,
-            operation: 'upsert_preferences',
-            recordId: userId,
-            method: 'UPSERT',
-            write: () => _uploadAllPreferencesForUser(userId),
-          ),
-        );
+        unawaited(() async {
+          try {
+            await _uploadAllPreferencesForUser(userId);
+          } catch (e, stackTrace) {
+            sentry.addBreadcrumb(
+              message: 'Immediate upload failed; record stays dirty for retry',
+              category: 'sync',
+              data: {'operation': 'upsert_preferences', 'recordId': userId},
+            );
+            await sentry.reportNetworkError(e, url: 'supabase:food_preferences:upsert', method: 'UPSERT', stackTrace: stackTrace);
+          }
+        }());
       }
 
       sentry.addBreadcrumb(
@@ -409,6 +409,5 @@ Future<FoodPreferencesRepository> foodPreferencesRepository(Ref ref) async {
     database: database,
     supabase: supabase,
     sentry: sentry,
-    immediateRemoteWriteService: ref.watch(immediateRemoteWriteServiceProvider),
   );
 }

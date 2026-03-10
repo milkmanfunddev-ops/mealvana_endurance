@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,7 +10,6 @@ import '../../../features/carb_loading/application/carb_loading_food_sync_servic
 import '../../../shared/services/app_external_deps.dart';
 import '../../../features/calendar/presentation/providers/calendar_controller.dart';
 
-import 'duplicate_cleanup_service.dart';
 import 'entity_sync/entity_sync.dart';
 
 part 'data_sync_service.g.dart';
@@ -25,7 +23,6 @@ DataSyncService dataSyncService(Ref ref) {
     logger: ref.read(appLoggerProvider),
     foodRepository: ref.read(foodRepositoryProvider),
     carbLoadingFoodSyncService: ref.read(carbLoadingFoodSyncServiceProvider),
-    duplicateCleanupService: ref.read(duplicateCleanupServiceProvider),
     activitySyncHandler: ref.read(activitySyncHandlerProvider),
     eventSyncHandler: ref.read(eventSyncHandlerProvider),
     carbLoadingSyncHandler: ref.read(carbLoadingSyncHandlerProvider),
@@ -48,7 +45,6 @@ class DataSyncService {
     required AppLogger logger,
     required FoodRepository foodRepository,
     required CarbLoadingFoodSyncService carbLoadingFoodSyncService,
-    required DuplicateCleanupService duplicateCleanupService,
     required ActivitySyncHandler activitySyncHandler,
     required EventSyncHandler eventSyncHandler,
     required CarbLoadingSyncHandler carbLoadingSyncHandler,
@@ -61,7 +57,6 @@ class DataSyncService {
        _logger = logger,
        _foodRepository = foodRepository,
        _carbLoadingFoodSyncService = carbLoadingFoodSyncService,
-       _duplicateCleanupService = duplicateCleanupService,
        _activitySyncHandler = activitySyncHandler,
        _eventSyncHandler = eventSyncHandler,
        _carbLoadingSyncHandler = carbLoadingSyncHandler,
@@ -75,7 +70,6 @@ class DataSyncService {
   final AppLogger _logger;
   final FoodRepository _foodRepository;
   final CarbLoadingFoodSyncService _carbLoadingFoodSyncService;
-  final DuplicateCleanupService _duplicateCleanupService;
 
   // Entity sync handlers
   final ActivitySyncHandler _activitySyncHandler;
@@ -101,19 +95,7 @@ class DataSyncService {
       // STEP 0: CRITICAL - Sync user profile first to prevent FK violations
       await _userSyncHandler.syncUsers(userId);
 
-      // STEP 1: CRITICAL - Upload dirty records FIRST to prevent data loss
-      final uploadResults = await uploadDirtyRecords(userId);
-      if (_hasUploadFailures(uploadResults)) {
-        final failedTables = _failedUploadTables(uploadResults);
-        _logger.warning(
-          'Blocking download because dirty upload failed',
-          context: 'DATA_SYNC',
-          data: {'userId': userId, 'failedTables': failedTables},
-        );
-        return false;
-      }
-
-      // STEP 2: Try edge function for fast parallel download
+      // STEP 1: Try edge function for fast parallel download
       final edgeFunctionSuccess = await _tryEdgeFunctionSync(
         userId,
         lastSyncTimestamp,
@@ -124,7 +106,7 @@ class DataSyncService {
         return true;
       }
 
-      // STEP 3: Fallback to client-side download if edge function fails
+      // STEP 2: Fallback to client-side download if edge function fails
       await _clientSideDownload(userId);
 
       // Update timestamp on successful client-side sync too
@@ -159,220 +141,6 @@ class DataSyncService {
   /// Ensure user profile exists in Supabase before syncing dependent records.
   Future<void> syncUsers(String userId) async {
     await _userSyncHandler.syncUsers(userId);
-  }
-
-  /// Upload dirty records to Supabase (upload-first pattern).
-  /// Returns map of table -> upload success for monitoring/retry logic.
-  Future<Map<String, bool>> uploadDirtyRecords(String userId) async {
-    final uploadResults = <String, bool>{};
-
-    try {
-      await _database.ensureUserDataSyncColumns();
-
-      // Clean duplicates from Drift before collecting records
-      await _duplicateCleanupService.cleanAllDuplicates(userId);
-
-      // Collect dirty records from all tables
-      final dirtyUserProfiles =
-          await (_database.select(_database.userProfilesTable)..where(
-                (tbl) => tbl.needsUpload.equals(true) & tbl.id.equals(userId),
-              ))
-              .get();
-      final dirtyUserProfile = dirtyUserProfiles.isNotEmpty
-          ? dirtyUserProfiles.first
-          : null;
-
-      final dirtyActivities =
-          await (_database.select(_database.activitiesTable)..where(
-                (tbl) =>
-                    tbl.needsUpload.equals(true) & tbl.userId.equals(userId),
-              ))
-              .get();
-
-      final dirtyEvents =
-          await (_database.select(_database.eventsTable)..where(
-                (tbl) =>
-                    tbl.needsUpload.equals(true) & tbl.userId.equals(userId),
-              ))
-              .get();
-
-      final dirtyCarbLoadingPlans =
-          await (_database.select(_database.carbLoadingPlansTable)..where(
-                (tbl) =>
-                    tbl.needsUpload.equals(true) & tbl.userId.equals(userId),
-              ))
-              .get();
-
-      final dirtyCarbLoadingDays =
-          await (_database.select(_database.carbLoadingDaysTable).join([
-                innerJoin(
-                  _database.carbLoadingPlansTable,
-                  _database.carbLoadingPlansTable.id.equalsExp(
-                    _database.carbLoadingDaysTable.carbLoadingPlanId,
-                  ),
-                ),
-              ])..where(
-                _database.carbLoadingDaysTable.needsUpload.equals(true) &
-                    _database.carbLoadingPlansTable.userId.equals(userId),
-              ))
-              .map((row) => row.readTable(_database.carbLoadingDaysTable))
-              .get();
-
-      // User foods use raw queries
-      List<QueryRow> dirtyUserFoods = const [];
-      try {
-        dirtyUserFoods = await _database
-            .customSelect(
-              'SELECT * FROM user_foods WHERE needs_upload = 1 AND user_id = ?',
-              variables: [Variable.withString(userId)],
-            )
-            .get();
-      } catch (e) {
-        // Table might not exist yet
-      }
-
-      final dirtyFeedback = await _database
-          .customSelect(
-            'SELECT * FROM feedback WHERE needs_upload = 1 AND device_id = ?',
-            variables: [Variable.withString(userId)],
-          )
-          .get();
-
-      // Check if there are any dirty records for edge function
-      final hasEdgeFunctionRecords =
-          dirtyActivities.isNotEmpty ||
-          dirtyEvents.isNotEmpty ||
-          dirtyCarbLoadingPlans.isNotEmpty ||
-          dirtyCarbLoadingDays.isNotEmpty ||
-          dirtyUserFoods.isNotEmpty ||
-          dirtyFeedback.isNotEmpty;
-
-      // If nothing to upload via edge function, handle user profile separately
-      if (!hasEdgeFunctionRecords) {
-        if (dirtyUserProfile != null) {
-          try {
-            await _userSyncHandler.uploadUserProfile(dirtyUserProfile);
-            uploadResults['users'] = true;
-            await _userSyncHandler.uploadFoodPreferences(dirtyUserProfile.id);
-            uploadResults['food_preferences'] = true;
-          } catch (e, stackTrace) {
-            _logger.error(
-              'Failed to upload user profile',
-              context: 'DATA_SYNC',
-              error: e,
-              stackTrace: stackTrace,
-            );
-            uploadResults['users'] = false;
-          }
-        }
-        return uploadResults;
-      }
-
-      // CRITICAL: Ensure user exists in Supabase FIRST to satisfy FK constraints
-      // This checks if user exists remotely and uploads if not (regardless of dirty flag)
-      try {
-        await _userSyncHandler.syncUsers(userId);
-        uploadResults['users'] = true;
-
-        // Also upload dirty user profile if it has pending changes
-        if (dirtyUserProfile != null) {
-          await _userSyncHandler.uploadUserProfile(dirtyUserProfile);
-          await _userSyncHandler.uploadFoodPreferences(dirtyUserProfile.id);
-          uploadResults['food_preferences'] = true;
-        }
-      } catch (e, stackTrace) {
-        _logger.error(
-          'Failed to ensure user exists in Supabase (required for FK constraints)',
-          context: 'DATA_SYNC',
-          error: e,
-          stackTrace: stackTrace,
-        );
-        uploadResults['users'] = false;
-        // Don't continue with activities if user sync failed - FK errors are guaranteed
-        return uploadResults;
-      }
-
-      // Build request payload
-      final dirtyRecords = <String, dynamic>{};
-
-      if (dirtyActivities.isNotEmpty) {
-        dirtyRecords['activities'] = dirtyActivities
-            .map((a) => _activitySyncHandler.activityToJson(a))
-            .toList();
-      }
-
-      if (dirtyEvents.isNotEmpty) {
-        dirtyRecords['events'] = dirtyEvents
-            .map((e) => _eventSyncHandler.eventToJson(e))
-            .toList();
-      }
-
-      if (dirtyCarbLoadingPlans.isNotEmpty) {
-        dirtyRecords['carb_loading_plans'] = dirtyCarbLoadingPlans
-            .map((p) => _carbLoadingSyncHandler.carbLoadingPlanToJson(p))
-            .toList();
-      }
-
-      if (dirtyCarbLoadingDays.isNotEmpty) {
-        dirtyRecords['carb_loading_days'] = dirtyCarbLoadingDays
-            .map((d) => _carbLoadingSyncHandler.carbLoadingDayToJson(d))
-            .toList();
-      }
-
-      if (dirtyUserFoods.isNotEmpty) {
-        dirtyRecords['user_foods'] = dirtyUserFoods
-            .map((row) => row.data)
-            .toList();
-      }
-
-      if (dirtyFeedback.isNotEmpty) {
-        dirtyRecords['feedback'] = dirtyFeedback
-            .map((row) => row.data)
-            .toList();
-      }
-
-      // Call upload-all-data edge function
-      final response = await _supabase.functions.invoke(
-        'upload-all-data',
-        body: {'user_id': userId, 'dirty_records': dirtyRecords},
-      );
-
-      if (response.status != 200) {
-        throw Exception('Edge function returned status ${response.status}');
-      }
-
-      final data = response.data as Map<String, dynamic>;
-      final results = data['results'] as Map<String, dynamic>;
-
-      // Process results and clear needs_upload flags for successful uploads
-      for (final entry in results.entries) {
-        final tableName = entry.key;
-        final result = entry.value as Map<String, dynamic>;
-        final success = result['success'] as bool? ?? false;
-
-        uploadResults[tableName] = success;
-
-        if (success) {
-          await _clearNeedsUploadFlag(tableName, userId);
-        } else {
-          _logger.warning(
-            'Failed to upload $tableName',
-            context: 'DATA_SYNC',
-            data: {'error': result['error']},
-          );
-        }
-      }
-
-      return uploadResults;
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Upload via edge function failed',
-        context: 'DATA_SYNC',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
   }
 
   /// Detect if this is a fresh device (needs full sync).
@@ -755,76 +523,10 @@ class DataSyncService {
   // PRIVATE - HELPERS
   // ============================================================================
 
-  /// Clear needs_upload flag for successfully uploaded records.
-  Future<void> _clearNeedsUploadFlag(String tableName, String userId) async {
-    try {
-      switch (tableName) {
-        case 'activities':
-          await _database.customStatement(
-            'UPDATE activities SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
-            [userId],
-          );
-          break;
-        case 'events':
-          await _database.customStatement(
-            'UPDATE events SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
-            [userId],
-          );
-          break;
-        case 'carb_loading_plans':
-          await _database.customStatement(
-            'UPDATE carb_loading_plans SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
-            [userId],
-          );
-          break;
-        case 'carb_loading_days':
-          await _database.customStatement(
-            '''UPDATE carb_loading_days
-               SET needs_upload = 0
-               WHERE carb_loading_plan_id IN (
-                 SELECT id FROM carb_loading_plans WHERE user_id = ?
-               ) AND needs_upload = 1''',
-            [userId],
-          );
-          break;
-        case 'user_foods':
-          await _database.customStatement(
-            'UPDATE user_foods SET needs_upload = 0 WHERE user_id = ? AND needs_upload = 1',
-            [userId],
-          );
-          break;
-        case 'feedback':
-          await _database.customStatement(
-            'UPDATE feedback SET needs_upload = 0 WHERE device_id = (SELECT device_id FROM users WHERE id = ?) AND needs_upload = 1',
-            [userId],
-          );
-          break;
-      }
-    } catch (e) {
-      _logger.error(
-        'Failed to clear needs_upload flag',
-        context: 'DATA_SYNC',
-        error: e,
-        data: {'table': tableName},
-      );
-    }
-  }
-
   /// Invalidate calendar-related providers to refresh UI after sync.
   void _invalidateCalendarProviders() {
     _ref.invalidate(calendarControllerProvider);
     _ref.invalidate(allEventsControllerProvider);
     _ref.invalidate(nextUpcomingEventProvider);
-  }
-
-  bool _hasUploadFailures(Map<String, bool> uploadResults) {
-    return uploadResults.values.any((success) => !success);
-  }
-
-  List<String> _failedUploadTables(Map<String, bool> uploadResults) {
-    return uploadResults.entries
-        .where((entry) => !entry.value)
-        .map((entry) => entry.key)
-        .toList(growable: false);
   }
 }

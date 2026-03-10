@@ -123,14 +123,12 @@ class _UnassignedTrayWidgetState extends State<UnassignedTrayWidget> {
           final isSelected = widget.selectedFoodId == item.foodId;
           final food = item.food;
           final qtyStr = _formatQuantity(item.remainingQuantity);
-          final name = food.displayName ?? food.name;
 
-          // Get unit from original quantity string
-          final unitMatch =
-              RegExp(r'^[\d.]+\s*(.*)$').firstMatch(food.quantity);
-          final unit = unitMatch?.group(1)?.trim() ?? '';
-          final displayText =
-              unit.isNotEmpty ? '$qtyStr $unit $name' : '$qtyStr $name';
+          final displayText = food.displayAtQuantity(qtyStr);
+
+          // Build separate drag label using step size (what's actually being placed)
+          final dragQtyStr = _formatQuantity(item.stepSize);
+          final dragText = food.displayAtQuantity(dragQtyStr);
 
           final timingCategory =
               ByHourApportionmentService.resolveTimingCategory(food);
@@ -160,7 +158,7 @@ class _UnassignedTrayWidgetState extends State<UnassignedTrayWidget> {
                     border: Border.all(color: widget.sectionColor),
                   ),
                   child: Text(
-                    displayText,
+                    dragText,
                     style: AppTextStyles.bodySmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,

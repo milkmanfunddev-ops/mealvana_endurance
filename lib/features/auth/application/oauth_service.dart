@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show kReleaseMode, kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -56,35 +56,17 @@ class OAuthService extends _$OAuthService {
       throw UnsupportedError('Native Google Sign-In not supported on web. Use Supabase web OAuth flow.');
     }
 
-    // Web Client ID for Supabase OAuth - used as serverClientId to get ID token
-    // This is the OAuth 2.0 Client ID for Web Application from Google Cloud Console
+    // Web Client ID - used as serverClientId to get ID token for Supabase
     const webClientId = '171527646530-d1hr8a9ja4ucqk28cipcfnlo288qhccn.apps.googleusercontent.com';
 
-    // Android Debug Client ID - registered with debug keystore SHA-1
-    // SHA-1: 7F:E9:43:B8:CE:F8:13:E9:EA:4E:A0:C9:5A:3D:87:E8:25:04:80:B9
-    const androidDebugClientId = '171527646530-h7omr4i3lgseljh598sdfc1seiqd5eqj.apps.googleusercontent.com';
-
-    // Android Release Client ID - registered with release keystore SHA-1
+    // Android Client ID for prod flavor (Mealvana Android Release)
+    // Prod flavor always signs with the release keystore (see build.gradle.kts),
+    // so one OAuth client covers both debug and release builds.
     // SHA-1: AB:86:C5:24:4D:DE:3E:75:40:65:B4:1D:7F:FC:61:CB:10:05:7A:0D
-    const androidReleaseClientId = '171527646530-5sjjs6che5nsl7nom9l8cfh64087aitb.apps.googleusercontent.com';
-
-    // kReleaseMode is true for release builds, false for debug/profile
-    // This is set automatically by Flutter based on build mode
-    const isReleaseBuild = kReleaseMode;
-
-    // Platform-specific client ID configuration:
-    // - iOS: Pass null to let plugin read GIDClientID from Info.plist
-    // - Android Debug: Use debug client ID (matches debug keystore SHA-1)
-    // - Android Release: Use release client ID (matches release keystore SHA-1)
-    //
-    // serverClientId is the Web client ID - required to get an ID token that
-    // Supabase can verify on the backend
-    final androidClientId = isReleaseBuild ? androidReleaseClientId : androidDebugClientId;
+    const androidClientId = '171527646530-5sjjs6che5nsl7nom9l8cfh64087aitb.apps.googleusercontent.com';
 
     _logger.info('Initializing Google Sign-In', context: 'OAUTH_NATIVE', data: {
       'platform': PlatformInfo.operatingSystem,
-      'is_release_build': isReleaseBuild,
-      'using_client_id': PlatformInfo.isAndroid ? (isReleaseBuild ? 'release' : 'debug') : 'ios_plist',
     });
 
     _googleSignIn = GoogleSignIn(

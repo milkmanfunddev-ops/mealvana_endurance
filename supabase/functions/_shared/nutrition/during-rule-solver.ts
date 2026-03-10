@@ -96,27 +96,44 @@ function categorizeFoods(foods: Food[]): CategorizedFoods {
 // Selection Helpers
 // ============================================================================
 
-/** Sort foods by preference score (liked > willing > neutral), then by carbs descending */
+/** Cryptographically secure random integer in [0, max).
+ *  Uses crypto.getRandomValues() instead of Math.random() because
+ *  Deno/Supabase edge functions may seed Math.random() deterministically. */
+function secureRandomInt(max: number): number {
+  if (max <= 1) return 0;
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  return array[0] % max;
+}
+
+/** Sort foods by preference score (liked > willing > neutral).
+ *  No secondary tiebreaker — foods with equal preference are shuffled
+ *  randomly so that gels, chews, and drink_mix get equal selection chance. */
 function sortByPreference(foods: Food[]): Food[] {
   return [...foods].sort((a, b) => {
-    if (b.preference_score !== a.preference_score) {
-      return b.preference_score - a.preference_score;
-    }
-    return b.per_serving.carbs_g - a.per_serving.carbs_g;
+    return b.preference_score - a.preference_score;
   });
 }
 
-/** Pick a food using weighted random among equally-preferred items.
+/** Pick a food using random selection among equally-preferred items.
  *  Preserves preference ordering (liked > willing > neutral) but randomizes
- *  among foods with the same preference score for variety. */
-function pickWeighted(foods: Food[]): Food | null {
+ *  among foods with the same preference score for variety.
+ *  Uses crypto.getRandomValues() for true randomness in edge functions. */
+function pickWeighted(foods: Food[], label?: string): Food | null {
   if (foods.length === 0) return null;
   if (foods.length === 1) return foods[0];
   const sorted = sortByPreference(foods);
   const bestScore = sorted[0].preference_score;
   const topTier = sorted.filter(f => f.preference_score === bestScore);
   if (topTier.length > 1) {
-    return topTier[Math.floor(Math.random() * topTier.length)];
+    const idx = secureRandomInt(topTier.length);
+    const picked = topTier[idx];
+    if (label) {
+      console.log(
+        `[DURING-RULES] ${label}: picked ${picked.name} (${idx + 1}/${topTier.length} candidates: ${topTier.map(f => f.name).join(', ')})`
+      );
+    }
+    return picked;
   }
   return sorted[0];
 }
@@ -214,13 +231,13 @@ export function generateDuringPhaseRuleBased(
   // Running: ONE of gel/chew/drink_mix (mixing constraint)
   // Cycling: can combine freely
 
-  const primaryCarb = pickWeighted(categorized.primary_carb);
+  const primaryCarb = pickWeighted(categorized.primary_carb, 'Primary carb selection');
 
   if (primaryCarb && carbTarget > 0) {
     // Determine carb share for primary source
     // If sports drink is also selected, split: 70% primary, 30% sports drink
-    const sportsDrink = pickWeighted(categorized.sports_drink);
-    const hasSportsDrink = sportsDrink !== null && sportsDrink.per_serving.carbs_g > 0;
+    const sportsDrinkPeek = pickWeighted(categorized.sports_drink);
+    const hasSportsDrink = sportsDrinkPeek !== null && sportsDrinkPeek.per_serving.carbs_g > 0;
     const primaryShare = hasSportsDrink ? 0.7 : 1.0;
 
     const primaryCarbTarget = carbTarget * primaryShare;
@@ -239,7 +256,7 @@ export function generateDuringPhaseRuleBased(
   }
 
   // ---- STEP 2: Sports drink (remaining carb share + fluid) ----
-  const sportsDrink = pickWeighted(categorized.sports_drink);
+  const sportsDrink = pickWeighted(categorized.sports_drink, 'Sports drink selection');
   if (sportsDrink && carbTarget > 0) {
     const remainingCarbs = Math.max(0, carbTarget - carbsAssigned);
 
@@ -264,7 +281,7 @@ export function generateDuringPhaseRuleBased(
     // Add bike solids for sustained energy; use remaining carb gap
     const remainingCarbs = Math.max(0, carbTarget - carbsAssigned);
     if (remainingCarbs > 10) {
-      const bikeSolid = pickWeighted(categorized.bike_solid);
+      const bikeSolid = pickWeighted(categorized.bike_solid, 'Bike solid selection');
       if (bikeSolid && bikeSolid.per_serving.carbs_g > 0) {
         let bsServings = remainingCarbs / bikeSolid.per_serving.carbs_g;
         bsServings = clampServings(bsServings, bikeSolid);
@@ -285,7 +302,7 @@ export function generateDuringPhaseRuleBased(
   // ---- STEP 4: Hydration (water to meet fluid target) ----
   const remainingFluid = Math.max(0, fluidTarget - fluidAssigned);
   if (remainingFluid > 0) {
-    const waterFood = pickWeighted(categorized.hydration);
+    const waterFood = pickWeighted(categorized.hydration, 'Hydration selection');
     if (waterFood && waterFood.per_serving.water_ml > 0) {
       let waterServings = remainingFluid / waterFood.per_serving.water_ml;
       waterServings = clampServings(waterServings, waterFood);

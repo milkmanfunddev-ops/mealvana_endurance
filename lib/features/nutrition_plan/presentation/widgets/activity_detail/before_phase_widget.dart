@@ -21,6 +21,7 @@ class BeforePhaseWidget extends StatefulWidget {
     required this.onUpdateQuantity,
     required this.onScaleSubPhase,
     required this.onAddFood,
+    this.categoryPrefix = 'before_run',
     this.showSwipeHint = false,
   });
 
@@ -38,6 +39,7 @@ class BeforePhaseWidget extends StatefulWidget {
   final void Function(int subPhaseIndex, int foodIndex, double newQuantity)
   onScaleSubPhase;
   final void Function(String category) onAddFood;
+  final String categoryPrefix;
   final bool showSwipeHint;
 
   @override
@@ -131,7 +133,7 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
     return MacroSummaryRow(
       foods: allFoods,
       section: aggregatedSection,
-      category: 'before_run',
+      category: widget.categoryPrefix,
       useImperial: widget.useImperial,
     );
   }
@@ -234,7 +236,7 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                     final foodIndex = entry.key;
                     final food = entry.value;
                     // Use sub-phase-specific category to target the correct sub-phase
-                    final subCategory = 'before_run:${subPhase.subPhaseType}';
+                    final subCategory = '${widget.categoryPrefix}:${subPhase.subPhaseType}';
                     return Padding(
                       padding: EdgeInsets.only(
                         bottom: foodIndex < subPhase.foodItems.length - 1
@@ -249,7 +251,7 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                         onDelete: () =>
                             widget.onDeleteFood(food.id, subCategory),
                         onQuantityChange: (newQuantity) => widget
-                            .onScaleSubPhase(index, foodIndex, newQuantity),
+                            .onUpdateQuantity(food.id, subCategory, newQuantity),
                         showSwipeHint:
                             widget.showSwipeHint &&
                             index == 0 &&
@@ -261,7 +263,7 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                   const SizedBox(height: AppSpacing.sm),
                   KyleAddFoodButton(
                     text: 'ADD FOOD',
-                    onPressed: () => widget.onAddFood('before_run:${subPhase.subPhaseType}'),
+                    onPressed: () => widget.onAddFood('${widget.categoryPrefix}:${subPhase.subPhaseType}'),
                   ),
                 ],
               ),

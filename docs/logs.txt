@@ -1,30 +1,165 @@
-Launching lib/main_dev.dart on iPhone 15 Pro Max in debug mode...
-Xcode build done.                                           16.4s
-Connecting to VM Service at ws://127.0.0.1:57693/S-EbdXX8c3g=/ws
-Connected to the VM Service.
-flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-flutter: ✅ Schema validation passed (22 tables verified)
-flutter: PushNotificationService: Initialized with app ID: 335e597f...
-flutter: PushNotificationService: Logged in user: ED3A34FB-EC33-451A-8B15-97967EF2DDCF
-flutter: PushNotificationService: Permission granted
-flutter: 🔄 Integration sync skipped (training_peaks) - data is fresh
-flutter: 🔄 Integration sync skipped (training_peaks) - data is fresh
-flutter: 🔄 Integration sync skipped (training_peaks) - data is fresh
-flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ FunctionException(status: 503, details: {code: BOOT_ERROR, message: Function failed to start (please check logs)}, reasonPhrase: Service Unavailable)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)\^[[0m
-flutter: \^[[38;5;196m│ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)\^[[0m
-flutter: \^[[38;5;196m│ #2   NutritionPlanService.generatePlanFromMacrosV2 (package:mealvana_endurance/features/nutrition_plan/application/nutrition_plan_service.dart:532:15)\^[[0m
-flutter: \^[[38;5;196m│ #3   <asynchronous suspension>\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ 05:30:48.200 (+0:00:27.710775)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ [NUTRITION_PLAN_SERVICE] V2 plan generation failed, falling back to v1\^[[0m
-flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
-flutter: \^[[38;5;196m│ 05:30:49.229 (+0:00:28.740367)\^[[0m
-flutter: \^[[38;5;196m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\^[[0m
-flutter: \^[[38;5;196m│ ⛔ [LLMNutritionPlanService] LLM Response Validation: Food Items vs Macro Targets Comparison\^[[0m
-flutter: \^[[38;5;196m│ ⛔ Data: {macro_targets: {total_sodium_mg: 3904, total_fluids_ml: 5437.0, total_carbs_g: 538}, food_items_actual: {total_sodium_mg: 4168, total_fluids_ml: 3106.4, total_carbs_g: 584}, discrepancies: {sodium_difference_mg: 264, fluids_difference_ml: -2330.6, carbs_difference_g: 46}, percentage_match: {sodium_percentage: 107, fluids_percentage: 57, carbs_percentage: 109}}\^[[0m
-flutter: \^[[38;5;196m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\^[[0m
+Restarted application in 2,081ms.
+W/Sentry  (27698): Sentry has been already initialized. Previous configuration will be overwritten.
+D/sentry-native(27698): shutting down backend
+W/Sentry  (27698): Failed to shutdown the async connection async sender  within 0 ms. Trying to force it now.
+W/sentry-native(27698): sentry_close() called, but options was empty
+I/sentry-native(27698): using database path "/data/data/com.milkman.mealvanaendurance/cache/sentry/9f5b15b7ae6f78a1b5056948b8ce2792f3498c99/.sentry-native"
+D/sentry-native(27698): starting backend
+D/sentry-native(27698): using existing signal stack (size: 32768, flags: 0)
+D/sentry-native(27698): processing and pruning old runs
+I/flutter (27698): supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+D/Sentry  (27698): Failed to delete '/data/user/0/com.milkman.mealvanaendurance/cache/sentry/9f5b15b7ae6f78a1b5056948b8ce2792f3498c99/1c5e1215919d469f88387d4a03970753.envelope' after trying to capture it
+I/flutter (27698): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (27698): │ 12:41:38.595 (+0:00:02.125613)
+I/flutter (27698): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (27698): │ ⚠️ [VERSION_CHECK] Schema resync required: local=4, remote=3
+I/flutter (27698): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (27698): ✅ Schema validation passed (22 tables verified)
+I/flutter (27698): WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
+I/flutter (27698): Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+I/flutter (27698): Here is the stacktrace from when the database was opened a second time:
+I/flutter (27698): #0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+I/flutter (27698): #1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+I/flutter (27698): #2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+I/flutter (27698): #3      new _$AppDatabase (package:mealvana_endurance/shared/database/app_database.g.dart:26556:36)
+I/flutter (27698): #4      new AppDatabase (package:mealvana_endurance/shared/database/app_database.dart:121:19)
+I/flutter (27698): #5      appDatabaseProvider.<anonymous closure> (package:mealvana_endurance/shared/database/database_provider.dart:10:10)
+I/flutter (27698): #6      Provider.create (package:riverpod/src/providers/provider.dart:59:36)
+I/flutter (27698): #7      $ProviderElement.create (package:riverpod/src/providers/provider.dart:343:32)
+I/flutter (27698): #8      ProviderElement.buildState (package:riverpod/src/core/element.dart:633:28)
+I/flutter (27698): #9      ProviderElement._performRebuild (package:riverpod/src/core/element.dart:548:5)
+I/flutter (27698): #10     ProviderElement.flush (package:riverpod/src/core/element.dart:595:7)
+I/flutter (27698): #11     $ProviderBaseImpl._addListener (package:riverpod/src/core/provider/provider.dart:117:24)
+I/flutter (27698): #12     ProviderContainer.listen (package:riverpod/src/core/provider_container.dart:954:26)
+I/flutter (27698): #13     ProviderContainer.read (package:riverpod/src/core/provider_container.dart:911:17)
+I/flutter (27698): #14     Ref.read (package:riverpod/src/core/ref.dart:481:30)
+I/flutter (27698): #15     AppStartupService.initializeDatabase (package:mealvana_endurance/features/app_startup/application/app_startup_service.dart:44:22)
+I/flutter (27698): #16     AppStartup.build (package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart:129:24)
+I/flutter (27698): <asynchronous suspension>
+I/flutter (27698): #17     ElementWithFuture.handleFuture.<anonymous closure>.<anonymous closure> (package:riverpod/src/core/element.dart:220:9)
+I/flutter (27698): <asynchronous suspension>
+I/flutter (27698): This warning will only appear on debug builds.
+I/flutter (27698): PushNotificationService: Initialized with app ID: 335e597f...
+D/OneSignal(27698): [main] initWithContext(context: com.milkman.mealvanaendurance.MainActivity@e88b29f, appId: 335e597f-9862-4fa1-91f9-506d546ef953)
+D/OneSignal(27698): [main] initWithContext: SDK already initialized
+D/OneSignal(27698): [main] InAppMessagesManager.addLifecycleListener(listener: com.onesignal.flutter.OneSignalInAppMessages@3225763)
+D/OneSignal(27698): [main] InAppMessagesManager.addClickListener(listener: com.onesignal.flutter.OneSignalInAppMessages@3225763)
+D/OneSignal(27698): [main] NotificationsManager.addClickListener(handler: com.onesignal.flutter.OneSignalNotifications@5d18f60)
+D/OneSignal(27698): [main] login(externalId: BP4A.251205.006, jwtBearerToken: null)
+I/flutter (27698): PushNotificationService: Logged in user: BP4A.251205.006
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/OneSignal(27698): [main] NotificationsManager.addForegroundLifecycleListener(listener: com.onesignal.flutter.OneSignalNotifications@5d18f60)
+D/OneSignal(27698): [main] NotificationsManager.addPermissionObserver(observer: com.onesignal.flutter.OneSignalNotifications@5d18f60)
+I/flutter (27698): PushNotificationService: Permission granted
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+I/ImeTracker(27698): com.milkman.mealvanaendurance:1aacfa26: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController(27698): show(ime())
+D/InsetsController(27698): Setting requestedVisibleTypes to 511 (was 503)
+D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring on
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.view.ImeBackAnimationController@b287e6d
+D/VRI[MainActivity](27698): WindowInsets changed: ime:[0,0,0,953]
+I/libbinder.BpBinder(27698): onLastStrongRef automatically unlinking death recipients for descriptor: '(not cached)'
+I/ImeTracker(27698): com.milkman.mealvanaendurance:1aacfa26: onShown
+I/ImeTracker(27698): com.milkman.mealvanaendurance:8cac18c9: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController(27698): show(ime())
+I/ImeTracker(27698): com.milkman.mealvanaendurance:8cac18c9: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring on
+D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring off
+D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring on
+D/VRI[MainActivity](27698): WindowInsets changed: ime:[0,0,0,1085]
+I/ImeTracker(27698): system_server:68c78bd9: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
+I/ImeTracker(27698): com.milkman.mealvanaendurance:c188924b: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+D/InsetsController(27698): hide(ime())
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+D/InsetsController(27698): Setting requestedVisibleTypes to 503 (was 511)
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+D/VRI[MainActivity](27698): WindowInsets changed: ime:null
+I/ImeTracker(27698): system_server:493d6a11: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring off
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+I/DynamiteModule(27698): Considering local module com.google.mlkit.dynamite.barcode:10000 and remote module com.google.mlkit.dynamite.barcode:0
+I/DynamiteModule(27698): Selected local version of com.google.mlkit.dynamite.barcode
+D/Camera2PresenceSrc(27698): System onCameraUnavailable: 0
+D/Camera2PresenceSrc(27698): [FetchData] Refreshed camera list: CameraIdentifier{cameraIds=0}, CameraIdentifier{cameraIds=1}
+I/tflite  (27698): Replacing 43 out of 43 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 1 partitions for the whole graph.
+I/tflite  (27698): Replacing 35 out of 47 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 23 partitions for the whole graph.
+I/native  (27698): I0000 00:00:1773164550.937045   28348 oned_decoder_client.cc:696] barhopper::deep_learning::OnedDecoderClient is created successfully.
+E/BufferQueueProducer(27698): [ImageReader-1600x1200f22m6-27698-5](id:6c3200000007,api:4,p:1137,c:27698) queueBuffer: BufferQueue has been abandoned
+E/BufferQueueProducer(27698): [ImageReader-1600x1200f22m6-27698-5](id:6c3200000007,api:4,p:1137,c:27698) cancelBuffer: BufferQueue has been abandoned
+D/Camera2PresenceSrc(27698): System onCameraAvailable: 0
+D/Camera2PresenceSrc(27698): [FetchData] Refreshed camera list: CameraIdentifier{cameraIds=0}, CameraIdentifier{cameraIds=1}
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+D/Camera2PresenceSrc(27698): System onCameraAccessPrioritiesChanged.
+D/Camera2PresenceSrc(27698): [FetchData] Refreshed camera list: CameraIdentifier{cameraIds=0}, CameraIdentifier{cameraIds=1}
+D/Camera2PresenceSrc(27698): System onCameraAccessPrioritiesChanged.
+D/Camera2PresenceSrc(27698): [FetchData] Refreshed camera list: CameraIdentifier{cameraIds=0}, CameraIdentifier{cameraIds=1}
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+D/Camera2PresenceSrc(27698): System onCameraAccessPrioritiesChanged.
+D/Camera2PresenceSrc(27698): [FetchData] Refreshed camera list: CameraIdentifier{cameraIds=0}, CameraIdentifier{cameraIds=1}
+D/Camera2PresenceSrc(27698): System onCameraAccessPrioritiesChanged.
+D/Camera2PresenceSrc(27698): [FetchData] Refreshed camera list: CameraIdentifier{cameraIds=0}, CameraIdentifier{cameraIds=1}
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+I/DynamiteModule(27698): Considering local module com.google.mlkit.dynamite.barcode:10000 and remote module com.google.mlkit.dynamite.barcode:0
+I/DynamiteModule(27698): Selected local version of com.google.mlkit.dynamite.barcode
+D/Camera2PresenceSrc(27698): System onCameraUnavailable: 0
+D/Camera2PresenceSrc(27698): [FetchData] Refreshed camera list: CameraIdentifier{cameraIds=0}, CameraIdentifier{cameraIds=1}
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+I/tflite  (27698): Replacing 43 out of 43 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 1 partitions for the whole graph.
+I/tflite  (27698): Replacing 35 out of 47 node(s) with delegate (TfLiteXNNPackDelegate) node, yielding 23 partitions for the whole graph.
+I/native  (27698): I0000 00:00:1773164596.207174   28354 oned_decoder_client.cc:696] barhopper::deep_learning::OnedDecoderClient is created successfully.
+E/BufferQueueProducer(27698): [ImageReader-1600x1200f22m6-27698-8](id:6c320000000a,api:4,p:1137,c:27698) cancelBuffer: BufferQueue has been abandoned
+D/Camera2PresenceSrc(27698): System onCameraAvailable: 0
+D/Camera2PresenceSrc(27698): [FetchData] Refreshed camera list: CameraIdentifier{cameraIds=0}, CameraIdentifier{cameraIds=1}
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+I/flutter (27698): 🟢 SWAP/ADD BUTTON PRESSED - about to call _handleConfirm
+I/flutter (27698): 🔵 _handleConfirm START
+I/flutter (27698): 🔵 _handleConfirm: food selected = Gatorade Gatorade Zero Glacier Freeze, isSwapping = false
+I/flutter (27698): 🔵 _handleConfirm: calling addFood...
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: true
+I/flutter (27698): 🔵 _handleConfirm: addFood returned
+I/flutter (27698): 🔵 _handleConfirm: operation complete, mounted = true
+I/flutter (27698): 🔵 _handleConfirm: showing snackbar
+I/flutter (27698): 🔵 _handleConfirm: navigator.canPop() = true
+I/flutter (27698): 🔵 _handleConfirm: calling navigator.pop() with rootNavigator
+I/flutter (27698): 🔵 _handleConfirm: navigator.pop() completed
+I/flutter (27698): 🔵 _handleConfirm END
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
+D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false
+I/flutter (27698): 🏗️ SwapFoodScreen build() called - isProcessing: false

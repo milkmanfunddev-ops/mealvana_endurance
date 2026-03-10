@@ -336,21 +336,6 @@ class EventsService {
 
   /// Parse database event_type string to ActivityType enum
   ActivityType _parseActivityType(String eventType) {
-    switch (eventType.toLowerCase()) {
-      case 'running':
-        return ActivityType.running;
-      case 'cycling':
-        return ActivityType.cycling;
-      case 'swimming':
-        return ActivityType.swimming;
-      case 'triathlon':
-      case 'duathlon':
-      case 'multisport':
-        // For multi-sport events, default to running for now
-        // TODO: Consider adding multi-sport types to ActivityType enum
-        return ActivityType.running;
-      default:
-        return ActivityType.running;
-    }
+    return ActivityType.fromDbValue(eventType);
   }
 }

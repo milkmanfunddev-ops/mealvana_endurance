@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/data/activities_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
+import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 class MockAppDatabase extends Mock implements AppDatabase {}
 class MockAppLogger extends Mock implements AppLogger {}
+class MockSentryReporter extends Mock implements SentryReporter {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +19,7 @@ void main() {
   late MockSupabaseClient mockSupabase;
   late MockAppDatabase mockDatabase;
   late MockAppLogger mockLogger;
+  late MockSentryReporter mockSentry;
   late ActivitiesRepository repository;
 
   setUpAll(() async {
@@ -28,6 +31,7 @@ void main() {
     mockSupabase = MockSupabaseClient();
     mockDatabase = MockAppDatabase();
     mockLogger = MockAppLogger();
+    mockSentry = MockSentryReporter();
 
     // Setup default logger behavior to avoid null errors
     when(() => mockLogger.info(any(), context: any(named: 'context'), data: any(named: 'data')))
@@ -52,6 +56,7 @@ void main() {
       supabase: mockSupabase,
       database: mockDatabase,
       logger: mockLogger,
+      sentry: mockSentry,
     );
   });
 

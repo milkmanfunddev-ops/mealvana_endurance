@@ -215,10 +215,9 @@ class GlobalSipSectionWidget extends StatelessWidget {
   }
 
   String _dragLabel(FoodItemData food, double stepSize) {
-    final name = food.displayName ?? food.name;
     final qtyStr = stepSize == stepSize.roundToDouble()
         ? stepSize.round().toString()
         : stepSize.toStringAsFixed(1);
-    return '$qtyStr $name';
+    return food.displayAtQuantity(qtyStr);
   }
 }

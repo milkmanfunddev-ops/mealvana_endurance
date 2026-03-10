@@ -154,8 +154,11 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
     return result;
   }
 
-  /// Build a human-readable quantity description
-  /// Uses quantity-first phrasing with simplified food names.
+  /// Build a human-readable quantity description.
+  ///
+  /// Always uses [FoodItemData.displayAtQuantity] as the primary display path
+  /// to ensure unit prefixes (e.g. "packets Energy Chews") are always shown,
+  /// regardless of whether the stored [quantity] field contains a tail.
   String _buildQuantityDescription() {
     final rawQuantity = widget.food.quantity.trim();
     final numericQty = _parseLeadingQuantity(rawQuantity);
@@ -167,28 +170,20 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
         isIndivisible: widget.food.isIndivisible,
       );
       final qtyStr = _formatQuantityNumber(roundedQty);
-      final tail = _parseQuantityTail(rawQuantity);
 
-      // Separate any add-on suffix (e.g., "+ 1 Electrolyte Tablet") from
-      // the main quantity tail so the food name is still resolved correctly.
-      String addOnSuffix = '';
-      String mainTail = tail;
+      // Use displayAtQuantity as the single source of truth for food display.
+      description = widget.food.displayAtQuantity(qtyStr);
+
+      // Preserve any add-on suffix (e.g., "+ 1 Electrolyte Tablet") from
+      // the original quantity string.
+      final tail = _parseQuantityTail(rawQuantity);
       final plusMatch = RegExp(r'\+\s*\d').firstMatch(tail);
       if (plusMatch != null) {
-        addOnSuffix = ' ${tail.substring(plusMatch.start).trim()}';
-        mainTail = tail.substring(0, plusMatch.start).trim();
-      }
-
-      final hasUsefulTail =
-          mainTail.isNotEmpty && !mainTail.toLowerCase().startsWith('x ');
-
-      if (hasUsefulTail) {
-        description = '$qtyStr ${_simplifyName(mainTail)}$addOnSuffix';
-      } else {
-        description = '$qtyStr ${_resolveSimpleFoodName(roundedQty)}$addOnSuffix';
+        final addOnSuffix = tail.substring(plusMatch.start).trim();
+        description = '$description $addOnSuffix';
       }
     } else if (rawQuantity.isEmpty) {
-      description = _resolveSimpleFoodName(1.0);
+      description = widget.food.displayAtQuantity('1');
     } else {
       description = _simplifyName(rawQuantity);
     }
@@ -212,74 +207,11 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
     return (match?.group(1) ?? '').trim();
   }
 
-  String _resolveSimpleFoodName(double quantity) {
-    final singularRaw = widget.food.displayName?.isNotEmpty == true
-        ? widget.food.displayName!
-        : widget.food.name;
-
-    // If we have servingSize with a unit (e.g. "1 cup cooked"), use unit + food name
-    // instead of naively pluralizing (avoids "Oatmeals", "Honeys", "Milks").
-    if (quantity != 1) {
-      final unitLabel = _extractUnitFromServingSize();
-      if (unitLabel != null) {
-        return '$unitLabel ${_simplifyName(singularRaw)}';
-      }
-    }
-
-    final pluralRaw = widget.food.displayNamePlural?.isNotEmpty == true
-        ? widget.food.displayNamePlural!
-        : _pluralize(singularRaw);
-    return _simplifyName(quantity == 1 ? singularRaw : pluralRaw);
-  }
-
-  /// Extract the measurement unit from servingSize (e.g. "1 cup cooked" → "cups").
-  /// Returns the pluralized unit if recognized, null otherwise.
-  String? _extractUnitFromServingSize() {
-    final servingSize = widget.food.servingSize;
-    if (servingSize == null || servingSize.isEmpty) return null;
-
-    // Match leading number (digits, fractions like 1/2, or Unicode fractions
-    // like ½, ¼, ¾, or mixed like "1½") followed by the unit word
-    final match = RegExp(
-      r'^[\d./½¼¾⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]+\s+(\S+)',
-    ).firstMatch(servingSize.trim());
-    final unit = match?.group(1)?.trim();
-    if (unit == null) return null;
-
-    // Only return recognized measurement units
-    const knownUnits = {
-      'cup', 'cups', 'tbsp', 'tsp', 'oz', 'ml', 'g', 'mg', 'kg', 'l',
-      'slice', 'slices', 'piece', 'pieces', 'scoop', 'scoops',
-      'tablespoon', 'tablespoons', 'teaspoon', 'teaspoons',
-      'packet', 'packets', 'serving', 'servings',
-      'pouch', 'pouches', 'bottle', 'bottles', 'shot', 'shots',
-      'bar', 'bars', 'waffle', 'waffles', 'sheet', 'sheets',
-    };
-    if (!knownUnits.contains(unit.toLowerCase())) return null;
-    return _pluralizeUnit(unit);
-  }
-
-  static String _pluralizeUnit(String unit) {
-    final lower = unit.toLowerCase().trim();
-    if (const {'tbsp', 'tsp', 'oz', 'ml', 'g', 'mg', 'kg', 'l', 'fl oz'}
-        .contains(lower)) {
-      return unit;
-    }
-    if (lower.endsWith('s')) return unit;
-    if (lower.endsWith('ch') || lower.endsWith('sh') || lower.endsWith('x')) {
-      return '${unit}es';
-    }
-    return '${unit}s';
-  }
-
-  String _pluralize(String value) {
-    // Strip parenthetical content first to avoid bugs like
-    // "Dates (Medjool)" → "Dates (Medjool)s" → "Datess"
-    final simplified = value.replaceAll(RegExp(r'\s*\([^)]*\)'), '').trim();
-    if (simplified.toLowerCase().endsWith('s')) return simplified;
-    return '${simplified}s';
-  }
-
+  /// Resolve the food name portion for display (without the leading number).
+  ///
+  /// Uses [FoodItemData.buildDisplayQuantity] to derive the serving unit from
+  /// [displayNamePlural] (e.g. "packets Energy Chews" → unit "packet").
+  /// This is the single source of truth for whether a food should show a
   String _simplifyName(String value) {
     final noParen = value.replaceAll(RegExp(r'\s*\([^)]*\)'), '');
     return noParen.trim();

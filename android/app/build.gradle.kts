@@ -38,26 +38,7 @@ android {
         multiDexEnabled = true
     }
 
-    // Product flavors for dev/prod environments
-    flavorDimensions += "environment"
-
-    productFlavors {
-        create("dev") {
-            dimension = "environment"
-            applicationIdSuffix = ".dev"
-            versionNameSuffix = "-dev"
-            resValue("string", "app_name", "Endurance Dev")
-            manifestPlaceholders["oauthCallbackScheme"] = "com.milkman.mealvanaendurance.dev"
-        }
-
-        create("prod") {
-            dimension = "environment"
-            resValue("string", "app_name", "Endurance")
-            manifestPlaceholders["oauthCallbackScheme"] = "com.milkman.mealvanaendurance"
-        }
-    }
-
-    // Release signing configuration - must be defined BEFORE buildTypes
+    // Signing configurations - defined before flavors and buildTypes
     signingConfigs {
         create("release") {
             val keystorePropertiesFile = rootProject.file("key.properties")
@@ -73,16 +54,39 @@ android {
         }
     }
 
+    // Product flavors for dev/prod environments
+    flavorDimensions += "environment"
+
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            resValue("string", "app_name", "Endurance Dev")
+            manifestPlaceholders["oauthCallbackScheme"] = "com.milkman.mealvanaendurance.dev"
+            // Dev flavor: always use debug keystore
+            signingConfig = signingConfigs.getByName("debug")
+        }
+
+        create("prod") {
+            dimension = "environment"
+            resValue("string", "app_name", "Endurance")
+            manifestPlaceholders["oauthCallbackScheme"] = "com.milkman.mealvanaendurance"
+            // Prod flavor: always use release keystore (upload key)
+            // so debug and release builds have the same SHA-1 for OAuth
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
     buildTypes {
+        debug {
+            // Let flavor signing configs take effect instead of default debug keystore
+            signingConfig = null
+        }
         release {
-            // Release signing configuration
-            // To generate keystore: keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
-            // Then create android/key.properties with storePassword, keyPassword, keyAlias, storeFile
             signingConfig = signingConfigs.getByName("release")
 
-            // R8 code shrinking and obfuscation (enabled by default)
-            // Reduces APK size by ~30-40%, adds basic obfuscation
-            // All packages in this project support R8
+            // R8 code shrinking and obfuscation
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

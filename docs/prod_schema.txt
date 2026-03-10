@@ -2,6 +2,10 @@
 
 comment on database postgres is 'default administrative connection database';
 
+grant create on database postgres to supabase_etl_admin;
+
+grant connect, create, temporary on database postgres to dashboard_user;
+
 create type gender_enum as enum ('male', 'female', 'other', 'unknown');
 
 alter type gender_enum owner to postgres;
@@ -84,72 +88,77 @@ comment on type phase_enum is 'Nutrition timing phases: before, during, or after
 
 alter type phase_enum owner to postgres;
 
-create type activity_status_enum as enum ('draft', 'planned', 'inProgress', 'completed', 'skipped', 'archivedForBrick');
+create type activity_status_enum as enum ('draft', 'planned', 'inProgress', 'completed', 'skipped', 'archivedForBrick', 'archived_for_brick');
 
 alter type activity_status_enum owner to postgres;
 
 create table users
 (
-    id                            uuid                     default gen_random_uuid()               not null
+    id                                uuid                     default gen_random_uuid()               not null
         primary key,
-    device_id                     text                                                             not null,
-    created_at                    timestamp with time zone default now(),
-    updated_at                    timestamp with time zone default now(),
-    gender                        gender_enum,
-    birthday                      date,
-    height_feet                   integer,
-    height_inches                 integer,
-    weight_pounds                 numeric(5, 2),
-    runs_with_water_bottle        boolean                  default false,
-    food_preferences              jsonb                    default '{}'::jsonb,
-    preferred_distance_unit       distance_unit_enum       default 'miles'::distance_unit_enum,
-    preferred_pace_unit           pace_unit_enum           default 'min_per_mile'::pace_unit_enum,
-    gut_training_level            gut_training_enum        default 'moderate'::gut_training_enum,
-    onboarding_completed          boolean                  default false,
-    last_active_at                timestamp with time zone default now(),
-    app_version                   text,
-    notifications_enabled         boolean                  default false,
-    default_reminder_day          integer                  default 4,
-    default_reminder_hour         integer                  default 17,
-    default_reminder_minute       integer                  default 0,
-    default_reminder_recurring    boolean                  default false,
-    cycling_ftp_watts             integer,
-    prefers_cycling_power         boolean                  default false,
-    swimming_css_seconds_per_100m integer,
-    prefers_swimming_pace         boolean                  default false,
-    auth_user_id                  uuid,
-    auth_provider                 auth_provider_enum       default 'anonymous'::auth_provider_enum not null,
-    is_anonymous                  boolean                  default true                            not null,
-    auth_skipped_at               timestamp with time zone,
-    typical_bike_bottles          integer
+    device_id                         text                                                             not null,
+    created_at                        timestamp with time zone default now(),
+    updated_at                        timestamp with time zone default now(),
+    gender                            gender_enum,
+    birthday                          date,
+    height_feet                       integer,
+    height_inches                     integer,
+    weight_pounds                     numeric(5, 2),
+    runs_with_water_bottle            boolean                  default false,
+    food_preferences                  jsonb                    default '{}'::jsonb,
+    preferred_distance_unit           distance_unit_enum       default 'miles'::distance_unit_enum,
+    preferred_pace_unit               pace_unit_enum           default 'min_per_mile'::pace_unit_enum,
+    gut_training_level                gut_training_enum        default 'moderate'::gut_training_enum,
+    onboarding_completed              boolean                  default false,
+    last_active_at                    timestamp with time zone default now(),
+    app_version                       text,
+    notifications_enabled             boolean                  default false,
+    default_reminder_day              integer                  default 4,
+    default_reminder_hour             integer                  default 17,
+    default_reminder_minute           integer                  default 0,
+    default_reminder_recurring        boolean                  default false,
+    cycling_ftp_watts                 integer,
+    prefers_cycling_power             boolean                  default false,
+    swimming_css_seconds_per_100m     integer,
+    prefers_swimming_pace             boolean                  default false,
+    auth_user_id                      uuid,
+    auth_provider                     auth_provider_enum       default 'anonymous'::auth_provider_enum not null,
+    is_anonymous                      boolean                  default true                            not null,
+    auth_skipped_at                   timestamp with time zone,
+    typical_bike_bottles              integer
         constraint check_bike_bottles
             check ((typical_bike_bottles IS NULL) OR ((typical_bike_bottles >= 0) AND (typical_bike_bottles <= 6))),
-    has_aero_bottle               boolean,
-    has_bento_box                 boolean,
-    typical_wetsuit               boolean,
-    typical_swim_cap_type         text
+    has_aero_bottle                   boolean,
+    has_bento_box                     boolean,
+    typical_wetsuit                   boolean,
+    typical_swim_cap_type             text
         constraint check_swim_cap_type
             check ((typical_swim_cap_type IS NULL) OR (typical_swim_cap_type = ANY
                                                        (ARRAY ['none'::text, 'latex'::text, 'silicone'::text, 'neoprene'::text]))),
-    gi_sensitivity                boolean,
-    dietary_preference            dietary_preference_enum,
-    allergies                     allergy_enum[]           default '{}'::allergy_enum[],
-    sweat_rate                    text                     default 'medium'::text                  not null
+    gi_sensitivity                    boolean,
+    dietary_preference                dietary_preference_enum,
+    allergies                         allergy_enum[]           default '{}'::allergy_enum[],
+    sweat_rate                        text                     default 'medium'::text                  not null
         constraint check_sweat_rate
             check (sweat_rate = ANY (ARRAY ['light'::text, 'medium'::text, 'heavy'::text])),
-    calendar_week_start           text                     default 'monday'::text                  not null
+    calendar_week_start               text                     default 'monday'::text                  not null
         constraint check_calendar_week_start
             check (calendar_week_start = ANY (ARRAY ['sunday'::text, 'monday'::text])),
-    default_activity_time         text                     default '07:00:00'::text                not null,
-    default_activity_day          text                     default 'saturday'::text                not null
+    default_activity_time             text                     default '07:00:00'::text                not null,
+    default_activity_day              text                     default 'saturday'::text                not null
         constraint check_default_activity_day
             check (default_activity_day = ANY
                    (ARRAY ['monday'::text, 'tuesday'::text, 'wednesday'::text, 'thursday'::text, 'friday'::text, 'saturday'::text, 'sunday'::text])),
-    auto_generate_nutrition       boolean                  default true                            not null,
-    completion_reminders          boolean                  default true                            not null,
-    sender_name                   text,
-    first_name                    text,
-    last_name                     text
+    auto_generate_nutrition           boolean                  default true                            not null,
+    completion_reminders              boolean                  default true                            not null,
+    sender_name                       text,
+    first_name                        text,
+    last_name                         text,
+    unit_system                       text                     default 'imperial'::text,
+    default_running_pace_min_per_mile real,
+    default_cycling_speed_mph         real,
+    default_swimming_pace_per_100_sec integer,
+    nutrition_target_overrides        jsonb
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -193,6 +202,16 @@ comment on column users.sender_name is 'Name used when sharing nutrition plans v
 comment on column users.first_name is 'Optional first name for coach mode athlete identification';
 
 comment on column users.last_name is 'Optional last name for coach mode athlete identification';
+
+comment on column users.unit_system is 'Unit system preference: imperial or metric';
+
+comment on column users.default_running_pace_min_per_mile is 'User default running pace in minutes per mile. Used to estimate workout duration from distance in new activity forms. Example: 8.5 = 8:30 min/mile pace.';
+
+comment on column users.default_cycling_speed_mph is 'User default cycling speed in miles per hour. Used to estimate workout duration from distance in new activity forms. Example: 18.5 mph.';
+
+comment on column users.default_swimming_pace_per_100_sec is 'User default swimming pace in seconds per 100 yards/meters. Used to estimate workout duration from distance in new activity forms. Example: 90 = 1:30 per 100 yards.';
+
+comment on column users.nutrition_target_overrides is 'User-configured nutrition target overrides. JSON with pre/during/post activity macro targets. Null = use algorithm defaults.';
 
 alter table users
     owner to postgres;
@@ -615,10 +634,6 @@ create index idx_activities_brick_type
     on activities (activity_type)
     where (activity_type = 'brick'::activity_type_enum);
 
-create unique index uq_activities_provider_workout
-    on activities (user_id, synced_from_provider, provider_workout_id)
-    where ((provider_workout_id IS NOT NULL) AND (synced_from_provider IS NOT NULL));
-
 create index idx_activities_needs_nutrition_refresh
     on activities (needs_nutrition_refresh)
     where (needs_nutrition_refresh = true);
@@ -630,6 +645,9 @@ create index idx_activities_provider_deleted_at
     where (provider_deleted_at IS NOT NULL);
 
 comment on index idx_activities_provider_deleted_at is 'Partial index for activities removed by external provider. Used to filter out soft-deleted workouts or show special UI indicator.';
+
+create unique index uq_activities_provider_workout
+    on activities (user_id, synced_from_provider, provider_workout_id);
 
 grant delete, insert, references, select, trigger, truncate, update on activities to anon;
 
@@ -1183,6 +1201,9 @@ create index idx_car_active
     on coach_athlete_relationships (coach_user_id, status)
     where (status = 'active'::text);
 
+create index idx_car_coach_athlete_status
+    on coach_athlete_relationships (coach_user_id, athlete_user_id, status);
+
 grant delete, insert, references, select, trigger, truncate, update on coach_athlete_relationships to anon;
 
 grant delete, insert, references, select, trigger, truncate, update on coach_athlete_relationships to authenticated;
@@ -1369,6 +1390,189 @@ grant delete, insert, references, select, trigger, truncate, update on app_confi
 grant delete, insert, references, select, trigger, truncate, update on app_config to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on app_config to service_role;
+
+create table template_foods
+(
+    id                     uuid                     default gen_random_uuid() not null
+        primary key,
+    name                   text                                               not null
+        constraint uq_template_foods_name
+            unique,
+    display_name           text                                               not null,
+    serving_size           text                                               not null,
+    serving_weight_g       numeric(6, 1),
+    calories               integer                  default 0,
+    carbs_g                numeric(6, 1)            default 0                 not null,
+    protein_g              numeric(6, 1)            default 0                 not null,
+    fat_g                  numeric(6, 1)            default 0                 not null,
+    fiber_g                numeric(6, 1)            default 0,
+    sodium_mg              numeric(6, 1)            default 0                 not null,
+    fluid_ml               numeric(6, 1)            default 0,
+    allergens              text[]                   default '{}'::text[],
+    digestion_speed        text                     default 'medium'::text
+        constraint template_foods_digestion_speed_check
+            check (digestion_speed = ANY (ARRAY ['fast'::text, 'medium'::text, 'slow'::text])),
+    is_active              boolean                  default true,
+    created_at             timestamp with time zone default now(),
+    updated_at             timestamp with time zone default now(),
+    excluded_diets         text[]                   default '{}'::text[],
+    product_type           text                     default 'real_food'::text,
+    activity_types         text[]                   default '{running,cycling,swimming}'::text[],
+    categories             text[]                   default '{before_run}'::text[],
+    show_in_preferences    boolean                  default true,
+    is_essential           boolean                  default false,
+    is_electrolyte         boolean                  default false,
+    requires_preparation   boolean                  default false,
+    caffeine_mg            numeric(6, 1)            default 0,
+    potassium_mg           numeric(6, 1)            default 0,
+    is_drink_pool          boolean                  default false,
+    drink_pool_phases      text[]                   default '{}'::text[],
+    is_liquid              boolean                  default false,
+    max_servings_before    integer                  default 4,
+    max_servings_during    integer                  default 4,
+    max_servings_after     integer                  default 4,
+    to_exclude_from_solver boolean                  default false,
+    display_name_plural    text,
+    image_address          text,
+    description            text,
+    serving_amount         real,
+    serving_unit           text,
+    serving_qualifier      text,
+    is_indivisible         boolean                  default false,
+    default_during         boolean                  default false             not null,
+    min_servings_during    numeric(4, 1)            default 1.0
+);
+
+comment on table template_foods is 'Food ingredient catalog for nutrition templates. Nutrition data from USDA FoodData Central.';
+
+comment on column template_foods.name is 'Machine-readable identifier (e.g., white_bread)';
+
+comment on column template_foods.allergens is 'Array of allergen tags: gluten, dairy, eggs, peanuts, tree_nuts';
+
+comment on column template_foods.digestion_speed is 'How quickly food digests: fast (simple carbs), medium, slow (high fat/fiber)';
+
+comment on column template_foods.is_indivisible is 'Whether this food comes in discrete, sealed units that cannot be fractionally consumed (e.g., tablets, gel packets)';
+
+comment on column template_foods.default_during is 'Whether this food is part of the default during-activity recommendation set.';
+
+alter table template_foods
+    owner to postgres;
+
+create index idx_template_foods_name
+    on template_foods (name);
+
+create index idx_template_foods_active
+    on template_foods (is_active)
+    where (is_active = true);
+
+create index idx_template_foods_drink_pool
+    on template_foods (is_drink_pool)
+    where (is_drink_pool = true);
+
+grant delete, insert, references, select, trigger, truncate, update on template_foods to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on template_foods to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on template_foods to service_role;
+
+create table templates
+(
+    id                 uuid                     default gen_random_uuid() not null
+        primary key,
+    name               text                                               not null,
+    slug               text                                               not null
+        unique,
+    phase              text                     default 'before'::text    not null
+        constraint templates_phase_check
+            check (phase = ANY (ARRAY ['before'::text, 'during'::text, 'after'::text, 'transition'::text])),
+    timing_window      text                                               not null,
+    timing_min_minutes integer                                            not null,
+    timing_max_minutes integer                                            not null,
+    meal_type          text                     default 'snack'::text     not null
+        constraint templates_meal_type_check
+            check (meal_type = ANY
+                   (ARRAY ['top_up'::text, 'snack'::text, 'full_meal'::text, 'during_fuel'::text, 'recovery'::text, 'transition_fuel'::text])),
+    base_category      text                                               not null,
+    digestion_speed    text                     default 'medium'::text
+        constraint templates_digestion_speed_check
+            check (digestion_speed = ANY (ARRAY ['fast'::text, 'medium'::text, 'slow'::text])),
+    allergens          text[]                   default '{}'::text[],
+    notes              text,
+    foods              jsonb                    default '[]'::jsonb       not null,
+    total_carbs_g      numeric(6, 1)            default 0,
+    total_protein_g    numeric(6, 1)            default 0,
+    total_fat_g        numeric(6, 1)            default 0,
+    total_sodium_mg    numeric(6, 1)            default 0,
+    total_fluid_ml     numeric(6, 1)            default 0,
+    total_calories     integer                  default 0,
+    validation_status  text                     default 'unvalidated'::text
+        constraint templates_validation_status_check
+            check (validation_status = ANY
+                   (ARRAY ['unvalidated'::text, 'validated'::text, 'needs_adjustment'::text, 'failed'::text])),
+    is_active          boolean                  default true,
+    sort_order         integer                  default 0,
+    created_at         timestamp with time zone default now(),
+    updated_at         timestamp with time zone default now(),
+    excluded_diets     text[]                   default '{}'::text[],
+    has_liquid_base    boolean                  default false,
+    food_names         text[]                   default '{}'::text[]
+);
+
+comment on table templates is 'Pre-workout nutrition templates with denormalized food data in JSONB. Each template is a curated food combination that scales to hit macro targets.';
+
+comment on column templates.timing_window is 'Display label: < 30 min, 30-60 min, 1-2 hours, 3-4 hours';
+
+comment on column templates.meal_type is 'Derived from timing: top_up (<1h), snack (1-2.5h), full_meal (2.5h+)';
+
+comment on column templates.foods is 'JSONB array of food items with per-serving nutrition and min/max servings for scaling';
+
+alter table templates
+    owner to postgres;
+
+create index idx_templates_phase
+    on templates (phase);
+
+create index idx_templates_timing
+    on templates (timing_window);
+
+create index idx_templates_category
+    on templates (base_category);
+
+create index idx_templates_active
+    on templates (is_active)
+    where (is_active = true);
+
+create index idx_templates_meal_type
+    on templates (meal_type);
+
+create index idx_templates_slug
+    on templates (slug);
+
+grant delete, insert, references, select, trigger, truncate, update on templates to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on templates to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on templates to service_role;
+
+create table education_content
+(
+    id               uuid                     default gen_random_uuid() not null
+        primary key,
+    title            text                                               not null,
+    description      text,
+    thumbnail_url    text,
+    video_url        text,
+    content_type     text                     default 'free'::text      not null,
+    duration_seconds integer,
+    sort_order       integer                  default 0                 not null,
+    is_published     boolean                  default false             not null,
+    tags             text[],
+    created_at       timestamp with time zone default now()             not null,
+    updated_at       timestamp with time zone default now()             not null
+);
+
+alter table education_content
+    owner to postgres;
 
 create view v_food_sport_phase_settings
             (food_id, food_name, display_name, product_type, sport, phase, effective_max_servings, is_suitable, notes,
@@ -1647,11 +1851,11 @@ create function update_updated_at_column() returns trigger
     language plpgsql
 as
 $$
-  BEGIN
-      NEW.updated_at = now();
-      RETURN NEW;
-  END;
-  $$;
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
 
 alter function update_updated_at_column() owner to postgres;
 

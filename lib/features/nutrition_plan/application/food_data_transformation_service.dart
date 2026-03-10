@@ -115,28 +115,56 @@ class FoodDataTransformationService {
     );
   }
 
-  /// Generate proper display name using quantity and food details
+  /// Generate proper display name using quantity and food details.
+  ///
+  /// Uses [FoodItemData.buildDisplayQuantity] to extract the serving unit from
+  /// displayNamePlural (e.g. "packets Energy Chews" → unit "packet") when
+  /// servingUnit is null in the database.
   String _generateDisplayName(num quantity, dynamic foodDetails) {
     // Check if there's a display override (for special cases like water+electrolytes)
     if (foodDetails.displayOverride != null && foodDetails.displayOverride!.isNotEmpty) {
       return _formatQuantity(quantity, '', foodDetails.displayOverride!);
     }
 
-    // Use singular vs plural display names from database
-    final isPlural = quantity != 1;
-    var displayName = isPlural && foodDetails.displayNamePlural?.isNotEmpty == true
-        ? foodDetails.displayNamePlural!
-        : (foodDetails.displayName?.isNotEmpty == true ? foodDetails.displayName : foodDetails.name);
-
     final unit = foodDetails.servingUnit ?? '';
+    var singularName = foodDetails.displayName?.isNotEmpty == true
+        ? foodDetails.displayName!
+        : foodDetails.name;
 
     // Check if the displayName is just a unit (like 'g', 'ml', 'oz', etc.)
-    // This can happen with user foods where displayName wasn't properly set
-    if (_isJustUnit(displayName)) {
-      // Use the actual food name instead
-      displayName = foodDetails.name;
+    if (_isJustUnit(singularName)) {
+      singularName = foodDetails.name;
     }
 
+    // When servingUnit is empty, delegate to buildDisplayQuantity which can
+    // extract the unit from displayNamePlural (e.g. "packets Energy Chews").
+    if (unit.isEmpty) {
+      final rawQty = quantity == quantity.toInt()
+          ? quantity.toInt().toString()
+          : quantity.toStringAsFixed(1);
+      final result = FoodItemData.buildDisplayQuantity(
+        rawQty: rawQty,
+        servingUnit: null,
+        displayName: singularName,
+        displayNamePlural: foodDetails.displayNamePlural,
+      );
+      // buildDisplayQuantity returns just the raw number when no unit is found;
+      // in that case fall back to the old "$qty $displayName" approach.
+      if (result == rawQty) {
+        final isPlural = quantity != 1;
+        final displayName = isPlural && foodDetails.displayNamePlural?.isNotEmpty == true
+            ? foodDetails.displayNamePlural!
+            : singularName;
+        return _formatQuantity(quantity, '', displayName);
+      }
+      return result;
+    }
+
+    // Has explicit serving unit – use old formatting with redundancy check
+    final isPlural = quantity != 1;
+    final displayName = isPlural && foodDetails.displayNamePlural?.isNotEmpty == true
+        ? foodDetails.displayNamePlural!
+        : singularName;
     return _formatQuantity(quantity, unit, displayName);
   }
 

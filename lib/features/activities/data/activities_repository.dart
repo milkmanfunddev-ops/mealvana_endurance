@@ -7,7 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sync/immediate_remote_write_service.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/activity.dart' as domain;
@@ -28,11 +29,12 @@ class _BatchUploadResult {
 
 @riverpod
 ActivitiesRepository activitiesRepository(Ref ref) {
+  final deps = ref.read(appExternalDepsProvider);
   return ActivitiesRepository(
     supabase: Supabase.instance.client,
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
-    immediateRemoteWriteService: ref.read(immediateRemoteWriteServiceProvider),
+    sentry: deps.sentry,
   );
 }
 
@@ -43,17 +45,17 @@ class ActivitiesRepository with SyncableRepository {
     required SupabaseClient supabase,
     required AppDatabase database,
     required AppLogger logger,
-    required ImmediateRemoteWriteService immediateRemoteWriteService,
+    required SentryReporter sentry,
   }) : _supabase = supabase,
        _database = database,
        _logger = logger,
-       _immediateRemoteWriteService = immediateRemoteWriteService,
+       _sentry = sentry,
        _mapper = ActivityMapper(logger: logger);
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
-  final ImmediateRemoteWriteService _immediateRemoteWriteService;
+  final SentryReporter _sentry;
   final ActivityMapper _mapper;
 
   /// Expose mapper for use by ActivitiesService and other consumers.
@@ -505,14 +507,17 @@ class ActivitiesRepository with SyncableRepository {
         },
       );
 
-      await _immediateRemoteWriteService.run(
-        repository: repositoryKey,
-        operation: 'create',
-        recordId: activityWithId.id,
-        method: 'INSERT',
-        write: () =>
-            _uploadActivityToSupabase(activityWithId, operation: 'create'),
-      );
+      try {
+        await _uploadActivityToSupabase(activityWithId, operation: 'create');
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate upload failed; record stays dirty for retry',
+          context: 'ACTIVITIES_REPOSITORY',
+          error: e, stackTrace: stackTrace,
+          data: {'operation': 'create', 'recordId': activityWithId.id},
+        );
+        _sentry.reportNetworkError(e, url: 'supabase:activities:create', method: 'INSERT', stackTrace: stackTrace);
+      }
 
       return activityWithId;
     } catch (e, stackTrace) {
@@ -542,18 +547,19 @@ class ActivitiesRepository with SyncableRepository {
       await _saveToDrift(activityWithDirtyFlag);
 
       // Attempt background upload (non-blocking)
-      unawaited(
-        _immediateRemoteWriteService.run(
-          repository: repositoryKey,
-          operation: 'update',
-          recordId: activityWithDirtyFlag.id,
-          method: 'UPSERT',
-          write: () => _uploadActivityToSupabase(
-            activityWithDirtyFlag,
-            operation: 'update',
-          ),
-        ),
-      );
+      unawaited(() async {
+        try {
+          await _uploadActivityToSupabase(activityWithDirtyFlag, operation: 'update');
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Immediate upload failed; record stays dirty for retry',
+            context: 'ACTIVITIES_REPOSITORY',
+            error: e, stackTrace: stackTrace,
+            data: {'operation': 'update', 'recordId': activityWithDirtyFlag.id},
+          );
+          _sentry.reportNetworkError(e, url: 'supabase:activities:update', method: 'UPSERT', stackTrace: stackTrace);
+        }
+      }());
 
       return activityWithDirtyFlag;
     } catch (e, stackTrace) {
@@ -585,15 +591,19 @@ class ActivitiesRepository with SyncableRepository {
       );
 
       // Attempt background upload (non-blocking)
-      unawaited(
-        _immediateRemoteWriteService.run(
-          repository: repositoryKey,
-          operation: 'delete',
-          recordId: activityId,
-          method: 'DELETE',
-          write: () => _uploadActivityDeletion(deviceId, activityId),
-        ),
-      );
+      unawaited(() async {
+        try {
+          await _uploadActivityDeletion(deviceId, activityId);
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Immediate upload failed; record stays dirty for retry',
+            context: 'ACTIVITIES_REPOSITORY',
+            error: e, stackTrace: stackTrace,
+            data: {'operation': 'delete', 'recordId': activityId},
+          );
+          _sentry.reportNetworkError(e, url: 'supabase:activities:delete', method: 'DELETE', stackTrace: stackTrace);
+        }
+      }());
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete activity',
@@ -989,15 +999,19 @@ class ActivitiesRepository with SyncableRepository {
     if (row == null) return;
 
     final activity = _mapper.fromDriftRow(row);
-    unawaited(
-      _immediateRemoteWriteService.run(
-        repository: repositoryKey,
-        operation: operation,
-        recordId: activityId,
-        method: 'UPSERT',
-        write: () => _uploadActivityToSupabase(activity, operation: 'update'),
-      ),
-    );
+    unawaited(() async {
+      try {
+        await _uploadActivityToSupabase(activity, operation: 'update');
+      } catch (e, stackTrace) {
+        _logger.warning(
+          'Immediate upload failed; record stays dirty for retry',
+          context: 'ACTIVITIES_REPOSITORY',
+          error: e, stackTrace: stackTrace,
+          data: {'operation': operation, 'recordId': activityId},
+        );
+        _sentry.reportNetworkError(e, url: 'supabase:activities:$operation', method: 'UPSERT', stackTrace: stackTrace);
+      }
+    }());
   }
 
   /// Clear dirty flag after successful upload
@@ -1363,16 +1377,19 @@ class ActivitiesRepository with SyncableRepository {
 
       await _saveToDrift(activityWithFlags);
 
-      unawaited(
-        _immediateRemoteWriteService.run(
-          repository: repositoryKey,
-          operation: 'provider_update',
-          recordId: activityWithFlags.id,
-          method: 'UPSERT',
-          write: () =>
-              _uploadActivityToSupabase(activityWithFlags, operation: 'update'),
-        ),
-      );
+      unawaited(() async {
+        try {
+          await _uploadActivityToSupabase(activityWithFlags, operation: 'update');
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Immediate upload failed; record stays dirty for retry',
+            context: 'ACTIVITIES_REPOSITORY',
+            error: e, stackTrace: stackTrace,
+            data: {'operation': 'provider_update', 'recordId': activityWithFlags.id},
+          );
+          _sentry.reportNetworkError(e, url: 'supabase:activities:provider_update', method: 'UPSERT', stackTrace: stackTrace);
+        }
+      }());
 
       _logger.info(
         'Activity updated from provider',
@@ -1807,16 +1824,19 @@ class ActivitiesRepository with SyncableRepository {
 
       // Step 5: Delete from Supabase AFTER transaction completes (non-blocking)
       if (userIdForSupabaseDelete != null) {
-        unawaited(
-          _immediateRemoteWriteService.run(
-            repository: repositoryKey,
-            operation: 'delete',
-            recordId: brickId,
-            method: 'DELETE',
-            write: () =>
-                _uploadActivityDeletion(userIdForSupabaseDelete!, brickId),
-          ),
-        );
+        unawaited(() async {
+          try {
+            await _uploadActivityDeletion(userIdForSupabaseDelete!, brickId);
+          } catch (e, stackTrace) {
+            _logger.warning(
+              'Immediate upload failed; record stays dirty for retry',
+              context: 'ACTIVITIES_REPOSITORY',
+              error: e, stackTrace: stackTrace,
+              data: {'operation': 'delete', 'recordId': brickId},
+            );
+            _sentry.reportNetworkError(e, url: 'supabase:activities:delete', method: 'DELETE', stackTrace: stackTrace);
+          }
+        }());
       }
     } catch (e, stackTrace) {
       _logger.error(

@@ -19,6 +19,8 @@ import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
+import '../../../../shared/services/sync/sync_coordinator.dart';
+import '../../../user_foods/data/user_foods_repository.dart';
 import '../../../../shared/widgets/buttons/search_openfoodfacts_button.dart';
 import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/utils/search_strategy.dart';
@@ -33,8 +35,6 @@ class FoodPreferencesScreen extends ConsumerStatefulWidget {
 }
 
 class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
-  static const _uuid = Uuid();
-
   // Store slider levels (0-4) locally
   final Map<String, int> _sliderLevels = {};
 
@@ -120,11 +120,27 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       final authService = ref.read(authServiceProvider);
       final database = ref.read(appDatabaseProvider);
 
-      // Get current user's device ID for user foods
+      // Get current user's ID using Supabase auth session for correct UUID
       DebugLogger.info('[FOOD_PREFS] 🔍 Getting current user profile...');
-      final userProfile = await database.userDao.getCurrentUserProfile();
+      final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+      final currentAuthUserId = supabaseClient.auth.currentUser?.id;
+      final userProfile = await database.userDao.getCurrentUserProfile(
+        currentAuthUserId: currentAuthUserId,
+      );
       final deviceId = userProfile?.id ?? 'unknown';
       DebugLogger.info('[FOOD_PREFS] ✅ User profile retrieved, deviceId: $deviceId');
+
+      // Ensure user_foods are synced from remote (pulls down after re-login)
+      try {
+        final userFoodsRepo = await ref.read(userFoodsRepositoryProvider.future);
+        await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
+          'user_foods',
+          deviceId,
+          repository: userFoodsRepo,
+        );
+      } catch (e) {
+        DebugLogger.warning('[FOOD_PREFS] ⚠️ User foods sync failed, continuing with cached data: $e');
+      }
 
       // Load primary foods, additional foods, user foods, and existing preferences in parallel
       DebugLogger.info('[FOOD_PREFS] 📦 Starting parallel data load (primary foods, additional foods, user foods, preferences)...');
@@ -574,15 +590,12 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     String? productType,
   }) async {
     try {
-      final database = ref.read(appDatabaseProvider);
-      final userProfile = await database.userDao.getCurrentUserProfile();
-      final deviceId = userProfile?.id ?? 'unknown';
-      final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+      final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
 
-      // Generate unique UUID for this food
-      final foodId = _uuid.v4();
+      // Use user-selected product type if provided, otherwise fall back to 'import'
+      final finalProductType = productType ?? foodItem.productTypeId ?? 'import';
 
-      final categoryNames = categoryIds.map((id) {
+      final categoryStrings = categoryIds.map((id) {
         switch (id) {
           case 1:
             return 'before_run';
@@ -595,15 +608,9 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         }
       }).toList();
 
-      // Use user-selected product type if provided, otherwise fall back to 'import'
-      final finalProductType = productType ?? foodItem.productTypeId ?? 'import';
-
-      // 1. Save to local Drift database first (for offline access)
-      await database.foodsDao.saveUserFood(
-        deviceId: deviceId,
-        userId: deviceId,
-        id: foodId,
-        clientFoodId: foodItem.id,
+      // Create a Food domain object with user-edited values
+      final food = Food(
+        id: foodItem.id,
         name: foodItem.name,
         displayName: foodItem.displayName,
         displayNamePlural: foodItem.displayNamePlural,
@@ -612,6 +619,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         servingAmount: foodItem.servingAmount,
         servingUnit: foodItem.servingUnit,
         servingSize: foodItem.servingSize,
+        categories: categoryStrings,
         caloriesPerServing: (carbsPerServing?.toInt()) ?? foodItem.caloriesPerServing,
         carbsPerServing: carbsPerServing ?? foodItem.carbsPerServing,
         proteinPerServing: proteinPerServing ?? foodItem.proteinPerServing,
@@ -619,41 +627,12 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         sodiumMg: (sodiumMg?.toInt()) ?? foodItem.sodiumMg,
         fluidMlPerServing: finalFluidAmount ?? foodItem.fluidMlPerServing,
         productTypeId: finalProductType,
-        categories: categoryNames,
+        beforeRunSuitable: categoryIds.contains(1),
+        duringRunSuitable: categoryIds.contains(2),
       );
 
-      // 2. Sync to Supabase via edge function (for backup and cross-device sync)
-      try {
-        final response = await supabase.functions.invoke('save-user-food', body: {
-          'device_id': deviceId,
-          'id': foodId,
-          'client_food_id': foodItem.id,
-          'name': foodItem.name,
-          'display_name': foodItem.displayName ?? foodItem.name,
-          'display_name_plural': foodItem.displayNamePlural ?? '${foodItem.name}s',
-          'description': foodItem.description,
-          'image_address': foodItem.imageAddress,
-          'serving_amount': foodItem.servingAmount,
-          'serving_unit': foodItem.servingUnit,
-          'serving_size': foodItem.servingSize,
-          'calories_per_serving': (carbsPerServing?.toInt()) ?? foodItem.caloriesPerServing,
-          'carbs_per_serving': carbsPerServing ?? foodItem.carbsPerServing,
-          'protein_per_serving': proteinPerServing ?? foodItem.proteinPerServing,
-          'fat_per_serving': fatPerServing ?? foodItem.fatPerServing,
-          'sodium_mg': (sodiumMg?.toInt()) ?? foodItem.sodiumMg,
-          'fluid_ml_per_serving': finalFluidAmount ?? foodItem.fluidMlPerServing,
-          'product_type_id': finalProductType,
-          'category_ids': categoryIds,
-        });
-
-        if (response.status != 200) {
-          DebugLogger.warning('⚠️ Supabase sync failed, but local save succeeded: ${response.data}');
-        } else {
-          DebugLogger.info('✅ Food saved to both local and Supabase: ${foodItem.name}');
-        }
-      } catch (supabaseError) {
-        DebugLogger.warning('⚠️ Supabase sync failed, but local save succeeded: $supabaseError');
-      }
+      // Save via UserFoodCrudService (handles local save + background Supabase upload)
+      await userFoodCrudService.saveUserFood(food, categoryIds);
 
       // Set default preference at neutral
       setState(() {

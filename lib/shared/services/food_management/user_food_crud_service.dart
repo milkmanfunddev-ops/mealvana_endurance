@@ -8,7 +8,7 @@ import '../../database/database_provider.dart';
 import '../../database/app_database.dart';
 import '../app_external_deps.dart';
 import '../logging_service.dart';
-import '../sync/immediate_remote_write_service.dart';
+import '../sentry/sentry_reporter.dart';
 import 'product_type_mapper.dart';
 
 /// Provider for UserFoodCrudService
@@ -19,7 +19,7 @@ final userFoodCrudServiceProvider = Provider<UserFoodCrudService>((ref) {
     database,
     deps.logger,
     deps.supabaseClient,
-    ref.read(immediateRemoteWriteServiceProvider),
+    deps.sentry,
   );
 });
 
@@ -30,13 +30,13 @@ class UserFoodCrudService {
     this._database,
     this._logger,
     this._supabase,
-    this._immediateRemoteWriteService,
+    this._sentry,
   );
 
   final AppDatabase _database;
   final AppLogger _logger;
   final SupabaseClient _supabase;
-  final ImmediateRemoteWriteService _immediateRemoteWriteService;
+  final SentryReporter _sentry;
   static const _uuid = Uuid();
 
   /// Load user foods for a user
@@ -71,8 +71,11 @@ class UserFoodCrudService {
         food.productTypeId,
         logger: _logger,
       );
-      // Get current user's ID
-      final userProfile = await _database.userDao.getCurrentUserProfile();
+      // Get current user's ID using Supabase auth session for correct UUID
+      final currentAuthUserId = _supabase.auth.currentUser?.id;
+      final userProfile = await _database.userDao.getCurrentUserProfile(
+        currentAuthUserId: currentAuthUserId,
+      );
       final userId = userProfile?.id ?? 'unknown';
       final deviceId =
           userProfile?.deviceId ?? userId; // Use userId as fallback
@@ -108,22 +111,26 @@ class UserFoodCrudService {
       );
 
       // Attempt background upload (non-blocking); needs_upload handles offline failure
-      unawaited(
-        _immediateRemoteWriteService.run(
-          repository: 'user_foods',
-          operation: 'create',
-          recordId: foodId,
-          method: 'UPSERT',
-          write: () => _uploadUserFoodToSupabase(
+      unawaited(() async {
+        try {
+          await _uploadUserFoodToSupabase(
             deviceId: deviceId,
             userId: userId,
             foodId: foodId,
             food: food,
             categoryNames: categoryNames,
             barcode: barcode,
-          ),
-        ),
-      );
+          );
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Immediate upload failed; record stays dirty for retry',
+            context: 'USER_FOOD_CRUD',
+            error: e, stackTrace: stackTrace,
+            data: {'operation': 'create', 'recordId': foodId},
+          );
+          _sentry.reportNetworkError(e, url: 'supabase:user_foods:create', method: 'UPSERT', stackTrace: stackTrace);
+        }
+      }());
     } catch (e) {
       _logger.error(
         'Error saving user food',
@@ -180,13 +187,9 @@ class UserFoodCrudService {
 
       if (success) {
         // Attempt background upload (non-blocking)
-        unawaited(
-          _immediateRemoteWriteService.run(
-            repository: 'user_foods',
-            operation: 'update',
-            recordId: foodId,
-            method: 'UPDATE',
-            write: () => _uploadUserFoodUpdateToSupabase(
+        unawaited(() async {
+          try {
+            await _uploadUserFoodUpdateToSupabase(
               foodId: foodId,
               name: name,
               displayName: displayName,
@@ -202,9 +205,17 @@ class UserFoodCrudService {
               sodiumMg: sodiumMg,
               fluidMlPerServing: fluidMlPerServing,
               categoryNames: categoryNames,
-            ),
-          ),
-        );
+            );
+          } catch (e, stackTrace) {
+            _logger.warning(
+              'Immediate upload failed; record stays dirty for retry',
+              context: 'USER_FOOD_CRUD',
+              error: e, stackTrace: stackTrace,
+              data: {'operation': 'update', 'recordId': foodId},
+            );
+            _sentry.reportNetworkError(e, url: 'supabase:user_foods:update', method: 'UPDATE', stackTrace: stackTrace);
+          }
+        }());
       }
 
       return success;
@@ -222,23 +233,30 @@ class UserFoodCrudService {
   /// Delete user food (offline-first pattern)
   Future<void> deleteUserFood(String foodId) async {
     try {
-      // Get current user's device ID
-      final userProfile = await _database.userDao.getCurrentUserProfile();
+      // Get current user's device ID using Supabase auth session
+      final currentAuthUserId = _supabase.auth.currentUser?.id;
+      final userProfile = await _database.userDao.getCurrentUserProfile(
+        currentAuthUserId: currentAuthUserId,
+      );
       final deviceId = userProfile?.id ?? 'unknown';
 
       // OFFLINE-FIRST: Delete from Drift IMMEDIATELY
       await _database.foodsDao.deleteUserFood(foodId);
 
       // Attempt background upload (non-blocking)
-      unawaited(
-        _immediateRemoteWriteService.run(
-          repository: 'user_foods',
-          operation: 'delete',
-          recordId: foodId,
-          method: 'UPDATE',
-          write: () => _uploadUserFoodDeletion(deviceId, foodId),
-        ),
-      );
+      unawaited(() async {
+        try {
+          await _uploadUserFoodDeletion(deviceId, foodId);
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Immediate upload failed; record stays dirty for retry',
+            context: 'USER_FOOD_CRUD',
+            error: e, stackTrace: stackTrace,
+            data: {'operation': 'delete', 'recordId': foodId},
+          );
+          _sentry.reportNetworkError(e, url: 'supabase:user_foods:delete', method: 'UPDATE', stackTrace: stackTrace);
+        }
+      }());
     } catch (e) {
       _logger.error(
         'Error deleting user food',
@@ -396,7 +414,10 @@ class UserFoodCrudService {
   /// Check if food exists in user_foods
   Future<bool> isUserFood(String foodId) async {
     try {
-      final userProfile = await _database.userDao.getCurrentUserProfile();
+      final currentAuthUserId = _supabase.auth.currentUser?.id;
+      final userProfile = await _database.userDao.getCurrentUserProfile(
+        currentAuthUserId: currentAuthUserId,
+      );
       final userId = userProfile?.id ?? 'unknown';
 
       final userFoods = await _database.foodsDao.getUserFoods(userId);

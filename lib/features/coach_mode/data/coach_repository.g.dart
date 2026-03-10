@@ -49,4 +49,4 @@ final class CoachRepositoryProvider
   }
 }
 
-String _$coachRepositoryHash() => r'be09b9bb5f86de75440bba8ed83f1694c5f3b910';
+String _$coachRepositoryHash() => r'725cbbaa1af27b0fa24ae00375429f1f498b2513';

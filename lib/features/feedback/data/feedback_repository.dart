@@ -6,7 +6,7 @@ import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sync/immediate_remote_write_service.dart';
+import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/feedback_data.dart';
 
@@ -18,7 +18,7 @@ final feedbackRepositoryProvider = Provider<FeedbackRepository>((ref) {
     database,
     deps.logger,
     deps.supabaseClient,
-    ref.read(immediateRemoteWriteServiceProvider),
+    deps.sentry,
   );
 });
 
@@ -29,13 +29,13 @@ class FeedbackRepository with SyncableRepository {
     this._database,
     this._logger,
     this._supabase,
-    this._immediateRemoteWriteService,
+    this._sentry,
   );
 
   final AppDatabase _database;
   final AppLogger _logger;
   final SupabaseClient _supabase;
-  final ImmediateRemoteWriteService _immediateRemoteWriteService;
+  final SentryReporter _sentry;
 
   // ========================================================================
   // SyncableRepository Implementation
@@ -234,18 +234,20 @@ class FeedbackRepository with SyncableRepository {
       planName: response.planName,
     );
 
-    final uploaded = await _immediateRemoteWriteService.run(
-      repository: repositoryKey,
-      operation: 'create',
-      recordId: localId,
-      method: 'INSERT',
-      write: () => _saveToSupabase(response),
-    );
-    if (uploaded) {
+    try {
+      await _saveToSupabase(response);
       await _database.customStatement(
         'UPDATE feedback SET needs_upload = 0 WHERE id = ?',
         [localId],
       );
+    } catch (e, stackTrace) {
+      _logger.warning(
+        'Immediate upload failed; record stays dirty for retry',
+        context: 'FEEDBACK_REPOSITORY',
+        error: e, stackTrace: stackTrace,
+        data: {'operation': 'create', 'recordId': localId},
+      );
+      _sentry.reportNetworkError(e, url: 'supabase:feedback:create', method: 'INSERT', stackTrace: stackTrace);
     }
   }
 
