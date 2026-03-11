@@ -15,6 +15,9 @@ import '../../../../shared/services/food_management/user_food_crud_service.dart'
 import '../../../barcode_scanning/application/product_detail_service.dart';
 import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/catalog_search_service.dart';
+import '../widgets/swap_food/food_card_widget.dart';
+import '../widgets/swap_food/selected_food_display_widget.dart';
+import '../widgets/swap_food/food_search_results_widget.dart';
 
 /// Swap/Add Food Screen - Kyle's Design System
 /// Allows users to swap existing food or add new food to nutrition plan
@@ -797,7 +800,18 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   Widget _buildSelectedFoodContent(Food selectedFood) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: _buildSelectedFoodCard(selectedFood),
+      child: SelectedFoodDisplayWidget(
+        food: selectedFood,
+        quantity: _selectedQuantity,
+        onQuantityChanged: (value) {
+          setState(() {
+            _selectedQuantity = value;
+          });
+        },
+        onClear: () {
+          ref.read(swapFoodControllerProvider(_params).notifier).clearSelection();
+        },
+      ),
     );
   }
 
@@ -809,7 +823,10 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
     // OpenFoodFacts results take priority
     if (state.openFoodFactsResults.isNotEmpty) {
-      return _buildOpenFoodFactsResults(state);
+      return OpenFoodFactsResultsWidget(
+        results: state.openFoodFactsResults,
+        onResultTap: _handleOpenFoodFactsSelection,
+      );
     }
 
     // Show recommendations or search results
@@ -817,7 +834,24 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       return _buildDefaultView(state);
     } else {
       // Show search results
-      return _buildSearchResults(state);
+      return FoodSearchResultsWidget(
+        searchResults: state.searchResults,
+        userFoods: state.userFoods,
+        catalogResults: state.catalogResults,
+        openFoodFactsResults: state.openFoodFactsResults,
+        isSearchingCatalog: state.isSearchingCatalog,
+        isMyFoodsExpanded: state.isMyFoodsExpanded,
+        searchQuery: state.searchQuery,
+        onFoodTap: _selectFood,
+        onFoodLongPress: (food) => _showUserFoodEditSheet(food),
+        onFoodEdit: (food) => _showUserFoodEditSheet(food),
+        onCatalogResultTap: _handleCatalogSelection,
+        onOpenFoodFactsResultTap: _handleOpenFoodFactsSelection,
+        onMyFoodsSectionToggle: () {
+          ref.read(swapFoodControllerProvider(_params).notifier).toggleMyFoodsExpanded();
+        },
+        isUserFood: _isUserFood,
+      );
     }
   }
 
@@ -831,7 +865,13 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
           if (state.isMyFoodsExpanded)
             ...state.userFoods.map((food) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _buildFoodCard(food),
+              child: FoodCardWidget(
+                food: food,
+                isUserFood: _isUserFood(food),
+                onTap: () => _selectFood(food),
+                onLongPress: () => _showUserFoodEditSheet(food),
+                onEdit: () => _showUserFoodEditSheet(food),
+              ),
             )),
           const SizedBox(height: AppSpacing.md),
         ],
@@ -848,7 +888,13 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         // Recommended food items
         ...state.recommendations.map((food) => Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: _buildFoodCard(food),
+          child: FoodCardWidget(
+            food: food,
+            isUserFood: _isUserFood(food),
+            onTap: () => _selectFood(food),
+            onLongPress: () => _showUserFoodEditSheet(food),
+            onEdit: () => _showUserFoodEditSheet(food),
+          ),
         )),
       ],
     );
@@ -944,163 +990,6 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     );
   }
 
-  Widget _buildSearchResults(SwapFoodState state) {
-    final hasNoResults = state.searchResults.isEmpty &&
-        state.userFoods.isEmpty &&
-        state.catalogResults.isEmpty &&
-        !state.isSearchingCatalog;
-
-    if (hasNoResults) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                FontAwesomeIcons.magnifyingGlass,
-                size: AppIconSizes.xl,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'No foods found for "${state.searchQuery}"',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      children: [
-        // My Foods section (if matching user foods exist)
-        if (state.userFoods.isNotEmpty) ...[
-          _buildMyFoodsSectionHeader(state),
-          if (state.isMyFoodsExpanded)
-            ...state.userFoods.map((food) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _buildFoodCard(food),
-            )),
-          const SizedBox(height: AppSpacing.md),
-        ],
-        // Search Results header
-        if (state.searchResults.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Text(
-              'Search Results',
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ),
-        // Search result food cards
-        ...state.searchResults.map((food) => Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: _buildFoodCard(food),
-        )),
-
-        // Product Catalog section
-        _buildCatalogSection(state),
-      ],
-    );
-  }
-
-  Widget _buildOpenFoodFactsResults(SwapFoodState state) {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      itemCount: state.openFoodFactsResults.length,
-      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (context, index) {
-        final result = state.openFoodFactsResults[index];
-        return _buildOpenFoodFactsCard(result);
-      },
-    );
-  }
-
-  Widget _buildFoodCard(Food food) {
-    final isUserFood = _isUserFood(food);
-
-    return BaseCard(
-      child: InkWell(
-        onTap: () => _selectFood(food),
-        onLongPress: isUserFood ? () => _showUserFoodEditSheet(food) : null,
-        borderRadius: AppRadius.cardRadius,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              // Food icon with colored circular background
-              Container(
-                width: AppIconSizes.foodIcon,
-                height: AppIconSizes.foodIcon,
-                decoration: BoxDecoration(
-                  color: _getFoodIconColor(food.name),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _getFoodIcon(food.name),
-                  size: AppIconSizes.controlIcon,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      food.displayName ?? food.name,
-                      style: AppTextStyles.foodTitle.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    if (food.carbsPerServing != null) ...[
-                      const SizedBox(height: AppSpacing.xxs),
-                      Text(
-                        '${food.carbsPerServing!.toInt()}g carbs per serving',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                    // Show category badges for user foods
-                    if (isUserFood && food.categories.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      _buildCategoryBadges(food.categories),
-                    ],
-                  ],
-                ),
-              ),
-              // Show edit button for user foods, plus for others
-              if (isUserFood)
-                IconButton(
-                  icon: Icon(
-                    FontAwesomeIcons.penToSquare,
-                    color: AppColors.electrolyte.withValues(alpha: 0.7),
-                    size: AppIconSizes.sm,
-                  ),
-                  onPressed: () => _showUserFoodEditSheet(food),
-                  tooltip: 'Edit food',
-                )
-              else
-                Icon(
-                  FontAwesomeIcons.circlePlus,
-                  color: AppColors.orange,
-                  size: AppIconSizes.md,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   /// Check if a food is a user-imported food (not a system food)
   /// Uses the userFoodIds set from the controller state for accurate detection
@@ -1124,50 +1013,6 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       'trail mix', 'water', 'yogurt',
     ];
     return !knownGenericFoods.any((keyword) => name.contains(keyword));
-  }
-
-  /// Build category badges for user foods
-  Widget _buildCategoryBadges(List<String> categories) {
-    return Wrap(
-      spacing: AppSpacing.xs,
-      runSpacing: AppSpacing.xs,
-      children: categories.map((category) {
-        final label = _categoryToLabel(category);
-        final color = _getCategoryColor(category);
-        return Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: 2,
-          ),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withValues(alpha: 0.5)),
-          ),
-          child: Text(
-            label,
-            style: AppTextStyles.smallLabel.copyWith(
-              color: color,
-              fontSize: 10,
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  String _categoryToLabel(String category) {
-    if (category.startsWith('before')) return 'Before';
-    if (category.startsWith('during')) return 'During';
-    if (category.startsWith('after')) return 'After';
-    return category;
-  }
-
-  Color _getCategoryColor(String category) {
-    if (category.startsWith('before')) return AppColors.electrolyte;
-    if (category.startsWith('during')) return AppColors.orange;
-    if (category.startsWith('after')) return AppColors.dragonfruit;
-    return AppColors.cream;
   }
 
   /// Show the edit screen for a user food
@@ -1238,550 +1083,5 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     }
   }
 
-  /// Build the product catalog results section (appears during search)
-  Widget _buildCatalogSection(SwapFoodState state) {
-    // Show loading spinner while searching
-    if (state.isSearchingCatalog && state.catalogResults.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: Row(
-                children: [
-                  Icon(
-                    FontAwesomeIcons.store,
-                    size: AppIconSizes.sm,
-                    color: AppColors.electrolyte,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    'Product Catalog',
-                    style: AppTextStyles.sectionTitle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(AppSpacing.md),
-              child: SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
 
-    // Nothing to show
-    if (state.catalogResults.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section header
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Row(
-              children: [
-                Icon(
-                  FontAwesomeIcons.store,
-                  size: AppIconSizes.sm,
-                  color: AppColors.electrolyte,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Product Catalog',
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.electrolyte.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${state.catalogResults.length}',
-                    style: AppTextStyles.smallLabel.copyWith(
-                      color: AppColors.electrolyte,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                if (state.isSearchingCatalog)
-                  const Padding(
-                    padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: SizedBox(
-                      height: 14,
-                      width: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          // Catalog result cards
-          ...state.catalogResults.map((result) => Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: _buildCatalogCard(result),
-          )),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCatalogCard(CatalogSearchResult result) {
-    return BaseCard(
-      child: InkWell(
-        onTap: () => _handleCatalogSelection(result),
-        borderRadius: AppRadius.cardRadius,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              // Product image or placeholder
-              Container(
-                width: AppIconSizes.foodIcon,
-                height: AppIconSizes.foodIcon,
-                decoration: BoxDecoration(
-                  color: AppColors.electrolyte.withValues(alpha: 0.2),
-                  borderRadius: AppRadius.smRadius,
-                ),
-                child: result.imageUrl?.isNotEmpty == true
-                    ? ClipRRect(
-                        borderRadius: AppRadius.smRadius,
-                        child: Image.network(
-                          result.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            FontAwesomeIcons.cartShopping,
-                            color: AppColors.electrolyte,
-                            size: AppIconSizes.controlIcon,
-                          ),
-                        ),
-                      )
-                    : Icon(
-                        FontAwesomeIcons.cartShopping,
-                        color: AppColors.electrolyte,
-                        size: AppIconSizes.controlIcon,
-                      ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      result.displayName,
-                      style: AppTextStyles.foodTitle.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (result.brand != null && result.brand!.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.xxs),
-                      Text(
-                        result.brand!,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    const SizedBox(height: AppSpacing.xs),
-                    // Nutrition badge row
-                    Row(
-                      children: [
-                        if (result.hasNutrition) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.sm,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.electrolyte.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${result.carbsG?.toInt() ?? 0}g carbs',
-                              style: AppTextStyles.smallLabel.copyWith(
-                                color: AppColors.electrolyte,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          if (result.caloriesPerServing != null)
-                            Text(
-                              '${result.caloriesPerServing} cal',
-                              style: AppTextStyles.smallLabel.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                fontSize: 10,
-                              ),
-                            ),
-                        ] else
-                          Text(
-                            'No nutrition data',
-                            style: AppTextStyles.smallLabel.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                              fontSize: 10,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                result.hasNutrition
-                    ? FontAwesomeIcons.circlePlus
-                    : FontAwesomeIcons.chevronRight,
-                color: result.hasNutrition
-                    ? AppColors.orange
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-                size: AppIconSizes.md,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOpenFoodFactsCard(dynamic result) {
-    return BaseCard(
-      child: InkWell(
-        onTap: () => _handleOpenFoodFactsSelection(result),
-        borderRadius: AppRadius.cardRadius,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              // Product image
-              Container(
-                width: AppIconSizes.foodIcon,
-                height: AppIconSizes.foodIcon,
-                decoration: BoxDecoration(
-                  color: AppColors.electrolyte.withValues(alpha: 0.2),
-                  borderRadius: AppRadius.smRadius,
-                ),
-                child: result.imageUrl?.isNotEmpty == true
-                    ? ClipRRect(
-                        borderRadius: AppRadius.smRadius,
-                        child: Image.network(
-                          result.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            FontAwesomeIcons.utensils,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            size: AppIconSizes.controlIcon,
-                          ),
-                        ),
-                      )
-                    : Icon(
-                        FontAwesomeIcons.utensils,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        size: AppIconSizes.controlIcon,
-                      ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      result.displayName ?? 'Unknown Product',
-                      style: AppTextStyles.foodTitle.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (result.categories?.isNotEmpty == true) ...[
-                      const SizedBox(height: AppSpacing.xxs),
-                      Text(
-                        result.categories!,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Icon(
-                FontAwesomeIcons.chevronRight,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                size: AppIconSizes.chevron,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSelectedFoodCard(Food food) {
-    final totalCarbs = (food.carbsPerServing ?? 0) * _selectedQuantity;
-    final totalProtein = (food.proteinPerServing ?? 0) * _selectedQuantity;
-    final totalFat = (food.fatPerServing ?? 0) * _selectedQuantity;
-    final totalCalories = ((food.caloriesPerServing ?? 0) * _selectedQuantity).toInt();
-
-    return BaseCard(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Food header
-            Row(
-              children: [
-                // Food icon with colored circular background
-                Container(
-                  width: AppIconSizes.foodIcon,
-                  height: AppIconSizes.foodIcon,
-                  decoration: BoxDecoration(
-                    color: _getFoodIconColor(food.name),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _getFoodIcon(food.name),
-                    size: AppIconSizes.controlIcon,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        food.displayName ?? food.name,
-                        style: AppTextStyles.foodTitle.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      if (food.description?.isNotEmpty == true) ...[
-                        const SizedBox(height: AppSpacing.xxs),
-                        Text(
-                          food.description!,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    FontAwesomeIcons.xmark,
-                    size: AppIconSizes.controlIcon,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  onPressed: () {
-                    ref.read(swapFoodControllerProvider(_params).notifier).clearSelection();
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // Quantity control
-            KylePlusMinusDecimalControl(
-              value: _selectedQuantity,
-              onChanged: (value) {
-                setState(() {
-                  _selectedQuantity = value;
-                });
-              },
-              min: 0.5,
-              max: 10.0,
-              step: 0.5,
-              decimalPlaces: 1,
-              label: 'QUANTITY',
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // Nutrition info
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.electrolyte.withValues(alpha: 0.1),
-                borderRadius: AppRadius.smRadius,
-              ),
-              child: Column(
-                children: [
-                  _buildNutrientRow('Carbohydrates', '${totalCarbs.toStringAsFixed(1)} g'),
-                  const SizedBox(height: AppSpacing.sm),
-                  _buildNutrientRow('Protein', '${totalProtein.toStringAsFixed(1)} g'),
-                  const SizedBox(height: AppSpacing.sm),
-                  _buildNutrientRow('Fat', '${totalFat.toStringAsFixed(1)} g'),
-                  const SizedBox(height: AppSpacing.sm),
-                  _buildNutrientRow('Calories', '$totalCalories kcal'),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNutrientRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        Text(
-          value,
-          style: AppTextStyles.dataNumber.copyWith(
-            color: AppColors.electrolyte,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Get the appropriate icon for a food based on its name
-  IconData _getFoodIcon(String foodName) {
-    final name = foodName.toLowerCase();
-
-    // Map generic foods to specific icons
-    if (name.contains('apple') && !name.contains('applesauce')) {
-      return FontAwesomeIcons.appleWhole;
-    } else if (name.contains('applesauce') || name.contains('purée')) {
-      return FontAwesomeIcons.bottleDroplet;
-    } else if (name.contains('bagel')) {
-      return FontAwesomeIcons.breadSlice;
-    } else if (name.contains('banana')) {
-      return FontAwesomeIcons.appleWhole;
-    } else if (name.contains('berr')) {
-      return FontAwesomeIcons.bowlFood;
-    } else if (name.contains('chocolate milk')) {
-      return FontAwesomeIcons.bottleWater;
-    } else if (name.contains('coconut water')) {
-      return FontAwesomeIcons.bottleWater;
-    } else if (name.contains('coffee')) {
-      return FontAwesomeIcons.mugHot;
-    } else if (name.contains('date')) {
-      return FontAwesomeIcons.appleWhole;
-    } else if (name.contains('electrolyte drink mix')) {
-      return FontAwesomeIcons.flask;
-    } else if (name.contains('electrolyte tablet')) {
-      return FontAwesomeIcons.pills;
-    } else if (name.contains('energy bar')) {
-      return FontAwesomeIcons.bars;
-    } else if (name.contains('energy chew')) {
-      return FontAwesomeIcons.candyCane;
-    } else if (name.contains('energy waffle') || name.contains('stroopwafel')) {
-      return FontAwesomeIcons.cookie;
-    } else if (name.contains('fig bar')) {
-      return FontAwesomeIcons.bars;
-    } else if (name.contains('gel')) {
-      return FontAwesomeIcons.droplet;
-    } else if (name.contains('oatmeal')) {
-      return FontAwesomeIcons.bowlFood;
-    } else if (name.contains('orange juice')) {
-      return FontAwesomeIcons.glassWater;
-    } else if (name.contains('peanut butter')) {
-      return FontAwesomeIcons.jar;
-    } else if (name.contains('pickle juice')) {
-      return FontAwesomeIcons.vial;
-    } else if (name.contains('pretzel')) {
-      return FontAwesomeIcons.bowlFood;
-    } else if (name.contains('protein bar')) {
-      return FontAwesomeIcons.bars;
-    } else if (name.contains('protein powder')) {
-      return FontAwesomeIcons.jar;
-    } else if (name.contains('protein shake')) {
-      return FontAwesomeIcons.bottleWater;
-    } else if (name.contains('salt packet')) {
-      return FontAwesomeIcons.bagShopping;
-    } else if (name.contains('sports drink mix')) {
-      return FontAwesomeIcons.flask;
-    } else if (name.contains('sports drink')) {
-      return FontAwesomeIcons.bottleWater;
-    } else if (name.contains('toast')) {
-      return FontAwesomeIcons.breadSlice;
-    } else if (name.contains('trail mix')) {
-      return FontAwesomeIcons.bowlFood;
-    } else if (name.contains('water')) {
-      return FontAwesomeIcons.bottleWater;
-    } else if (name.contains('yogurt')) {
-      return FontAwesomeIcons.bowlFood;
-    }
-
-    // Check if this is likely a user-imported food
-    final knownGenericFoods = [
-      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
-      'chocolate milk', 'coconut water', 'coffee', 'date',
-      'electrolyte drink', 'electrolyte tablet', 'energy bar',
-      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
-      'gel', 'oatmeal', 'orange juice', 'peanut butter',
-      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
-      'protein shake', 'salt packet', 'sports drink', 'toast',
-      'trail mix', 'water', 'yogurt',
-    ];
-
-    // If none of the generic food keywords match, it's likely user-imported
-    if (!knownGenericFoods.any((keyword) => name.contains(keyword))) {
-      return FontAwesomeIcons.userPen;
-    }
-
-    // Default fallback icon
-    return FontAwesomeIcons.utensils;
-  }
-
-  /// Get the background color for the food icon
-  Color _getFoodIconColor(String foodName) {
-    final name = foodName.toLowerCase();
-
-    final knownGenericFoods = [
-      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
-      'chocolate milk', 'coconut water', 'coffee', 'date',
-      'electrolyte drink', 'electrolyte tablet', 'energy bar',
-      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
-      'gel', 'oatmeal', 'orange juice', 'peanut butter',
-      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
-      'protein shake', 'salt packet', 'sports drink', 'toast',
-      'trail mix', 'water', 'yogurt',
-    ];
-
-    // User-imported foods get orange color
-    if (!knownGenericFoods.any((keyword) => name.contains(keyword))) {
-      return AppColors.orange;
-    }
-
-    // Generic foods get electrolyte color
-    return AppColors.electrolyte;
-  }
 }
