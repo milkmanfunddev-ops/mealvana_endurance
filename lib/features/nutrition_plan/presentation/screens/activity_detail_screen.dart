@@ -2,27 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../widgets/activity_detail/post_workout_feedback_dialog.dart';
-import '../widgets/activity_detail/brick_completion_dialog.dart';
-import '../../domain/carb_adjustment_level.dart';
-import '../widgets/activity_detail/macro_summary_row.dart';
-import '../widgets/activity_detail/dismissible_food_item.dart';
+import '../widgets/activity_detail/activity_detail_app_bar.dart';
+import '../widgets/activity_detail/activity_detail_action_buttons.dart';
+import '../widgets/activity_detail/nutrition_sections_builder.dart';
+import '../widgets/activity_detail/no_nutrition_plan_state.dart';
 import '../widgets/activity_detail/single_sport_hero_image.dart';
 import '../widgets/activity_detail/activity_schedule_info.dart';
-import '../widgets/activity_detail/activity_completed_badge.dart';
 import '../widgets/activity_detail/brick_header.dart';
-import '../widgets/activity_detail/brick_nutrition_sections.dart';
-import '../widgets/activity_detail/before_phase_widget.dart';
-import '../widgets/activity_detail/during_phase_section_widget.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/app_date_picker.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../providers/activity_detail_controller.dart';
-import '../../domain/nutrition_plan.dart';
-import '../../domain/food_item_data.dart';
-import '../../domain/run_parameters.dart';
-import '../../../settings/presentation/providers/settings_controller.dart';
+import '../../domain/carb_adjustment_level.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../coach_mode/presentation/widgets/activity_coach_feedback_widget.dart';
 import '../../../coach_mode/presentation/providers/coach_activity_detail_controller.dart';
@@ -32,7 +24,6 @@ import '../widgets/low_fuel_risk_badge.dart';
 import '../../../personal_templates/presentation/widgets/save_template_dialog.dart';
 import '../../../personal_templates/presentation/widgets/macro_comparison_banner.dart';
 import '../../../personal_templates/presentation/providers/personal_templates_controller.dart';
-import '../../../../shared/utils/food_display_utils.dart' as food_utils;
 
 /// Activity Detail Screen - Refactored with extracted widgets
 /// Shows activity details with nutrition sections and food items
@@ -61,7 +52,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   bool _hasShownSwipeHint = false;
   bool _swipeHintChecked = false;
   bool _templateBannerDismissed = false;
-  final Map<String, bool> _expandedSections = {};
 
   @override
   void initState() {
@@ -117,7 +107,14 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _buildAppBar(context),
+      appBar: ActivityDetailAppBar(
+        activityId: widget.activityId,
+        isNewActivity: widget.isNewActivity,
+        isCoachView: widget.isCoachView,
+        onSaveTemplate: () => _showSaveTemplateDialog(context),
+        onEdit: () => _navigateToEditActivity(context),
+        onDelete: () => _showDeleteConfirmationDialog(context),
+      ),
       body: activityDetailAsync.when(
         data: (data) {
           final ActivityDetailState state;
@@ -141,103 +138,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         loading: () => _buildLoadingState(context),
         error: (error, stack) => _buildErrorState(context, error),
       ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Theme.of(
-        context,
-      ).scaffoldBackgroundColor.withValues(alpha: 0.95),
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      automaticallyImplyLeading: false,
-      title: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                FontAwesomeIcons.arrowLeft,
-                size: AppIconSizes.controlIcon,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              onPressed: () => context.pop(),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Consumer(
-              builder: (context, ref, _) {
-                final asyncState = widget.isCoachView
-                    ? ref.watch(coachActivityDetailControllerProvider(widget.activityId))
-                    : ref.watch(activityDetailControllerProvider(
-                        activityId: widget.activityId,
-                        isNewActivity: widget.isNewActivity,
-                      ));
-                final eventName = asyncState.whenOrNull(
-                  data: (data) {
-                    if (data is ActivityDetailState) return data.eventName;
-                    return null;
-                  },
-                );
-                final title = eventName ??
-                    (widget.isNewActivity ? 'New Activity' : 'Activity Details');
-                return Text(
-                  title,
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        // Save as Template button (only for existing activities with a nutrition plan)
-        if (!widget.isNewActivity && !widget.isCoachView)
-          IconButton(
-            icon: Icon(
-              FontAwesomeIcons.bookmark,
-              size: AppIconSizes.md,
-              color: AppColors.electrolyte,
-            ),
-            onPressed: () => _showSaveTemplateDialog(context),
-            tooltip: 'Save as Template',
-          ),
-        // Edit button for existing activities (not new ones, not coach view)
-        if (!widget.isNewActivity && !widget.isCoachView)
-          IconButton(
-            icon: Icon(
-              FontAwesomeIcons.penToSquare,
-              size: AppIconSizes.md,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            onPressed: () => _navigateToEditActivity(context),
-            tooltip: 'Edit Activity',
-          ),
-        // Only show delete button for existing activities (not new ones, not coach view)
-        if (!widget.isNewActivity && !widget.isCoachView)
-          IconButton(
-            icon: Icon(
-              FontAwesomeIcons.trash,
-              size: AppIconSizes.md,
-              color: AppColors.dragonfruit,
-            ),
-            onPressed: () => _showDeleteConfirmationDialog(context),
-            tooltip: 'Delete Activity',
-          ),
-        const SizedBox(width: AppSpacing.sm),
-      ],
     );
   }
 
@@ -340,9 +240,56 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             LowFuelRiskBadge(nutritionPlan: state.nutritionPlan!),
 
           if (state.nutritionPlan != null)
-            _buildNutritionSections(context, state),
+            NutritionSectionsBuilder(
+              state: state,
+              onSwapFood: (foodId, foodName, category) =>
+                  _swapFood(context, state, foodId, foodName, category),
+              onDeleteFood: (foodId, category) =>
+                  _deleteFood(context, state, foodId, category),
+              onUpdateQuantity: (foodId, category, newQuantity) =>
+                  _updateFoodQuantity(context, state, foodId, category, newQuantity),
+              onAddFood: (category) => _addFood(context, category),
+              onInitializeByHour: (cat, duration) {
+                final controller = _getControllerNotifier();
+                controller.initializeByHourData(cat, duration);
+              },
+              onMoveFoodToTimeSlot: (foodId, cat, sourceSlot, newSlot) {
+                final controller = _getControllerNotifier();
+                controller.moveFoodToTimeSlot(foodId, cat, sourceSlot, newSlot);
+              },
+              onPlaceFoodInSlot: (foodId, cat, slot, qty, timingCategory, isSip) {
+                final controller = _getControllerNotifier();
+                controller.placeFoodInSlot(
+                  foodId, cat, slot, qty,
+                  timingCategory: timingCategory,
+                  isSipThroughout: isSip,
+                );
+              },
+              onRemoveFoodFromSlot: (foodId, cat, slot) {
+                final controller = _getControllerNotifier();
+                controller.removeFoodFromSlot(foodId, cat, slot);
+              },
+              onAdjustSlotQuantity: (foodId, cat, slot, delta) {
+                final controller = _getControllerNotifier();
+                controller.adjustSlotQuantity(foodId, cat, slot, delta);
+              },
+              onMoveSipFoodToSlot: (foodId, cat, slot, qty, timingCategory) {
+                final controller = _getControllerNotifier();
+                controller.moveSipFoodToSlot(foodId, cat, slot, qty,
+                    timingCategory: timingCategory);
+              },
+              onScaleSubPhase: (subPhaseIndex, foodIndex, newQuantity) {
+                final controller = _getControllerNotifier();
+                controller.updateSubPhaseQuantityWithScaling(
+                    subPhaseIndex, foodIndex, newQuantity);
+              },
+              consumeSwipeHint: _consumeSwipeHint,
+            ),
           if (state.nutritionPlan == null)
-            _buildNoNutritionPlanState(context, state),
+            NoNutritionPlanState(
+              activity: state.activity,
+              onGeneratePlan: () => _navigateToGeneratePlan(context, state.activity),
+            ),
           const SizedBox(height: AppSpacing.md),
           // Collapsible coach feedback section
           ActivityCoachFeedbackWidget(
@@ -351,7 +298,23 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             activityUserId: activity.userId,
           ),
           const SizedBox(height: AppSpacing.lg),
-          _buildActionButtons(context, state),
+          ActivityDetailActionButtons(
+            state: state,
+            isNewActivity: widget.isNewActivity,
+            isCoachView: widget.isCoachView,
+            onSave: () => _saveWorkout(context, state),
+            onComplete: (rating, notes, {isBrick = false, carbAdjustment}) =>
+                _handleCompletion(context, state, rating, notes,
+                    isBrick: isBrick, carbAdjustment: carbAdjustment),
+            onRatingChanged: (rating) {
+              final controller = _getControllerNotifier();
+              controller.updateCompletionRating(rating);
+            },
+            onNotesChanged: (notes) {
+              final controller = _getControllerNotifier();
+              controller.updateWorkoutNotes(notes);
+            },
+          ),
           const SizedBox(height: AppSpacing.xxxl),
         ],
       ),
@@ -392,51 +355,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     );
   }
 
-  Widget _buildNoNutritionPlanState(
-    BuildContext context,
-    ActivityDetailState state,
-  ) {
-    final activity = state.activity;
-
-    return BaseCard(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            children: [
-              Icon(
-                FontAwesomeIcons.utensils,
-                size: AppIconSizes.xl,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'No nutrition plan yet',
-                style: AppTextStyles.subtitle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Generate a nutrition plan to see recommendations',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              // Generate Plan Button
-              KylePrimaryButton(
-                onPressed: () => _navigateToGeneratePlan(context, activity),
-                text: 'Generate Plan',
-                icon: FontAwesomeIcons.wandMagicSparkles,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   /// Navigate to NewActivityScreen with activity details pre-filled
   void _navigateToGeneratePlan(BuildContext context, Activity? activity) {
@@ -501,398 +419,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     );
   }
 
-  Widget _buildNutritionSections(
-    BuildContext context,
-    ActivityDetailState state,
-  ) {
-    final plan = state.nutritionPlan!;
-    final activity = state.activity;
-
-    // Check if this is a brick workout
-    if (activity != null && activity.isBrick) {
-      return BrickNutritionSections(
-        brick: activity,
-        planData: plan,
-        useImperial:
-            ref
-                .watch(settingsControllerProvider)
-                .value
-                ?.preferredDistanceUnit ==
-            DistanceUnit.miles,
-        onAddFood: (category) => _addFood(context, category),
-        onSwapFood: (foodId, foodName, category) =>
-            _swapFood(context, state, foodId, foodName, category),
-        onDeleteFood: (foodId, category) =>
-            _deleteFood(context, state, foodId, category),
-        onUpdateQuantity: (foodId, category, newQuantity) =>
-            _updateFoodQuantity(context, state, foodId, category, newQuantity),
-        onInitializeByHour: (cat, duration) {
-          final controller = _getControllerNotifier();
-          controller.initializeByHourData(cat, duration);
-        },
-        onMoveFoodToTimeSlot: (foodId, cat, sourceSlot, newSlot) {
-          final controller = _getControllerNotifier();
-          controller.moveFoodToTimeSlot(foodId, cat, sourceSlot, newSlot);
-        },
-        onPlaceFoodInSlot: (foodId, cat, slot, qty, timingCategory, isSip) {
-          final controller = _getControllerNotifier();
-          controller.placeFoodInSlot(
-            foodId, cat, slot, qty,
-            timingCategory: timingCategory,
-            isSipThroughout: isSip,
-          );
-        },
-        onRemoveFoodFromSlot: (foodId, cat, slot) {
-          final controller = _getControllerNotifier();
-          controller.removeFoodFromSlot(foodId, cat, slot);
-        },
-        onAdjustSlotQuantity: (foodId, cat, slot, delta) {
-          final controller = _getControllerNotifier();
-          controller.adjustSlotQuantity(foodId, cat, slot, delta);
-        },
-        onMoveSipFoodToSlot: (foodId, cat, slot, qty, timingCategory) {
-          final controller = _getControllerNotifier();
-          controller.moveSipFoodToSlot(foodId, cat, slot, qty,
-              timingCategory: timingCategory);
-        },
-        onScaleSubPhase: (subPhaseIndex, foodIndex, newQuantity) {
-          final controller = _getControllerNotifier();
-          controller.updateSubPhaseQuantityWithScaling(
-              subPhaseIndex, foodIndex, newQuantity);
-        },
-        showSwipeHint: _consumeSwipeHint(),
-      );
-    }
-
-    // Get activity type for sport-specific section titles (e.g., "Before Swim", "During Ride")
-    final activityType = state.activity?.activityType ?? ActivityType.running;
-
-    // Check unit preference
-    final settings = ref.watch(settingsControllerProvider).value;
-    final useImperial = settings?.preferredDistanceUnit == DistanceUnit.miles;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: plan.sections.map((section) {
-        // Determine category from section.id (preferred) or fallback to parsing title
-        String category;
-        Color sectionColor;
-
-        if (section.id.contains('during')) {
-          switch (activityType) {
-            case ActivityType.cycling:
-              category = 'during_cycling';
-            case ActivityType.swimming:
-              category = 'during_swim';
-            default:
-              category = 'during_run';
-          }
-          sectionColor = AppColors.electrolyte;
-        } else if (section.id.contains('after')) {
-          category = 'after_run';
-          sectionColor = AppColors.dragonfruit;
-        } else {
-          category = 'before_run';
-          sectionColor = AppColors.orange;
-        }
-
-        // Generate sport-specific title using ActivityType
-        final sectionTitle = activityType.getSectionTitle(category);
-
-        // Use BeforePhaseWidget for before sections with sub-phases (V2 template plans)
-        if (category == 'before_run' && section.hasSubPhases) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-            child: BeforePhaseWidget(
-              section: section,
-              sectionColor: sectionColor,
-              sectionTitle: sectionTitle.toUpperCase(),
-              useImperial: useImperial,
-              onSwapFood: (foodId, foodName, cat) =>
-                  _swapFood(context, state, foodId, foodName, cat),
-              onDeleteFood: (foodId, cat) =>
-                  _deleteFood(context, state, foodId, cat),
-              onUpdateQuantity: (foodId, cat, newQuantity) =>
-                  _updateFoodQuantity(context, state, foodId, cat, newQuantity),
-              onScaleSubPhase: (subPhaseIndex, foodIndex, newQuantity) {
-                final controller = _getControllerNotifier();
-                controller.updateSubPhaseQuantityWithScaling(
-                  subPhaseIndex,
-                  foodIndex,
-                  newQuantity,
-                );
-              },
-              onAddFood: (cat) => _addFood(context, cat),
-              showSwipeHint: _consumeSwipeHint(),
-            ),
-          );
-        }
-
-        // Use DuringPhaseSectionWidget for during sections (supports By Hour toggle)
-        if (category.startsWith('during_')) {
-          final durationMinutes = state.activity?.durationMinutes ?? 120;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-            child: DuringPhaseSectionWidget(
-              section: section,
-              sectionColor: sectionColor,
-              sectionTitle: sectionTitle.toUpperCase(),
-              category: category,
-              durationMinutes: durationMinutes,
-              useImperial: useImperial,
-              activityType: activityType,
-              subtitle: section.subtitle,
-              sportIcon: _getSportIcon(activityType),
-              sportIconColor: sectionColor,
-              onSwapFood: (foodId, foodName, cat) =>
-                  _swapFood(context, state, foodId, foodName, cat),
-              onDeleteFood: (foodId, cat) =>
-                  _deleteFood(context, state, foodId, cat),
-              onUpdateQuantity: (foodId, cat, newQuantity) =>
-                  _updateFoodQuantity(context, state, foodId, cat, newQuantity),
-              onAddFood: (cat) => _addFood(context, cat),
-              onInitializeByHour: (cat, duration) {
-                final controller = _getControllerNotifier();
-                controller.initializeByHourData(cat, duration);
-              },
-              onMoveFoodToTimeSlot: (foodId, cat, sourceSlot, newSlot) {
-                final controller = _getControllerNotifier();
-                controller.moveFoodToTimeSlot(foodId, cat, sourceSlot, newSlot);
-              },
-              onPlaceFoodInSlot: (foodId, cat, slot, qty, timingCategory, isSip) {
-                final controller = _getControllerNotifier();
-                controller.placeFoodInSlot(
-                  foodId, cat, slot, qty,
-                  timingCategory: timingCategory,
-                  isSipThroughout: isSip,
-                );
-              },
-              onRemoveFoodFromSlot: (foodId, cat, slot) {
-                final controller = _getControllerNotifier();
-                controller.removeFoodFromSlot(foodId, cat, slot);
-              },
-              onAdjustSlotQuantity: (foodId, cat, slot, delta) {
-                final controller = _getControllerNotifier();
-                controller.adjustSlotQuantity(foodId, cat, slot, delta);
-              },
-              onMoveSipFoodToSlot: (foodId, cat, slot, qty, timingCategory) {
-                final controller = _getControllerNotifier();
-                controller.moveSipFoodToSlot(foodId, cat, slot, qty,
-                    timingCategory: timingCategory);
-              },
-              showSwipeHint: _consumeSwipeHint(),
-            ),
-          );
-        }
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-          child: _buildNutritionSection(
-            context: context,
-            state: state,
-            title: sectionTitle.toUpperCase(),
-            section: section,
-            category: category,
-            sectionColor: sectionColor,
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildNutritionSection({
-    required BuildContext context,
-    required ActivityDetailState state,
-    required String title,
-    required PlanSection section,
-    required String category,
-    required Color sectionColor,
-  }) {
-    // Check unit preference
-    final settings = ref.watch(settingsControllerProvider).value;
-    final useImperial = settings?.preferredDistanceUnit == DistanceUnit.miles;
-
-    final isExpanded = _expandedSections[category] ?? false;
-
-    final foodSummary = section.foodItems
-        .map(_buildCollapsedFoodSummaryLabel)
-        .join(' + ');
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: AppRadius.cardRadius,
-        border: Border.all(
-          color: sectionColor.withValues(alpha: 0.3),
-          width: 2,
-        ),
-      ),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: AppTextStyles.sectionTitle.copyWith(
-              color: sectionColor,
-              fontSize: 18,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          MacroSummaryRow(
-            foods: section.foodItems,
-            section: section,
-            category: category,
-            useImperial: useImperial,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          // Collapsible food list
-          InkWell(
-            onTap: () {
-              setState(() {
-                _expandedSections[category] = !isExpanded;
-              });
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              child: Row(
-                children: [
-                  Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_down
-                        : Icons.keyboard_arrow_right,
-                    color: sectionColor,
-                    size: 20,
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      foodSummary,
-                      style: AppTextStyles.smallLabel.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (isExpanded) ...[
-            const SizedBox(height: AppSpacing.sm),
-            ...section.foodItems.asMap().entries.map((entry) {
-              final index = entry.key;
-              final food = entry.value;
-              return Padding(
-                padding: EdgeInsets.only(
-                  bottom: index < section.foodItems.length - 1
-                      ? AppSpacing.sm
-                      : 0,
-                ),
-                child: DismissibleFoodItem(
-                  food: food,
-                  category: category,
-                  onSwap: () =>
-                      _swapFood(context, state, food.id, food.name, category),
-                  onDelete: () =>
-                      _deleteFood(context, state, food.id, category),
-                  onQuantityChange: (newQuantity) => _updateFoodQuantity(
-                    context,
-                    state,
-                    food.id,
-                    category,
-                    newQuantity,
-                  ),
-                  showSwipeHint: _consumeSwipeHint(),
-                  useImperial: useImperial,
-                ),
-              );
-            }),
-            const SizedBox(height: AppSpacing.md),
-            KyleAddFoodButton(
-              text: 'ADD FOOD',
-              onPressed: () => _addFood(context, category),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _buildCollapsedFoodSummaryLabel(FoodItemData food) {
-    final qty = food_utils.parseLeadingQuantity(food.quantity);
-
-    // If the quantity string already has a multi-word tail (e.g. "2 cups Oatmeal"),
-    // use it directly — the enrichment already built the proper label.
-    final tail = food_utils.parseQuantityTail(food.quantity);
-    if (qty != null && tail.contains(' ')) {
-      if ((qty - 1.0).abs() < 0.01) {
-        return food_utils.stripParenthetical(food.displayName ?? food.name);
-      }
-      return '${food_utils.formatQuantity(qty)} ${food_utils.stripParenthetical(tail)}';
-    }
-
-    final singular = food_utils.stripParenthetical(food.displayName ?? food.name);
-    final plural = food_utils.stripParenthetical(
-      food.displayNamePlural ??
-          (singular.toLowerCase().endsWith('s') ? singular : '${singular}s'),
-    );
-
-    if (qty == null || (qty - 1.0).abs() < 0.01) return singular;
-    final label = qty > 1 ? plural : singular;
-    return '${food_utils.formatQuantity(qty)} $label';
-  }
-
-  Widget _buildActionButtons(BuildContext context, ActivityDetailState state) {
-    if (state.isCompleted) {
-      final controller = _getControllerNotifier();
-      return ActivityCompletedCard(
-        completion: state.completion,
-        rating: state.activity?.completionRating,
-        notes: state.activity?.completionNotes,
-        onRatingChanged: (rating) => controller.updateCompletionRating(rating),
-        onNotesChanged: (notes) => controller.updateWorkoutNotes(notes),
-      );
-    }
-
-    // Coach view: Only show Save button (for saving feedback/notes)
-    if (widget.isCoachView) {
-      return KylePrimaryButton(
-        text: state.isSaving ? 'Saving...' : 'Save',
-        onPressed: state.isSaving ? null : () => _saveWorkout(context, state),
-      );
-    }
-
-    if (state.isNewActivity) {
-      return KylePrimaryButton(
-        text: state.isSaving ? 'Saving...' : 'Save Workout',
-        onPressed: state.isSaving ? null : () => _saveWorkout(context, state),
-      );
-    }
-
-    return Row(
-      children: [
-        Expanded(
-          child: KyleSecondaryButton(
-            text: state.isSaving ? 'Saving...' : 'Save',
-            onPressed: state.isSaving
-                ? null
-                : () => _saveWorkout(context, state),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: KylePrimaryButton(
-            text: state.isCompleting ? 'Completing...' : 'Complete',
-            onPressed: state.isCompleting
-                ? null
-                : () => _completeWorkout(context, state),
-          ),
-        ),
-      ],
-    );
-  }
 
   // Helper to get the correct controller notifier based on view mode
   dynamic _getControllerNotifier() {
@@ -931,63 +457,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     }
   }
 
-  void _completeWorkout(BuildContext context, ActivityDetailState state) {
-    final activity = state.activity;
-    final isBrick = activity != null && activity.isBrick;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        // Use brick-specific dialog if this is a brick workout
-        if (isBrick && activity.brickMetadata != null) {
-          return BrickCompletionDialog(
-            brick: activity,
-            onComplete: (rating, notes) async {
-              Navigator.of(dialogContext).pop();
-              await _handleCompletion(
-                context,
-                state,
-                rating,
-                notes,
-                isBrick: true,
-              );
-            },
-          );
-        }
-
-        // Compute during-activity carb rate for feedback section
-        double? duringCarbRateGPerH;
-        if (state.nutritionPlan != null) {
-          final duringSection = state.nutritionPlan!.sections
-              .where((s) => s.id.contains('during'))
-              .firstOrNull;
-          final durationMinutes = activity?.durationMinutes?.toDouble();
-          if (duringSection?.carbsTarget != null &&
-              durationMinutes != null &&
-              durationMinutes > 0) {
-            duringCarbRateGPerH =
-                duringSection!.carbsTarget! / (durationMinutes / 60.0);
-          }
-        }
-
-        // Use post-workout feedback dialog for single-sport workouts
-        return PostWorkoutFeedbackDialog(
-          duringCarbRateGPerH: duringCarbRateGPerH,
-          onComplete: (rating, notes, carbAdjustment) async {
-            Navigator.of(dialogContext).pop();
-            await _handleCompletion(
-              context,
-              state,
-              rating,
-              notes,
-              isBrick: false,
-              carbAdjustment: carbAdjustment,
-            );
-          },
-        );
-      },
-    );
-  }
 
   /// Handle workout completion after dialog confirmation
   Future<void> _handleCompletion(
@@ -1148,17 +617,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     }
   }
 
-  IconData _getSportIcon(ActivityType activityType) {
-    switch (activityType) {
-      case ActivityType.cycling:
-        return FontAwesomeIcons.personBiking;
-      case ActivityType.swimming:
-        return FontAwesomeIcons.personSwimming;
-      case ActivityType.running:
-      default:
-        return FontAwesomeIcons.personRunning;
-    }
-  }
 
   /// Handle regenerate plan button tap for stale nutrition plans
   Future<void> _handleRegeneratePlan(
