@@ -14,6 +14,7 @@ import '../../../shared/data/syncable_repository.dart';
 import '../domain/activity.dart' as domain;
 import '../domain/brick_metadata.dart';
 import 'activity_mapper.dart';
+import '../application/activity_deduplication_service.dart';
 
 part 'activities_repository.g.dart';
 
@@ -35,6 +36,7 @@ ActivitiesRepository activitiesRepository(Ref ref) {
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
     sentry: deps.sentry,
+    deduplicationService: ref.read(activityDeduplicationServiceProvider),
   );
 }
 
@@ -46,17 +48,20 @@ class ActivitiesRepository with SyncableRepository {
     required AppDatabase database,
     required AppLogger logger,
     required SentryReporter sentry,
+    required ActivityDeduplicationService deduplicationService,
   }) : _supabase = supabase,
        _database = database,
        _logger = logger,
        _sentry = sentry,
-       _mapper = ActivityMapper(logger: logger);
+       _mapper = ActivityMapper(logger: logger),
+       _deduplicationService = deduplicationService;
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
   final AppLogger _logger;
   final SentryReporter _sentry;
   final ActivityMapper _mapper;
+  final ActivityDeduplicationService _deduplicationService;
 
   /// Expose mapper for use by ActivitiesService and other consumers.
   ActivityMapper get mapper => _mapper;
@@ -1102,6 +1107,7 @@ class ActivitiesRepository with SyncableRepository {
   }
 
   /// Remove duplicate provider-synced activities for a user/provider pair.
+  /// Uses ActivityDeduplicationService to identify duplicates, then removes them.
   Future<int> cleanupDuplicateProviderActivities({
     required String userId,
     required String provider,
@@ -1111,31 +1117,16 @@ class ActivitiesRepository with SyncableRepository {
         userId: userId,
         providerVariants: _providerLookupVariants(provider),
       );
+
       if (rows.length < 2) return 0;
 
-      final keeperByKey = <String, Activity>{};
-      final duplicates = <Activity>[];
-
-      for (final row in rows) {
-        final key = _providerDuplicateKey(row);
-        final existing = keeperByKey[key];
-
-        if (existing == null) {
-          keeperByKey[key] = row;
-          continue;
-        }
-
-        final preferred = _selectPreferredDuplicate(existing, row);
-        if (preferred.id == row.id) {
-          duplicates.add(existing);
-          keeperByKey[key] = row;
-        } else {
-          duplicates.add(row);
-        }
-      }
+      // Use deduplication service to identify duplicates
+      final result = _deduplicationService.identifyDuplicates(rows);
+      final duplicates = result.duplicates;
 
       if (duplicates.isEmpty) return 0;
 
+      // Delete from local database
       await _database.batch((batch) {
         for (final duplicate in duplicates) {
           batch.deleteWhere(
@@ -1145,7 +1136,7 @@ class ActivitiesRepository with SyncableRepository {
         }
       });
 
-      // Best-effort remote cleanup so deleted duplicates don't rehydrate.
+      // Best-effort remote cleanup so deleted duplicates don't rehydrate
       for (final duplicate in duplicates) {
         try {
           await _supabase
@@ -1190,52 +1181,7 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
-  String _providerDuplicateKey(Activity activity) {
-    final providerWorkoutId = activity.providerWorkoutId?.trim();
-    if (providerWorkoutId != null && providerWorkoutId.isNotEmpty) {
-      return 'id:$providerWorkoutId';
-    }
-
-    final normalizedTitle = activity.title.trim().toLowerCase();
-    final scheduledAt = activity.scheduledDateTime.toUtc().toIso8601String();
-    final duration = activity.durationMinutes ?? -1;
-    final distance = activity.distanceMiles?.toStringAsFixed(3) ?? 'na';
-    return 'fp:${activity.activityType}|$normalizedTitle|$scheduledAt|$duration|$distance';
-  }
-
-  Activity _selectPreferredDuplicate(Activity a, Activity b) {
-    final scoreA = _duplicateRecordScore(a);
-    final scoreB = _duplicateRecordScore(b);
-
-    if (scoreA != scoreB) {
-      return scoreA > scoreB ? a : b;
-    }
-
-    return b.updatedAt.isAfter(a.updatedAt) ? b : a;
-  }
-
-  int _duplicateRecordScore(Activity activity) {
-    var score = 0;
-
-    if (activity.nutritionPlanData != null &&
-        activity.nutritionPlanData!.isNotEmpty) {
-      score += 100;
-    }
-    if (activity.completedAt != null ||
-        activity.actualDistanceMiles != null ||
-        activity.actualDurationMinutes != null) {
-      score += 50;
-    }
-    if ((activity.notes ?? '').trim().isNotEmpty) {
-      score += 10;
-    }
-    if (activity.providerDeletedAt == null) {
-      score += 5;
-    }
-
-    return score;
-  }
-
+  /// Get provider name variants for case-insensitive lookup.
   List<String> _providerLookupVariants(String provider) {
     final normalized = provider.trim().toLowerCase();
     final variants = <String>{normalized};
@@ -1254,6 +1200,7 @@ class ActivitiesRepository with SyncableRepository {
     return variants.toList(growable: false);
   }
 
+  /// Load all provider activities for the given user and provider variants.
   Future<List<Activity>> _loadLocalProviderActivities({
     required String userId,
     required List<String> providerVariants,
@@ -1281,6 +1228,7 @@ class ActivitiesRepository with SyncableRepository {
     );
     return activities;
   }
+
 
   Future<List<Activity>> _hydrateProviderActivitiesFromRemote({
     required String userId,

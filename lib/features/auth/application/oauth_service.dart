@@ -16,8 +16,8 @@ import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/utils/platform_io.dart' if (dart.library.html) '../../../shared/utils/platform_web.dart';
 import '../../activities/presentation/providers/activities_controller.dart';
 import '../../events/presentation/providers/events_controller.dart';
-import '../data/user_repository.dart';
 import '../domain/auth_exceptions.dart';
+import 'auth_migration_service.dart';
 
 part 'oauth_service.g.dart';
 
@@ -160,8 +160,8 @@ class OAuthService extends _$OAuthService {
       }
 
       // Complete authentication (unified flow for all providers)
-      final userRepo = await ref.read(userRepositoryProvider.future);
-      await userRepo.completeAuthentication(
+      final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+      await authMigrationService.completeAuthentication(
         previousUserId: anonymousUserId,
         wasAnonymous: wasAnonymous,
         newUserId: anonymousUserId, // Same ID for linking
@@ -306,8 +306,8 @@ class OAuthService extends _$OAuthService {
       }
 
       // Complete authentication (unified flow for all providers)
-      final userRepo = await ref.read(userRepositoryProvider.future);
-      await userRepo.completeAuthentication(
+      final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+      await authMigrationService.completeAuthentication(
         previousUserId: anonymousUserId,
         wasAnonymous: wasAnonymous,
         newUserId: anonymousUserId, // Same ID for linking
@@ -418,8 +418,8 @@ class OAuthService extends _$OAuthService {
           'was_anonymous': wasAnonymous,
         });
 
-        final userRepo = await ref.read(userRepositoryProvider.future);
-        final dataMigrated = await userRepo.completeAuthentication(
+        final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+        final dataMigrated = await authMigrationService.completeAuthentication(
           previousUserId: anonymousUserId,
           wasAnonymous: wasAnonymous,
           newUserId: oauthUserId,
@@ -549,8 +549,8 @@ class OAuthService extends _$OAuthService {
           'was_anonymous': wasAnonymous,
         });
 
-        final userRepo = await ref.read(userRepositoryProvider.future);
-        final dataMigrated = await userRepo.completeAuthentication(
+        final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+        final dataMigrated = await authMigrationService.completeAuthentication(
           previousUserId: anonymousUserId,
           wasAnonymous: wasAnonymous,
           newUserId: oauthUserId,

@@ -6,8 +6,8 @@ import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/providers/user_id_provider.dart';
-import '../data/user_repository.dart';
 import '../domain/auth_exceptions.dart';
+import 'auth_migration_service.dart';
 
 part 'email_auth_service.g.dart';
 
@@ -141,8 +141,8 @@ class EmailAuthService extends _$EmailAuthService {
       });
 
       // Complete authentication (unified flow for all providers)
-      final userRepo = await ref.read(userRepositoryProvider.future);
-      await userRepo.completeAuthentication(
+      final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+      await authMigrationService.completeAuthentication(
         previousUserId: anonymousUserId,
         wasAnonymous: currentUser.isAnonymous,
         newUserId: anonymousUserId, // Same ID for linking
@@ -244,8 +244,8 @@ class EmailAuthService extends _$EmailAuthService {
       });
 
       // Complete authentication (creates UserProfile)
-      final userRepo = await ref.read(userRepositoryProvider.future);
-      await userRepo.completeAuthentication(
+      final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+      await authMigrationService.completeAuthentication(
         previousUserId: null, // No previous user during onboarding
         wasAnonymous: false,
         newUserId: newUserId,
@@ -347,8 +347,8 @@ class EmailAuthService extends _$EmailAuthService {
       });
 
       // Complete authentication (unified flow for all providers)
-      final userRepo = await ref.read(userRepositoryProvider.future);
-      final dataMigrated = await userRepo.completeAuthentication(
+      final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+      final dataMigrated = await authMigrationService.completeAuthentication(
         previousUserId: previousUserId,
         wasAnonymous: wasAnonymous,
         newUserId: newUserId,

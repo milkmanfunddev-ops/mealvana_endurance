@@ -6,6 +6,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../data/coach_repository.dart';
+import '../data/coach_messaging_repository.dart';
 import '../domain/coach.dart';
 import '../domain/coach_athlete_relationship.dart';
 import '../domain/coach_message.dart';
@@ -16,6 +17,7 @@ part 'coach_service.g.dart';
 CoachService coachService(Ref ref) {
   return CoachService(
     repository: ref.read(coachRepositoryProvider),
+    messagingRepository: ref.read(coachMessagingRepositoryProvider),
     database: ref.read(appDatabaseProvider),
     logger: ref.read(appLoggerProvider),
     supabase: Supabase.instance.client,
@@ -28,15 +30,18 @@ CoachService coachService(Ref ref) {
 class CoachService {
   const CoachService({
     required CoachRepository repository,
+    required CoachMessagingRepository messagingRepository,
     required AppDatabase database,
     required AppLogger logger,
     required SupabaseClient supabase,
   }) : _repository = repository,
+       _messagingRepository = messagingRepository,
        _database = database,
        _logger = logger,
        _supabase = supabase;
 
   final CoachRepository _repository;
+  final CoachMessagingRepository _messagingRepository;
   final AppDatabase _database;
   final AppLogger _logger;
   final SupabaseClient _supabase;
@@ -546,7 +551,7 @@ class CoachService {
     int? limit,
   }) async {
     try {
-      return await _repository.getMessagesForConversation(
+      return await _messagingRepository.getMessagesForConversation(
         coachUserId: coachUserId,
         athleteUserId: athleteUserId,
         limit: limit,
@@ -567,7 +572,7 @@ class CoachService {
     String nutritionPlanId,
   ) async {
     try {
-      return await _repository.getMessagesForNutritionPlan(nutritionPlanId);
+      return await _messagingRepository.getMessagesForNutritionPlan(nutritionPlanId);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get nutrition plan comments',
@@ -582,7 +587,7 @@ class CoachService {
   /// Get comments/messages for an activity
   Future<List<CoachMessage>> getActivityComments(String activityId) async {
     try {
-      return await _repository.getMessagesForActivity(activityId);
+      return await _messagingRepository.getMessagesForActivity(activityId);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get activity comments',
@@ -600,7 +605,7 @@ class CoachService {
       final profile = await _getCurrentProfile();
       if (profile == null) return 0;
 
-      return await _repository.getUnreadMessageCount(profile.id);
+      return await _messagingRepository.getUnreadMessageCount(profile.id);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get unread message count',
@@ -630,7 +635,7 @@ class CoachService {
         return null;
       }
 
-      return await _repository.sendMessage(
+      return await _messagingRepository.sendMessage(
         coachUserId: coachUserId,
         athleteUserId: athleteUserId,
         senderUserId: profile.id,
@@ -658,7 +663,7 @@ class CoachService {
       final profile = await _getCurrentProfile();
       if (profile == null) return;
 
-      await _repository.markMessagesAsRead(
+      await _messagingRepository.markMessagesAsRead(
         coachUserId: coachUserId,
         athleteUserId: athleteUserId,
         readerUserId: profile.id,
@@ -676,7 +681,7 @@ class CoachService {
   /// Delete a message (current user must be the sender)
   Future<void> deleteMessage(String messageId) async {
     try {
-      await _repository.deleteMessage(messageId);
+      await _messagingRepository.deleteMessage(messageId);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete message',
@@ -700,7 +705,7 @@ class CoachService {
     int? limit,
   }) async {
     try {
-      return await _repository.getGeneralChatMessages(
+      return await _messagingRepository.getGeneralChatMessages(
         coachUserId: coachUserId,
         athleteUserId: athleteUserId,
         limit: limit,
@@ -723,7 +728,7 @@ class CoachService {
     required String athleteUserId,
     required void Function(CoachMessage) onNewMessage,
   }) {
-    return _repository.subscribeToConversation(
+    return _messagingRepository.subscribeToConversation(
       coachUserId: coachUserId,
       athleteUserId: athleteUserId,
       onNewMessage: onNewMessage,
@@ -732,7 +737,7 @@ class CoachService {
 
   /// Unsubscribe from a conversation channel
   Future<void> unsubscribeFromConversation(RealtimeChannel channel) async {
-    await _repository.unsubscribeFromConversation(channel);
+    await _messagingRepository.unsubscribeFromConversation(channel);
   }
 
   /// Send a general chat message (not linked to activity or nutrition plan)
@@ -752,7 +757,7 @@ class CoachService {
         return null;
       }
 
-      return await _repository.sendChatMessageToSupabase(
+      return await _messagingRepository.sendChatMessageToSupabase(
         coachUserId: coachUserId,
         athleteUserId: athleteUserId,
         senderUserId: profile.id,
