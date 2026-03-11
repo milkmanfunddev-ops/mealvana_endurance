@@ -30,10 +30,12 @@ import '../providers/events_controller.dart';
 /// - If [event] is provided, this is EDIT mode
 class EventFormScreen extends ConsumerStatefulWidget {
   final Event? event; // null = create mode, non-null = edit mode
+  final String? forUserId; // If provided, create event for this user (coach creating for athlete)
 
   const EventFormScreen({
     super.key,
     this.event,
+    this.forUserId,
   });
 
   @override
@@ -515,6 +517,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         // Create new event
         final eventId = await ref.read(eventsControllerProvider.notifier).createEvent(
           activityId: null,
+          forUserId: widget.forUserId,
           eventType: _selectedSportType,
           eventSubtype: _selectedEventSubtype?.name,
           eventName: _eventNameController.text.trim(),

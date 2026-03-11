@@ -37,6 +37,8 @@ import '../../features/settings/presentation/screens/food_settings_consolidated_
 import '../../features/settings/presentation/screens/food_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/sport_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
+import '../../features/personal_templates/presentation/screens/personal_templates_screen.dart';
+import '../../features/personal_templates/presentation/widgets/macro_comparison_banner.dart';
 import '../../features/settings/presentation/screens/connected_apps_screen.dart';
 import '../../features/settings/presentation/screens/nutrition_targets_screen.dart';
 import '../core/screen_mode.dart';
@@ -49,7 +51,7 @@ import '../../features/carb_loading/presentation/screens/create_custom_carb_load
 import '../../features/carb_loading/domain/meal_type.dart';
 import '../widgets/tabs_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
-import '../../features/events/presentation/screens/event_creation_screen.dart';
+import '../../features/events/presentation/screens/event_form_screen.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/education/presentation/screens/video_player_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
@@ -369,6 +371,8 @@ class AppRouter {
             activityId: activityId,
             isNewActivity: extra?['isNewActivity'] as bool? ?? false,
             isCoachView: extra?['isCoachView'] as bool? ?? false,
+            templateComparison:
+                extra?['templateComparison'] as TemplateComparisonData?,
           );
         },
       ),
@@ -391,6 +395,8 @@ class AppRouter {
             activityId: activityId,
             isNewActivity: extra?['isNewActivity'] as bool? ?? false,
             isCoachView: extra?['isCoachView'] as bool? ?? false,
+            templateComparison:
+                extra?['templateComparison'] as TemplateComparisonData?,
           );
         },
       ),
@@ -435,7 +441,7 @@ class AppRouter {
         name: 'events-create',
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return EventCreationScreen(
+          return EventFormScreen(
             forUserId: extra?['forUserId'] as String?,
           );
         },
@@ -495,6 +501,13 @@ class AppRouter {
         path: '/settings/nutrition-targets',
         name: 'settings-nutrition-targets',
         builder: (context, state) => const NutritionTargetsScreen(),
+      ),
+
+      // Personal Templates Screen - Manage saved nutrition plan templates
+      GoRoute(
+        path: '/settings/templates',
+        name: 'settings-templates',
+        builder: (context, state) => const PersonalTemplatesScreen(),
       ),
 
       // Food Preferences Consolidated Screen - All food-related settings in one place (DEPRECATED - kept for backward compatibility)
