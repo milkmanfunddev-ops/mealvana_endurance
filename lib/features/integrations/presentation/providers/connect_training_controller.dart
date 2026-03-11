@@ -27,6 +27,17 @@ part 'connect_training_controller.g.dart';
 /// Key for storing temporary user ID in shared preferences during onboarding
 const _tempUserIdKey = 'onboarding_temp_user_id';
 
+/// Wrapper class for TrainingPeaks combined sync result
+/// Used internally to adapt the combined result to the generic _importWorkouts helper
+class _TPCombinedResultWrapper {
+  _TPCombinedResultWrapper(this.fullResult);
+  _TPCombinedResultWrapper.error(TrainingPeaksSyncResult workoutResult)
+      : fullResult = TrainingPeaksFullSyncResult(
+            workoutResult: workoutResult, eventResult: null);
+
+  final TrainingPeaksFullSyncResult fullResult;
+}
+
 /// State for the Connect Training screen
 class ConnectTrainingState {
   const ConnectTrainingState({
@@ -293,61 +304,57 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     }
   }
 
-  Future<bool> connectFinalSurge() async {
+  /// Generic provider connection helper to reduce duplication
+  Future<bool> _connectProvider({
+    required String providerId,
+    required Future<dynamic> Function() authenticate,
+    required ConnectTrainingState Function(String? athleteName) updateState,
+  }) async {
     if (_currentUserId == null) {
       if (kDebugMode) {
-        print('❌ connectFinalSurge: No current user ID');
+        print('❌ connect$providerId: No current user ID');
       }
       return false;
     }
 
     if (kDebugMode) {
       print(
-        '🔌 connectFinalSurge: Starting connection for user $_currentUserId',
+        '🔌 connect$providerId: Starting connection for user $_currentUserId',
       );
     }
 
     state = AsyncData(
       state.value!.copyWith(
         isConnecting: true,
-        connectingProvider: 'final_surge',
+        connectingProvider: providerId,
         clearErrorMessage: true,
       ),
     );
 
     try {
-      _trackIntegrationConnectStarted('final_surge');
-      final integration = await _finalSurgeOAuth.authenticate(_currentUserId!);
+      _trackIntegrationConnectStarted(providerId);
+      final integration = await authenticate();
 
       if (kDebugMode) {
-        print('✅ connectFinalSurge: Authentication successful');
+        print('✅ connect$providerId: Authentication successful');
         print('   Athlete Name: ${integration.providerAthleteName}');
         print('   Is Active: ${integration.isActive}');
       }
 
-      state = AsyncData(
-        state.value!.copyWith(
-          isConnecting: false,
-          clearConnectingProvider: true,
-          isFinalSurgeConnected: true,
-          finalSurgeAthleteName: integration.providerAthleteName,
-        ),
-      );
+      state = AsyncData(updateState(integration.providerAthleteName));
 
       if (kDebugMode) {
-        print(
-          '✅ connectFinalSurge: State updated - isFinalSurgeConnected=true',
-        );
+        print('✅ connect$providerId: State updated - connected=true');
       }
 
       _trackIntegrationConnectSuccess(
-        'final_surge',
+        providerId,
         athleteName: integration.providerAthleteName,
       );
       return true;
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('❌ connectFinalSurge: Error occurred');
+        print('❌ connect$providerId: Error occurred');
         print('   Error: $e');
         print('   Stack: $stackTrace');
       }
@@ -359,7 +366,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         ),
       );
       _trackIntegrationConnectFailed(
-        'final_surge',
+        providerId,
         'authentication_error',
         errorMessage: e.toString(),
       );
@@ -367,17 +374,30 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     }
   }
 
-  Future<void> disconnectFinalSurge() async {
+  Future<bool> connectFinalSurge() async {
+    return _connectProvider(
+      providerId: 'final_surge',
+      authenticate: () => _finalSurgeOAuth.authenticate(_currentUserId!),
+      updateState: (athleteName) => state.value!.copyWith(
+        isConnecting: false,
+        clearConnectingProvider: true,
+        isFinalSurgeConnected: true,
+        finalSurgeAthleteName: athleteName,
+      ),
+    );
+  }
+
+  /// Generic provider disconnect helper to reduce duplication
+  Future<void> _disconnectProvider({
+    required String providerId,
+    required Future<void> Function() disconnect,
+    required ConnectTrainingState Function() updateState,
+  }) async {
     if (_currentUserId == null) return;
     try {
-      await _finalSurgeOAuth.disconnect(_currentUserId!);
-      state = AsyncData(
-        state.value!.copyWith(
-          isFinalSurgeConnected: false,
-          finalSurgeAthleteName: null,
-        ),
-      );
-      _trackIntegrationDisconnected('final_surge', reason: 'user_initiated');
+      await disconnect();
+      state = AsyncData(updateState());
+      _trackIntegrationDisconnected(providerId, reason: 'user_initiated');
     } catch (e) {
       state = AsyncData(
         state.value!.copyWith(errorMessage: 'Failed to disconnect: $e'),
@@ -385,24 +405,52 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     }
   }
 
-  Future<SyncResult> importFinalSurgeWorkouts() async {
+  Future<void> disconnectFinalSurge() async {
+    await _disconnectProvider(
+      providerId: 'final_surge',
+      disconnect: () => _finalSurgeOAuth.disconnect(_currentUserId!),
+      updateState: () => state.value!.copyWith(
+        isFinalSurgeConnected: false,
+        finalSurgeAthleteName: null,
+      ),
+    );
+  }
+
+  /// Generic workout import helper to reduce duplication
+  Future<T> _importWorkouts<T>({
+    required String providerId,
+    required Future<T> Function() syncWorkouts,
+    required bool Function(T result) checkSuccess,
+    required bool Function(T result) checkNeedsReauth,
+    required bool Function(T result)? checkIsNetworkError,
+    required String? Function(T result) getError,
+    required String Function(T result) getSummary,
+    required String Function(T result) getErrorType,
+    required List<dynamic> Function(T result) getActivities,
+    required int Function(T result) getNewWorkouts,
+    required int Function(T result) getUpdated,
+    required int Function(T result) getSkipped,
+    required List<dynamic> Function(T result)? getRaceCandidates,
+    required List<dynamic> Function(T result)? getEventData,
+    required T Function(String error) createError,
+  }) async {
     if (_currentUserId == null) {
-      return SyncResult.error('Missing user ID');
+      return createError('Missing user ID');
     }
 
     // Prevent concurrent syncs that could cause duplicate inserts
-    if (_syncingProviders.contains('final_surge')) {
+    if (_syncingProviders.contains(providerId)) {
       if (kDebugMode) {
-        print('⚠️ Final Surge sync already in progress, skipping');
+        print('⚠️ $providerId sync already in progress, skipping');
       }
-      return const SyncResult(success: true);
+      return createError(''); // Return successful empty result
     }
-    _syncingProviders.add('final_surge');
+    _syncingProviders.add(providerId);
 
     state = AsyncData(
       state.value!.copyWith(
         isImporting: true,
-        syncingProvider: 'final_surge',
+        syncingProvider: providerId,
         importProgress: 0.0,
         clearErrorMessage: true,
         isNetworkError: false,
@@ -410,47 +458,54 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     );
 
     try {
-      _trackIntegrationConnectStarted('final_surge'); // Sync started
-      final result = await _finalSurgeSync.syncWorkouts(_currentUserId!);
+      _trackIntegrationConnectStarted(providerId); // Sync started
+      final result = await syncWorkouts();
 
       // Check if still mounted after async operation
       if (!ref.mounted) return result;
 
       // Handle different error types
-      if (!result.success) {
-        if (result.needsReauth) {
+      if (!checkSuccess(result)) {
+        if (checkNeedsReauth(result)) {
           // Token expired - user must reconnect
-          state = AsyncData(
-            state.value!.copyWith(
-              isImporting: false,
-              clearSyncingProvider: true,
-              finalSurgeNeedsReauth: true,
-              isFinalSurgeConnected: false,
-              errorMessage: result.summary,
-            ),
-          );
+          final stateUpdate = providerId == 'final_surge'
+              ? state.value!.copyWith(
+                  isImporting: false,
+                  clearSyncingProvider: true,
+                  finalSurgeNeedsReauth: true,
+                  isFinalSurgeConnected: false,
+                  errorMessage: getSummary(result),
+                )
+              : state.value!.copyWith(
+                  isImporting: false,
+                  clearSyncingProvider: true,
+                  trainingPeaksNeedsReauth: true,
+                  isTrainingPeaksConnected: false,
+                  errorMessage: getSummary(result),
+                );
+          state = AsyncData(stateUpdate);
           _trackIntegrationSyncFailed(
-            'final_surge',
+            providerId,
             'token_expired',
             errorMessage: 'Requires re-authentication',
           );
           return result;
         }
 
-        if (result.isNetworkError) {
+        if (checkIsNetworkError != null && checkIsNetworkError(result)) {
           // Network error - user can retry
           state = AsyncData(
             state.value!.copyWith(
               isImporting: false,
               clearSyncingProvider: true,
               isNetworkError: true,
-              errorMessage: result.summary,
+              errorMessage: getSummary(result),
             ),
           );
           _trackIntegrationSyncFailed(
-            'final_surge',
+            providerId,
             'network_error',
-            errorMessage: result.error,
+            errorMessage: getError(result),
           );
           return result;
         }
@@ -460,29 +515,32 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           state.value!.copyWith(
             isImporting: false,
             clearSyncingProvider: true,
-            errorMessage: result.error ?? 'Failed to import workouts',
+            errorMessage: getError(result) ?? 'Failed to import workouts',
           ),
         );
         _trackIntegrationSyncFailed(
-          'final_surge',
-          result.errorType.name,
-          errorMessage: result.error,
+          providerId,
+          getErrorType(result),
+          errorMessage: getError(result),
         );
         return result;
       }
 
       // Activities are saved during sync - users will generate nutrition plans manually
       // by tapping activities in the calendar
-      if (kDebugMode && result.hasNewWorkouts) {
+      final activities = getActivities(result);
+      if (kDebugMode && activities.isNotEmpty) {
         print(
-          '📋 Synced ${result.activities.length} activities (nutrition plans will be created manually)',
+          '📋 Synced ${activities.length} activities (nutrition plans will be created manually)',
         );
       }
 
       // CRITICAL: Upload dirty activities to Supabase immediately after sync.
       // This prevents duplicates on logout→login→re-sync because remote
       // hydration will find the activities in Supabase.
-      if (result.hasNewWorkouts || result.updated > 0) {
+      final newWorkouts = getNewWorkouts(result);
+      final updated = getUpdated(result);
+      if (newWorkouts > 0 || updated > 0) {
         if (_isUsingTempUserId) {
           if (kDebugMode) {
             print(
@@ -511,76 +569,46 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         }
       }
 
-      // Create events for explicitly marked races (WorkoutRace=true)
+      // Handle provider-specific event creation
       int savedEventsCount = 0;
-      if (result.raceCandidates.isNotEmpty) {
-        final eventsRepository = ref.read(eventsRepositoryProvider);
+      final raceCandidates = getRaceCandidates?.call(result);
+      final eventData = getEventData?.call(result);
 
-        for (final candidate in result.raceCandidates) {
-          final activityId = candidate.activityId;
-          if (activityId == null || activityId.isEmpty) {
-            continue;
-          }
-
-          // Skip if an event already exists for this activity
-          final existingByActivity = await eventsRepository.getEventForActivity(
-            activityId,
-          );
-          if (existingByActivity != null) {
-            continue;
-          }
-
-          final eventName = candidate.eventName.trim().isNotEmpty
-              ? candidate.eventName
-              : 'Race';
-          final existingByName = await eventsRepository.findExistingEvent(
-            userId: _currentUserId!,
-            eventName: eventName,
-            eventDate: candidate.scheduledAt,
-          );
-          if (existingByName != null) {
-            continue;
-          }
-
-          try {
-            await _calendarService.createEvent(
-              userId: _currentUserId!,
-              activityId: activityId,
-              eventType: candidate.eventType,
-              eventName: eventName,
-              startTime: candidate.scheduledAt.toIso8601String(),
-              goalTimeMinutes: candidate.goalTimeMinutes,
-              goalPaceMinutesPerMile: candidate.goalPaceMinutesPerMile,
-            );
-            savedEventsCount++;
-          } catch (e) {
-            if (kDebugMode) {
-              print('⚠️ Failed to save Final Surge race event: $e');
-            }
-          }
-        }
+      if (raceCandidates != null && raceCandidates.isNotEmpty) {
+        savedEventsCount = await _saveRaceCandidates(raceCandidates);
+      } else if (eventData != null && eventData.isNotEmpty) {
+        savedEventsCount = await _saveTrainingPeaksEvents(eventData);
       }
 
       // Invalidate calendar to refresh UI
       state = AsyncData(state.value!.copyWith(importProgress: 0.8));
       _invalidateCalendar();
 
-      state = AsyncData(
-        state.value!.copyWith(
-          isImporting: false,
-          clearSyncingProvider: true,
-          importProgress: 1.0,
-          importedWorkoutsCount: result.newWorkouts,
-          finalSurgeNeedsReauth: false,
-          isNetworkError: false,
-          clearErrorMessage: true,
-        ),
-      );
+      final stateUpdate = providerId == 'final_surge'
+          ? state.value!.copyWith(
+              isImporting: false,
+              clearSyncingProvider: true,
+              importProgress: 1.0,
+              importedWorkoutsCount: newWorkouts,
+              finalSurgeNeedsReauth: false,
+              isNetworkError: false,
+              clearErrorMessage: true,
+            )
+          : state.value!.copyWith(
+              isImporting: false,
+              clearSyncingProvider: true,
+              importProgress: 1.0,
+              importedWorkoutsCount: newWorkouts,
+              trainingPeaksNeedsReauth: false,
+              isNetworkError: false,
+              clearErrorMessage: true,
+            );
+      state = AsyncData(stateUpdate);
 
       _trackIntegrationSyncSuccess(
-        'final_surge',
-        result.newWorkouts,
-        skippedCount: result.skipped,
+        providerId,
+        newWorkouts,
+        skippedCount: getSkipped(result),
         eventsCount: savedEventsCount,
       );
       return result;
@@ -595,82 +623,175 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         );
       }
       _trackIntegrationSyncFailed(
-        'final_surge',
+        providerId,
         'exception',
         errorMessage: e.toString(),
       );
-      return SyncResult.error(e.toString());
+      return createError(e.toString());
     } finally {
-      _syncingProviders.remove('final_surge');
+      _syncingProviders.remove(providerId);
     }
+  }
+
+  /// Save Final Surge race candidates as events
+  Future<int> _saveRaceCandidates(List<dynamic> raceCandidates) async {
+    int savedEventsCount = 0;
+    final eventsRepository = ref.read(eventsRepositoryProvider);
+
+    for (final candidate in raceCandidates) {
+      final activityId = candidate.activityId;
+      if (activityId == null || activityId.isEmpty) {
+        continue;
+      }
+
+      // Skip if an event already exists for this activity
+      final existingByActivity = await eventsRepository.getEventForActivity(
+        activityId,
+      );
+      if (existingByActivity != null) {
+        continue;
+      }
+
+      final eventName = candidate.eventName.trim().isNotEmpty
+          ? candidate.eventName
+          : 'Race';
+      final existingByName = await eventsRepository.findExistingEvent(
+        userId: _currentUserId!,
+        eventName: eventName,
+        eventDate: candidate.scheduledAt,
+      );
+      if (existingByName != null) {
+        continue;
+      }
+
+      try {
+        await _calendarService.createEvent(
+          userId: _currentUserId!,
+          activityId: activityId,
+          eventType: candidate.eventType,
+          eventName: eventName,
+          startTime: candidate.scheduledAt.toIso8601String(),
+          goalTimeMinutes: candidate.goalTimeMinutes,
+          goalPaceMinutesPerMile: candidate.goalPaceMinutesPerMile,
+        );
+        savedEventsCount++;
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ Failed to save Final Surge race event: $e');
+        }
+      }
+    }
+
+    return savedEventsCount;
+  }
+
+  /// Save TrainingPeaks events
+  Future<int> _saveTrainingPeaksEvents(List<dynamic> eventData) async {
+    int savedEventsCount = 0;
+    int skippedEventsCount = 0;
+    final eventsRepository = ref.read(eventsRepositoryProvider);
+
+    for (final event in eventData) {
+      if (kDebugMode) {
+        print('💾 Checking TrainingPeaks event: ${event.eventName}');
+      }
+
+      // Check for existing event (same user + name + date) to prevent duplicates
+      final existingEvent = await eventsRepository.findExistingEvent(
+        userId: _currentUserId!,
+        eventName: event.eventName,
+        eventDate: event.eventDate,
+      );
+
+      if (existingEvent != null) {
+        skippedEventsCount++;
+        if (kDebugMode) {
+          print('   ⏭️ Event already exists, skipping: ${event.eventName}');
+        }
+        continue;
+      }
+
+      try {
+        final savedEvent = await _calendarService.createEvent(
+          userId: _currentUserId!,
+          eventType: event.activityType,
+          eventSubtype: event.eventType, // Store TP event type as subtype
+          eventName: event.eventName,
+          startTime: event.eventDate.toIso8601String(),
+          goalTimeMinutes: event.goalTimeHours != null
+              ? (event.goalTimeHours! * 60).round()
+              : null,
+        );
+        savedEventsCount++;
+        if (kDebugMode) {
+          print('✅ Event saved with ID: ${savedEvent.id}');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ Failed to save event: $e');
+        }
+      }
+    }
+
+    if (kDebugMode) {
+      print(
+        '✅ Event sync complete: $savedEventsCount new, $skippedEventsCount existing',
+      );
+    }
+
+    return savedEventsCount;
+  }
+
+  Future<SyncResult> importFinalSurgeWorkouts() async {
+    return _importWorkouts<SyncResult>(
+      providerId: 'final_surge',
+      syncWorkouts: () => _finalSurgeSync.syncWorkouts(_currentUserId!),
+      checkSuccess: (result) => result.success,
+      checkNeedsReauth: (result) => result.needsReauth,
+      checkIsNetworkError: (result) => result.isNetworkError,
+      getError: (result) => result.error,
+      getSummary: (result) => result.summary,
+      getErrorType: (result) => result.errorType.name,
+      getActivities: (result) => result.activities,
+      getNewWorkouts: (result) => result.newWorkouts,
+      getUpdated: (result) => result.updated,
+      getSkipped: (result) => result.skipped,
+      getRaceCandidates: (result) => result.raceCandidates,
+      getEventData: null,
+      createError: (error) => SyncResult.error(error),
+    );
   }
 
   Future<bool> connectTrainingPeaks() async {
-    if (_currentUserId == null) return false;
-
-    state = AsyncData(
-      state.value!.copyWith(
-        isConnecting: true,
-        connectingProvider: 'training_peaks',
-        clearErrorMessage: true,
+    return _connectProvider(
+      providerId: 'training_peaks',
+      authenticate: () async {
+        final oauthService = await _trainingPeaksOAuth;
+        return oauthService.authenticate(_currentUserId!);
+      },
+      updateState: (athleteName) => state.value!.copyWith(
+        isConnecting: false,
+        clearConnectingProvider: true,
+        isTrainingPeaksConnected: true,
+        trainingPeaksAthleteName: athleteName,
       ),
     );
-
-    try {
-      _trackIntegrationConnectStarted('training_peaks');
-      final oauthService = await _trainingPeaksOAuth;
-      final integration = await oauthService.authenticate(_currentUserId!);
-
-      state = AsyncData(
-        state.value!.copyWith(
-          isConnecting: false,
-          clearConnectingProvider: true,
-          isTrainingPeaksConnected: true,
-          trainingPeaksAthleteName: integration.providerAthleteName,
-        ),
-      );
-
-      _trackIntegrationConnectSuccess(
-        'training_peaks',
-        athleteName: integration.providerAthleteName,
-      );
-      return true;
-    } catch (e) {
-      state = AsyncData(
-        state.value!.copyWith(
-          isConnecting: false,
-          clearConnectingProvider: true,
-          errorMessage: e.toString(),
-        ),
-      );
-      _trackIntegrationConnectFailed(
-        'training_peaks',
-        'authentication_error',
-        errorMessage: e.toString(),
-      );
-      return false;
-    }
   }
 
   Future<void> disconnectTrainingPeaks() async {
-    if (_currentUserId == null) return;
-    try {
-      final oauthService = await _trainingPeaksOAuth;
-      await oauthService.disconnect(_currentUserId!);
-      state = AsyncData(
-        state.value!.copyWith(
-          isTrainingPeaksConnected: false,
-          trainingPeaksAthleteName: null,
-          hasNextEvent: false,
-          nextEventName: null,
-        ),
-      );
-      _trackIntegrationDisconnected('training_peaks', reason: 'user_initiated');
-    } catch (e) {
-      state = AsyncData(
-        state.value!.copyWith(errorMessage: 'Failed to disconnect: $e'),
-      );
-    }
+    await _disconnectProvider(
+      providerId: 'training_peaks',
+      disconnect: () async {
+        final oauthService = await _trainingPeaksOAuth;
+        await oauthService.disconnect(_currentUserId!);
+      },
+      updateState: () => state.value!.copyWith(
+        isTrainingPeaksConnected: false,
+        trainingPeaksAthleteName: null,
+        hasNextEvent: false,
+        nextEventName: null,
+      ),
+    );
   }
 
   Future<TrainingPeaksSyncResult> importTrainingPeaksWorkouts() async {
@@ -678,224 +799,37 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       return TrainingPeaksSyncResult.error('Missing user ID');
     }
 
-    // Prevent concurrent syncs that could cause duplicate inserts
-    if (_syncingProviders.contains('training_peaks')) {
-      if (kDebugMode) {
-        print('⚠️ TrainingPeaks sync already in progress, skipping');
-      }
-      return const TrainingPeaksSyncResult(success: true);
-    }
-    _syncingProviders.add('training_peaks');
+    final syncService = await _trainingPeaksSync;
 
-    state = AsyncData(
-      state.value!.copyWith(
-        isImporting: true,
-        syncingProvider: 'training_peaks',
-        importProgress: 0.0,
-        clearErrorMessage: true,
-      ),
+    // Use a wrapper class to handle the combined result from TrainingPeaks
+    final _TPCombinedResultWrapper combinedResult =
+        await _importWorkouts<_TPCombinedResultWrapper>(
+      providerId: 'training_peaks',
+      syncWorkouts: () async {
+        final result = await syncService.syncAll(_currentUserId!);
+        return _TPCombinedResultWrapper(result);
+      },
+      checkSuccess: (wrapper) => wrapper.fullResult.workoutResult.success,
+      checkNeedsReauth: (wrapper) =>
+          wrapper.fullResult.workoutResult.tokenExpired,
+      checkIsNetworkError: null,
+      getError: (wrapper) => wrapper.fullResult.workoutResult.error,
+      getSummary: (wrapper) => wrapper.fullResult.workoutResult.summary,
+      getErrorType: (wrapper) => 'sync_error',
+      getActivities: (wrapper) => wrapper.fullResult.workoutResult.activities,
+      getNewWorkouts: (wrapper) => wrapper.fullResult.workoutResult.newWorkouts,
+      getUpdated: (wrapper) => wrapper.fullResult.workoutResult.updated,
+      getSkipped: (wrapper) => wrapper.fullResult.workoutResult.unchanged,
+      getRaceCandidates: null,
+      getEventData: (wrapper) =>
+          wrapper.fullResult.eventResult?.hasEvent ?? false
+              ? wrapper.fullResult.eventResult!.events
+              : [],
+      createError: (error) =>
+          _TPCombinedResultWrapper.error(TrainingPeaksSyncResult.error(error)),
     );
 
-    try {
-      _trackIntegrationConnectStarted('training_peaks'); // Sync started
-      final syncService = await _trainingPeaksSync;
-      final result = await syncService.syncAll(_currentUserId!);
-
-      // Check if still mounted after async operation
-      if (!ref.mounted) return result.workoutResult;
-
-      // Handle sync failure (token expired, not connected, etc.)
-      if (!result.workoutResult.success) {
-        if (result.workoutResult.tokenExpired) {
-          // Token expired - user must reconnect
-          state = AsyncData(
-            state.value!.copyWith(
-              isImporting: false,
-              clearSyncingProvider: true,
-              trainingPeaksNeedsReauth: true,
-              isTrainingPeaksConnected: false,
-              errorMessage: result.workoutResult.summary,
-            ),
-          );
-          _trackIntegrationSyncFailed(
-            'training_peaks',
-            'token_expired',
-            errorMessage: 'Token expired',
-          );
-          return result.workoutResult;
-        }
-
-        // Other sync error (not connected, API error, etc.)
-        state = AsyncData(
-          state.value!.copyWith(
-            isImporting: false,
-            clearSyncingProvider: true,
-            errorMessage:
-                result.workoutResult.error ?? 'Failed to sync workouts',
-          ),
-        );
-        _trackIntegrationSyncFailed(
-          'training_peaks',
-          'sync_error',
-          errorMessage: result.workoutResult.error,
-        );
-        return result.workoutResult;
-      }
-
-      // Activities are saved during sync - users will generate nutrition plans manually
-      // by tapping activities in the calendar
-      if (kDebugMode && result.workoutResult.hasNewWorkouts) {
-        print(
-          '📋 Synced ${result.workoutResult.activities.length} activities (nutrition plans will be created manually)',
-        );
-      }
-
-      // CRITICAL: Upload dirty activities to Supabase immediately after sync.
-      // This prevents duplicates on logout→login→re-sync because remote
-      // hydration will find the activities in Supabase.
-      if (result.workoutResult.hasNewWorkouts ||
-          result.workoutResult.updated > 0) {
-        if (_isUsingTempUserId) {
-          if (kDebugMode) {
-            print(
-              '⏸️ Skipping Supabase activity upload during onboarding (temp user ID)',
-            );
-          }
-        } else {
-          try {
-            final uploadResult = await _activitiesRepo.uploadDirtyRecords(
-              _currentUserId!,
-            );
-            if (kDebugMode) {
-              if (uploadResult.success) {
-                print(
-                  '☁️ Uploaded ${uploadResult.count} synced activities to Supabase',
-                );
-              } else {
-                print('⚠️ Upload to Supabase failed: ${uploadResult.error}');
-              }
-            }
-          } catch (e) {
-            if (kDebugMode) {
-              print('⚠️ Failed to upload synced activities: $e');
-            }
-          }
-        }
-      }
-
-      // Update progress
-      if (ref.mounted) {
-        state = AsyncData(state.value!.copyWith(importProgress: 0.5));
-      }
-
-      // Save all events to database if found
-      int savedEventsCount = 0;
-      int skippedEventsCount = 0;
-      if (result.eventResult?.hasEvent ?? false) {
-        final eventsRepository = ref.read(eventsRepositoryProvider);
-
-        for (final eventData in result.eventResult!.events) {
-          if (kDebugMode) {
-            print('💾 Checking TrainingPeaks event: ${eventData.eventName}');
-          }
-
-          // Check for existing event (same user + name + date) to prevent duplicates
-          final existingEvent = await eventsRepository.findExistingEvent(
-            userId: _currentUserId!,
-            eventName: eventData.eventName,
-            eventDate: eventData.eventDate,
-          );
-
-          if (existingEvent != null) {
-            skippedEventsCount++;
-            if (kDebugMode) {
-              print(
-                '   ⏭️ Event already exists, skipping: ${eventData.eventName}',
-              );
-            }
-            continue;
-          }
-
-          try {
-            final savedEvent = await _calendarService.createEvent(
-              userId: _currentUserId!,
-              eventType: eventData.activityType,
-              eventSubtype:
-                  eventData.eventType, // Store TP event type as subtype
-              eventName: eventData.eventName,
-              startTime: eventData.eventDate.toIso8601String(),
-              goalTimeMinutes: eventData.goalTimeHours != null
-                  ? (eventData.goalTimeHours! * 60).round()
-                  : null,
-            );
-            savedEventsCount++;
-            if (kDebugMode) {
-              print('✅ Event saved with ID: ${savedEvent.id}');
-            }
-          } catch (e) {
-            if (kDebugMode) {
-              print('⚠️ Failed to save event: $e');
-            }
-          }
-        }
-
-        if (kDebugMode) {
-          print(
-            '✅ Event sync complete: $savedEventsCount new, $skippedEventsCount existing',
-          );
-        }
-        if (!ref.mounted) return result.workoutResult;
-      }
-
-      // Phase 4: Invalidate calendar to refresh UI
-      if (ref.mounted) {
-        state = AsyncData(state.value!.copyWith(importProgress: 0.9));
-        _invalidateCalendar();
-
-        // Get first event name for display (if any events found)
-        final firstEventName = (result.eventResult?.events.isNotEmpty ?? false)
-            ? result.eventResult!.events.first.eventName
-            : null;
-
-        state = AsyncData(
-          state.value!.copyWith(
-            isImporting: false,
-            clearSyncingProvider: true,
-            importProgress: 1.0,
-            importedWorkoutsCount: result.workoutResult.newWorkouts,
-            hasNextEvent: result.eventResult?.hasEvent ?? false,
-            nextEventName: firstEventName,
-            clearErrorMessage: true,
-          ),
-        );
-      }
-
-      _trackIntegrationSyncSuccess(
-        'training_peaks',
-        result.workoutResult.newWorkouts,
-        skippedCount: result.workoutResult.unchanged,
-        eventsCount: savedEventsCount,
-      );
-      return result.workoutResult;
-    } catch (e) {
-      if (ref.mounted) {
-        state = AsyncData(
-          state.value!.copyWith(
-            isImporting: false,
-            clearSyncingProvider: true,
-            errorMessage: 'Failed to import workouts: $e',
-          ),
-        );
-      }
-      _trackIntegrationSyncFailed(
-        'training_peaks',
-        'exception',
-        errorMessage: e.toString(),
-      );
-      return TrainingPeaksSyncResult.error(e.toString());
-    } finally {
-      _syncingProviders.remove('training_peaks');
-    }
+    return combinedResult.fullResult.workoutResult;
   }
 
   /// Invalidate calendar and activities providers to refresh UI

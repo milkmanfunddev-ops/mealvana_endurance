@@ -40,7 +40,7 @@ final class MacroTargetsControllerProvider
 }
 
 String _$macroTargetsControllerHash() =>
-    r'e172c5070db872d7f4e9bb21433cfd5094b818fa';
+    r'b810ae2c50a84072b4c2b9818d010a794afb0255';
 
 /// Controller for distance page gut entry screen
 /// FOA COMPLIANT: Contains ALL business logic, no UI concerns
@@ -65,3 +65,57 @@ abstract class _$MacroTargetsController
     element.handleValue(ref, created);
   }
 }
+
+/// Provider for DraftActivityCleanupService
+
+@ProviderFor(draftActivityCleanupService)
+const draftActivityCleanupServiceProvider =
+    DraftActivityCleanupServiceProvider._();
+
+/// Provider for DraftActivityCleanupService
+
+final class DraftActivityCleanupServiceProvider
+    extends
+        $FunctionalProvider<
+          DraftActivityCleanupService,
+          DraftActivityCleanupService,
+          DraftActivityCleanupService
+        >
+    with $Provider<DraftActivityCleanupService> {
+  /// Provider for DraftActivityCleanupService
+  const DraftActivityCleanupServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'draftActivityCleanupServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$draftActivityCleanupServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<DraftActivityCleanupService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DraftActivityCleanupService create(Ref ref) {
+    return draftActivityCleanupService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DraftActivityCleanupService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DraftActivityCleanupService>(value),
+    );
+  }
+}
+
+String _$draftActivityCleanupServiceHash() =>
+    r'7acc74026b98fea0a8e028a578c1ff466754f5a0';

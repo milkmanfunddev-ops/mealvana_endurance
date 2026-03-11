@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/activity_completion.dart';
 import '../../../activities/application/activities_service.dart';
@@ -14,7 +13,6 @@ import '../../../auth/application/auth_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../activities/domain/activity_reminder.dart';
-import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../application/nutrition_plan_service.dart';
@@ -31,6 +29,8 @@ import '../../../calendar/presentation/providers/calendar_controller.dart';
 import '../../../events/data/events_repository.dart';
 import 'activity_detail_state.dart';
 import '../../../../shared/utils/food_display_utils.dart' as food_utils;
+import '../../../../shared/utils/category_matcher.dart';
+import '../../application/food_operations_service.dart';
 
 part 'activity_detail_controller.g.dart';
 
@@ -46,6 +46,8 @@ class ActivityDetailController extends _$ActivityDetailController {
   ActivitiesService get _activitiesService =>
       ref.read(activitiesServiceProvider);
   AuthService get _authService => ref.read(authServiceProvider);
+  FoodOperationsService get _foodOpsService =>
+      ref.read(foodOperationsServiceProvider);
 
   /// Cached gut training level from user profile, loaded in build().
   GutTraining _cachedGutTraining = GutTraining.moderate;
@@ -575,7 +577,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       FoodItemData enrichFood(FoodItemData food) {
         final tf = foodLookup[food.id];
-        if (tf == null) return _normalizeFoodQuantity(food);
+        if (tf == null) return _foodOpsService.normalizeFoodQuantity(food);
 
         // Derive timingCategory from template_foods DB fields
         final derivedTimingCategory = TimingCategory.fromFoodProperties(
@@ -595,7 +597,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           servingSize: tf.servingSize,
         );
 
-        return _normalizeFoodQuantity(
+        return _foodOpsService.normalizeFoodQuantity(
           FoodItemData(
             id: food.id,
             name: food.name,
@@ -731,110 +733,12 @@ class ActivityDetailController extends _$ActivityDetailController {
     String sectionId,
     String sectionTitle,
   ) {
-    final categoryLower = category.toLowerCase();
-    final sectionIdLower = sectionId.toLowerCase();
-    final titleLower = sectionTitle.toLowerCase();
-
-    // Direct section ID match (e.g., category='during_run', sectionId='during_run')
-    if (sectionIdLower == categoryLower) return true;
-
-    // Handle transition category (brick-specific)
-    if (categoryLower == 'transition') {
-      return sectionIdLower.startsWith('t') &&
-          sectionIdLower.length <= 2; // T1, T2
-    }
-
-    // Handle sport-specific during categories (brick workouts)
-    if (categoryLower.startsWith('during_')) {
-      final sportSuffix = categoryLower.replaceFirst('during_', '');
-
-      // Must be a during section
-      if (!sectionIdLower.contains('during') &&
-          !titleLower.startsWith('during')) {
-        return false;
-      }
-
-      // Match sport from title
-      if (sportSuffix == 'swim' || sportSuffix == 'swimming') {
-        return titleLower.contains('swim');
-      }
-      if (sportSuffix == 'cycling' ||
-          sportSuffix == 'bike' ||
-          sportSuffix == 'ride') {
-        return titleLower.contains('bike') ||
-            titleLower.contains('cycle') ||
-            titleLower.contains('ride');
-      }
-      if (sportSuffix == 'run' || sportSuffix == 'running') {
-        // For 'during_run', match any during section that contains 'run' OR
-        // any during section that doesn't contain swim/bike/cycle (backward compat)
-        return titleLower.contains('run') ||
-            (!titleLower.contains('swim') &&
-                !titleLower.contains('bike') &&
-                !titleLower.contains('cycle'));
-      }
-    }
-
-    // Extract phase prefix (e.g., 'before' from 'before_run')
-    final phasePrefix = categoryLower.split('_').first;
-
-    // Flexible prefix matching for before/after
-    if (phasePrefix == 'before') {
-      return sectionIdLower.contains('before') ||
-          titleLower.startsWith('before');
-    }
-    if (phasePrefix == 'after') {
-      return sectionIdLower.contains('after') || titleLower.startsWith('after');
-    }
-    if (phasePrefix == 'during') {
-      return sectionIdLower.contains('during') ||
-          titleLower.startsWith('during');
-    }
-
-    return false;
+    return CategoryMatcher.matches(category, sectionId, sectionTitle);
   }
 
   /// Create a FoodItemData from a food object with optional custom amount
   FoodItemData _createFoodItemData(dynamic food, {double? customAmount}) {
-    final multiplier = customAmount ?? food.servingAmount ?? 1.0;
-
-    // Derive timing category from product type for proper by-hour placement
-    final String productType = (food.productTypeId as String?) ?? 'real_food';
-    final isLiquid = _isLikelyLiquidFood(food, productType);
-    final isElectrolyte = _isLikelyElectrolyteFood(food, productType);
-    final timingCategory = TimingCategory.fromFoodProperties(
-      isLiquid: isLiquid,
-      productType: productType,
-      isElectrolyte: isElectrolyte,
-      carbsPerServing: (food.carbsPerServing as num?)?.toDouble() ?? 0,
-    );
-    final isDrink =
-        timingCategory == TimingCategory.sipThroughout ||
-        timingCategory == TimingCategory.fuelDrink;
-
-    return _normalizeFoodQuantity(
-      FoodItemData(
-        id: const Uuid().v4(),
-        name: food.name,
-        quantity: food.generateQuantityDisplay(customAmount: customAmount),
-        imageAddress: food.imageAddress,
-        description: food.description,
-        instructions: food.instructions,
-        displayName: food.displayName,
-        displayNamePlural: food.displayNamePlural,
-        isIndivisible: isElectrolyte || productType == 'supplement',
-        isDrink: isDrink,
-        timingCategory: timingCategory,
-        nutritionalInfo: NutritionalInfo(
-          calories: ((food.caloriesPerServing ?? 0) * multiplier).toInt(),
-          carbs: ((food.carbsPerServing ?? 0) * multiplier).toInt(),
-          protein: ((food.proteinPerServing ?? 0) * multiplier).toInt(),
-          fat: ((food.fatPerServing ?? 0) * multiplier).toInt(),
-          sodium: ((food.sodiumMg ?? 0) * multiplier).toInt(),
-          fluids: ((food.fluidMlPerServing ?? 0) * multiplier),
-        ),
-      ),
-    );
+    return _foodOpsService.createFoodItemData(food, customAmount: customAmount);
   }
 
   /// Unified method to modify food items in a nutrition plan section.
@@ -1052,14 +956,14 @@ class ActivityDetailController extends _$ActivityDetailController {
       transform: (items) => items.map((item) {
         if (item.id == foodId) {
           final currentQuantity = food_utils.parseLeadingQuantity(item.quantity) ?? 1.0;
-          final normalizedQty = _roundFriendlyQuantity(
+          final normalizedQty = _foodOpsService.roundFriendlyQuantity(
             newQuantity,
             isIndivisible: item.isIndivisible,
           );
           final scaleFactor = currentQuantity > 0
               ? normalizedQty / currentQuantity
               : 1.0;
-          final newQuantityDisplay = _buildQuantityLabel(item, normalizedQty);
+          final newQuantityDisplay = _foodOpsService.buildQuantityLabel(item, normalizedQty);
 
           final currentNutrition = item.nutritionalInfo;
           final scaledNutrition = currentNutrition != null
@@ -1109,146 +1013,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     );
   }
 
-  bool _isLikelyLiquidFood(dynamic food, String productType) {
-    final normalizedType = productType.toLowerCase();
-    if (normalizedType == 'sports_drink' || normalizedType == 'beverage') {
-      return true;
-    }
-
-    final fluidMl = (food.fluidMlPerServing as num?)?.toDouble() ?? 0;
-    if (fluidMl > 0) return true;
-
-    final searchable = [
-      food.name,
-      food.displayName,
-      food.description,
-    ].whereType<String>().join(' ').toLowerCase();
-    return searchable.contains('drink') ||
-        searchable.contains('water') ||
-        searchable.contains('juice') ||
-        searchable.contains('smoothie') ||
-        searchable.contains('shake');
-  }
-
-  bool _isLikelyElectrolyteFood(dynamic food, String productType) {
-    if (productType.toLowerCase() == 'supplement') return true;
-    final searchable = [
-      food.name,
-      food.displayName,
-      food.description,
-    ].whereType<String>().join(' ').toLowerCase();
-    return searchable.contains('electrolyte') ||
-        searchable.contains('liquid iv') ||
-        searchable.contains('salt') ||
-        searchable.contains('sodium') ||
-        searchable.contains('pickle juice');
-  }
-
-
-  double _roundFriendlyQuantity(double value, {required bool isIndivisible}) {
-    if (value <= 0) return isIndivisible ? 1.0 : 0.5;
-    if (isIndivisible) return value.round().toDouble();
-
-    final half = (value * 2).round() / 2;
-    final third = (value * 3).round() / 3;
-    final halfDiff = (value - half).abs();
-    final thirdDiff = (value - third).abs();
-    final rounded = thirdDiff + 0.08 < halfDiff ? third : half;
-    return (rounded * 100).round() / 100;
-  }
-
-  String _buildQuantityLabel(FoodItemData item, double quantity) {
-    final qtyStr = food_utils.formatQuantity(quantity);
-
-    // Prefer the existing quantity tail if it already contains unit info
-    // (e.g. "2 cups Oatmeal" → tail = "cups Oatmeal").
-    final existingTailMatch = RegExp(
-      r'^[\d.]+\s*(.*)$',
-    ).firstMatch(item.quantity.trim());
-    final existingTail = existingTailMatch?.group(1)?.trim();
-
-    // If the existing tail has multiple words (unit + name), preserve it
-    // since enrichment already built the proper "unit foodName" string.
-    if (existingTail != null &&
-        existingTail.isNotEmpty &&
-        existingTail.contains(' ')) {
-      return '$qtyStr ${food_utils.stripParenthetical(existingTail)}'.trim();
-    }
-
-    String label;
-    if (quantity != 1 && item.displayNamePlural?.isNotEmpty == true) {
-      label = food_utils.stripParenthetical(item.displayNamePlural!);
-    } else if (item.displayName?.isNotEmpty == true) {
-      label = food_utils.stripParenthetical(item.displayName!);
-    } else if (existingTail != null && existingTail.isNotEmpty) {
-      label = food_utils.stripParenthetical(existingTail);
-    } else {
-      label = food_utils.stripParenthetical(item.name);
-    }
-
-    if (quantity != 1 &&
-        item.displayNamePlural?.isEmpty != false &&
-        !label.contains(' ') &&
-        !label.toLowerCase().endsWith('s')) {
-      label = '${label}s';
-    }
-
-    return '$qtyStr $label'.trim();
-  }
-
-  FoodItemData _normalizeFoodQuantity(FoodItemData food) {
-    final currentQuantity = food_utils.parseLeadingQuantity(food.quantity);
-    if (currentQuantity == null) return food;
-
-    final normalizedQuantity = _roundFriendlyQuantity(
-      currentQuantity,
-      isIndivisible: food.isIndivisible,
-    );
-    if ((normalizedQuantity - currentQuantity).abs() < 0.01) return food;
-
-    final newLabel = _buildQuantityLabel(food, normalizedQuantity);
-    final scaleFactor = currentQuantity > 0
-        ? normalizedQuantity / currentQuantity
-        : 1.0;
-    final info = food.nutritionalInfo;
-
-    return FoodItemData(
-      id: food.id,
-      name: food.name,
-      quantity: newLabel,
-      imageAddress: food.imageAddress,
-      description: food.description,
-      timing: food.timing,
-      nutritionalInfo: info != null
-          ? NutritionalInfo(
-              calories: info.calories != null
-                  ? (info.calories! * scaleFactor).round()
-                  : null,
-              carbs: info.carbs != null
-                  ? (info.carbs! * scaleFactor).round()
-                  : null,
-              protein: info.protein != null
-                  ? (info.protein! * scaleFactor).round()
-                  : null,
-              fat: info.fat != null ? (info.fat! * scaleFactor).round() : null,
-              sodium: info.sodium != null
-                  ? (info.sodium! * scaleFactor).round()
-                  : null,
-              fluids: info.fluids != null ? info.fluids! * scaleFactor : null,
-            )
-          : null,
-      instructions: food.instructions,
-      displayName: food.displayName,
-      displayNamePlural: food.displayNamePlural,
-      displayOverride: food.displayOverride,
-      servingSize: food.servingSize,
-      isDrink: food.isDrink,
-      isIndivisible: food.isIndivisible,
-      templateId: food.templateId,
-      scaleMultiplier: food.scaleMultiplier,
-      timingCategory: food.timingCategory,
-    );
-  }
 
   /// Update a food quantity within a sub-phase, applying proportional scaling
   /// to all sibling items in the same sub-phase.
@@ -1648,7 +1412,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         }
 
         if (newSummaryQty != null) {
-          final newLabel = _buildQuantityLabel(food, newSummaryQty);
+          final newLabel = _foodOpsService.buildQuantityLabel(food, newSummaryQty);
           final scaleFactor =
               summaryQty > 0 ? newSummaryQty / summaryQty : 1.0;
           final ni = food.nutritionalInfo;

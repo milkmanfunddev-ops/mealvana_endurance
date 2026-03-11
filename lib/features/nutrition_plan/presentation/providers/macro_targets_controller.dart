@@ -16,6 +16,7 @@ import '../../data/macro_repository.dart';
 import '../../application/macro_generation_service.dart';
 import '../../application/brick_macro_service.dart';
 import '../../application/nutrition_plan_service.dart';
+import '../../application/draft_activity_cleanup_service.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../../activities/domain/brick_metadata.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -586,8 +587,16 @@ class MacroTargetsController extends _$MacroTargetsController {
           }
         }
 
-        // Call generate-macros-v3 edge function directly
-        await _generateMacroTargets(
+        // Create the service instance
+        final macroService = MacroGenerationService(
+          supabaseClient: ref.read(appExternalDepsProvider).supabaseClient,
+          macroRepository: ref.read(macroRepositoryProvider),
+          authService: _authService,
+          analytics: _analytics,
+        );
+
+        // Call the service to generate macros
+        var macroTargets = await macroService.generateRunningMacros(
           activityId: finalActivityId,
           deviceId: deviceId,
           distanceMiles: distance,
@@ -601,15 +610,14 @@ class MacroTargetsController extends _$MacroTargetsController {
           intensity: intensity,
         );
 
-        // Get the generated macro targets from cache to track analytics
-        final repository = ref.read(macroRepositoryProvider);
-        var macroTargets = await repository.getCachedMacroTargets();
-
         // Apply user profile nutrition target overrides (if any)
-        if (macroTargets != null) {
-          macroTargets = await _maybeApplyOverrides(macroTargets);
-          await repository.saveMacroTargets(macroTargets);
-        }
+        final beforeOverrides = 'pre=${macroTargets.preRun.carbsG}g, during=${macroTargets.duringRun.carbTotalG}g, post=${macroTargets.postRun.carbsG}g';
+        DebugLogger.info('🎯 OVERRIDE DEBUG [1/5]: MacroTargets BEFORE overrides: $beforeOverrides');
+        macroTargets = await _maybeApplyOverrides(macroTargets);
+        final afterOverrides = 'pre=${macroTargets.preRun.carbsG}g, during=${macroTargets.duringRun.carbTotalG}g, post=${macroTargets.postRun.carbsG}g, isModified=${macroTargets.isUserModified}, modifiedFields=${macroTargets.modifiedFields}';
+        DebugLogger.info('🎯 OVERRIDE DEBUG [1/5]: MacroTargets AFTER overrides: $afterOverrides');
+        final repository = ref.read(macroRepositoryProvider);
+        await repository.saveMacroTargets(macroTargets);
 
         // Update state to not generating and include macro targets with finalActivityId
         return currentState.copyWith(
@@ -836,250 +844,6 @@ class MacroTargetsController extends _$MacroTargetsController {
         rethrow; // Re-throw so the screen can handle it
       }
     });
-  }
-
-  /// Generate macro targets by calling the generate-macros-v3 edge function
-  Future<void> _generateMacroTargets({
-    String? activityId,
-    required String deviceId,
-    required double distanceMiles,
-    required double paceMinutesPerMile,
-    required int timeBeforeRunMinutes,
-    required GutTraining gutTraining,
-    SweatRateCat? sweatRateCat,
-    double? temperatureC,
-    double? humidityPct,
-    bool isFasted = false,
-    IntensityDistribution? intensity,
-  }) async {
-    // Get user profile data
-    final userProfile = await _authService.getCurrentUser();
-
-    // Calculate user metrics with fallbacks to reasonable defaults
-    final age = userProfile?.age ?? 30;
-    final gender = userProfile?.gender.name ?? 'other';
-    final weightKg = userProfile != null
-        ? userProfile.weightPounds *
-              0.453592 // Convert lbs to kg
-        : 70.0; // Default 70kg if no profile
-    final heightCm = userProfile != null
-        ? userProfile.totalHeightInches *
-              2.54 // Convert inches to cm
-        : 170.0; // Default 170cm if no profile
-
-    // V3: Convert minutes to hours for the new edge function
-    final hoursBefore = timeBeforeRunMinutes / 60.0;
-
-    // V3: Normalize intensity distribution to fractions (0-1)
-    final zoneLow = (intensity?.conversationalPct ?? 70) / 100.0;
-    final zoneMid = (intensity?.tempoPct ?? 20) / 100.0;
-    final zoneHigh = (intensity?.allOutPct ?? 10) / 100.0;
-
-    final requestData = {
-      'activity_type': 'running',
-      'age': age,
-      'gender': gender,
-      'weight': weightKg,
-      'weight_unit': 'kg',
-      'height': heightCm,
-      'height_unit': 'cm',
-      'run_pace': paceMinutesPerMile,
-      'run_distance': distanceMiles,
-      'run_pace_unit': 'min_per_mile',
-      'run_distance_unit': 'mi',
-      // V3 params
-      'hours_before': hoursBefore,
-      'is_fasted': isFasted,
-      'intensity_distribution': {
-        'zone_low': zoneLow,
-        'zone_mid': zoneMid,
-        'zone_high': zoneHigh,
-      },
-      // Legacy param kept for backward compat
-      'time_before_run_min': timeBeforeRunMinutes,
-      'gut_training': gutTraining.name,
-      'carb_source': 'dual',
-      'sweat_sodium': 'medium',
-      'drink_sodium_mg_per_l': 500,
-      'optional_sweat_rate_lph': null,
-      'sweat_rate_category': sweatRateCat?.name ?? 'medium',
-      'temp_c': temperatureC,
-      'humidity_pct': humidityPct,
-    };
-
-    // Call the generate-macros-v3 edge function
-    final supabase = ref.read(appExternalDepsProvider).supabaseClient;
-    final response = await supabase.functions.invoke(
-      'generate-macros-v3',
-      body: requestData,
-    );
-
-    if (response.status >= 400) {
-      final data = response.data as Map<String, dynamic>?;
-      throw Exception(data?['message'] ?? 'Failed to generate macro targets');
-    }
-
-    // Parse the response
-    final data = response.data as Map<String, dynamic>;
-
-    if (data['success'] != true) {
-      throw Exception(data['message'] ?? 'Failed to generate macro targets');
-    }
-
-    final macrosData = data['macros'] as Map<String, dynamic>;
-
-    // Helper function to safely convert to double
-    double toDouble(dynamic value, [String fieldName = 'unknown']) {
-      try {
-        if (value == null) return 0.0;
-        if (value is double) return value;
-        if (value is int) return value.toDouble();
-        if (value is String) return double.tryParse(value) ?? 0.0;
-        return (value as num).toDouble();
-      } catch (e) {
-        DebugLogger.error(
-          '❌ DEBUG: Error converting field "$fieldName" with value "$value" (${value.runtimeType}) to double: $e',
-        );
-        return 0.0;
-      }
-    }
-
-    // Helper function to safely convert list to List<double>
-    List<double> toDoubleList(
-      dynamic value, [
-      List<double> defaultValue = const [30, 60],
-    ]) {
-      if (value == null) return defaultValue;
-      if (value is List) {
-        return value.map((e) => toDouble(e)).toList();
-      }
-      return defaultValue;
-    }
-
-    // Convert edge function response to MacroTargets with correct field names
-    final macroTargets = MacroTargets(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      activityType: ActivityType.running,
-      preRun: PreRunMacros(
-        carbsG: toDouble(macrosData['pre_run_carbs_g'], 'pre_run_carbs_g'),
-        proteinG: toDouble(
-          macrosData['pre_run_protein_g_optional'],
-          'pre_run_protein_g_optional',
-        ),
-        fatCapG: toDouble(macrosData['pre_run_fat_g_cap'], 'pre_run_fat_g_cap'),
-        fluidsMl: toDouble(macrosData['pre_run_water_ml'], 'pre_run_water_ml'),
-        sodiumMg: toDouble(
-          macrosData['pre_run_sodium_mg'],
-          'pre_run_sodium_mg',
-        ),
-      ),
-      duringRun: DuringRunMacros(
-        carbRateGPerH: toDouble(
-          macrosData['during_rate_g_per_h'],
-          'during_rate_g_per_h',
-        ),
-        carbTotalG: toDouble(macrosData['during_total_g'], 'during_total_g'),
-        fluidRateMlPerH: toDouble(
-          macrosData['during_water_rate_ml_per_h'],
-          'during_water_rate_ml_per_h',
-        ),
-        fluidTotalMl: toDouble(
-          macrosData['during_water_total_ml'],
-          'during_water_total_ml',
-        ),
-        sodiumRateMgPerH: toDouble(
-          macrosData['during_sodium_rate_mg_per_h'],
-          'during_sodium_rate_mg_per_h',
-        ),
-        sodiumTotalMg: toDouble(
-          macrosData['during_sodium_total_mg'],
-          'during_sodium_total_mg',
-        ),
-        massNormRateGPerH: toDouble(
-          macrosData['during_mass_norm_rate_g_per_h'],
-          'during_mass_norm_rate_g_per_h',
-        ),
-        absClampRangeGPerH: toDoubleList(
-          macrosData['during_abs_clamp_range_g_per_h'],
-        ),
-      ),
-      postRun: PostRunMacros(
-        carbsG: toDouble(macrosData['post_run_carbs_g'], 'post_run_carbs_g'),
-        proteinG: toDouble(
-          macrosData['post_run_protein_g'],
-          'post_run_protein_g',
-        ),
-        fluidsMl: toDouble(
-          macrosData['post_run_water_ml'],
-          'post_run_water_ml',
-        ),
-        sodiumMg: toDouble(
-          macrosData['post_run_sodium_mg'],
-          'post_run_sodium_mg',
-        ),
-      ),
-      metrics: () {
-        // Compute derived metrics client-side since the edge function
-        // only returns distance_km, duration_h, and duration_min
-        final distanceKm = toDouble(macrosData['distance_km'], 'distance_km');
-        final durationH = toDouble(macrosData['duration_h'], 'duration_h');
-        final durationMin = toDouble(
-          macrosData['duration_min'],
-          'duration_min',
-        );
-        final distanceMi = distanceKm > 0 ? distanceKm / 1.60934 : 0.0;
-        final speedMph = (distanceMi > 0 && durationH > 0)
-            ? distanceMi / durationH
-            : 0.0;
-        final paceMinPerMile = (distanceMi > 0 && durationMin > 0)
-            ? durationMin / distanceMi
-            : null;
-
-        return RunMetrics(
-          distanceMi: distanceMi,
-          distanceKm: distanceKm,
-          durationH: durationH,
-          durationMin: durationMin,
-          paceMinPerMile: paceMinPerMile,
-          speedMph: speedMph,
-          caloriesNetKcal: toDouble(
-            macrosData['calories_net_kcal'],
-            'calories_net_kcal',
-          ),
-          caloriesGrossKcal: toDouble(
-            macrosData['calories_gross_kcal'],
-            'calories_gross_kcal',
-          ),
-          met: toDouble(macrosData['MET'], 'MET'),
-        );
-      }(),
-      calculationRule:
-          macrosData['pre_run_carbs_rule'] ?? 'Generated from edge function',
-      timestamp: DateTime.now(),
-      isUserModified: false,
-    );
-
-    // Cache the macro targets
-    final repository = ref.read(macroRepositoryProvider);
-    await repository.saveMacroTargets(macroTargets);
-
-    await _analytics.trackPlanGenerated(
-      deviceId: deviceId,
-      activityId: activityId,
-      activityType: 'running',
-      distanceMiles: distanceMiles,
-      paceMinutesPerMile: paceMinutesPerMile,
-      totalCalories: macroTargets.metrics.caloriesNetKcal.round(),
-      totalCarbs:
-          (macroTargets.preRun.carbsG +
-                  macroTargets.duringRun.carbTotalG +
-                  macroTargets.postRun.carbsG)
-              .round(),
-      beforeRunItems: 1,
-      duringRunItems: 1,
-      afterRunItems: 1,
-      isFirstPlan: true,
-    );
   }
 
   /// Generate macros for running (wrapper around main generateMacros)
@@ -1957,41 +1721,23 @@ class MacroTargetsController extends _$MacroTargetsController {
   ///
   /// NOTE: Uses [_lastKnownActivityId] instead of [state.value] because this
   /// is called from ref.onDispose(), where accessing state is forbidden by Riverpod.
-  void _scheduleCleanupIfNeeded() {
+  void _scheduleCleanupIfNeeded() async {
     final activityId = _lastKnownActivityId;
 
-    // Only cleanup if we have a draft activity ID
-    if (activityId != null && activityId.isNotEmpty) {
-      // Schedule cleanup after a delay to allow navigation to complete
-      Future.delayed(const Duration(seconds: 2), () async {
-        await _cleanupDraftActivityIfNeeded(activityId);
-      });
-    }
-  }
+    // Get userId in a delayed Future (safe after disposal)
+    Future.delayed(const Duration(seconds: 2), () async {
+      try {
+        final userId = await ref.read(userIdProvider.future);
+        final cleanupService = ref.read(draftActivityCleanupServiceProvider);
 
-  /// Clean up draft activity if it's still in draft status
-  /// This is safe to call from ref.onDispose() because we're using Future.delayed
-  Future<void> _cleanupDraftActivityIfNeeded(String activityId) async {
-    try {
-      // Safe to use ref.read here - we're in a delayed Future, not dispose() itself
-      final userId = await ref.read(userIdProvider.future);
-      final activitiesService = ref.read(activitiesServiceProvider);
-
-      final activity = await activitiesService.getActivityById(
-        userId,
-        activityId,
-      );
-
-      if (activity != null && activity.status == domain.ActivityStatus.draft) {
-        await activitiesService.deleteActivity(
-          deviceId: userId,
-          activityId: activityId,
+        await cleanupService.cleanupIfNeeded(
+          activityId: activityId ?? '',
+          userId: userId,
         );
+      } catch (e) {
+        DebugLogger.error('Failed to schedule cleanup: $e');
       }
-    } catch (e) {
-      DebugLogger.error('Failed to cleanup draft activity: $e');
-      // Don't rethrow - cleanup failure is acceptable
-    }
+    });
   }
 
   /// Apply user profile nutrition target overrides to generated macro targets.
@@ -2093,8 +1839,14 @@ class MacroTargetsController extends _$MacroTargetsController {
   /// Returns the (potentially modified) macro targets.
   Future<MacroTargets> _maybeApplyOverrides(MacroTargets macroTargets) async {
     final user = await _authService.getCurrentUser();
-    if (user?.nutritionTargetOverrides?.hasAnyOverride == true) {
-      return _applyUserOverrides(macroTargets, user!.nutritionTargetOverrides!);
+    final overrides = user?.nutritionTargetOverrides;
+    DebugLogger.info(
+      '🎯 OVERRIDE DEBUG [1b/5]: _maybeApplyOverrides - '
+      'userFound=${user != null}, hasOverrides=${overrides?.hasAnyOverride}, '
+      'pre=${overrides?.pre}, during=${overrides?.during}, post=${overrides?.post}',
+    );
+    if (overrides?.hasAnyOverride == true) {
+      return _applyUserOverrides(macroTargets, overrides!);
     }
     return macroTargets;
   }
@@ -2169,4 +1921,12 @@ class MacroTargetsController extends _$MacroTargetsController {
       DebugLogger.error('TP write-back failed (non-blocking): $e');
     }
   }
+}
+
+/// Provider for DraftActivityCleanupService
+@riverpod
+DraftActivityCleanupService draftActivityCleanupService(Ref ref) {
+  return DraftActivityCleanupService(
+    activitiesService: ref.read(activitiesServiceProvider),
+  );
 }
