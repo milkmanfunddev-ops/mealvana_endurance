@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item_data.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/data/nutrition_plan_mapper.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import '../../../activities/data/activities_repository.dart';
@@ -74,7 +75,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
     NutritionPlan? plan;
     if (activity.nutritionPlanData != null) {
-      plan = NutritionPlan.fromJson(activity.nutritionPlanData!);
+      plan = NutritionPlanMapper.fromJson(activity.nutritionPlanData!);
     }
 
     ActivityCompletion? completion;

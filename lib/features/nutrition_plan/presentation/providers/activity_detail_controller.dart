@@ -17,6 +17,7 @@ import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../application/nutrition_plan_service.dart';
 import '../../data/nutrition_plan_repository.dart';
+import '../../data/nutrition_plan_mapper.dart';
 import '../../data/template_foods_repository.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../domain/carb_adjustment_level.dart';
@@ -1509,7 +1510,7 @@ class ActivityDetailController extends _$ActivityDetailController {
       if (planData != null) {
         final user = await _authService.getCurrentUser();
         if (user != null) {
-          final plan = NutritionPlan.fromJson(planData);
+          final plan = NutritionPlanMapper.fromJson(planData);
           unawaited(_pushToTrainingPeaks(user.id, updatedActivity, plan));
         }
       }

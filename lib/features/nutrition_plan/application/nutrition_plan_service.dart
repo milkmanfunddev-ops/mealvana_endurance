@@ -14,6 +14,7 @@ import '../../activities/domain/brick_metadata.dart';
 import '../../activities/data/activities_repository.dart';
 import '../data/food_repository.dart';
 import '../data/nutrition_plan_repository.dart';
+import '../data/nutrition_plan_mapper.dart';
 import '../domain/food_item.dart';
 import '../domain/macro_targets.dart';
 import '../domain/nutrition_plan.dart';
@@ -465,6 +466,13 @@ class NutritionPlanService {
   }) async {
     try {
       _logger.info('Generating plan via V2 template system', context: 'NUTRITION_PLAN_SERVICE');
+      _logger.info(
+        '🎯 OVERRIDE DEBUG [2/5]: Sending to V2 edge function: '
+        'pre_carbs=${macroTargets.preRun.carbsG}, pre_protein=${macroTargets.preRun.proteinG}, pre_sodium=${macroTargets.preRun.sodiumMg}, pre_fluids=${macroTargets.preRun.fluidsMl}, '
+        'during_carbs=${macroTargets.duringRun.carbTotalG}, during_sodium=${macroTargets.duringRun.sodiumTotalMg}, during_fluids=${macroTargets.duringRun.fluidTotalMl}, '
+        'post_carbs=${macroTargets.postRun.carbsG}, post_protein=${macroTargets.postRun.proteinG}, post_sodium=${macroTargets.postRun.sodiumMg}, post_fluids=${macroTargets.postRun.fluidsMl}',
+        context: 'NUTRITION_PLAN_SERVICE',
+      );
 
       final supabase = ref.read(appExternalDepsProvider).supabaseClient;
 
@@ -550,7 +558,7 @@ class NutritionPlanService {
       final now = DateTime.now();
       final planId = data['plan_id'] as String? ?? const Uuid().v4();
 
-      return NutritionPlan.fromSupabaseJson({
+      final plan = NutritionPlanMapper.fromSupabaseJson({
         'plan_id': planId,
         'plan_name': 'Nutrition Plan',
         'plan_data': data, // Contains plan.before (nested), plan.during, plan.after
@@ -558,9 +566,21 @@ class NutritionPlanService {
         'updated_at': now.toIso8601String(),
         'activity_id': activityId,
       });
+
+      // Log the targets on each PlanSection after V2 parse
+      for (final section in plan.sections) {
+        _logger.info(
+          '🎯 OVERRIDE DEBUG [4/5]: V2 plan section "${section.id}": '
+          'carbsTarget=${section.carbsTarget}, proteinTarget=${section.proteinTarget}, '
+          'sodiumTarget=${section.sodiumTarget}, fluidsTarget=${section.fluidsTarget}',
+          context: 'NUTRITION_PLAN_SERVICE',
+        );
+      }
+
+      return plan;
     } catch (e) {
       _logger.error(
-        'V2 plan generation failed, falling back to v1',
+        '🎯 OVERRIDE DEBUG: V2 FAILED - falling back to v1! Error: $e',
         context: 'NUTRITION_PLAN_SERVICE',
         error: e,
       );

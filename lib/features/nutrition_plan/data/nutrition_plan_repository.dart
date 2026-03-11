@@ -13,6 +13,7 @@ import '../../activities/data/activities_repository.dart';
 import '../../calendar/application/calendar_service.dart';
 import '../application/food_data_transformation_service.dart';
 import '../domain/nutrition_plan.dart' as domain;
+import 'nutrition_plan_mapper.dart';
 
 part 'nutrition_plan_repository.g.dart';
 
@@ -104,7 +105,7 @@ class NutritionPlanRepository {
 
       // Parse and return the nutrition plan
       final planJson = _decodePlanJson(activity.nutritionPlanData!);
-      return domain.NutritionPlan.fromJson(planJson);
+      return NutritionPlanMapper.fromJson(planJson);
     } catch (e, stackTrace) {
       DebugLogger.error('Failed to get nutrition plan for activity $activityId', error: e);
       DebugLogger.debug(stackTrace.toString());
@@ -145,7 +146,7 @@ class NutritionPlanRepository {
         return null;
       }
       final planData = json.decode(activity!.nutritionPlanData!) as Map<String, dynamic>;
-      return domain.NutritionPlan.fromJson(planData);
+      return NutritionPlanMapper.fromJson(planData);
     } catch (e, stackTrace) {
       DebugLogger.error('Error getting cached plan', error: e, stackTrace: stackTrace);
       return null;
