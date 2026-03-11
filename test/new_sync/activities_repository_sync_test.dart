@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/data/activities_repository.dart';
+import 'package:mealvana_endurance/features/activities/application/activity_deduplication_service.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
@@ -12,6 +13,7 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 class MockAppDatabase extends Mock implements AppDatabase {}
 class MockAppLogger extends Mock implements AppLogger {}
 class MockSentryReporter extends Mock implements SentryReporter {}
+class MockActivityDeduplicationService extends Mock implements ActivityDeduplicationService {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +59,7 @@ void main() {
       database: mockDatabase,
       logger: mockLogger,
       sentry: mockSentry,
+      deduplicationService: MockActivityDeduplicationService(),
     );
   });
 

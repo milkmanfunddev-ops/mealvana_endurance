@@ -240,7 +240,7 @@ class NutritionPlanRepository {
         try {
           if (activity.nutritionPlanData != null) {
             final planJson = _decodePlanJson(activity.nutritionPlanData!);
-            plans.add(domain.NutritionPlan.fromJson(planJson));
+            plans.add(NutritionPlanMapper.fromJson(planJson));
           }
         } catch (e) {
           DebugLogger.warning('Failed to parse plan for activity ${activity.id}: $e');
@@ -276,7 +276,7 @@ class NutritionPlanRepository {
         try {
           if (activity.nutritionPlanData != null) {
             final planJson = _decodePlanJson(activity.nutritionPlanData!);
-            plans.add(domain.NutritionPlan.fromJson(planJson));
+            plans.add(NutritionPlanMapper.fromJson(planJson));
           }
         } catch (e) {
           DebugLogger.warning('Failed to parse plan for activity ${activity.id}: $e');
