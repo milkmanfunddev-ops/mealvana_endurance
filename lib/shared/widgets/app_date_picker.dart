@@ -100,3 +100,47 @@ Future<DateTime?> showAppDatePicker({
   }
   return null;
 }
+
+/// Global wrapper for time picking to ensure consistent styling.
+///
+/// Applies Mealvana theming (orange primary, cream/blackberry surfaces).
+Future<TimeOfDay?> showAppTimePicker({
+  required BuildContext context,
+  required TimeOfDay initialTime,
+}) async {
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+
+  return showTimePicker(
+    context: context,
+    initialTime: initialTime,
+    builder: (context, child) {
+      return Theme(
+        data: theme.copyWith(
+          colorScheme: theme.colorScheme.copyWith(
+            primary: AppColors.electrolyte,
+            onPrimary: isDark ? AppColors.blackberry : Colors.white,
+          ),
+        ),
+        child: child!,
+      );
+    },
+  );
+}
+
+/// Merges a [date] and [time] into a single [DateTime].
+///
+/// Preserves the year/month/day from [date] and the hour/minute from [time].
+DateTime mergeDateAndTime(DateTime date, TimeOfDay time) {
+  return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+}
+
+/// Replaces the time component of [dateTime] with [time], preserving the date.
+DateTime replaceDateTimeTime(DateTime dateTime, TimeOfDay time) {
+  return DateTime(dateTime.year, dateTime.month, dateTime.day, time.hour, time.minute);
+}
+
+/// Replaces the date component of [dateTime] with [date], preserving the time.
+DateTime replaceDateTimeDate(DateTime dateTime, DateTime date) {
+  return DateTime(date.year, date.month, date.day, dateTime.hour, dateTime.minute);
+}

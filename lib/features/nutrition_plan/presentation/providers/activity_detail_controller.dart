@@ -30,6 +30,7 @@ import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/presentation/providers/calendar_controller.dart';
 import '../../../events/data/events_repository.dart';
 import 'activity_detail_state.dart';
+import '../../../../shared/utils/food_display_utils.dart' as food_utils;
 
 part 'activity_detail_controller.g.dart';
 
@@ -116,6 +117,14 @@ class ActivityDetailController extends _$ActivityDetailController {
       );
       if (nutritionPlan != null) {
         _logger.info('Loaded nutrition plan for activity: ${nutritionPlan.id}');
+        // Debug: log section targets from stored plan
+        for (final section in nutritionPlan.sections) {
+          _logger.info(
+            '🎯 OVERRIDE DEBUG [5/5]: Loaded plan section "${section.id}": '
+            'carbsTarget=${section.carbsTarget}, proteinTarget=${section.proteinTarget}, '
+            'sodiumTarget=${section.sodiumTarget}, fluidsTarget=${section.fluidsTarget}',
+          );
+        }
         // Enrich food items with displayNamePlural/servingSize from template_foods
         nutritionPlan = await _enrichFoodItemsFromTemplateFoods(nutritionPlan);
       }
@@ -653,7 +662,7 @@ class ActivityDetailController extends _$ActivityDetailController {
     if (resolvedUnit == null || resolvedUnit.isEmpty) return rawQuantity;
 
     final trimmed = rawQuantity.trim();
-    final numericQty = _parseLeadingQuantity(trimmed);
+    final numericQty = food_utils.parseLeadingQuantity(trimmed);
     if (numericQty == null) return rawQuantity;
 
     // Check if there's already a tail (unit/descriptor) after the number
@@ -662,7 +671,7 @@ class ActivityDetailController extends _$ActivityDetailController {
     if (tail.isNotEmpty) return rawQuantity;
 
     // Quantity is bare — rebuild with unit + food name
-    final qtyStr = _formatQuantity(numericQty);
+    final qtyStr = food_utils.formatQuantity(numericQty);
     final unit = numericQty != 1
         ? _pluralizeUnit(resolvedUnit)
         : resolvedUnit;
@@ -1042,7 +1051,7 @@ class ActivityDetailController extends _$ActivityDetailController {
       operationName: 'updateFoodQuantity',
       transform: (items) => items.map((item) {
         if (item.id == foodId) {
-          final currentQuantity = _parseLeadingQuantity(item.quantity) ?? 1.0;
+          final currentQuantity = food_utils.parseLeadingQuantity(item.quantity) ?? 1.0;
           final normalizedQty = _roundFriendlyQuantity(
             newQuantity,
             isIndivisible: item.isIndivisible,
@@ -1135,25 +1144,6 @@ class ActivityDetailController extends _$ActivityDetailController {
         searchable.contains('pickle juice');
   }
 
-  double? _parseLeadingQuantity(String rawQuantity) {
-    final match = RegExp(r'^([\d.]+)').firstMatch(rawQuantity.trim());
-    if (match == null) return null;
-    return double.tryParse(match.group(1)!);
-  }
-
-  String _formatQuantity(double value) {
-    if ((value - value.roundToDouble()).abs() < 0.01) {
-      return value.round().toString();
-    }
-    if ((value * 10 - (value * 10).round()).abs() < 0.01) {
-      return value.toStringAsFixed(1);
-    }
-    return value.toStringAsFixed(2);
-  }
-
-  String _stripParenthetical(String value) {
-    return value.replaceAll(RegExp(r'\s*\([^)]*\)'), '').trim();
-  }
 
   double _roundFriendlyQuantity(double value, {required bool isIndivisible}) {
     if (value <= 0) return isIndivisible ? 1.0 : 0.5;
@@ -1168,7 +1158,7 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   String _buildQuantityLabel(FoodItemData item, double quantity) {
-    final qtyStr = _formatQuantity(quantity);
+    final qtyStr = food_utils.formatQuantity(quantity);
 
     // Prefer the existing quantity tail if it already contains unit info
     // (e.g. "2 cups Oatmeal" → tail = "cups Oatmeal").
@@ -1182,18 +1172,18 @@ class ActivityDetailController extends _$ActivityDetailController {
     if (existingTail != null &&
         existingTail.isNotEmpty &&
         existingTail.contains(' ')) {
-      return '$qtyStr ${_stripParenthetical(existingTail)}'.trim();
+      return '$qtyStr ${food_utils.stripParenthetical(existingTail)}'.trim();
     }
 
     String label;
     if (quantity != 1 && item.displayNamePlural?.isNotEmpty == true) {
-      label = _stripParenthetical(item.displayNamePlural!);
+      label = food_utils.stripParenthetical(item.displayNamePlural!);
     } else if (item.displayName?.isNotEmpty == true) {
-      label = _stripParenthetical(item.displayName!);
+      label = food_utils.stripParenthetical(item.displayName!);
     } else if (existingTail != null && existingTail.isNotEmpty) {
-      label = _stripParenthetical(existingTail);
+      label = food_utils.stripParenthetical(existingTail);
     } else {
-      label = _stripParenthetical(item.name);
+      label = food_utils.stripParenthetical(item.name);
     }
 
     if (quantity != 1 &&
@@ -1207,7 +1197,7 @@ class ActivityDetailController extends _$ActivityDetailController {
   }
 
   FoodItemData _normalizeFoodQuantity(FoodItemData food) {
-    final currentQuantity = _parseLeadingQuantity(food.quantity);
+    final currentQuantity = food_utils.parseLeadingQuantity(food.quantity);
     if (currentQuantity == null) return food;
 
     final normalizedQuantity = _roundFriendlyQuantity(

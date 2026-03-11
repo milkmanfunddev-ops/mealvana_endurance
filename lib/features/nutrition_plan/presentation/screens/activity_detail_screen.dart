@@ -29,6 +29,10 @@ import '../../../coach_mode/presentation/providers/coach_activity_detail_control
 import '../providers/activity_detail_state.dart';
 import '../widgets/stale_plan_warning.dart';
 import '../widgets/low_fuel_risk_badge.dart';
+import '../../../personal_templates/presentation/widgets/save_template_dialog.dart';
+import '../../../personal_templates/presentation/widgets/macro_comparison_banner.dart';
+import '../../../personal_templates/presentation/providers/personal_templates_controller.dart';
+import '../../../../shared/utils/food_display_utils.dart' as food_utils;
 
 /// Activity Detail Screen - Refactored with extracted widgets
 /// Shows activity details with nutrition sections and food items
@@ -38,11 +42,15 @@ class ActivityDetailScreen extends ConsumerStatefulWidget {
     required this.activityId,
     this.isNewActivity = false,
     this.isCoachView = false,
+    this.templateComparison,
   });
 
   final String activityId;
   final bool isNewActivity;
   final bool isCoachView;
+
+  /// Template vs recommended macro comparison data (shown as banner when non-null)
+  final TemplateComparisonData? templateComparison;
 
   @override
   ConsumerState<ActivityDetailScreen> createState() =>
@@ -52,6 +60,7 @@ class ActivityDetailScreen extends ConsumerStatefulWidget {
 class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   bool _hasShownSwipeHint = false;
   bool _swipeHintChecked = false;
+  bool _templateBannerDismissed = false;
   final Map<String, bool> _expandedSections = {};
 
   @override
@@ -194,6 +203,17 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         ],
       ),
       actions: [
+        // Save as Template button (only for existing activities with a nutrition plan)
+        if (!widget.isNewActivity && !widget.isCoachView)
+          IconButton(
+            icon: Icon(
+              FontAwesomeIcons.bookmark,
+              size: AppIconSizes.md,
+              color: AppColors.electrolyte,
+            ),
+            onPressed: () => _showSaveTemplateDialog(context),
+            tooltip: 'Save as Template',
+          ),
         // Edit button for existing activities (not new ones, not coach view)
         if (!widget.isNewActivity && !widget.isCoachView)
           IconButton(
@@ -301,6 +321,19 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
           ],
+
+          // Template comparison banner (shown when plan was applied from a template)
+          if (widget.templateComparison != null && !_templateBannerDismissed)
+            MacroComparisonBanner(
+              templateCarbsG: widget.templateComparison!.templateCarbsG,
+              targetCarbsG: widget.templateComparison!.targetCarbsG,
+              templateProteinG: widget.templateComparison!.templateProteinG,
+              targetProteinG: widget.templateComparison!.targetProteinG,
+              templateSodiumMg: widget.templateComparison!.templateSodiumMg,
+              targetSodiumMg: widget.templateComparison!.targetSodiumMg,
+              onDismiss: () =>
+                  setState(() => _templateBannerDismissed = true),
+            ),
 
           // Low fuel risk badge (shown when carbs are 33%+ below target)
           if (state.nutritionPlan != null)
@@ -788,50 +821,27 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   }
 
   String _buildCollapsedFoodSummaryLabel(FoodItemData food) {
-    final qty = _parseLeadingQuantity(food.quantity);
+    final qty = food_utils.parseLeadingQuantity(food.quantity);
 
     // If the quantity string already has a multi-word tail (e.g. "2 cups Oatmeal"),
     // use it directly — the enrichment already built the proper label.
-    final tailMatch = RegExp(r'^[\d.]+\s*(.*)$').firstMatch(food.quantity.trim());
-    final tail = tailMatch?.group(1)?.trim() ?? '';
+    final tail = food_utils.parseQuantityTail(food.quantity);
     if (qty != null && tail.contains(' ')) {
       if ((qty - 1.0).abs() < 0.01) {
-        // For qty=1, prefer the clean food name over the tail which may
-        // include a serving unit prefix (e.g. "packet Energy Chews").
-        return _simplifyFoodName(food.displayName ?? food.name);
+        return food_utils.stripParenthetical(food.displayName ?? food.name);
       }
-      return '${_formatQuantity(qty)} ${_simplifyFoodName(tail)}';
+      return '${food_utils.formatQuantity(qty)} ${food_utils.stripParenthetical(tail)}';
     }
 
-    final singular = _simplifyFoodName(food.displayName ?? food.name);
-    final plural = _simplifyFoodName(
+    final singular = food_utils.stripParenthetical(food.displayName ?? food.name);
+    final plural = food_utils.stripParenthetical(
       food.displayNamePlural ??
           (singular.toLowerCase().endsWith('s') ? singular : '${singular}s'),
     );
 
     if (qty == null || (qty - 1.0).abs() < 0.01) return singular;
     final label = qty > 1 ? plural : singular;
-    return '${_formatQuantity(qty)} $label';
-  }
-
-  double? _parseLeadingQuantity(String raw) {
-    final match = RegExp(r'^([\d.]+)').firstMatch(raw.trim());
-    if (match == null) return null;
-    return double.tryParse(match.group(1)!);
-  }
-
-  String _formatQuantity(double value) {
-    if ((value - value.roundToDouble()).abs() < 0.01) {
-      return value.round().toString();
-    }
-    if ((value * 10 - (value * 10).round()).abs() < 0.01) {
-      return value.toStringAsFixed(1);
-    }
-    return value.toStringAsFixed(2);
-  }
-
-  String _simplifyFoodName(String raw) {
-    return raw.replaceAll(RegExp(r'\s*\([^)]*\)'), '').trim();
+    return '${food_utils.formatQuantity(qty)} $label';
   }
 
   Widget _buildActionButtons(BuildContext context, ActivityDetailState state) {
@@ -1175,6 +1185,90 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         MealvanaSnackbar.showError(
           context,
           'Failed to regenerate nutrition plan. Please try again.',
+        );
+      }
+    }
+  }
+
+  /// Show dialog to save the current activity's nutrition plan as a template
+  Future<void> _showSaveTemplateDialog(BuildContext context) async {
+    // Read the current activity state from the provider
+    final asyncState = ref.read(activityDetailControllerProvider(
+      activityId: widget.activityId,
+      isNewActivity: widget.isNewActivity,
+    ));
+
+    final state = asyncState.value;
+    final activity = state?.activity;
+    final nutritionPlan = state?.nutritionPlan;
+
+    if (activity == null || nutritionPlan == null) {
+      MealvanaSnackbar.showError(
+        context,
+        'No nutrition plan to save as template',
+      );
+      return;
+    }
+
+    // Format duration for display
+    final durationMinutes = activity.durationMinutes ?? 0;
+    final hours = durationMinutes ~/ 60;
+    final mins = durationMinutes % 60;
+    final durationDisplay = hours > 0
+        ? '${hours}h ${mins.toString().padLeft(2, '0')}m'
+        : '${mins}m';
+
+    // Format distance for display
+    String? distanceDisplay;
+    if (activity.distanceMiles != null && activity.distanceMiles! > 0) {
+      final miles = activity.distanceMiles!;
+      distanceDisplay = miles == miles.roundToDouble()
+          ? '${miles.round()} miles'
+          : '${miles.toStringAsFixed(1)} miles';
+    }
+
+    final activityTypeDisplay = activity.isBrick
+        ? 'Brick'
+        : activity.activityType.displayName;
+
+    final defaultName = activity.title.isNotEmpty ? activity.title : 'My Template';
+
+    final templateName = await SaveTemplateDialog.show(
+      context,
+      defaultName: defaultName,
+      activityTypeDisplay: activityTypeDisplay,
+      durationDisplay: durationDisplay,
+      distanceDisplay: distanceDisplay,
+    );
+
+    if (templateName == null || !mounted) return;
+
+    final templatesController = ref.read(
+      personalTemplatesControllerProvider.notifier,
+    );
+
+    final success = await templatesController.saveTemplate(
+      activity: activity,
+      nutritionPlan: nutritionPlan,
+      templateName: templateName,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      MealvanaSnackbar.showSuccess(context, 'Template saved!');
+    } else {
+      // Check if it's a limit issue
+      final count = await templatesController.getTemplateCount();
+      if (count >= kMaxTemplateCount) {
+        MealvanaSnackbar.showWarning(
+          context,
+          'Template limit reached ($kMaxTemplateCount). Delete one to save a new template.',
+        );
+      } else {
+        MealvanaSnackbar.showError(
+          context,
+          'Failed to save template. Please try again.',
         );
       }
     }

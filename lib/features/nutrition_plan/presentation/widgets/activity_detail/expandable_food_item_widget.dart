@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../../shared/utils/food_display_utils.dart' as food_utils;
 
 /// Expandable Food Item Widget with Quantity Controls
 /// Displays food item with expandable details and swipe actions
@@ -161,7 +162,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
   /// regardless of whether the stored [quantity] field contains a tail.
   String _buildQuantityDescription() {
     final rawQuantity = widget.food.quantity.trim();
-    final numericQty = _parseLeadingQuantity(rawQuantity);
+    final numericQty = food_utils.parseLeadingQuantity(rawQuantity);
     String description = rawQuantity;
 
     if (numericQty != null) {
@@ -169,14 +170,14 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
         numericQty,
         isIndivisible: widget.food.isIndivisible,
       );
-      final qtyStr = _formatQuantityNumber(roundedQty);
+      final qtyStr = food_utils.formatQuantity(roundedQty);
 
       // Use displayAtQuantity as the single source of truth for food display.
       description = widget.food.displayAtQuantity(qtyStr);
 
       // Preserve any add-on suffix (e.g., "+ 1 Electrolyte Tablet") from
       // the original quantity string.
-      final tail = _parseQuantityTail(rawQuantity);
+      final tail = food_utils.parseQuantityTail(rawQuantity);
       final plusMatch = RegExp(r'\+\s*\d').firstMatch(tail);
       if (plusMatch != null) {
         final addOnSuffix = tail.substring(plusMatch.start).trim();
@@ -185,7 +186,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
     } else if (rawQuantity.isEmpty) {
       description = widget.food.displayAtQuantity('1');
     } else {
-      description = _simplifyName(rawQuantity);
+      description = food_utils.stripParenthetical(rawQuantity);
     }
 
     // Convert to metric if user prefers metric
@@ -196,41 +197,10 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
     return description;
   }
 
-  double? _parseLeadingQuantity(String raw) {
-    final match = RegExp(r'^([\d.]+)').firstMatch(raw);
-    if (match == null) return null;
-    return double.tryParse(match.group(1)!);
-  }
-
-  String _parseQuantityTail(String raw) {
-    final match = RegExp(r'^[\d.]+\s*(.*)$').firstMatch(raw);
-    return (match?.group(1) ?? '').trim();
-  }
-
-  /// Resolve the food name portion for display (without the leading number).
-  ///
-  /// Uses [FoodItemData.buildDisplayQuantity] to derive the serving unit from
-  /// [displayNamePlural] (e.g. "packets Energy Chews" → unit "packet").
-  /// This is the single source of truth for whether a food should show a
-  String _simplifyName(String value) {
-    final noParen = value.replaceAll(RegExp(r'\s*\([^)]*\)'), '');
-    return noParen.trim();
-  }
-
   double _roundFriendlyQuantity(double value, {required bool isIndivisible}) {
     if (value <= 0) return isIndivisible ? 1.0 : 0.5;
     if (isIndivisible) return value.round().toDouble();
     return (value * 2).round() / 2; // Snap to nearest 0.5
-  }
-
-  String _formatQuantityNumber(double value) {
-    if ((value - value.roundToDouble()).abs() < 0.01) {
-      return value.round().toString();
-    }
-    if ((value * 10 - (value * 10).round()).abs() < 0.01) {
-      return value.toStringAsFixed(1);
-    }
-    return value.toStringAsFixed(2);
   }
 
   @override
@@ -362,7 +332,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
 
                             // Quantity display
                             Text(
-                              _formatQuantityNumber(_quantity),
+                              food_utils.formatQuantity(_quantity),
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.bold,
