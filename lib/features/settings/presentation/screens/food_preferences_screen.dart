@@ -24,6 +24,11 @@ import '../../../user_foods/data/user_foods_repository.dart';
 import '../../../../shared/widgets/buttons/search_openfoodfacts_button.dart';
 import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/utils/search_strategy.dart';
+import '../widgets/food_preferences/food_preference_item_widget.dart';
+import '../widgets/food_preferences/user_food_item_widget.dart';
+import '../widgets/food_preferences/search_result_item_widget.dart';
+import '../widgets/food_preferences/additional_foods_section_widget.dart';
+import '../widgets/food_preferences/user_foods_section_widget.dart';
 
 /// Food Preferences Screen - Kyle's Design System (Settings)
 /// Settings version with search bar, barcode scanning, and 5-point slider system
@@ -348,31 +353,6 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     }
   }
 
-  Color _getIconColor(int sliderLevel, bool isLeft) {
-    if (isLeft) {
-      // X icon on the left (avoid)
-      if (sliderLevel == 0) {
-        return AppColors.dragonfruit;
-      } else if (sliderLevel == 1) {
-        return AppColors.dragonfruit.withOpacity(0.7);
-      } else if (sliderLevel == 2) {
-        return Colors.white;
-      } else {
-        return Colors.white.withOpacity(0.5);
-      }
-    } else {
-      // Heart icon on the right (love)
-      if (sliderLevel == 4) {
-        return AppColors.dragonfruit;
-      } else if (sliderLevel == 3) {
-        return AppColors.dragonfruit.withOpacity(0.7);
-      } else if (sliderLevel == 2) {
-        return Colors.white;
-      } else {
-        return Colors.white.withOpacity(0.5);
-      }
-    }
-  }
 
   List<FoodItem> get _filteredFoods {
     if (_searchQuery.isEmpty) {
@@ -1060,202 +1040,40 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   }
 
   Widget _buildUserFoodsSection(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.blackberry.withOpacity(0.2)
-            : AppColors.electrolyte.withOpacity(0.1),
-        borderRadius: AppRadius.cardRadius,
-        border: Border.all(
-          color: AppColors.electrolyte.withOpacity(0.3),
-          width: 2,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section header
-          Row(
-            children: [
-              Icon(
-                FontAwesomeIcons.circlePlus,
-                size: AppIconSizes.md,
-                color: AppColors.electrolyte,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  'Your Added Foods',
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-              // Count badge
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.electrolyte,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${_filteredUserFoods.length}',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // User foods list
-          ..._filteredUserFoods.map((food) {
-            final sliderLevel = _sliderLevels[food.name] ?? 2;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: _buildUserFoodPreferenceItem(context, food, sliderLevel),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUserFoodPreferenceItem(BuildContext context, FoodItem food, int sliderLevel) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: () => _showUserFoodEditSheet(food),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.blackberry.withOpacity(0.3) : Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.cardRadius,
-        ),
-        child: Column(
-          children: [
-            // Food info row with edit hint
-            Row(
-              children: [
-                // Food icon
-                KyleFoodIcon(
-                  foodType: _mapFoodType(food.name),
-                ),
-
-                const SizedBox(width: AppSpacing.md),
-
-                // Food name and category badges
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        food.name.toUpperCase(),
-                        style: AppTextStyles.foodTitle.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      // Category badges - convert FoodCategory to strings
-                      _buildCategoryBadges(food.categories.map((c) => c.dbValue).toList(), isDark),
-                    ],
-                  ),
-                ),
-
-                // Edit indicator
-                Icon(
-                  FontAwesomeIcons.penToSquare,
-                  size: AppIconSizes.sm,
-                  color: AppColors.electrolyte.withOpacity(0.7),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.md),
-
-            // Preference slider
-            _buildPreferenceSlider(context, food, sliderLevel),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Build category badges for user foods
-  Widget _buildCategoryBadges(List<String> categories, bool isDark) {
-    if (categories.isEmpty) {
-      return Text(
-        'Tap to set categories',
-        style: AppTextStyles.smallLabel.copyWith(
-          color: isDark ? AppColors.cream.withOpacity(0.5) : AppColors.blackberry.withOpacity(0.5),
-          fontStyle: FontStyle.italic,
-        ),
-      );
-    }
-
-    return Wrap(
-      spacing: AppSpacing.xs,
-      runSpacing: AppSpacing.xs,
-      children: categories.map((category) {
-        final label = _categoryToLabel(category);
-        final color = _categoryToColor(category);
-        return Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: 2,
-          ),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.5)),
-          ),
-          child: Text(
-            label,
-            style: AppTextStyles.smallLabel.copyWith(
-              color: color,
-              fontSize: 10,
-            ),
-          ),
+    return UserFoodsSectionWidget(
+      foodCount: _filteredUserFoods.length,
+      children: _filteredUserFoods.map((food) {
+        final sliderLevel = _sliderLevels[food.name] ?? 2;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+          child: _buildUserFoodPreferenceItem(context, food, sliderLevel),
         );
       }).toList(),
     );
   }
 
-  String _categoryToLabel(String category) {
-    switch (category) {
-      case 'before_run':
-        return 'Before';
-      case 'during_run':
-        return 'During';
-      case 'after_run':
-        return 'After';
-      default:
-        return category;
-    }
+  Widget _buildUserFoodPreferenceItem(BuildContext context, FoodItem food, int sliderLevel) {
+    return UserFoodItemWidget(
+      food: food,
+      sliderLevel: sliderLevel,
+      onLevelChanged: (newLevel) {
+        setState(() {
+          _sliderLevels[food.name] = newLevel;
+        });
+
+        final analytics = ref.read(appExternalDepsProvider);
+        analytics.analytics.track('food_preference_changed', properties: {
+          'food_name': food.name,
+          'slider_level': newLevel,
+          'backend_preference': _levelToPreference(newLevel).toString(),
+          'source': 'settings',
+        });
+      },
+      onEditTap: () => _showUserFoodEditSheet(food),
+      mapFoodType: _mapFoodType,
+    );
   }
 
-  Color _categoryToColor(String category) {
-    switch (category) {
-      case 'before_run':
-        return AppColors.electrolyte;
-      case 'during_run':
-        return AppColors.orange;
-      case 'after_run':
-        return AppColors.dragonfruit;
-      default:
-        return AppColors.cream;
-    }
-  }
 
   /// Show the edit screen for a user food
   Future<void> _showUserFoodEditSheet(FoodItem food) async {
@@ -1313,215 +1131,26 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   }
 
   Widget _buildFoodPreferenceItem(BuildContext context, FoodItem food, int sliderLevel) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return FoodPreferenceItemWidget(
+      food: food,
+      sliderLevel: sliderLevel,
+      onLevelChanged: (newLevel) {
+        setState(() {
+          _sliderLevels[food.name] = newLevel;
+        });
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.blackberry.withOpacity(0.3) : Theme.of(context).colorScheme.surface,
-        borderRadius: AppRadius.cardRadius,
-      ),
-      child: Column(
-        children: [
-          // Food info row
-          Row(
-            children: [
-              // Food icon
-              KyleFoodIcon(
-                foodType: _mapFoodType(food.name),
-              ),
-
-              const SizedBox(width: AppSpacing.md),
-
-              // Food name
-              Expanded(
-                child: Text(
-                  food.name.toUpperCase(),
-                  style: AppTextStyles.foodTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Preference slider
-          _buildPreferenceSlider(context, food, sliderLevel),
-        ],
-      ),
+        final analytics = ref.read(appExternalDepsProvider);
+        analytics.analytics.track('food_preference_changed', properties: {
+          'food_name': food.name,
+          'slider_level': newLevel,
+          'backend_preference': _levelToPreference(newLevel).toString(),
+          'source': 'settings',
+        });
+      },
+      mapFoodType: _mapFoodType,
     );
   }
 
-  Widget _buildPreferenceSlider(BuildContext context, FoodItem food, int sliderLevel) {
-    return Column(
-      children: [
-        // Slider track
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final trackWidth = constraints.maxWidth - 40;
-            final dotSpacing = trackWidth / 4;
-
-            return GestureDetector(
-              onHorizontalDragStart: (details) {
-                final localX = details.localPosition.dx - 20;
-                final newLevel = ((localX / trackWidth) * 4).round().clamp(0, 4);
-
-                setState(() {
-                  _sliderLevels[food.name] = newLevel;
-                });
-
-                final analytics = ref.read(appExternalDepsProvider);
-                analytics.analytics.track('food_preference_changed', properties: {
-                  'food_name': food.name,
-                  'slider_level': newLevel,
-                  'backend_preference': _levelToPreference(newLevel).toString(),
-                  'source': 'settings',
-                });
-              },
-              onHorizontalDragUpdate: (details) {
-                final localX = details.localPosition.dx - 20;
-                final newLevel = ((localX / trackWidth) * 4).round().clamp(0, 4);
-
-                if (newLevel != sliderLevel) {
-                  setState(() {
-                    _sliderLevels[food.name] = newLevel;
-                  });
-
-                  final analytics = ref.read(appExternalDepsProvider);
-                  analytics.analytics.track('food_preference_changed', properties: {
-                    'food_name': food.name,
-                    'slider_level': newLevel,
-                    'backend_preference': _levelToPreference(newLevel).toString(),
-                    'source': 'settings',
-                  });
-                }
-              },
-              onTapDown: (details) {
-                final localX = details.localPosition.dx - 20;
-                final newLevel = ((localX / trackWidth) * 4).round().clamp(0, 4);
-
-                setState(() {
-                  _sliderLevels[food.name] = newLevel;
-                });
-
-                final analytics = ref.read(appExternalDepsProvider);
-                analytics.analytics.track('food_preference_changed', properties: {
-                  'food_name': food.name,
-                  'slider_level': newLevel,
-                  'backend_preference': _levelToPreference(newLevel).toString(),
-                  'source': 'settings',
-                });
-              },
-              child: Container(
-                height: 40,
-                color: Colors.transparent,
-                child: Stack(
-                  children: [
-                    // Track line
-                    Positioned(
-                      left: 20,
-                      right: 20,
-                      top: 19,
-                      child: Container(
-                        height: 2,
-                        color: Colors.white,
-                      ),
-                    ),
-
-                    // Track dots
-                    ...List.generate(5, (index) {
-                      final position = 20.0 + (index * dotSpacing);
-                      return Positioned(
-                        left: position - 4,
-                        top: 15,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: index <= sliderLevel
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.3),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      );
-                    }),
-
-                    // Active handle
-                    Positioned(
-                      left: 20.0 + (sliderLevel * dotSpacing) - 10,
-                      top: 11,
-                      child: Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        // Labels with dynamic color
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Avoid label with X icon
-            Row(
-              children: [
-                Icon(
-                  FontAwesomeIcons.xmark,
-                  size: 15,
-                  color: _getIconColor(sliderLevel, true),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Text(
-                  'Avoid',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: _getIconColor(sliderLevel, true),
-                  ),
-                ),
-              ],
-            ),
-
-            // Love label with heart icon
-            Row(
-              children: [
-                Text(
-                  'Love',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: _getIconColor(sliderLevel, false),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Icon(
-                  FontAwesomeIcons.heart,
-                  size: 20,
-                  color: _getIconColor(sliderLevel, false),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 
   Widget _buildSearchResultsView() {
     return Column(
@@ -1616,140 +1245,27 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   }
 
   Widget _buildSearchResultItem(FoodSearchResult result) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return InkWell(
+    return SearchResultItemWidget(
+      result: result,
       onTap: () => _handleSearchResultTap(result),
-      borderRadius: AppRadius.cardRadius,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.blackberry.withOpacity(0.3) : Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.cardRadius,
-          border: Border.all(
-            color: AppColors.electrolyte.withOpacity(0.3),
-          ),
-        ),
-        child: Row(
-          children: [
-            // Product image (if available)
-            if (result.imageUrl?.isNotEmpty == true)
-              Container(
-                width: 50,
-                height: 50,
-                margin: const EdgeInsets.only(right: AppSpacing.md),
-                decoration: BoxDecoration(
-                  borderRadius: AppRadius.cardRadius,
-                  image: DecorationImage(
-                    image: NetworkImage(result.imageUrl!),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-
-            // Product info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    result.displayName,
-                    style: AppTextStyles.foodTitle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  if (result.brand?.isNotEmpty == true) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      result.brand!,
-                      style: AppTextStyles.smallLabel.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // Add button
-            Icon(
-              FontAwesomeIcons.circlePlus,
-              size: AppIconSizes.lg,
-              color: AppColors.electrolyte,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
   Widget _buildExpandableAdditionalFoods(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      children: [
-        // Expandable header
-        InkWell(
-          onTap: () {
-            setState(() {
-              _isAdditionalFoodsExpanded = !_isAdditionalFoodsExpanded;
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.blackberry.withOpacity(0.2)
-                  : Theme.of(context).colorScheme.surface.withOpacity(0.5),
-              borderRadius: AppRadius.cardRadius,
-              border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.restaurant_menu,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  size: AppIconSizes.controlIcon,
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    _isAdditionalFoodsExpanded
-                        ? 'Show fewer food options'
-                        : 'Show more food options',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Icon(
-                  _isAdditionalFoodsExpanded
-                      ? FontAwesomeIcons.chevronUp
-                      : FontAwesomeIcons.chevronDown,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  size: AppIconSizes.chevron,
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Expandable content
-        if (_isAdditionalFoodsExpanded) ...[
-          const SizedBox(height: AppSpacing.md),
-          ..._filteredAdditionalFoods.map((food) {
-            final sliderLevel = _sliderLevels[food.name] ?? 0;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: _buildFoodPreferenceItem(context, food, sliderLevel),
-            );
-          }),
-        ],
-      ],
+    return AdditionalFoodsSectionWidget(
+      isExpanded: _isAdditionalFoodsExpanded,
+      onToggle: () {
+        setState(() {
+          _isAdditionalFoodsExpanded = !_isAdditionalFoodsExpanded;
+        });
+      },
+      children: _filteredAdditionalFoods.map((food) {
+        final sliderLevel = _sliderLevels[food.name] ?? 0;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+          child: _buildFoodPreferenceItem(context, food, sliderLevel),
+        );
+      }).toList(),
     );
   }
 

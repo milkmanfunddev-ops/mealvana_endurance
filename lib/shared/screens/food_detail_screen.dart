@@ -6,6 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../../features/nutrition_plan/domain/food.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
 import '../widgets/kyle_design/kyle_design.dart';
+import '../widgets/food_detail/nutrition_input_fields.dart';
+import '../widgets/food_detail/category_selector.dart';
+import '../widgets/food_detail/product_type_selector.dart';
 
 /// Mode for the FoodDetailScreen - determines behavior and visible fields
 enum FoodDetailMode {
@@ -32,80 +35,6 @@ enum FoodDetailContext {
   carbLoading,
 }
 
-/// Product types available for user foods
-/// These map to the product_type enum values in the database
-class ProductTypeOption {
-  const ProductTypeOption({
-    required this.value,
-    required this.label,
-    required this.description,
-  });
-
-  final String value;
-  final String label;
-  final String description;
-}
-
-const productTypeOptions = [
-  ProductTypeOption(
-    value: 'gel',
-    label: 'Energy Gel',
-    description: 'Quick-absorbing gel pouches',
-  ),
-  ProductTypeOption(
-    value: 'chew',
-    label: 'Energy Chew',
-    description: 'Gummy or chewable energy',
-  ),
-  ProductTypeOption(
-    value: 'bar',
-    label: 'Energy/Protein Bar',
-    description: 'Solid bars for sustained energy',
-  ),
-  ProductTypeOption(
-    value: 'drink_mix',
-    label: 'Drink Mix',
-    description: 'Powder to mix with water',
-  ),
-  ProductTypeOption(
-    value: 'sports_drink',
-    label: 'Sports Drink',
-    description: 'Ready-to-drink beverages',
-  ),
-  ProductTypeOption(
-    value: 'real_food',
-    label: 'Real Food',
-    description: 'Whole foods like fruit, sandwiches',
-  ),
-  ProductTypeOption(
-    value: 'waffle',
-    label: 'Energy Waffle',
-    description: 'Stroopwafels and similar',
-  ),
-  ProductTypeOption(
-    value: 'electrolyte_only',
-    label: 'Electrolytes Only',
-    description: 'No calories, just electrolytes',
-  ),
-  ProductTypeOption(
-    value: 'recovery_shake',
-    label: 'Recovery Shake',
-    description: 'Post-workout protein shakes',
-  ),
-  ProductTypeOption(
-    value: 'import',
-    label: 'Other / Custom',
-    description: 'Doesn\'t fit other categories',
-  ),
-];
-
-/// Beverage-related product types that should show fluid field
-const beverageProductTypes = [
-  'sports_drink',
-  'drink_mix',
-  'electrolyte_only',
-  'recovery_shake',
-];
 
 /// Data class for initializing FoodDetailScreen
 /// Consolidates data from Food, FoodItem, and UserFoodData
@@ -634,11 +563,66 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildNutritionField(
-                          controller: _servingAmountController,
-                          label: 'Amount',
-                          suffix: '',
-                          isDark: isDark,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Amount',
+                              style: AppTextStyles.smallLabel.copyWith(
+                                color:
+                                    Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            TextField(
+                              controller: _servingAmountController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d*\.?\d*')),
+                              ],
+                              onChanged: (_) => _onFieldChanged(),
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: AppRadius.inputRadius,
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? AppColors.cream.withValues(alpha: 0.3)
+                                        : AppColors.blackberry
+                                            .withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: AppRadius.inputRadius,
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? AppColors.cream.withValues(alpha: 0.3)
+                                        : AppColors.blackberry
+                                            .withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: AppRadius.inputRadius,
+                                  borderSide: const BorderSide(
+                                    color: AppColors.electrolyte,
+                                    width: 2,
+                                  ),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.sm,
+                                  vertical: AppSpacing.sm,
+                                ),
+                                isDense: true,
+                                filled: true,
+                                fillColor: Theme.of(context).colorScheme.surface,
+                              ),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
@@ -669,119 +653,43 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Nutrition section
-                  _buildSectionTitle('Nutrition Information'),
-                  const SizedBox(height: AppSpacing.sm),
-
-                  // Calories
-                  _buildNutritionField(
-                    controller: _caloriesController,
-                    label: 'Calories',
-                    suffix: 'cal',
-                    isDark: isDark,
-                    allowDecimals: false,
+                  NutritionInputFields(
+                    caloriesController: _caloriesController,
+                    carbsController: _carbsController,
+                    proteinController: _proteinController,
+                    fatController: _fatController,
+                    sodiumController: _sodiumController,
+                    fluidController: _fluidController,
+                    showFluidField: _shouldShowFluidField,
+                    onFieldChanged: _onFieldChanged,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-
-                  // Carbs and Protein row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildNutritionField(
-                          controller: _carbsController,
-                          label: 'Carbs',
-                          suffix: 'g',
-                          isDark: isDark,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: _buildNutritionField(
-                          controller: _proteinController,
-                          label: 'Protein',
-                          suffix: 'g',
-                          isDark: isDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-
-                  // Fat and Sodium row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildNutritionField(
-                          controller: _fatController,
-                          label: 'Fat',
-                          suffix: 'g',
-                          isDark: isDark,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: _buildNutritionField(
-                          controller: _sodiumController,
-                          label: 'Sodium',
-                          suffix: 'mg',
-                          isDark: isDark,
-                          allowDecimals: false,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Fluid amount field (smart display)
-                  if (_shouldShowFluidField) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    _buildNutritionField(
-                      controller: _fluidController,
-                      label: 'Fluid Amount',
-                      suffix: 'ml',
-                      isDark: isDark,
-                      allowDecimals: false,
-                    ),
-                  ],
 
                   // Category section
                   if (widget.showCategories) ...[
                     const SizedBox(height: AppSpacing.lg),
-
-                    _buildSectionTitle('When would you eat this?'),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Select one or more categories (at least one required)',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    CategorySelector(
+                      selectedCategories: _selectedCategories,
+                      onCategoriesChanged: (updatedCategories) {
+                        setState(() {
+                          _selectedCategories = updatedCategories;
+                          _hasChanges = true;
+                        });
+                      },
                     ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Category checkboxes
-                    _buildCategoryCheckbox(
-                        1, 'Before Run', 'Fuel up before your workout', isDark),
-                    const SizedBox(height: AppSpacing.sm),
-                    _buildCategoryCheckbox(
-                        2, 'During Run', 'Energy during long workouts', isDark),
-                    const SizedBox(height: AppSpacing.sm),
-                    _buildCategoryCheckbox(
-                        3, 'After Run', 'Recovery after your workout', isDark),
                   ],
 
                   // Product type section
                   if (widget.showProductType) ...[
                     const SizedBox(height: AppSpacing.lg),
-
-                    _buildSectionTitle('What type of food is this?'),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Helps us recommend similar alternatives',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    ProductTypeSelector(
+                      selectedProductType: _selectedProductType,
+                      onProductTypeChanged: (value) {
+                        setState(() {
+                          _selectedProductType = value;
+                          _hasChanges = true;
+                        });
+                      },
                     ),
-                    const SizedBox(height: AppSpacing.md),
-
-                    _buildProductTypeDropdown(isDark),
                   ],
 
                   const SizedBox(height: AppSpacing.xl),
@@ -874,225 +782,4 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     );
   }
 
-  Widget _buildNutritionField({
-    required TextEditingController controller,
-    required String label,
-    required String suffix,
-    required bool isDark,
-    bool allowDecimals = true,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.smallLabel.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        TextField(
-          controller: controller,
-          keyboardType: TextInputType.numberWithOptions(decimal: allowDecimals),
-          inputFormatters: [
-            if (allowDecimals)
-              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))
-            else
-              FilteringTextInputFormatter.digitsOnly,
-          ],
-          decoration: InputDecoration(
-            suffixText: suffix.isNotEmpty ? suffix : null,
-            border: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: BorderSide(
-                color: isDark
-                    ? AppColors.cream.withValues(alpha: 0.3)
-                    : AppColors.blackberry.withValues(alpha: 0.3),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: BorderSide(
-                color: isDark
-                    ? AppColors.cream.withValues(alpha: 0.3)
-                    : AppColors.blackberry.withValues(alpha: 0.3),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: AppRadius.inputRadius,
-              borderSide: const BorderSide(
-                color: AppColors.electrolyte,
-                width: 2,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: AppSpacing.sm,
-            ),
-            isDense: true,
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-          ),
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategoryCheckbox(
-      int categoryId, String title, String subtitle, bool isDark) {
-    final isSelected = _selectedCategories[categoryId] ?? false;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedCategories[categoryId] = !isSelected;
-          _hasChanges = true;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.electrolyte.withValues(alpha: 0.1)
-              : Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.cardRadius,
-          border: Border.all(
-            color: isSelected
-                ? AppColors.electrolyte
-                : isDark
-                    ? AppColors.cream.withValues(alpha: 0.3)
-                    : AppColors.blackberry.withValues(alpha: 0.3),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.electrolyte : Colors.transparent,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.electrolyte
-                      : isDark
-                          ? AppColors.cream.withValues(alpha: 0.5)
-                          : AppColors.blackberry.withValues(alpha: 0.5),
-                  width: 2,
-                ),
-              ),
-              child: isSelected
-                  ? const Icon(
-                      FontAwesomeIcons.check,
-                      color: AppColors.blackberry,
-                      size: 14,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProductTypeDropdown(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: AppRadius.inputRadius,
-        border: Border.all(
-          color: isDark
-              ? AppColors.cream.withValues(alpha: 0.3)
-              : AppColors.blackberry.withValues(alpha: 0.3),
-        ),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedProductType,
-          isExpanded: true,
-          icon: Icon(
-            FontAwesomeIcons.chevronDown,
-            size: AppIconSizes.chevron,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          dropdownColor: Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.cardRadius,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          items: productTypeOptions.map((option) {
-            return DropdownMenuItem<String>(
-              value: option.value,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    option.label,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    option.description,
-                    style: AppTextStyles.smallLabel.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-          onChanged: (value) {
-            if (value != null) {
-              setState(() {
-                _selectedProductType = value;
-                _hasChanges = true;
-              });
-            }
-          },
-          selectedItemBuilder: (context) {
-            return productTypeOptions.map((option) {
-              return Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  option.label,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              );
-            }).toList();
-          },
-        ),
-      ),
-    );
-  }
 }
