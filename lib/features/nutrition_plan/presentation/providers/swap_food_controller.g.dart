@@ -100,7 +100,7 @@ final class SwapFoodControllerProvider
 }
 
 String _$swapFoodControllerHash() =>
-    r'ebc2c50f76350bc531256bd508f7135426a53dbb';
+    r'9be481b7f75cd29e80ad14570336317290c684f6';
 
 /// Controller for swap food functionality - takes swap parameters
 

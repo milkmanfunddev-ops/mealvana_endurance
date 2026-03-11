@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../../../features/nutrition_plan/domain/food.dart';
 import '../../../features/barcode_scanning/application/open_food_facts_search_service.dart';
+import '../../../features/barcode_scanning/application/catalog_search_service.dart';
 import '../../../features/barcode_scanning/application/product_detail_service.dart';
 import '../../../features/barcode_scanning/application/food_mapping_service.dart';
 import '../app_external_deps.dart';
@@ -11,12 +13,14 @@ import 'user_food_crud_service.dart';
 /// Provider for SharedFoodSearchService
 final sharedFoodSearchServiceProvider = Provider<SharedFoodSearchService>((ref) {
   final openFoodFactsService = ref.read(openFoodFactsSearchServiceProvider);
+  final catalogSearchService = ref.read(catalogSearchServiceProvider);
   final productDetailService = ref.read(productDetailServiceProvider);
   final foodMappingService = ref.read(foodMappingServiceProvider);
   final userFoodService = ref.read(userFoodCrudServiceProvider);
   final logger = ref.read(appExternalDepsProvider).logger;
   return SharedFoodSearchService(
     openFoodFactsService,
+    catalogSearchService,
     productDetailService,
     foodMappingService,
     userFoodService,
@@ -24,11 +28,12 @@ final sharedFoodSearchServiceProvider = Provider<SharedFoodSearchService>((ref) 
   );
 });
 
-/// Shared service for Open Food Facts search functionality
+/// Shared service for food search functionality (catalog + Open Food Facts)
 /// Used by both food preferences and swap/add food screens
 class SharedFoodSearchService {
   SharedFoodSearchService(
     this._openFoodFactsService,
+    this._catalogSearchService,
     this._productDetailService,
     this._foodMappingService,
     this._userFoodService,
@@ -36,6 +41,7 @@ class SharedFoodSearchService {
   );
 
   final OpenFoodFactsSearchService _openFoodFactsService;
+  final CatalogSearchService _catalogSearchService;
   final ProductDetailService _productDetailService;
   final FoodMappingService _foodMappingService;
   final UserFoodCrudService _userFoodService;
@@ -107,4 +113,97 @@ class SharedFoodSearchService {
     }
   }
 
+  /// Search the product catalog (The Feed)
+  /// Returns empty list on failure (silent fallback).
+  Future<List<CatalogSearchResult>> searchCatalog(String query) async {
+    return _catalogSearchService.searchCatalog(query);
+  }
+
+  /// Map a Feed product type string to the app's product_type enum value.
+  /// Feed uses categories like "Gels", "Bars", "Hydration", etc.
+  static String _mapCatalogProductType(String? feedType) {
+    if (feedType == null) return 'import';
+    switch (feedType.toLowerCase()) {
+      case 'gels':
+        return 'gel';
+      case 'bars':
+      case 'energy bars':
+        return 'bar';
+      case 'hydration':
+      case 'electrolytes':
+      case 'drink mix':
+      case 'drink mixes':
+        return 'hydration_mix';
+      case 'chews':
+      case 'chews & gummies':
+        return 'chew';
+      case 'waffles':
+        return 'waffle';
+      case 'protein':
+      case 'recovery':
+      case 'protein bars':
+        return 'protein';
+      case 'snacks':
+        return 'snack';
+      case 'meal replacement':
+        return 'meal_replacement';
+      default:
+        return 'import';
+    }
+  }
+
+  /// Add a catalog search result to user foods (auto-import with nutrition).
+  /// Returns the created Food object if successful, null if failed.
+  Future<Food?> addCatalogResultToUserFoods(
+    CatalogSearchResult result,
+    String userId,
+  ) async {
+    try {
+      final foodId = const Uuid().v4();
+
+      final food = Food(
+        id: foodId,
+        name: result.displayName,
+        displayName: result.displayName,
+        displayNamePlural: '${result.displayName}s',
+        imageAddress: result.imageUrl,
+        servingSize: result.servingSize,
+        servingAmount: 1.0,
+        servingUnit: 'serving',
+        caloriesPerServing: result.caloriesPerServing,
+        carbsPerServing: result.carbsG,
+        proteinPerServing: result.proteinG,
+        fatPerServing: result.fatG,
+        sodiumMg: result.sodiumMg,
+        caffeineMg: result.caffeineMg,
+        productTypeId: _mapCatalogProductType(result.productType),
+        categories: const ['before_run', 'during_run', 'after_run'],
+      );
+
+      // Save to user foods with all categories
+      final categoryIds = [1, 2, 3];
+      await _userFoodService.saveUserFood(food, categoryIds);
+
+      _logger.info(
+        'Catalog result imported to user foods',
+        context: 'SharedFoodSearchService',
+        data: {
+          'catalogId': result.id,
+          'foodId': foodId,
+          'name': result.displayName,
+          'hasNutrition': result.hasNutrition,
+        },
+      );
+
+      return food;
+    } catch (e) {
+      _logger.error(
+        'Error adding catalog result to user foods',
+        context: 'SharedFoodSearchService',
+        data: {'catalogId': result.id, 'userId': userId},
+        error: e,
+      );
+      return null;
+    }
+  }
 }

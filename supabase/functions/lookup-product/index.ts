@@ -1,8 +1,79 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
+
+/**
+ * Look up a catalog_items row by barcode.
+ * Returns a cleanedProduct in the same shape as the OFF response so the
+ * Flutter client needs zero changes.
+ */
+async function lookupCatalog(barcode: string): Promise<{ product: Record<string, unknown>; source: string } | null> {
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
+
+    const { data, error } = await supabase
+      .from('catalog_items')
+      .select('*')
+      .eq('barcode', barcode)
+      .eq('available_for_sale', true)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    // Map catalog row → cleanedProduct (same shape as OFF response)
+    const cleanedProduct = {
+      barcode: data.barcode || barcode,
+      product_name: data.variant_title
+        ? `${data.title} — ${data.variant_title}`
+        : data.title,
+      brand_name: data.brand || null,
+      image_url: data.image_url || null,
+      // Serving information
+      serving_size: data.serving_size || null,
+      serving_grams: data.serving_grams || null,
+      // Per-100g (null — catalog stores per-serving only)
+      calories_per_100g: null,
+      carbohydrates_per_100g: null,
+      protein_per_100g: null,
+      fat_per_100g: null,
+      sodium_mg_per_100g: null,
+      // Per-serving nutrition
+      calories_per_serving: data.calories_per_serving || null,
+      carbohydrates_per_serving: data.carbs_g || null,
+      protein_per_serving: data.protein_g || null,
+      fat_per_serving: data.fat_g || null,
+      sodium_mg_per_serving: data.sodium_mg || null,
+      // Additional fields
+      categories: data.product_type || null,
+      serving_quantity: data.serving_grams || null,
+      serving_quantity_unit: data.serving_grams ? 'g' : null,
+      product_quantity: null,
+      product_quantity_unit: null,
+      // Metadata — non-breaking additions
+      api_source: 'catalog_thefeed',
+      confidence_score: data.nutrition_confidence || (data.calories_per_serving ? 0.9 : 0.5),
+      nutrition_data_per: data.calories_per_serving ? 'serving' : '100g',
+      // Extra catalog metadata (ignored by existing Flutter parsers)
+      catalog_id: data.id,
+      product_url: data.product_url || null,
+      caffeine_mg: data.caffeine_mg || null,
+    };
+
+    return { product: cleanedProduct, source: 'catalog_barcode' };
+  } catch (e) {
+    console.error('⚠️ Catalog lookup error:', e);
+    return null;
+  }
+}
+
 serve(async (req)=>{
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -30,6 +101,29 @@ serve(async (req)=>{
         }
       });
     }
+
+    // ── Priority 0: Check product catalog by barcode ──
+    if (requestData.barcode) {
+      console.log('🔍 Lookup Product - Checking product catalog:', requestData.barcode);
+      const catalogResult = await lookupCatalog(requestData.barcode);
+      if (catalogResult) {
+        console.log('✅ Lookup Product - Found in catalog:', {
+          product_name: (catalogResult.product as any).product_name,
+          has_nutrition: !!(catalogResult.product as any).calories_per_serving,
+        });
+        return new Response(JSON.stringify({
+          success: true,
+          product: catalogResult.product,
+          source: catalogResult.source,
+          message: `Product found via product catalog`,
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log('ℹ️ Lookup Product - Not in catalog, falling through to OFF');
+    }
+
     let productData = null;
     let source = '';
     // Priority 1: Try barcode lookup if available

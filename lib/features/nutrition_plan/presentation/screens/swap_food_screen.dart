@@ -14,6 +14,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
 import '../../../barcode_scanning/application/food_mapping_service.dart';
+import '../../../barcode_scanning/application/catalog_search_service.dart';
 
 /// Swap/Add Food Screen - Kyle's Design System
 /// Allows users to swap existing food or add new food to nutrition plan
@@ -311,6 +312,101 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     debugPrint('🔵 _handleConfirm END');
   }
 
+  Future<void> _handleCatalogSelection(CatalogSearchResult result) async {
+    if (result.hasNutrition) {
+      // Auto-import with nutrition — seamless, no confirmation screen
+      setState(() { _isSavingScannedFood = true; });
+      try {
+        await ref.read(swapFoodControllerProvider(_params).notifier)
+            .addCatalogResult(result);
+        _searchController.clear();
+        if (mounted) {
+          MealvanaSnackbar.showSuccess(context, '${result.title} added!');
+        }
+      } catch (e) {
+        if (mounted) {
+          MealvanaSnackbar.showError(context, 'Failed to import: $e');
+        }
+      } finally {
+        if (mounted) {
+          setState(() { _isSavingScannedFood = false; });
+        }
+      }
+    } else {
+      // No nutrition — open FoodDetailScreen for manual entry
+      final preCheckedCategories = <int>[_categoryToId(widget.category)];
+      final detailResult = await Navigator.push<dynamic>(
+        context,
+        MaterialPageRoute(
+          builder: (ctx) => FoodDetailScreen(
+            foodData: FoodDetailData(
+              id: '',
+              name: result.displayName,
+              categoryIds: preCheckedCategories,
+              imageUrl: result.imageUrl,
+            ),
+            mode: FoodDetailMode.addFromSearch,
+            screenContext: _isSwapping ? FoodDetailContext.swapFood : FoodDetailContext.addFood,
+            preSelectedCategories: preCheckedCategories,
+            showCategories: true,
+            showProductType: true,
+          ),
+        ),
+      );
+
+      if (detailResult is FoodDetailResult && mounted) {
+        setState(() { _isSavingScannedFood = true; });
+        try {
+          final categoryStrings = detailResult.categoryIds.map((id) {
+            switch (id) {
+              case 1: return 'before_run';
+              case 2: return 'during_run';
+              case 3: return 'after_run';
+              default: return 'before_run';
+            }
+          }).toList();
+
+          final food = Food(
+            id: detailResult.foodId.isEmpty
+                ? DateTime.now().millisecondsSinceEpoch.toString()
+                : detailResult.foodId,
+            name: detailResult.name,
+            categories: categoryStrings,
+            servingSize: detailResult.servingSize,
+            servingAmount: detailResult.servingAmount,
+            servingUnit: detailResult.servingUnit,
+            carbsPerServing: detailResult.carbsPerServing,
+            proteinPerServing: detailResult.proteinPerServing,
+            fatPerServing: detailResult.fatPerServing,
+            sodiumMg: detailResult.sodiumMg,
+            caloriesPerServing: detailResult.caloriesPerServing,
+            fluidMlPerServing: detailResult.fluidMlPerServing,
+            productTypeId: detailResult.productType,
+            imageAddress: result.imageUrl,
+          );
+
+          final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+          await userFoodCrudService.saveUserFood(food, detailResult.categoryIds);
+          await ref.read(swapFoodControllerProvider(_params).notifier)
+              .refreshFoods(selectAfterRefresh: food, expandMyFoods: true);
+
+          _searchController.clear();
+          if (mounted) {
+            MealvanaSnackbar.showSuccess(context, '${result.title} added!');
+          }
+        } catch (e) {
+          if (mounted) {
+            MealvanaSnackbar.showError(context, 'Failed to save food: $e');
+          }
+        } finally {
+          if (mounted) {
+            setState(() { _isSavingScannedFood = false; });
+          }
+        }
+      }
+    }
+  }
+
   Future<void> _handleOpenFoodFactsSelection(dynamic result) async {
     try {
       // Show loading indicator
@@ -590,7 +686,8 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   Widget _buildContent(SwapFoodState state) {
     final hasSelectedFood = state.selectedFood != null &&
         state.searchQuery.isEmpty &&
-        state.openFoodFactsResults.isEmpty;
+        state.openFoodFactsResults.isEmpty &&
+        state.catalogResults.isEmpty;
 
     return SafeArea(
       child: Column(
@@ -848,7 +945,12 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   Widget _buildSearchResults(SwapFoodState state) {
-    if (state.searchResults.isEmpty && state.userFoods.isEmpty) {
+    final hasNoResults = state.searchResults.isEmpty &&
+        state.userFoods.isEmpty &&
+        state.catalogResults.isEmpty &&
+        !state.isSearchingCatalog;
+
+    if (hasNoResults) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.xl),
@@ -903,6 +1005,9 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: _buildFoodCard(food),
         )),
+
+        // Product Catalog section
+        _buildCatalogSection(state),
       ],
     );
   }
@@ -1131,6 +1236,231 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         }
       }
     }
+  }
+
+  /// Build the product catalog results section (appears during search)
+  Widget _buildCatalogSection(SwapFoodState state) {
+    // Show loading spinner while searching
+    if (state.isSearchingCatalog && state.catalogResults.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Icon(
+                    FontAwesomeIcons.store,
+                    size: AppIconSizes.sm,
+                    color: AppColors.electrolyte,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'Product Catalog',
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Nothing to show
+    if (state.catalogResults.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section header
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Row(
+              children: [
+                Icon(
+                  FontAwesomeIcons.store,
+                  size: AppIconSizes.sm,
+                  color: AppColors.electrolyte,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Product Catalog',
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.electrolyte.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${state.catalogResults.length}',
+                    style: AppTextStyles.smallLabel.copyWith(
+                      color: AppColors.electrolyte,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (state.isSearchingCatalog)
+                  const Padding(
+                    padding: EdgeInsets.only(left: AppSpacing.sm),
+                    child: SizedBox(
+                      height: 14,
+                      width: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          // Catalog result cards
+          ...state.catalogResults.map((result) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: _buildCatalogCard(result),
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCatalogCard(CatalogSearchResult result) {
+    return BaseCard(
+      child: InkWell(
+        onTap: () => _handleCatalogSelection(result),
+        borderRadius: AppRadius.cardRadius,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              // Product image or placeholder
+              Container(
+                width: AppIconSizes.foodIcon,
+                height: AppIconSizes.foodIcon,
+                decoration: BoxDecoration(
+                  color: AppColors.electrolyte.withValues(alpha: 0.2),
+                  borderRadius: AppRadius.smRadius,
+                ),
+                child: result.imageUrl?.isNotEmpty == true
+                    ? ClipRRect(
+                        borderRadius: AppRadius.smRadius,
+                        child: Image.network(
+                          result.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            FontAwesomeIcons.cartShopping,
+                            color: AppColors.electrolyte,
+                            size: AppIconSizes.controlIcon,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        FontAwesomeIcons.cartShopping,
+                        color: AppColors.electrolyte,
+                        size: AppIconSizes.controlIcon,
+                      ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      result.displayName,
+                      style: AppTextStyles.foodTitle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (result.brand != null && result.brand!.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        result.brand!,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.xs),
+                    // Nutrition badge row
+                    Row(
+                      children: [
+                        if (result.hasNutrition) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.electrolyte.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${result.carbsG?.toInt() ?? 0}g carbs',
+                              style: AppTextStyles.smallLabel.copyWith(
+                                color: AppColors.electrolyte,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          if (result.caloriesPerServing != null)
+                            Text(
+                              '${result.caloriesPerServing} cal',
+                              style: AppTextStyles.smallLabel.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                fontSize: 10,
+                              ),
+                            ),
+                        ] else
+                          Text(
+                            'No nutrition data',
+                            style: AppTextStyles.smallLabel.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                              fontSize: 10,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                result.hasNutrition
+                    ? FontAwesomeIcons.circlePlus
+                    : FontAwesomeIcons.chevronRight,
+                color: result.hasNutrition
+                    ? AppColors.orange
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                size: AppIconSizes.md,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildOpenFoodFactsCard(dynamic result) {

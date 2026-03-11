@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'dart:convert';
 import '../../domain/food.dart';
@@ -16,6 +17,7 @@ import '../../../auth/domain/user_preferences.dart';
 import '../../../../features/coach_mode/presentation/providers/coach_activity_detail_controller.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../../features/user_foods/data/user_foods_repository.dart';
+import '../../../../features/barcode_scanning/application/catalog_search_service.dart';
 
 part 'swap_food_controller.g.dart';
 
@@ -56,6 +58,8 @@ class SwapFoodState {
     this.preferences = const {},
     this.openFoodFactsResults = const [],
     this.isSearchingOpenFoodFacts = false,
+    this.catalogResults = const [],
+    this.isSearchingCatalog = false,
     this.userFoodIds = const {},
     this.userFoods = const [],
     this.allUserFoods = const [],
@@ -73,6 +77,8 @@ class SwapFoodState {
   final List<dynamic>
   openFoodFactsResults; // Open Food Facts search results (FoodSearchResult)
   final bool isSearchingOpenFoodFacts;
+  final List<CatalogSearchResult> catalogResults; // Product catalog results
+  final bool isSearchingCatalog; // Whether catalog search is in progress
   final Set<String> userFoodIds; // Set of food IDs that are user-created foods
   final List<Food> userFoods; // Category-filtered user foods (default) or search-filtered (during search)
   final List<Food> allUserFoods; // All user foods unfiltered (for search)
@@ -89,6 +95,8 @@ class SwapFoodState {
     Map<String, FoodPreference>? preferences,
     List<dynamic>? openFoodFactsResults,
     bool? isSearchingOpenFoodFacts,
+    List<CatalogSearchResult>? catalogResults,
+    bool? isSearchingCatalog,
     Set<String>? userFoodIds,
     List<Food>? userFoods,
     List<Food>? allUserFoods,
@@ -107,6 +115,8 @@ class SwapFoodState {
       openFoodFactsResults: openFoodFactsResults ?? this.openFoodFactsResults,
       isSearchingOpenFoodFacts:
           isSearchingOpenFoodFacts ?? this.isSearchingOpenFoodFacts,
+      catalogResults: catalogResults ?? this.catalogResults,
+      isSearchingCatalog: isSearchingCatalog ?? this.isSearchingCatalog,
       userFoodIds: userFoodIds ?? this.userFoodIds,
       userFoods: userFoods ?? this.userFoods,
       allUserFoods: allUserFoods ?? this.allUserFoods,
@@ -132,6 +142,9 @@ class SwapFoodController extends _$SwapFoodController {
 
   /// Search strategy helper for managing local vs OpenFoodFacts search
   final _searchStrategy = SearchStrategy();
+
+  /// Debounce timer for automatic catalog search
+  Timer? _catalogDebounceTimer;
 
   /// Helper to check if provider is still mounted before state updates
   bool get _isMounted {
@@ -352,12 +365,15 @@ class SwapFoodController extends _$SwapFoodController {
     if (query.isEmpty) {
       // No search - show recommendations, reset user foods to category-filtered
       _searchStrategy.cancelAutoSearch();
+      _catalogDebounceTimer?.cancel();
       state = AsyncValue.data(
         currentState.copyWith(
           searchQuery: '',
           searchResults: currentState.recommendations,
           isSearching: false,
           openFoodFactsResults: [], // Clear OpenFoodFacts results
+          catalogResults: [], // Clear catalog results
+          isSearchingCatalog: false,
           userFoods: currentState.allUserFoods, // Show all user foods regardless of category
           isMyFoodsExpanded: false,
           // Keep selected food when clearing search
@@ -421,7 +437,13 @@ class SwapFoodController extends _$SwapFoodController {
         ),
       );
 
-      // No auto-search of OpenFoodFacts - user taps the button manually
+      // Auto-search product catalog after debounce (300ms)
+      _catalogDebounceTimer?.cancel();
+      if (query.trim().length >= 2) {
+        _catalogDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+          searchCatalog(query.trim());
+        });
+      }
     }
   }
 
@@ -621,6 +643,113 @@ class SwapFoodController extends _$SwapFoodController {
     );
   }
 
+  /// Search product catalog and update state (called automatically via debounce)
+  Future<void> searchCatalog(String query) async {
+    final currentState = state.value;
+    if (currentState == null || query.isEmpty) return;
+
+    // Cache service before async gap
+    final searchService = ref.read(sharedFoodSearchServiceProvider);
+
+    try {
+      // Set searching state
+      if (_isMounted) {
+        final freshState = state.value;
+        if (freshState != null) {
+          state = AsyncValue.data(
+            freshState.copyWith(isSearchingCatalog: true),
+          );
+        }
+      }
+
+      // Search catalog (async operation)
+      final results = await searchService.searchCatalog(query);
+
+      if (!_isMounted) return;
+
+      // Get fresh state after async gap
+      final freshState = state.value;
+      if (freshState == null) return;
+
+      // Only update if the query is still current
+      if (freshState.searchQuery.trim() == query.trim()) {
+        state = AsyncValue.data(
+          freshState.copyWith(
+            catalogResults: results,
+            isSearchingCatalog: false,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!_isMounted) return;
+
+      _logger.warning(
+        'Catalog search failed',
+        context: 'SwapFoodController',
+        data: {'query': query, 'error': e.toString()},
+      );
+
+      final freshState = state.value;
+      if (freshState == null) return;
+
+      state = AsyncValue.data(
+        freshState.copyWith(isSearchingCatalog: false),
+      );
+    }
+  }
+
+  /// Add a catalog result to user foods and select it (auto-import)
+  Future<void> addCatalogResult(CatalogSearchResult result) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    // Cache services before async gap
+    final authService = ref.read(authServiceProvider);
+    final searchService = ref.read(sharedFoodSearchServiceProvider);
+
+    try {
+      final currentUser = await authService.getCurrentUser();
+      final userId = currentUser?.id ?? 'unknown';
+
+      // Auto-import to user_foods
+      final food = await searchService.addCatalogResultToUserFoods(
+        result,
+        userId,
+      );
+
+      if (!_isMounted) return;
+
+      if (food != null) {
+        final freshState = state.value;
+        if (freshState == null) return;
+
+        // Auto-select the food and clear search state
+        state = AsyncValue.data(
+          freshState.copyWith(
+            selectedFood: food,
+            searchQuery: '',
+            searchResults: freshState.recommendations,
+            isSearching: false,
+            catalogResults: [],
+            isSearchingCatalog: false,
+            openFoodFactsResults: [],
+          ),
+        );
+      } else {
+        _logger.warning('Failed to add catalog result to user foods');
+      }
+    } catch (e) {
+      if (!_isMounted) return;
+
+      _logger.error(
+        'Error adding catalog result',
+        context: 'SwapFoodController',
+        data: {'catalogId': result.id},
+        error: e,
+      );
+    }
+  }
+
   /// Search Open Food Facts and update state
   Future<void> searchOpenFoodFacts(String query) async {
     final currentState = state.value;
@@ -764,6 +893,8 @@ class SwapFoodController extends _$SwapFoodController {
       currentState.copyWith(
         openFoodFactsResults: [],
         isSearchingOpenFoodFacts: false,
+        catalogResults: [],
+        isSearchingCatalog: false,
         searchQuery: '',
       ),
     );
