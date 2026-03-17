@@ -3,11 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/settings_controller.dart';
+import '../widgets/during_sport_override_section.dart';
 
 /// Screen for configuring default nutrition target overrides.
 /// Empty fields = use algorithm defaults (null).
+///
+/// During-workout overrides are split by sport (Run, Bike, Swim, Brick).
+/// During overrides only apply to activities >= 90 minutes.
 class NutritionTargetsScreen extends ConsumerStatefulWidget {
   const NutritionTargetsScreen({super.key});
 
@@ -29,10 +33,25 @@ class _NutritionTargetsScreenState
   final _preSodiumController = TextEditingController();
   final _preFluidController = TextEditingController();
 
-  // During-activity controllers
-  final _duringCarbRateController = TextEditingController();
-  final _duringSodiumRateController = TextEditingController();
-  final _duringFluidRateController = TextEditingController();
+  // During Run controllers
+  final _duringRunCarbRateController = TextEditingController();
+  final _duringRunSodiumRateController = TextEditingController();
+  final _duringRunFluidRateController = TextEditingController();
+
+  // During Bike controllers
+  final _duringBikeCarbRateController = TextEditingController();
+  final _duringBikeSodiumRateController = TextEditingController();
+  final _duringBikeFluidRateController = TextEditingController();
+
+  // During Swim controllers
+  final _duringSwimCarbRateController = TextEditingController();
+  final _duringSwimSodiumRateController = TextEditingController();
+  final _duringSwimFluidRateController = TextEditingController();
+
+  // During Brick controllers
+  final _duringBrickCarbRateController = TextEditingController();
+  final _duringBrickSodiumRateController = TextEditingController();
+  final _duringBrickFluidRateController = TextEditingController();
 
   // Post-activity controllers
   final _postCarbsController = TextEditingController();
@@ -63,15 +82,49 @@ class _NutritionTargetsScreenState
           _setController(_preSodiumController, overrides.pre!.sodiumMg);
           _setController(_preFluidController, overrides.pre!.fluidMl);
         }
-        // During-activity
-        if (overrides.during != null) {
+
+        // During Run (sport-specific, with legacy fallback)
+        final duringRun = overrides.duringRun ?? overrides.during;
+        if (duringRun != null) {
+          _setController(_duringRunCarbRateController, duringRun.carbRateGPerH);
           _setController(
-              _duringCarbRateController, overrides.during!.carbRateGPerH);
+              _duringRunSodiumRateController, duringRun.sodiumRateMgPerH);
           _setController(
-              _duringSodiumRateController, overrides.during!.sodiumRateMgPerH);
-          _setController(
-              _duringFluidRateController, overrides.during!.fluidRateMlPerH);
+              _duringRunFluidRateController, duringRun.fluidRateMlPerH);
         }
+
+        // During Bike (sport-specific, with legacy fallback)
+        final duringBike = overrides.duringCycling ?? overrides.during;
+        if (duringBike != null) {
+          _setController(
+              _duringBikeCarbRateController, duringBike.carbRateGPerH);
+          _setController(
+              _duringBikeSodiumRateController, duringBike.sodiumRateMgPerH);
+          _setController(
+              _duringBikeFluidRateController, duringBike.fluidRateMlPerH);
+        }
+
+        // During Swim (sport-specific, with legacy fallback)
+        final duringSwim = overrides.duringSwimming ?? overrides.during;
+        if (duringSwim != null) {
+          // Don't load carbs for swimming (carbs N/A while swimming)
+          _setController(
+              _duringSwimSodiumRateController, duringSwim.sodiumRateMgPerH);
+          _setController(
+              _duringSwimFluidRateController, duringSwim.fluidRateMlPerH);
+        }
+
+        // During Brick (sport-specific, with legacy fallback)
+        final duringBrick = overrides.duringBrick ?? overrides.during;
+        if (duringBrick != null) {
+          _setController(
+              _duringBrickCarbRateController, duringBrick.carbRateGPerH);
+          _setController(
+              _duringBrickSodiumRateController, duringBrick.sodiumRateMgPerH);
+          _setController(
+              _duringBrickFluidRateController, duringBrick.fluidRateMlPerH);
+        }
+
         // Post-activity
         if (overrides.post != null) {
           _setController(_postCarbsController, overrides.post!.carbsG);
@@ -86,8 +139,9 @@ class _NutritionTargetsScreenState
   void _setController(TextEditingController controller, double? value) {
     if (value != null) {
       // Display as integer if whole number, otherwise 1 decimal
-      controller.text =
-          value == value.roundToDouble() ? value.toInt().toString() : value.toStringAsFixed(1);
+      controller.text = value == value.roundToDouble()
+          ? value.toInt().toString()
+          : value.toStringAsFixed(1);
     }
   }
 
@@ -98,9 +152,18 @@ class _NutritionTargetsScreenState
     _preFatController.dispose();
     _preSodiumController.dispose();
     _preFluidController.dispose();
-    _duringCarbRateController.dispose();
-    _duringSodiumRateController.dispose();
-    _duringFluidRateController.dispose();
+    _duringRunCarbRateController.dispose();
+    _duringRunSodiumRateController.dispose();
+    _duringRunFluidRateController.dispose();
+    _duringBikeCarbRateController.dispose();
+    _duringBikeSodiumRateController.dispose();
+    _duringBikeFluidRateController.dispose();
+    _duringSwimCarbRateController.dispose();
+    _duringSwimSodiumRateController.dispose();
+    _duringSwimFluidRateController.dispose();
+    _duringBrickCarbRateController.dispose();
+    _duringBrickSodiumRateController.dispose();
+    _duringBrickFluidRateController.dispose();
     _postCarbsController.dispose();
     _postProteinController.dispose();
     _postSodiumController.dispose();
@@ -120,6 +183,19 @@ class _NutritionTargetsScreenState
     return double.tryParse(text);
   }
 
+  DuringActivityOverrides? _parseDuringOverride({
+    required TextEditingController carbController,
+    required TextEditingController sodiumController,
+    required TextEditingController fluidController,
+  }) {
+    final during = DuringActivityOverrides(
+      carbRateGPerH: _parseField(carbController),
+      sodiumRateMgPerH: _parseField(sodiumController),
+      fluidRateMlPerH: _parseField(fluidController),
+    );
+    return during.hasAnyOverride ? during : null;
+  }
+
   Future<void> _saveChanges() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
@@ -134,12 +210,6 @@ class _NutritionTargetsScreenState
       fluidMl: _parseField(_preFluidController),
     );
 
-    final during = DuringActivityOverrides(
-      carbRateGPerH: _parseField(_duringCarbRateController),
-      sodiumRateMgPerH: _parseField(_duringSodiumRateController),
-      fluidRateMlPerH: _parseField(_duringFluidRateController),
-    );
-
     final post = PostActivityOverrides(
       carbsG: _parseField(_postCarbsController),
       proteinG: _parseField(_postProteinController),
@@ -149,8 +219,28 @@ class _NutritionTargetsScreenState
 
     var overrides = NutritionTargetOverrides(
       pre: pre.hasAnyOverride ? pre : null,
-      during: during.hasAnyOverride ? during : null,
       post: post.hasAnyOverride ? post : null,
+      // Sport-specific during overrides (no legacy `during` written)
+      duringRun: _parseDuringOverride(
+        carbController: _duringRunCarbRateController,
+        sodiumController: _duringRunSodiumRateController,
+        fluidController: _duringRunFluidRateController,
+      ),
+      duringCycling: _parseDuringOverride(
+        carbController: _duringBikeCarbRateController,
+        sodiumController: _duringBikeSodiumRateController,
+        fluidController: _duringBikeFluidRateController,
+      ),
+      duringSwimming: _parseDuringOverride(
+        carbController: _duringSwimCarbRateController,
+        sodiumController: _duringSwimSodiumRateController,
+        fluidController: _duringSwimFluidRateController,
+      ),
+      duringBrick: _parseDuringOverride(
+        carbController: _duringBrickCarbRateController,
+        sodiumController: _duringBrickSodiumRateController,
+        fluidController: _duringBrickFluidRateController,
+      ),
     );
 
     // Clamp to guardrails
@@ -187,9 +277,18 @@ class _NutritionTargetsScreenState
       _preFatController.clear();
       _preSodiumController.clear();
       _preFluidController.clear();
-      _duringCarbRateController.clear();
-      _duringSodiumRateController.clear();
-      _duringFluidRateController.clear();
+      _duringRunCarbRateController.clear();
+      _duringRunSodiumRateController.clear();
+      _duringRunFluidRateController.clear();
+      _duringBikeCarbRateController.clear();
+      _duringBikeSodiumRateController.clear();
+      _duringBikeFluidRateController.clear();
+      _duringSwimCarbRateController.clear();
+      _duringSwimSodiumRateController.clear();
+      _duringSwimFluidRateController.clear();
+      _duringBrickCarbRateController.clear();
+      _duringBrickSodiumRateController.clear();
+      _duringBrickFluidRateController.clear();
       _postCarbsController.clear();
       _postProteinController.clear();
       _postSodiumController.clear();
@@ -202,6 +301,7 @@ class _NutritionTargetsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: const CustomAppBarBackButton(),
         title: Text(
           'Nutrition Targets',
           style: AppTextStyles.sectionTitle.copyWith(
@@ -254,19 +354,74 @@ class _NutritionTargetsScreenState
               ],
             ),
 
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.lg),
 
-            // During-Activity section
-            _buildSectionCard(
-              title: 'During Activity (per hour)',
-              children: [
-                _buildField(
-                    'Carbs (g/hr)', _duringCarbRateController, 0, 120),
-                _buildField(
-                    'Sodium (mg/hr)', _duringSodiumRateController, 0, 2000),
-                _buildField(
-                    'Fluids (ml/hr)', _duringFluidRateController, 200, 3000),
-              ],
+            // 90-minute note
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+              child: Text(
+                'During-workout targets only apply to activities 90 minutes or longer.',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.5),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            // During Run section
+            DuringSportOverrideSection(
+              sportLabel: 'Run',
+              sportIcon: Icons.directions_run,
+              carbController: _duringRunCarbRateController,
+              sodiumController: _duringRunSodiumRateController,
+              fluidController: _duringRunFluidRateController,
+              maxCarbRate: NutritionTargetGuardrails.duringMaxCarbRateRunning,
+              onChanged: _markChanged,
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            // During Bike section
+            DuringSportOverrideSection(
+              sportLabel: 'Bike',
+              sportIcon: Icons.directions_bike,
+              carbController: _duringBikeCarbRateController,
+              sodiumController: _duringBikeSodiumRateController,
+              fluidController: _duringBikeFluidRateController,
+              maxCarbRate: NutritionTargetGuardrails.duringMaxCarbRateCycling,
+              onChanged: _markChanged,
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            // During Swim section
+            DuringSportOverrideSection(
+              sportLabel: 'Swim',
+              sportIcon: Icons.pool,
+              carbController: _duringSwimCarbRateController,
+              sodiumController: _duringSwimSodiumRateController,
+              fluidController: _duringSwimFluidRateController,
+              maxCarbRate: NutritionTargetGuardrails.duringMaxCarbRateSwimming,
+              carbsDisabled: true,
+              onChanged: _markChanged,
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            // During Brick section
+            DuringSportOverrideSection(
+              sportLabel: 'Brick',
+              sportIcon: Icons.link,
+              carbController: _duringBrickCarbRateController,
+              sodiumController: _duringBrickSodiumRateController,
+              fluidController: _duringBrickFluidRateController,
+              maxCarbRate: NutritionTargetGuardrails.duringMaxCarbRateBrick,
+              onChanged: _markChanged,
             ),
 
             const SizedBox(height: AppSpacing.md),
@@ -381,8 +536,9 @@ class _NutritionTargetsScreenState
             flex: 2,
             child: TextFormField(
               controller: controller,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
               ],
@@ -398,27 +554,24 @@ class _NutritionTargetsScreenState
                 ),
                 hintText: 'Auto',
                 hintStyle: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.4),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.2),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.2),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.2),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.2),
                   ),
                 ),
               ),

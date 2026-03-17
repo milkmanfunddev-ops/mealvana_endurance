@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/activity_completion.dart';
 import '../../../activities/application/activities_service.dart';
+import '../../domain/macro_targets.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../domain/food_item_data.dart';
 import '../../domain/time_slot_assignment.dart';
@@ -16,12 +17,14 @@ import '../../../activities/domain/activity_reminder.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../application/nutrition_plan_service.dart';
+import '../../data/macro_repository.dart';
 import '../../data/nutrition_plan_repository.dart';
 import '../../data/nutrition_plan_mapper.dart';
 import '../../data/template_foods_repository.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../domain/carb_adjustment_level.dart';
 import '../../domain/nutrition_target_overrides.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
@@ -164,9 +167,19 @@ class ActivityDetailController extends _$ActivityDetailController {
       );
     }
 
+    // Try to load cached MacroTargets for range display
+    MacroTargets? macroTargets;
+    try {
+      final macroRepo = ref.read(macroRepositoryProvider);
+      macroTargets = await macroRepo.getCachedMacroTargets();
+    } catch (e) {
+      _logger.warning('Failed to load cached macro targets: $e');
+    }
+
     return ActivityDetailState(
       activity: activity,
       nutritionPlan: nutritionPlan,
+      macroTargets: macroTargets,
       completion: completion,
       scheduledDateTime: activity.scheduledDateTime,
       isNewActivity: isNewActivity,
@@ -303,37 +316,47 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// Apply carb feedback adjustment to the user's nutrition target overrides.
   ///
-  /// This modifies `nutrition_target_overrides.during.carbRateGPerH` by
+  /// This modifies the sport-specific during carb rate override by
   /// multiplying the current rate by [level.adjustmentFactor].
-  /// "Just Right" is a no-op.
+  /// "Just Right" is a no-op. Only applies to activities >= 90 minutes.
   Future<void> applyCarbFeedbackAdjustment(CarbAdjustmentLevel level) async {
     // "Just Right" means no change
     if (level == CarbAdjustmentLevel.justRight) return;
 
     try {
+      // 90-minute gate
+      final currentState = state.value;
+      final durationMinutes =
+          currentState?.activity?.durationMinutes?.toDouble();
+      if (durationMinutes == null || durationMinutes < 90) {
+        _logger.info('Skipping carb feedback: activity < 90 minutes');
+        return;
+      }
+
       final user = await _authService.getCurrentUser();
       if (user == null) {
         _logger.warning('Cannot apply carb feedback: no user');
         return;
       }
 
+      // Determine the activity type for sport-specific override
+      final activityType =
+          currentState?.activity?.activityType ?? ActivityType.running;
+
       // Determine the base carb rate:
-      // 1. If user has an existing during carb override, use that
+      // 1. If user has an existing sport-specific during carb override, use that
       // 2. Otherwise, derive from this activity's during section
       double baseRate;
       final existingOverride =
-          user.nutritionTargetOverrides?.during?.carbRateGPerH;
+          user.nutritionTargetOverrides?.getDuring(activityType)?.carbRateGPerH;
 
       if (existingOverride != null) {
         baseRate = existingOverride;
       } else {
         // Derive from the current activity's during section carbsTarget / duration
-        final currentState = state.value;
         final plan = currentState?.nutritionPlan;
-        final durationMinutes = currentState?.activity?.durationMinutes
-            ?.toDouble();
 
-        if (plan != null && durationMinutes != null && durationMinutes > 0) {
+        if (plan != null && durationMinutes > 0) {
           final duringSection = plan.sections.firstWhere(
             (s) => s.id.contains('during'),
             orElse: () => plan.sections.first,
@@ -353,14 +376,16 @@ class ActivityDetailController extends _$ActivityDetailController {
         NutritionTargetGuardrails.duringMaxCarbRateGPerH,
       );
 
-      // Build updated overrides
+      // Build updated overrides — write to sport-specific field only
       final currentOverrides =
           user.nutritionTargetOverrides ?? const NutritionTargetOverrides();
-      final updatedOverrides = currentOverrides.copyWith(
-        during: () => DuringActivityOverrides(
+      final existingSportDuring = currentOverrides.getDuring(activityType);
+      final updatedOverrides = currentOverrides.setDuring(
+        activityType,
+        DuringActivityOverrides(
           carbRateGPerH: newRate,
-          sodiumRateMgPerH: currentOverrides.during?.sodiumRateMgPerH,
-          fluidRateMlPerH: currentOverrides.during?.fluidRateMlPerH,
+          sodiumRateMgPerH: existingSportDuring?.sodiumRateMgPerH,
+          fluidRateMlPerH: existingSportDuring?.fluidRateMlPerH,
         ),
       );
 
@@ -376,6 +401,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           'baseRate': baseRate,
           'newRate': newRate,
           'factor': level.adjustmentFactor,
+          'activityType': activityType.name,
         },
       );
 
@@ -385,6 +411,7 @@ class ActivityDetailController extends _$ActivityDetailController {
         'adjustment_factor': level.adjustmentFactor,
         'base_rate': baseRate,
         'new_rate': newRate,
+        'activity_type': activityType.name,
       });
     } catch (e, stackTrace) {
       _logger.error(

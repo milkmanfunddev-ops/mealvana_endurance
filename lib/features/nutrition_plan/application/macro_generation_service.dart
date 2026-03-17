@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/macro_targets.dart';
+import '../domain/nutrition_target_overrides.dart';
 import '../domain/intensity_distribution.dart';
 import '../data/macro_repository.dart';
 import '../../auth/application/auth_service.dart';
@@ -44,6 +45,7 @@ class MacroGenerationService {
     double? humidityPct,
     bool isFasted = false,
     IntensityDistribution? intensity,
+    NutritionTargetOverrides? overrides,
   }) async {
     final requestData = await _buildRunningRequestData(
       distanceMiles: distanceMiles,
@@ -60,6 +62,7 @@ class MacroGenerationService {
     final macroTargets = await _callGenerateMacrosEdgeFunction(
       requestData: requestData,
       expectedActivityType: ActivityType.running,
+      overrides: overrides,
     );
 
     await _cacheMacroTargets(macroTargets);
@@ -97,6 +100,7 @@ class MacroGenerationService {
     double? humidityPct,
     bool isFasted = false,
     IntensityDistribution? intensity,
+    NutritionTargetOverrides? overrides,
   }) async {
     DebugLogger.info('🚴 MACRO SERVICE: generateCyclingMacros called - distance: ${distanceMiles}mi, speed: ${speedMph}mph');
 
@@ -120,6 +124,7 @@ class MacroGenerationService {
     final macroTargets = await _callGenerateMacrosEdgeFunction(
       requestData: requestData,
       expectedActivityType: ActivityType.cycling,
+      overrides: overrides,
     );
     DebugLogger.info('🚴 MACRO SERVICE: Edge function returned, caching targets...');
 
@@ -156,6 +161,7 @@ class MacroGenerationService {
     String? sessionGoal,
     double? waterTempC,
     IntensityDistribution? intensity,
+    NutritionTargetOverrides? overrides,
   }) async {
     DebugLogger.info('🏊 MACRO SERVICE: generateSwimmingMacros called - distance: ${distanceMeters}m, pace: ${paceSecondsper100m}s/100m');
 
@@ -175,6 +181,7 @@ class MacroGenerationService {
     final macroTargets = await _callGenerateMacrosEdgeFunction(
       requestData: requestData,
       expectedActivityType: ActivityType.swimming,
+      overrides: overrides,
     );
     DebugLogger.info('🏊 MACRO SERVICE: Edge function returned, caching targets...');
 
@@ -373,12 +380,19 @@ class MacroGenerationService {
   Future<MacroTargets> _callGenerateMacrosEdgeFunction({
     required Map<String, dynamic> requestData,
     required ActivityType expectedActivityType,
+    NutritionTargetOverrides? overrides,
   }) async {
-    DebugLogger.info('🌐 EDGE FUNCTION: Calling generate-macros-v3 for ${expectedActivityType.name}...');
+    // Include overrides in request payload if provided
+    if (overrides != null && overrides.hasAnyOverride) {
+      final clamped = NutritionTargetGuardrails.clampAll(overrides);
+      requestData['overrides'] = clamped.toEdgeFunctionPayload(sport: expectedActivityType);
+    }
+
+    DebugLogger.info('🌐 EDGE FUNCTION: Calling generate-macros-v4 for ${expectedActivityType.name}...');
     DebugLogger.info('📤 EDGE FUNCTION: Request payload: ${requestData.toString().substring(0, 200)}...');
 
     final response = await supabaseClient.functions.invoke(
-      'generate-macros-v3',
+      'generate-macros-v4',
       body: requestData,
     );
 
@@ -428,22 +442,49 @@ class MacroGenerationService {
         fatCapG: _toDouble(macrosData['pre_run_fat_g'], 'pre_run_fat_g'),
         fluidsMl: _toDouble(macrosData['pre_run_water_ml'], 'pre_run_water_ml'),
         sodiumMg: _toDouble(macrosData['pre_run_sodium_mg'], 'pre_run_sodium_mg'),
+        carbsLowG: _toDoubleOrNull(macrosData['pre_run_carbs_low_g']),
+        carbsHighG: _toDoubleOrNull(macrosData['pre_run_carbs_high_g']),
+        proteinLowG: _toDoubleOrNull(macrosData['pre_run_protein_low_g']),
+        proteinHighG: _toDoubleOrNull(macrosData['pre_run_protein_high_g']),
+        sodiumLowMg: _toDoubleOrNull(macrosData['pre_run_sodium_low_mg']),
+        sodiumHighMg: _toDoubleOrNull(macrosData['pre_run_sodium_high_mg']),
+        fluidsLowMl: _toDoubleOrNull(macrosData['pre_run_water_low_ml']),
+        fluidsHighMl: _toDoubleOrNull(macrosData['pre_run_water_high_ml']),
       ),
-      duringRun: DuringRunMacros(
-        carbRateGPerH: _toDouble(macrosData['during_rate_g_per_h'], 'during_rate_g_per_h'),
-        carbTotalG: _toDouble(macrosData['during_total_g'], 'during_total_g'),
-        fluidRateMlPerH: _toDouble(macrosData['during_water_rate_ml_per_h'], 'during_water_rate_ml_per_h'),
-        fluidTotalMl: _toDouble(macrosData['during_water_total_ml'], 'during_water_total_ml'),
-        sodiumRateMgPerH: _toDouble(macrosData['during_sodium_rate_mg_per_h'], 'during_sodium_rate_mg_per_h'),
-        sodiumTotalMg: _toDouble(macrosData['during_sodium_total_mg'], 'during_sodium_total_mg'),
-        massNormRateGPerH: _toDouble(macrosData['during_mass_norm_rate_g_per_h'], 'during_mass_norm_rate_g_per_h'),
-        absClampRangeGPerH: _toDoubleList(macrosData['during_abs_clamp_range_g_per_h']),
-      ),
+      duringRun: () {
+        final durationH = _toDouble(macrosData['duration_h'], 'duration_h');
+        final bandLow = _toDoubleOrNull(macrosData['during_band_low_g_per_h']);
+        final bandHigh = _toDoubleOrNull(macrosData['during_band_high_g_per_h']);
+        return DuringRunMacros(
+          carbRateGPerH: _toDouble(macrosData['during_rate_g_per_h'], 'during_rate_g_per_h'),
+          carbTotalG: _toDouble(macrosData['during_total_g'], 'during_total_g'),
+          fluidRateMlPerH: _toDouble(macrosData['during_water_rate_ml_per_h'], 'during_water_rate_ml_per_h'),
+          fluidTotalMl: _toDouble(macrosData['during_water_total_ml'], 'during_water_total_ml'),
+          sodiumRateMgPerH: _toDouble(macrosData['during_sodium_rate_mg_per_h'], 'during_sodium_rate_mg_per_h'),
+          sodiumTotalMg: _toDouble(macrosData['during_sodium_total_mg'], 'during_sodium_total_mg'),
+          massNormRateGPerH: _toDouble(macrosData['during_mass_norm_rate_g_per_h'], 'during_mass_norm_rate_g_per_h'),
+          absClampRangeGPerH: _toDoubleList(macrosData['during_abs_clamp_range_g_per_h']),
+          carbsLowG: bandLow != null ? bandLow * durationH : null,
+          carbsHighG: bandHigh != null ? bandHigh * durationH : null,
+          sodiumLowMg: _toDoubleOrNull(macrosData['during_sodium_low_mg']),
+          sodiumHighMg: _toDoubleOrNull(macrosData['during_sodium_high_mg']),
+          fluidsLowMl: _toDoubleOrNull(macrosData['during_water_low_ml']),
+          fluidsHighMl: _toDoubleOrNull(macrosData['during_water_high_ml']),
+        );
+      }(),
       postRun: PostRunMacros(
         carbsG: _toDouble(macrosData['post_run_carbs_g'], 'post_run_carbs_g'),
         proteinG: _toDouble(macrosData['post_run_protein_g'], 'post_run_protein_g'),
         fluidsMl: _toDouble(macrosData['post_run_water_ml'], 'post_run_water_ml'),
         sodiumMg: _toDouble(macrosData['post_run_sodium_mg'], 'post_run_sodium_mg'),
+        carbsLowG: _toDoubleOrNull(macrosData['post_run_carbs_low_g']),
+        carbsHighG: _toDoubleOrNull(macrosData['post_run_carbs_high_g']),
+        proteinLowG: _toDoubleOrNull(macrosData['post_run_protein_low_g']),
+        proteinHighG: _toDoubleOrNull(macrosData['post_run_protein_high_g']),
+        sodiumLowMg: _toDoubleOrNull(macrosData['post_run_sodium_low_mg']),
+        sodiumHighMg: _toDoubleOrNull(macrosData['post_run_sodium_high_mg']),
+        fluidsLowMl: _toDoubleOrNull(macrosData['post_run_water_low_ml']),
+        fluidsHighMl: _toDoubleOrNull(macrosData['post_run_water_high_ml']),
       ),
       metrics: () {
         // Compute derived metrics client-side since the edge function
@@ -486,6 +527,18 @@ class MacroGenerationService {
         '(${value.runtimeType}) to double: $e',
       );
       return 0.0;
+    }
+  }
+
+  double? _toDoubleOrNull(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    try {
+      return (value as num).toDouble();
+    } catch (_) {
+      return null;
     }
   }
 

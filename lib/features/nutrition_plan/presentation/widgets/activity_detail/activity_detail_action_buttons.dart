@@ -17,12 +17,14 @@ class ActivityDetailActionButtons extends StatelessWidget {
     required this.onComplete,
     required this.onRatingChanged,
     required this.onNotesChanged,
+    this.onSaveAsTemplate,
   });
 
   final ActivityDetailState state;
   final bool isNewActivity;
   final bool isCoachView;
   final VoidCallback onSave;
+  final VoidCallback? onSaveAsTemplate;
   final void Function(int rating, String? notes, {bool isBrick, CarbAdjustmentLevel? carbAdjustment}) onComplete;
   final void Function(int rating) onRatingChanged;
   final void Function(String? notes) onNotesChanged;
@@ -48,9 +50,22 @@ class ActivityDetailActionButtons extends StatelessWidget {
     }
 
     if (isNewActivity) {
-      return KylePrimaryButton(
-        text: state.isSaving ? 'Saving...' : 'Save Workout',
-        onPressed: state.isSaving ? null : onSave,
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          KylePrimaryButton(
+            text: state.isSaving ? 'Saving...' : 'Save Workout',
+            onPressed: state.isSaving ? null : onSave,
+          ),
+          if (onSaveAsTemplate != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            KyleSecondaryButton(
+              text: 'Save as Template',
+              onPressed: state.isSaving ? null : onSaveAsTemplate,
+              icon: Icons.bookmark_outline,
+            ),
+          ],
+        ],
       );
     }
 
@@ -100,7 +115,7 @@ class ActivityDetailActionButtons extends StatelessWidget {
           final durationMinutes = activity?.durationMinutes?.toDouble();
           if (duringSection?.carbsTarget != null &&
               durationMinutes != null &&
-              durationMinutes > 0) {
+              durationMinutes >= 90) {
             duringCarbRateGPerH =
                 duringSection!.carbsTarget! / (durationMinutes / 60.0);
           }

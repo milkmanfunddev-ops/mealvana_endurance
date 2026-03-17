@@ -595,7 +595,13 @@ class MacroTargetsController extends _$MacroTargetsController {
           analytics: _analytics,
         );
 
-        // Call the service to generate macros
+        // Load sport-specific overrides with 90-min gate
+        final overrides = await _loadOverridesForEdgeFunction(
+          ActivityType.running,
+          estimatedDurationMinutes.toDouble(),
+        );
+
+        // Call the service to generate macros (overrides sent to edge function)
         var macroTargets = await macroService.generateRunningMacros(
           activityId: finalActivityId,
           deviceId: deviceId,
@@ -608,14 +614,13 @@ class MacroTargetsController extends _$MacroTargetsController {
           humidityPct: humidityPct,
           isFasted: isFasted,
           intensity: intensity,
+          overrides: overrides,
         );
 
-        // Apply user profile nutrition target overrides (if any)
-        final beforeOverrides = 'pre=${macroTargets.preRun.carbsG}g, during=${macroTargets.duringRun.carbTotalG}g, post=${macroTargets.postRun.carbsG}g';
-        DebugLogger.info('🎯 OVERRIDE DEBUG [1/5]: MacroTargets BEFORE overrides: $beforeOverrides');
-        macroTargets = await _maybeApplyOverrides(macroTargets);
-        final afterOverrides = 'pre=${macroTargets.preRun.carbsG}g, during=${macroTargets.duringRun.carbTotalG}g, post=${macroTargets.postRun.carbsG}g, isModified=${macroTargets.isUserModified}, modifiedFields=${macroTargets.modifiedFields}';
-        DebugLogger.info('🎯 OVERRIDE DEBUG [1/5]: MacroTargets AFTER overrides: $afterOverrides');
+        // Mark as user-modified if overrides were applied
+        if (overrides != null && overrides.hasAnyOverride) {
+          macroTargets = macroTargets.copyWith(isUserModified: true);
+        }
         final repository = ref.read(macroRepositoryProvider);
         await repository.saveMacroTargets(macroTargets);
 
@@ -785,7 +790,16 @@ class MacroTargetsController extends _$MacroTargetsController {
           analytics: _analytics,
         );
 
-        // Call the service
+        // Load sport-specific overrides with 90-min gate
+        final estimatedCyclingDurationMin = speedMph > 0
+            ? (distanceMiles / speedMph) * 60.0
+            : 0.0;
+        final overrides = await _loadOverridesForEdgeFunction(
+          ActivityType.cycling,
+          estimatedCyclingDurationMin,
+        );
+
+        // Call the service (overrides sent to edge function)
         var macroTargets = await macroService.generateCyclingMacros(
           activityId: finalActivityId,
           deviceId: deviceId,
@@ -801,10 +815,13 @@ class MacroTargetsController extends _$MacroTargetsController {
           humidityPct: humidityPct,
           isFasted: isFasted,
           intensity: intensity,
+          overrides: overrides,
         );
 
-        // Apply user profile nutrition target overrides (if any)
-        macroTargets = await _maybeApplyOverrides(macroTargets);
+        // Mark as user-modified if overrides were applied
+        if (overrides != null && overrides.hasAnyOverride) {
+          macroTargets = macroTargets.copyWith(isUserModified: true);
+        }
 
         return currentState.copyWith(
           isGeneratingMacros: false,
@@ -1010,7 +1027,13 @@ class MacroTargetsController extends _$MacroTargetsController {
           analytics: _analytics,
         );
 
-        // Call the service
+        // Load sport-specific overrides with 90-min gate
+        final overrides = await _loadOverridesForEdgeFunction(
+          ActivityType.swimming,
+          durationMinutes,
+        );
+
+        // Call the service (overrides sent to edge function)
         var macroTargets = await macroService.generateSwimmingMacros(
           activityId: finalActivityId,
           deviceId: deviceId,
@@ -1022,10 +1045,13 @@ class MacroTargetsController extends _$MacroTargetsController {
           sessionGoal: sessionGoal,
           waterTempC: waterTempC,
           intensity: intensity,
+          overrides: overrides,
         );
 
-        // Apply user profile nutrition target overrides (if any)
-        macroTargets = await _maybeApplyOverrides(macroTargets);
+        // Mark as user-modified if overrides were applied
+        if (overrides != null && overrides.hasAnyOverride) {
+          macroTargets = macroTargets.copyWith(isUserModified: true);
+        }
 
         return currentState.copyWith(
           isGeneratingMacros: false,
@@ -1217,7 +1243,15 @@ class MacroTargetsController extends _$MacroTargetsController {
           analytics: _analytics,
         );
 
+        // Load sport-specific overrides with 90-min gate
+        final overrides = await _loadOverridesForEdgeFunction(
+          ActivityType.brick,
+          totalDurationMinutes.toDouble(),
+        );
+
         // Call the service
+        // Note: BrickMacroService does not yet accept overrides directly.
+        // Overrides are applied by the per-segment edge function calls.
         var macroTargets = await brickMacroService.generateBrickMacros(
           activityId: finalActivityId,
           deviceId: deviceId,
@@ -1227,8 +1261,10 @@ class MacroTargetsController extends _$MacroTargetsController {
           preActivityMinutes: preActivityMinutes,
         );
 
-        // Apply user profile nutrition target overrides (if any)
-        macroTargets = await _maybeApplyOverrides(macroTargets);
+        // Mark as user-modified if overrides were applied
+        if (overrides != null && overrides.hasAnyOverride) {
+          macroTargets = macroTargets.copyWith(isUserModified: true);
+        }
 
         return currentState.copyWith(
           isGeneratingMacros: false,
@@ -1740,115 +1776,36 @@ class MacroTargetsController extends _$MacroTargetsController {
     });
   }
 
-  /// Apply user profile nutrition target overrides to generated macro targets.
-  /// Non-null override fields replace the algorithm-generated values.
-  /// During-activity rate overrides are multiplied by duration to compute totals.
-  MacroTargets _applyUserOverrides(
-    MacroTargets targets,
-    NutritionTargetOverrides overrides,
-  ) {
-    final clamped = NutritionTargetGuardrails.clampAll(overrides);
-    final durationH = targets.metrics.durationH;
-    final modifiedFields = <String>[...targets.modifiedFields];
-
-    // Pre-activity overrides
-    var preRun = targets.preRun;
-    if (clamped.pre != null) {
-      final pre = clamped.pre!;
-      if (pre.carbsG != null) {
-        preRun = preRun.copyWith(carbsG: pre.carbsG);
-        modifiedFields.add('preRunCarbs');
-      }
-      if (pre.proteinG != null) {
-        preRun = preRun.copyWith(proteinG: pre.proteinG);
-        modifiedFields.add('preRunProtein');
-      }
-      if (pre.fatG != null) {
-        preRun = preRun.copyWith(fatCapG: pre.fatG);
-        modifiedFields.add('preRunFatCap');
-      }
-      if (pre.sodiumMg != null) {
-        preRun = preRun.copyWith(sodiumMg: pre.sodiumMg);
-        modifiedFields.add('preRunSodium');
-      }
-      if (pre.fluidMl != null) {
-        preRun = preRun.copyWith(fluidsMl: pre.fluidMl);
-        modifiedFields.add('preRunFluids');
-      }
-    }
-
-    // During-activity overrides (rates → totals using duration)
-    var duringRun = targets.duringRun;
-    if (clamped.during != null) {
-      final during = clamped.during!;
-      if (during.carbRateGPerH != null) {
-        duringRun = duringRun.copyWith(
-          carbRateGPerH: during.carbRateGPerH,
-          carbTotalG: during.carbRateGPerH! * durationH,
-        );
-        modifiedFields.add('duringRunCarbRate');
-      }
-      if (during.sodiumRateMgPerH != null) {
-        duringRun = duringRun.copyWith(
-          sodiumRateMgPerH: during.sodiumRateMgPerH,
-          sodiumTotalMg: during.sodiumRateMgPerH! * durationH,
-        );
-        modifiedFields.add('duringRunSodiumRate');
-      }
-      if (during.fluidRateMlPerH != null) {
-        duringRun = duringRun.copyWith(
-          fluidRateMlPerH: during.fluidRateMlPerH,
-          fluidTotalMl: during.fluidRateMlPerH! * durationH,
-        );
-        modifiedFields.add('duringRunFluidRate');
-      }
-    }
-
-    // Post-activity overrides
-    var postRun = targets.postRun;
-    if (clamped.post != null) {
-      final post = clamped.post!;
-      if (post.carbsG != null) {
-        postRun = postRun.copyWith(carbsG: post.carbsG);
-        modifiedFields.add('postRunCarbs');
-      }
-      if (post.proteinG != null) {
-        postRun = postRun.copyWith(proteinG: post.proteinG);
-        modifiedFields.add('postRunProtein');
-      }
-      if (post.sodiumMg != null) {
-        postRun = postRun.copyWith(sodiumMg: post.sodiumMg);
-        modifiedFields.add('postRunSodium');
-      }
-      if (post.fluidMl != null) {
-        postRun = postRun.copyWith(fluidsMl: post.fluidMl);
-        modifiedFields.add('postRunFluids');
-      }
-    }
-
-    return targets.copyWith(
-      preRun: preRun,
-      duringRun: duringRun,
-      postRun: postRun,
-      isUserModified: modifiedFields.isNotEmpty,
-      modifiedFields: modifiedFields.toSet().toList(), // deduplicate
-    );
-  }
-
-  /// Load user profile overrides and apply them to macro targets if present.
-  /// Returns the (potentially modified) macro targets.
-  Future<MacroTargets> _maybeApplyOverrides(MacroTargets macroTargets) async {
+  /// Load user overrides for the edge function, applying sport-specific
+  /// during selection and the 90-minute gate for during overrides.
+  ///
+  /// Returns null if the user has no overrides.
+  Future<NutritionTargetOverrides?> _loadOverridesForEdgeFunction(
+    ActivityType sport,
+    double durationMin,
+  ) async {
     final user = await _authService.getCurrentUser();
     final overrides = user?.nutritionTargetOverrides;
-    DebugLogger.info(
-      '🎯 OVERRIDE DEBUG [1b/5]: _maybeApplyOverrides - '
-      'userFound=${user != null}, hasOverrides=${overrides?.hasAnyOverride}, '
-      'pre=${overrides?.pre}, during=${overrides?.during}, post=${overrides?.post}',
-    );
-    if (overrides?.hasAnyOverride == true) {
-      return _applyUserOverrides(macroTargets, overrides!);
+    if (overrides == null || !overrides.hasAnyOverride) return null;
+
+    // 90-minute gate: strip during overrides for short activities
+    if (durationMin < 90) {
+      // Return overrides with only pre/post (no during)
+      final prePostOnly = NutritionTargetOverrides(
+        pre: overrides.pre,
+        post: overrides.post,
+      );
+      return prePostOnly.hasAnyOverride ? prePostOnly : null;
     }
-    return macroTargets;
+
+    // Build overrides with the correct sport's during values in the `during`
+    // field, since the edge function reads from the flat `during_*` keys.
+    final sportDuring = overrides.getDuring(sport);
+    return NutritionTargetOverrides(
+      pre: overrides.pre,
+      during: sportDuring,
+      post: overrides.post,
+    );
   }
 
   /// Helper method to get current value of a field
