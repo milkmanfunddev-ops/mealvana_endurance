@@ -114,6 +114,34 @@ class CoachService {
     }
   }
 
+  /// Pull the current user's coach-related records from Supabase into local DB.
+  /// Returns true if the user is an approved coach after sync.
+  Future<bool> syncCurrentCoachDataFromSupabase() async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) return false;
+
+      final result = await _repository.syncFromRemote(profile.id);
+      if (!result.success) {
+        _logger.warning(
+          'Coach data sync did not complete successfully',
+          context: 'COACH_SERVICE',
+          data: {'userId': profile.id, 'error': result.error},
+        );
+      }
+
+      return await _repository.isUserApprovedCoach(profile.id);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to sync current coach data from Supabase',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
   // ============================================================================
   // ATHLETE MANAGEMENT (Coach perspective)
   // ============================================================================
@@ -158,36 +186,6 @@ class CoachService {
         context: 'COACH_SERVICE',
         error: e,
         stackTrace: stackTrace,
-      );
-      return [];
-    }
-  }
-
-  /// Search users to add as athletes by name/email.
-  Future<List<AthleteSearchResult>> searchAthletesByNameOrEmail(
-    String query, {
-    int limit = 20,
-  }) async {
-    try {
-      final profile = await _getCurrentProfile();
-      if (profile == null) return [];
-
-      // Check coaches table for approved status
-      final isCoach = await _repository.isUserApprovedCoach(profile.id);
-      if (!isCoach) return [];
-
-      return await _repository.searchAthletesByNameOrEmail(
-        query: query,
-        currentUserId: profile.id,
-        limit: limit,
-      );
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to search athletes by name/email',
-        context: 'COACH_SERVICE',
-        error: e,
-        stackTrace: stackTrace,
-        data: {'query': query},
       );
       return [];
     }
@@ -312,19 +310,31 @@ class CoachService {
         return null;
       }
 
-      final isCoach = await _repository.isUserApprovedCoach(profile.id);
+      var isCoach = await _repository.isUserApprovedCoach(profile.id);
+      if (!isCoach) {
+        isCoach = await syncCurrentCoachDataFromSupabase();
+      }
       if (!isCoach) {
         _logger.warning(
           'Cannot connect: user is not a coach',
           context: 'COACH_SERVICE',
+          data: {'coachUserId': profile.id},
         );
         return null;
       }
 
-      return await _repository.connectViaCode(
+      final relationship = await _repository.connectViaCode(
         code: code,
         coachUserId: profile.id,
       );
+      if (relationship == null) {
+        _logger.warning(
+          'Pairing code connection returned no relationship',
+          context: 'COACH_SERVICE',
+          data: {'coachUserId': profile.id, 'code': code},
+        );
+      }
+      return relationship;
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to connect via pairing code',
@@ -611,7 +621,9 @@ class CoachService {
     String nutritionPlanId,
   ) async {
     try {
-      return await _messagingRepository.getMessagesForNutritionPlan(nutritionPlanId);
+      return await _messagingRepository.getMessagesForNutritionPlan(
+        nutritionPlanId,
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get nutrition plan comments',

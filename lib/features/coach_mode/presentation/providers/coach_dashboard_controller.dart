@@ -64,11 +64,20 @@ class CoachDashboardController extends _$CoachDashboardController {
   /// Load local data immediately, sync in background
   Future<CoachDashboardState> _loadDashboard() async {
     try {
-      final coachInfo = await _coachService.getCurrentCoachInfo();
+      var coachInfo = await _coachService.getCurrentCoachInfo();
+
+      if (coachInfo == null) {
+        final isCoachAfterSync = await _coachService
+            .syncCurrentCoachDataFromSupabase();
+        if (isCoachAfterSync) {
+          coachInfo = await _coachService.getCurrentCoachInfo();
+        }
+      }
 
       if (coachInfo == null) {
         return const CoachDashboardState(
-          error: 'You are not registered as a coach. Please apply via the coach registration form.',
+          error:
+              'You are not registered as a coach. Please apply via the coach registration form.',
         );
       }
 
@@ -127,16 +136,20 @@ class CoachDashboardController extends _$CoachDashboardController {
       final activeAthletes = await _coachService.getMyAthletes();
       final pendingRequests = await _coachService.getPendingAthleteRequests();
 
-      state = AsyncData(currentState.copyWith(
-        activeAthletes: activeAthletes,
-        pendingRequests: pendingRequests,
-        isLoading: false,
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          activeAthletes: activeAthletes,
+          pendingRequests: pendingRequests,
+          isLoading: false,
+        ),
+      );
     } catch (e) {
-      state = AsyncData(currentState.copyWith(
-        isLoading: false,
-        error: 'Failed to accept request: ${e.toString()}',
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          isLoading: false,
+          error: 'Failed to accept request: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -155,15 +168,19 @@ class CoachDashboardController extends _$CoachDashboardController {
           .where((r) => r.id != relationshipId)
           .toList();
 
-      state = AsyncData(currentState.copyWith(
-        pendingRequests: updatedPending,
-        isLoading: false,
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          pendingRequests: updatedPending,
+          isLoading: false,
+        ),
+      );
     } catch (e) {
-      state = AsyncData(currentState.copyWith(
-        isLoading: false,
-        error: 'Failed to decline request: ${e.toString()}',
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          isLoading: false,
+          error: 'Failed to decline request: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -182,15 +199,16 @@ class CoachDashboardController extends _$CoachDashboardController {
           .where((r) => r.id != relationshipId)
           .toList();
 
-      state = AsyncData(currentState.copyWith(
-        activeAthletes: updatedActive,
-        isLoading: false,
-      ));
+      state = AsyncData(
+        currentState.copyWith(activeAthletes: updatedActive, isLoading: false),
+      );
     } catch (e) {
-      state = AsyncData(currentState.copyWith(
-        isLoading: false,
-        error: 'Failed to archive athlete: ${e.toString()}',
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          isLoading: false,
+          error: 'Failed to archive athlete: ${e.toString()}',
+        ),
+      );
     }
   }
 

@@ -28,7 +28,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final now = DateTime.now();
 
     // Reset counter if more than 2 seconds since last tap
-    if (_lastTapTime != null && now.difference(_lastTapTime!) > const Duration(seconds: 2)) {
+    if (_lastTapTime != null &&
+        now.difference(_lastTapTime!) > const Duration(seconds: 2)) {
       _tapCount = 0;
     }
 
@@ -42,11 +43,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       debugPrint('🎉 Triple tap detected! Opening debug screen...');
 
       // Navigate to debug screen
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const DebugScreen(),
-        ),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => const DebugScreen()));
     }
   }
 
@@ -82,9 +81,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildLoadingState(BuildContext context) {
     return const Center(
-      child: CircularProgressIndicator(
-        color: AppColors.electrolyte,
-      ),
+      child: CircularProgressIndicator(color: AppColors.electrolyte),
     );
   }
 
@@ -132,7 +129,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: AppSpacing.lg),
 
           // Quick links section (removed label, added preferences link)
-          _buildQuickLinksSection(context),
+          _buildQuickLinksSection(context, state),
 
           const SizedBox(height: AppSpacing.xl),
 
@@ -172,12 +169,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () {
                 // Copy user ID to clipboard
                 Clipboard.setData(ClipboardData(text: userId));
-                MealvanaSnackbar.showSuccess(context, 'User ID copied to clipboard');
+                MealvanaSnackbar.showSuccess(
+                  context,
+                  'User ID copied to clipboard',
+                );
               },
               child: Text(
                 'User ID: $userId',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                   fontSize: 10,
                 ),
               ),
@@ -329,11 +331,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                   if (confirmed == true && context.mounted) {
                     final analytics = ref.read(appExternalDepsProvider);
-                    analytics.analytics.track('settings_anonymous_sign_out_tapped');
+                    analytics.analytics.track(
+                      'settings_anonymous_sign_out_tapped',
+                    );
 
                     // Sign out of Supabase (clears anonymous session)
                     // Local data is preserved - user can sign back in later
-                    await ref.read(settingsControllerProvider.notifier).signOut();
+                    await ref
+                        .read(settingsControllerProvider.notifier)
+                        .signOut();
 
                     if (context.mounted) {
                       context.go('/welcome');
@@ -341,7 +347,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   }
                 },
                 style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                  foregroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
                 ),
                 child: const Text('Sign Out'),
               ),
@@ -351,9 +359,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Row(
               children: [
                 Icon(
-                  authProvider == 'apple' ? FontAwesomeIcons.apple :
-                  authProvider == 'google' ? FontAwesomeIcons.google :
-                  FontAwesomeIcons.envelope,
+                  authProvider == 'apple'
+                      ? FontAwesomeIcons.apple
+                      : authProvider == 'google'
+                      ? FontAwesomeIcons.google
+                      : FontAwesomeIcons.envelope,
                   size: AppIconSizes.md,
                   color: AppColors.electrolyte,
                 ),
@@ -374,7 +384,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         Text(
                           email,
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                             fontSize: 14,
                           ),
                         ),
@@ -416,7 +428,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                   // If user confirmed, proceed with sign out
                   if (confirmed == true && context.mounted) {
-                    await ref.read(settingsControllerProvider.notifier).signOut();
+                    await ref
+                        .read(settingsControllerProvider.notifier)
+                        .signOut();
 
                     // Navigate to welcome screen after logout
                     if (context.mounted) {
@@ -449,7 +463,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(context, true),
-                          style: TextButton.styleFrom(foregroundColor: AppColors.dragonfruit),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.dragonfruit,
+                          ),
                           child: const Text('Delete'),
                         ),
                       ],
@@ -458,7 +474,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                   // If user confirmed, proceed with delete
                   if (confirmed == true && context.mounted) {
-                    await ref.read(settingsControllerProvider.notifier).deleteAccount();
+                    await ref
+                        .read(settingsControllerProvider.notifier)
+                        .deleteAccount();
 
                     // Navigate to welcome screen after account deletion
                     if (context.mounted) {
@@ -481,7 +499,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildQuickLinksSection(BuildContext context) {
+  Widget _buildQuickLinksSection(BuildContext context, dynamic state) {
+    final isCoach = state.isCoach == true;
+
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,7 +562,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: 'Running, cycling, and swimming',
             onTap: () {
               final analytics = ref.read(appExternalDepsProvider);
-              analytics.analytics.track('settings_sport_preferences_hub_tapped');
+              analytics.analytics.track(
+                'settings_sport_preferences_hub_tapped',
+              );
               context.push('/settings/sport-preferences-hub');
             },
           ),
@@ -563,6 +585,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
 
           const SizedBox(height: AppSpacing.sm),
+
+          // Athlete coach connection (pairing code generation)
+          if (!isCoach) ...[
+            _buildQuickLink(
+              context: context,
+              icon: FontAwesomeIcons.userGroup,
+              title: 'Coach Connection',
+              subtitle: 'Generate a code to connect with your coach',
+              onTap: () {
+                final analytics = ref.read(appExternalDepsProvider);
+                analytics.analytics.track('settings_coach_connection_tapped');
+                context.push('/settings/coach-connection');
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
 
           // Connected Apps (Final Surge, TrainingPeaks, Strava integrations)
           _buildQuickLink(
@@ -667,7 +705,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   groupValue: currentMode,
                   onChanged: (selected) {
                     if (selected != null) {
-                      ref.read(kyleThemeModeProvider.notifier).setThemeMode(selected);
+                      ref
+                          .read(kyleThemeModeProvider.notifier)
+                          .setThemeMode(selected);
                       Navigator.of(context).pop();
                     }
                   },

@@ -1378,22 +1378,27 @@ class CoachRepository with SyncableRepository {
     required Map<String, dynamic>? overridesJson,
   }) async {
     try {
-      await _supabase.from('users').update({
-        'nutrition_target_overrides': overridesJson,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', athleteUserId);
+      await _supabase
+          .from('users')
+          .update({
+            'nutrition_target_overrides': overridesJson,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', athleteUserId);
 
       // Also update local Drift database
-      await (_database.update(_database.userProfilesTable)
-            ..where((t) => t.id.equals(athleteUserId)))
-          .write(UserProfilesTableCompanion(
-            nutritionTargetOverrides: Value(
-              overridesJson != null
-                  ? Uri.encodeFull(overridesJson.toString())
-                  : null,
-            ),
-            updatedAt: Value(DateTime.now()),
-          ));
+      await (_database.update(
+        _database.userProfilesTable,
+      )..where((t) => t.id.equals(athleteUserId))).write(
+        UserProfilesTableCompanion(
+          nutritionTargetOverrides: Value(
+            overridesJson != null
+                ? Uri.encodeFull(overridesJson.toString())
+                : null,
+          ),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
 
       _logger.info(
         'Updated athlete nutrition targets',
@@ -1480,121 +1485,6 @@ class CoachRepository with SyncableRepository {
   // ============================================================================
   // USER PROFILE OPERATIONS (for coach mode)
   // ============================================================================
-
-  /// Search users to add as athletes by name/email.
-  ///
-  /// Returns broad results from `users` so coaches can initiate relationships.
-  /// Excludes the current coach user ID from the result set.
-  Future<List<AthleteSearchResult>> searchAthletesByNameOrEmail({
-    required String query,
-    required String currentUserId,
-    int limit = 20,
-  }) async {
-    try {
-      final normalizedQuery = query.trim();
-      if (normalizedQuery.isEmpty) return const [];
-
-      // PostgREST `or` filter expression.
-      // Commas are separators in the expression, so strip from user input.
-      final safeQuery = normalizedQuery.replaceAll(',', ' ');
-      final clampedLimit = limit.clamp(1, 50).toInt();
-
-      // Split query into individual words for flexible matching.
-      final words = safeQuery
-          .split(RegExp(r'\s+'))
-          .where((w) => w.isNotEmpty)
-          .toList();
-
-      final filterParts = <String>[];
-
-      if (words.length >= 2) {
-        // Multi-word query: match first+last name combination in both orders.
-        // e.g. "Lee Martin" → first_name~Lee AND last_name~Martin, OR reversed.
-        final first = '%${words.first}%';
-        final last = '%${words.sublist(1).join(' ')}%';
-        filterParts.add('and(first_name.ilike.$first,last_name.ilike.$last)');
-        filterParts.add('and(first_name.ilike.$last,last_name.ilike.$first)');
-      }
-
-      // Also match each word individually against first_name and last_name
-      for (final word in words) {
-        final wc = '%$word%';
-        filterParts.add('first_name.ilike.$wc');
-        filterParts.add('last_name.ilike.$wc');
-      }
-
-      // Match full query against sender_name (only for single-word queries
-      // since multi-word values in PostgREST or() filters can cause parse errors).
-      if (words.length == 1) {
-        filterParts.add('sender_name.ilike.%$safeQuery%');
-      }
-
-      List<dynamic> response;
-
-      // Try with email first. Some environments may not have an `email` column
-      // in public.users, so fall back to name-only search if that fails.
-      final hasEmailFilter = words.length == 1;
-      try {
-        // Only add email filter for single-word queries (spaces break or() parsing)
-        if (hasEmailFilter) {
-          filterParts.add('email.ilike.%$safeQuery%');
-        }
-        final filterExpression = filterParts.join(',');
-        _logger.info(
-          'Searching athletes: query="$safeQuery", filter=$filterExpression',
-          context: 'COACH_REPOSITORY',
-        );
-        response = await _supabase
-            .from('users')
-            .select('id, first_name, last_name, sender_name, email')
-            .or(filterExpression)
-            .neq('id', currentUserId)
-            .limit(clampedLimit);
-      } on PostgrestException catch (e) {
-        final message = e.message.toLowerCase();
-        final referencesMissingEmailColumn =
-            message.contains('column') && message.contains('email');
-        if (!referencesMissingEmailColumn) {
-          rethrow;
-        }
-
-        // Remove the email filter part (if added) and retry without email column
-        if (hasEmailFilter) {
-          filterParts.removeLast();
-        }
-        response = await _supabase
-            .from('users')
-            .select('id, first_name, last_name, sender_name')
-            .or(filterParts.join(','))
-            .neq('id', currentUserId)
-            .limit(clampedLimit);
-      }
-
-      _logger.info(
-        'Search returned ${response.length} results for "$safeQuery"',
-        context: 'COACH_REPOSITORY',
-      );
-      return response.map((row) {
-        final data = row as Map<String, dynamic>;
-        return AthleteSearchResult(
-          userId: data['id'] as String,
-          firstName: data['first_name'] as String?,
-          lastName: data['last_name'] as String?,
-          senderName: data['sender_name'] as String?,
-          email: data['email'] as String?,
-        );
-      }).toList();
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to search athletes by name/email',
-        context: 'COACH_REPOSITORY',
-        error: e,
-        stackTrace: stackTrace,
-        data: {'query': query},
-      );
-      return const [];
-    }
-  }
 
   /// Look up a user ID by their athlete code
   /// Athlete code format: ATH-XXXXXXXX (first 8 chars of UUID, uppercase, no hyphens)
@@ -1952,20 +1842,26 @@ class CoachRepository with SyncableRepository {
       });
 
       // Also save locally
-      await _database.into(_database.athletePairingCodesTable).insertOnConflictUpdate(
-        AthletePairingCodesTableCompanion.insert(
-          id: id,
-          userId: userId,
-          code: code,
-          expiresAt: expiresAt,
-          createdAt: Value(now),
-        ),
-      );
+      await _database
+          .into(_database.athletePairingCodesTable)
+          .insertOnConflictUpdate(
+            AthletePairingCodesTableCompanion.insert(
+              id: id,
+              userId: userId,
+              code: code,
+              expiresAt: expiresAt,
+              createdAt: Value(now),
+            ),
+          );
 
       _logger.info(
         'Generated pairing code for user',
         context: 'COACH_REPOSITORY',
-        data: {'userId': userId, 'code': code, 'expiresAt': expiresAt.toIso8601String()},
+        data: {
+          'userId': userId,
+          'code': code,
+          'expiresAt': expiresAt.toIso8601String(),
+        },
       );
 
       return code;
@@ -1993,13 +1889,38 @@ class CoachRepository with SyncableRepository {
           .eq('code', normalizedCode)
           .maybeSingle();
 
-      if (response == null) return null;
+      if (response == null) {
+        _logger.warning(
+          'Pairing code not found',
+          context: 'COACH_REPOSITORY',
+          data: {'code': normalizedCode},
+        );
+        return null;
+      }
 
       final expiresAt = DateTime.parse(response['expires_at'] as String);
       final usedAt = response['used_at'];
 
-      if (usedAt != null) return null;
-      if (expiresAt.isBefore(DateTime.now().toUtc())) return null;
+      if (usedAt != null) {
+        _logger.warning(
+          'Pairing code already used',
+          context: 'COACH_REPOSITORY',
+          data: {'code': normalizedCode},
+        );
+        return null;
+      }
+
+      if (expiresAt.isBefore(DateTime.now().toUtc())) {
+        _logger.warning(
+          'Pairing code expired',
+          context: 'COACH_REPOSITORY',
+          data: {
+            'code': normalizedCode,
+            'expiresAt': expiresAt.toIso8601String(),
+          },
+        );
+        return null;
+      }
 
       return response['user_id'] as String;
     } catch (e, stackTrace) {
@@ -2134,7 +2055,10 @@ class CoachRepository with SyncableRepository {
           final first = coachRow['first_name'] as String?;
           final last = coachRow['last_name'] as String?;
           final sender = coachRow['sender_name'] as String?;
-          coachName = [first, last].where((s) => s?.isNotEmpty ?? false).join(' ');
+          coachName = [
+            first,
+            last,
+          ].where((s) => s?.isNotEmpty ?? false).join(' ');
           if (coachName.isEmpty) coachName = sender;
         }
       } catch (_) {
@@ -2170,15 +2094,18 @@ class CoachRepository with SyncableRepository {
           .eq('status', 'active');
 
       // Also update local DB
-      await (_database.update(_database.coachAthleteRelationshipsTable)
-            ..where((t) =>
+      await (_database.update(_database.coachAthleteRelationshipsTable)..where(
+            (t) =>
                 t.athleteUserId.equals(athleteUserId) &
                 t.coachUserId.equals(coachUserId) &
-                t.status.equals('active')))
-          .write(CoachAthleteRelationshipsTableCompanion(
-            status: const Value('archived'),
-            archivedAt: Value(DateTime.now().toUtc()),
-          ));
+                t.status.equals('active'),
+          ))
+          .write(
+            CoachAthleteRelationshipsTableCompanion(
+              status: const Value('archived'),
+              archivedAt: Value(DateTime.now().toUtc()),
+            ),
+          );
 
       return true;
     } catch (e, stackTrace) {

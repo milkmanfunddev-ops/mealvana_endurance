@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../application/coach_service.dart';
-import '../../domain/coach.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/coach_dashboard_controller.dart';
 import '../providers/coach_portal_controller.dart';
@@ -204,8 +201,8 @@ class PortalSidebar extends ConsumerWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              onPressed: () => _showAthleteSearchDialog(context, ref, state),
-              icon: const Icon(Icons.person_search, size: 16),
+              onPressed: () => _showAthleteCodeDialog(context, ref),
+              icon: const Icon(Icons.key, size: 16),
               label: const Text('Add Athlete'),
             ),
           ),
@@ -236,7 +233,6 @@ class PortalSidebar extends ConsumerWidget {
               onRemove: () => _confirmRemoveAthlete(context, ref, athlete),
             ),
           ),
-
       ],
     );
   }
@@ -286,22 +282,13 @@ class PortalSidebar extends ConsumerWidget {
     }
   }
 
-  Future<void> _showAthleteSearchDialog(
+  Future<void> _showAthleteCodeDialog(
     BuildContext context,
     WidgetRef ref,
-    CoachDashboardState state,
   ) async {
-    final connectedAthleteIds = {
-      ...state.activeAthletes
-          .map((relationship) => relationship.athleteUserId),
-      ...state.pendingRequests
-          .map((relationship) => relationship.athleteUserId),
-    };
-
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => _AthleteSearchDialog(
-        connectedAthleteIds: connectedAthleteIds,
+      builder: (dialogContext) => _AthleteCodeDialog(
         onInviteSuccess: () {
           ref.read(coachDashboardControllerProvider.notifier).refresh();
         },
@@ -310,129 +297,24 @@ class PortalSidebar extends ConsumerWidget {
   }
 }
 
-class _AthleteSearchDialog extends ConsumerStatefulWidget {
-  final Set<String> connectedAthleteIds;
+class _AthleteCodeDialog extends ConsumerStatefulWidget {
   final VoidCallback onInviteSuccess;
 
-  const _AthleteSearchDialog({
-    required this.connectedAthleteIds,
-    required this.onInviteSuccess,
-  });
+  const _AthleteCodeDialog({required this.onInviteSuccess});
 
   @override
-  ConsumerState<_AthleteSearchDialog> createState() =>
-      _AthleteSearchDialogState();
+  ConsumerState<_AthleteCodeDialog> createState() => _AthleteCodeDialogState();
 }
 
-class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
-  final TextEditingController _searchController = TextEditingController();
+class _AthleteCodeDialogState extends ConsumerState<_AthleteCodeDialog> {
   final TextEditingController _codeController = TextEditingController();
-  final Set<String> _invitingUserIds = <String>{};
-  Timer? _debounce;
-
-  List<AthleteSearchResult> _results = const [];
-  bool _isSearching = false;
   bool _isConnectingViaCode = false;
-  String? _error;
   String? _codeError;
 
   @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(_onSearchInputChanged);
-  }
-
-  @override
   void dispose() {
-    _searchController.removeListener(_onSearchInputChanged);
-    _searchController.dispose();
     _codeController.dispose();
-    _debounce?.cancel();
     super.dispose();
-  }
-
-  void _onSearchInputChanged() {
-    _debounce?.cancel();
-    final query = _searchController.text.trim();
-
-    if (query.length < 2) {
-      setState(() {
-        _results = const [];
-        _isSearching = false;
-        _error = null;
-      });
-      return;
-    }
-
-    _debounce = Timer(const Duration(milliseconds: 350), () {
-      _search(query);
-    });
-  }
-
-  Future<void> _search(String query) async {
-    setState(() {
-      _isSearching = true;
-      _error = null;
-    });
-
-    try {
-      final results = await ref
-          .read(coachServiceProvider)
-          .searchAthletesByNameOrEmail(query, limit: 25);
-
-      if (!mounted) return;
-      setState(() {
-        _results = results;
-        _isSearching = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isSearching = false;
-        _error = 'Search failed. Please try again.';
-      });
-    }
-  }
-
-  Future<void> _inviteAthlete(AthleteSearchResult athlete) async {
-    if (_invitingUserIds.contains(athlete.userId)) return;
-
-    setState(() {
-      _invitingUserIds.add(athlete.userId);
-    });
-
-    try {
-      final relationship = await ref
-          .read(coachServiceProvider)
-          .inviteAthlete(athleteUserId: athlete.userId);
-      if (!mounted) return;
-
-      if (relationship != null) {
-        MealvanaSnackbar.showSuccess(
-          context,
-          '${athlete.displayName} added as athlete',
-        );
-        widget.onInviteSuccess();
-        Navigator.of(context).pop();
-      } else {
-        MealvanaSnackbar.showError(
-          context,
-          'Unable to add athlete. This user may already be connected.',
-        );
-      }
-    } catch (_) {
-      if (!mounted) return;
-      MealvanaSnackbar.showError(
-        context,
-        'Failed to add athlete. Please try again.',
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _invitingUserIds.remove(athlete.userId);
-        });
-      }
-    }
   }
 
   Future<void> _connectViaCode() async {
@@ -461,7 +343,8 @@ class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
       } else {
         setState(() {
           _isConnectingViaCode = false;
-          _codeError = 'Invalid or expired code. Please check and try again.';
+          _codeError =
+              'Unable to connect this code. Check that it is active and your coach account is approved.';
         });
       }
     } catch (_) {
@@ -530,22 +413,30 @@ class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
                       hintText: 'ABC123',
                       counterText: '',
                       hintStyle: TextStyle(
-                        color: AppColors.textDarkSecondary.withValues(alpha: 0.5),
+                        color: AppColors.textDarkSecondary.withValues(
+                          alpha: 0.5,
+                        ),
                         letterSpacing: 4,
                       ),
                       filled: true,
                       fillColor: AppColors.blackberryDark,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.blackberryLight),
+                        borderSide: const BorderSide(
+                          color: AppColors.blackberryLight,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.blackberryLight),
+                        borderSide: const BorderSide(
+                          color: AppColors.blackberryLight,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: AppColors.electrolyte),
+                        borderSide: const BorderSide(
+                          color: AppColors.electrolyte,
+                        ),
                       ),
                     ),
                     onSubmitted: (_) => _connectViaCode(),
@@ -579,248 +470,21 @@ class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   _codeError!,
-                  style: const TextStyle(color: AppColors.dragonfruit, fontSize: 11),
-                ),
-              ),
-            const SizedBox(height: 16),
-            const Divider(color: AppColors.blackberryLight, height: 1),
-            const SizedBox(height: 16),
-
-            // ── Name/Email Search ──
-            const Text(
-              'Or search by name or email',
-              style: TextStyle(
-                color: AppColors.textDarkSecondary,
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _searchController,
-              style: const TextStyle(color: AppColors.cream, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Start typing a name or email...',
-                hintStyle: TextStyle(
-                  color: AppColors.textDarkSecondary.withOpacity(0.7),
-                ),
-                prefixIcon: const Icon(Icons.search, color: AppColors.inactive),
-                suffixIcon: _isSearching
-                    ? const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.electrolyte,
-                          ),
-                        ),
-                      )
-                    : null,
-                filled: true,
-                fillColor: AppColors.blackberryDark,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: AppColors.blackberryLight,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: AppColors.blackberryLight,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.electrolyte),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  _error!,
                   style: const TextStyle(
                     color: AppColors.dragonfruit,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            Flexible(child: _buildResultsView()),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultsView() {
-    final query = _searchController.text.trim();
-    if (query.length < 2) {
-      return const Center(
-        child: Text(
-          'Type at least 2 characters to search.',
-          style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
-        ),
-      );
-    }
-
-    if (_isSearching && _results.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.electrolyte),
-      );
-    }
-
-    if (_results.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Text(
-                'No users found.',
-                style: TextStyle(
-                  color: AppColors.textDarkSecondary,
-                  fontSize: 12,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Tip: Ask your athlete to generate a pairing code from their Settings > Coach Connection screen.',
-                style: TextStyle(
-                  color: AppColors.textDarkSecondary,
-                  fontSize: 11,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return ListView.separated(
-      shrinkWrap: true,
-      itemCount: _results.length,
-      separatorBuilder: (_, __) =>
-          const Divider(color: AppColors.blackberryLight, height: 1),
-      itemBuilder: (context, index) {
-        final athlete = _results[index];
-        final isConnected = widget.connectedAthleteIds.contains(athlete.userId);
-        final isInviting = _invitingUserIds.contains(athlete.userId);
-        final subtitle = athlete.email?.trim().isNotEmpty == true
-            ? athlete.email!
-            : null;
-
-        return ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 4,
-            vertical: 2,
-          ),
-          leading: CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.blackberryLight,
-            child: Text(
-              _getInitials(athlete.displayName),
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppColors.cream,
-              ),
-            ),
-          ),
-          title: Text(
-            athlete.displayName,
-            style: const TextStyle(
-              color: AppColors.cream,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          subtitle: subtitle != null
-              ? Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textDarkSecondary,
                     fontSize: 11,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                )
-              : null,
-          trailing: isConnected
-              ? const _StatusTag(
-                  label: 'Connected',
-                  color: AppColors.electrolyte,
-                )
-              : SizedBox(
-                  height: 30,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.electrolyte,
-                      foregroundColor: AppColors.blackberryDark,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      textStyle: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    onPressed: isInviting
-                        ? null
-                        : () => _inviteAthlete(athlete),
-                    child: isInviting
-                        ? const SizedBox(
-                            width: 12,
-                            height: 12,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.blackberryDark,
-                            ),
-                          )
-                        : const Text('Add'),
-                  ),
                 ),
-        );
-      },
-    );
-  }
-
-  String _getInitials(String name) {
-    final parts = name
-        .trim()
-        .split(' ')
-        .where((part) => part.isNotEmpty)
-        .toList();
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    if (parts.isEmpty) return '?';
-    return parts[0][0].toUpperCase();
-  }
-}
-
-class _StatusTag extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _StatusTag({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
+              ),
+            const SizedBox(height: 12),
+            const Text(
+              'Ask your athlete to generate this code from Settings > Coach Connection.',
+              style: TextStyle(
+                color: AppColors.textDarkSecondary,
+                fontSize: 11,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1022,4 +686,3 @@ class _AthleteListItem extends StatelessWidget {
     return parts[0].isNotEmpty ? parts[0][0].toUpperCase() : '?';
   }
 }
-
