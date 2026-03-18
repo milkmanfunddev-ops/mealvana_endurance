@@ -104,7 +104,7 @@ run_test "Running workout" '{
     "macro_targets": {
         "pre_run": {"carbs_g": 50, "protein_g": 10, "sodium_mg": 300, "water_ml": 400},
         "during_run": {"carbs_g": 60, "sodium_mg": 500, "water_ml": 800},
-        "post_run": {"carbs_g": 80, "protein_g": 25, "sodium_mg": 400, "water_ml": 600}
+        "post_run": {"carbs_g": 80, "protein_g": 25, "sodium_mg": 625, "water_ml": 1250}
     }
 }' "true"
 
@@ -126,7 +126,7 @@ run_test "Swimming workout" '{
     "macro_targets": {
         "pre_run": {"carbs_g": 40, "protein_g": 10, "sodium_mg": 200, "water_ml": 300},
         "during_run": {"carbs_g": 30, "sodium_mg": 300, "water_ml": 500},
-        "post_run": {"carbs_g": 60, "protein_g": 20, "sodium_mg": 300, "water_ml": 500}
+        "post_run": {"carbs_g": 60, "protein_g": 20, "sodium_mg": 625, "water_ml": 1250}
     }
 }' "true"
 
@@ -142,7 +142,7 @@ run_test "Brick workout (swim/run)" '{
                 {"segment_order": 2, "sport": "running", "duration_minutes": 45, "carbs_g": 40, "sodium_mg": 400, "water_ml": 500}
             ],
             "transitions": [{"transition_name": "T1", "carbs_g": 15, "sodium_mg": 100, "water_ml": 150}],
-            "after": {"carbs_g": 80, "protein_g": 25, "sodium_mg": 400, "water_ml": 600}
+            "after": {"carbs_g": 80, "protein_g": 25, "sodium_mg": 625, "water_ml": 1250}
         }
     }
 }' "true"
@@ -159,7 +159,7 @@ run_test "Brick workout (bike/run)" '{
                 {"segment_order": 2, "sport": "running", "duration_minutes": 30, "carbs_g": 30, "sodium_mg": 300, "water_ml": 400}
             ],
             "transitions": [{"transition_name": "T1", "carbs_g": 15, "sodium_mg": 100, "water_ml": 150}],
-            "after": {"carbs_g": 90, "protein_g": 30, "sodium_mg": 450, "water_ml": 700}
+            "after": {"carbs_g": 90, "protein_g": 30, "sodium_mg": 625, "water_ml": 1250}
         }
     }
 }' "true"

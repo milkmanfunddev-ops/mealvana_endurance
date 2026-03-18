@@ -379,7 +379,7 @@ Deno.test({
           macro_targets: {
             pre_run: { carbs_g: 100, protein_g: 20, sodium_mg: 500, water_ml: 800 },
             during_run: { carbs_g: 60, sodium_mg: 500, water_ml: 600 },
-            post_run: { carbs_g: 80, protein_g: 30, sodium_mg: 400, water_ml: 500 },
+            post_run: { carbs_g: 80, protein_g: 30, sodium_mg: 625, water_ml: 1250 },
           },
         }),
       },

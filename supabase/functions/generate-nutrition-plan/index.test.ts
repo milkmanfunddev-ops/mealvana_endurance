@@ -134,8 +134,8 @@ const fixtures = {
       post_run: {
         carbs_g: 60,
         protein_g: 20,
-        sodium_mg: 300,
-        water_ml: 500,
+        sodium_mg: 625,
+        water_ml: 1250,
       },
     },
     liked_foods: [],
@@ -184,8 +184,8 @@ const fixtures = {
         after: {
           carbs_g: 80,
           protein_g: 25,
-          sodium_mg: 400,
-          water_ml: 600,
+          sodium_mg: 625,
+          water_ml: 1250,
         },
       },
     },
@@ -235,8 +235,8 @@ const fixtures = {
         after: {
           carbs_g: 90,
           protein_g: 30,
-          sodium_mg: 450,
-          water_ml: 700,
+          sodium_mg: 625,
+          water_ml: 1250,
         },
       },
     },
