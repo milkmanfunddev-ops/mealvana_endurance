@@ -41,51 +41,12 @@ class BeforeSubPhase {
     }
   }
 
-  /// Auto-generated summary of foods in this sub-phase (for collapsed display)
+  /// Auto-generated summary of foods in this sub-phase (for collapsed display).
+  /// Shows food names only (no quantities) for a clean, scannable format.
   String get templateSummary {
     if (foodItems.isEmpty) return templateName ?? '';
-
     return foodItems
-        .map((f) {
-          final match = RegExp(
-            r'^([\d.]+)\s*(.*)$',
-          ).firstMatch(f.quantity.trim());
-          final numericQty = match != null
-              ? double.tryParse(match.group(1)!)
-              : null;
-          final tail = match?.group(2)?.trim() ?? '';
-
-          final baseName = _simplifyName(f.displayName ?? f.name);
-
-          if (numericQty == null) return baseName;
-
-          final qtyStr = (numericQty - numericQty.roundToDouble()).abs() < 0.01
-              ? numericQty.round().toString()
-              : numericQty.toStringAsFixed(
-                  (numericQty * 10 - (numericQty * 10).round()).abs() < 0.01
-                      ? 1
-                      : 2,
-                );
-
-          if ((numericQty - 1.0).abs() < 0.01) {
-            // For qty=1 prefer the clean food name (baseName) over the tail
-            // which may include a serving unit prefix (e.g. "packet Energy Chews").
-            return baseName;
-          }
-
-          // If quantity has a multi-word tail (e.g. "cups Oatmeal"), use it
-          if (tail.contains(' ')) {
-            return '$qtyStr ${_simplifyName(tail)}';
-          }
-
-          final pluralName = _simplifyName(
-            f.displayNamePlural ??
-                (baseName.toLowerCase().endsWith('s')
-                    ? baseName
-                    : '${baseName}s'),
-          );
-          return '$qtyStr $pluralName';
-        })
+        .map((f) => _simplifyName(f.displayName ?? f.name))
         .join(' + ');
   }
 

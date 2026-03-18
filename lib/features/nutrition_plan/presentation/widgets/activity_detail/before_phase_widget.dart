@@ -130,6 +130,10 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                         bodyWeightKg: widget.bodyWeightKg,
                         sportLabel: widget.sportLabel,
                         useImperial: widget.useImperial,
+                        foods: widget.section.subPhases
+                                ?.expand((sp) => sp.foodItems)
+                                .toList() ??
+                            widget.section.foodItems,
                       );
                     },
                   ),
@@ -337,18 +341,30 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
     );
   }
 
-  /// Centered macro summary displayed inside expanded sub-phase content
+  /// Centered macro summary displayed inside expanded sub-phase content.
+  /// Shows CARBS/FLUIDS/SODIUM to match the parent card header.
   Widget _buildCenteredMacroSummary(BeforeSubPhase subPhase) {
     int totalCarbs = 0;
-    int totalProtein = 0;
+    double totalFluidsMl = 0;
     int totalSodium = 0;
 
     for (final food in subPhase.foodItems) {
       if (food.nutritionalInfo != null) {
         totalCarbs += food.nutritionalInfo!.carbs ?? 0;
-        totalProtein += food.nutritionalInfo!.protein ?? 0;
+        totalFluidsMl += food.nutritionalInfo!.fluids ?? 0;
         totalSodium += food.nutritionalInfo!.sodium ?? 0;
       }
+    }
+
+    // Convert fluids to display unit (ml or oz)
+    final String fluidsValue;
+    final String fluidsUnit;
+    if (widget.useImperial) {
+      fluidsValue = (totalFluidsMl * 0.033814).round().toString();
+      fluidsUnit = 'oz';
+    } else {
+      fluidsValue = totalFluidsMl.round().toString();
+      fluidsUnit = 'ml';
     }
 
     return Row(
@@ -356,7 +372,7 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
       children: [
         _macroLabel('${totalCarbs}g', 'CARBS'),
         const SizedBox(width: AppSpacing.lg),
-        _macroLabel('${totalProtein}g', 'PROTEIN'),
+        _macroLabel('$fluidsValue$fluidsUnit', 'FLUIDS'),
         const SizedBox(width: AppSpacing.lg),
         _macroLabel('${totalSodium}mg', 'SODIUM'),
       ],

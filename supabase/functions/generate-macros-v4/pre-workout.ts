@@ -314,7 +314,9 @@ function scoreFormula(
   // Fill gap with add-ons — sodium-aware ordering
   let gap = carbTarget - carbs;
 
-  const bananaEligible = template.plus_banana && !state.banana_used;
+  // Prevent banana add-on if template already contains banana as a component
+  const templateHasBanana = (template.component_food_names ?? []).includes('banana');
+  const bananaEligible = template.plus_banana && !state.banana_used && !templateHasBanana;
   const drinkEligible = template.plus_sports_drink && !state.sports_drink_used;
 
   const sodiumRemaining = state.sodium_target - (state.sodium_delivered + sodium);
@@ -501,6 +503,9 @@ function pickDrink(
       const resultSodium = totalSodiumDelivered + template.sodium_mg * servings;
       const resultFluid = totalFluidDelivered + template.fluid_ml * servings;
 
+      // Hard cap: skip any combo that would push fluids past 1.5x target
+      if (fluidTarget > 0 && resultFluid > fluidTarget * 1.5) continue;
+
       const score = scoreDrinkOption(resultSodium, resultFluid, sodiumTarget, fluidTarget);
 
       if (score < bestScore) {
@@ -640,6 +645,10 @@ export function selectPreWorkoutFoods(
     }
 
     const primarySel = makeSelection(pick.template, pick.servings);
+
+    // Mark banana_used if primary or stack template contains banana as a component
+    if ((primarySel.component_food_names ?? []).includes('banana')) state.banana_used = true;
+    if ((stackSelection?.component_food_names ?? []).includes('banana')) state.banana_used = true;
 
     const totalCarbs = primarySel.carbs_g + (stackSelection?.carbs_g ?? 0)
       + pick.addOns.reduce((s, a) => s + a.carbs_g, 0);
