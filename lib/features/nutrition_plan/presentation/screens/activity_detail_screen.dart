@@ -7,7 +7,6 @@ import '../widgets/activity_detail/activity_detail_action_buttons.dart';
 import '../widgets/activity_detail/nutrition_sections_builder.dart';
 import '../widgets/activity_detail/no_nutrition_plan_state.dart';
 import '../widgets/activity_detail/single_sport_hero_image.dart';
-import '../widgets/activity_detail/activity_coach_notes_widget.dart';
 import '../widgets/activity_detail/activity_schedule_info.dart';
 import '../widgets/activity_detail/brick_header.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -209,12 +208,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         children: [
           const SizedBox(height: AppSpacing.xxl),
           _buildHeroSection(context, state),
-
-          // Coach notes from TrainingPeaks / Final Surge
-          if (activity.syncedFromProvider != null &&
-              activity.notes != null &&
-              activity.notes!.trim().isNotEmpty)
-            ActivityCoachNotesWidget(activity: activity),
 
           const SizedBox(height: AppSpacing.lg),
 
@@ -615,33 +608,19 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
 
   /// Handle regenerate plan button tap for stale nutrition plans
-  Future<void> _handleRegeneratePlan(
+  ///
+  /// Navigates to NewActivityScreen with activity details pre-filled so the
+  /// user goes through the full plan creation flow (v2/v3 edge functions).
+  void _handleRegeneratePlan(
     BuildContext context,
     ActivityDetailState state,
-  ) async {
+  ) {
     if (state.activity == null) {
-      if (mounted) {
-        MealvanaSnackbar.showError(context, 'Activity not found');
-      }
+      MealvanaSnackbar.showError(context, 'Activity not found');
       return;
     }
 
-    final controller = _getControllerNotifier();
-    final success = await controller.regenerateNutritionPlan();
-
-    if (mounted) {
-      if (success) {
-        MealvanaSnackbar.showSuccess(
-          context,
-          'Nutrition plan regenerated successfully!',
-        );
-      } else {
-        MealvanaSnackbar.showError(
-          context,
-          'Failed to regenerate nutrition plan. Please try again.',
-        );
-      }
-    }
+    _navigateToGeneratePlan(context, state.activity);
   }
 
   /// Show dialog to save the current activity's nutrition plan as a template

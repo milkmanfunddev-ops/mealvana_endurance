@@ -133,7 +133,7 @@ class SharedFoodSearchService {
       case 'electrolytes':
       case 'drink mix':
       case 'drink mixes':
-        return 'hydration_mix';
+        return 'drink_mix';
       case 'chews':
       case 'chews & gummies':
         return 'chew';
@@ -142,11 +142,11 @@ class SharedFoodSearchService {
       case 'protein':
       case 'recovery':
       case 'protein bars':
-        return 'protein';
+        return 'protein_recovery';
       case 'snacks':
-        return 'snack';
+        return 'solid_carb_snacks';
       case 'meal replacement':
-        return 'meal_replacement';
+        return 'real_food';
       default:
         return 'import';
     }

@@ -420,13 +420,13 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: NewActivityAppBar(isDark: isDark),
-      body: Stack(
-        children: [
-          // Main scrollable content
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              behavior: HitTestBehavior.opaque,
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          children: [
+            // Main scrollable content
+            Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -462,26 +462,20 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
                     // Sport-specific form fields (full width)
                     _buildFormFields(coordinatorState),
 
-                    // Add padding at bottom for the sticky button
-                    const SizedBox(height: 120),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
             ),
-          ),
 
-          // Action Buttons (fixed at bottom)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _buildBottomButtons(
+            // Action Buttons (fixed at bottom)
+            _buildBottomButtons(
               context,
               coordinator,
               coordinatorState,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

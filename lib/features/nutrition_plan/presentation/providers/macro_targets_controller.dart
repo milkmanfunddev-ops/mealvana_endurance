@@ -1699,7 +1699,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             paceTargetMinutesPerMile:
                 macroTargets.metrics.paceMinPerMile ??
                 existingActivity.paceTargetMinutesPerMile,
-            notes: 'Finalized nutrition plan',
+            notes: existingActivity.notes,
             updatedAt: DateTime.now(),
           );
 

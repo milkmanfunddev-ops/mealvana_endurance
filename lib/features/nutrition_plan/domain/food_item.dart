@@ -305,7 +305,7 @@ class NutritionInfo {
   /// Sugar in grams per serving
   final double sugar;
 
-  /// Fluid content in fluid ounces per serving
+  /// Fluid content in milliliters per serving
   final double fluids;
 
   NutritionInfo({

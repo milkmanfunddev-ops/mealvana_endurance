@@ -154,14 +154,12 @@ class _NutritionSectionsBuilderState
         Color sectionColor;
 
         if (section.id.contains('during')) {
-          switch (activityType) {
-            case ActivityType.cycling:
-              category = 'during_cycling';
-            case ActivityType.swimming:
-              category = 'during_swim';
-            default:
-              category = 'during_run';
-          }
+          // Always use 'during_run' as the category for single-sport plans.
+          // The plan data (from nutrition_plan_mapper) always stores 'during_run'
+          // as the section ID regardless of sport type. Using the same category
+          // ensures a direct match when adding/swapping/deleting foods.
+          // The display title is generated independently via activityType.getSectionTitle().
+          category = 'during_run';
           sectionColor = isDark
               ? AppColors.electrolyte
               : AppColors.electrolyteDark;

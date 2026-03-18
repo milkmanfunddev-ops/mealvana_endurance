@@ -158,6 +158,20 @@ class FinalSurgeTransformer {
       updatedAt: now,
     );
 
+    if (kDebugMode) {
+      print('🏁 FS TRANSFORM RESULT:');
+      print('   Title: ${activity.title}');
+      print('   Type: ${activity.activityType}');
+      print('   Raw PlannedDistance: ${workout['PlannedDistance']} (${workout['PlannedDistanceType']})');
+      print('   Raw PlannedTime: ${workout['PlannedTime']} seconds');
+      print('   Raw ActualDistanceMeters: ${workout['ActualDistanceMeters']}');
+      print('   Raw ActualTime: ${workout['ActualTime']}');
+      print('   → Final distanceMiles: $distanceMiles');
+      print('   → Final durationMinutes: $durationMinutes');
+      print('   → Final pace: ${paceResult.targetPace} min/mi');
+      print('   → Notes: ${activity.notes != null ? activity.notes!.substring(0, activity.notes!.length > 50 ? 50 : activity.notes!.length) : 'null'}');
+    }
+
     // Infer intensity distribution: prefer structured data, fall back to heuristics
     final intensityDistribution = structuredData != null
         ? _parseStructuredWorkout(structuredData) ?? _inferIntensityDistribution(workout)

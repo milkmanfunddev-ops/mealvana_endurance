@@ -129,10 +129,14 @@ enum ActivityType {
       case 'during':
       case 'during_run':
       case 'during-run':
+      case 'during_cycling':
+      case 'during_swim':
         return 'During $activityWord';
       case 'after':
       case 'after_run':
       case 'after-run':
+      case 'after_cycling':
+      case 'after_swim':
       case 'post-run':
       case 'post':
         return 'After $activityWord';

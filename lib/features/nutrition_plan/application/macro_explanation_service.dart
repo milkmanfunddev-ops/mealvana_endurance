@@ -192,7 +192,7 @@ class MacroExplanationService {
           ? (pre.fluidsHighMl != null ? (pre.fluidsHighMl! * 0.033814).round().toString() : null)
           : pre.fluidsHighMl?.round().toString(),
       actualValue: actuals != null
-          ? '${useImperial ? (actuals['fluids'] ?? 0) : (actuals['fluids'] ?? 0)}'
+          ? '${useImperial ? ((actuals['fluids'] ?? 0) * 0.033814).round() : actuals['fluids'] ?? 0}'
           : null,
       formulaText: mealType == 'top-up'
           ? 'A fixed 250mL (about 8oz) tops off your hydration in the '
@@ -310,7 +310,7 @@ class MacroExplanationService {
           ? (during.fluidsHighMl != null ? (during.fluidsHighMl! * 0.033814).round().toString() : null)
           : during.fluidsHighMl?.round().toString(),
       actualValue: actuals != null
-          ? '${actuals['fluids'] ?? 0}'
+          ? '${useImperial ? ((actuals['fluids'] ?? 0) * 0.033814).round() : actuals['fluids'] ?? 0}'
           : null,
       formulaText: 'We replace about 75% of your sweat losses during activity.\n\n'
           'Formula:  sweat_rate  x  0.75  x  duration\n'
@@ -447,7 +447,7 @@ class MacroExplanationService {
         macroName: 'Fluids',
         value: '$water',
         unit: 'mL',
-        actualValue: actuals != null ? '${actuals['fluids'] ?? 0}' : null,
+        actualValue: actuals != null ? '${(actuals['fluids'] ?? 0)}' : null,
         formulaText: 'A small drink during transition to stay on top of '
             'hydration without overfilling your stomach.\n\n'
             'Formula:  fixed ${water}mL (${isT1 ? "T1" : "T2"} transition)',

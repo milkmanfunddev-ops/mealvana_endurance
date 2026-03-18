@@ -981,8 +981,8 @@ function calculateBrickPhaseBreakdown(segments, weightKg, duringCarbs, beforeCar
       carbs_g: Math.round(afterCarbs),
       protein_g: Math.round(afterProtein),
       fat_g: 10,
-      sodium_mg: 300,
-      water_ml: 500,
+      sodium_mg: 625,
+      water_ml: 1250,
     },
   };
 
@@ -1113,7 +1113,7 @@ function calculateBrickMacros(input) {
   // 5. Calculate total macros
   const duringCarbs = finalCarbRate * totalDurationH;
   const beforeCarbs = weightKg * 1.5; // 1-2g/kg, use 1.5
-  const afterCarbs = weightKg * 1.0; // 1g/kg for recovery
+  const afterCarbs = totalDurationH > 2 ? weightKg * 1.2 : weightKg * 1.0; // 1-1.2g/kg for recovery
 
   const beforeProtein = 10; // Light protein before
   const afterProtein = weightKg * 0.3; // 0.3g/kg post
@@ -1305,7 +1305,7 @@ serve(async (req)=>{
         // Post-activity (normalize post_ride_* to post_run_*)
         post_run_carbs_g: cyclingMacros.post_ride_carbs_g,
         post_run_protein_g: cyclingMacros.post_ride_protein_g,
-        post_run_water_ml: cyclingMacros.pre_ride_water_ml,
+        post_run_water_ml: 1250,
         post_run_sodium_mg: 625
       };
       console.log('✅ DEBUG: Calculated cycling macros successfully:', {
@@ -1382,7 +1382,7 @@ serve(async (req)=>{
         // Post-activity (normalize post_swim_* to post_run_*)
         post_run_carbs_g: swimmingMacros.post_swim_carbs_g,
         post_run_protein_g: swimmingMacros.post_swim_protein_g,
-        post_run_water_ml: swimmingMacros.pre_swim_water_ml,
+        post_run_water_ml: 1250,
         post_run_sodium_mg: 625
       };
       console.log('✅ DEBUG: Calculated swimming macros successfully:', {

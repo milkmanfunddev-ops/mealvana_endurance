@@ -33,7 +33,7 @@ export const cyclingConfig: SportConfig = {
       maxFoods: 4,
       defaultMaxServings: 2,
       maxServingsCap: 3,
-      priorities: ['protein', 'carbs'],
+      priorities: ['protein', 'carbs', 'hydration'],
     },
   },
 

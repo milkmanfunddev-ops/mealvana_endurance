@@ -243,32 +243,13 @@ class EmailAuthService extends _$EmailAuthService {
         'email_confirmed': response.user!.emailConfirmedAt != null,
       });
 
-      // Check for temp user ID from onboarding (used before email registration)
-      // Activities synced from Training Peaks / Final Surge during onboarding are
-      // stored locally under this temp UUID and need to be migrated to the real user.
-      final prefs = ref.read(sharedPreferencesProvider);
-      final tempUserId = prefs.getString('onboarding_temp_user_id');
-
-      _logger.info('Checking for onboarding temp user', context: 'EMAIL_AUTH', data: {
-        'has_temp_user_id': tempUserId != null,
-        'temp_user_id': tempUserId,
-      });
-
-      // Complete authentication (creates UserProfile + migrates temp data if present)
-      final authMigrationService = await ref.read(authMigrationServiceProvider.future);
-      await authMigrationService.completeAuthentication(
-        previousUserId: tempUserId, // Migrate data from temp onboarding user
-        wasAnonymous: tempUserId != null, // Trigger migration when temp user exists
-        newUserId: newUserId,
-        authProvider: 'email',
-        preservedUserId: false, // New user ID created
-      );
-
-      // Clear the temp user ID after successful migration
-      if (tempUserId != null) {
-        await prefs.remove('onboarding_temp_user_id');
-        _logger.info('Cleared onboarding temp user ID after migration', context: 'EMAIL_AUTH');
-      }
+      // NOTE: Do NOT call completeAuthentication() or clear onboarding_temp_user_id here.
+      // During onboarding, activities/integrations synced from Final Surge / Training Peaks
+      // are stored locally under a temp UUID and were never uploaded to Supabase.
+      // completeAuthentication() checks Supabase for data (finds none) and skips migration.
+      // Instead, onboardingController.saveAllOnboardingData() handles migration via
+      // _migrateOnboardingDataToNewUser() which correctly migrates LOCAL database data
+      // and clears the temp user ID afterward.
 
       // CRITICAL: Invalidate userIdProvider to force re-read with new user
       ref.invalidate(userIdProvider);

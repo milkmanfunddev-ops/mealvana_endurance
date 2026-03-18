@@ -252,9 +252,10 @@ class ActivityDetailController extends _$ActivityDetailController {
         return;
       }
 
-      // Update activity with nutrition plan JSON
+      // Update activity with nutrition plan JSON and clear stale flag
       final updatedActivity = activity.copyWith(
         nutritionPlanData: plan.toJson(),
+        needsNutritionRefresh: false,
         updatedAt: DateTime.now(),
       );
 

@@ -56,15 +56,22 @@ class ActivitiesController extends _$ActivitiesController {
     return localData;
   }
 
-  /// Background sync: ensures data is fresh, then refreshes UI
+  /// Background sync: ensures data is fresh, then refreshes UI only when data was stale
   Future<void> _backgroundSync(String userId) async {
     try {
+      final repo = ref.read(activitiesRepositoryProvider);
+      final wasStale = await repo.isStale();
       await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
             'activities',
             userId,
-            repository: ref.read(activitiesRepositoryProvider),
+            repository: repo,
           );
-      ref.invalidateSelf();
+      // Only refresh UI if data was actually stale and got synced.
+      // Without this guard, invalidateSelf triggers build() which calls
+      // _backgroundSync again, creating an infinite loop.
+      if (wasStale) {
+        ref.invalidateSelf();
+      }
     } catch (e, stackTrace) {
       _logger.error(
         'Background sync failed',

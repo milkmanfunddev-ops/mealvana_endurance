@@ -47,24 +47,23 @@ class CategoryMatcher {
         return false;
       }
 
-      // Match sport from title
+      // Match sport from title (positive match only - fall through on miss
+      // to handle single-sport plans where section ID/title may be generic)
       if (sportSuffix == 'swim' || sportSuffix == 'swimming') {
-        return titleLower.contains('swim');
+        if (titleLower.contains('swim')) return true;
       }
       if (sportSuffix == 'cycling' ||
           sportSuffix == 'bike' ||
           sportSuffix == 'ride') {
-        return titleLower.contains('bike') ||
+        if (titleLower.contains('bike') ||
             titleLower.contains('cycle') ||
-            titleLower.contains('ride');
+            titleLower.contains('ride')) return true;
       }
       if (sportSuffix == 'run' || sportSuffix == 'running') {
-        // For 'during_run', match any during section that contains 'run' OR
-        // any during section that doesn't contain swim/bike/cycle (backward compat)
-        return titleLower.contains('run') ||
+        if (titleLower.contains('run') ||
             (!titleLower.contains('swim') &&
                 !titleLower.contains('bike') &&
-                !titleLower.contains('cycle'));
+                !titleLower.contains('cycle'))) return true;
       }
     }
 
