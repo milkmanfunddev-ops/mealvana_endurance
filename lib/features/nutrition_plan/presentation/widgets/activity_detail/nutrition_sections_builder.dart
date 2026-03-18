@@ -328,7 +328,7 @@ class _NutritionSectionsBuilderState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle(context, title, category, sectionColor, useImperial),
+          _buildSectionTitle(context, title, category, sectionColor, useImperial, section),
           const SizedBox(height: AppSpacing.md),
           MacroSummaryRow(
             foods: section.foodItems,
@@ -460,6 +460,7 @@ class _NutritionSectionsBuilderState
     String category,
     Color sectionColor,
     bool useImperial,
+    PlanSection section,
   ) {
     final mt = widget.state.macroTargets;
     final activityType =
@@ -499,6 +500,7 @@ class _NutritionSectionsBuilderState
                   bodyWeightKg: bodyWeightKg,
                   sportLabel: activityType.displayName,
                   useImperial: useImperial,
+                  foods: section.foodItems,
                 );
               },
             ),

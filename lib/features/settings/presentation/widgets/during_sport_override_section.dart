@@ -41,8 +41,9 @@ class DuringSportOverrideSection extends StatelessWidget {
               Expanded(
                 child: Text(
                   'During $sportLabel (per hour)',
-                  style: AppTextStyles.subtitle.copyWith(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../application/macro_explanation_service.dart';
+import '../../../domain/food_item_data.dart';
 import '../../../domain/macro_targets.dart';
 
 /// Bottom sheet that explains how nutrition targets were calculated for a given phase.
@@ -16,6 +17,7 @@ class PhaseExplanationSheet extends StatefulWidget {
     required this.bodyWeightKg,
     this.sportLabel,
     this.useImperial = false,
+    this.foods,
   });
 
   final ExplanationPhase phase;
@@ -23,6 +25,7 @@ class PhaseExplanationSheet extends StatefulWidget {
   final double bodyWeightKg;
   final String? sportLabel;
   final bool useImperial;
+  final List<FoodItemData>? foods;
 
   /// Show the explanation sheet as a modal bottom sheet.
   static void show(
@@ -32,6 +35,7 @@ class PhaseExplanationSheet extends StatefulWidget {
     required double bodyWeightKg,
     String? sportLabel,
     bool useImperial = false,
+    List<FoodItemData>? foods,
   }) {
     showModalBottomSheet<void>(
       context: context,
@@ -43,6 +47,7 @@ class PhaseExplanationSheet extends StatefulWidget {
         bodyWeightKg: bodyWeightKg,
         sportLabel: sportLabel,
         useImperial: useImperial,
+        foods: foods,
       ),
     );
   }
@@ -70,14 +75,44 @@ class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
     }
   }
 
+  /// Compute actual food totals from the provided food items
+  Map<String, int>? _computeActuals() {
+    final foods = widget.foods;
+    if (foods == null || foods.isEmpty) return null;
+
+    int carbs = 0;
+    int protein = 0;
+    int sodium = 0;
+    int fluids = 0;
+
+    for (final food in foods) {
+      final info = food.nutritionalInfo;
+      if (info != null) {
+        carbs += info.carbs ?? 0;
+        protein += info.protein ?? 0;
+        sodium += info.sodium ?? 0;
+        fluids += (info.fluids ?? 0).round();
+      }
+    }
+
+    return {
+      'carbs': carbs,
+      'protein': protein,
+      'sodium': sodium,
+      'fluids': fluids,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = _service.getSheetTitle(widget.phase, widget.sportLabel);
+    final actuals = _computeActuals();
     final explanations = _service.getExplanations(
       phase: widget.phase,
       macroTargets: widget.macroTargets,
       bodyWeightKg: widget.bodyWeightKg,
       useImperial: widget.useImperial,
+      actuals: actuals,
     );
 
     return DraggableScrollableSheet(
@@ -183,12 +218,27 @@ class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      explanation.displayHeader,
-                      style: AppTextStyles.subtitle.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          explanation.displayHeader,
+                          style: AppTextStyles.sectionTitle.copyWith(
+                            fontSize: 15,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        if (explanation.displaySubHeader != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            explanation.displaySubHeader!,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              fontSize: 13,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   Icon(

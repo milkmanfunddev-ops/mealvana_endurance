@@ -43,8 +43,8 @@ export interface PreWorkoutTemplate {
 // ============================================================================
 
 export interface PlanState {
-  banana_used: boolean;
-  sports_drink_used: boolean;
+  used_foods: Set<string>;          // All component food names used across phases
+  sports_drink_used: boolean;       // Limits sports drink ADD-ON to one across all phases
   used_categories: Set<string>;
   sodium_delivered: number;
   fluid_delivered: number;
@@ -69,9 +69,9 @@ export interface ScoredFormula {
 export const BANANA_CARBS = 27;
 export const BANANA_SODIUM = 1;
 export const BANANA_FLUID = 0;
-export const SPORTS_DRINK_CARBS = 17;
-export const SPORTS_DRINK_SODIUM = 230;
-export const SPORTS_DRINK_FLUID = 240;
+export const SPORTS_DRINK_CARBS = 15;    // per 1 cup (8 oz)
+export const SPORTS_DRINK_SODIUM = 100;   // per 1 cup (8 oz)
+export const SPORTS_DRINK_FLUID = 240;    // per 1 cup (8 oz)
 
 // ============================================================================
 // Algorithm Output Types
@@ -82,6 +82,7 @@ export interface AddOn {
   carbs_g: number;
   sodium_mg: number;
   fluid_ml: number;
+  servings: number;        // 1 for banana; 0.5, 1, or 2 cups for sports drink
 }
 
 export interface TemplateSelection {

@@ -221,6 +221,7 @@ class _DuringPhaseSectionWidgetState
                   bodyWeightKg: widget.bodyWeightKg,
                   sportLabel: widget.sportLabel,
                   useImperial: widget.useImperial,
+                  foods: widget.section.foodItems,
                 );
               },
             ),

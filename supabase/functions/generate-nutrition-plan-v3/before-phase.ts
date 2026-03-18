@@ -202,9 +202,10 @@ function selectionToFoodResults(
 
 function addOnToFoodResult(addOn: AddOn, timing: string): FoodResult {
   const isBanana = addOn.type === 'banana';
+  const servings = addOn.servings ?? 1;
   return {
     food_id: `addon_${addOn.type}`,
-    quantity: 1,
+    quantity: servings,
     carbs_grams: addOn.carbs_g,
     protein_grams: 0,
     fat_grams: 0,
@@ -212,6 +213,7 @@ function addOnToFoodResult(addOn: AddOn, timing: string): FoodResult {
     fluids_ml: addOn.fluid_ml,
     calories: Math.round(addOn.carbs_g * 4),
     display_name: isBanana ? 'Banana' : 'Sports Drink',
+    display_name_plural: isBanana ? 'Bananas' : 'cups Sports Drink',
     serving_size: isBanana ? '1 medium' : '1 cup (8 oz)',
     timing,
     is_drink: !isBanana,

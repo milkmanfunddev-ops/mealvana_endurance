@@ -287,6 +287,7 @@ class BrickNutritionSections extends StatelessWidget {
             isTransition,
             sectionColor,
             section.id,
+            section,
             isDark: isDark,
           ),
           if (section.subtitle != null) ...[
@@ -357,7 +358,8 @@ class BrickNutritionSections extends StatelessWidget {
     String? sportType,
     bool isTransition,
     Color sectionColor,
-    String sectionId, {
+    String sectionId,
+    PlanSection section, {
     required bool isDark,
   }) {
     return Row(
@@ -404,6 +406,7 @@ class BrickNutritionSections extends StatelessWidget {
                   bodyWeightKg: bodyWeightKg,
                   sportLabel: sportLabel,
                   useImperial: useImperial,
+                  foods: section.foodItems,
                 );
               },
             ),

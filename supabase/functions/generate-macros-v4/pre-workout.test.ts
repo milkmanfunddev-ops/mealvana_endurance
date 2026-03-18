@@ -498,7 +498,46 @@ describe('Pre-Workout V4 Integration Tests', () => {
     });
   });
 
-  // ─── Test 7: Phase Splitting ───────────────────────────────────────────
+  // ─── Test 7: Variable Sports Drink Add-On ────────────────────────────
+
+  describe('Variable Sports Drink Add-On', () => {
+    it('should produce sports drink add-ons with valid servings (0.5, 1, or 2)', () => {
+      const weights = [54, 64, 73, 82, 91];
+      const timings = [3.0, 2.5, 1.5];
+
+      for (const weight of weights) {
+        for (const timing of timings) {
+          const targets = calculatePreWorkoutTargets(weight, timing, false, 'medium', 'moderate');
+          const results = selectPreWorkoutFoods(
+            targets, timing, 'none',
+            ALL_FOOD_TEMPLATES, ALL_DRINK_TEMPLATES, ALL_ELECTROLYTE_TEMPLATES,
+          );
+
+          for (const phase of results) {
+            for (const addOn of phase.add_ons) {
+              if (addOn.type === 'sports_drink') {
+                assert(
+                  [0.5, 1, 2].includes(addOn.servings),
+                  `Sports drink add-on servings should be 0.5, 1, or 2, got ${addOn.servings}`,
+                );
+                // Verify nutrition scales with servings
+                assert(
+                  addOn.carbs_g > 0,
+                  `Sports drink carbs should be > 0 for ${addOn.servings} servings`,
+                );
+                assert(
+                  addOn.fluid_ml > 0,
+                  `Sports drink fluid should be > 0 for ${addOn.servings} servings`,
+                );
+              }
+            }
+          }
+        }
+      }
+    });
+  });
+
+  // ─── Test 8: Phase Splitting ───────────────────────────────────────────
 
   describe('Phase Splitting', () => {
     it('should have 3 phases for >= 2.5 hours', () => {

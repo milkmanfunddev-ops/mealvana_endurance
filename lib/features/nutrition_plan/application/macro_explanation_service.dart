@@ -5,17 +5,16 @@ import '../domain/macro_targets.dart';
 class MacroExplanation {
   const MacroExplanation({
     required this.macroName,
-    required this.icon,
     required this.value,
     required this.unit,
     this.rangeLow,
     this.rangeHigh,
     required this.formulaText,
     required this.rangeRationale,
+    this.actualValue,
   });
 
   final String macroName;
-  final String icon;
   final String value;
   final String unit;
   final String? rangeLow;
@@ -23,11 +22,22 @@ class MacroExplanation {
   final String formulaText;
   final String rangeRationale;
 
+  /// The actual food total (e.g. "194") when foods are provided
+  final String? actualValue;
+
+  /// Header: "Carbohydrates: 194g" (actual) or "Carbohydrates: 191g" (target)
   String get displayHeader {
+    final displayVal = actualValue ?? value;
+    return '$macroName: $displayVal$unit';
+  }
+
+  /// Sub-header shown when actuals are present: "Target: 191g (range: 167-215g)"
+  String? get displaySubHeader {
+    if (actualValue == null) return null;
     final rangeStr = (rangeLow != null && rangeHigh != null)
-        ? ' ($rangeLow-$rangeHigh$unit)'
+        ? ' (range: $rangeLow-$rangeHigh$unit)'
         : '';
-    return '$icon $macroName: $value$unit$rangeStr';
+    return 'Target: $value$unit$rangeStr';
   }
 }
 
@@ -65,23 +75,27 @@ class MacroExplanationService {
   }
 
   /// Generate explanations for all macros in a given phase.
+  ///
+  /// [actuals] - optional map of actual food totals keyed by macro name
+  /// (e.g. {'carbs': 194, 'protein': 25, 'sodium': 450, 'fluids': 600})
   List<MacroExplanation> getExplanations({
     required ExplanationPhase phase,
     required MacroTargets macroTargets,
     required double bodyWeightKg,
     bool useImperial = false,
+    Map<String, int>? actuals,
   }) {
     switch (phase) {
       case ExplanationPhase.before:
-        return _beforeExplanations(macroTargets, bodyWeightKg, useImperial);
+        return _beforeExplanations(macroTargets, bodyWeightKg, useImperial, actuals);
       case ExplanationPhase.during:
-        return _duringExplanations(macroTargets, bodyWeightKg, useImperial);
+        return _duringExplanations(macroTargets, bodyWeightKg, useImperial, actuals);
       case ExplanationPhase.after:
-        return _afterExplanations(macroTargets, bodyWeightKg, useImperial);
+        return _afterExplanations(macroTargets, bodyWeightKg, useImperial, actuals);
       case ExplanationPhase.transition1:
-        return _transitionExplanations(1);
+        return _transitionExplanations(1, actuals);
       case ExplanationPhase.transition2:
-        return _transitionExplanations(2);
+        return _transitionExplanations(2, actuals);
     }
   }
 
@@ -127,6 +141,7 @@ class MacroExplanationService {
     MacroTargets mt,
     double weightKg,
     bool useImperial,
+    Map<String, int>? actuals,
   ) {
     final pre = mt.preRun;
     final hoursBeforeEst = weightKg > 0
@@ -145,11 +160,11 @@ class MacroExplanationService {
     // Carbs — same formula for all sports
     explanations.add(MacroExplanation(
       macroName: 'Carbohydrates',
-      icon: '\u{1F35E}',
       value: '${pre.carbsG.round()}',
       unit: 'g',
       rangeLow: pre.carbsLowG?.round().toString(),
       rangeHigh: pre.carbsHighG?.round().toString(),
+      actualValue: actuals != null ? '${actuals['carbs'] ?? 0}' : null,
       formulaText: 'Your pre-workout carb target scales with your body weight '
           'and how far out you eat before your activity.\n\n'
           'Formula:  weight  x  hours_before g/kg\n'
@@ -162,33 +177,12 @@ class MacroExplanationService {
           'gives you flexibility to hit your goal with real food portions.',
     ));
 
-    // Protein
-    final proteinPerKg = mealType == 'full meal' ? 0.25 : (mealType == 'snack' ? 0.15 : 0.0);
-    final proteinLabel = mealType == 'full meal'
-        ? '0.25 g/kg (full meal)'
-        : (mealType == 'snack' ? '0.15 g/kg (snack)' : '0 g/kg (top-up)');
-    explanations.add(MacroExplanation(
-      macroName: 'Protein',
-      icon: '\u{1F969}',
-      value: '${pre.proteinG.round()}',
-      unit: 'g',
-      rangeLow: pre.proteinLowG?.round().toString(),
-      rangeHigh: pre.proteinHighG?.round().toString(),
-      formulaText: 'A moderate amount of protein with your pre-workout $mealType helps '
-          'you feel satisfied without slowing digestion.\n\n'
-          'Formula:  weight  x  $proteinLabel\n'
-          '${wt}kg  x  $proteinPerKg g/kg  =  ${pre.proteinG.round()}g',
-      rangeRationale: 'Keep it moderate — too much protein before exercise '
-          'can cause stomach discomfort.',
-    ));
-
-    // Fluids
+    // Fluids (Before: Carbs, Fluids, Sodium — no Protein)
     final fluidsVal = useImperial ? pre.fluidsFlOz.round() : pre.fluidsMl.round();
     final fluidsUnit = useImperial ? 'oz' : 'mL';
     final fluidsMlPerKg = mealType == 'full meal' ? 6.5 : (mealType == 'snack' ? 5.5 : 0.0);
     explanations.add(MacroExplanation(
       macroName: 'Fluids',
-      icon: '\u{1F4A7}',
       value: '$fluidsVal',
       unit: fluidsUnit,
       rangeLow: useImperial
@@ -197,6 +191,9 @@ class MacroExplanationService {
       rangeHigh: useImperial
           ? (pre.fluidsHighMl != null ? (pre.fluidsHighMl! * 0.033814).round().toString() : null)
           : pre.fluidsHighMl?.round().toString(),
+      actualValue: actuals != null
+          ? '${useImperial ? (actuals['fluids'] ?? 0) : (actuals['fluids'] ?? 0)}'
+          : null,
       formulaText: mealType == 'top-up'
           ? 'A fixed 250mL (about 8oz) tops off your hydration in the '
               'final minutes before your workout.\n\n'
@@ -212,11 +209,11 @@ class MacroExplanationService {
     // Sodium
     explanations.add(MacroExplanation(
       macroName: 'Sodium',
-      icon: '\u{1F9C2}',
       value: '${pre.sodiumMg.round()}',
       unit: 'mg',
       rangeLow: pre.sodiumLowMg?.round().toString(),
       rangeHigh: pre.sodiumHighMg?.round().toString(),
+      actualValue: actuals != null ? '${actuals['sodium'] ?? 0}' : null,
       formulaText: 'Sodium helps your body absorb and retain the fluids you drink '
           'before your workout.\n\n'
           'Formula:  base_sodium (by sweat level)  +  environment_bump\n'
@@ -238,6 +235,7 @@ class MacroExplanationService {
     MacroTargets mt,
     double weightKg,
     bool useImperial,
+    Map<String, int>? actuals,
   ) {
     final during = mt.duringRun;
     final durationH = mt.metrics.durationH;
@@ -260,9 +258,9 @@ class MacroExplanationService {
     if (sport == ActivityType.swimming) {
       explanations.add(MacroExplanation(
         macroName: 'Carbohydrates',
-        icon: '\u{1F35E}',
         value: '0',
         unit: 'g',
+        actualValue: actuals != null ? '${actuals['carbs'] ?? 0}' : null,
         formulaText: 'No carb fueling is possible during swimming — '
             'you can\'t eat or drink while in the water.\n\n'
             'Swimming carb ceiling: 0 g/hr.',
@@ -277,11 +275,11 @@ class MacroExplanationService {
         : '';
     explanations.add(MacroExplanation(
       macroName: 'Carbohydrates',
-      icon: '\u{1F35E}',
       value: '${during.carbTotalG.round()}',
       unit: 'g',
       rangeLow: during.carbsLowG?.round().toString(),
       rangeHigh: during.carbsHighG?.round().toString(),
+      actualValue: actuals != null ? '${actuals['carbs'] ?? 0}' : null,
       formulaText: 'Your fueling rate is determined by your activity duration, '
           'gut training level, and sport.\n\n'
           '1. Duration band (${durationMin.round()} min):  $bandLow–$bandHigh g/hr\n'
@@ -303,7 +301,6 @@ class MacroExplanationService {
     final fluidsUnit = useImperial ? 'oz' : 'mL';
     explanations.add(MacroExplanation(
       macroName: 'Fluids',
-      icon: '\u{1F4A7}',
       value: '$fluidsVal',
       unit: fluidsUnit,
       rangeLow: useImperial
@@ -312,6 +309,9 @@ class MacroExplanationService {
       rangeHigh: useImperial
           ? (during.fluidsHighMl != null ? (during.fluidsHighMl! * 0.033814).round().toString() : null)
           : during.fluidsHighMl?.round().toString(),
+      actualValue: actuals != null
+          ? '${actuals['fluids'] ?? 0}'
+          : null,
       formulaText: 'We replace about 75% of your sweat losses during activity.\n\n'
           'Formula:  sweat_rate  x  0.75  x  duration\n'
           '${during.fluidRateMlPerH.round()} mL/hr  x  ${durationH.toStringAsFixed(1)}h  =  ${during.fluidTotalMl.round()}mL\n\n'
@@ -324,11 +324,11 @@ class MacroExplanationService {
     // Sodium
     explanations.add(MacroExplanation(
       macroName: 'Sodium',
-      icon: '\u{1F9C2}',
       value: '${during.sodiumTotalMg.round()}',
       unit: 'mg',
       rangeLow: during.sodiumLowMg?.round().toString(),
       rangeHigh: during.sodiumHighMg?.round().toString(),
+      actualValue: actuals != null ? '${actuals['sodium'] ?? 0}' : null,
       formulaText: 'We replace about 60% of your sweat sodium losses.\n\n'
           'Formula:  sweat_rate  x  sodium_conc  x  0.60  x  duration\n'
           '${during.sodiumRateMgPerH.round()} mg/hr  x  ${durationH.toStringAsFixed(1)}h  =  ${during.sodiumTotalMg.round()}mg\n\n'
@@ -348,6 +348,7 @@ class MacroExplanationService {
     MacroTargets mt,
     double weightKg,
     bool useImperial,
+    Map<String, int>? actuals,
   ) {
     final post = mt.postRun;
     final durationH = mt.metrics.durationH;
@@ -364,11 +365,11 @@ class MacroExplanationService {
         : '  (1.0x — standard recovery)';
     explanations.add(MacroExplanation(
       macroName: 'Carbohydrates',
-      icon: '\u{1F35E}',
       value: '${post.carbsG.round()}',
       unit: 'g',
       rangeLow: post.carbsLowG?.round().toString(),
       rangeHigh: post.carbsHighG?.round().toString(),
+      actualValue: actuals != null ? '${actuals['carbs'] ?? 0}' : null,
       formulaText: 'Recovery carbs replenish the glycogen (energy) your muscles '
           'used during your workout.\n\n'
           'Formula:  weight  x  duration_multiplier\n'
@@ -378,15 +379,15 @@ class MacroExplanationService {
       rangeRationale: 'Eat within the first hour after your workout for the best recovery.',
     ));
 
-    // Protein
+    // Protein (After: Carbs, Protein, Sodium — no Fluids)
     final proteinPerKg = 0.30;
     explanations.add(MacroExplanation(
       macroName: 'Protein',
-      icon: '\u{1F969}',
       value: '${post.proteinG.round()}',
       unit: 'g',
       rangeLow: post.proteinLowG?.round().toString(),
       rangeHigh: post.proteinHighG?.round().toString(),
+      actualValue: actuals != null ? '${actuals['protein'] ?? 0}' : null,
       formulaText: 'Post-workout protein kickstarts muscle repair and recovery.\n\n'
           'Formula:  weight  x  0.30 g/kg\n'
           '${wt}kg  x  $proteinPerKg g/kg  =  ${post.proteinG.round()}g\n\n'
@@ -396,38 +397,14 @@ class MacroExplanationService {
           'for maximum muscle recovery benefit.',
     ));
 
-    // Fluids
-    final fluidsVal = useImperial ? post.fluidsFlOz.round() : post.fluidsMl.round();
-    final fluidsUnit = useImperial ? 'oz' : 'mL';
-    explanations.add(MacroExplanation(
-      macroName: 'Fluids',
-      icon: '\u{1F4A7}',
-      value: '$fluidsVal',
-      unit: fluidsUnit,
-      rangeLow: useImperial
-          ? (post.fluidsLowMl != null ? (post.fluidsLowMl! * 0.033814).round().toString() : null)
-          : post.fluidsLowMl?.round().toString(),
-      rangeHigh: useImperial
-          ? (post.fluidsHighMl != null ? (post.fluidsHighMl! * 0.033814).round().toString() : null)
-          : post.fluidsHighMl?.round().toString(),
-      formulaText: 'After your workout, replace 150% of your remaining '
-          'fluid deficit to fully rehydrate.\n\n'
-          'Formula:  remaining_deficit  x  1.5  (min 500mL)\n'
-          'Target:  ${post.fluidsMl.round()}mL\n\n'
-          'The extra 50% accounts for ongoing water loss through '
-          'urination as your body rebalances.',
-      rangeRationale: 'Sip steadily over the next 2–4 hours rather than '
-          'drinking it all at once.',
-    ));
-
     // Sodium
     explanations.add(MacroExplanation(
       macroName: 'Sodium',
-      icon: '\u{1F9C2}',
       value: '${post.sodiumMg.round()}',
       unit: 'mg',
       rangeLow: post.sodiumLowMg?.round().toString(),
       rangeHigh: post.sodiumHighMg?.round().toString(),
+      actualValue: actuals != null ? '${actuals['sodium'] ?? 0}' : null,
       formulaText: 'Sodium in your recovery meal or drink helps your body '
           'hold onto the fluids you\'re drinking.\n\n'
           'Formula:  max(300, min(700, sodium_deficit x 0.5))\n'
@@ -443,7 +420,10 @@ class MacroExplanationService {
 
   // ── Transition Phase ────────────────────────────────────────────────
 
-  List<MacroExplanation> _transitionExplanations(int transitionNumber) {
+  List<MacroExplanation> _transitionExplanations(
+    int transitionNumber,
+    Map<String, int>? actuals,
+  ) {
     final isT1 = transitionNumber == 1;
     final carbs = isT1 ? 20 : 25;
     final sodium = isT1 ? 150 : 100;
@@ -452,9 +432,9 @@ class MacroExplanationService {
     return [
       MacroExplanation(
         macroName: 'Carbohydrates',
-        icon: '\u{1F35E}',
         value: '$carbs',
         unit: 'g',
+        actualValue: actuals != null ? '${actuals['carbs'] ?? 0}' : null,
         formulaText: 'Quick, easily-digestible carbs to keep your blood sugar '
             'steady during the ${isT1 ? "first" : "second"} transition.\n\n'
             'Formula:  fixed ${carbs}g (${isT1 ? "T1" : "T2"} transition)\n\n'
@@ -465,9 +445,9 @@ class MacroExplanationService {
       ),
       MacroExplanation(
         macroName: 'Fluids',
-        icon: '\u{1F4A7}',
         value: '$water',
         unit: 'mL',
+        actualValue: actuals != null ? '${actuals['fluids'] ?? 0}' : null,
         formulaText: 'A small drink during transition to stay on top of '
             'hydration without overfilling your stomach.\n\n'
             'Formula:  fixed ${water}mL (${isT1 ? "T1" : "T2"} transition)',
@@ -476,9 +456,9 @@ class MacroExplanationService {
       ),
       MacroExplanation(
         macroName: 'Sodium',
-        icon: '\u{1F9C2}',
         value: '$sodium',
         unit: 'mg',
+        actualValue: actuals != null ? '${actuals['sodium'] ?? 0}' : null,
         formulaText: 'Sodium from your sports drink or gel supports fluid '
             'absorption during the transition.\n\n'
             'Formula:  fixed ${sodium}mg (${isT1 ? "T1" : "T2"} transition)',

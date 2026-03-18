@@ -1754,6 +1754,7 @@ create table pre_workout_templates
         constraint pre_workout_templates_template_type_check
             check (template_type = ANY (ARRAY ['food'::text, 'drink'::text, 'electrolyte'::text])),
     component_food_names text[]                   default '{}'::text[],
+    component_quantities jsonb                    default '{}'::jsonb,
     constraint pre_workout_formulas_check
         check (max_servings >= min_servings)
 );
@@ -1769,6 +1770,8 @@ comment on column pre_workout_templates.fat_per_serving is 'Fat in grams per 1x 
 comment on column pre_workout_templates.sodium_mg is 'Sodium in milligrams per 1x serving';
 
 comment on column pre_workout_templates.component_food_names is 'Array of template_foods.name values that compose this template meal/drink';
+
+comment on column pre_workout_templates.component_quantities is 'Per-component serving proportions. Key = template_foods.name, Value = servings of that component food per 1 serving of this template.';
 
 alter table pre_workout_templates
     owner to postgres;

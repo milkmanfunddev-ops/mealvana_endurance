@@ -39,6 +39,12 @@ const STACK_THRESHOLD = 0.20;    // Stack second formula if >20% short AND >20g 
 const DIVERSITY_BAND = 0.15;     // Pick among formulas within 15% of best carb gap
 const DIVERSITY_FLOOR = 8;       // Minimum absolute carb gap for diversity band
 
+// Foods that may appear across multiple sub-phases without feeling repetitive
+const CROSS_PHASE_EXEMPT_FOODS = new Set([
+  'water', 'sports_drink', 'sports_drink_mix',
+  'electrolyte_tablet', 'electrolyte_drink_mix',
+]);
+
 // ============================================================================
 // Target Calculation
 // ============================================================================
@@ -280,11 +286,17 @@ function makeSelection(t: PreWorkoutTemplate, servings: number): TemplateSelecti
 }
 
 function makeBananaAddOn(): AddOn {
-  return { type: 'banana', carbs_g: BANANA_CARBS, sodium_mg: BANANA_SODIUM, fluid_ml: BANANA_FLUID };
+  return { type: 'banana', carbs_g: BANANA_CARBS, sodium_mg: BANANA_SODIUM, fluid_ml: BANANA_FLUID, servings: 1 };
 }
 
-function makeSportsDrinkAddOn(): AddOn {
-  return { type: 'sports_drink', carbs_g: SPORTS_DRINK_CARBS, sodium_mg: SPORTS_DRINK_SODIUM, fluid_ml: SPORTS_DRINK_FLUID };
+function makeSportsDrinkAddOn(servings: number = 1): AddOn {
+  return {
+    type: 'sports_drink',
+    carbs_g: Math.round(SPORTS_DRINK_CARBS * servings * 10) / 10,
+    sodium_mg: Math.round(SPORTS_DRINK_SODIUM * servings * 10) / 10,
+    fluid_ml: Math.round(SPORTS_DRINK_FLUID * servings * 10) / 10,
+    servings,
+  };
 }
 
 // ============================================================================
@@ -314,9 +326,10 @@ function scoreFormula(
   // Fill gap with add-ons — sodium-aware ordering
   let gap = carbTarget - carbs;
 
-  // Prevent banana add-on if template already contains banana as a component
-  const templateHasBanana = (template.component_food_names ?? []).includes('banana');
-  const bananaEligible = template.plus_banana && !state.banana_used && !templateHasBanana;
+  // Banana add-on: skip if banana already used in any prior phase or in this template's components
+  const bananaAlreadyUsed = state.used_foods.has('banana') ||
+    (template.component_food_names ?? []).includes('banana');
+  const bananaEligible = template.plus_banana && !bananaAlreadyUsed;
   const drinkEligible = template.plus_sports_drink && !state.sports_drink_used;
 
   const sodiumRemaining = state.sodium_target - (state.sodium_delivered + sodium);
@@ -339,18 +352,39 @@ function scoreFormula(
         gap = carbTarget - carbs;
       }
     } else {
-      // Skip sports drink if sodium already significantly over target
-      const wouldOvershoot = (state.sodium_delivered + sodium + SPORTS_DRINK_SODIUM) > state.sodium_target * 1.4;
-      const withDrink = Math.abs(carbTarget - (carbs + SPORTS_DRINK_CARBS));
-      const carbImprovement = Math.abs(gap) - withDrink;
-      const carbsNeedHelp = carbImprovement > 5 && carbTarget > 0 && Math.abs(gap) / carbTarget > 0.15;
-      if (wouldOvershoot && !preferDrinkFirst && !carbsNeedHelp) continue;
+      // Try variable sports drink servings (0.5, 1, 2 cups) — pick best fit
+      const servingOptions = [0.5, 1, 2];
+      let bestDrinkServings = 0;
+      let bestDrinkGap = Math.abs(gap);
 
-      if (withDrink < Math.abs(gap)) {
-        carbs += SPORTS_DRINK_CARBS;
-        sodium += SPORTS_DRINK_SODIUM;
-        fluid += SPORTS_DRINK_FLUID;
-        addOns.push(makeSportsDrinkAddOn());
+      for (const srv of servingOptions) {
+        const drinkCarbs = SPORTS_DRINK_CARBS * srv;
+        const drinkSodium = SPORTS_DRINK_SODIUM * srv;
+        const drinkFluid = SPORTS_DRINK_FLUID * srv;
+
+        const sodiumWouldOvershoot = (state.sodium_delivered + sodium + drinkSodium) > state.sodium_target * 1.4;
+        const fluidWouldOvershoot = state.fluid_target > 0 &&
+          (state.fluid_delivered + fluid + drinkFluid) > state.fluid_target * 1.3;
+        const wouldOvershoot = sodiumWouldOvershoot || fluidWouldOvershoot;
+
+        const newGap = Math.abs(carbTarget - (carbs + drinkCarbs));
+        const carbImprovement = Math.abs(gap) - newGap;
+        const carbsNeedHelp = carbImprovement > 5 && carbTarget > 0 && Math.abs(gap) / carbTarget > 0.15;
+
+        if (wouldOvershoot && !preferDrinkFirst && !carbsNeedHelp) continue;
+
+        if (newGap < bestDrinkGap) {
+          bestDrinkGap = newGap;
+          bestDrinkServings = srv;
+        }
+      }
+
+      if (bestDrinkServings > 0) {
+        const srv = bestDrinkServings;
+        carbs += SPORTS_DRINK_CARBS * srv;
+        sodium += SPORTS_DRINK_SODIUM * srv;
+        fluid += SPORTS_DRINK_FLUID * srv;
+        addOns.push(makeSportsDrinkAddOn(srv));
         gap = carbTarget - carbs;
       }
     }
@@ -370,7 +404,8 @@ function scoreFormula(
 }
 
 /**
- * Pick from the carb-close pool using sodium/fluid alignment as tiebreaker.
+ * Pick from the carb-close pool using sodium/fluid alignment as tiebreaker,
+ * with controlled randomization so repeated plans get variety.
  */
 function pickBestFormula(
   scored: ScoredFormula[],
@@ -388,8 +423,8 @@ function pickBestFormula(
 
   if (pool.length === 1) return pool[0];
 
-  let bestScore = Infinity;
-  let bestPick = pool[0];
+  // Score each candidate, then add random jitter so ties resolve differently each run
+  const scoredPool: Array<{ candidate: ScoredFormula; score: number }> = [];
 
   for (const candidate of pool) {
     const resultSodium = state.sodium_delivered + candidate.sodium;
@@ -408,15 +443,15 @@ function pickBestFormula(
     }
 
     const carbErr = carbTarget > 0 ? candidate.gap / carbTarget : 0;
-    const score = carbErr + sodiumErr + fluidErr;
+    const baseScore = carbErr + sodiumErr + fluidErr;
 
-    if (score < bestScore) {
-      bestScore = score;
-      bestPick = candidate;
-    }
+    // Add small random jitter (±10% of score, min ±0.05) to break ties
+    const jitter = (Math.random() - 0.5) * Math.max(0.1, baseScore * 0.2);
+    scoredPool.push({ candidate, score: baseScore + jitter });
   }
 
-  return bestPick;
+  scoredPool.sort((a, b) => a.score - b.score);
+  return scoredPool[0].candidate;
 }
 
 /**
@@ -579,7 +614,7 @@ export function selectPreWorkoutFoods(
   const phaseTargets = splitTargets(targets, hoursBefore);
 
   const state: PlanState = {
-    banana_used: false,
+    used_foods: new Set(),
     sports_drink_used: false,
     used_categories: new Set(),
     sodium_delivered: 0,
@@ -600,6 +635,18 @@ export function selectPreWorkoutFoods(
     // Filter to unused categories (fallback to all if none left)
     let candidates = eligible.filter((t) => !state.used_categories.has(t.base_category));
     if (candidates.length === 0) candidates = eligible;
+
+    // Cross-phase food dedup: exclude templates that share non-exempt
+    // component foods with already-selected phases (e.g. no bagel in both meal and snack)
+    if (state.used_foods.size > 0) {
+      const deduped = candidates.filter((t) => {
+        const components = t.component_food_names ?? [];
+        return !components.some((name) =>
+          state.used_foods.has(name) && !CROSS_PHASE_EXEMPT_FOODS.has(name)
+        );
+      });
+      if (deduped.length > 0) candidates = deduped;
+    }
 
     if (candidates.length === 0) {
       results.push({
@@ -640,15 +687,17 @@ export function selectPreWorkoutFoods(
     // Update cross-phase state
     state.used_categories.add(pick.template.base_category);
     for (const addOn of pick.addOns) {
-      if (addOn.type === 'banana') state.banana_used = true;
+      if (addOn.type === 'banana') state.used_foods.add('banana');
       if (addOn.type === 'sports_drink') state.sports_drink_used = true;
     }
 
     const primarySel = makeSelection(pick.template, pick.servings);
 
-    // Mark banana_used if primary or stack template contains banana as a component
-    if ((primarySel.component_food_names ?? []).includes('banana')) state.banana_used = true;
-    if ((stackSelection?.component_food_names ?? []).includes('banana')) state.banana_used = true;
+    // Record all component foods from primary and stack selections
+    for (const name of (primarySel.component_food_names ?? [])) state.used_foods.add(name);
+    if (stackSelection) {
+      for (const name of (stackSelection.component_food_names ?? [])) state.used_foods.add(name);
+    }
 
     const totalCarbs = primarySel.carbs_g + (stackSelection?.carbs_g ?? 0)
       + pick.addOns.reduce((s, a) => s + a.carbs_g, 0);
@@ -693,14 +742,14 @@ export function selectPreWorkoutFoods(
       const phaseIdx = results.findIndex((p) => p.phase === targetPhase);
       if (phaseIdx < 0) continue;
 
-      // Try adding a banana if not already used
-      if (!state.banana_used && carbDeficit > 5) {
+      // Try adding a banana if not already used in any phase
+      if (!state.used_foods.has('banana') && carbDeficit > 5) {
         const phase = results[phaseIdx];
         phase.add_ons.push(makeBananaAddOn());
         phase.total_carbs_g = Math.round((phase.total_carbs_g + BANANA_CARBS) * 10) / 10;
         phase.total_sodium_mg = Math.round((phase.total_sodium_mg + BANANA_SODIUM) * 10) / 10;
         phase.total_fluid_ml = Math.round((phase.total_fluid_ml + BANANA_FLUID) * 10) / 10;
-        state.banana_used = true;
+        state.used_foods.add('banana');
         state.sodium_delivered += BANANA_SODIUM;
         state.fluid_delivered += BANANA_FLUID;
         filled = true;

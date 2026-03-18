@@ -64,9 +64,8 @@ Future<DateTime?> showAppDatePicker({
       color: secondaryColor,
       fontWeight: FontWeight.w600,
     ),
-    controlsTextStyle: AppTextStyles.subtitle.copyWith(
+    controlsTextStyle: AppTextStyles.datePickerHeader.copyWith(
       color: textColor,
-      fontSize: 16,
     ),
     yearTextStyle: AppTextStyles.bodyMedium.copyWith(color: textColor),
     selectedYearTextStyle: AppTextStyles.bodyMedium.copyWith(
