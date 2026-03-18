@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/nutrition_plan/domain/food.dart';
 import '../../features/nutrition_plan/domain/food_item.dart';
 import '../widgets/kyle_design/kyle_design.dart';
+import '../widgets/custom_app_bar_back_button.dart';
 import '../widgets/food_detail/nutrition_input_fields.dart';
 import '../widgets/food_detail/category_selector.dart';
 import '../widgets/food_detail/product_type_selector.dart';
@@ -34,7 +35,6 @@ enum FoodDetailContext {
   foodPreferences,
   carbLoading,
 }
-
 
 /// Data class for initializing FoodDetailScreen
 /// Consolidates data from Food, FoodItem, and UserFoodData
@@ -96,20 +96,18 @@ class FoodDetailData {
       caloriesPerServing: food.caloriesPerServing,
       fluidMlPerServing: food.fluidMlPerServing,
       productType: food.productTypeId,
-      categoryIds: food.categories
-          .map((name) {
-            switch (name) {
-              case 'before_run':
-                return 1;
-              case 'during_run':
-                return 2;
-              case 'after_run':
-                return 3;
-              default:
-                return 1;
-            }
-          })
-          .toList(),
+      categoryIds: food.categories.map((name) {
+        switch (name) {
+          case 'before_run':
+            return 1;
+          case 'during_run':
+            return 2;
+          case 'after_run':
+            return 3;
+          default:
+            return 1;
+        }
+      }).toList(),
     );
   }
 
@@ -257,11 +255,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       };
     } else {
       // Default: all checked for new foods
-      _selectedCategories = {
-        1: true,
-        2: true,
-        3: true,
-      };
+      _selectedCategories = {1: true, 2: true, 3: true};
     }
 
     // Initialize product type
@@ -271,30 +265,44 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     // For createNew mode, leave nutrition fields empty instead of showing "0"
     final isCreateNew = widget.mode == FoodDetailMode.createNew;
     _nameController = TextEditingController(text: widget.foodData.name);
-    _servingSizeController =
-        TextEditingController(text: widget.foodData.servingSize ?? '');
-    _servingAmountController = TextEditingController(
-      text: isCreateNew ? '1' : (widget.foodData.servingAmount?.toStringAsFixed(0) ?? '1'),
+    _servingSizeController = TextEditingController(
+      text: widget.foodData.servingSize ?? '',
     );
-    _servingUnitController =
-        TextEditingController(text: widget.foodData.servingUnit ?? 'serving');
+    _servingAmountController = TextEditingController(
+      text: isCreateNew
+          ? '1'
+          : (widget.foodData.servingAmount?.toStringAsFixed(0) ?? '1'),
+    );
+    _servingUnitController = TextEditingController(
+      text: widget.foodData.servingUnit ?? 'serving',
+    );
     _caloriesController = TextEditingController(
-      text: isCreateNew ? '' : (widget.foodData.caloriesPerServing ?? 0).toString(),
+      text: isCreateNew
+          ? ''
+          : (widget.foodData.caloriesPerServing ?? 0).toString(),
     );
     _carbsController = TextEditingController(
-      text: isCreateNew ? '' : (widget.foodData.carbsPerServing ?? 0).toStringAsFixed(1),
+      text: isCreateNew
+          ? ''
+          : (widget.foodData.carbsPerServing ?? 0).toStringAsFixed(1),
     );
     _proteinController = TextEditingController(
-      text: isCreateNew ? '' : (widget.foodData.proteinPerServing ?? 0).toStringAsFixed(1),
+      text: isCreateNew
+          ? ''
+          : (widget.foodData.proteinPerServing ?? 0).toStringAsFixed(1),
     );
     _fatController = TextEditingController(
-      text: isCreateNew ? '' : (widget.foodData.fatPerServing ?? 0).toStringAsFixed(1),
+      text: isCreateNew
+          ? ''
+          : (widget.foodData.fatPerServing ?? 0).toStringAsFixed(1),
     );
     _sodiumController = TextEditingController(
       text: isCreateNew ? '' : (widget.foodData.sodiumMg ?? 0).toString(),
     );
     _fluidController = TextEditingController(
-      text: isCreateNew ? '' : (widget.foodData.fluidMlPerServing ?? 0).toStringAsFixed(0),
+      text: isCreateNew
+          ? ''
+          : (widget.foodData.fluidMlPerServing ?? 0).toStringAsFixed(0),
     );
 
     // Add listeners to track changes
@@ -383,10 +391,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
 
   void _handleSave() {
     if (!_hasValidName) {
-      MealvanaSnackbar.showError(
-        context,
-        'Please enter a food name',
-      );
+      MealvanaSnackbar.showError(context, 'Please enter a food name');
       return;
     }
 
@@ -401,9 +406,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     // Get selected category IDs
     final selectedCategoryIds = widget.showCategories
         ? _selectedCategories.entries
-            .where((entry) => entry.value)
-            .map((entry) => entry.key)
-            .toList()
+              .where((entry) => entry.value)
+              .map((entry) => entry.key)
+              .toList()
         : <int>[];
 
     // Parse values
@@ -441,7 +446,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Food'),
         content: Text(
-            'Are you sure you want to delete "${_nameController.text.trim()}"?'),
+          'Are you sure you want to delete "${_nameController.text.trim()}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -468,8 +474,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_screenTitle),
-        leading: IconButton(
-          icon: const Icon(FontAwesomeIcons.chevronLeft),
+        leading: CustomAppBarBackButton(
           onPressed: () {
             if (_isNavigating) return;
             _isNavigating = true;
@@ -515,16 +520,18 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                               width: 120,
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? AppColors.blackberry.withValues(alpha: 0.3)
+                                    ? AppColors.blackberry.withValues(
+                                        alpha: 0.3,
+                                      )
                                     : Colors.grey[200],
                                 borderRadius: AppRadius.cardRadius,
                               ),
                               child: Icon(
                                 FontAwesomeIcons.utensils,
                                 size: 40,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             );
                           },
@@ -569,8 +576,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                             Text(
                               'Amount',
                               style: AppTextStyles.smallLabel.copyWith(
-                                color:
-                                    Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(height: AppSpacing.xs),
@@ -578,10 +586,12 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                               controller: _servingAmountController,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
-                                      decimal: true),
+                                    decimal: true,
+                                  ),
                               inputFormatters: [
                                 FilteringTextInputFormatter.allow(
-                                    RegExp(r'^\d*\.?\d*')),
+                                  RegExp(r'^\d*\.?\d*'),
+                                ),
                               ],
                               onChanged: (_) => _onFieldChanged(),
                               decoration: InputDecoration(
@@ -590,8 +600,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                                   borderSide: BorderSide(
                                     color: isDark
                                         ? AppColors.cream.withValues(alpha: 0.3)
-                                        : AppColors.blackberry
-                                            .withValues(alpha: 0.3),
+                                        : AppColors.blackberry.withValues(
+                                            alpha: 0.3,
+                                          ),
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
@@ -599,8 +610,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                                   borderSide: BorderSide(
                                     color: isDark
                                         ? AppColors.cream.withValues(alpha: 0.3)
-                                        : AppColors.blackberry
-                                            .withValues(alpha: 0.3),
+                                        : AppColors.blackberry.withValues(
+                                            alpha: 0.3,
+                                          ),
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
@@ -616,7 +628,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                                 ),
                                 isDense: true,
                                 filled: true,
-                                fillColor: Theme.of(context).colorScheme.surface,
+                                fillColor: Theme.of(
+                                  context,
+                                ).colorScheme.surface,
                               ),
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: Theme.of(context).colorScheme.onSurface,
@@ -634,8 +648,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                             Text(
                               'Unit',
                               style: AppTextStyles.smallLabel.copyWith(
-                                color:
-                                    Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(height: AppSpacing.xs),
@@ -763,10 +778,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.inputRadius,
-          borderSide: const BorderSide(
-            color: AppColors.electrolyte,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: AppColors.electrolyte, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm,
@@ -781,5 +793,4 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       ),
     );
   }
-
 }

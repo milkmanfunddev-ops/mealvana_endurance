@@ -216,6 +216,12 @@ else:
     pre_carbs = round(weight_kg × carb_per_kg)
 ```
 
+**V4 Carb Range:** ±12.5% of target
+```
+carbs_low = round(pre_carbs × 0.875)
+carbs_high = round(pre_carbs × 1.125)
+```
+
 **Explanation:** Linear relationship — 1 g/kg per hour, with a floor of 0.5 g/kg (even <30 min gets something) and a ceiling of 4.0 g/kg (matches ISSN's 1-4 g/kg range).
 
 **Examples:**
@@ -267,6 +273,14 @@ if top_up:      protein = 0
 if fasted:      protein = 0
 ```
 
+**V4 Protein Range (by meal type):**
+
+| meal_type | protein_low | protein_high |
+|-----------|-------------|--------------|
+| `full_meal` | weight_kg × 0.15 | weight_kg × 0.35 |
+| `snack` | 0 | weight_kg × 0.25 |
+| `top_up` | 0 | 10g |
+
 **Examples (Full Meal, hours_before ≥ 2.5):**
 
 | Persona | All Workouts |
@@ -307,13 +321,25 @@ if top_up:      sodium = envBump + 100
 if fasted:      sodium = 0
 ```
 
+**V4 Range-Based Sodium Targets:**
+
+V4 adds range-based sodium targets based on meal type (validated 112/112 in test suite):
+
+| meal_type | sodium_low_mg | sodium_high_mg |
+|-----------|---------------|----------------|
+| `full_meal` | 200 | 2000 |
+| `snack` | 100 | 1000 |
+| `top_up` | 0 | 400 |
+
+The midpoint (`sodium_mg`) is calculated as before for backward compatibility. The range accounts for the "dead zone" where sodium effects are hard to detect (Sims 2007).
+
 **Examples (Full Meal):**
 
 | Persona | Workout A (22°C, temperate) | Workout B (18°C, temperate) | Workout C (28°C, hot) |
 |---------|---------------------------|---------------------------|---------------------|
-| Elena (medium Na) | **450mg** | **450mg** | **550mg** |
-| Marcus (medium Na) | **450mg** | **450mg** | **550mg** |
-| Sarah (low Na) | **300mg** | **300mg** | **400mg** |
+| Elena (medium Na) | **450mg** (200-2000) | **450mg** (200-2000) | **550mg** (200-2000) |
+| Marcus (medium Na) | **450mg** (200-2000) | **450mg** (200-2000) | **550mg** (200-2000) |
+| Sarah (low Na) | **300mg** (200-2000) | **300mg** (200-2000) | **400mg** (200-2000) |
 
 ---
 
@@ -327,13 +353,23 @@ if top_up:      hydration = 250
 if fasted:      hydration = 0
 ```
 
+**V4 Range-Based Hydration Targets:**
+
+V4 adds range-based hydration targets with minimum thresholds (validated 112/112):
+
+| meal_type | water_low_ml | water_high_ml |
+|-----------|-------------|---------------|
+| `full_meal` | max(200, target × 0.50) | max(600, target × 1.50) |
+| `snack` | max(150, target × 0.50) | max(500, target × 1.50) |
+| `top_up` | 0 | 500 |
+
 **Examples (Full Meal):**
 
 | Persona | All Workouts |
 |---------|--------------|
-| Elena (52 kg) | **338mL** |
-| Marcus (75 kg) | **488mL** |
-| Sarah (82 kg) | **533mL** |
+| Elena (52 kg) | **338mL** (200-600) |
+| Marcus (75 kg) | **488mL** (244-732) |
+| Sarah (82 kg) | **533mL** (267-800) |
 
 ---
 
@@ -869,9 +905,38 @@ When `generateLLMNutritionPlan()` is called without pre-calculated MacroTargets,
 
 ## Appendix C: v3-to-v4 Migration Notes
 
-If maintaining backward compatibility with v3-era clients:
+### V4 Edge Function (`generate-macros-v4`)
 
-- The edge function endpoint name is still `generate-macros-v3` (no rename needed)
-- Response field names are unchanged
-- The `algorithm_version` field still returns `"v3"` (the algorithm is named v3 in the edge function but this doc calls it v4 to distinguish from the original spec)
-- Input fields are additive: old `time_before_run_min` is still accepted for backward compatibility, but `hours_before` is the primary field
+V4 is a new edge function that replaces V3. Key differences:
+
+- **New endpoint**: `generate-macros-v4` (V3 remains available for backward compatibility)
+- **`algorithm_version`**: Returns `"v4"` instead of `"v3"`
+- **Range fields**: V4 adds 8 new pre-workout range fields (see below)
+- **Pre-workout food selections**: V4 returns `pre_run_selections` array with recommended foods (Algorithm C)
+- **Database**: V4 queries `pre_workout_templates` table (renamed from `pre_workout_formulas`) for food, drink, and electrolyte templates
+
+### New V4 Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `pre_run_carbs_low_g` | number | Carb range low (target × 0.875) |
+| `pre_run_carbs_high_g` | number | Carb range high (target × 1.125) |
+| `pre_run_protein_low_g` | number | Protein range low (meal-type-dependent) |
+| `pre_run_protein_high_g` | number | Protein range high (meal-type-dependent) |
+| `pre_run_sodium_low_mg` | number | Sodium range low (meal-type-dependent) |
+| `pre_run_sodium_high_mg` | number | Sodium range high (meal-type-dependent) |
+| `pre_run_water_low_ml` | number | Hydration range low (with min threshold) |
+| `pre_run_water_high_ml` | number | Hydration range high (with min threshold) |
+| `pre_run_selections` | array | Algorithm C food recommendations per phase |
+
+### V3 Backward Compatibility
+
+V3 also returns sodium and hydration range fields (added for forward compatibility), but does NOT return carb/protein ranges or food selections.
+
+### Dart Client Parsing
+
+New range fields are parsed into `PreRunMacros` as nullable `double?` fields:
+- `carbsLowG`, `carbsHighG`, `proteinLowG`, `proteinHighG`
+- `sodiumLowMg`, `sodiumHighMg`, `fluidsLowMl`, `fluidsHighMl`
+
+These flow into `PlanMacroSummary.sodiumMin/Max` and `fluidsMin/Max` for UI display.

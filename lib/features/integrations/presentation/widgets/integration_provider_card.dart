@@ -90,9 +90,15 @@ class IntegrationProviderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? AppColors.blackberryLight
+        : Theme.of(context).colorScheme.surface;
+    final secondaryText = Theme.of(context).colorScheme.onSurfaceVariant;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.blackberryLight,
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
         border: isConnected
             ? Border.all(color: AppColors.success, width: 2)
@@ -109,7 +115,7 @@ class IntegrationProviderCard extends StatelessWidget {
               Expanded(
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: _buildLogo(),
+                  child: _buildLogo(context),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -119,7 +125,7 @@ class IntegrationProviderCard extends StatelessWidget {
                 width: 200,
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: _buildAction(),
+                  child: _buildAction(context),
                 ),
               ),
             ],
@@ -130,7 +136,7 @@ class IntegrationProviderCard extends StatelessWidget {
             Text(
               statusText!,
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textDarkSecondary,
+                color: secondaryText,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -139,16 +145,16 @@ class IntegrationProviderCard extends StatelessWidget {
           // Bottom row: Athlete name and last sync timestamp (when connected)
           if (isConnected && (athleteName != null || lastSyncAt != null)) ...[
             const SizedBox(height: AppSpacing.sm),
-            _buildConnectionInfo(),
+            _buildConnectionInfo(context),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildLogo() {
+  Widget _buildLogo(BuildContext context) {
     if (iconPath == null) {
-      return _buildPlaceholderIcon();
+      return _buildPlaceholderIcon(context);
     }
 
     // Check if it's an SVG file
@@ -161,32 +167,32 @@ class IntegrationProviderCard extends StatelessWidget {
               iconPath!,
               height: logoHeight,
               fit: BoxFit.contain,
-              placeholderBuilder: (_) => _buildPlaceholderIcon(),
+              placeholderBuilder: (_) => _buildPlaceholderIcon(context),
             )
           : Image.asset(
               iconPath!,
               height: logoHeight,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => _buildPlaceholderIcon(),
+              errorBuilder: (_, __, ___) => _buildPlaceholderIcon(context),
             ),
     );
   }
 
-  Widget _buildPlaceholderIcon() {
+  Widget _buildPlaceholderIcon(BuildContext context) {
     return Text(
       name,
-      style: AppTextStyles.activityTitle.copyWith(color: AppColors.textDark, fontSize: 14),
+      style: AppTextStyles.activityTitle.copyWith(
+        color: Theme.of(context).colorScheme.onSurface,
+        fontSize: 14,
+      ),
     );
   }
 
-  Widget _buildAction() {
+  Widget _buildAction(BuildContext context) {
     // Coming soon badge
     if (!isAvailable) {
       if (onNotify != null) {
-        return _NotifyButton(
-          onNotify: onNotify,
-          isNotified: isNotified,
-        );
+        return _NotifyButton(onNotify: onNotify, isNotified: isNotified);
       }
       return Container(
         padding: const EdgeInsets.symmetric(
@@ -199,7 +205,9 @@ class IntegrationProviderCard extends StatelessWidget {
         ),
         child: Text(
           comingSoonText ?? 'Coming Soon',
-          style: AppTextStyles.smallLabel.copyWith(color: AppColors.textDarkSecondary),
+          style: AppTextStyles.smallLabel.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -221,7 +229,9 @@ class IntegrationProviderCard extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               'Syncing...',
-              style: AppTextStyles.smallLabel.copyWith(color: AppColors.textDarkSecondary),
+              style: AppTextStyles.smallLabel.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ],
@@ -231,7 +241,11 @@ class IntegrationProviderCard extends StatelessWidget {
     // Connected - show Sync Now button or Connected badge
     if (isConnected) {
       if (showSyncButton) {
-        return _SyncButton(onSync: onSync, onDisconnect: onDisconnect, hasSynced: hasSynced);
+        return _SyncButton(
+          onSync: onSync,
+          onDisconnect: onDisconnect,
+          hasSynced: hasSynced,
+        );
       } else {
         return _ConnectedBadge();
       }
@@ -242,7 +256,7 @@ class IntegrationProviderCard extends StatelessWidget {
   }
 
   /// Build the connection info section showing athlete name and last sync timestamp
-  Widget _buildConnectionInfo() {
+  Widget _buildConnectionInfo(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -251,7 +265,7 @@ class IntegrationProviderCard extends StatelessWidget {
           Text(
             athleteName!,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textDarkSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
 
@@ -261,7 +275,9 @@ class IntegrationProviderCard extends StatelessWidget {
           Text(
             _formatLastSync(lastSyncAt!),
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textDarkSecondary.withValues(alpha: 0.8),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.85),
               fontSize: 11,
             ),
           ),
@@ -288,12 +304,27 @@ class IntegrationProviderCard extends StatelessWidget {
     }
 
     // For older syncs, show formatted date
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final month = months[timestamp.month - 1];
     final day = timestamp.day;
 
     // Format time as 12-hour with AM/PM
-    final hour = timestamp.hour > 12 ? timestamp.hour - 12 : (timestamp.hour == 0 ? 12 : timestamp.hour);
+    final hour = timestamp.hour > 12
+        ? timestamp.hour - 12
+        : (timestamp.hour == 0 ? 12 : timestamp.hour);
     final minute = timestamp.minute.toString().padLeft(2, '0');
     final period = timestamp.hour >= 12 ? 'PM' : 'AM';
 
@@ -335,7 +366,9 @@ class _SyncButton extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               hasSynced ? 'Synced!' : 'Sync Now',
-              style: AppTextStyles.buttonPrimary.copyWith(color: AppColors.textDark),
+              style: AppTextStyles.buttonPrimary.copyWith(
+                color: AppColors.textDark,
+              ),
             ),
           ],
         ),
@@ -354,14 +387,18 @@ class _SyncButton extends StatelessWidget {
         ),
         content: Text(
           'Your imported workouts will remain, but no new workouts will be synced.\n\nTip: Long-press Sync Now to disconnect.',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textDarkSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textDarkSecondary,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancel',
-              style: AppTextStyles.buttonTertiary.copyWith(color: AppColors.textDarkSecondary),
+              style: AppTextStyles.buttonTertiary.copyWith(
+                color: AppColors.textDarkSecondary,
+              ),
             ),
           ),
           TextButton(
@@ -371,7 +408,9 @@ class _SyncButton extends StatelessWidget {
             },
             child: Text(
               'Disconnect',
-              style: AppTextStyles.buttonTertiary.copyWith(color: AppColors.dragonfruit),
+              style: AppTextStyles.buttonTertiary.copyWith(
+                color: AppColors.dragonfruit,
+              ),
             ),
           ),
         ],
@@ -392,10 +431,7 @@ class _ConnectButton extends StatelessWidget {
       onTap: onConnect,
       child: Container(
         alignment: Alignment.center,
-        constraints: const BoxConstraints(
-          minHeight: 36,
-          minWidth: 96,
-        ),
+        constraints: const BoxConstraints(minHeight: 36, minWidth: 96),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm,
           vertical: AppSpacing.xs,
@@ -406,7 +442,9 @@ class _ConnectButton extends StatelessWidget {
         ),
         child: Text(
           'Connect',
-          style: AppTextStyles.buttonPrimary.copyWith(color: AppColors.textDark),
+          style: AppTextStyles.buttonPrimary.copyWith(
+            color: AppColors.textDark,
+          ),
           textAlign: TextAlign.center,
         ),
       ),
@@ -432,15 +470,13 @@ class _ConnectedBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.check_circle,
-            size: 16,
-            color: AppColors.textDark,
-          ),
+          Icon(Icons.check_circle, size: 16, color: AppColors.textDark),
           const SizedBox(width: 4),
           Text(
             'Connected',
-            style: AppTextStyles.buttonPrimary.copyWith(color: AppColors.textDark),
+            style: AppTextStyles.buttonPrimary.copyWith(
+              color: AppColors.textDark,
+            ),
           ),
         ],
       ),
@@ -450,10 +486,7 @@ class _ConnectedBadge extends StatelessWidget {
 
 /// Notify Me button for coming soon providers
 class _NotifyButton extends StatelessWidget {
-  const _NotifyButton({
-    this.onNotify,
-    this.isNotified = false,
-  });
+  const _NotifyButton({this.onNotify, this.isNotified = false});
 
   final VoidCallback? onNotify;
   final bool isNotified;

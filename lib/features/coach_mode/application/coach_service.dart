@@ -297,6 +297,45 @@ class CoachService {
     }
   }
 
+  /// Connect to an athlete using their 6-character pairing code.
+  /// Returns the created relationship or null if the code is invalid.
+  Future<CoachAthleteRelationship?> connectViaPairingCode({
+    required String code,
+  }) async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) {
+        _logger.warning(
+          'Cannot connect: no user profile',
+          context: 'COACH_SERVICE',
+        );
+        return null;
+      }
+
+      final isCoach = await _repository.isUserApprovedCoach(profile.id);
+      if (!isCoach) {
+        _logger.warning(
+          'Cannot connect: user is not a coach',
+          context: 'COACH_SERVICE',
+        );
+        return null;
+      }
+
+      return await _repository.connectViaCode(
+        code: code,
+        coachUserId: profile.id,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to connect via pairing code',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
   /// Accept an athlete's request to connect
   Future<CoachAthleteRelationship?> acceptAthleteRequest(
     String relationshipId,

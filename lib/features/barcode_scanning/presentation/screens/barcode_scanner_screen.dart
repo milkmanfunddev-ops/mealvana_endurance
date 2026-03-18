@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -12,7 +13,8 @@ import '../../../nutrition_plan/domain/food.dart';
 /// Barcode Scanner Screen - Kyle's Design System
 /// Unified scanner for all contexts (swap, add, preferences, carb loading)
 class BarcodeScannerScreen extends ConsumerStatefulWidget {
-  final String category; // 'before_run', 'during_run', 'after_run', 'add_food', 'preferences', 'carb_loading'
+  final String
+  category; // 'before_run', 'during_run', 'after_run', 'add_food', 'preferences', 'carb_loading'
   final String? foodToSwapId;
   final String? foodToSwapName;
   final String? context; // Additional context parameter
@@ -26,7 +28,8 @@ class BarcodeScannerScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<BarcodeScannerScreen> createState() => _BarcodeScannerScreenState();
+  ConsumerState<BarcodeScannerScreen> createState() =>
+      _BarcodeScannerScreenState();
 }
 
 class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
@@ -46,10 +49,10 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     // Track scanner opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final analytics = ref.read(appExternalDepsProvider);
-      analytics.analytics.track('barcode_scanner_opened', properties: {
-        'category': widget.category,
-        'context': widget.context,
-      });
+      analytics.analytics.track(
+        'barcode_scanner_opened',
+        properties: {'category': widget.category, 'context': widget.context},
+      );
     });
   }
 
@@ -118,10 +121,10 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
     // Track scan
     final analytics = ref.read(appExternalDepsProvider);
-    analytics.analytics.track('barcode_scanned', properties: {
-      'code': barcodeValue,
-      'category': widget.category,
-    });
+    analytics.analytics.track(
+      'barcode_scanned',
+      properties: {'code': barcodeValue, 'category': widget.category},
+    );
 
     // Perform barcode lookup
     _lookupBarcode(barcodeValue);
@@ -535,11 +538,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       context,
       MaterialPageRoute(
         builder: (context) => FoodDetailScreen(
-          foodData: FoodDetailData(
-            id: uuid,
-            name: '',
-            categoryIds: [1, 2, 3],
-          ),
+          foodData: FoodDetailData(id: uuid, name: '', categoryIds: [1, 2, 3]),
           mode: FoodDetailMode.createNew,
           screenContext: FoodDetailContext.addFood,
           showCategories: true,
@@ -555,10 +554,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         name: result.name,
         categories: result.categoryIds.map((id) {
           switch (id) {
-            case 1: return 'before_run';
-            case 2: return 'during_run';
-            case 3: return 'after_run';
-            default: return 'before_run';
+            case 1:
+              return 'before_run';
+            case 2:
+              return 'during_run';
+            case 3:
+              return 'after_run';
+            default:
+              return 'before_run';
           }
         }).toList(),
         servingSize: result.servingSize,
@@ -615,28 +618,15 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         automaticallyImplyLeading: false,
         title: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
-                  FontAwesomeIcons.arrowLeft,
-                  size: AppIconSizes.controlIcon,
-                  color: Colors.white,
-                ),
-                onPressed: () => context.pop(),
-              ),
+            const CustomAppBarBackButton(
+              margin: EdgeInsets.zero,
+              iconColor: Colors.white,
+              backgroundColor: Color(0x80000000),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
               title,
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: Colors.white,
-              ),
+              style: AppTextStyles.sectionTitle.copyWith(color: Colors.white),
             ),
           ],
         ),
@@ -686,10 +676,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
   }
 
   Widget _buildScannerOverlay() {
-    return CustomPaint(
-      painter: ScannerOverlayPainter(),
-      size: Size.infinite,
-    );
+    return CustomPaint(painter: ScannerOverlayPainter(), size: Size.infinite);
   }
 
   Widget _buildInstructions() {
@@ -701,9 +688,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       ),
       child: Text(
         'Position the barcode within the scanning area',
-        style: AppTextStyles.bodyMedium.copyWith(
-          color: Colors.white,
-        ),
+        style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
         textAlign: TextAlign.center,
       ),
     );
@@ -750,20 +735,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             ),
           ),
           child: IconButton(
-            icon: Icon(
-              icon,
-              color: Colors.white,
-              size: AppIconSizes.md,
-            ),
+            icon: Icon(icon, color: Colors.white, size: AppIconSizes.md),
             onPressed: onPressed,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           label,
-          style: AppTextStyles.smallLabel.copyWith(
-            color: Colors.white,
-          ),
+          style: AppTextStyles.smallLabel.copyWith(color: Colors.white),
         ),
       ],
     );
@@ -793,7 +772,9 @@ class ScannerOverlayPainter extends CustomPainter {
     // Draw the overlay with cut-out
     final path = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..addRRect(RRect.fromRectAndRadius(scannerRect, const Radius.circular(12)))
+      ..addRRect(
+        RRect.fromRectAndRadius(scannerRect, const Radius.circular(12)),
+      )
       ..fillType = PathFillType.evenOdd;
 
     canvas.drawPath(path, paint);

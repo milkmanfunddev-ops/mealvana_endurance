@@ -13,7 +13,7 @@ import 'dart:io';
 import '../../helpers/mock_path_provider.dart';
 
 /// Mock repository that simulates network failures
-class NetworkFailingRepository implements SyncableRepository {
+class NetworkFailingRepository with SyncableRepository {
   @override
   final String repositoryKey;
 
@@ -28,37 +28,6 @@ class NetworkFailingRepository implements SyncableRepository {
     required this.repositoryKey,
     this.dependencies = const [],
   });
-
-  @override
-  Future<bool> isStale() async {
-    final lastSync = await getLastSyncTime();
-    if (lastSync == null) return true;
-
-    const staleDuration = Duration(hours: 24);
-    return DateTime.now().difference(lastSync) > staleDuration;
-  }
-
-  @override
-  Future<DateTime?> getLastSyncTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${repositoryKey}_last_sync';
-    final timestamp = prefs.getString(key);
-
-    if (timestamp == null) return null;
-
-    try {
-      return DateTime.parse(timestamp);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Future<void> setLastSyncTime(DateTime time) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${repositoryKey}_last_sync';
-    await prefs.setString(key, time.toIso8601String());
-  }
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
@@ -88,6 +57,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Network Failure Edge Cases', () {
+    final staleDuration = SyncableRepository.staleDuration;
+
     late String tempDir;
     late DirtyRecordBackupService backupService;
 
@@ -144,7 +115,9 @@ void main() {
 
       // Mark as stale
       await repo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
       // Simulate network failure on upload
@@ -173,7 +146,9 @@ void main() {
 
       // Mark as stale
       await repo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
       // Network fails on first attempts
@@ -181,27 +156,37 @@ void main() {
 
       // First attempt
       await coordinator.ensureSynced('events', 'user-123', repository: repo);
-      expect(repo.syncAttempts, 1);
+      expect(repo.uploadAttempts, 1);
+      expect(repo.syncAttempts, 0);
 
-      // Network comes back
+      // Network comes back, use a fresh coordinator instance to bypass in-memory
+      // failure cooldown and retry immediately.
       repo.networkAvailable = true;
+      final retryContainer = ProviderContainer();
+      addTearDown(retryContainer.dispose);
+      final retryCoordinator = retryContainer.read(
+        syncCoordinatorProvider.notifier,
+      );
 
       // Mark as stale again to force retry
       await repo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
       // Second attempt - should succeed
-      await coordinator.ensureSynced('events', 'user-123', repository: repo);
-      expect(repo.syncAttempts, 2);
+      await retryCoordinator.ensureSynced(
+        'events',
+        'user-123',
+        repository: repo,
+      );
+      expect(repo.syncAttempts, 1);
 
       // Verify timestamp updated after successful sync
       final lastSync = await repo.getLastSyncTime();
       expect(lastSync, isNotNull);
-      expect(
-        DateTime.now().difference(lastSync!).inSeconds < 5,
-        true,
-      );
+      expect(DateTime.now().difference(lastSync!).inSeconds < 5, true);
     });
 
     test('network failure during sync preserves old timestamp', () async {
@@ -220,7 +205,9 @@ void main() {
 
       // Mark as stale
       await repo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
       // Network fails
@@ -231,7 +218,7 @@ void main() {
       final afterFailureTime = await repo.getLastSyncTime();
       expect(afterFailureTime, isNotNull);
       expect(
-        afterFailureTime!.isBefore(DateTime.now().subtract(const Duration(hours: 24))),
+        afterFailureTime!.isBefore(DateTime.now().subtract(staleDuration)),
         true,
       );
     });
@@ -288,15 +275,23 @@ void main() {
 
       // Mark both as stale
       await usersRepo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
       await activitiesRepo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
       // Users sync succeeds
       usersRepo.networkAvailable = true;
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
       expect(usersRepo.syncAttempts, 1);
 
       // Activities sync fails
@@ -306,7 +301,8 @@ void main() {
         'user-123',
         repository: activitiesRepo,
       );
-      expect(activitiesRepo.syncAttempts, 1);
+      expect(activitiesRepo.uploadAttempts, 1);
+      expect(activitiesRepo.syncAttempts, 0);
 
       // Verify users timestamp updated, activities did not
       final usersTime = await usersRepo.getLastSyncTime();
@@ -318,7 +314,7 @@ void main() {
         reason: 'Users should have recent timestamp',
       );
       expect(
-        activitiesTime!.isBefore(DateTime.now().subtract(const Duration(hours: 24))),
+        activitiesTime!.isBefore(DateTime.now().subtract(staleDuration)),
         true,
         reason: 'Activities should have old timestamp (failed)',
       );

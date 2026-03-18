@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../application/macro_explanation_service.dart';
+import '../../../domain/macro_targets.dart';
 import '../../../domain/nutrition_plan.dart';
 import 'macro_summary_row.dart';
 import 'dismissible_food_item.dart';
+import 'phase_explanation_sheet.dart';
 
 /// Widget for rendering the "Before" phase with expandable sub-phases.
 ///
@@ -23,6 +26,17 @@ class BeforePhaseWidget extends StatefulWidget {
     required this.onAddFood,
     this.categoryPrefix = 'before_run',
     this.showSwipeHint = false,
+    this.macroTargets,
+    this.bodyWeightKg = 70.0,
+    this.sportLabel,
+    this.carbsLow,
+    this.carbsHigh,
+    this.proteinLow,
+    this.proteinHigh,
+    this.sodiumLow,
+    this.sodiumHigh,
+    this.fluidsLow,
+    this.fluidsHigh,
   });
 
   final PlanSection section;
@@ -41,6 +55,17 @@ class BeforePhaseWidget extends StatefulWidget {
   final void Function(String category) onAddFood;
   final String categoryPrefix;
   final bool showSwipeHint;
+  final MacroTargets? macroTargets;
+  final double bodyWeightKg;
+  final String? sportLabel;
+  final int? carbsLow;
+  final int? carbsHigh;
+  final int? proteinLow;
+  final int? proteinHigh;
+  final int? sodiumLow;
+  final int? sodiumHigh;
+  final int? fluidsLow;
+  final int? fluidsHigh;
 
   @override
   State<BeforePhaseWidget> createState() => _BeforePhaseWidgetState();
@@ -73,13 +98,43 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section title
-          Text(
-            widget.sectionTitle,
-            style: AppTextStyles.sectionTitle.copyWith(
-              color: widget.sectionColor,
-              fontSize: 18,
-            ),
+          // Section title with info button
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.sectionTitle,
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: widget.sectionColor,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              if (widget.macroTargets != null)
+                SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    iconSize: 20,
+                    icon: Icon(
+                      Icons.help_outline_rounded,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      PhaseExplanationSheet.show(
+                        context,
+                        phase: ExplanationPhase.before,
+                        macroTargets: widget.macroTargets!,
+                        bodyWeightKg: widget.bodyWeightKg,
+                        sportLabel: widget.sportLabel,
+                        useImperial: widget.useImperial,
+                      );
+                    },
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: AppSpacing.sm),
 
@@ -135,6 +190,14 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
       section: aggregatedSection,
       category: widget.categoryPrefix,
       useImperial: widget.useImperial,
+      carbsLow: widget.carbsLow,
+      carbsHigh: widget.carbsHigh,
+      proteinLow: widget.proteinLow,
+      proteinHigh: widget.proteinHigh,
+      sodiumLow: widget.sodiumLow,
+      sodiumHigh: widget.sodiumHigh,
+      fluidsLow: widget.fluidsLow,
+      fluidsHigh: widget.fluidsHigh,
     );
   }
 

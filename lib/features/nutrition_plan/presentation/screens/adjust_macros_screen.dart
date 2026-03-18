@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../widgets/adjust_macros/edit_macros_dialog_widget.dart';
 import '../widgets/adjust_macros/help_bottom_sheet_widget.dart';
 import '../utils/macro_helpers.dart';
@@ -71,22 +72,13 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                FontAwesomeIcons.arrowLeft,
-                size: AppIconSizes.controlIcon,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              onPressed: () => context.pop(),
-              padding: EdgeInsets.zero,
-            ),
+          CustomAppBarBackButton(
+            onPressed: () => context.pop(),
+            margin: EdgeInsets.zero,
+            iconColor: Theme.of(context).colorScheme.onSurface,
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
@@ -107,7 +99,9 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     MacroTargetsState state,
   ) {
     if (state.macroTargets == null) {
-      DebugLogger.error('❌ ADJUST MACROS: Showing NO DATA state - this should not happen!');
+      DebugLogger.error(
+        '❌ ADJUST MACROS: Showing NO DATA state - this should not happen!',
+      );
       return _buildNoDataState(context);
     }
 
@@ -135,11 +129,10 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     );
   }
 
-  Widget _buildActivityHeader(
-    BuildContext context,
-    MacroTargetsState state,
-  ) {
-    final activityTypeText = MacroHelpers.getActivityTypeText(state.macroTargets);
+  Widget _buildActivityHeader(BuildContext context, MacroTargetsState state) {
+    final activityTypeText = MacroHelpers.getActivityTypeText(
+      state.macroTargets,
+    );
     final activityInfo = MacroHelpers.formatActivityInfo(state);
 
     return Padding(
@@ -176,7 +169,8 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     domain.MacroTargets macros,
   ) {
     final pace = MacroHelpers.formatPaceValue(state);
-    final totalBurn = '${macros.metrics.caloriesNetKcal.round().toString()} kcal';
+    final totalBurn =
+        '${macros.metrics.caloriesNetKcal.round().toString()} kcal';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 17),
@@ -289,18 +283,18 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
 
     // Default single-sport UI
     final useMetric = state.unitSystem == UnitSystem.metric;
-    
+
     // Calculate fluid values based on unit preference
-    final preFluids = useMetric 
-        ? macros.preRun.fluidsMl.round() 
+    final preFluids = useMetric
+        ? macros.preRun.fluidsMl.round()
         : (macros.preRun.fluidsMl * UnitFormatter.kFlOzPerMl).round();
-    
-    final duringFluids = useMetric 
-        ? macros.duringRun.fluidTotalMl.round() 
+
+    final duringFluids = useMetric
+        ? macros.duringRun.fluidTotalMl.round()
         : (macros.duringRun.fluidTotalMl * UnitFormatter.kFlOzPerMl).round();
-    
-    final postFluids = useMetric 
-        ? macros.postRun.fluidsMl.round() 
+
+    final postFluids = useMetric
+        ? macros.postRun.fluidsMl.round()
         : (macros.postRun.fluidsMl * UnitFormatter.kFlOzPerMl).round();
 
     return Padding(
@@ -373,7 +367,8 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           Expanded(
             child: KyleSecondaryButton(
               text: 'Edit Macros',
-              onPressed: () => _showEditMacrosDialog(context, ref, state, macros),
+              onPressed: () =>
+                  _showEditMacrosDialog(context, ref, state, macros),
               isFullWidth: true,
               variant: SecondaryButtonVariant.orange,
             ),
@@ -413,9 +408,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
-            color: AppColors.orange,
-          ),
+          CircularProgressIndicator(color: AppColors.orange),
           const SizedBox(height: AppSpacing.md),
           Text(
             'Loading macros...',
@@ -511,10 +504,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          'Reset to Recommended',
-          style: AppTextStyles.sectionTitle,
-        ),
+        title: Text('Reset to Recommended', style: AppTextStyles.sectionTitle),
         content: Text(
           'This will reset all macro values to the recommended amounts. Continue?',
           style: AppTextStyles.bodyLarge,
@@ -524,7 +514,9 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
               'Cancel',
-              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.dragonfruit),
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: AppColors.dragonfruit,
+              ),
             ),
           ),
           KylePrimaryButton(
@@ -539,9 +531,10 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       ref
           .read(appExternalDepsProvider)
           .analytics
-          .track('reset_all_macros_tapped', properties: {
-        'screen': 'adjust_macros',
-      });
+          .track(
+            'reset_all_macros_tapped',
+            properties: {'screen': 'adjust_macros'},
+          );
 
       await ref
           .read(macroTargetsControllerProvider.notifier)
@@ -553,9 +546,10 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     ref
         .read(appExternalDepsProvider)
         .analytics
-        .track('create_plan_button_tapped', properties: {
-      'screen': 'adjust_macros',
-    });
+        .track(
+          'create_plan_button_tapped',
+          properties: {'screen': 'adjust_macros'},
+        );
 
     // CRITICAL FIX: Get activityId directly from return value instead of state
     // This prevents race conditions where state hasn't propagated yet
@@ -564,12 +558,20 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         .createNutritionPlan();
 
     if (context.mounted && activityId != null) {
-      context.push('/current-plan', extra: {
-        'activityId': activityId,
-        'isNewActivity': true,
-      });
+      final macroState = ref.read(macroTargetsControllerProvider).value;
+      final isCoachView = macroState?.forUserId != null;
+      context.push(
+        '/current-plan',
+        extra: {
+          'activityId': activityId,
+          'isNewActivity': true,
+          if (isCoachView) 'isCoachView': true,
+        },
+      );
     } else if (activityId == null) {
-      DebugLogger.error('🚫 ADJUST_MACROS: Cannot navigate - activityId is null!');
+      DebugLogger.error(
+        '🚫 ADJUST_MACROS: Cannot navigate - activityId is null!',
+      );
     }
   }
 
@@ -582,9 +584,10 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     ref
         .read(appExternalDepsProvider)
         .analytics
-        .track('edit_macros_button_tapped', properties: {
-      'screen': 'adjust_macros',
-    });
+        .track(
+          'edit_macros_button_tapped',
+          properties: {'screen': 'adjust_macros'},
+        );
 
     showDialog(
       context: context,
@@ -604,9 +607,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     ref
         .read(appExternalDepsProvider)
         .analytics
-        .track('help_icon_tapped', properties: {
-      'screen': 'adjust_macros',
-    });
+        .track('help_icon_tapped', properties: {'screen': 'adjust_macros'});
 
     showModalBottomSheet(
       context: context,
@@ -640,8 +641,9 @@ class _BrickSegmentPaceCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 4),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
-        color: (isDark ? AppColors.blackberry : AppColors.cream)
-            .withValues(alpha: 0.3),
+        color: (isDark ? AppColors.blackberry : AppColors.cream).withValues(
+          alpha: 0.3,
+        ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: AppColors.orange.withValues(alpha: 0.3),

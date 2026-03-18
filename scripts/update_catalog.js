@@ -5,9 +5,9 @@
  * Product Catalog Import Script
  *
  * Pipeline:
- *   A. Fetch products + variants from Shopify Storefront GraphQL
+ *   A. Fetch products + variants (with PIM metafields) from Shopify Storefront GraphQL
  *   B. Filter to food-only products (by productType + tags)
- *   C. Enrich each variant with nutrition (Algolia → FDA → OFF)
+ *   C. Enrich each variant with nutrition (metafields → Algolia → web scrape → OFF → FDA)
  *   D. Upsert into catalog_items via Supabase JS client
  *   E. Log sync run to catalog_sync_runs
  *
@@ -23,7 +23,14 @@
  *   THEFEED_ALGOLIA_APP_ID, THEFEED_ALGOLIA_SEARCH_KEY
  */
 
-const SCRIPT_VERSION = "1.0.0";
+const {
+  init: initEnrichment,
+  sleep,
+  buildMetafieldsGraphQL,
+  enrichNutrition,
+} = require("./lib/nutrition_enrichment.js");
+
+const SCRIPT_VERSION = "1.1.0";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -49,6 +56,13 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   );
   process.exit(1);
 }
+
+// Initialize shared enrichment module
+initEnrichment({
+  FDA_API_KEY,
+  ALGOLIA_APP_ID,
+  ALGOLIA_SEARCH_KEY,
+});
 
 // Food-only product types (case-insensitive)
 const FOOD_PRODUCT_TYPES = new Set(
@@ -131,6 +145,7 @@ const PRODUCTS_QUERY = `
           featuredImage {
             url
           }
+          ${buildMetafieldsGraphQL()}
           variants(first: 100) {
             edges {
               node {
@@ -158,10 +173,6 @@ const PRODUCTS_QUERY = `
     }
   }
 `;
-
-async function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function graphqlRequest(query, variables, attempt = 0) {
   const res = await fetch(SHOPIFY_ENDPOINT, {
@@ -257,6 +268,8 @@ function isFoodProduct(product) {
 
 function expandVariants(product) {
   const variants = product.variants?.edges?.map((e) => e.node) || [];
+  // Product-level metafields (PIM nutrition data) — attach to each variant
+  const metafields = product.metafields || [];
 
   // If no variants, create a single row from the product itself
   if (variants.length === 0) {
@@ -278,6 +291,7 @@ function expandVariants(product) {
         image_url: product.featuredImage?.url || null,
         product_url: product.onlineStoreUrl || null,
         shopify_updated_at: product.updatedAt || null,
+        _metafields: metafields,
       },
     ];
   }
@@ -301,212 +315,15 @@ function expandVariants(product) {
     image_url: v.image?.url || product.featuredImage?.url || null,
     product_url: product.onlineStoreUrl || null,
     shopify_updated_at: product.updatedAt || null,
+    _metafields: metafields,
   }));
 }
 
 // ---------------------------------------------------------------------------
-// C. Nutrition enrichment waterfall: Algolia → FDA → OFF
+// C. Nutrition enrichment — delegated to shared module
+//    Waterfall: metafields → Algolia → web scrape → OFF → FDA
+//    See: scripts/lib/nutrition_enrichment.js
 // ---------------------------------------------------------------------------
-
-/**
- * Attempt Algolia enrichment (The Feed's search index)
- */
-async function enrichFromAlgolia(variant) {
-  if (!ALGOLIA_APP_ID || !ALGOLIA_SEARCH_KEY) return null;
-
-  try {
-    const query = [variant.title, variant.variant_title, variant.brand]
-      .filter(Boolean)
-      .join(" ");
-
-    const res = await fetch(
-      `https://${ALGOLIA_APP_ID}-dsn.algolia.net/1/indexes/shopify_products/query`,
-      {
-        method: "POST",
-        headers: {
-          "X-Algolia-API-Key": ALGOLIA_SEARCH_KEY,
-          "X-Algolia-Application-Id": ALGOLIA_APP_ID,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query,
-          hitsPerPage: 1,
-        }),
-      },
-    );
-
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    const hit = data.hits?.[0];
-    if (!hit) return null;
-
-    // Look for nutrition in meta.pim or other known fields
-    const pim = hit.meta?.pim || {};
-    const calories = parseFloat(pim.calories) || null;
-    const carbs = parseFloat(pim.carbs || pim.carbohydrates) || null;
-    const protein = parseFloat(pim.protein) || null;
-    const fat = parseFloat(pim.fat) || null;
-    const sodium = parseInt(pim.sodium, 10) || null;
-
-    if (!calories && !carbs) return null; // No useful nutrition data
-
-    return {
-      calories_per_serving: calories ? Math.round(calories) : null,
-      carbs_g: carbs,
-      protein_g: protein,
-      fat_g: fat,
-      sodium_mg: sodium,
-      serving_size: pim.serving_size || null,
-      serving_grams: parseFloat(pim.serving_grams) || null,
-      caffeine_mg: parseInt(pim.caffeine, 10) || null,
-      nutrition_source: "algolia",
-      nutrition_confidence: 0.7,
-    };
-  } catch (e) {
-    console.error(`    ⚠ Algolia error: ${e.message}`);
-    return null;
-  }
-}
-
-/**
- * Attempt FDA FoodData Central enrichment (by barcode)
- */
-async function enrichFromFDA(variant) {
-  if (!FDA_API_KEY || !variant.barcode) return null;
-
-  try {
-    await sleep(100); // Rate limit: ~1K req/hr
-
-    const url = `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(variant.barcode)}&dataType=Branded&pageSize=1&api_key=${FDA_API_KEY}`;
-    const res = await fetch(url);
-
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    const food = data.foods?.[0];
-    if (!food) return null;
-
-    const nutrients = {};
-    for (const n of food.foodNutrients || []) {
-      nutrients[n.nutrientId] = n.value;
-    }
-
-    // Common FDA nutrient IDs
-    const calories = nutrients[1008] || null; // Energy (kcal)
-    const carbs = nutrients[1005] || null; // Carbohydrate
-    const protein = nutrients[1003] || null; // Protein
-    const fat = nutrients[1004] || null; // Total fat
-    const sodium = nutrients[1093] || null; // Sodium (mg)
-
-    if (!calories && !carbs) return null;
-
-    return {
-      calories_per_serving: calories ? Math.round(calories) : null,
-      carbs_g: carbs,
-      protein_g: protein,
-      fat_g: fat,
-      sodium_mg: sodium ? Math.round(sodium) : null,
-      serving_size: food.servingSize
-        ? `${food.servingSize}${food.servingSizeUnit || "g"}`
-        : null,
-      serving_grams: food.servingSize || null,
-      caffeine_mg: nutrients[1057] ? Math.round(nutrients[1057]) : null,
-      nutrition_source: "fda",
-      nutrition_confidence: 0.85,
-    };
-  } catch (e) {
-    console.error(`    ⚠ FDA error: ${e.message}`);
-    return null;
-  }
-}
-
-// Circuit breaker for OFF — skip after consecutive failures
-let offConsecutiveFailures = 0;
-const OFF_FAILURE_THRESHOLD = 5;
-
-/**
- * Attempt OpenFoodFacts enrichment (by barcode)
- */
-async function enrichFromOFF(variant) {
-  if (!variant.barcode) return null;
-  if (offConsecutiveFailures >= OFF_FAILURE_THRESHOLD) return null; // Circuit breaker
-
-  try {
-    await sleep(700); // Rate limit for OFF
-
-    const res = await fetch(
-      `https://world.openfoodfacts.org/api/v0/product/${variant.barcode}.json`,
-      {
-        headers: {
-          "User-Agent": "MealvanaEndurance/1.0 (support@mealvana.com)",
-        },
-      },
-    );
-
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    if (data.status !== 1 || !data.product) return null;
-
-    const n = data.product.nutriments || {};
-    const calories =
-      n["energy-kcal_serving"] || n["energy-kcal_100g"] || null;
-    const carbs = n.carbohydrates_serving || n.carbohydrates_100g || null;
-    const protein = n.proteins_serving || n.proteins_100g || null;
-    const fat = n.fat_serving || n.fat_100g || null;
-    const sodium = n.sodium_serving
-      ? n.sodium_serving * 1000
-      : n.sodium_100g
-        ? n.sodium_100g * 1000
-        : null;
-
-    if (!calories && !carbs) return null;
-
-    offConsecutiveFailures = 0; // Reset on success
-    return {
-      calories_per_serving: calories ? Math.round(calories) : null,
-      carbs_g: carbs,
-      protein_g: protein,
-      fat_g: fat,
-      sodium_mg: sodium ? Math.round(sodium) : null,
-      serving_size: data.product.serving_size || null,
-      serving_grams: data.product.serving_quantity
-        ? parseFloat(data.product.serving_quantity)
-        : null,
-      caffeine_mg: null,
-      nutrition_source: "openfoodfacts",
-      nutrition_confidence: data.product.completeness || 0.6,
-    };
-  } catch (e) {
-    offConsecutiveFailures++;
-    if (offConsecutiveFailures === OFF_FAILURE_THRESHOLD) {
-      console.error(`    ⚠ OFF: ${OFF_FAILURE_THRESHOLD} consecutive failures — disabling for this run`);
-    } else {
-      console.error(`    ⚠ OFF error: ${e.message}`);
-    }
-    return null;
-  }
-}
-
-/**
- * Run the nutrition enrichment waterfall for a single variant
- */
-async function enrichNutrition(variant) {
-  // 1. Algolia
-  const algoliaResult = await enrichFromAlgolia(variant);
-  if (algoliaResult) return algoliaResult;
-
-  // 2. FDA FoodData Central
-  const fdaResult = await enrichFromFDA(variant);
-  if (fdaResult) return fdaResult;
-
-  // 3. OpenFoodFacts
-  const offResult = await enrichFromOFF(variant);
-  if (offResult) return offResult;
-
-  return null; // No nutrition data found
-}
 
 // ---------------------------------------------------------------------------
 // D. Upsert into catalog_items
@@ -665,6 +482,8 @@ async function main() {
 
           // IMPORTANT: All rows must have the exact same keys for PostgREST
           // batch upsert (PGRST102). Always include all nutrition columns.
+          // Strip _metafields from variant before storing in raw_payload
+          const { _metafields, ...variantForPayload } = variant;
           const row = {
             shopify_product_id: variant.shopify_product_id,
             shopify_variant_id: variant.shopify_variant_id,
@@ -691,11 +510,15 @@ async function main() {
             serving_size: nutrition?.serving_size ?? null,
             serving_grams: nutrition?.serving_grams ?? null,
             caffeine_mg: nutrition?.caffeine_mg ?? null,
+            sugar_g: nutrition?.sugar_g ?? null,
+            fiber_g: nutrition?.fiber_g ?? null,
+            ingredients: nutrition?.ingredients ?? null,
+            servings_per_container: nutrition?.servings_per_container ?? null,
             nutrition_source: nutrition?.nutrition_source ?? null,
             nutrition_confidence: nutrition?.nutrition_confidence ?? null,
             nutrition_enriched_at: nutrition ? new Date().toISOString() : null,
             raw_payload: {
-              shopify: variant,
+              shopify: variantForPayload,
               ...(nutrition
                 ? { nutrition_source_data: nutrition.nutrition_source }
                 : {}),

@@ -145,6 +145,14 @@ class PreRunMacros {
     required this.fatCapG,
     required this.fluidsMl,
     required this.sodiumMg,
+    this.carbsLowG,
+    this.carbsHighG,
+    this.proteinLowG,
+    this.proteinHighG,
+    this.sodiumLowMg,
+    this.sodiumHighMg,
+    this.fluidsLowMl,
+    this.fluidsHighMl,
   });
 
   final double carbsG;
@@ -152,6 +160,14 @@ class PreRunMacros {
   final double fatCapG;
   final double fluidsMl;
   final double sodiumMg;
+  final double? carbsLowG;
+  final double? carbsHighG;
+  final double? proteinLowG;
+  final double? proteinHighG;
+  final double? sodiumLowMg;
+  final double? sodiumHighMg;
+  final double? fluidsLowMl;
+  final double? fluidsHighMl;
 
   /// Convert fluids to US units (fl oz)
   double get fluidsFlOz => fluidsMl * 0.033814;
@@ -162,6 +178,14 @@ class PreRunMacros {
     double? fatCapG,
     double? fluidsMl,
     double? sodiumMg,
+    double? carbsLowG,
+    double? carbsHighG,
+    double? proteinLowG,
+    double? proteinHighG,
+    double? sodiumLowMg,
+    double? sodiumHighMg,
+    double? fluidsLowMl,
+    double? fluidsHighMl,
   }) {
     return PreRunMacros(
       carbsG: carbsG ?? this.carbsG,
@@ -169,6 +193,14 @@ class PreRunMacros {
       fatCapG: fatCapG ?? this.fatCapG,
       fluidsMl: fluidsMl ?? this.fluidsMl,
       sodiumMg: sodiumMg ?? this.sodiumMg,
+      carbsLowG: carbsLowG ?? this.carbsLowG,
+      carbsHighG: carbsHighG ?? this.carbsHighG,
+      proteinLowG: proteinLowG ?? this.proteinLowG,
+      proteinHighG: proteinHighG ?? this.proteinHighG,
+      sodiumLowMg: sodiumLowMg ?? this.sodiumLowMg,
+      sodiumHighMg: sodiumHighMg ?? this.sodiumHighMg,
+      fluidsLowMl: fluidsLowMl ?? this.fluidsLowMl,
+      fluidsHighMl: fluidsHighMl ?? this.fluidsHighMl,
     );
   }
 
@@ -179,6 +211,14 @@ class PreRunMacros {
       'fatCapG': fatCapG,
       'fluidsMl': fluidsMl,
       'sodiumMg': sodiumMg,
+      if (carbsLowG != null) 'carbsLowG': carbsLowG,
+      if (carbsHighG != null) 'carbsHighG': carbsHighG,
+      if (proteinLowG != null) 'proteinLowG': proteinLowG,
+      if (proteinHighG != null) 'proteinHighG': proteinHighG,
+      if (sodiumLowMg != null) 'sodiumLowMg': sodiumLowMg,
+      if (sodiumHighMg != null) 'sodiumHighMg': sodiumHighMg,
+      if (fluidsLowMl != null) 'fluidsLowMl': fluidsLowMl,
+      if (fluidsHighMl != null) 'fluidsHighMl': fluidsHighMl,
     };
   }
 
@@ -189,6 +229,14 @@ class PreRunMacros {
       fatCapG: (json['fatCapG'] as num).toDouble(),
       fluidsMl: (json['fluidsMl'] as num).toDouble(),
       sodiumMg: (json['sodiumMg'] as num).toDouble(),
+      carbsLowG: (json['carbsLowG'] as num?)?.toDouble(),
+      carbsHighG: (json['carbsHighG'] as num?)?.toDouble(),
+      proteinLowG: (json['proteinLowG'] as num?)?.toDouble(),
+      proteinHighG: (json['proteinHighG'] as num?)?.toDouble(),
+      sodiumLowMg: (json['sodiumLowMg'] as num?)?.toDouble(),
+      sodiumHighMg: (json['sodiumHighMg'] as num?)?.toDouble(),
+      fluidsLowMl: (json['fluidsLowMl'] as num?)?.toDouble(),
+      fluidsHighMl: (json['fluidsHighMl'] as num?)?.toDouble(),
     );
   }
 
@@ -200,12 +248,24 @@ class PreRunMacros {
         other.proteinG == proteinG &&
         other.fatCapG == fatCapG &&
         other.fluidsMl == fluidsMl &&
-        other.sodiumMg == sodiumMg;
+        other.sodiumMg == sodiumMg &&
+        other.carbsLowG == carbsLowG &&
+        other.carbsHighG == carbsHighG &&
+        other.proteinLowG == proteinLowG &&
+        other.proteinHighG == proteinHighG &&
+        other.sodiumLowMg == sodiumLowMg &&
+        other.sodiumHighMg == sodiumHighMg &&
+        other.fluidsLowMl == fluidsLowMl &&
+        other.fluidsHighMl == fluidsHighMl;
   }
 
   @override
   int get hashCode {
-    return Object.hash(carbsG, proteinG, fatCapG, fluidsMl, sodiumMg);
+    return Object.hash(
+      carbsG, proteinG, fatCapG, fluidsMl, sodiumMg,
+      carbsLowG, carbsHighG, proteinLowG, proteinHighG,
+      sodiumLowMg, sodiumHighMg, fluidsLowMl, fluidsHighMl,
+    );
   }
 
   @override
@@ -225,6 +285,12 @@ class DuringRunMacros {
     required this.sodiumTotalMg,
     required this.massNormRateGPerH,
     this.absClampRangeGPerH = const [30, 60],
+    this.carbsLowG,
+    this.carbsHighG,
+    this.sodiumLowMg,
+    this.sodiumHighMg,
+    this.fluidsLowMl,
+    this.fluidsHighMl,
   });
 
   final double carbRateGPerH;
@@ -235,6 +301,12 @@ class DuringRunMacros {
   final double sodiumTotalMg;
   final double massNormRateGPerH;
   final List<double> absClampRangeGPerH;
+  final double? carbsLowG;
+  final double? carbsHighG;
+  final double? sodiumLowMg;
+  final double? sodiumHighMg;
+  final double? fluidsLowMl;
+  final double? fluidsHighMl;
 
   /// Convert fluids to US units (fl oz)
   double get fluidRateFlOzPerH => fluidRateMlPerH * 0.033814;
@@ -285,6 +357,12 @@ class DuringRunMacros {
     double? sodiumTotalMg,
     double? massNormRateGPerH,
     List<double>? absClampRangeGPerH,
+    double? carbsLowG,
+    double? carbsHighG,
+    double? sodiumLowMg,
+    double? sodiumHighMg,
+    double? fluidsLowMl,
+    double? fluidsHighMl,
   }) {
     return DuringRunMacros(
       carbRateGPerH: carbRateGPerH ?? this.carbRateGPerH,
@@ -295,6 +373,12 @@ class DuringRunMacros {
       sodiumTotalMg: sodiumTotalMg ?? this.sodiumTotalMg,
       massNormRateGPerH: massNormRateGPerH ?? this.massNormRateGPerH,
       absClampRangeGPerH: absClampRangeGPerH ?? this.absClampRangeGPerH,
+      carbsLowG: carbsLowG ?? this.carbsLowG,
+      carbsHighG: carbsHighG ?? this.carbsHighG,
+      sodiumLowMg: sodiumLowMg ?? this.sodiumLowMg,
+      sodiumHighMg: sodiumHighMg ?? this.sodiumHighMg,
+      fluidsLowMl: fluidsLowMl ?? this.fluidsLowMl,
+      fluidsHighMl: fluidsHighMl ?? this.fluidsHighMl,
     );
   }
 
@@ -308,6 +392,12 @@ class DuringRunMacros {
       'sodiumTotalMg': sodiumTotalMg,
       'massNormRateGPerH': massNormRateGPerH,
       'absClampRangeGPerH': absClampRangeGPerH,
+      if (carbsLowG != null) 'carbsLowG': carbsLowG,
+      if (carbsHighG != null) 'carbsHighG': carbsHighG,
+      if (sodiumLowMg != null) 'sodiumLowMg': sodiumLowMg,
+      if (sodiumHighMg != null) 'sodiumHighMg': sodiumHighMg,
+      if (fluidsLowMl != null) 'fluidsLowMl': fluidsLowMl,
+      if (fluidsHighMl != null) 'fluidsHighMl': fluidsHighMl,
     };
   }
 
@@ -321,6 +411,12 @@ class DuringRunMacros {
       sodiumTotalMg: (json['sodiumTotalMg'] as num).toDouble(),
       massNormRateGPerH: (json['massNormRateGPerH'] as num).toDouble(),
       absClampRangeGPerH: List<double>.from(json['absClampRangeGPerH'] as List? ?? [30, 60]),
+      carbsLowG: (json['carbsLowG'] as num?)?.toDouble(),
+      carbsHighG: (json['carbsHighG'] as num?)?.toDouble(),
+      sodiumLowMg: (json['sodiumLowMg'] as num?)?.toDouble(),
+      sodiumHighMg: (json['sodiumHighMg'] as num?)?.toDouble(),
+      fluidsLowMl: (json['fluidsLowMl'] as num?)?.toDouble(),
+      fluidsHighMl: (json['fluidsHighMl'] as num?)?.toDouble(),
     );
   }
 
@@ -335,7 +431,13 @@ class DuringRunMacros {
         other.sodiumRateMgPerH == sodiumRateMgPerH &&
         other.sodiumTotalMg == sodiumTotalMg &&
         other.massNormRateGPerH == massNormRateGPerH &&
-        _listEquals(other.absClampRangeGPerH, absClampRangeGPerH);
+        _listEquals(other.absClampRangeGPerH, absClampRangeGPerH) &&
+        other.carbsLowG == carbsLowG &&
+        other.carbsHighG == carbsHighG &&
+        other.sodiumLowMg == sodiumLowMg &&
+        other.sodiumHighMg == sodiumHighMg &&
+        other.fluidsLowMl == fluidsLowMl &&
+        other.fluidsHighMl == fluidsHighMl;
   }
 
   @override
@@ -349,6 +451,12 @@ class DuringRunMacros {
       sodiumTotalMg,
       massNormRateGPerH,
       Object.hashAll(absClampRangeGPerH),
+      carbsLowG,
+      carbsHighG,
+      sodiumLowMg,
+      sodiumHighMg,
+      fluidsLowMl,
+      fluidsHighMl,
     );
   }
 
@@ -365,12 +473,28 @@ class PostRunMacros {
     required this.proteinG,
     required this.fluidsMl,
     required this.sodiumMg,
+    this.carbsLowG,
+    this.carbsHighG,
+    this.proteinLowG,
+    this.proteinHighG,
+    this.sodiumLowMg,
+    this.sodiumHighMg,
+    this.fluidsLowMl,
+    this.fluidsHighMl,
   });
 
   final double carbsG;
   final double proteinG;
   final double fluidsMl;
   final double sodiumMg;
+  final double? carbsLowG;
+  final double? carbsHighG;
+  final double? proteinLowG;
+  final double? proteinHighG;
+  final double? sodiumLowMg;
+  final double? sodiumHighMg;
+  final double? fluidsLowMl;
+  final double? fluidsHighMl;
 
   /// Convert fluids to US units (fl oz)
   double get fluidsFlOz => fluidsMl * 0.033814;
@@ -380,12 +504,28 @@ class PostRunMacros {
     double? proteinG,
     double? fluidsMl,
     double? sodiumMg,
+    double? carbsLowG,
+    double? carbsHighG,
+    double? proteinLowG,
+    double? proteinHighG,
+    double? sodiumLowMg,
+    double? sodiumHighMg,
+    double? fluidsLowMl,
+    double? fluidsHighMl,
   }) {
     return PostRunMacros(
       carbsG: carbsG ?? this.carbsG,
       proteinG: proteinG ?? this.proteinG,
       fluidsMl: fluidsMl ?? this.fluidsMl,
       sodiumMg: sodiumMg ?? this.sodiumMg,
+      carbsLowG: carbsLowG ?? this.carbsLowG,
+      carbsHighG: carbsHighG ?? this.carbsHighG,
+      proteinLowG: proteinLowG ?? this.proteinLowG,
+      proteinHighG: proteinHighG ?? this.proteinHighG,
+      sodiumLowMg: sodiumLowMg ?? this.sodiumLowMg,
+      sodiumHighMg: sodiumHighMg ?? this.sodiumHighMg,
+      fluidsLowMl: fluidsLowMl ?? this.fluidsLowMl,
+      fluidsHighMl: fluidsHighMl ?? this.fluidsHighMl,
     );
   }
 
@@ -395,6 +535,14 @@ class PostRunMacros {
       'proteinG': proteinG,
       'fluidsMl': fluidsMl,
       'sodiumMg': sodiumMg,
+      if (carbsLowG != null) 'carbsLowG': carbsLowG,
+      if (carbsHighG != null) 'carbsHighG': carbsHighG,
+      if (proteinLowG != null) 'proteinLowG': proteinLowG,
+      if (proteinHighG != null) 'proteinHighG': proteinHighG,
+      if (sodiumLowMg != null) 'sodiumLowMg': sodiumLowMg,
+      if (sodiumHighMg != null) 'sodiumHighMg': sodiumHighMg,
+      if (fluidsLowMl != null) 'fluidsLowMl': fluidsLowMl,
+      if (fluidsHighMl != null) 'fluidsHighMl': fluidsHighMl,
     };
   }
 
@@ -404,6 +552,14 @@ class PostRunMacros {
       proteinG: (json['proteinG'] as num).toDouble(),
       fluidsMl: (json['fluidsMl'] as num).toDouble(),
       sodiumMg: (json['sodiumMg'] as num).toDouble(),
+      carbsLowG: (json['carbsLowG'] as num?)?.toDouble(),
+      carbsHighG: (json['carbsHighG'] as num?)?.toDouble(),
+      proteinLowG: (json['proteinLowG'] as num?)?.toDouble(),
+      proteinHighG: (json['proteinHighG'] as num?)?.toDouble(),
+      sodiumLowMg: (json['sodiumLowMg'] as num?)?.toDouble(),
+      sodiumHighMg: (json['sodiumHighMg'] as num?)?.toDouble(),
+      fluidsLowMl: (json['fluidsLowMl'] as num?)?.toDouble(),
+      fluidsHighMl: (json['fluidsHighMl'] as num?)?.toDouble(),
     );
   }
 
@@ -414,12 +570,24 @@ class PostRunMacros {
         other.carbsG == carbsG &&
         other.proteinG == proteinG &&
         other.fluidsMl == fluidsMl &&
-        other.sodiumMg == sodiumMg;
+        other.sodiumMg == sodiumMg &&
+        other.carbsLowG == carbsLowG &&
+        other.carbsHighG == carbsHighG &&
+        other.proteinLowG == proteinLowG &&
+        other.proteinHighG == proteinHighG &&
+        other.sodiumLowMg == sodiumLowMg &&
+        other.sodiumHighMg == sodiumHighMg &&
+        other.fluidsLowMl == fluidsLowMl &&
+        other.fluidsHighMl == fluidsHighMl;
   }
 
   @override
   int get hashCode {
-    return Object.hash(carbsG, proteinG, fluidsMl, sodiumMg);
+    return Object.hash(
+      carbsG, proteinG, fluidsMl, sodiumMg,
+      carbsLowG, carbsHighG, proteinLowG, proteinHighG,
+      sodiumLowMg, sodiumHighMg, fluidsLowMl, fluidsHighMl,
+    );
   }
 
   @override

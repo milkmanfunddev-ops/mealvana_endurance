@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:uuid/uuid.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
@@ -36,7 +37,8 @@ class FoodPreferencesScreen extends ConsumerStatefulWidget {
   const FoodPreferencesScreen({super.key});
 
   @override
-  ConsumerState<FoodPreferencesScreen> createState() => _FoodPreferencesScreenState();
+  ConsumerState<FoodPreferencesScreen> createState() =>
+      _FoodPreferencesScreenState();
 }
 
 class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
@@ -44,7 +46,8 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   final Map<String, int> _sliderLevels = {};
 
   List<FoodItem> _allFoodPreferences = [];
-  List<FoodItem> _additionalFoodPreferences = []; // Additional food options (expandable)
+  List<FoodItem> _additionalFoodPreferences =
+      []; // Additional food options (expandable)
   List<FoodItem> _userFoods = []; // User-added foods (scanned/searched)
   bool _isLoading = true;
   bool _isSaving = false;
@@ -80,7 +83,8 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
     if (value.trim().isNotEmpty) {
       // Count total local results across all lists
-      final totalLocalResults = _filteredFoods.length +
+      final totalLocalResults =
+          _filteredFoods.length +
           _filteredAdditionalFoods.length +
           _filteredUserFoods.length;
 
@@ -105,9 +109,13 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     super.initState();
     _loadFoods();
 
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': 'Food Preferences Settings',
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {'screen_name': 'Food Preferences Settings'},
+        );
   }
 
   @override
@@ -133,82 +141,123 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         currentAuthUserId: currentAuthUserId,
       );
       final deviceId = userProfile?.id ?? 'unknown';
-      DebugLogger.info('[FOOD_PREFS] ✅ User profile retrieved, deviceId: $deviceId');
+      DebugLogger.info(
+        '[FOOD_PREFS] ✅ User profile retrieved, deviceId: $deviceId',
+      );
 
       // Ensure user_foods are synced from remote (pulls down after re-login)
       try {
-        final userFoodsRepo = await ref.read(userFoodsRepositoryProvider.future);
-        await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
-          'user_foods',
-          deviceId,
-          repository: userFoodsRepo,
+        final userFoodsRepo = await ref.read(
+          userFoodsRepositoryProvider.future,
         );
+        await ref
+            .read(syncCoordinatorProvider.notifier)
+            .ensureSynced('user_foods', deviceId, repository: userFoodsRepo);
       } catch (e) {
-        DebugLogger.warning('[FOOD_PREFS] ⚠️ User foods sync failed, continuing with cached data: $e');
+        DebugLogger.warning(
+          '[FOOD_PREFS] ⚠️ User foods sync failed, continuing with cached data: $e',
+        );
       }
 
       // Load primary foods, additional foods, user foods, and existing preferences in parallel
-      DebugLogger.info('[FOOD_PREFS] 📦 Starting parallel data load (primary foods, additional foods, user foods, preferences)...');
-
-      final results = await Future.wait([
-        () async {
-          DebugLogger.info('[FOOD_PREFS] 🌐 Fetching primary foods from Supabase...');
-          final foods = await foodRepository.getPrimaryFoodsForPreferences();
-          DebugLogger.info('[FOOD_PREFS] ✅ Primary foods loaded: ${foods.length} items');
-          return foods;
-        }(),
-        () async {
-          DebugLogger.info('[FOOD_PREFS] 🌐 Fetching additional foods from Supabase...');
-          final foods = await foodRepository.getAdditionalFoodsForPreferences();
-          DebugLogger.info('[FOOD_PREFS] ✅ Additional foods loaded: ${foods.length} items');
-          return foods;
-        }(),
-        () async {
-          DebugLogger.info('[FOOD_PREFS] 💾 Fetching user foods from local database...');
-          final userFoods = await database.foodsDao.getUserFoods(deviceId);
-          DebugLogger.info('[FOOD_PREFS] ✅ User foods loaded: ${userFoods.length} items');
-          return userFoods;
-        }(),
-        () async {
-          DebugLogger.info('[FOOD_PREFS] 🔐 Checking auth and loading preferences...');
-          final user = await authService.getCurrentUser();
-          if (user != null) {
-            DebugLogger.info('[FOOD_PREFS] 👤 User authenticated, fetching preferences...');
-            final prefs = await authService.getFoodPreferences(user.id);
-            DebugLogger.info('[FOOD_PREFS] ✅ Preferences loaded: ${prefs?.length ?? 0} items');
-            return prefs;
-          }
-          DebugLogger.info('[FOOD_PREFS] ⚠️ No authenticated user, skipping preferences');
-          return null;
-        }(),
-        () async {
-          DebugLogger.info('[FOOD_PREFS] 📊 Loading slider levels...');
-          final user = await authService.getCurrentUser();
-          if (user != null) {
-            final levels = await authService.getFoodPreferenceLevels(user.id);
-            DebugLogger.info('[FOOD_PREFS] ✅ Slider levels loaded: ${levels.length}');
-            return levels;
-          }
-          return <String, int>{};
-        }(),
-      ]).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          DebugLogger.error('[FOOD_PREFS] ❌ Future.wait timed out after 15 seconds');
-          throw TimeoutException('Failed to load food data - operation timed out');
-        },
+      DebugLogger.info(
+        '[FOOD_PREFS] 📦 Starting parallel data load (primary foods, additional foods, user foods, preferences)...',
       );
+
+      final results =
+          await Future.wait([
+            () async {
+              DebugLogger.info(
+                '[FOOD_PREFS] 🌐 Fetching primary foods from Supabase...',
+              );
+              final foods = await foodRepository
+                  .getPrimaryFoodsForPreferences();
+              DebugLogger.info(
+                '[FOOD_PREFS] ✅ Primary foods loaded: ${foods.length} items',
+              );
+              return foods;
+            }(),
+            () async {
+              DebugLogger.info(
+                '[FOOD_PREFS] 🌐 Fetching additional foods from Supabase...',
+              );
+              final foods = await foodRepository
+                  .getAdditionalFoodsForPreferences();
+              DebugLogger.info(
+                '[FOOD_PREFS] ✅ Additional foods loaded: ${foods.length} items',
+              );
+              return foods;
+            }(),
+            () async {
+              DebugLogger.info(
+                '[FOOD_PREFS] 💾 Fetching user foods from local database...',
+              );
+              final userFoods = await database.foodsDao.getUserFoods(deviceId);
+              DebugLogger.info(
+                '[FOOD_PREFS] ✅ User foods loaded: ${userFoods.length} items',
+              );
+              return userFoods;
+            }(),
+            () async {
+              DebugLogger.info(
+                '[FOOD_PREFS] 🔐 Checking auth and loading preferences...',
+              );
+              final user = await authService.getCurrentUser();
+              if (user != null) {
+                DebugLogger.info(
+                  '[FOOD_PREFS] 👤 User authenticated, fetching preferences...',
+                );
+                final prefs = await authService.getFoodPreferences(user.id);
+                DebugLogger.info(
+                  '[FOOD_PREFS] ✅ Preferences loaded: ${prefs?.length ?? 0} items',
+                );
+                return prefs;
+              }
+              DebugLogger.info(
+                '[FOOD_PREFS] ⚠️ No authenticated user, skipping preferences',
+              );
+              return null;
+            }(),
+            () async {
+              DebugLogger.info('[FOOD_PREFS] 📊 Loading slider levels...');
+              final user = await authService.getCurrentUser();
+              if (user != null) {
+                final levels = await authService.getFoodPreferenceLevels(
+                  user.id,
+                );
+                DebugLogger.info(
+                  '[FOOD_PREFS] ✅ Slider levels loaded: ${levels.length}',
+                );
+                return levels;
+              }
+              return <String, int>{};
+            }(),
+          ]).timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              DebugLogger.error(
+                '[FOOD_PREFS] ❌ Future.wait timed out after 15 seconds',
+              );
+              throw TimeoutException(
+                'Failed to load food data - operation timed out',
+              );
+            },
+          );
 
       final primaryFoods = results[0] as List<FoodItem>;
       final additionalFoods = results[1] as List<FoodItem>;
       final userFoodsData = results[2] as List<dynamic>;
       final existingPreferences = results[3] as Map<String, FoodPreference>?;
-      final sliderLevels = Map<String, int>.from(results[4] as Map<String, int>? ?? {});
+      final sliderLevels = Map<String, int>.from(
+        results[4] as Map<String, int>? ?? {},
+      );
 
       DebugLogger.info('[FOOD_PREFS] 🔄 Converting user foods to FoodItems...');
       // Convert user foods to FoodItems
       final userFoods = userFoodsData
-          .map((userFood) => database.foodsDao.convertUserFoodToFoodItem(userFood))
+          .map(
+            (userFood) => database.foodsDao.convertUserFoodToFoodItem(userFood),
+          )
           .cast<FoodItem>()
           .toList();
 
@@ -221,10 +270,12 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
         // Initialize slider levels based on existing preferences
         for (final food in primaryFoods) {
-          if (existingPreferences != null && existingPreferences.containsKey(food.name)) {
+          if (existingPreferences != null &&
+              existingPreferences.containsKey(food.name)) {
             // Convert existing preference to slider level
             final level =
-                (sliderLevels[food.name] ?? _preferenceToLevel(existingPreferences[food.name]!))
+                (sliderLevels[food.name] ??
+                        _preferenceToLevel(existingPreferences[food.name]!))
                     .clamp(0, 4);
             _sliderLevels[food.name] = level.toInt();
           } else {
@@ -235,9 +286,11 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
         // Initialize slider levels for additional foods with avoid (level 0) by default
         for (final food in additionalFoods) {
-          if (existingPreferences != null && existingPreferences.containsKey(food.name)) {
+          if (existingPreferences != null &&
+              existingPreferences.containsKey(food.name)) {
             final level =
-                (sliderLevels[food.name] ?? _preferenceToLevel(existingPreferences[food.name]!))
+                (sliderLevels[food.name] ??
+                        _preferenceToLevel(existingPreferences[food.name]!))
                     .clamp(0, 4);
             _sliderLevels[food.name] = level.toInt();
           } else {
@@ -248,9 +301,11 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
         // Initialize slider levels for user foods
         for (final food in userFoods) {
-          if (existingPreferences != null && existingPreferences.containsKey(food.name)) {
+          if (existingPreferences != null &&
+              existingPreferences.containsKey(food.name)) {
             final level =
-                (sliderLevels[food.name] ?? _preferenceToLevel(existingPreferences[food.name]!))
+                (sliderLevels[food.name] ??
+                        _preferenceToLevel(existingPreferences[food.name]!))
                     .clamp(0, 4);
             _sliderLevels[food.name] = level.toInt();
           } else {
@@ -260,15 +315,24 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         }
       });
 
-      DebugLogger.info('[FOOD_PREFS] 🎉 Food preferences load completed successfully! (${primaryFoods.length} primary foods, ${userFoods.length} user foods)');
+      DebugLogger.info(
+        '[FOOD_PREFS] 🎉 Food preferences load completed successfully! (${primaryFoods.length} primary foods, ${userFoods.length} user foods)',
+      );
     } catch (e, stackTrace) {
-      DebugLogger.error('[FOOD_PREFS] ❌ Failed to load foods', error: e, stackTrace: stackTrace);
+      DebugLogger.error(
+        '[FOOD_PREFS] ❌ Failed to load foods',
+        error: e,
+        stackTrace: stackTrace,
+      );
       setState(() {
         _isLoading = false;
       });
 
       if (mounted) {
-        MealvanaSnackbar.showError(context, 'Error loading food preferences: ${e.toString()}');
+        MealvanaSnackbar.showError(
+          context,
+          'Error loading food preferences: ${e.toString()}',
+        );
       }
     }
   }
@@ -281,7 +345,9 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     });
 
     DebugLogger.info('🔄 Food preferences settings - Saving preferences');
-    DebugLogger.info('📊 Food preferences settings - Selected preferences count: ${_sliderLevels.length}');
+    DebugLogger.info(
+      '📊 Food preferences settings - Selected preferences count: ${_sliderLevels.length}',
+    );
 
     try {
       final authService = ref.read(authServiceProvider);
@@ -303,12 +369,17 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       }
 
       final analytics = ref.read(appExternalDepsProvider).analytics;
-      await analytics.track('food_preferences_saved', properties: {
-        'total_foods': preferences.length,
-        'preferences': preferences.map((key, value) => MapEntry(key, value.toString())),
-        'slider_levels': _sliderLevels,
-        'source': 'settings',
-      });
+      await analytics.track(
+        'food_preferences_saved',
+        properties: {
+          'total_foods': preferences.length,
+          'preferences': preferences.map(
+            (key, value) => MapEntry(key, value.toString()),
+          ),
+          'slider_levels': _sliderLevels,
+          'source': 'settings',
+        },
+      );
 
       if (mounted) {
         MealvanaSnackbar.showSuccess(context, '✅ Food preferences saved!');
@@ -319,7 +390,10 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     } catch (e) {
       DebugLogger.error('❌ Food preferences settings - Failed to save: $e');
       if (mounted) {
-        MealvanaSnackbar.showError(context, 'Failed to save food preferences: $e');
+        MealvanaSnackbar.showError(
+          context,
+          'Failed to save food preferences: $e',
+        );
       }
     } finally {
       if (mounted) {
@@ -353,13 +427,15 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     }
   }
 
-
   List<FoodItem> get _filteredFoods {
     if (_searchQuery.isEmpty) {
       return _allFoodPreferences;
     }
     return _allFoodPreferences
-        .where((food) => food.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where(
+          (food) =>
+              food.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
         .toList();
   }
 
@@ -368,7 +444,10 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       return _additionalFoodPreferences;
     }
     return _additionalFoodPreferences
-        .where((food) => food.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where(
+          (food) =>
+              food.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
         .toList();
   }
 
@@ -377,7 +456,10 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       return _userFoods;
     }
     return _userFoods
-        .where((food) => food.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where(
+          (food) =>
+              food.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
         .toList();
   }
 
@@ -411,15 +493,22 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
       if (results.isEmpty) {
         setState(() {
-          _searchErrorMessage = 'No products found for "$query". Try different keywords.';
+          _searchErrorMessage =
+              'No products found for "$query". Try different keywords.';
         });
       }
 
-      ref.read(appExternalDepsProvider).analytics.track('food_search_performed', properties: {
-        'query': query,
-        'results_count': results.length,
-        'source': 'settings_food_preferences',
-      });
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track(
+            'food_search_performed',
+            properties: {
+              'query': query,
+              'results_count': results.length,
+              'source': 'settings_food_preferences',
+            },
+          );
     } on SearchException catch (e) {
       setState(() {
         _searchErrorMessage = e.message;
@@ -447,7 +536,10 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   Future<void> _handleSearchResultTap(FoodSearchResult result) async {
     if (!result.hasValidId) {
       if (mounted) {
-        MealvanaSnackbar.showError(context, 'Cannot load details for this product');
+        MealvanaSnackbar.showError(
+          context,
+          'Cannot load details for this product',
+        );
       }
       return;
     }
@@ -458,9 +550,8 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(),
-          ),
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
         );
       }
 
@@ -573,7 +664,8 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
 
       // Use user-selected product type if provided, otherwise fall back to 'import'
-      final finalProductType = productType ?? foodItem.productTypeId ?? 'import';
+      final finalProductType =
+          productType ?? foodItem.productTypeId ?? 'import';
 
       final categoryStrings = categoryIds.map((id) {
         switch (id) {
@@ -600,7 +692,8 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         servingUnit: foodItem.servingUnit,
         servingSize: foodItem.servingSize,
         categories: categoryStrings,
-        caloriesPerServing: (carbsPerServing?.toInt()) ?? foodItem.caloriesPerServing,
+        caloriesPerServing:
+            (carbsPerServing?.toInt()) ?? foodItem.caloriesPerServing,
         carbsPerServing: carbsPerServing ?? foodItem.carbsPerServing,
         proteinPerServing: proteinPerServing ?? foodItem.proteinPerServing,
         fatPerServing: fatPerServing ?? foodItem.fatPerServing,
@@ -624,12 +717,18 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       await _loadFoods();
 
       if (mounted) {
-        MealvanaSnackbar.showSuccess(context, '${foodItem.name} added to your foods!');
+        MealvanaSnackbar.showSuccess(
+          context,
+          '${foodItem.name} added to your foods!',
+        );
       }
     } catch (e) {
       DebugLogger.error('Error saving searched food: $e');
       if (mounted) {
-        MealvanaSnackbar.showError(context, 'Failed to save food. Please try again.');
+        MealvanaSnackbar.showError(
+          context,
+          'Failed to save food. Please try again.',
+        );
       }
     }
   }
@@ -652,9 +751,13 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
             .eq('device_id', deviceId)
             .eq('id', food.id);
 
-        DebugLogger.info('✅ Food deleted from both local and Supabase: ${food.name}');
+        DebugLogger.info(
+          '✅ Food deleted from both local and Supabase: ${food.name}',
+        );
       } catch (supabaseError) {
-        DebugLogger.warning('⚠️ Supabase delete sync failed, but local delete succeeded: $supabaseError');
+        DebugLogger.warning(
+          '⚠️ Supabase delete sync failed, but local delete succeeded: $supabaseError',
+        );
       }
 
       // Remove from local state and preference
@@ -664,12 +767,18 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       });
 
       if (mounted) {
-        MealvanaSnackbar.showSuccess(context, '${food.name} removed from your foods');
+        MealvanaSnackbar.showSuccess(
+          context,
+          '${food.name} removed from your foods',
+        );
       }
     } catch (e) {
       DebugLogger.error('Error deleting user food: $e');
       if (mounted) {
-        MealvanaSnackbar.showError(context, 'Failed to delete food. Please try again.');
+        MealvanaSnackbar.showError(
+          context,
+          'Failed to delete food. Please try again.',
+        );
       }
     }
   }
@@ -682,11 +791,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       context,
       MaterialPageRoute(
         builder: (ctx) => FoodDetailScreen(
-          foodData: FoodDetailData(
-            id: uuid,
-            name: '',
-            categoryIds: [1, 2, 3],
-          ),
+          foodData: FoodDetailData(id: uuid, name: '', categoryIds: [1, 2, 3]),
           mode: FoodDetailMode.createNew,
           screenContext: FoodDetailContext.foodPreferences,
           showCategories: true,
@@ -699,10 +804,14 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       try {
         final categoryStrings = result.categoryIds.map((id) {
           switch (id) {
-            case 1: return 'before_run';
-            case 2: return 'during_run';
-            case 3: return 'after_run';
-            default: return 'before_run';
+            case 1:
+              return 'before_run';
+            case 2:
+              return 'during_run';
+            case 3:
+              return 'after_run';
+            default:
+              return 'before_run';
           }
         }).toList();
 
@@ -734,10 +843,14 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           name: food.name,
           categories: categoryStrings.map((cat) {
             switch (cat) {
-              case 'before_run': return FoodCategory.beforeRun;
-              case 'during_run': return FoodCategory.duringRun;
-              case 'after_run': return FoodCategory.afterRun;
-              default: return FoodCategory.beforeRun;
+              case 'before_run':
+                return FoodCategory.beforeRun;
+              case 'during_run':
+                return FoodCategory.duringRun;
+              case 'after_run':
+                return FoodCategory.afterRun;
+              default:
+                return FoodCategory.beforeRun;
             }
           }).toList(),
           carbsPerServing: food.carbsPerServing,
@@ -771,9 +884,10 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   Future<void> _handleBarcodeScan() async {
     try {
       // Navigate to barcode scanner screen
-      final result = await context.push('/barcode-scanner', extra: {
-        'category': 'preferences',
-      });
+      final result = await context.push(
+        '/barcode-scanner',
+        extra: {'category': 'preferences'},
+      );
 
       // If a food was successfully scanned, the FoodDetailScreen already handled category selection
       // The result from barcode-scanner is now a Food with categories already set
@@ -785,10 +899,14 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           foodItem,
           result.categories.map((cat) {
             switch (cat) {
-              case 'before_run': return 1;
-              case 'during_run': return 2;
-              case 'after_run': return 3;
-              default: return 1;
+              case 'before_run':
+                return 1;
+              case 'during_run':
+                return 2;
+              case 'after_run':
+                return 3;
+              default:
+                return 1;
             }
           }).toList(),
           result.fluidMlPerServing,
@@ -815,8 +933,8 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _showSearchResults
-              ? _buildSearchResultsView()
-              : _buildContent(context),
+          ? _buildSearchResultsView()
+          : _buildContent(context),
     );
   }
 
@@ -825,14 +943,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          FontAwesomeIcons.arrowLeft,
-          size: AppIconSizes.md,
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-        onPressed: () => context.pop(),
-      ),
+      leading: const CustomAppBarBackButton(),
       title: Text(
         'Food Preferences',
         style: AppTextStyles.sectionTitle.copyWith(
@@ -860,22 +971,27 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                     onChanged: _handleSearchChanged,
                     onBarcodeScan: () {
                       final analytics = ref.read(appExternalDepsProvider);
-                      analytics.analytics.track('barcode_scanner_opened', properties: {
-                        'source': 'food_preferences_settings',
-                      });
+                      analytics.analytics.track(
+                        'barcode_scanner_opened',
+                        properties: {'source': 'food_preferences_settings'},
+                      );
                       _handleBarcodeScan();
                     },
                     onSearchSubmit: (query) => _performSearch(),
-                    enableAutoSearch: false, // Disabled - now handled in _handleSearchChanged based on results
+                    enableAutoSearch:
+                        false, // Disabled - now handled in _handleSearchChanged based on results
                     autoSearchDebounceMs: 1500,
                     hintText: 'Search foods...',
                   ),
 
                   // "Search OpenFoodFacts" button (when 1-3 local results)
-                  if (_searchQuery.isNotEmpty && !_showSearchResults && !_isSearching)
+                  if (_searchQuery.isNotEmpty &&
+                      !_showSearchResults &&
+                      !_isSearching)
                     Builder(
                       builder: (context) {
-                        final totalLocalResults = _filteredFoods.length +
+                        final totalLocalResults =
+                            _filteredFoods.length +
                             _filteredAdditionalFoods.length +
                             _filteredUserFoods.length;
 
@@ -943,7 +1059,10 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
         // Food preferences list
         Expanded(
-          child: (_filteredFoods.isEmpty && _filteredUserFoods.isEmpty && _filteredAdditionalFoods.isEmpty)
+          child:
+              (_filteredFoods.isEmpty &&
+                  _filteredUserFoods.isEmpty &&
+                  _filteredAdditionalFoods.isEmpty)
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -951,11 +1070,15 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                       Icon(
                         FontAwesomeIcons.searchengin,
                         size: 48,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurfaceVariant.withOpacity(0.5),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Text(
-                        _searchQuery.isEmpty ? 'No foods found' : 'No foods found for "$_searchQuery"',
+                        _searchQuery.isEmpty
+                            ? 'No foods found'
+                            : 'No foods found for "$_searchQuery"',
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -966,7 +1089,9 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                         Text(
                           'Try a different search term or use the search button to find foods in our database',
                           style: AppTextStyles.smallLabel.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant.withOpacity(0.7),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -987,8 +1112,14 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                         ..._filteredUserFoods.map((food) {
                           final sliderLevel = _sliderLevels[food.name] ?? 2;
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                            child: _buildFoodPreferenceItem(context, food, sliderLevel),
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.md,
+                            ),
+                            child: _buildFoodPreferenceItem(
+                              context,
+                              food,
+                              sliderLevel,
+                            ),
                           );
                         }),
                       ],
@@ -999,7 +1130,11 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                       final sliderLevel = _sliderLevels[food.name] ?? 2;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: _buildFoodPreferenceItem(context, food, sliderLevel),
+                        child: _buildFoodPreferenceItem(
+                          context,
+                          food,
+                          sliderLevel,
+                        ),
                       );
                     }),
 
@@ -1014,8 +1149,14 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                         ..._filteredAdditionalFoods.map((food) {
                           final sliderLevel = _sliderLevels[food.name] ?? 0;
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                            child: _buildFoodPreferenceItem(context, food, sliderLevel),
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.md,
+                            ),
+                            child: _buildFoodPreferenceItem(
+                              context,
+                              food,
+                              sliderLevel,
+                            ),
                           );
                         }),
                       ],
@@ -1052,7 +1193,11 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     );
   }
 
-  Widget _buildUserFoodPreferenceItem(BuildContext context, FoodItem food, int sliderLevel) {
+  Widget _buildUserFoodPreferenceItem(
+    BuildContext context,
+    FoodItem food,
+    int sliderLevel,
+  ) {
     return UserFoodItemWidget(
       food: food,
       sliderLevel: sliderLevel,
@@ -1062,18 +1207,20 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         });
 
         final analytics = ref.read(appExternalDepsProvider);
-        analytics.analytics.track('food_preference_changed', properties: {
-          'food_name': food.name,
-          'slider_level': newLevel,
-          'backend_preference': _levelToPreference(newLevel).toString(),
-          'source': 'settings',
-        });
+        analytics.analytics.track(
+          'food_preference_changed',
+          properties: {
+            'food_name': food.name,
+            'slider_level': newLevel,
+            'backend_preference': _levelToPreference(newLevel).toString(),
+            'source': 'settings',
+          },
+        );
       },
       onEditTap: () => _showUserFoodEditSheet(food),
       mapFoodType: _mapFoodType,
     );
   }
-
 
   /// Show the edit screen for a user food
   Future<void> _showUserFoodEditSheet(FoodItem food) async {
@@ -1124,13 +1271,20 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       } catch (e) {
         DebugLogger.error('Error updating user food: $e');
         if (mounted) {
-          MealvanaSnackbar.showError(context, 'Failed to update food. Please try again.');
+          MealvanaSnackbar.showError(
+            context,
+            'Failed to update food. Please try again.',
+          );
         }
       }
     }
   }
 
-  Widget _buildFoodPreferenceItem(BuildContext context, FoodItem food, int sliderLevel) {
+  Widget _buildFoodPreferenceItem(
+    BuildContext context,
+    FoodItem food,
+    int sliderLevel,
+  ) {
     return FoodPreferenceItemWidget(
       food: food,
       sliderLevel: sliderLevel,
@@ -1140,17 +1294,19 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         });
 
         final analytics = ref.read(appExternalDepsProvider);
-        analytics.analytics.track('food_preference_changed', properties: {
-          'food_name': food.name,
-          'slider_level': newLevel,
-          'backend_preference': _levelToPreference(newLevel).toString(),
-          'source': 'settings',
-        });
+        analytics.analytics.track(
+          'food_preference_changed',
+          properties: {
+            'food_name': food.name,
+            'slider_level': newLevel,
+            'backend_preference': _levelToPreference(newLevel).toString(),
+            'source': 'settings',
+          },
+        );
       },
       mapFoodType: _mapFoodType,
     );
   }
-
 
   Widget _buildSearchResultsView() {
     return Column(
@@ -1170,27 +1326,27 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           child: _isSearching
               ? _buildSearchingIndicator()
               : _searchErrorMessage != null
-                  ? _buildSearchError()
-                  : _searchResults.isEmpty
-                      ? Center(
-                          child: Text(
-                            'No results found',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          itemCount: _searchResults.length,
-                          itemBuilder: (context, index) {
-                            final result = _searchResults[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                              child: _buildSearchResultItem(result),
-                            );
-                          },
-                        ),
+              ? _buildSearchError()
+              : _searchResults.isEmpty
+              ? Center(
+                  child: Text(
+                    'No results found',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  itemCount: _searchResults.length,
+                  itemBuilder: (context, index) {
+                    final result = _searchResults[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _buildSearchResultItem(result),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -1284,15 +1440,25 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       return KyleFoodType.gel;
     } else if (name.contains('bar') || name.contains('energy')) {
       return KyleFoodType.energyBar;
-    } else if (name.contains('drink') || name.contains('water') || name.contains('fluid')) {
+    } else if (name.contains('drink') ||
+        name.contains('water') ||
+        name.contains('fluid')) {
       return KyleFoodType.drink;
-    } else if (name.contains('protein') || name.contains('meat') || name.contains('chicken')) {
+    } else if (name.contains('protein') ||
+        name.contains('meat') ||
+        name.contains('chicken')) {
       return KyleFoodType.protein;
-    } else if (name.contains('vegetable') || name.contains('carrot') || name.contains('salad')) {
+    } else if (name.contains('vegetable') ||
+        name.contains('carrot') ||
+        name.contains('salad')) {
       return KyleFoodType.vegetable;
-    } else if (name.contains('snack') || name.contains('cookie') || name.contains('cracker')) {
+    } else if (name.contains('snack') ||
+        name.contains('cookie') ||
+        name.contains('cracker')) {
       return KyleFoodType.snack;
-    } else if (name.contains('supplement') || name.contains('pill') || name.contains('vitamin')) {
+    } else if (name.contains('supplement') ||
+        name.contains('pill') ||
+        name.contains('vitamin')) {
       return KyleFoodType.supplement;
     } else {
       return KyleFoodType.other;

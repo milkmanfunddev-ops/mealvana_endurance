@@ -15,7 +15,6 @@ class AppConfig {
     required this.usdaApiKey,
     required this.wiredashProjectId,
     required this.wiredashSecret,
-    required this.oneSignalAppId,
     required this.trainingPeaksClientId,
     required this.trainingPeaksClientSecret,
     required this.trainingPeaksUseSandbox,
@@ -44,9 +43,6 @@ class AppConfig {
   // Wiredash (User Feedback) configuration
   final String wiredashProjectId;
   final String wiredashSecret;
-
-  // OneSignal (Push Notifications) configuration
-  final String oneSignalAppId;
 
   // External API keys
   final String usdaApiKey;
@@ -130,13 +126,6 @@ class AppConfig {
         fallback: 'wuQrGN_DMojjIopfhEblvMpU53FSChuD',
       ),
 
-      // OneSignal (Push Notifications) configuration
-      // App ID from OneSignal dashboard - must be configured in .env files
-      oneSignalAppId: dotenv.get(
-        'ONESIGNAL_APP_ID',
-        fallback: '', // No fallback - must be configured
-      ),
-
       // External API keys
       usdaApiKey: dotenv.get(
         'USDA_API_KEY',
@@ -191,7 +180,6 @@ class AppConfig {
     String? mixpanelToken,
     String? wiredashProjectId,
     String? wiredashSecret,
-    String? oneSignalAppId,
     String? usdaApiKey,
     String? trainingPeaksClientId,
     String? trainingPeaksClientSecret,
@@ -214,7 +202,6 @@ class AppConfig {
       mixpanelProjectToken: mixpanelToken ?? 'test-mixpanel-token',
       wiredashProjectId: wiredashProjectId ?? 'test-wiredash-project',
       wiredashSecret: wiredashSecret ?? 'test-wiredash-secret',
-      oneSignalAppId: oneSignalAppId ?? 'test-onesignal-app-id',
       usdaApiKey: usdaApiKey ?? 'test-usda-api-key',
       trainingPeaksClientId: trainingPeaksClientId ?? 'test-tp-client-id',
       trainingPeaksClientSecret: trainingPeaksClientSecret ?? 'test-tp-secret',
@@ -313,9 +300,6 @@ class AppConfig {
       // Wiredash (User Feedback)
       wiredashProjectId: wiredashProjectId,
       wiredashSecret: wiredashSecret,
-
-      // OneSignal - not used on web
-      oneSignalAppId: '',
 
       // External API keys
       usdaApiKey: usdaApiKey,

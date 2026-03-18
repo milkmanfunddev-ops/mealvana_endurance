@@ -6,7 +6,6 @@ import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
-
 /// Plus/Minus control for Kyle's design system
 /// 36px circular buttons with Orange borders
 class KylePlusMinusControl extends ConsumerStatefulWidget {
@@ -34,7 +33,8 @@ class KylePlusMinusControl extends ConsumerStatefulWidget {
   final bool tappable;
 
   @override
-  ConsumerState<KylePlusMinusControl> createState() => _KylePlusMinusControlState();
+  ConsumerState<KylePlusMinusControl> createState() =>
+      _KylePlusMinusControlState();
 }
 
 class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
@@ -104,7 +104,10 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
               final value = int.tryParse(controller.text);
               if (value != null) {
                 // Clamp value to min/max
-                final clampedValue = value.clamp(widget.min, widget.max ?? value);
+                final clampedValue = value.clamp(
+                  widget.min,
+                  widget.max ?? value,
+                );
                 Navigator.pop(context, clampedValue);
               }
             },
@@ -124,7 +127,8 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
 
   @override
   Widget build(BuildContext context) {
-    final canIncrement = widget.max == null || _currentValue + widget.step <= widget.max!;
+    final canIncrement =
+        widget.max == null || _currentValue + widget.step <= widget.max!;
     final canDecrement = _currentValue - widget.step >= widget.min;
 
     return Column(
@@ -161,11 +165,15 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
                   ? GestureDetector(
                       onTap: widget.enabled ? _showEditDialog : null,
                       child: Text(
-                        widget.unit != null ? '$_currentValue ${widget.unit!.toUpperCase()}' : '$_currentValue',
+                        widget.unit != null
+                            ? '$_currentValue ${widget.unit!.toUpperCase()}'
+                            : '$_currentValue',
                         style: AppTextStyles.dataNumber.copyWith(
                           color: widget.enabled
                               ? Theme.of(context).colorScheme.onSurface
-                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.4),
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                         ),
@@ -173,11 +181,15 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
                       ),
                     )
                   : Text(
-                      widget.unit != null ? '$_currentValue ${widget.unit!.toUpperCase()}' : '$_currentValue',
+                      widget.unit != null
+                          ? '$_currentValue ${widget.unit!.toUpperCase()}'
+                          : '$_currentValue',
                       style: AppTextStyles.dataNumber.copyWith(
                         color: widget.enabled
                             ? Theme.of(context).colorScheme.onSurface
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.4),
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                       ),
@@ -214,6 +226,10 @@ class _ControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final enabledIconColor = isDark ? AppColors.cream : AppColors.orange;
+    final disabledIconColor = enabledIconColor.withValues(alpha: 0.4);
+
     return SizedBox(
       width: AppSizes.controlSize,
       height: AppSizes.controlSize,
@@ -229,22 +245,16 @@ class _ControlButton extends StatelessWidget {
           elevation: 0,
           shadowColor: Colors.transparent,
           side: BorderSide(
-            color: enabled
-                ? Colors.orange
-                : Colors.orange.withOpacity(0.4),
+            color: enabled ? Colors.orange : Colors.orange.withOpacity(0.4),
             width: 2,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.circularRadius,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.circularRadius),
           padding: EdgeInsets.zero,
         ),
         child: Icon(
           icon,
           size: AppIconSizes.controlIcon,
-          color: enabled
-              ? AppColors.cream  // White/cream icon color to match Kyle's design
-              : AppColors.cream.withOpacity(0.4),
+          color: enabled ? enabledIconColor : disabledIconColor,
         ),
       ),
     );
@@ -279,10 +289,12 @@ class KylePlusMinusDecimalControl extends ConsumerStatefulWidget {
   final bool tappable;
 
   @override
-  ConsumerState<KylePlusMinusDecimalControl> createState() => _KylePlusMinusDecimalControlState();
+  ConsumerState<KylePlusMinusDecimalControl> createState() =>
+      _KylePlusMinusDecimalControlState();
 }
 
-class _KylePlusMinusDecimalControlState extends ConsumerState<KylePlusMinusDecimalControl> {
+class _KylePlusMinusDecimalControlState
+    extends ConsumerState<KylePlusMinusDecimalControl> {
   late double _currentValue;
 
   @override
@@ -324,7 +336,9 @@ class _KylePlusMinusDecimalControlState extends ConsumerState<KylePlusMinusDecim
   }
 
   Future<void> _showEditDialog() async {
-    final controller = TextEditingController(text: _currentValue.toStringAsFixed(widget.decimalPlaces));
+    final controller = TextEditingController(
+      text: _currentValue.toStringAsFixed(widget.decimalPlaces),
+    );
     final result = await showDialog<double>(
       context: context,
       builder: (context) => AlertDialog(
@@ -351,7 +365,10 @@ class _KylePlusMinusDecimalControlState extends ConsumerState<KylePlusMinusDecim
               final value = double.tryParse(controller.text);
               if (value != null) {
                 // Clamp value to min/max
-                final clampedValue = value.clamp(widget.min, widget.max ?? value);
+                final clampedValue = value.clamp(
+                  widget.min,
+                  widget.max ?? value,
+                );
                 Navigator.pop(context, clampedValue);
               }
             },
@@ -371,7 +388,8 @@ class _KylePlusMinusDecimalControlState extends ConsumerState<KylePlusMinusDecim
 
   @override
   Widget build(BuildContext context) {
-    final canIncrement = widget.max == null || _currentValue + widget.step <= widget.max!;
+    final canIncrement =
+        widget.max == null || _currentValue + widget.step <= widget.max!;
     final canDecrement = _currentValue - widget.step >= widget.min;
 
     return Column(
@@ -410,11 +428,15 @@ class _KylePlusMinusDecimalControlState extends ConsumerState<KylePlusMinusDecim
                       child: Text(
                         widget.unit != null
                             ? '${_currentValue.toStringAsFixed(widget.decimalPlaces)} ${widget.unit!.toUpperCase()}'
-                            : _currentValue.toStringAsFixed(widget.decimalPlaces),
+                            : _currentValue.toStringAsFixed(
+                                widget.decimalPlaces,
+                              ),
                         style: AppTextStyles.dataNumber.copyWith(
                           color: widget.enabled
                               ? Theme.of(context).colorScheme.onSurface
-                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.4),
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                         ),
@@ -428,7 +450,9 @@ class _KylePlusMinusDecimalControlState extends ConsumerState<KylePlusMinusDecim
                       style: AppTextStyles.dataNumber.copyWith(
                         color: widget.enabled
                             ? Theme.of(context).colorScheme.onSurface
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.4),
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                       ),

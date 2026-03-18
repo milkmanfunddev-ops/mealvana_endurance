@@ -26552,6 +26552,1642 @@ class TpWritebackTableCompanion extends UpdateCompanion<TpWritebackEntry> {
   }
 }
 
+class $PersonalTemplatesTableTable extends PersonalTemplatesTable
+    with TableInfo<$PersonalTemplatesTableTable, PersonalTemplateEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PersonalTemplatesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activityTypeMeta = const VerificationMeta(
+    'activityType',
+  );
+  @override
+  late final GeneratedColumn<String> activityType = GeneratedColumn<String>(
+    'activity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _originalDurationMinutesMeta =
+      const VerificationMeta('originalDurationMinutes');
+  @override
+  late final GeneratedColumn<int> originalDurationMinutes =
+      GeneratedColumn<int>(
+        'original_duration_minutes',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _originalDistanceMeta = const VerificationMeta(
+    'originalDistance',
+  );
+  @override
+  late final GeneratedColumn<double> originalDistance = GeneratedColumn<double>(
+    'original_distance',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _originalActivityTitleMeta =
+      const VerificationMeta('originalActivityTitle');
+  @override
+  late final GeneratedColumn<String> originalActivityTitle =
+      GeneratedColumn<String>(
+        'original_activity_title',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _planDataMeta = const VerificationMeta(
+    'planData',
+  );
+  @override
+  late final GeneratedColumn<String> planData = GeneratedColumn<String>(
+    'plan_data',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _totalCarbsGMeta = const VerificationMeta(
+    'totalCarbsG',
+  );
+  @override
+  late final GeneratedColumn<int> totalCarbsG = GeneratedColumn<int>(
+    'total_carbs_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _totalProteinGMeta = const VerificationMeta(
+    'totalProteinG',
+  );
+  @override
+  late final GeneratedColumn<int> totalProteinG = GeneratedColumn<int>(
+    'total_protein_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _totalFatGMeta = const VerificationMeta(
+    'totalFatG',
+  );
+  @override
+  late final GeneratedColumn<int> totalFatG = GeneratedColumn<int>(
+    'total_fat_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _totalSodiumMgMeta = const VerificationMeta(
+    'totalSodiumMg',
+  );
+  @override
+  late final GeneratedColumn<int> totalSodiumMg = GeneratedColumn<int>(
+    'total_sodium_mg',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _totalFluidsMlMeta = const VerificationMeta(
+    'totalFluidsMl',
+  );
+  @override
+  late final GeneratedColumn<int> totalFluidsMl = GeneratedColumn<int>(
+    'total_fluids_ml',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _totalCaloriesMeta = const VerificationMeta(
+    'totalCalories',
+  );
+  @override
+  late final GeneratedColumn<int> totalCalories = GeneratedColumn<int>(
+    'total_calories',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _brickSegmentOrderMeta = const VerificationMeta(
+    'brickSegmentOrder',
+  );
+  @override
+  late final GeneratedColumn<String> brickSegmentOrder =
+      GeneratedColumn<String>(
+        'brick_segment_order',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    name,
+    activityType,
+    originalDurationMinutes,
+    originalDistance,
+    originalActivityTitle,
+    planData,
+    totalCarbsG,
+    totalProteinG,
+    totalFatG,
+    totalSodiumMg,
+    totalFluidsMl,
+    totalCalories,
+    brickSegmentOrder,
+    createdAt,
+    updatedAt,
+    needsUpload,
+    localUpdatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'personal_templates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PersonalTemplateEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('activity_type')) {
+      context.handle(
+        _activityTypeMeta,
+        activityType.isAcceptableOrUnknown(
+          data['activity_type']!,
+          _activityTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_activityTypeMeta);
+    }
+    if (data.containsKey('original_duration_minutes')) {
+      context.handle(
+        _originalDurationMinutesMeta,
+        originalDurationMinutes.isAcceptableOrUnknown(
+          data['original_duration_minutes']!,
+          _originalDurationMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('original_distance')) {
+      context.handle(
+        _originalDistanceMeta,
+        originalDistance.isAcceptableOrUnknown(
+          data['original_distance']!,
+          _originalDistanceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('original_activity_title')) {
+      context.handle(
+        _originalActivityTitleMeta,
+        originalActivityTitle.isAcceptableOrUnknown(
+          data['original_activity_title']!,
+          _originalActivityTitleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('plan_data')) {
+      context.handle(
+        _planDataMeta,
+        planData.isAcceptableOrUnknown(data['plan_data']!, _planDataMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_planDataMeta);
+    }
+    if (data.containsKey('total_carbs_g')) {
+      context.handle(
+        _totalCarbsGMeta,
+        totalCarbsG.isAcceptableOrUnknown(
+          data['total_carbs_g']!,
+          _totalCarbsGMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_protein_g')) {
+      context.handle(
+        _totalProteinGMeta,
+        totalProteinG.isAcceptableOrUnknown(
+          data['total_protein_g']!,
+          _totalProteinGMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_fat_g')) {
+      context.handle(
+        _totalFatGMeta,
+        totalFatG.isAcceptableOrUnknown(data['total_fat_g']!, _totalFatGMeta),
+      );
+    }
+    if (data.containsKey('total_sodium_mg')) {
+      context.handle(
+        _totalSodiumMgMeta,
+        totalSodiumMg.isAcceptableOrUnknown(
+          data['total_sodium_mg']!,
+          _totalSodiumMgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_fluids_ml')) {
+      context.handle(
+        _totalFluidsMlMeta,
+        totalFluidsMl.isAcceptableOrUnknown(
+          data['total_fluids_ml']!,
+          _totalFluidsMlMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_calories')) {
+      context.handle(
+        _totalCaloriesMeta,
+        totalCalories.isAcceptableOrUnknown(
+          data['total_calories']!,
+          _totalCaloriesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('brick_segment_order')) {
+      context.handle(
+        _brickSegmentOrderMeta,
+        brickSegmentOrder.isAcceptableOrUnknown(
+          data['brick_segment_order']!,
+          _brickSegmentOrderMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PersonalTemplateEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PersonalTemplateEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      activityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_type'],
+      )!,
+      originalDurationMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}original_duration_minutes'],
+      ),
+      originalDistance: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}original_distance'],
+      ),
+      originalActivityTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}original_activity_title'],
+      ),
+      planData: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_data'],
+      )!,
+      totalCarbsG: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_carbs_g'],
+      ),
+      totalProteinG: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_protein_g'],
+      ),
+      totalFatG: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_fat_g'],
+      ),
+      totalSodiumMg: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_sodium_mg'],
+      ),
+      totalFluidsMl: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_fluids_ml'],
+      ),
+      totalCalories: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_calories'],
+      ),
+      brickSegmentOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brick_segment_order'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
+    );
+  }
+
+  @override
+  $PersonalTemplatesTableTable createAlias(String alias) {
+    return $PersonalTemplatesTableTable(attachedDatabase, alias);
+  }
+}
+
+class PersonalTemplateEntry extends DataClass
+    implements Insertable<PersonalTemplateEntry> {
+  final String id;
+  final String userId;
+  final String name;
+  final String activityType;
+  final int? originalDurationMinutes;
+  final double? originalDistance;
+  final String? originalActivityTitle;
+  final String planData;
+  final int? totalCarbsG;
+  final int? totalProteinG;
+  final int? totalFatG;
+  final int? totalSodiumMg;
+  final int? totalFluidsMl;
+  final int? totalCalories;
+  final String? brickSegmentOrder;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
+  const PersonalTemplateEntry({
+    required this.id,
+    required this.userId,
+    required this.name,
+    required this.activityType,
+    this.originalDurationMinutes,
+    this.originalDistance,
+    this.originalActivityTitle,
+    required this.planData,
+    this.totalCarbsG,
+    this.totalProteinG,
+    this.totalFatG,
+    this.totalSodiumMg,
+    this.totalFluidsMl,
+    this.totalCalories,
+    this.brickSegmentOrder,
+    required this.createdAt,
+    required this.updatedAt,
+    this.needsUpload,
+    this.localUpdatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['name'] = Variable<String>(name);
+    map['activity_type'] = Variable<String>(activityType);
+    if (!nullToAbsent || originalDurationMinutes != null) {
+      map['original_duration_minutes'] = Variable<int>(originalDurationMinutes);
+    }
+    if (!nullToAbsent || originalDistance != null) {
+      map['original_distance'] = Variable<double>(originalDistance);
+    }
+    if (!nullToAbsent || originalActivityTitle != null) {
+      map['original_activity_title'] = Variable<String>(originalActivityTitle);
+    }
+    map['plan_data'] = Variable<String>(planData);
+    if (!nullToAbsent || totalCarbsG != null) {
+      map['total_carbs_g'] = Variable<int>(totalCarbsG);
+    }
+    if (!nullToAbsent || totalProteinG != null) {
+      map['total_protein_g'] = Variable<int>(totalProteinG);
+    }
+    if (!nullToAbsent || totalFatG != null) {
+      map['total_fat_g'] = Variable<int>(totalFatG);
+    }
+    if (!nullToAbsent || totalSodiumMg != null) {
+      map['total_sodium_mg'] = Variable<int>(totalSodiumMg);
+    }
+    if (!nullToAbsent || totalFluidsMl != null) {
+      map['total_fluids_ml'] = Variable<int>(totalFluidsMl);
+    }
+    if (!nullToAbsent || totalCalories != null) {
+      map['total_calories'] = Variable<int>(totalCalories);
+    }
+    if (!nullToAbsent || brickSegmentOrder != null) {
+      map['brick_segment_order'] = Variable<String>(brickSegmentOrder);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
+    return map;
+  }
+
+  PersonalTemplatesTableCompanion toCompanion(bool nullToAbsent) {
+    return PersonalTemplatesTableCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      name: Value(name),
+      activityType: Value(activityType),
+      originalDurationMinutes: originalDurationMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originalDurationMinutes),
+      originalDistance: originalDistance == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originalDistance),
+      originalActivityTitle: originalActivityTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originalActivityTitle),
+      planData: Value(planData),
+      totalCarbsG: totalCarbsG == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalCarbsG),
+      totalProteinG: totalProteinG == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalProteinG),
+      totalFatG: totalFatG == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalFatG),
+      totalSodiumMg: totalSodiumMg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalSodiumMg),
+      totalFluidsMl: totalFluidsMl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalFluidsMl),
+      totalCalories: totalCalories == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalCalories),
+      brickSegmentOrder: brickSegmentOrder == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brickSegmentOrder),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
+    );
+  }
+
+  factory PersonalTemplateEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PersonalTemplateEntry(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      name: serializer.fromJson<String>(json['name']),
+      activityType: serializer.fromJson<String>(json['activityType']),
+      originalDurationMinutes: serializer.fromJson<int?>(
+        json['originalDurationMinutes'],
+      ),
+      originalDistance: serializer.fromJson<double?>(json['originalDistance']),
+      originalActivityTitle: serializer.fromJson<String?>(
+        json['originalActivityTitle'],
+      ),
+      planData: serializer.fromJson<String>(json['planData']),
+      totalCarbsG: serializer.fromJson<int?>(json['totalCarbsG']),
+      totalProteinG: serializer.fromJson<int?>(json['totalProteinG']),
+      totalFatG: serializer.fromJson<int?>(json['totalFatG']),
+      totalSodiumMg: serializer.fromJson<int?>(json['totalSodiumMg']),
+      totalFluidsMl: serializer.fromJson<int?>(json['totalFluidsMl']),
+      totalCalories: serializer.fromJson<int?>(json['totalCalories']),
+      brickSegmentOrder: serializer.fromJson<String?>(
+        json['brickSegmentOrder'],
+      ),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'name': serializer.toJson<String>(name),
+      'activityType': serializer.toJson<String>(activityType),
+      'originalDurationMinutes': serializer.toJson<int?>(
+        originalDurationMinutes,
+      ),
+      'originalDistance': serializer.toJson<double?>(originalDistance),
+      'originalActivityTitle': serializer.toJson<String?>(
+        originalActivityTitle,
+      ),
+      'planData': serializer.toJson<String>(planData),
+      'totalCarbsG': serializer.toJson<int?>(totalCarbsG),
+      'totalProteinG': serializer.toJson<int?>(totalProteinG),
+      'totalFatG': serializer.toJson<int?>(totalFatG),
+      'totalSodiumMg': serializer.toJson<int?>(totalSodiumMg),
+      'totalFluidsMl': serializer.toJson<int?>(totalFluidsMl),
+      'totalCalories': serializer.toJson<int?>(totalCalories),
+      'brickSegmentOrder': serializer.toJson<String?>(brickSegmentOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+    };
+  }
+
+  PersonalTemplateEntry copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    String? activityType,
+    Value<int?> originalDurationMinutes = const Value.absent(),
+    Value<double?> originalDistance = const Value.absent(),
+    Value<String?> originalActivityTitle = const Value.absent(),
+    String? planData,
+    Value<int?> totalCarbsG = const Value.absent(),
+    Value<int?> totalProteinG = const Value.absent(),
+    Value<int?> totalFatG = const Value.absent(),
+    Value<int?> totalSodiumMg = const Value.absent(),
+    Value<int?> totalFluidsMl = const Value.absent(),
+    Value<int?> totalCalories = const Value.absent(),
+    Value<String?> brickSegmentOrder = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
+  }) => PersonalTemplateEntry(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    name: name ?? this.name,
+    activityType: activityType ?? this.activityType,
+    originalDurationMinutes: originalDurationMinutes.present
+        ? originalDurationMinutes.value
+        : this.originalDurationMinutes,
+    originalDistance: originalDistance.present
+        ? originalDistance.value
+        : this.originalDistance,
+    originalActivityTitle: originalActivityTitle.present
+        ? originalActivityTitle.value
+        : this.originalActivityTitle,
+    planData: planData ?? this.planData,
+    totalCarbsG: totalCarbsG.present ? totalCarbsG.value : this.totalCarbsG,
+    totalProteinG: totalProteinG.present
+        ? totalProteinG.value
+        : this.totalProteinG,
+    totalFatG: totalFatG.present ? totalFatG.value : this.totalFatG,
+    totalSodiumMg: totalSodiumMg.present
+        ? totalSodiumMg.value
+        : this.totalSodiumMg,
+    totalFluidsMl: totalFluidsMl.present
+        ? totalFluidsMl.value
+        : this.totalFluidsMl,
+    totalCalories: totalCalories.present
+        ? totalCalories.value
+        : this.totalCalories,
+    brickSegmentOrder: brickSegmentOrder.present
+        ? brickSegmentOrder.value
+        : this.brickSegmentOrder,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
+  );
+  PersonalTemplateEntry copyWithCompanion(
+    PersonalTemplatesTableCompanion data,
+  ) {
+    return PersonalTemplateEntry(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      name: data.name.present ? data.name.value : this.name,
+      activityType: data.activityType.present
+          ? data.activityType.value
+          : this.activityType,
+      originalDurationMinutes: data.originalDurationMinutes.present
+          ? data.originalDurationMinutes.value
+          : this.originalDurationMinutes,
+      originalDistance: data.originalDistance.present
+          ? data.originalDistance.value
+          : this.originalDistance,
+      originalActivityTitle: data.originalActivityTitle.present
+          ? data.originalActivityTitle.value
+          : this.originalActivityTitle,
+      planData: data.planData.present ? data.planData.value : this.planData,
+      totalCarbsG: data.totalCarbsG.present
+          ? data.totalCarbsG.value
+          : this.totalCarbsG,
+      totalProteinG: data.totalProteinG.present
+          ? data.totalProteinG.value
+          : this.totalProteinG,
+      totalFatG: data.totalFatG.present ? data.totalFatG.value : this.totalFatG,
+      totalSodiumMg: data.totalSodiumMg.present
+          ? data.totalSodiumMg.value
+          : this.totalSodiumMg,
+      totalFluidsMl: data.totalFluidsMl.present
+          ? data.totalFluidsMl.value
+          : this.totalFluidsMl,
+      totalCalories: data.totalCalories.present
+          ? data.totalCalories.value
+          : this.totalCalories,
+      brickSegmentOrder: data.brickSegmentOrder.present
+          ? data.brickSegmentOrder.value
+          : this.brickSegmentOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonalTemplateEntry(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('activityType: $activityType, ')
+          ..write('originalDurationMinutes: $originalDurationMinutes, ')
+          ..write('originalDistance: $originalDistance, ')
+          ..write('originalActivityTitle: $originalActivityTitle, ')
+          ..write('planData: $planData, ')
+          ..write('totalCarbsG: $totalCarbsG, ')
+          ..write('totalProteinG: $totalProteinG, ')
+          ..write('totalFatG: $totalFatG, ')
+          ..write('totalSodiumMg: $totalSodiumMg, ')
+          ..write('totalFluidsMl: $totalFluidsMl, ')
+          ..write('totalCalories: $totalCalories, ')
+          ..write('brickSegmentOrder: $brickSegmentOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    name,
+    activityType,
+    originalDurationMinutes,
+    originalDistance,
+    originalActivityTitle,
+    planData,
+    totalCarbsG,
+    totalProteinG,
+    totalFatG,
+    totalSodiumMg,
+    totalFluidsMl,
+    totalCalories,
+    brickSegmentOrder,
+    createdAt,
+    updatedAt,
+    needsUpload,
+    localUpdatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PersonalTemplateEntry &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.name == this.name &&
+          other.activityType == this.activityType &&
+          other.originalDurationMinutes == this.originalDurationMinutes &&
+          other.originalDistance == this.originalDistance &&
+          other.originalActivityTitle == this.originalActivityTitle &&
+          other.planData == this.planData &&
+          other.totalCarbsG == this.totalCarbsG &&
+          other.totalProteinG == this.totalProteinG &&
+          other.totalFatG == this.totalFatG &&
+          other.totalSodiumMg == this.totalSodiumMg &&
+          other.totalFluidsMl == this.totalFluidsMl &&
+          other.totalCalories == this.totalCalories &&
+          other.brickSegmentOrder == this.brickSegmentOrder &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
+}
+
+class PersonalTemplatesTableCompanion
+    extends UpdateCompanion<PersonalTemplateEntry> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> name;
+  final Value<String> activityType;
+  final Value<int?> originalDurationMinutes;
+  final Value<double?> originalDistance;
+  final Value<String?> originalActivityTitle;
+  final Value<String> planData;
+  final Value<int?> totalCarbsG;
+  final Value<int?> totalProteinG;
+  final Value<int?> totalFatG;
+  final Value<int?> totalSodiumMg;
+  final Value<int?> totalFluidsMl;
+  final Value<int?> totalCalories;
+  final Value<String?> brickSegmentOrder;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
+  final Value<int> rowid;
+  const PersonalTemplatesTableCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.activityType = const Value.absent(),
+    this.originalDurationMinutes = const Value.absent(),
+    this.originalDistance = const Value.absent(),
+    this.originalActivityTitle = const Value.absent(),
+    this.planData = const Value.absent(),
+    this.totalCarbsG = const Value.absent(),
+    this.totalProteinG = const Value.absent(),
+    this.totalFatG = const Value.absent(),
+    this.totalSodiumMg = const Value.absent(),
+    this.totalFluidsMl = const Value.absent(),
+    this.totalCalories = const Value.absent(),
+    this.brickSegmentOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PersonalTemplatesTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String userId,
+    required String name,
+    required String activityType,
+    this.originalDurationMinutes = const Value.absent(),
+    this.originalDistance = const Value.absent(),
+    this.originalActivityTitle = const Value.absent(),
+    required String planData,
+    this.totalCarbsG = const Value.absent(),
+    this.totalProteinG = const Value.absent(),
+    this.totalFatG = const Value.absent(),
+    this.totalSodiumMg = const Value.absent(),
+    this.totalFluidsMl = const Value.absent(),
+    this.totalCalories = const Value.absent(),
+    this.brickSegmentOrder = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       name = Value(name),
+       activityType = Value(activityType),
+       planData = Value(planData),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<PersonalTemplateEntry> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? name,
+    Expression<String>? activityType,
+    Expression<int>? originalDurationMinutes,
+    Expression<double>? originalDistance,
+    Expression<String>? originalActivityTitle,
+    Expression<String>? planData,
+    Expression<int>? totalCarbsG,
+    Expression<int>? totalProteinG,
+    Expression<int>? totalFatG,
+    Expression<int>? totalSodiumMg,
+    Expression<int>? totalFluidsMl,
+    Expression<int>? totalCalories,
+    Expression<String>? brickSegmentOrder,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (name != null) 'name': name,
+      if (activityType != null) 'activity_type': activityType,
+      if (originalDurationMinutes != null)
+        'original_duration_minutes': originalDurationMinutes,
+      if (originalDistance != null) 'original_distance': originalDistance,
+      if (originalActivityTitle != null)
+        'original_activity_title': originalActivityTitle,
+      if (planData != null) 'plan_data': planData,
+      if (totalCarbsG != null) 'total_carbs_g': totalCarbsG,
+      if (totalProteinG != null) 'total_protein_g': totalProteinG,
+      if (totalFatG != null) 'total_fat_g': totalFatG,
+      if (totalSodiumMg != null) 'total_sodium_mg': totalSodiumMg,
+      if (totalFluidsMl != null) 'total_fluids_ml': totalFluidsMl,
+      if (totalCalories != null) 'total_calories': totalCalories,
+      if (brickSegmentOrder != null) 'brick_segment_order': brickSegmentOrder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PersonalTemplatesTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<String>? name,
+    Value<String>? activityType,
+    Value<int?>? originalDurationMinutes,
+    Value<double?>? originalDistance,
+    Value<String?>? originalActivityTitle,
+    Value<String>? planData,
+    Value<int?>? totalCarbsG,
+    Value<int?>? totalProteinG,
+    Value<int?>? totalFatG,
+    Value<int?>? totalSodiumMg,
+    Value<int?>? totalFluidsMl,
+    Value<int?>? totalCalories,
+    Value<String?>? brickSegmentOrder,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
+    Value<int>? rowid,
+  }) {
+    return PersonalTemplatesTableCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      activityType: activityType ?? this.activityType,
+      originalDurationMinutes:
+          originalDurationMinutes ?? this.originalDurationMinutes,
+      originalDistance: originalDistance ?? this.originalDistance,
+      originalActivityTitle:
+          originalActivityTitle ?? this.originalActivityTitle,
+      planData: planData ?? this.planData,
+      totalCarbsG: totalCarbsG ?? this.totalCarbsG,
+      totalProteinG: totalProteinG ?? this.totalProteinG,
+      totalFatG: totalFatG ?? this.totalFatG,
+      totalSodiumMg: totalSodiumMg ?? this.totalSodiumMg,
+      totalFluidsMl: totalFluidsMl ?? this.totalFluidsMl,
+      totalCalories: totalCalories ?? this.totalCalories,
+      brickSegmentOrder: brickSegmentOrder ?? this.brickSegmentOrder,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (activityType.present) {
+      map['activity_type'] = Variable<String>(activityType.value);
+    }
+    if (originalDurationMinutes.present) {
+      map['original_duration_minutes'] = Variable<int>(
+        originalDurationMinutes.value,
+      );
+    }
+    if (originalDistance.present) {
+      map['original_distance'] = Variable<double>(originalDistance.value);
+    }
+    if (originalActivityTitle.present) {
+      map['original_activity_title'] = Variable<String>(
+        originalActivityTitle.value,
+      );
+    }
+    if (planData.present) {
+      map['plan_data'] = Variable<String>(planData.value);
+    }
+    if (totalCarbsG.present) {
+      map['total_carbs_g'] = Variable<int>(totalCarbsG.value);
+    }
+    if (totalProteinG.present) {
+      map['total_protein_g'] = Variable<int>(totalProteinG.value);
+    }
+    if (totalFatG.present) {
+      map['total_fat_g'] = Variable<int>(totalFatG.value);
+    }
+    if (totalSodiumMg.present) {
+      map['total_sodium_mg'] = Variable<int>(totalSodiumMg.value);
+    }
+    if (totalFluidsMl.present) {
+      map['total_fluids_ml'] = Variable<int>(totalFluidsMl.value);
+    }
+    if (totalCalories.present) {
+      map['total_calories'] = Variable<int>(totalCalories.value);
+    }
+    if (brickSegmentOrder.present) {
+      map['brick_segment_order'] = Variable<String>(brickSegmentOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonalTemplatesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('name: $name, ')
+          ..write('activityType: $activityType, ')
+          ..write('originalDurationMinutes: $originalDurationMinutes, ')
+          ..write('originalDistance: $originalDistance, ')
+          ..write('originalActivityTitle: $originalActivityTitle, ')
+          ..write('planData: $planData, ')
+          ..write('totalCarbsG: $totalCarbsG, ')
+          ..write('totalProteinG: $totalProteinG, ')
+          ..write('totalFatG: $totalFatG, ')
+          ..write('totalSodiumMg: $totalSodiumMg, ')
+          ..write('totalFluidsMl: $totalFluidsMl, ')
+          ..write('totalCalories: $totalCalories, ')
+          ..write('brickSegmentOrder: $brickSegmentOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AthletePairingCodesTableTable extends AthletePairingCodesTable
+    with TableInfo<$AthletePairingCodesTableTable, AthletePairingCodeEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AthletePairingCodesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+    'expires_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _usedByCoachIdMeta = const VerificationMeta(
+    'usedByCoachId',
+  );
+  @override
+  late final GeneratedColumn<String> usedByCoachId = GeneratedColumn<String>(
+    'used_by_coach_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _usedAtMeta = const VerificationMeta('usedAt');
+  @override
+  late final GeneratedColumn<DateTime> usedAt = GeneratedColumn<DateTime>(
+    'used_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    code,
+    createdAt,
+    expiresAt,
+    usedByCoachId,
+    usedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'athlete_pairing_codes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AthletePairingCodeEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_expiresAtMeta);
+    }
+    if (data.containsKey('used_by_coach_id')) {
+      context.handle(
+        _usedByCoachIdMeta,
+        usedByCoachId.isAcceptableOrUnknown(
+          data['used_by_coach_id']!,
+          _usedByCoachIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('used_at')) {
+      context.handle(
+        _usedAtMeta,
+        usedAt.isAcceptableOrUnknown(data['used_at']!, _usedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AthletePairingCodeEntry map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AthletePairingCodeEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      )!,
+      usedByCoachId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}used_by_coach_id'],
+      ),
+      usedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}used_at'],
+      ),
+    );
+  }
+
+  @override
+  $AthletePairingCodesTableTable createAlias(String alias) {
+    return $AthletePairingCodesTableTable(attachedDatabase, alias);
+  }
+}
+
+class AthletePairingCodeEntry extends DataClass
+    implements Insertable<AthletePairingCodeEntry> {
+  /// UUID primary key
+  final String id;
+
+  /// References users.id - the athlete who generated the code
+  final String userId;
+
+  /// 6-character alphanumeric pairing code
+  final String code;
+
+  /// When the code was created
+  final DateTime createdAt;
+
+  /// When the code expires (24h after creation)
+  final DateTime expiresAt;
+
+  /// Coach who used this code (null if unused)
+  final String? usedByCoachId;
+
+  /// When the code was used (null if unused)
+  final DateTime? usedAt;
+  const AthletePairingCodeEntry({
+    required this.id,
+    required this.userId,
+    required this.code,
+    required this.createdAt,
+    required this.expiresAt,
+    this.usedByCoachId,
+    this.usedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['code'] = Variable<String>(code);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['expires_at'] = Variable<DateTime>(expiresAt);
+    if (!nullToAbsent || usedByCoachId != null) {
+      map['used_by_coach_id'] = Variable<String>(usedByCoachId);
+    }
+    if (!nullToAbsent || usedAt != null) {
+      map['used_at'] = Variable<DateTime>(usedAt);
+    }
+    return map;
+  }
+
+  AthletePairingCodesTableCompanion toCompanion(bool nullToAbsent) {
+    return AthletePairingCodesTableCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      code: Value(code),
+      createdAt: Value(createdAt),
+      expiresAt: Value(expiresAt),
+      usedByCoachId: usedByCoachId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(usedByCoachId),
+      usedAt: usedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(usedAt),
+    );
+  }
+
+  factory AthletePairingCodeEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AthletePairingCodeEntry(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      code: serializer.fromJson<String>(json['code']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      expiresAt: serializer.fromJson<DateTime>(json['expiresAt']),
+      usedByCoachId: serializer.fromJson<String?>(json['usedByCoachId']),
+      usedAt: serializer.fromJson<DateTime?>(json['usedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'code': serializer.toJson<String>(code),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'expiresAt': serializer.toJson<DateTime>(expiresAt),
+      'usedByCoachId': serializer.toJson<String?>(usedByCoachId),
+      'usedAt': serializer.toJson<DateTime?>(usedAt),
+    };
+  }
+
+  AthletePairingCodeEntry copyWith({
+    String? id,
+    String? userId,
+    String? code,
+    DateTime? createdAt,
+    DateTime? expiresAt,
+    Value<String?> usedByCoachId = const Value.absent(),
+    Value<DateTime?> usedAt = const Value.absent(),
+  }) => AthletePairingCodeEntry(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    code: code ?? this.code,
+    createdAt: createdAt ?? this.createdAt,
+    expiresAt: expiresAt ?? this.expiresAt,
+    usedByCoachId: usedByCoachId.present
+        ? usedByCoachId.value
+        : this.usedByCoachId,
+    usedAt: usedAt.present ? usedAt.value : this.usedAt,
+  );
+  AthletePairingCodeEntry copyWithCompanion(
+    AthletePairingCodesTableCompanion data,
+  ) {
+    return AthletePairingCodeEntry(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      code: data.code.present ? data.code.value : this.code,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      usedByCoachId: data.usedByCoachId.present
+          ? data.usedByCoachId.value
+          : this.usedByCoachId,
+      usedAt: data.usedAt.present ? data.usedAt.value : this.usedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AthletePairingCodeEntry(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('code: $code, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('usedByCoachId: $usedByCoachId, ')
+          ..write('usedAt: $usedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    code,
+    createdAt,
+    expiresAt,
+    usedByCoachId,
+    usedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AthletePairingCodeEntry &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.code == this.code &&
+          other.createdAt == this.createdAt &&
+          other.expiresAt == this.expiresAt &&
+          other.usedByCoachId == this.usedByCoachId &&
+          other.usedAt == this.usedAt);
+}
+
+class AthletePairingCodesTableCompanion
+    extends UpdateCompanion<AthletePairingCodeEntry> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> code;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> expiresAt;
+  final Value<String?> usedByCoachId;
+  final Value<DateTime?> usedAt;
+  final Value<int> rowid;
+  const AthletePairingCodesTableCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.code = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.usedByCoachId = const Value.absent(),
+    this.usedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AthletePairingCodesTableCompanion.insert({
+    required String id,
+    required String userId,
+    required String code,
+    this.createdAt = const Value.absent(),
+    required DateTime expiresAt,
+    this.usedByCoachId = const Value.absent(),
+    this.usedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       userId = Value(userId),
+       code = Value(code),
+       expiresAt = Value(expiresAt);
+  static Insertable<AthletePairingCodeEntry> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? code,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? expiresAt,
+    Expression<String>? usedByCoachId,
+    Expression<DateTime>? usedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (code != null) 'code': code,
+      if (createdAt != null) 'created_at': createdAt,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (usedByCoachId != null) 'used_by_coach_id': usedByCoachId,
+      if (usedAt != null) 'used_at': usedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AthletePairingCodesTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<String>? code,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? expiresAt,
+    Value<String?>? usedByCoachId,
+    Value<DateTime?>? usedAt,
+    Value<int>? rowid,
+  }) {
+    return AthletePairingCodesTableCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      code: code ?? this.code,
+      createdAt: createdAt ?? this.createdAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+      usedByCoachId: usedByCoachId ?? this.usedByCoachId,
+      usedAt: usedAt ?? this.usedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (usedByCoachId.present) {
+      map['used_by_coach_id'] = Variable<String>(usedByCoachId.value);
+    }
+    if (usedAt.present) {
+      map['used_at'] = Variable<DateTime>(usedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AthletePairingCodesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('code: $code, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('usedByCoachId: $usedByCoachId, ')
+          ..write('usedAt: $usedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -26596,6 +28232,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TpWritebackTableTable tpWritebackTable = $TpWritebackTableTable(
     this,
   );
+  late final $PersonalTemplatesTableTable personalTemplatesTable =
+      $PersonalTemplatesTableTable(this);
+  late final $AthletePairingCodesTableTable athletePairingCodesTable =
+      $AthletePairingCodesTableTable(this);
   late final UserDao userDao = UserDao(this as AppDatabase);
   late final FoodPreferencesDao foodPreferencesDao = FoodPreferencesDao(
     this as AppDatabase,
@@ -26631,6 +28271,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     templateFoodsTable,
     templatesTable,
     tpWritebackTable,
+    personalTemplatesTable,
+    athletePairingCodesTable,
   ];
 }
 
@@ -38226,6 +39868,774 @@ typedef $$TpWritebackTableTableProcessedTableManager =
       TpWritebackEntry,
       PrefetchHooks Function()
     >;
+typedef $$PersonalTemplatesTableTableCreateCompanionBuilder =
+    PersonalTemplatesTableCompanion Function({
+      Value<String> id,
+      required String userId,
+      required String name,
+      required String activityType,
+      Value<int?> originalDurationMinutes,
+      Value<double?> originalDistance,
+      Value<String?> originalActivityTitle,
+      required String planData,
+      Value<int?> totalCarbsG,
+      Value<int?> totalProteinG,
+      Value<int?> totalFatG,
+      Value<int?> totalSodiumMg,
+      Value<int?> totalFluidsMl,
+      Value<int?> totalCalories,
+      Value<String?> brickSegmentOrder,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+typedef $$PersonalTemplatesTableTableUpdateCompanionBuilder =
+    PersonalTemplatesTableCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<String> name,
+      Value<String> activityType,
+      Value<int?> originalDurationMinutes,
+      Value<double?> originalDistance,
+      Value<String?> originalActivityTitle,
+      Value<String> planData,
+      Value<int?> totalCarbsG,
+      Value<int?> totalProteinG,
+      Value<int?> totalFatG,
+      Value<int?> totalSodiumMg,
+      Value<int?> totalFluidsMl,
+      Value<int?> totalCalories,
+      Value<String?> brickSegmentOrder,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+
+class $$PersonalTemplatesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PersonalTemplatesTableTable> {
+  $$PersonalTemplatesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get originalDurationMinutes => $composableBuilder(
+    column: $table.originalDurationMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get originalDistance => $composableBuilder(
+    column: $table.originalDistance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originalActivityTitle => $composableBuilder(
+    column: $table.originalActivityTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get planData => $composableBuilder(
+    column: $table.planData,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalCarbsG => $composableBuilder(
+    column: $table.totalCarbsG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalProteinG => $composableBuilder(
+    column: $table.totalProteinG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalFatG => $composableBuilder(
+    column: $table.totalFatG,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalSodiumMg => $composableBuilder(
+    column: $table.totalSodiumMg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalFluidsMl => $composableBuilder(
+    column: $table.totalFluidsMl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalCalories => $composableBuilder(
+    column: $table.totalCalories,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brickSegmentOrder => $composableBuilder(
+    column: $table.brickSegmentOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PersonalTemplatesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PersonalTemplatesTableTable> {
+  $$PersonalTemplatesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get originalDurationMinutes => $composableBuilder(
+    column: $table.originalDurationMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get originalDistance => $composableBuilder(
+    column: $table.originalDistance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get originalActivityTitle => $composableBuilder(
+    column: $table.originalActivityTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get planData => $composableBuilder(
+    column: $table.planData,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalCarbsG => $composableBuilder(
+    column: $table.totalCarbsG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalProteinG => $composableBuilder(
+    column: $table.totalProteinG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalFatG => $composableBuilder(
+    column: $table.totalFatG,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalSodiumMg => $composableBuilder(
+    column: $table.totalSodiumMg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalFluidsMl => $composableBuilder(
+    column: $table.totalFluidsMl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalCalories => $composableBuilder(
+    column: $table.totalCalories,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get brickSegmentOrder => $composableBuilder(
+    column: $table.brickSegmentOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PersonalTemplatesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PersonalTemplatesTableTable> {
+  $$PersonalTemplatesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get originalDurationMinutes => $composableBuilder(
+    column: $table.originalDurationMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get originalDistance => $composableBuilder(
+    column: $table.originalDistance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get originalActivityTitle => $composableBuilder(
+    column: $table.originalActivityTitle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get planData =>
+      $composableBuilder(column: $table.planData, builder: (column) => column);
+
+  GeneratedColumn<int> get totalCarbsG => $composableBuilder(
+    column: $table.totalCarbsG,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalProteinG => $composableBuilder(
+    column: $table.totalProteinG,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalFatG =>
+      $composableBuilder(column: $table.totalFatG, builder: (column) => column);
+
+  GeneratedColumn<int> get totalSodiumMg => $composableBuilder(
+    column: $table.totalSodiumMg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalFluidsMl => $composableBuilder(
+    column: $table.totalFluidsMl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalCalories => $composableBuilder(
+    column: $table.totalCalories,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get brickSegmentOrder => $composableBuilder(
+    column: $table.brickSegmentOrder,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$PersonalTemplatesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PersonalTemplatesTableTable,
+          PersonalTemplateEntry,
+          $$PersonalTemplatesTableTableFilterComposer,
+          $$PersonalTemplatesTableTableOrderingComposer,
+          $$PersonalTemplatesTableTableAnnotationComposer,
+          $$PersonalTemplatesTableTableCreateCompanionBuilder,
+          $$PersonalTemplatesTableTableUpdateCompanionBuilder,
+          (
+            PersonalTemplateEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $PersonalTemplatesTableTable,
+              PersonalTemplateEntry
+            >,
+          ),
+          PersonalTemplateEntry,
+          PrefetchHooks Function()
+        > {
+  $$PersonalTemplatesTableTableTableManager(
+    _$AppDatabase db,
+    $PersonalTemplatesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PersonalTemplatesTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$PersonalTemplatesTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PersonalTemplatesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> activityType = const Value.absent(),
+                Value<int?> originalDurationMinutes = const Value.absent(),
+                Value<double?> originalDistance = const Value.absent(),
+                Value<String?> originalActivityTitle = const Value.absent(),
+                Value<String> planData = const Value.absent(),
+                Value<int?> totalCarbsG = const Value.absent(),
+                Value<int?> totalProteinG = const Value.absent(),
+                Value<int?> totalFatG = const Value.absent(),
+                Value<int?> totalSodiumMg = const Value.absent(),
+                Value<int?> totalFluidsMl = const Value.absent(),
+                Value<int?> totalCalories = const Value.absent(),
+                Value<String?> brickSegmentOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PersonalTemplatesTableCompanion(
+                id: id,
+                userId: userId,
+                name: name,
+                activityType: activityType,
+                originalDurationMinutes: originalDurationMinutes,
+                originalDistance: originalDistance,
+                originalActivityTitle: originalActivityTitle,
+                planData: planData,
+                totalCarbsG: totalCarbsG,
+                totalProteinG: totalProteinG,
+                totalFatG: totalFatG,
+                totalSodiumMg: totalSodiumMg,
+                totalFluidsMl: totalFluidsMl,
+                totalCalories: totalCalories,
+                brickSegmentOrder: brickSegmentOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                required String userId,
+                required String name,
+                required String activityType,
+                Value<int?> originalDurationMinutes = const Value.absent(),
+                Value<double?> originalDistance = const Value.absent(),
+                Value<String?> originalActivityTitle = const Value.absent(),
+                required String planData,
+                Value<int?> totalCarbsG = const Value.absent(),
+                Value<int?> totalProteinG = const Value.absent(),
+                Value<int?> totalFatG = const Value.absent(),
+                Value<int?> totalSodiumMg = const Value.absent(),
+                Value<int?> totalFluidsMl = const Value.absent(),
+                Value<int?> totalCalories = const Value.absent(),
+                Value<String?> brickSegmentOrder = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PersonalTemplatesTableCompanion.insert(
+                id: id,
+                userId: userId,
+                name: name,
+                activityType: activityType,
+                originalDurationMinutes: originalDurationMinutes,
+                originalDistance: originalDistance,
+                originalActivityTitle: originalActivityTitle,
+                planData: planData,
+                totalCarbsG: totalCarbsG,
+                totalProteinG: totalProteinG,
+                totalFatG: totalFatG,
+                totalSodiumMg: totalSodiumMg,
+                totalFluidsMl: totalFluidsMl,
+                totalCalories: totalCalories,
+                brickSegmentOrder: brickSegmentOrder,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PersonalTemplatesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PersonalTemplatesTableTable,
+      PersonalTemplateEntry,
+      $$PersonalTemplatesTableTableFilterComposer,
+      $$PersonalTemplatesTableTableOrderingComposer,
+      $$PersonalTemplatesTableTableAnnotationComposer,
+      $$PersonalTemplatesTableTableCreateCompanionBuilder,
+      $$PersonalTemplatesTableTableUpdateCompanionBuilder,
+      (
+        PersonalTemplateEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $PersonalTemplatesTableTable,
+          PersonalTemplateEntry
+        >,
+      ),
+      PersonalTemplateEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$AthletePairingCodesTableTableCreateCompanionBuilder =
+    AthletePairingCodesTableCompanion Function({
+      required String id,
+      required String userId,
+      required String code,
+      Value<DateTime> createdAt,
+      required DateTime expiresAt,
+      Value<String?> usedByCoachId,
+      Value<DateTime?> usedAt,
+      Value<int> rowid,
+    });
+typedef $$AthletePairingCodesTableTableUpdateCompanionBuilder =
+    AthletePairingCodesTableCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<String> code,
+      Value<DateTime> createdAt,
+      Value<DateTime> expiresAt,
+      Value<String?> usedByCoachId,
+      Value<DateTime?> usedAt,
+      Value<int> rowid,
+    });
+
+class $$AthletePairingCodesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $AthletePairingCodesTableTable> {
+  $$AthletePairingCodesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get usedByCoachId => $composableBuilder(
+    column: $table.usedByCoachId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get usedAt => $composableBuilder(
+    column: $table.usedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AthletePairingCodesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $AthletePairingCodesTableTable> {
+  $$AthletePairingCodesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get usedByCoachId => $composableBuilder(
+    column: $table.usedByCoachId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get usedAt => $composableBuilder(
+    column: $table.usedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AthletePairingCodesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AthletePairingCodesTableTable> {
+  $$AthletePairingCodesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<String> get usedByCoachId => $composableBuilder(
+    column: $table.usedByCoachId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get usedAt =>
+      $composableBuilder(column: $table.usedAt, builder: (column) => column);
+}
+
+class $$AthletePairingCodesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AthletePairingCodesTableTable,
+          AthletePairingCodeEntry,
+          $$AthletePairingCodesTableTableFilterComposer,
+          $$AthletePairingCodesTableTableOrderingComposer,
+          $$AthletePairingCodesTableTableAnnotationComposer,
+          $$AthletePairingCodesTableTableCreateCompanionBuilder,
+          $$AthletePairingCodesTableTableUpdateCompanionBuilder,
+          (
+            AthletePairingCodeEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $AthletePairingCodesTableTable,
+              AthletePairingCodeEntry
+            >,
+          ),
+          AthletePairingCodeEntry,
+          PrefetchHooks Function()
+        > {
+  $$AthletePairingCodesTableTableTableManager(
+    _$AppDatabase db,
+    $AthletePairingCodesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AthletePairingCodesTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$AthletePairingCodesTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$AthletePairingCodesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> code = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> expiresAt = const Value.absent(),
+                Value<String?> usedByCoachId = const Value.absent(),
+                Value<DateTime?> usedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AthletePairingCodesTableCompanion(
+                id: id,
+                userId: userId,
+                code: code,
+                createdAt: createdAt,
+                expiresAt: expiresAt,
+                usedByCoachId: usedByCoachId,
+                usedAt: usedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String userId,
+                required String code,
+                Value<DateTime> createdAt = const Value.absent(),
+                required DateTime expiresAt,
+                Value<String?> usedByCoachId = const Value.absent(),
+                Value<DateTime?> usedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AthletePairingCodesTableCompanion.insert(
+                id: id,
+                userId: userId,
+                code: code,
+                createdAt: createdAt,
+                expiresAt: expiresAt,
+                usedByCoachId: usedByCoachId,
+                usedAt: usedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AthletePairingCodesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AthletePairingCodesTableTable,
+      AthletePairingCodeEntry,
+      $$AthletePairingCodesTableTableFilterComposer,
+      $$AthletePairingCodesTableTableOrderingComposer,
+      $$AthletePairingCodesTableTableAnnotationComposer,
+      $$AthletePairingCodesTableTableCreateCompanionBuilder,
+      $$AthletePairingCodesTableTableUpdateCompanionBuilder,
+      (
+        AthletePairingCodeEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $AthletePairingCodesTableTable,
+          AthletePairingCodeEntry
+        >,
+      ),
+      AthletePairingCodeEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -38284,4 +40694,14 @@ class $AppDatabaseManager {
       $$TemplatesTableTableTableManager(_db, _db.templatesTable);
   $$TpWritebackTableTableTableManager get tpWritebackTable =>
       $$TpWritebackTableTableTableManager(_db, _db.tpWritebackTable);
+  $$PersonalTemplatesTableTableTableManager get personalTemplatesTable =>
+      $$PersonalTemplatesTableTableTableManager(
+        _db,
+        _db.personalTemplatesTable,
+      );
+  $$AthletePairingCodesTableTableTableManager get athletePairingCodesTable =>
+      $$AthletePairingCodesTableTableTableManager(
+        _db,
+        _db.athletePairingCodesTable,
+      );
 }

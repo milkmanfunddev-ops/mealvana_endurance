@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../logging_service.dart';
+import '../sentry/sentry_reporter.dart';
 import 'data_sync_service.dart';
+import 'sync_dependency_graph.dart';
 import '../../data/syncable_repository.dart';
 import '../app_external_deps.dart';
 
@@ -46,27 +49,15 @@ enum SyncState { idle, syncing }
 /// NOT synced on app startup - returning users see cached data until pull-to-refresh
 @Riverpod(keepAlive: true)
 class SyncCoordinator extends _$SyncCoordinator {
-  /// Repository dependency graph for dependency resolution
-  static const Map<String, List<String>> _dependencies = {
-    'users': [],
-    'foods': [],
-    'carb_loading_foods': [],
-    'activities': ['users'],
-    'events': ['users'],
-    'food_preferences': ['users', 'template_foods'],
-    'user_foods': ['users'],
-    'coaches': ['users'],
-    'coach_athlete_relationships': ['coaches', 'users'],
-    'carb_loading_plans': ['users', 'events'],
-    'carb_loading_days': ['carb_loading_plans'],
-    'carb_loading_day_meals': ['carb_loading_days', 'carb_loading_foods'],
-    'coach_messages': ['coach_athlete_relationships'],
-    'template_foods': [],
-    'templates': ['template_foods'],
-  };
+  /// Canonical repository dependency graph for dependency resolution.
+  static const Map<String, List<String>> _dependencies =
+      SyncDependencyGraph.dependenciesByRepository;
 
   /// Track what's currently being synced to prevent infinite loops
   final Set<String> _syncingNow = {};
+
+  /// Track in-flight sync futures per repository to dedupe concurrent callers.
+  final Map<String, Future<void>> _inFlightSyncs = {};
 
   /// Track last sync times per repository for staleness checks
   final Map<String, DateTime> _lastSyncTimes = {};
@@ -96,6 +87,7 @@ class SyncCoordinator extends _$SyncCoordinator {
 
   AppLogger get _logger => ref.read(appLoggerProvider);
   DataSyncService get _dataSyncService => ref.read(dataSyncServiceProvider);
+  SentryReporter get _sentry => ref.read(sentryReporterProvider);
 
   /// Ensures a repository's data is fresh (synced within staleness threshold).
   ///
@@ -152,36 +144,52 @@ class SyncCoordinator extends _$SyncCoordinator {
       return;
     }
 
-    // 2. Rate limiting - skip if recently failed (cooldown period)
-    if (_isInFailureCooldown(repoKey)) {
+    final inFlightSync = _inFlightSyncs[repoKey];
+    if (inFlightSync != null) {
       _logger.debug(
-        'Skipping sync - in failure cooldown',
-        context: 'SYNC_COORDINATOR',
-        data: {
-          'repoKey': repoKey,
-          'failureCount': _failureCount[repoKey] ?? 0,
-          'cooldownRemaining': _getCooldownRemaining(repoKey),
-        },
-      );
-      return;
-    }
-
-    // 3. Check if data is stale - if fresh, return immediately
-    if (!await _isStale(repoKey, repository)) {
-      _logger.debug(
-        'Skipping sync - data is fresh',
+        'Awaiting in-flight sync',
         context: 'SYNC_COORDINATOR',
         data: {'repoKey': repoKey},
       );
+      await inFlightSync;
       return;
     }
 
-    // 4. Mark as syncing
-    _syncingNow.add(repoKey);
+    final completer = Completer<void>();
+    _inFlightSyncs[repoKey] = completer.future;
+    var markedSyncing = false;
 
     try {
+      // 2. Rate limiting - skip if recently failed (cooldown period)
+      if (_isInFailureCooldown(repoKey)) {
+        _logger.debug(
+          'Skipping sync - in failure cooldown',
+          context: 'SYNC_COORDINATOR',
+          data: {
+            'repoKey': repoKey,
+            'failureCount': _failureCount[repoKey] ?? 0,
+            'cooldownRemaining': _getCooldownRemaining(repoKey),
+          },
+        );
+        return;
+      }
+
+      // 3. Check if data is stale - if fresh, return immediately
+      if (!await _isStale(repoKey, repository)) {
+        _logger.debug(
+          'Skipping sync - data is fresh',
+          context: 'SYNC_COORDINATOR',
+          data: {'repoKey': repoKey},
+        );
+        return;
+      }
+
+      // 4. Mark as syncing
+      _syncingNow.add(repoKey);
+      markedSyncing = true;
+
       // 5. Sync dependencies FIRST (recursive)
-      final deps = _dependencies[repoKey] ?? [];
+      final deps = _dependencies[repoKey] ?? const <String>[];
       for (final dep in deps) {
         await ensureSynced(dep, userId);
       }
@@ -225,9 +233,22 @@ class SyncCoordinator extends _$SyncCoordinator {
           'failureCount': _failureCount[repoKey] ?? 1,
         },
       );
+      unawaited(
+        _sentry.reportCriticalError(
+          e,
+          stackTrace: stackTrace,
+          context: 'sync_ensureSynced_$repoKey',
+        ),
+      );
       // Don't rethrow - best effort sync
     } finally {
-      _syncingNow.remove(repoKey);
+      if (markedSyncing) {
+        _syncingNow.remove(repoKey);
+      }
+      _inFlightSyncs.remove(repoKey);
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     }
   }
 
@@ -372,6 +393,13 @@ class SyncCoordinator extends _$SyncCoordinator {
         stackTrace: stackTrace,
         data: {'trigger': trigger.name, 'userId': userId},
       );
+      unawaited(
+        _sentry.reportCriticalError(
+          e,
+          stackTrace: stackTrace,
+          context: 'sync_full_sync_${trigger.name}',
+        ),
+      );
       return false;
     } finally {
       _syncInProgress = false;
@@ -379,34 +407,66 @@ class SyncCoordinator extends _$SyncCoordinator {
     }
   }
 
+  /// Upload dirty records from all repositories (public API).
+  /// Best-effort: logs failures but doesn't throw.
+  /// Used by corruption recovery to save data before database deletion.
+  Future<void> uploadAllDirtyRecords(String userId) =>
+      _uploadAllDirtyRecords(userId);
+
   /// Upload dirty records from all repositories before download.
   /// Best-effort: logs failures but doesn't block download.
   Future<void> _uploadAllDirtyRecords(String userId) async {
     try {
-      final activitiesRepo = ref.read(activitiesRepositoryProvider);
-      final eventsRepo = ref.read(eventsRepositoryProvider);
-      final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
-      final feedbackRepo = ref.read(feedbackRepositoryProvider);
-      final foodPrefsRepo = await ref.read(foodPreferencesRepositoryProvider.future);
-      final userRepo = await ref.read(userRepositoryProvider.future);
-      final userFoodsRepo = await ref.read(userFoodsRepositoryProvider.future);
+      final repos = <String, SyncableRepository>{
+        'activities': ref.read(activitiesRepositoryProvider),
+        'events': ref.read(eventsRepositoryProvider),
+        'carb_loading': ref.read(carbLoadingRepositoryProvider),
+        'feedback': ref.read(feedbackRepositoryProvider),
+        'food_preferences': await ref.read(
+          foodPreferencesRepositoryProvider.future,
+        ),
+        'users': await ref.read(userRepositoryProvider.future),
+        'user_foods': await ref.read(userFoodsRepositoryProvider.future),
+      };
 
-      final results = await Future.wait([
-        activitiesRepo.uploadDirtyRecords(userId),
-        eventsRepo.uploadDirtyRecords(userId),
-        carbLoadingRepo.uploadDirtyRecords(userId),
-        feedbackRepo.uploadDirtyRecords(userId),
-        foodPrefsRepo.uploadDirtyRecords(userId),
-        userRepo.uploadDirtyRecords(userId),
-        userFoodsRepo.uploadDirtyRecords(userId),
-      ]);
+      final entries = repos.entries.toList();
+      final results = await Future.wait(
+        entries.map((e) => e.value.uploadDirtyRecords(userId)),
+      );
 
-      final failedCount = results.where((r) => !r.success).length;
-      if (failedCount > 0) {
+      final failures = <String>[];
+      for (var i = 0; i < entries.length; i++) {
+        final name = entries[i].key;
+        final result = results[i];
+        if (!result.success) {
+          failures.add(name);
+          _logger.error(
+            'Dirty record upload failed for $name',
+            context: 'SYNC_COORDINATOR',
+            data: {'repository': name, 'error': result.error},
+          );
+        }
+      }
+
+      if (failures.isNotEmpty) {
         _logger.warning(
           'Some dirty record uploads failed before download',
           context: 'SYNC_COORDINATOR',
-          data: {'failedCount': failedCount, 'totalRepos': results.length},
+          data: {
+            'failedRepos': failures,
+            'failedCount': failures.length,
+            'totalRepos': entries.length,
+          },
+        );
+        unawaited(
+          _sentry.captureMessage(
+            'Dirty record upload failures during sync: ${failures.join(", ")}',
+            level: SentryLevel.warning,
+            tags: {
+              'failed_repos': failures.join(','),
+              'failed_count': '${failures.length}',
+            },
+          ),
         );
       }
     } catch (e, stackTrace) {
@@ -415,6 +475,13 @@ class SyncCoordinator extends _$SyncCoordinator {
         context: 'SYNC_COORDINATOR',
         error: e,
         stackTrace: stackTrace,
+      );
+      unawaited(
+        _sentry.reportCriticalError(
+          e,
+          stackTrace: stackTrace,
+          context: 'sync_upload_dirty_records',
+        ),
       );
     }
   }
@@ -454,6 +521,7 @@ class SyncCoordinator extends _$SyncCoordinator {
   /// instead of incorrectly reusing stale freshness timestamps.
   Future<void> resetRepositorySyncState() async {
     _syncingNow.clear();
+    _inFlightSyncs.clear();
     _lastSyncTimes.clear();
     _lastFailedAttempt.clear();
     _failureCount.clear();
@@ -462,7 +530,7 @@ class SyncCoordinator extends _$SyncCoordinator {
     state = SyncState.idle;
 
     final prefs = ref.read(sharedPreferencesProvider);
-    for (final repoKey in _dependencies.keys) {
+    for (final repoKey in SyncDependencyGraph.repositoryKeys) {
       await prefs.remove('${repoKey}_last_sync');
     }
 

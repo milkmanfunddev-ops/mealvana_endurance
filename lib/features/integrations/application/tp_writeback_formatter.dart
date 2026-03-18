@@ -132,6 +132,47 @@ class TpWritebackFormatter {
     return 'Post: ${parts.join(', ')} within 30min';
   }
 
+  // ─── Feedback block ───
+
+  static const String feedbackStartDelimiter = '[Mealvana Feedback]';
+  static const String feedbackEndDelimiter = '[/Mealvana Feedback]';
+
+  /// Format completion feedback into a delimited text block for TP descriptions.
+  static String formatFeedbackBlock({
+    required int rating,
+    String? notes,
+  }) {
+    final lines = <String>[];
+    lines.add('---');
+    lines.add(feedbackStartDelimiter);
+    lines.add('Rating: $rating/5');
+    if (notes != null && notes.trim().isNotEmpty) {
+      lines.add('Notes: ${notes.trim()}');
+    }
+    lines.add(feedbackEndDelimiter);
+    return lines.join('\n');
+  }
+
+  /// Merge a feedback block into an existing workout description.
+  /// Replaces any existing feedback block, or appends if none exists.
+  static String mergeFeedbackIntoDescription(String? existingDesc, String block) {
+    final desc = existingDesc ?? '';
+    final stripped = stripFeedbackFromDescription(desc);
+    if (stripped.trim().isEmpty) {
+      return block;
+    }
+    return '${stripped.trimRight()}\n\n$block';
+  }
+
+  /// Remove the feedback block from a description.
+  static String stripFeedbackFromDescription(String desc) {
+    final pattern = RegExp(
+      r'(\n{0,2}---\n)?\[Mealvana Feedback\].*?\[/Mealvana Feedback\]',
+      dotAll: true,
+    );
+    return desc.replaceAll(pattern, '').trimRight();
+  }
+
   /// Convert milliliters to fluid ounces (rounded).
   static int? _mlToOz(double? ml) {
     if (ml == null || ml <= 0) return null;

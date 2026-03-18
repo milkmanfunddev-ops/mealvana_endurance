@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/onboarding_controller.dart';
 import '../../../../shared/services/app_external_deps.dart';
 
@@ -12,10 +13,12 @@ class SportPreferencesScreen extends ConsumerStatefulWidget {
   const SportPreferencesScreen({super.key});
 
   @override
-  ConsumerState<SportPreferencesScreen> createState() => _SportPreferencesScreenState();
+  ConsumerState<SportPreferencesScreen> createState() =>
+      _SportPreferencesScreenState();
 }
 
-class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen> {
+class _SportPreferencesScreenState
+    extends ConsumerState<SportPreferencesScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Sport selection
@@ -41,9 +44,13 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
   @override
   void initState() {
     super.initState();
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': 'Sport Preferences Onboarding',
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {'screen_name': 'Sport Preferences Onboarding'},
+        );
   }
 
   @override
@@ -69,20 +76,25 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
 
     // Track form submission
     final analytics = ref.read(appExternalDepsProvider).analytics;
-    await analytics.track('sport_preferences_submit', properties: {
-      'does_running': _doesRunning,
-      'does_cycling': _doesCycling,
-      'does_swimming': _doesSwimming,
-      'gi_sensitivity': _giSensitivity,
-      'ftp_watts': _doesCycling ? int.parse(_ftpController.text) : null,
-      'bike_bottles': _doesCycling ? _bikeBottles : null,
-      'css_seconds': _doesSwimming ? _calculateCssSeconds() : null,
-    });
+    await analytics.track(
+      'sport_preferences_submit',
+      properties: {
+        'does_running': _doesRunning,
+        'does_cycling': _doesCycling,
+        'does_swimming': _doesSwimming,
+        'gi_sensitivity': _giSensitivity,
+        'ftp_watts': _doesCycling ? int.parse(_ftpController.text) : null,
+        'bike_bottles': _doesCycling ? _bikeBottles : null,
+        'css_seconds': _doesSwimming ? _calculateCssSeconds() : null,
+      },
+    );
 
     final controller = ref.read(onboardingControllerProvider.notifier);
 
     // Prepare sport preferences data
-    final ftpWatts = _doesCycling ? (int.tryParse(_ftpController.text) ?? 0) : null;
+    final ftpWatts = _doesCycling
+        ? (int.tryParse(_ftpController.text) ?? 0)
+        : null;
     final cssSeconds = _doesSwimming ? _calculateCssSeconds() : null;
 
     final success = await controller.saveSportPreferences(
@@ -98,10 +110,13 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
 
     if (success && mounted) {
       // Track successful navigation
-      await analytics.track('navigation', properties: {
-        'destination': 'Food Preferences Onboarding',
-        'source': 'Sport Preferences Submit',
-      });
+      await analytics.track(
+        'navigation',
+        properties: {
+          'destination': 'Food Preferences Onboarding',
+          'source': 'Sport Preferences Submit',
+        },
+      );
 
       if (mounted) {
         context.push('/onboarding/food-preferences');
@@ -109,7 +124,8 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
     } else if (mounted) {
       // Show error if save failed
       final state = ref.read(onboardingControllerProvider);
-      final errorMessage = state.asError?.error.toString() ?? 'Failed to save sport preferences';
+      final errorMessage =
+          state.asError?.error.toString() ?? 'Failed to save sport preferences';
 
       MealvanaSnackbar.showError(context, errorMessage);
     }
@@ -140,7 +156,9 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
                 borderRadius: AppRadius.circularRadius,
                 child: LinearProgressIndicator(
                   value: 0.67, // 67% through onboarding (step 2 of 3)
-                  backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.1),
                   valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
                   minHeight: 8,
                 ),
@@ -235,21 +253,13 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
       title: Row(
         children: [
           // Custom back button
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                FontAwesomeIcons.arrowLeft,
-                size: AppIconSizes.controlIcon,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              onPressed: () => context.pop(),
-            ),
+          CustomAppBarBackButton(
+            onPressed: () => context.pop(),
+            margin: EdgeInsets.zero,
+            iconColor: Theme.of(context).colorScheme.onSurface,
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
@@ -274,7 +284,9 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
       child: BaseCard(
         backgroundColor: isSelected ? AppColors.orange : null,
         border: Border.all(
-          color: isSelected ? AppColors.orange : Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+          color: isSelected
+              ? AppColors.orange
+              : Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
           width: isSelected ? 2 : 1,
         ),
         child: Row(
@@ -284,7 +296,9 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
               width: AppIconSizes.activityIcon,
               height: AppIconSizes.activityIcon,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.blackberry : AppColors.electrolyte,
+                color: isSelected
+                    ? AppColors.blackberry
+                    : AppColors.electrolyte,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -301,7 +315,9 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
               child: Text(
                 label,
                 style: AppTextStyles.subtitle.copyWith(
-                  color: isSelected ? AppColors.blackberry : Theme.of(context).colorScheme.onSurface,
+                  color: isSelected
+                      ? AppColors.blackberry
+                      : Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -359,13 +375,13 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Switch(
+              KyleSwitch(
                 value: _giSensitivity,
                 onChanged: (value) => setState(() => _giSensitivity = value),
-                activeThumbColor: AppColors.orange,
-                activeTrackColor: AppColors.orange.withOpacity(0.5),
-                inactiveThumbColor: AppColors.cream,
-                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                activeTrackColor: AppColors.orange.withOpacity(0.85),
+                inactiveTrackColor: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withOpacity(0.3),
               ),
             ],
           ),
@@ -420,28 +436,30 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
                   border: OutlineInputBorder(
                     borderRadius: AppRadius.inputRadius,
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.2),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: AppRadius.inputRadius,
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.2),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: AppRadius.inputRadius,
-                    borderSide: BorderSide(
-                      color: AppColors.orange,
-                      width: 2,
-                    ),
+                    borderSide: BorderSide(color: AppColors.orange, width: 2),
                   ),
                   contentPadding: AppSpacing.inputPadding,
                 ),
                 validator: (value) {
                   if (value?.isEmpty ?? true) return 'Required';
                   final ftp = int.tryParse(value!);
-                  if (ftp == null || ftp < 0) return 'Enter valid FTP (0 or higher)';
+                  if (ftp == null || ftp < 0)
+                    return 'Enter valid FTP (0 or higher)';
                   return null;
                 },
               ),
@@ -503,13 +521,13 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Switch(
+              KyleSwitch(
                 value: _hasAeroBottle,
                 onChanged: (value) => setState(() => _hasAeroBottle = value),
-                activeThumbColor: AppColors.orange,
-                activeTrackColor: AppColors.orange.withOpacity(0.5),
-                inactiveThumbColor: AppColors.cream,
-                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                activeTrackColor: AppColors.orange.withOpacity(0.85),
+                inactiveTrackColor: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withOpacity(0.3),
               ),
             ],
           ),
@@ -543,13 +561,13 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Switch(
+              KyleSwitch(
                 value: _hasBentoBox,
                 onChanged: (value) => setState(() => _hasBentoBox = value),
-                activeThumbColor: AppColors.orange,
-                activeTrackColor: AppColors.orange.withOpacity(0.5),
-                inactiveThumbColor: AppColors.cream,
-                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                activeTrackColor: AppColors.orange.withOpacity(0.85),
+                inactiveTrackColor: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withOpacity(0.3),
               ),
             ],
           ),
@@ -606,13 +624,17 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
                         border: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.2),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.2),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -636,7 +658,9 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
                   ),
 
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                    ),
                     child: Text(
                       ':',
                       style: AppTextStyles.pageTitle.copyWith(
@@ -657,13 +681,17 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
                         border: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.2),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.2),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -719,13 +747,13 @@ class _SportPreferencesScreenState extends ConsumerState<SportPreferencesScreen>
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Switch(
+              KyleSwitch(
                 value: _typicalWetsuit,
                 onChanged: (value) => setState(() => _typicalWetsuit = value),
-                activeThumbColor: AppColors.orange,
-                activeTrackColor: AppColors.orange.withOpacity(0.5),
-                inactiveThumbColor: AppColors.cream,
-                inactiveTrackColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+                activeTrackColor: AppColors.orange.withOpacity(0.85),
+                inactiveTrackColor: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withOpacity(0.3),
               ),
             ],
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../providers/password_recovery_controller.dart';
@@ -18,8 +19,7 @@ class VerifyResetCodeScreen extends ConsumerStatefulWidget {
       _VerifyResetCodeScreenState();
 }
 
-class _VerifyResetCodeScreenState
-    extends ConsumerState<VerifyResetCodeScreen> {
+class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _codeController = TextEditingController();
 
@@ -33,11 +33,9 @@ class _VerifyResetCodeScreenState
     if (!_formKey.currentState!.validate()) return;
 
     final code = _codeController.text.trim();
-    final controller =
-        ref.read(passwordRecoveryControllerProvider.notifier);
+    final controller = ref.read(passwordRecoveryControllerProvider.notifier);
 
-    final success =
-        await controller.verifyResetCode(widget.email, code);
+    final success = await controller.verifyResetCode(widget.email, code);
 
     if (success && mounted) {
       context.push('/auth/set-new-password');
@@ -50,8 +48,7 @@ class _VerifyResetCodeScreenState
   }
 
   Future<void> _handleResendCode() async {
-    final controller =
-        ref.read(passwordRecoveryControllerProvider.notifier);
+    final controller = ref.read(passwordRecoveryControllerProvider.notifier);
 
     final success = await controller.sendResetCode(widget.email);
 
@@ -178,8 +175,7 @@ class _VerifyResetCodeScreenState
                 // Verify button
                 KylePrimaryButton(
                   text: asyncState.isLoading ? 'Verifying...' : 'Verify Code',
-                  onPressed:
-                      asyncState.isLoading ? null : _handleVerifyCode,
+                  onPressed: asyncState.isLoading ? null : _handleVerifyCode,
                 ),
 
                 const SizedBox(height: AppSpacing.md),
@@ -187,8 +183,7 @@ class _VerifyResetCodeScreenState
                 // Back button
                 KyleSecondaryButton(
                   text: 'Back',
-                  onPressed:
-                      asyncState.isLoading ? null : () => context.pop(),
+                  onPressed: asyncState.isLoading ? null : () => context.pop(),
                 ),
 
                 const SizedBox(height: AppSpacing.xxl),
@@ -208,24 +203,13 @@ class _VerifyResetCodeScreenState
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                FontAwesomeIcons.arrowLeft,
-                size: AppIconSizes.controlIcon,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              onPressed: () => context.pop(),
-            ),
+          CustomAppBarBackButton(
+            onPressed: () => context.pop(),
+            margin: EdgeInsets.zero,
+            iconColor: Theme.of(context).colorScheme.onSurface,
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
         ],
       ),

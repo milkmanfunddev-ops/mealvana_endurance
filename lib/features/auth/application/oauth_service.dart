@@ -160,7 +160,7 @@ class OAuthService extends _$OAuthService {
       }
 
       // Complete authentication (unified flow for all providers)
-      final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+      final authMigrationService = await ref.read(authMigrationServiceProvider.future);
       await authMigrationService.completeAuthentication(
         previousUserId: anonymousUserId,
         wasAnonymous: wasAnonymous,
@@ -306,7 +306,7 @@ class OAuthService extends _$OAuthService {
       }
 
       // Complete authentication (unified flow for all providers)
-      final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+      final authMigrationService = await ref.read(authMigrationServiceProvider.future);
       await authMigrationService.completeAuthentication(
         previousUserId: anonymousUserId,
         wasAnonymous: wasAnonymous,
@@ -376,12 +376,21 @@ class OAuthService extends _$OAuthService {
 
       // CRITICAL: Capture anonymous user ID BEFORE signing in
       // This allows us to migrate their data after the session switch
-      final anonymousUserId = _supabase.auth.currentUser?.id;
-      final wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+      var anonymousUserId = _supabase.auth.currentUser?.id;
+      var wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+
+      // Also check for temp onboarding user ID (used when no Supabase session exists)
+      final prefs = ref.read(sharedPreferencesProvider);
+      final tempUserId = prefs.getString('onboarding_temp_user_id');
+      if (anonymousUserId == null && tempUserId != null) {
+        anonymousUserId = tempUserId;
+        wasAnonymous = true;
+      }
 
       _logger.info('Capturing anonymous user before sign-in', context: 'OAUTH_NATIVE', data: {
         'anonymous_user_id': anonymousUserId,
         'was_anonymous': wasAnonymous,
+        'had_temp_user_id': tempUserId != null,
       });
 
       // Generate nonce
@@ -418,7 +427,7 @@ class OAuthService extends _$OAuthService {
           'was_anonymous': wasAnonymous,
         });
 
-        final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+        final authMigrationService = await ref.read(authMigrationServiceProvider.future);
         final dataMigrated = await authMigrationService.completeAuthentication(
           previousUserId: anonymousUserId,
           wasAnonymous: wasAnonymous,
@@ -430,6 +439,12 @@ class OAuthService extends _$OAuthService {
         _logger.info('Authentication completed', context: 'OAUTH_NATIVE', data: {
           'data_migrated': dataMigrated,
         });
+
+        // Clear temp user ID after successful migration
+        if (tempUserId != null) {
+          await prefs.remove('onboarding_temp_user_id');
+          _logger.info('Cleared onboarding temp user ID after Apple sign-in', context: 'OAUTH_NATIVE');
+        }
       }
 
       await _analytics.track('auth_apple_signin_completed', properties: {
@@ -496,12 +511,21 @@ class OAuthService extends _$OAuthService {
 
       // CRITICAL: Capture anonymous user ID BEFORE signing in
       // This allows us to migrate their data after the session switch
-      final anonymousUserId = _supabase.auth.currentUser?.id;
-      final wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+      var anonymousUserId = _supabase.auth.currentUser?.id;
+      var wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+
+      // Also check for temp onboarding user ID (used when no Supabase session exists)
+      final prefs = ref.read(sharedPreferencesProvider);
+      final tempUserId = prefs.getString('onboarding_temp_user_id');
+      if (anonymousUserId == null && tempUserId != null) {
+        anonymousUserId = tempUserId;
+        wasAnonymous = true;
+      }
 
       _logger.info('Capturing anonymous user before sign-in', context: 'OAUTH_NATIVE', data: {
         'anonymous_user_id': anonymousUserId,
         'was_anonymous': wasAnonymous,
+        'had_temp_user_id': tempUserId != null,
       });
 
       final googleSignIn = _getGoogleSignIn();
@@ -549,7 +573,7 @@ class OAuthService extends _$OAuthService {
           'was_anonymous': wasAnonymous,
         });
 
-        final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+        final authMigrationService = await ref.read(authMigrationServiceProvider.future);
         final dataMigrated = await authMigrationService.completeAuthentication(
           previousUserId: anonymousUserId,
           wasAnonymous: wasAnonymous,
@@ -561,6 +585,12 @@ class OAuthService extends _$OAuthService {
         _logger.info('Authentication completed', context: 'OAUTH_NATIVE', data: {
           'data_migrated': dataMigrated,
         });
+
+        // Clear temp user ID after successful migration
+        if (tempUserId != null) {
+          await prefs.remove('onboarding_temp_user_id');
+          _logger.info('Cleared onboarding temp user ID after Google sign-in', context: 'OAUTH_NATIVE');
+        }
       }
 
       await _analytics.track('auth_google_signin_completed', properties: {

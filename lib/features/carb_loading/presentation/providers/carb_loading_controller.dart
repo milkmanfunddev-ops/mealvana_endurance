@@ -18,9 +18,14 @@ class CarbLoadingController extends _$CarbLoadingController {
 
   @override
   FutureOr<void> build() async {
+    // Background sync (fire-and-forget) - syncs if stale, then refreshes UI
+    final userId = await ref.read(userIdProvider.future);
+    unawaited(_backgroundSync(userId));
+  }
+
+  /// Background sync: ensures data is fresh, then refreshes UI
+  Future<void> _backgroundSync(String userId) async {
     try {
-      // Ensure carb loading data is synced using new sync architecture
-      final userId = await ref.read(userIdProvider.future);
       final repository = ref.read(carbLoadingRepositoryProvider);
       final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
 
@@ -29,10 +34,10 @@ class CarbLoadingController extends _$CarbLoadingController {
         userId,
         repository: repository,
       );
+      ref.invalidateSelf();
     } catch (e, stackTrace) {
-      // Log sync errors but don't block UI - offline-first means we can work with cached data
       _logger.error(
-        'Failed to sync carb loading data on controller build',
+        'Background sync failed',
         context: 'CARB_LOADING_CONTROLLER',
         error: e,
         stackTrace: stackTrace,

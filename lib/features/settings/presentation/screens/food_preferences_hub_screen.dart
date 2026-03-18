@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../providers/settings_controller.dart';
 
@@ -35,10 +36,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () => context.pop(),
-      ),
+      leading: const CustomAppBarBackButton(),
       title: Text(
         'Food Preferences',
         style: AppTextStyles.sectionTitle.copyWith(
@@ -50,9 +48,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
 
   Widget _buildLoadingState(BuildContext context) {
     return const Center(
-      child: CircularProgressIndicator(
-        color: AppColors.electrolyte,
-      ),
+      child: CircularProgressIndicator(color: AppColors.electrolyte),
     );
   }
 

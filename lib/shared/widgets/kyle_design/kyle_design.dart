@@ -1,6 +1,7 @@
 /// Kyle's Design System - Complete Component Library
 /// Export all components for easy importing
 library;
+
 export 'buttons/primary_button.dart';
 export 'buttons/secondary_button.dart';
 export 'buttons/tertiary_button.dart';
@@ -10,6 +11,7 @@ export 'buttons/selection_button.dart';
 export 'inputs/text_field.dart';
 export 'inputs/kyle_input_field.dart';
 export 'inputs/plus_minus_control.dart';
+export 'inputs/kyle_switch.dart';
 export 'icons/activity_icon.dart';
 export 'icons/food_icon.dart';
 export 'cards/base_card.dart';

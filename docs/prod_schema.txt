@@ -1574,6 +1574,222 @@ create table education_content
 alter table education_content
     owner to postgres;
 
+create index idx_education_content_published_sort
+    on education_content (is_published, sort_order);
+
+grant delete, insert, references, select, trigger, truncate, update on education_content to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on education_content to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on education_content to service_role;
+
+create table catalog_items
+(
+    id                     uuid                     default gen_random_uuid() not null
+        primary key,
+    shopify_product_id     text                                               not null,
+    shopify_variant_id     text,
+    handle                 text                                               not null,
+    title                  text                                               not null,
+    variant_title          text,
+    brand                  text,
+    product_type           text,
+    tags                   text[],
+    barcode                text,
+    sku                    text,
+    price_cents            integer,
+    currency_code          text                     default 'USD'::text,
+    available_for_sale     boolean                  default true,
+    image_url              text,
+    product_url            text,
+    calories_per_serving   integer,
+    carbs_g                double precision,
+    protein_g              double precision,
+    fat_g                  double precision,
+    sodium_mg              integer,
+    serving_size           text,
+    serving_grams          double precision,
+    caffeine_mg            integer,
+    nutrition_source       text,
+    nutrition_confidence   double precision,
+    raw_payload            jsonb,
+    shopify_updated_at     timestamp with time zone,
+    nutrition_enriched_at  timestamp with time zone,
+    created_at             timestamp with time zone default now()             not null,
+    updated_at             timestamp with time zone default now()             not null,
+    sugar_g                double precision,
+    fiber_g                double precision,
+    ingredients            text,
+    servings_per_container double precision
+);
+
+alter table catalog_items
+    owner to postgres;
+
+create unique index idx_catalog_items_shopify_variant_id
+    on catalog_items (shopify_variant_id)
+    where (shopify_variant_id IS NOT NULL);
+
+create unique index idx_catalog_items_barcode
+    on catalog_items (barcode)
+    where (barcode IS NOT NULL);
+
+create index idx_catalog_items_title_trgm
+    on catalog_items using gin (title gin_trgm_ops);
+
+create index idx_catalog_items_brand_trgm
+    on catalog_items using gin (brand gin_trgm_ops);
+
+create index idx_catalog_items_variant_title_trgm
+    on catalog_items using gin (variant_title gin_trgm_ops);
+
+create index idx_catalog_items_product_type
+    on catalog_items (product_type);
+
+create index idx_catalog_items_available
+    on catalog_items (available_for_sale)
+    where (available_for_sale = true);
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_items to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_items to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_items to service_role;
+
+create table catalog_sync_runs
+(
+    id                     uuid                     default gen_random_uuid() not null
+        primary key,
+    started_at             timestamp with time zone default now()             not null,
+    completed_at           timestamp with time zone,
+    status                 text                     default 'running'::text   not null,
+    total_products_fetched integer                  default 0,
+    variants_imported      integer                  default 0,
+    variants_skipped       integer                  default 0,
+    nutrition_enriched     integer                  default 0,
+    nutrition_failed       integer                  default 0,
+    errors                 jsonb                    default '[]'::jsonb,
+    script_version         text
+);
+
+alter table catalog_sync_runs
+    owner to postgres;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_sync_runs to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_sync_runs to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_sync_runs to service_role;
+
+create table personal_templates
+(
+    id                        uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id                   uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    name                      text                                               not null,
+    activity_type             text                                               not null,
+    original_duration_minutes integer,
+    original_distance         numeric(8, 2),
+    original_activity_title   text,
+    plan_data                 jsonb                                              not null,
+    total_carbs_g             integer,
+    total_protein_g           integer,
+    total_fat_g               integer,
+    total_sodium_mg           integer,
+    total_fluids_ml           integer,
+    total_calories            integer,
+    brick_segment_order       text[],
+    created_at                timestamp with time zone default now(),
+    updated_at                timestamp with time zone default now()
+);
+
+alter table personal_templates
+    owner to postgres;
+
+create index idx_personal_templates_user
+    on personal_templates (user_id);
+
+create index idx_personal_templates_sport
+    on personal_templates (user_id, activity_type);
+
+grant delete, insert, references, select, trigger, truncate, update on personal_templates to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on personal_templates to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on personal_templates to service_role;
+
+create table pre_workout_templates
+(
+    id                   uuid                     default gen_random_uuid() not null
+        constraint pre_workout_formulas_pkey
+            primary key,
+    name                 text                                               not null,
+    base_category        text                                               not null,
+    time_window          text                                               not null
+        constraint pre_workout_formulas_time_window_check
+            check (time_window = ANY (ARRAY ['< 30 min'::text, '30-90 min'::text, '1.5-3 hours'::text])),
+    digestion_speed      text                                               not null
+        constraint pre_workout_formulas_digestion_speed_check
+            check (digestion_speed = ANY (ARRAY ['Fast'::text, 'Medium'::text])),
+    allergens            text[]                   default '{}'::text[],
+    serving_unit         text                                               not null,
+    min_servings         numeric                  default 1                 not null
+        constraint pre_workout_templates_min_servings_check
+            check (min_servings >= 0.5),
+    max_servings         numeric                                            not null,
+    plus_banana          boolean                  default false             not null,
+    plus_sports_drink    boolean                  default false             not null,
+    notes                text,
+    is_active            boolean                  default true              not null,
+    created_at           timestamp with time zone default now()             not null,
+    updated_at           timestamp with time zone default now()             not null,
+    carbs_per_serving    numeric                  default 25                not null,
+    protein_per_serving  numeric                  default 0                 not null,
+    fat_per_serving      numeric                  default 0                 not null,
+    sodium_mg            numeric                  default 0                 not null,
+    fluid_ml             numeric                  default 0                 not null,
+    template_type        text                     default 'food'::text      not null
+        constraint pre_workout_templates_template_type_check
+            check (template_type = ANY (ARRAY ['food'::text, 'drink'::text, 'electrolyte'::text])),
+    component_food_names text[]                   default '{}'::text[],
+    constraint pre_workout_formulas_check
+        check (max_servings >= min_servings)
+);
+
+comment on table pre_workout_templates is 'Pre-workout nutrition formulas for personalized fueling recommendations based on timing, athlete weight, and preferences';
+
+comment on column pre_workout_templates.carbs_per_serving is 'Carbohydrates in grams per 1x serving';
+
+comment on column pre_workout_templates.protein_per_serving is 'Protein in grams per 1x serving';
+
+comment on column pre_workout_templates.fat_per_serving is 'Fat in grams per 1x serving';
+
+comment on column pre_workout_templates.sodium_mg is 'Sodium in milligrams per 1x serving';
+
+comment on column pre_workout_templates.component_food_names is 'Array of template_foods.name values that compose this template meal/drink';
+
+alter table pre_workout_templates
+    owner to postgres;
+
+create index idx_pre_workout_templates_time_window
+    on pre_workout_templates (time_window)
+    where (is_active = true);
+
+create index idx_pre_workout_templates_base_category
+    on pre_workout_templates (base_category)
+    where (is_active = true);
+
+create index idx_pre_workout_templates_allergens
+    on pre_workout_templates using gin (allergens);
+
+grant delete, insert, references, select, trigger, truncate, update on pre_workout_templates to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on pre_workout_templates to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on pre_workout_templates to service_role;
+
 create view v_food_sport_phase_settings
             (food_id, food_name, display_name, product_type, sport, phase, effective_max_servings, is_suitable, notes,
              legacy_max_before, legacy_max_during, legacy_max_after)
@@ -2772,6 +2988,24 @@ grant execute on function update_app_config_updated_at() to anon;
 grant execute on function update_app_config_updated_at() to authenticated;
 
 grant execute on function update_app_config_updated_at() to service_role;
+
+create function update_catalog_items_updated_at() returns trigger
+    language plpgsql
+as
+$$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+alter function update_catalog_items_updated_at() owner to postgres;
+
+grant execute on function update_catalog_items_updated_at() to anon;
+
+grant execute on function update_catalog_items_updated_at() to authenticated;
+
+grant execute on function update_catalog_items_updated_at() to service_role;
 
 create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
 

@@ -3,7 +3,7 @@ import 'package:mealvana_endurance/shared/data/syncable_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Simple test repository for staleness testing
-class StaleTestRepository implements SyncableRepository {
+class StaleTestRepository with SyncableRepository {
   @override
   final String repositoryKey;
 
@@ -14,37 +14,6 @@ class StaleTestRepository implements SyncableRepository {
     required this.repositoryKey,
     this.dependencies = const [],
   });
-
-  @override
-  Future<bool> isStale() async {
-    final lastSync = await getLastSyncTime();
-    if (lastSync == null) return true;
-
-    const staleDuration = Duration(hours: 24);
-    return DateTime.now().difference(lastSync) > staleDuration;
-  }
-
-  @override
-  Future<DateTime?> getLastSyncTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${repositoryKey}_last_sync';
-    final timestamp = prefs.getString(key);
-
-    if (timestamp == null) return null;
-
-    try {
-      return DateTime.parse(timestamp);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Future<void> setLastSyncTime(DateTime time) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${repositoryKey}_last_sync';
-    await prefs.setString(key, time.toIso8601String());
-  }
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
@@ -60,58 +29,56 @@ class StaleTestRepository implements SyncableRepository {
 
 void main() {
   group('Staleness Boundary Edge Cases', () {
+    const staleDuration = SyncableRepository.staleDuration;
+
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
     });
 
-    test('exactly 24 hours is NOT stale', () async {
+    test('just under stale duration is NOT stale', () async {
       final repo = StaleTestRepository(repositoryKey: 'users');
 
-      // Set timestamp to exactly 24 hours ago
-      final exactly24HoursAgo = DateTime.now().subtract(const Duration(hours: 24));
-      await repo.setLastSyncTime(exactly24HoursAgo);
+      final justUnderThreshold = DateTime.now()
+          .subtract(staleDuration)
+          .add(const Duration(seconds: 1));
+      await repo.setLastSyncTime(justUnderThreshold);
 
-      // Should NOT be stale (24 hours is the threshold, not past it)
       final isStale = await repo.isStale();
       expect(isStale, false);
     });
 
-    test('24 hours + 1 second is stale', () async {
+    test('just over stale duration is stale', () async {
       final repo = StaleTestRepository(repositoryKey: 'users');
 
-      // Set timestamp to 24 hours + 1 second ago
-      final justPast24Hours = DateTime.now().subtract(
-        const Duration(hours: 24, seconds: 1),
-      );
-      await repo.setLastSyncTime(justPast24Hours);
+      final justOverThreshold = DateTime.now()
+          .subtract(staleDuration)
+          .subtract(const Duration(seconds: 1));
+      await repo.setLastSyncTime(justOverThreshold);
 
-      // Should be stale
       final isStale = await repo.isStale();
       expect(isStale, true);
     });
 
-    test('23 hours 59 minutes is NOT stale', () async {
+    test('one minute under stale duration is NOT stale', () async {
       final repo = StaleTestRepository(repositoryKey: 'activities');
 
-      // Set timestamp to 23:59:00 ago
-      final almostStale = DateTime.now().subtract(
-        const Duration(hours: 23, minutes: 59),
-      );
+      final almostStale = DateTime.now()
+          .subtract(staleDuration)
+          .add(const Duration(minutes: 1));
       await repo.setLastSyncTime(almostStale);
 
-      // Should NOT be stale
       final isStale = await repo.isStale();
       expect(isStale, false);
     });
 
-    test('25 hours is stale', () async {
+    test('well past stale duration is stale', () async {
       final repo = StaleTestRepository(repositoryKey: 'events');
 
-      // Set timestamp to 25 hours ago
-      final wellPastStale = DateTime.now().subtract(const Duration(hours: 25));
+      final wellPastStale = DateTime.now()
+          .subtract(staleDuration)
+          .subtract(const Duration(minutes: 30));
       await repo.setLastSyncTime(wellPastStale);
 
-      // Should be stale
       final isStale = await repo.isStale();
       expect(isStale, true);
     });
@@ -212,8 +179,9 @@ void main() {
     test('staleness check is consistent across multiple calls', () async {
       final repo = StaleTestRepository(repositoryKey: 'consistent');
 
-      // Set timestamp to 25 hours ago
-      final staleTime = DateTime.now().subtract(const Duration(hours: 25));
+      final staleTime = DateTime.now()
+          .subtract(staleDuration)
+          .subtract(const Duration(minutes: 30));
       await repo.setLastSyncTime(staleTime);
 
       // Call isStale multiple times - should always be true
@@ -225,8 +193,9 @@ void main() {
     test('timestamp update makes data fresh', () async {
       final repo = StaleTestRepository(repositoryKey: 'refreshed');
 
-      // Set timestamp to 25 hours ago (stale)
-      final oldTime = DateTime.now().subtract(const Duration(hours: 25));
+      final oldTime = DateTime.now()
+          .subtract(staleDuration)
+          .subtract(const Duration(minutes: 30));
       await repo.setLastSyncTime(oldTime);
       expect(await repo.isStale(), true);
 
@@ -238,13 +207,11 @@ void main() {
     test('staleness boundary with milliseconds precision', () async {
       final repo = StaleTestRepository(repositoryKey: 'milliseconds');
 
-      // Test exact boundary with milliseconds
       final exactBoundary = DateTime.now().subtract(
-        const Duration(hours: 24, milliseconds: 1),
+        staleDuration + const Duration(milliseconds: 1),
       );
       await repo.setLastSyncTime(exactBoundary);
 
-      // Should be stale (1 millisecond past threshold)
       final isStale = await repo.isStale();
       expect(isStale, true);
     });
@@ -256,7 +223,9 @@ void main() {
       // Set different timestamps
       await repo1.setLastSyncTime(DateTime.now());
       await repo2.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
       // repo1 should be fresh, repo2 should be stale

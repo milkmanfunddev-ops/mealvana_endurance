@@ -84,7 +84,11 @@ void main() {
       );
 
       // Sync activities - should sync users first
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
       await coordinator.ensureSynced(
         'activities',
         'user-123',
@@ -109,8 +113,16 @@ void main() {
       );
 
       // Sync food_preferences - should sync users and foods first
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
-      await coordinator.ensureSynced('foods', 'user-123', repository: foodsRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
+      await coordinator.ensureSynced(
+        'foods',
+        'user-123',
+        repository: foodsRepo,
+      );
       await coordinator.ensureSynced(
         'food_preferences',
         'user-123',
@@ -133,7 +145,7 @@ void main() {
         repositoryKey: 'repo_a',
         dependencies: ['repo_b'],
       );
-      final repoB = DependencyTrackingRepository(
+      final _ = DependencyTrackingRepository(
         repositoryKey: 'repo_b',
         dependencies: ['repo_a'],
       );
@@ -173,9 +185,21 @@ void main() {
       final foodsRepo = DependencyTrackingRepository(repositoryKey: 'foods');
 
       // Sync in dependency order
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
-      await coordinator.ensureSynced('events', 'user-123', repository: eventsRepo);
-      await coordinator.ensureSynced('foods', 'user-123', repository: foodsRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
+      await coordinator.ensureSynced(
+        'events',
+        'user-123',
+        repository: eventsRepo,
+      );
+      await coordinator.ensureSynced(
+        'foods',
+        'user-123',
+        repository: foodsRepo,
+      );
       await coordinator.ensureSynced(
         'carb_loading_plans',
         'user-123',
@@ -218,8 +242,16 @@ void main() {
       );
 
       // Sync plans - should sync users and events first
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
-      await coordinator.ensureSynced('events', 'user-123', repository: eventsRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
+      await coordinator.ensureSynced(
+        'events',
+        'user-123',
+        repository: eventsRepo,
+      );
       await coordinator.ensureSynced(
         'carb_loading_plans',
         'user-123',
@@ -244,7 +276,11 @@ void main() {
       );
 
       // First sync - users will sync
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
       expect(usersRepo.syncCount, 1);
 
       // Mark activities as stale, but users is fresh
@@ -286,35 +322,46 @@ void main() {
       expect(repo.syncCount, 1);
     });
 
-    test('coach_athlete_relationships depends on both coaches and users', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+    test(
+      'coach_athlete_relationships depends on both coaches and users',
+      () async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
 
-      final coordinator = container.read(syncCoordinatorProvider.notifier);
+        final coordinator = container.read(syncCoordinatorProvider.notifier);
 
-      final usersRepo = DependencyTrackingRepository(repositoryKey: 'users');
-      final coachesRepo = DependencyTrackingRepository(
-        repositoryKey: 'coaches',
-        dependencies: ['users'],
-      );
-      final relationshipsRepo = DependencyTrackingRepository(
-        repositoryKey: 'coach_athlete_relationships',
-        dependencies: ['coaches', 'users'],
-      );
+        final usersRepo = DependencyTrackingRepository(repositoryKey: 'users');
+        final coachesRepo = DependencyTrackingRepository(
+          repositoryKey: 'coaches',
+          dependencies: ['users'],
+        );
+        final relationshipsRepo = DependencyTrackingRepository(
+          repositoryKey: 'coach_athlete_relationships',
+          dependencies: ['coaches', 'users'],
+        );
 
-      // Sync relationships - should sync users and coaches first
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
-      await coordinator.ensureSynced('coaches', 'user-123', repository: coachesRepo);
-      await coordinator.ensureSynced(
-        'coach_athlete_relationships',
-        'user-123',
-        repository: relationshipsRepo,
-      );
+        // Sync relationships - should sync users and coaches first
+        await coordinator.ensureSynced(
+          'users',
+          'user-123',
+          repository: usersRepo,
+        );
+        await coordinator.ensureSynced(
+          'coaches',
+          'user-123',
+          repository: coachesRepo,
+        );
+        await coordinator.ensureSynced(
+          'coach_athlete_relationships',
+          'user-123',
+          repository: relationshipsRepo,
+        );
 
-      expect(usersRepo.syncCount, 1);
-      expect(coachesRepo.syncCount, 1);
-      expect(relationshipsRepo.syncCount, 1);
-    });
+        expect(usersRepo.syncCount, 1);
+        expect(coachesRepo.syncCount, 1);
+        expect(relationshipsRepo.syncCount, 1);
+      },
+    );
 
     test('parallel dependencies sync independently', () async {
       final container = ProviderContainer();
@@ -333,7 +380,11 @@ void main() {
       );
 
       // Sync both activities and events - users should sync only once
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
       await coordinator.ensureSynced(
         'activities',
         'user-123',
@@ -342,7 +393,11 @@ void main() {
 
       usersRepo.syncCount = 0; // Reset counter
 
-      await coordinator.ensureSynced('events', 'user-123', repository: eventsRepo);
+      await coordinator.ensureSynced(
+        'events',
+        'user-123',
+        repository: eventsRepo,
+      );
 
       expect(usersRepo.syncCount, 0); // Did not sync again (cached)
       expect(activitiesRepo.syncCount, 1);

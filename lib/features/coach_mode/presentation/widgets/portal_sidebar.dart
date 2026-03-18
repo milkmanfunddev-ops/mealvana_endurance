@@ -326,12 +326,15 @@ class _AthleteSearchDialog extends ConsumerStatefulWidget {
 
 class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _codeController = TextEditingController();
   final Set<String> _invitingUserIds = <String>{};
   Timer? _debounce;
 
   List<AthleteSearchResult> _results = const [];
   bool _isSearching = false;
+  bool _isConnectingViaCode = false;
   String? _error;
+  String? _codeError;
 
   @override
   void initState() {
@@ -343,6 +346,7 @@ class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
   void dispose() {
     _searchController.removeListener(_onSearchInputChanged);
     _searchController.dispose();
+    _codeController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
@@ -431,6 +435,44 @@ class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
     }
   }
 
+  Future<void> _connectViaCode() async {
+    final code = _codeController.text.trim().toUpperCase();
+    if (code.length != 6) {
+      setState(() => _codeError = 'Code must be 6 characters');
+      return;
+    }
+
+    setState(() {
+      _isConnectingViaCode = true;
+      _codeError = null;
+    });
+
+    try {
+      final relationship = await ref
+          .read(coachServiceProvider)
+          .connectViaPairingCode(code: code);
+
+      if (!mounted) return;
+
+      if (relationship != null) {
+        MealvanaSnackbar.showSuccess(context, 'Athlete connected!');
+        widget.onInviteSuccess();
+        Navigator.of(context).pop();
+      } else {
+        setState(() {
+          _isConnectingViaCode = false;
+          _codeError = 'Invalid or expired code. Please check and try again.';
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isConnectingViaCode = false;
+        _codeError = 'Connection failed. Please try again.';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -461,8 +503,92 @@ class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Pairing Code Entry ──
             const Text(
-              'Search by athlete name or email',
+              'Enter athlete pairing code',
+              style: TextStyle(
+                color: AppColors.textDarkSecondary,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _codeController,
+                    autofocus: true,
+                    textCapitalization: TextCapitalization.characters,
+                    maxLength: 6,
+                    style: const TextStyle(
+                      color: AppColors.cream,
+                      fontSize: 18,
+                      letterSpacing: 4,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'ABC123',
+                      counterText: '',
+                      hintStyle: TextStyle(
+                        color: AppColors.textDarkSecondary.withValues(alpha: 0.5),
+                        letterSpacing: 4,
+                      ),
+                      filled: true,
+                      fillColor: AppColors.blackberryDark,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.blackberryLight),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.blackberryLight),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.electrolyte),
+                      ),
+                    ),
+                    onSubmitted: (_) => _connectViaCode(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _isConnectingViaCode ? null : _connectViaCode,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.electrolyte,
+                      foregroundColor: AppColors.blackberry,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: _isConnectingViaCode
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Connect'),
+                  ),
+                ),
+              ],
+            ),
+            if (_codeError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  _codeError!,
+                  style: const TextStyle(color: AppColors.dragonfruit, fontSize: 11),
+                ),
+              ),
+            const SizedBox(height: 16),
+            const Divider(color: AppColors.blackberryLight, height: 1),
+            const SizedBox(height: 16),
+
+            // ── Name/Email Search ──
+            const Text(
+              'Or search by name or email',
               style: TextStyle(
                 color: AppColors.textDarkSecondary,
                 fontSize: 12,
@@ -471,7 +597,6 @@ class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _searchController,
-              autofocus: true,
               style: const TextStyle(color: AppColors.cream, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Start typing a name or email...',
@@ -549,10 +674,30 @@ class _AthleteSearchDialogState extends ConsumerState<_AthleteSearchDialog> {
     }
 
     if (_results.isEmpty) {
-      return const Center(
-        child: Text(
-          'No users found.',
-          style: TextStyle(color: AppColors.textDarkSecondary, fontSize: 12),
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text(
+                'No users found.',
+                style: TextStyle(
+                  color: AppColors.textDarkSecondary,
+                  fontSize: 12,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Tip: Ask your athlete to generate a pairing code from their Settings > Coach Connection screen.',
+                style: TextStyle(
+                  color: AppColors.textDarkSecondary,
+                  fontSize: 11,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }

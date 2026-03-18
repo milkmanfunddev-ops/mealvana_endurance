@@ -8,6 +8,7 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/data/syncable_repository.dart';
 import 'carb_loading_mapper.dart';
 
@@ -59,7 +60,8 @@ class CarbLoadingRepository with SyncableRepository {
   String get repositoryKey => 'carb_loading_plans';
 
   @override
-  List<String> get dependencies => ['users', 'events'];
+  List<String> get dependencies =>
+      SyncDependencyGraph.dependenciesFor(repositoryKey);
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
@@ -414,10 +416,16 @@ class CarbLoadingRepository with SyncableRepository {
           _logger.warning(
             'Immediate upload failed; record stays dirty for retry',
             context: 'CARB_LOADING_REPOSITORY',
-            error: e, stackTrace: stackTrace,
+            error: e,
+            stackTrace: stackTrace,
             data: {'operation': 'create', 'recordId': planId},
           );
-          _sentry.reportNetworkError(e, url: 'supabase:carb_loading_plans:create', method: 'UPSERT', stackTrace: stackTrace);
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:carb_loading_plans:create',
+            method: 'UPSERT',
+            stackTrace: stackTrace,
+          );
         }
       }());
 
@@ -498,10 +506,16 @@ class CarbLoadingRepository with SyncableRepository {
           _logger.warning(
             'Immediate upload failed; record stays dirty for retry',
             context: 'CARB_LOADING_REPOSITORY',
-            error: e, stackTrace: stackTrace,
+            error: e,
+            stackTrace: stackTrace,
             data: {'operation': 'update_day', 'recordId': carbLoadingDayId},
           );
-          _sentry.reportNetworkError(e, url: 'supabase:carb_loading_days:update', method: 'UPSERT', stackTrace: stackTrace);
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:carb_loading_days:update',
+            method: 'UPSERT',
+            stackTrace: stackTrace,
+          );
         }
       }());
 
@@ -549,10 +563,16 @@ class CarbLoadingRepository with SyncableRepository {
           _logger.warning(
             'Immediate upload failed; record stays dirty for retry',
             context: 'CARB_LOADING_REPOSITORY',
-            error: e, stackTrace: stackTrace,
+            error: e,
+            stackTrace: stackTrace,
             data: {'operation': 'delete', 'recordId': planId},
           );
-          _sentry.reportNetworkError(e, url: 'supabase:carb_loading_plans:delete', method: 'DELETE', stackTrace: stackTrace);
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:carb_loading_plans:delete',
+            method: 'DELETE',
+            stackTrace: stackTrace,
+          );
         }
       }());
     } catch (e, stackTrace) {
@@ -895,5 +915,4 @@ class CarbLoadingRepository with SyncableRepository {
       );
     }
   }
-
 }

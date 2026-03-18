@@ -162,6 +162,97 @@ class TpWritebackService {
     }
   }
 
+  /// Push completion feedback to the TP workout description.
+  /// Appends a [Mealvana Feedback] block with rating and notes.
+  /// Safe to call fire-and-forget — never throws.
+  Future<void> pushCompletionFeedback({
+    required String userId,
+    required Activity activity,
+    required int rating,
+    String? notes,
+  }) async {
+    try {
+      if (!_preferencesService.tpWritebackEnabled) return;
+      if (activity.syncedFromProvider != 'training_peaks') return;
+
+      final workoutIdStr = activity.providerWorkoutId;
+      if (workoutIdStr == null || workoutIdStr.isEmpty) return;
+      if (_preferencesService.tpWritebackPremiumBlocked) return;
+
+      if (!_inFlightWorkouts.add('fb_$workoutIdStr')) return;
+
+      try {
+        await _doPushFeedback(
+          userId: userId,
+          workoutIdStr: workoutIdStr,
+          rating: rating,
+          notes: notes,
+        );
+      } finally {
+        _inFlightWorkouts.remove('fb_$workoutIdStr');
+      }
+    } catch (e, st) {
+      _logError('pushCompletionFeedback', e, st);
+    }
+  }
+
+  Future<void> _doPushFeedback({
+    required String userId,
+    required String workoutIdStr,
+    required int rating,
+    String? notes,
+    bool isRetry = false,
+  }) async {
+    final accessToken = await _oauthService.getValidAccessToken(userId);
+    if (accessToken == null) return;
+
+    final block = TpWritebackFormatter.formatFeedbackBlock(
+      rating: rating,
+      notes: notes,
+    );
+
+    if (kDebugMode) {
+      print('📤 TP Feedback: pushing to workout $workoutIdStr${isRetry ? ' (retry)' : ''}');
+    }
+
+    try {
+      final workout = await _apiClient.getWorkoutById(
+        accessToken, workoutIdStr, includeDescription: true,
+      );
+      final existingDesc = workout['Description'] as String? ?? '';
+      final updatedDesc = TpWritebackFormatter.mergeFeedbackIntoDescription(
+        existingDesc, block,
+      );
+
+      final updatedWorkout = Map<String, dynamic>.from(workout);
+      updatedWorkout['Description'] = updatedDesc;
+
+      await _apiClient.updatePlannedWorkout(
+        accessToken,
+        workoutId: workoutIdStr,
+        workoutData: updatedWorkout,
+      );
+
+      if (kDebugMode) {
+        print('✅ TP Feedback: pushed rating $rating/5 to workout $workoutIdStr');
+      }
+    } on TokenExpiredException {
+      if (!isRetry) {
+        final freshToken = await _oauthService.forceRefreshToken(userId);
+        if (freshToken == null) return;
+        await _doPushFeedback(
+          userId: userId,
+          workoutIdStr: workoutIdStr,
+          rating: rating,
+          notes: notes,
+          isRetry: true,
+        );
+      }
+    } on IntegrationApiException catch (e) {
+      await _handleApiException(e, userId, workoutIdStr);
+    }
+  }
+
   /// Remove the Mealvana block from the TP workout description.
   /// Safe to call fire-and-forget — never throws.
   Future<void> removePlanFromWorkout({

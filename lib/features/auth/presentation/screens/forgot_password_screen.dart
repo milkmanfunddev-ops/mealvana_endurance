@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../application/email_auth_service.dart';
@@ -31,8 +32,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final email = _emailController.text.trim();
-    final controller =
-        ref.read(passwordRecoveryControllerProvider.notifier);
+    final controller = ref.read(passwordRecoveryControllerProvider.notifier);
 
     final success = await controller.sendResetCode(email);
 
@@ -125,8 +125,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   ),
                   style: AppTextStyles.bodyMedium,
                   validator: (value) {
-                    return emailAuthService.validateEmail(
-                        value?.trim() ?? '');
+                    return emailAuthService.validateEmail(value?.trim() ?? '');
                   },
                   onFieldSubmitted: (_) => _handleSendCode(),
                 ),
@@ -135,9 +134,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
                 // Send code button
                 KylePrimaryButton(
-                  text: asyncState.isLoading
-                      ? 'Sending...'
-                      : 'Send Reset Code',
+                  text: asyncState.isLoading ? 'Sending...' : 'Send Reset Code',
                   onPressed: asyncState.isLoading ? null : _handleSendCode,
                 ),
 
@@ -146,8 +143,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 // Back button
                 KyleSecondaryButton(
                   text: 'Back',
-                  onPressed:
-                      asyncState.isLoading ? null : () => context.pop(),
+                  onPressed: asyncState.isLoading ? null : () => context.pop(),
                 ),
 
                 const SizedBox(height: AppSpacing.xxl),
@@ -167,24 +163,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                FontAwesomeIcons.arrowLeft,
-                size: AppIconSizes.controlIcon,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              onPressed: () => context.pop(),
-            ),
+          CustomAppBarBackButton(
+            onPressed: () => context.pop(),
+            margin: EdgeInsets.zero,
+            iconColor: Theme.of(context).colorScheme.onSurface,
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
         ],
       ),

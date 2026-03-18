@@ -13,17 +13,28 @@ import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/models/version_check_result.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
+import 'package:mealvana_endurance/shared/database/daos/user_dao.dart';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 
 // Mock classes
 class MockVersionCheckService extends Mock implements VersionCheckService {}
+
 class MockAppStartupService extends Mock implements AppStartupService {}
+
 class MockSupabaseClient extends Mock implements SupabaseClient {}
+
 class MockGoTrueClient extends Mock implements GoTrueClient {}
+
 class MockAppLogger extends Mock implements AppLogger {}
+
 class MockSentryReporter extends Mock implements SentryReporter {}
+
 class MockAnalyticsTracker extends Mock implements AnalyticsTracker {}
+
 class MockAppDatabase extends Mock implements AppDatabase {}
+
+class MockUserDao extends Mock implements UserDao {}
+
 class MockSharedPreferences extends Mock implements SharedPreferences {}
 
 /// Integration test for version check during app startup
@@ -42,6 +53,7 @@ void main() {
     late MockSentryReporter mockSentry;
     late MockAnalyticsTracker mockAnalytics;
     late MockAppDatabase mockDatabase;
+    late MockUserDao mockUserDao;
     late MockSharedPreferences mockSharedPreferences;
     late ProviderContainer container;
 
@@ -54,19 +66,43 @@ void main() {
       mockSentry = MockSentryReporter();
       mockAnalytics = MockAnalyticsTracker();
       mockDatabase = MockAppDatabase();
+      mockUserDao = MockUserDao();
       mockSharedPreferences = MockSharedPreferences();
 
       // Setup default mocks
       when(() => mockSupabaseClient.auth).thenReturn(mockGoTrueClient);
       when(() => mockGoTrueClient.currentSession).thenReturn(null);
-      when(() => mockLogger.info(any(), context: any(named: 'context'))).thenReturn(null);
-      when(() => mockLogger.warning(any(), context: any(named: 'context'))).thenReturn(null);
-      when(() => mockLogger.error(any(), context: any(named: 'context'), error: any(named: 'error'), stackTrace: any(named: 'stackTrace'))).thenReturn(null);
-      when(() => mockSentry.addBreadcrumb(
-        message: any(named: 'message'),
-        category: any(named: 'category'),
-        data: any(named: 'data'),
-      )).thenReturn(null);
+      when(
+        () => mockLogger.info(any(), context: any(named: 'context')),
+      ).thenReturn(null);
+      when(
+        () => mockLogger.warning(any(), context: any(named: 'context')),
+      ).thenReturn(null);
+      when(
+        () => mockLogger.error(
+          any(),
+          context: any(named: 'context'),
+          error: any(named: 'error'),
+          stackTrace: any(named: 'stackTrace'),
+        ),
+      ).thenReturn(null);
+      when(
+        () => mockSentry.addBreadcrumb(
+          message: any(named: 'message'),
+          category: any(named: 'category'),
+          data: any(named: 'data'),
+        ),
+      ).thenReturn(null);
+      when(
+        () => mockVersionCheckService.performSchemaResync(any()),
+      ).thenAnswer((_) async => true);
+      when(() => mockDatabase.userDao).thenReturn(mockUserDao);
+      when(
+        () => mockUserDao.getCurrentUserProfile(
+          currentAuthUserId: any(named: 'currentAuthUserId'),
+        ),
+      ).thenAnswer((_) async => null);
+      when(() => mockDatabase.schemaVersion).thenReturn(2);
 
       // Setup AppExternalDeps
       final mockAppExternalDeps = AppExternalDeps(
@@ -80,7 +116,9 @@ void main() {
       // Create container with overrides
       container = ProviderContainer(
         overrides: [
-          versionCheckServiceProvider.overrideWithValue(mockVersionCheckService),
+          versionCheckServiceProvider.overrideWithValue(
+            mockVersionCheckService,
+          ),
           appStartupServiceProvider.overrideWithValue(mockAppStartupService),
           appExternalDepsProvider.overrideWithValue(mockAppExternalDeps),
         ],
@@ -93,20 +131,27 @@ void main() {
 
     test('proceeds with normal startup when version check passes', () async {
       // Arrange
-      when(() => mockVersionCheckService.checkVersion()).thenAnswer(
-        (_) async => const VersionCheckResult.ok(),
-      );
-      when(() => mockAppStartupService.initializeDatabase()).thenAnswer((_) async {});
+      when(
+        () => mockVersionCheckService.checkVersion(),
+      ).thenAnswer((_) async => const VersionCheckResult.ok());
+      when(
+        () => mockAppStartupService.initializeDatabase(),
+      ).thenAnswer((_) async {});
       // initializeSupabaseAuth was removed - Supabase init happens in main.dart
-      when(() => mockAppStartupService.setSentryUserContext()).thenAnswer((_) async {});
-      when(() => mockAppStartupService.initializeDeferredServices()).thenAnswer((_) async {});
-      when(() => mockAppStartupService.checkForPendingFeedback()).thenAnswer((_) async => null);
+      when(
+        () => mockAppStartupService.setSentryUserContext(),
+      ).thenAnswer((_) async {});
+      when(
+        () => mockAppStartupService.initializeDeferredServices(),
+      ).thenAnswer((_) async {});
 
       // Mock database provider is needed but won't be called during version check
       // We need to override it to prevent real database initialization
       final containerWithDb = ProviderContainer(
         overrides: [
-          versionCheckServiceProvider.overrideWithValue(mockVersionCheckService),
+          versionCheckServiceProvider.overrideWithValue(
+            mockVersionCheckService,
+          ),
           appStartupServiceProvider.overrideWithValue(mockAppStartupService),
           appExternalDepsProvider.overrideWithValue(
             AppExternalDeps(
@@ -121,10 +166,6 @@ void main() {
         ],
       );
 
-      when(() => mockDatabase.userDao.getCurrentUserProfile(currentAuthUserId: any(named: 'currentAuthUserId')))
-          .thenAnswer((_) async => null);
-      when(() => mockDatabase.schemaVersion).thenReturn(2);
-
       // Act
       final result = await containerWithDb.read(appStartupProvider.future);
 
@@ -135,7 +176,12 @@ void main() {
 
       // Verify version check was called
       verify(() => mockVersionCheckService.checkVersion()).called(1);
-      verify(() => mockLogger.info('Version check passed - continuing with normal startup', context: 'VERSION_CHECK')).called(1);
+      verify(
+        () => mockLogger.info(
+          'Version check passed - continuing with normal startup',
+          context: 'VERSION_CHECK',
+        ),
+      ).called(1);
 
       containerWithDb.dispose();
     });
@@ -160,58 +206,75 @@ void main() {
 
       // Verify version check was called
       verify(() => mockVersionCheckService.checkVersion()).called(1);
-      verify(() => mockLogger.warning(
-        'Force upgrade required: current=1.0.0, required=2.0.0',
-        context: 'VERSION_CHECK',
-      )).called(1);
-
-      // Verify database initialization was NOT called (startup stopped early)
-      verifyNever(() => mockAppStartupService.initializeDatabase());
-    });
-
-    test('returns resync state when schema version mismatch detected', () async {
-      // Arrange
-      when(() => mockVersionCheckService.checkVersion()).thenAnswer(
-        (_) async => const VersionCheckResult.resyncRequired(
-          localSchemaVersion: 1,
-          remoteSchemaVersion: 2,
+      verify(
+        () => mockLogger.warning(
+          'Force upgrade required: current=1.0.0, required=2.0.0',
+          context: 'VERSION_CHECK',
         ),
-      );
-
-      // Act
-      final result = await container.read(appStartupProvider.future);
-
-      // Assert
-      expect(result.resyncRequired, true);
-      expect(result.localSchemaVersion, 1);
-      expect(result.remoteSchemaVersion, 2);
-      expect(result.forceUpgradeRequired, false);
-
-      // Verify version check was called
-      verify(() => mockVersionCheckService.checkVersion()).called(1);
-      verify(() => mockLogger.warning(
-        'Schema resync required: local=1, remote=2',
-        context: 'VERSION_CHECK',
-      )).called(1);
+      ).called(1);
 
       // Verify database initialization was NOT called (startup stopped early)
       verifyNever(() => mockAppStartupService.initializeDatabase());
     });
+
+    test(
+      'returns resync state when schema version mismatch detected',
+      () async {
+        // Arrange
+        when(() => mockVersionCheckService.checkVersion()).thenAnswer(
+          (_) async => const VersionCheckResult.resyncRequired(
+            localSchemaVersion: 1,
+            remoteSchemaVersion: 2,
+          ),
+        );
+        when(
+          () => mockVersionCheckService.performSchemaResync(any()),
+        ).thenAnswer((_) async => false);
+
+        // Act
+        final result = await container.read(appStartupProvider.future);
+
+        // Assert
+        expect(result.resyncRequired, true);
+        expect(result.localSchemaVersion, 1);
+        expect(result.remoteSchemaVersion, 2);
+        expect(result.forceUpgradeRequired, false);
+
+        // Verify version check was called
+        verify(() => mockVersionCheckService.checkVersion()).called(1);
+        verify(
+          () => mockLogger.warning(
+            'Schema resync required: local=1, remote=2',
+            context: 'VERSION_CHECK',
+          ),
+        ).called(1);
+
+        // Verify database initialization was NOT called (startup stopped early)
+        verifyNever(() => mockAppStartupService.initializeDatabase());
+      },
+    );
 
     test('handles version check network failure gracefully', () async {
       // Arrange - version check throws exception but returns cached ok result
       when(() => mockVersionCheckService.checkVersion()).thenAnswer(
         (_) async => const VersionCheckResult.ok(), // Cached result
       );
-      when(() => mockAppStartupService.initializeDatabase()).thenAnswer((_) async {});
+      when(
+        () => mockAppStartupService.initializeDatabase(),
+      ).thenAnswer((_) async {});
       // initializeSupabaseAuth was removed - Supabase init happens in main.dart
-      when(() => mockAppStartupService.setSentryUserContext()).thenAnswer((_) async {});
-      when(() => mockAppStartupService.initializeDeferredServices()).thenAnswer((_) async {});
-      when(() => mockAppStartupService.checkForPendingFeedback()).thenAnswer((_) async => null);
+      when(
+        () => mockAppStartupService.setSentryUserContext(),
+      ).thenAnswer((_) async {});
+      when(
+        () => mockAppStartupService.initializeDeferredServices(),
+      ).thenAnswer((_) async {});
 
       final containerWithDb = ProviderContainer(
         overrides: [
-          versionCheckServiceProvider.overrideWithValue(mockVersionCheckService),
+          versionCheckServiceProvider.overrideWithValue(
+            mockVersionCheckService,
+          ),
           appStartupServiceProvider.overrideWithValue(mockAppStartupService),
           appExternalDepsProvider.overrideWithValue(
             AppExternalDeps(
@@ -225,10 +288,6 @@ void main() {
           appDatabaseProvider.overrideWithValue(mockDatabase),
         ],
       );
-
-      when(() => mockDatabase.userDao.getCurrentUserProfile(currentAuthUserId: any(named: 'currentAuthUserId')))
-          .thenAnswer((_) async => null);
-      when(() => mockDatabase.schemaVersion).thenReturn(2);
 
       // Act
       final result = await containerWithDb.read(appStartupProvider.future);

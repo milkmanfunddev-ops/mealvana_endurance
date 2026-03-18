@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../providers/activity_detail_controller.dart';
 import '../../providers/activity_detail_state.dart';
 import '../../../../coach_mode/presentation/providers/coach_activity_detail_controller.dart';
 
 /// AppBar for ActivityDetailScreen with back button, title, and action buttons
-class ActivityDetailAppBar extends ConsumerWidget implements PreferredSizeWidget {
+class ActivityDetailAppBar extends ConsumerWidget
+    implements PreferredSizeWidget {
   const ActivityDetailAppBar({
     super.key,
     required this.activityId,
@@ -40,41 +42,36 @@ class ActivityDetailAppBar extends ConsumerWidget implements PreferredSizeWidget
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                FontAwesomeIcons.arrowLeft,
-                size: AppIconSizes.controlIcon,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              onPressed: () => context.pop(),
-            ),
+          CustomAppBarBackButton(
+            onPressed: () => context.pop(),
+            margin: EdgeInsets.zero,
+            iconColor: Theme.of(context).colorScheme.onSurface,
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Consumer(
               builder: (context, ref, _) {
                 final asyncState = isCoachView
-                    ? ref.watch(coachActivityDetailControllerProvider(activityId))
-                    : ref.watch(activityDetailControllerProvider(
-                        activityId: activityId,
-                        isNewActivity: isNewActivity,
-                      ));
+                    ? ref.watch(
+                        coachActivityDetailControllerProvider(activityId),
+                      )
+                    : ref.watch(
+                        activityDetailControllerProvider(
+                          activityId: activityId,
+                          isNewActivity: isNewActivity,
+                        ),
+                      );
                 final eventName = asyncState.whenOrNull(
                   data: (data) {
                     if (data is ActivityDetailState) return data.eventName;
                     return null;
                   },
                 );
-                final title = eventName ??
+                final title =
+                    eventName ??
                     (isNewActivity ? 'New Activity' : 'Activity Details');
                 return Text(
                   title,

@@ -83,9 +83,6 @@ dependencies:
   flutter_local_notifications: ^19.4.1
   timezone: ^0.10.0
 
-  # Push Notifications (OneSignal)
-  onesignal_flutter: ^5.2.7
-  
   # Speech Recognition
   speech_to_text: ^7.0.0
 
@@ -124,6 +121,7 @@ dev_dependencies:
 
   # Testing
   mocktail: ^1.0.4
+  patrol: ^4.3.0
   
   # Code Generation
   build_runner: ^2.6.0
@@ -260,6 +258,13 @@ flutter_native_splash:
     image: "assets/images/android12_splash.png"
   ios: true
   web: true
+
+patrol:
+  app_name: Mealvana Endurance
+  android:
+    package_name: com.milkman.mealvanaendurance
+  ios:
+    bundle_id: com.milkman.mealvanaendurance
 
 sentry:
   upload_debug_symbols: true

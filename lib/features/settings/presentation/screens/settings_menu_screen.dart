@@ -72,6 +72,26 @@ class SettingsMenuScreen extends ConsumerWidget {
             ),
             SizedBox(height: 16.h),
 
+            // My Templates
+            _buildCategoryTile(
+              context: context,
+              icon: Icons.bookmark_outline,
+              title: 'My Templates',
+              description: 'Saved nutrition plan templates',
+              onTap: () => context.push('/settings/templates'),
+            ),
+            SizedBox(height: 16.h),
+
+            // Coach Connection
+            _buildCategoryTile(
+              context: context,
+              icon: Icons.people_outline,
+              title: 'Coach Connection',
+              description: 'Connect with your coach',
+              onTap: () => context.push('/settings/coach-connection'),
+            ),
+            SizedBox(height: 16.h),
+
             // Help & Feedback
             _buildCategoryTile(
               context: context,

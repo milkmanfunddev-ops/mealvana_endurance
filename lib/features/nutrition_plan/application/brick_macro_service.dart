@@ -73,7 +73,7 @@ class BrickMacroService {
 
       // Call edge function with timeout
       final response = await supabaseClient.functions.invoke(
-        'generate-macros-v3',
+        'generate-macros-v4',
         body: requestData,
       );
 
@@ -232,6 +232,15 @@ class BrickMacroService {
     final preRunFat = _toDouble(beforePhase['fat_g'], 'before.fat_g');
     final preRunFluids = _toDouble(beforePhase['water_ml'], 'before.water_ml');
     final preRunSodium = _toDouble(beforePhase['sodium_mg'], 'before.sodium_mg');
+    // V4 range fields
+    final preRunCarbsLow = _toDoubleOrNull(beforePhase['carbs_low_g']);
+    final preRunCarbsHigh = _toDoubleOrNull(beforePhase['carbs_high_g']);
+    final preRunProteinLow = _toDoubleOrNull(beforePhase['protein_low_g']);
+    final preRunProteinHigh = _toDoubleOrNull(beforePhase['protein_high_g']);
+    final preRunSodiumLow = _toDoubleOrNull(beforePhase['sodium_low_mg']);
+    final preRunSodiumHigh = _toDoubleOrNull(beforePhase['sodium_high_mg']);
+    final preRunFluidsLow = _toDoubleOrNull(beforePhase['water_low_ml']);
+    final preRunFluidsHigh = _toDoubleOrNull(beforePhase['water_high_ml']);
 
     // Parse after phase
     final afterPhase = phasesData['after'] as Map<String, dynamic>? ?? {};
@@ -289,6 +298,14 @@ class BrickMacroService {
         fatCapG: preRunFat,
         fluidsMl: preRunFluids,
         sodiumMg: preRunSodium,
+        carbsLowG: preRunCarbsLow,
+        carbsHighG: preRunCarbsHigh,
+        proteinLowG: preRunProteinLow,
+        proteinHighG: preRunProteinHigh,
+        sodiumLowMg: preRunSodiumLow,
+        sodiumHighMg: preRunSodiumHigh,
+        fluidsLowMl: preRunFluidsLow,
+        fluidsHighMl: preRunFluidsHigh,
       ),
       duringRun: DuringRunMacros(
         carbRateGPerH: duringCarbRate,
@@ -341,6 +358,19 @@ class BrickMacroService {
       'weightKg': weightKg,
       'heightCm': heightCm,
     };
+  }
+
+  /// Safely convert to nullable double
+  double? _toDoubleOrNull(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    try {
+      return (value as num).toDouble();
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Safely convert to double

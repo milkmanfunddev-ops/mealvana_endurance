@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
@@ -57,6 +59,8 @@ class FloatingActionButtonsBar extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final inactiveBackground = Colors.transparent;
     final activeBackground = isDark ? AppColors.cream : Colors.white;
+    final frostedBackground = (isDark ? AppColors.blackberry : Colors.white)
+        .withValues(alpha: 0.35);
 
     return Positioned(
       bottom: 16,
@@ -67,76 +71,85 @@ class FloatingActionButtonsBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Navigation pill container
-            Container(
-              height: 43,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isDark ? AppColors.cream : AppColors.blackberry,
-                  width: 1,
-                ),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularActionButton(
-                    icon: FontAwesomeIcons.calendar,
-                    onPressed: onCalendarTap,
-                    backgroundColor: activeButton == 0
-                        ? activeBackground
-                        : inactiveBackground,
-                    iconColor: activeButton == 0
-                        ? AppColors.blackberry
-                        : (isDark ? AppColors.cream : AppColors.blackberry),
-                  ),
-                  const SizedBox(width: 8),
-                  if (showCoachTab) ...[
-                    CircularActionButton(
-                      icon: FontAwesomeIcons.userTie,
-                      onPressed: onCoachTap,
-                      backgroundColor: activeButton == 1
-                          ? activeBackground
-                          : inactiveBackground,
-                      iconColor: activeButton == 1
-                          ? AppColors.blackberry
-                          : (isDark ? AppColors.cream : AppColors.blackberry),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(25),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: Container(
+                  height: 43,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: frostedBackground,
+                    border: Border.all(
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                      width: 1,
                     ),
-                    const SizedBox(width: 8),
-                  ],
-                  CircularActionButton(
-                    icon: FontAwesomeIcons.calendarCheck,
-                    onPressed: onEventsTap,
-                    backgroundColor: activeButton == (showCoachTab ? 2 : 1)
-                        ? activeBackground
-                        : inactiveBackground,
-                    iconColor: activeButton == (showCoachTab ? 2 : 1)
-                        ? AppColors.blackberry
-                        : (isDark ? AppColors.cream : AppColors.blackberry),
+                    borderRadius: BorderRadius.circular(25),
                   ),
-                  const SizedBox(width: 8),
-                  CircularActionButton(
-                    icon: FontAwesomeIcons.graduationCap,
-                    onPressed: onLearnTap,
-                    backgroundColor: activeButton == (showCoachTab ? 3 : 2)
-                        ? activeBackground
-                        : inactiveBackground,
-                    iconColor: activeButton == (showCoachTab ? 3 : 2)
-                        ? AppColors.blackberry
-                        : (isDark ? AppColors.cream : AppColors.blackberry),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularActionButton(
+                        icon: FontAwesomeIcons.calendar,
+                        onPressed: onCalendarTap,
+                        backgroundColor: activeButton == 0
+                            ? activeBackground
+                            : inactiveBackground,
+                        iconColor: activeButton == 0
+                            ? AppColors.blackberry
+                            : (isDark ? AppColors.cream : AppColors.blackberry),
+                      ),
+                      const SizedBox(width: 8),
+                      if (showCoachTab) ...[
+                        CircularActionButton(
+                          icon: FontAwesomeIcons.userTie,
+                          onPressed: onCoachTap,
+                          backgroundColor: activeButton == 1
+                              ? activeBackground
+                              : inactiveBackground,
+                          iconColor: activeButton == 1
+                              ? AppColors.blackberry
+                              : (isDark
+                                    ? AppColors.cream
+                                    : AppColors.blackberry),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      CircularActionButton(
+                        icon: FontAwesomeIcons.calendarCheck,
+                        onPressed: onEventsTap,
+                        backgroundColor: activeButton == (showCoachTab ? 2 : 1)
+                            ? activeBackground
+                            : inactiveBackground,
+                        iconColor: activeButton == (showCoachTab ? 2 : 1)
+                            ? AppColors.blackberry
+                            : (isDark ? AppColors.cream : AppColors.blackberry),
+                      ),
+                      const SizedBox(width: 8),
+                      CircularActionButton(
+                        icon: FontAwesomeIcons.graduationCap,
+                        onPressed: onLearnTap,
+                        backgroundColor: activeButton == (showCoachTab ? 3 : 2)
+                            ? activeBackground
+                            : inactiveBackground,
+                        iconColor: activeButton == (showCoachTab ? 3 : 2)
+                            ? AppColors.blackberry
+                            : (isDark ? AppColors.cream : AppColors.blackberry),
+                      ),
+                      const SizedBox(width: 8),
+                      CircularActionButton(
+                        icon: FontAwesomeIcons.ellipsis,
+                        onPressed: onMenuTap,
+                        backgroundColor: activeButton == (showCoachTab ? 4 : 3)
+                            ? activeBackground
+                            : inactiveBackground,
+                        iconColor: activeButton == (showCoachTab ? 4 : 3)
+                            ? AppColors.blackberry
+                            : (isDark ? AppColors.cream : AppColors.blackberry),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  CircularActionButton(
-                    icon: FontAwesomeIcons.ellipsis,
-                    onPressed: onMenuTap,
-                    backgroundColor: activeButton == (showCoachTab ? 4 : 3)
-                        ? activeBackground
-                        : inactiveBackground,
-                    iconColor: activeButton == (showCoachTab ? 4 : 3)
-                        ? AppColors.blackberry
-                        : (isDark ? AppColors.cream : AppColors.blackberry),
-                  ),
-                ],
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -157,11 +170,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.add,
-                  color: AppColors.cream,
-                  size: 28,
-                ),
+                child: const Icon(Icons.add, color: AppColors.cream, size: 28),
               ),
             ),
           ],

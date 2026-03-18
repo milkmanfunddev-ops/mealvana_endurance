@@ -7,7 +7,7 @@ class MockSyncableRepository with SyncableRepository {
   final String _repositoryKey;
 
   MockSyncableRepository({String repositoryKey = 'test_repo'})
-      : _repositoryKey = repositoryKey;
+    : _repositoryKey = repositoryKey;
 
   @override
   String get repositoryKey => _repositoryKey;
@@ -64,27 +64,31 @@ void main() {
       });
 
       test('isStale returns false when recently synced', () async {
-        // Set last sync to 1 hour ago
-        final oneHourAgo = DateTime.now().subtract(const Duration(hours: 1));
-        await repository.setLastSyncTime(oneHourAgo);
+        // Set last sync to comfortably under stale threshold
+        final recentSync = DateTime.now().subtract(
+          SyncableRepository.staleDuration - const Duration(minutes: 10),
+        );
+        await repository.setLastSyncTime(recentSync);
 
         final isStale = await repository.isStale();
         expect(isStale, isFalse);
       });
 
-      test('isStale returns false when synced 23 hours ago', () async {
-        // Just under the 24-hour threshold
-        final almostStale = DateTime.now().subtract(const Duration(hours: 23));
+      test('isStale returns false when synced 50 minutes ago', () async {
+        final almostStale = DateTime.now().subtract(
+          const Duration(minutes: 50),
+        );
         await repository.setLastSyncTime(almostStale);
 
         final isStale = await repository.isStale();
         expect(isStale, isFalse);
       });
 
-      test('isStale returns true when synced >24 hours ago', () async {
-        // Over the 24-hour threshold
-        final yesterday = DateTime.now().subtract(const Duration(hours: 25));
-        await repository.setLastSyncTime(yesterday);
+      test('isStale returns true when synced well past threshold', () async {
+        final staleSync = DateTime.now().subtract(
+          SyncableRepository.staleDuration + const Duration(minutes: 10),
+        );
+        await repository.setLastSyncTime(staleSync);
 
         final isStale = await repository.isStale();
         expect(isStale, isTrue);
@@ -219,26 +223,32 @@ void main() {
     });
 
     group('Edge Cases', () {
-      test('staleDuration constant is 24 hours', () {
-        expect(SyncableRepository.staleDuration, equals(const Duration(hours: 24)));
+      test('staleDuration constant is 1 hour', () {
+        expect(
+          SyncableRepository.staleDuration,
+          equals(const Duration(hours: 1)),
+        );
       });
 
-      test('multiple repositories use different SharedPreferences keys', () async {
-        final repo1 = MockSyncableRepository(repositoryKey: 'repo1');
-        final repo2 = MockSyncableRepository(repositoryKey: 'repo2');
+      test(
+        'multiple repositories use different SharedPreferences keys',
+        () async {
+          final repo1 = MockSyncableRepository(repositoryKey: 'repo1');
+          final repo2 = MockSyncableRepository(repositoryKey: 'repo2');
 
-        final time1 = DateTime.now();
-        final time2 = time1.add(const Duration(hours: 5));
+          final time1 = DateTime.now();
+          final time2 = time1.add(const Duration(hours: 5));
 
-        await repo1.setLastSyncTime(time1);
-        await repo2.setLastSyncTime(time2);
+          await repo1.setLastSyncTime(time1);
+          await repo2.setLastSyncTime(time2);
 
-        final stored1 = await repo1.getLastSyncTime();
-        final stored2 = await repo2.getLastSyncTime();
+          final stored1 = await repo1.getLastSyncTime();
+          final stored2 = await repo2.getLastSyncTime();
 
-        expect(stored1!.difference(time1).inSeconds.abs(), lessThan(2));
-        expect(stored2!.difference(time2).inSeconds.abs(), lessThan(2));
-      });
+          expect(stored1!.difference(time1).inSeconds.abs(), lessThan(2));
+          expect(stored2!.difference(time2).inSeconds.abs(), lessThan(2));
+        },
+      );
     });
   });
 }

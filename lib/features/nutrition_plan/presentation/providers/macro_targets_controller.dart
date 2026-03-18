@@ -76,6 +76,8 @@ class MacroTargetsState {
   activityId; // Calendar activity ID (links nutrition plan to activity) - ALWAYS exists after macro generation
   final String?
   eventId; // Calendar event ID (for provider invalidation after plan creation)
+  final String?
+  forUserId; // Target athlete user ID when coach is creating for athlete
   final UnitSystem unitSystem;
 
   const MacroTargetsState({
@@ -119,6 +121,7 @@ class MacroTargetsState {
     this.errorMessage,
     this.activityId,
     this.eventId,
+    this.forUserId,
     this.unitSystem = UnitSystem.imperial,
   });
 
@@ -163,8 +166,10 @@ class MacroTargetsState {
     String? errorMessage,
     String? activityId,
     String? eventId,
+    String? forUserId,
     bool overrideActivityId = false,
     bool overrideEventId = false,
+    bool overrideForUserId = false,
     UnitSystem? unitSystem,
   }) {
     return MacroTargetsState(
@@ -214,6 +219,9 @@ class MacroTargetsState {
           ? activityId
           : activityId ?? this.activityId,
       eventId: overrideEventId ? eventId : eventId ?? this.eventId,
+      forUserId: overrideForUserId
+          ? forUserId
+          : forUserId ?? this.forUserId,
       unitSystem: unitSystem ?? this.unitSystem,
     );
   }
@@ -430,8 +438,10 @@ class MacroTargetsController extends _$MacroTargetsController {
         macroTargets: null,
         activityId: null,
         eventId: null,
+        forUserId: null,
         overrideActivityId: true,
         overrideEventId: true,
+        overrideForUserId: true,
       ),
     );
 
@@ -632,8 +642,10 @@ class MacroTargetsController extends _$MacroTargetsController {
           activityId:
               finalActivityId, // Always has a value now (draft created if needed)
           eventId: eventId, // Store event ID for provider invalidation
+          forUserId: forUserId, // Store coach target user ID
           overrideActivityId: true,
           overrideEventId: true,
+          overrideForUserId: true,
         );
       } catch (error) {
         DebugLogger.error('❌ DEBUG: Error generating macro targets: $error');
@@ -829,8 +841,10 @@ class MacroTargetsController extends _$MacroTargetsController {
           activityId:
               finalActivityId, // Always has a value now (draft created if needed)
           eventId: eventId,
+          forUserId: forUserId,
           overrideActivityId: true,
           overrideEventId: true,
+          overrideForUserId: true,
         );
       } catch (error) {
         DebugLogger.error(
@@ -1059,8 +1073,10 @@ class MacroTargetsController extends _$MacroTargetsController {
           activityId:
               finalActivityId, // Always has a value now (draft created if needed)
           eventId: eventId,
+          forUserId: forUserId,
           overrideActivityId: true,
           overrideEventId: true,
+          overrideForUserId: true,
         );
       } catch (error) {
         DebugLogger.error(
@@ -1272,8 +1288,10 @@ class MacroTargetsController extends _$MacroTargetsController {
           activityId:
               finalActivityId, // Always has a value now (draft created if needed)
           eventId: eventId,
+          forUserId: forUserId,
           overrideActivityId: true,
           overrideEventId: true,
+          overrideForUserId: true,
         );
       } catch (error) {
         DebugLogger.error(

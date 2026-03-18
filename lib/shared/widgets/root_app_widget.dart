@@ -157,9 +157,10 @@ class RootAppWidget extends ConsumerWidget {
 /// Listens to GoRouter route changes and wraps content with
 /// ResponsiveContentWrapper, passing isFullWidth for coach portal routes.
 ///
-/// Uses the full route match list to detect if /coach is anywhere in the
-/// navigation stack. This ensures screens pushed from the coach portal
-/// (e.g. /distancepacegut, /events/create, /plan) remain full-width.
+/// Checks only the **current** route path to decide if the coach portal
+/// should render full-width. Child screens pushed from the portal
+/// (e.g. /distancepacegut, /plan, /adjust-macros) get standard width so
+/// forms are not awkwardly stretched across the full viewport.
 class _RouteAwareWrapper extends StatelessWidget {
   const _RouteAwareWrapper({
     required this.goRouter,
@@ -171,18 +172,10 @@ class _RouteAwareWrapper extends StatelessWidget {
 
   bool _isCoachSession() {
     try {
-      // Check the full route match list so screens pushed from the coach
-      // portal (e.g. /events/create, /distancepacegut, /plan) stay full-width.
-      final matches = goRouter.routerDelegate.currentConfiguration.matches;
-      for (final match in matches) {
-        final location = match.matchedLocation;
-        if (location == '/coach' || location.startsWith('/coach/')) {
-          return true;
-        }
-      }
-      // Fallback: check the current path directly (handles initial page load
-      // where the delegate may not have processed the route yet).
       final path = goRouter.routeInformationProvider.value.uri.path;
+      // Only /coach and /coach/* routes get full-width portal layout.
+      // Child screens like /distancepacegut, /plan, /adjust-macros get
+      // standard centered width.
       return path == '/coach' || path.startsWith('/coach/');
     } catch (_) {
       return false;

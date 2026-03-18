@@ -5,11 +5,14 @@ import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/two_option_pill_slider.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import '../../../domain/food_item_data.dart';
+import '../../../application/macro_explanation_service.dart';
+import '../../../domain/macro_targets.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/time_slot_assignment.dart';
 import 'macro_summary_row.dart';
 import 'dismissible_food_item.dart';
 import 'by_hour_view.dart';
+import 'phase_explanation_sheet.dart';
 
 /// Main container for during-activity sections that supports Summary / By Hour toggle.
 ///
@@ -42,6 +45,15 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
     this.sportIconColor,
     this.showSwipeHint = false,
     this.activityType = ActivityType.running,
+    this.carbsLow,
+    this.carbsHigh,
+    this.sodiumLow,
+    this.sodiumHigh,
+    this.fluidsLow,
+    this.fluidsHigh,
+    this.macroTargets,
+    this.bodyWeightKg = 70.0,
+    this.sportLabel,
   });
 
   final PlanSection section;
@@ -88,6 +100,17 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
       double qty, TimingCategory? timingCategory)? onMoveSipFoodToSlot;
 
   final bool showSwipeHint;
+  final int? carbsLow;
+  final int? carbsHigh;
+  final int? sodiumLow;
+  final int? sodiumHigh;
+  final int? fluidsLow;
+  final int? fluidsHigh;
+
+  /// Optional macro targets for explanation sheet
+  final MacroTargets? macroTargets;
+  final double bodyWeightKg;
+  final String? sportLabel;
 
   @override
   ConsumerState<DuringPhaseSectionWidget> createState() =>
@@ -141,6 +164,12 @@ class _DuringPhaseSectionWidgetState
             section: widget.section,
             category: widget.category,
             useImperial: widget.useImperial,
+            carbsLow: widget.carbsLow,
+            carbsHigh: widget.carbsHigh,
+            sodiumLow: widget.sodiumLow,
+            sodiumHigh: widget.sodiumHigh,
+            fluidsLow: widget.fluidsLow,
+            fluidsHigh: widget.fluidsHigh,
           ),
           const SizedBox(height: AppSpacing.md),
           if (_showByHour && widget.section.byHourData != null)
@@ -172,6 +201,30 @@ class _DuringPhaseSectionWidgetState
             ),
           ),
         ),
+        if (widget.macroTargets != null)
+          SizedBox(
+            width: 28,
+            height: 28,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              iconSize: 20,
+              icon: Icon(
+                Icons.help_outline_rounded,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+              onPressed: () {
+                PhaseExplanationSheet.show(
+                  context,
+                  phase: ExplanationPhase.during,
+                  macroTargets: widget.macroTargets!,
+                  bodyWeightKg: widget.bodyWeightKg,
+                  sportLabel: widget.sportLabel,
+                  useImperial: widget.useImperial,
+                );
+              },
+            ),
+          ),
         if (_canShowByHour) ...[
           SizedBox(
             width: 180,

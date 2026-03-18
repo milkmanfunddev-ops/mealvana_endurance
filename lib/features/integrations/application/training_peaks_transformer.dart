@@ -208,9 +208,18 @@ class TrainingPeaksGoal {
   final String? unit;
 
   factory TrainingPeaksGoal.fromJson(Map<String, dynamic> json) {
+    final rawValue = json['Value'];
+    final double value;
+    if (rawValue is num) {
+      value = rawValue.toDouble();
+    } else if (rawValue is bool) {
+      value = rawValue ? 1 : 0;
+    } else {
+      value = 0;
+    }
     return TrainingPeaksGoal(
       goalType: json['GoalType'] as String? ?? '',
-      value: (json['Value'] as num?)?.toDouble() ?? 0,
+      value: value,
       unit: json['Unit'] as String?,
     );
   }

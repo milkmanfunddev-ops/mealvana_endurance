@@ -22,25 +22,32 @@ class EventsController extends _$EventsController {
   FutureOr<List<Event>> build() async {
     // Cache service reference before async operations
     final service = ref.read(eventsServiceProvider);
-    final logger = ref.read(appLoggerProvider);
 
     // Get user ID
     final userId = await ref.read(userIdProvider.future);
 
-    // Ensure events data is synced (with dependency resolution)
+    // 1. Load local data IMMEDIATELY
+    final localData = await service.getAllEvents(userId);
+
+    // 2. Background sync (fire-and-forget)
+    unawaited(_backgroundSync(userId));
+
+    return localData;
+  }
+
+  /// Background sync: ensures data is fresh, then refreshes UI
+  Future<void> _backgroundSync(String userId) async {
     try {
       await ref.read(syncCoordinatorProvider.notifier).ensureSynced('events', userId);
+      ref.invalidateSelf();
     } catch (e) {
-      // Log error but continue with cached data
+      final logger = ref.read(appLoggerProvider);
       logger.warning(
-        'Events sync failed',
+        'Background sync failed',
         context: 'EVENTS_CONTROLLER',
         data: {'error': e.toString()},
       );
     }
-
-    // Load all events on build
-    return await service.getAllEvents(userId);
   }
 
   /// Create a new event

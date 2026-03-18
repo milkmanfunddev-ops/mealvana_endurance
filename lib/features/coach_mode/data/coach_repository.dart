@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -10,6 +11,7 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/coach.dart';
 import '../domain/coach_athlete_relationship.dart';
@@ -57,7 +59,8 @@ class CoachRepository with SyncableRepository {
   String get repositoryKey => 'coaches';
 
   @override
-  List<String> get dependencies => ['users'];
+  List<String> get dependencies =>
+      SyncDependencyGraph.dependenciesFor(repositoryKey);
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
@@ -561,10 +564,16 @@ class CoachRepository with SyncableRepository {
         _logger.warning(
           'Immediate upload failed; record stays dirty for retry',
           context: 'COACH_REPOSITORY',
-          error: e, stackTrace: stackTrace,
+          error: e,
+          stackTrace: stackTrace,
           data: {'operation': 'create', 'recordId': id},
         );
-        _sentry.reportNetworkError(e, url: 'supabase:coach_athlete_relationships:create', method: 'INSERT', stackTrace: stackTrace);
+        _sentry.reportNetworkError(
+          e,
+          url: 'supabase:coach_athlete_relationships:create',
+          method: 'INSERT',
+          stackTrace: stackTrace,
+        );
         throw StateError(
           'Failed to create coach-athlete relationship remotely',
         );
@@ -633,10 +642,16 @@ class CoachRepository with SyncableRepository {
         _logger.warning(
           'Immediate upload failed; record stays dirty for retry',
           context: 'COACH_REPOSITORY',
-          error: e, stackTrace: stackTrace,
+          error: e,
+          stackTrace: stackTrace,
           data: {'operation': 'accept', 'recordId': relationshipId},
         );
-        _sentry.reportNetworkError(e, url: 'supabase:coach_athlete_relationships:accept', method: 'UPDATE', stackTrace: stackTrace);
+        _sentry.reportNetworkError(
+          e,
+          url: 'supabase:coach_athlete_relationships:accept',
+          method: 'UPDATE',
+          stackTrace: stackTrace,
+        );
         throw StateError(
           'Failed to accept coach-athlete relationship remotely',
         );
@@ -691,10 +706,16 @@ class CoachRepository with SyncableRepository {
         _logger.warning(
           'Immediate upload failed; record stays dirty for retry',
           context: 'COACH_REPOSITORY',
-          error: e, stackTrace: stackTrace,
+          error: e,
+          stackTrace: stackTrace,
           data: {'operation': 'decline', 'recordId': relationshipId},
         );
-        _sentry.reportNetworkError(e, url: 'supabase:coach_athlete_relationships:decline', method: 'UPDATE', stackTrace: stackTrace);
+        _sentry.reportNetworkError(
+          e,
+          url: 'supabase:coach_athlete_relationships:decline',
+          method: 'UPDATE',
+          stackTrace: stackTrace,
+        );
         throw StateError(
           'Failed to decline coach-athlete relationship remotely',
         );
@@ -749,10 +770,16 @@ class CoachRepository with SyncableRepository {
         _logger.warning(
           'Immediate upload failed; record stays dirty for retry',
           context: 'COACH_REPOSITORY',
-          error: e, stackTrace: stackTrace,
+          error: e,
+          stackTrace: stackTrace,
           data: {'operation': 'archive', 'recordId': relationshipId},
         );
-        _sentry.reportNetworkError(e, url: 'supabase:coach_athlete_relationships:archive', method: 'UPDATE', stackTrace: stackTrace);
+        _sentry.reportNetworkError(
+          e,
+          url: 'supabase:coach_athlete_relationships:archive',
+          method: 'UPDATE',
+          stackTrace: stackTrace,
+        );
         throw StateError(
           'Failed to archive coach-athlete relationship remotely',
         );
@@ -1064,31 +1091,34 @@ class CoachRepository with SyncableRepository {
         if (id == null) continue;
 
         // Update existing local user_profiles (only name fields)
-        final rowsAffected = await (_database.update(
-          _database.userProfilesTable,
-        )..where((t) => t.id.equals(id))).write(
-          UserProfilesTableCompanion(
-            firstName: Value(r['first_name'] as String?),
-            lastName: Value(r['last_name'] as String?),
-            senderName: Value(r['sender_name'] as String?),
-            updatedAt: Value(DateTime.now()),
-          ),
-        );
+        final rowsAffected =
+            await (_database.update(
+              _database.userProfilesTable,
+            )..where((t) => t.id.equals(id))).write(
+              UserProfilesTableCompanion(
+                firstName: Value(r['first_name'] as String?),
+                lastName: Value(r['last_name'] as String?),
+                senderName: Value(r['sender_name'] as String?),
+                updatedAt: Value(DateTime.now()),
+              ),
+            );
 
         // If profile doesn't exist locally, create a minimal one with name data
         // This is needed because the LEFT OUTER JOIN in getActiveRelationshipsForCoach
         // returns null when the profile row is missing, causing "Athlete XXXXX" fallback
         if (rowsAffected == 0) {
-          await _database.into(_database.userProfilesTable).insert(
-            UserProfilesTableCompanion.insert(
-              id: id,
-              deviceId: id,
-              firstName: Value(r['first_name'] as String?),
-              lastName: Value(r['last_name'] as String?),
-              senderName: Value(r['sender_name'] as String?),
-            ),
-            mode: InsertMode.insertOrIgnore,
-          );
+          await _database
+              .into(_database.userProfilesTable)
+              .insert(
+                UserProfilesTableCompanion.insert(
+                  id: id,
+                  deviceId: id,
+                  firstName: Value(r['first_name'] as String?),
+                  lastName: Value(r['last_name'] as String?),
+                  senderName: Value(r['sender_name'] as String?),
+                ),
+                mode: InsertMode.insertOrIgnore,
+              );
         }
       }
 
@@ -1341,6 +1371,49 @@ class CoachRepository with SyncableRepository {
     }
   }
 
+  /// Update an athlete's nutrition target overrides in Supabase.
+  /// Pass null to clear all overrides.
+  Future<void> updateAthleteNutritionTargets({
+    required String athleteUserId,
+    required Map<String, dynamic>? overridesJson,
+  }) async {
+    try {
+      await _supabase.from('users').update({
+        'nutrition_target_overrides': overridesJson,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', athleteUserId);
+
+      // Also update local Drift database
+      await (_database.update(_database.userProfilesTable)
+            ..where((t) => t.id.equals(athleteUserId)))
+          .write(UserProfilesTableCompanion(
+            nutritionTargetOverrides: Value(
+              overridesJson != null
+                  ? Uri.encodeFull(overridesJson.toString())
+                  : null,
+            ),
+            updatedAt: Value(DateTime.now()),
+          ));
+
+      _logger.info(
+        'Updated athlete nutrition targets',
+        context: 'COACH_REPOSITORY',
+        data: {
+          'athleteUserId': athleteUserId,
+          'hasOverrides': overridesJson != null,
+        },
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to update athlete nutrition targets',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
   /// Get a relationship by ID (works for both coach and athlete perspective)
   Future<CoachAthleteRelationship?> getRelationshipById(
     String relationshipId,
@@ -1439,10 +1512,8 @@ class CoachRepository with SyncableRepository {
         // e.g. "Lee Martin" → first_name~Lee AND last_name~Martin, OR reversed.
         final first = '%${words.first}%';
         final last = '%${words.sublist(1).join(' ')}%';
-        filterParts
-            .add('and(first_name.ilike.$first,last_name.ilike.$last)');
-        filterParts
-            .add('and(first_name.ilike.$last,last_name.ilike.$first)');
+        filterParts.add('and(first_name.ilike.$first,last_name.ilike.$last)');
+        filterParts.add('and(first_name.ilike.$last,last_name.ilike.$first)');
       }
 
       // Also match each word individually against first_name and last_name
@@ -1468,10 +1539,15 @@ class CoachRepository with SyncableRepository {
         if (hasEmailFilter) {
           filterParts.add('email.ilike.%$safeQuery%');
         }
+        final filterExpression = filterParts.join(',');
+        _logger.info(
+          'Searching athletes: query="$safeQuery", filter=$filterExpression',
+          context: 'COACH_REPOSITORY',
+        );
         response = await _supabase
             .from('users')
             .select('id, first_name, last_name, sender_name, email')
-            .or(filterParts.join(','))
+            .or(filterExpression)
             .neq('id', currentUserId)
             .limit(clampedLimit);
       } on PostgrestException catch (e) {
@@ -1494,6 +1570,10 @@ class CoachRepository with SyncableRepository {
             .limit(clampedLimit);
       }
 
+      _logger.info(
+        'Search returned ${response.length} results for "$safeQuery"',
+        context: 'COACH_REPOSITORY',
+      );
       return response.map((row) {
         final data = row as Map<String, dynamic>;
         return AthleteSearchResult(
@@ -1699,10 +1779,16 @@ class CoachRepository with SyncableRepository {
         _logger.warning(
           'Immediate upload failed; record stays dirty for retry',
           context: 'COACH_REPOSITORY',
-          error: e, stackTrace: stackTrace,
+          error: e,
+          stackTrace: stackTrace,
           data: {'operation': 'submit_application', 'recordId': id},
         );
-        _sentry.reportNetworkError(e, url: 'supabase:coaches:submit_application', method: 'INSERT', stackTrace: stackTrace);
+        _sentry.reportNetworkError(
+          e,
+          url: 'supabase:coaches:submit_application',
+          method: 'INSERT',
+          stackTrace: stackTrace,
+        );
         return false;
       }
     } catch (e, stackTrace) {
@@ -1832,5 +1918,286 @@ class CoachRepository with SyncableRepository {
       coachDisplayName: coachDisplayName,
       athleteDisplayName: athleteDisplayName,
     );
+  }
+
+  // ─── Athlete Pairing Codes ────────────────────────────────────────
+
+  /// Characters allowed in pairing codes (no confusing chars: 0/O, 1/I/L)
+  static const _codeChars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+  /// Generate a 6-character alphanumeric pairing code for an athlete.
+  /// Invalidates any existing active code for this user first.
+  /// Returns the generated code string.
+  Future<String> generatePairingCode(String userId) async {
+    try {
+      final now = DateTime.now().toUtc();
+      final expiresAt = now.add(const Duration(hours: 24));
+      final code = _generateRandomCode(6);
+      final id = const Uuid().v4();
+
+      // Expire any existing unused codes for this user
+      await _supabase
+          .from('athlete_pairing_codes')
+          .update({'expires_at': now.toIso8601String()})
+          .eq('user_id', userId)
+          .isFilter('used_at', null);
+
+      // Insert new code
+      await _supabase.from('athlete_pairing_codes').insert({
+        'id': id,
+        'user_id': userId,
+        'code': code,
+        'created_at': now.toIso8601String(),
+        'expires_at': expiresAt.toIso8601String(),
+      });
+
+      // Also save locally
+      await _database.into(_database.athletePairingCodesTable).insertOnConflictUpdate(
+        AthletePairingCodesTableCompanion.insert(
+          id: id,
+          userId: userId,
+          code: code,
+          expiresAt: expiresAt,
+          createdAt: Value(now),
+        ),
+      );
+
+      _logger.info(
+        'Generated pairing code for user',
+        context: 'COACH_REPOSITORY',
+        data: {'userId': userId, 'code': code, 'expiresAt': expiresAt.toIso8601String()},
+      );
+
+      return code;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to generate pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Validate a pairing code entered by a coach.
+  /// Returns the athlete's userId if the code is valid (not expired, not used).
+  /// Returns null if invalid.
+  Future<String?> validatePairingCode(String code) async {
+    try {
+      final normalizedCode = code.trim().toUpperCase();
+
+      final response = await _supabase
+          .from('athlete_pairing_codes')
+          .select('user_id, expires_at, used_at')
+          .eq('code', normalizedCode)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      final expiresAt = DateTime.parse(response['expires_at'] as String);
+      final usedAt = response['used_at'];
+
+      if (usedAt != null) return null;
+      if (expiresAt.isBefore(DateTime.now().toUtc())) return null;
+
+      return response['user_id'] as String;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to validate pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'code': code},
+      );
+      return null;
+    }
+  }
+
+  /// Connect coach to athlete using a valid pairing code.
+  /// Marks the code as used and creates an active relationship.
+  /// Returns the created relationship or null on failure.
+  Future<CoachAthleteRelationship?> connectViaCode({
+    required String code,
+    required String coachUserId,
+  }) async {
+    try {
+      final normalizedCode = code.trim().toUpperCase();
+
+      // Validate code first
+      final athleteUserId = await validatePairingCode(normalizedCode);
+      if (athleteUserId == null) return null;
+
+      // Prevent self-connection
+      if (athleteUserId == coachUserId) return null;
+
+      // Mark code as used
+      final now = DateTime.now().toUtc();
+      await _supabase
+          .from('athlete_pairing_codes')
+          .update({
+            'used_by_coach_id': coachUserId,
+            'used_at': now.toIso8601String(),
+          })
+          .eq('code', normalizedCode);
+
+      // Create active relationship (coach-initiated = immediately active)
+      final relationship = await createRelationship(
+        coachUserId: coachUserId,
+        athleteUserId: athleteUserId,
+        requestedBy: 'coach',
+      );
+
+      _logger.info(
+        'Connected via pairing code',
+        context: 'COACH_REPOSITORY',
+        data: {
+          'code': normalizedCode,
+          'coachUserId': coachUserId,
+          'athleteUserId': athleteUserId,
+        },
+      );
+
+      return relationship;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to connect via pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Get the active (unexpired, unused) pairing code for a user, if any.
+  Future<({String code, DateTime expiresAt})?> getActivePairingCode(
+    String userId,
+  ) async {
+    try {
+      final now = DateTime.now().toUtc();
+      final response = await _supabase
+          .from('athlete_pairing_codes')
+          .select('code, expires_at')
+          .eq('user_id', userId)
+          .isFilter('used_at', null)
+          .gte('expires_at', now.toIso8601String())
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      return (
+        code: response['code'] as String,
+        expiresAt: DateTime.parse(response['expires_at'] as String),
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get active pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Get the athlete's connected coach info.
+  /// Returns null if the athlete has no active coach connection.
+  Future<({String coachUserId, String? coachName})?> getMyCoach(
+    String athleteUserId,
+  ) async {
+    try {
+      final response = await _supabase
+          .from('coach_athlete_relationships')
+          .select('coach_user_id')
+          .eq('athlete_user_id', athleteUserId)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      final coachUserId = response['coach_user_id'] as String;
+
+      // Look up coach name
+      String? coachName;
+      try {
+        final coachRow = await _supabase
+            .from('users')
+            .select('first_name, last_name, sender_name')
+            .eq('id', coachUserId)
+            .maybeSingle();
+
+        if (coachRow != null) {
+          final first = coachRow['first_name'] as String?;
+          final last = coachRow['last_name'] as String?;
+          final sender = coachRow['sender_name'] as String?;
+          coachName = [first, last].where((s) => s?.isNotEmpty ?? false).join(' ');
+          if (coachName.isEmpty) coachName = sender;
+        }
+      } catch (_) {
+        // Name lookup is best-effort
+      }
+
+      return (coachUserId: coachUserId, coachName: coachName);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get athlete coach',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Disconnect athlete from their coach.
+  Future<bool> disconnectFromCoach({
+    required String athleteUserId,
+    required String coachUserId,
+  }) async {
+    try {
+      await _supabase
+          .from('coach_athlete_relationships')
+          .update({
+            'status': 'archived',
+            'archived_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('athlete_user_id', athleteUserId)
+          .eq('coach_user_id', coachUserId)
+          .eq('status', 'active');
+
+      // Also update local DB
+      await (_database.update(_database.coachAthleteRelationshipsTable)
+            ..where((t) =>
+                t.athleteUserId.equals(athleteUserId) &
+                t.coachUserId.equals(coachUserId) &
+                t.status.equals('active')))
+          .write(CoachAthleteRelationshipsTableCompanion(
+            status: const Value('archived'),
+            archivedAt: Value(DateTime.now().toUtc()),
+          ));
+
+      return true;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to disconnect from coach',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  /// Generate a random code of the given length
+  String _generateRandomCode(int length) {
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => _codeChars[random.nextInt(_codeChars.length)],
+    ).join();
   }
 }

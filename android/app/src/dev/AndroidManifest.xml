@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <!-- Keep prod callback scheme in dev for providers that only whitelist one redirect URI. -->
-        <activity android:name="com.linusu.flutter_web_auth_2.CallbackActivity">
+        <activity android:name=".OAuthCallbackActivity">
             <intent-filter android:label="flutter_web_auth_2_prod_compat">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>

@@ -5,13 +5,16 @@ import '../../../../../core/utils/debug_logger.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../activities/domain/activity.dart';
+import '../../../application/macro_explanation_service.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/nutrition_plan.dart';
+import '../../../domain/macro_targets.dart';
 import '../../../domain/time_slot_assignment.dart';
 import 'before_phase_widget.dart';
 import 'dismissible_food_item.dart';
 import 'during_phase_section_widget.dart';
 import 'macro_summary_row.dart';
+import 'phase_explanation_sheet.dart';
 
 /// BrickNutritionSections widget - renders multi-phase nutrition sections for brick workouts
 ///
@@ -34,8 +37,10 @@ class BrickNutritionSections extends StatelessWidget {
     this.onAdjustSlotQuantity,
     this.onMoveSipFoodToSlot,
     this.onScaleSubPhase,
+    this.macroTargets,
     this.showSwipeHint = false,
     this.useImperial = false,
+    this.bodyWeightKg = 70.0,
   });
 
   final Activity brick;
@@ -43,23 +48,48 @@ class BrickNutritionSections extends StatelessWidget {
   final Function(String category) onAddFood;
   final Function(String foodId, String foodName, String category) onSwapFood;
   final Function(String foodId, String category) onDeleteFood;
-  final Function(String foodId, String category, double newQuantity) onUpdateQuantity;
+  final Function(String foodId, String category, double newQuantity)
+  onUpdateQuantity;
   final void Function(String category, int durationMinutes)? onInitializeByHour;
   final void Function(
-          String foodId, String category, TimeSlot sourceTimeSlot, TimeSlot newTimeSlot)? onMoveFoodToTimeSlot;
-  final void Function(String foodId, String category, TimeSlot slot, double qty,
-      TimingCategory? timingCategory, bool isSipThroughout)? onPlaceFoodInSlot;
-  final void Function(String foodId, String category, TimeSlot slot)?
-      onRemoveFoodFromSlot;
+    String foodId,
+    String category,
+    TimeSlot sourceTimeSlot,
+    TimeSlot newTimeSlot,
+  )?
+  onMoveFoodToTimeSlot;
   final void Function(
-      String foodId, String category, TimeSlot slot, double delta)?
-      onAdjustSlotQuantity;
-  final void Function(String foodId, String category, TimeSlot targetSlot,
-      double qty, TimingCategory? timingCategory)? onMoveSipFoodToSlot;
+    String foodId,
+    String category,
+    TimeSlot slot,
+    double qty,
+    TimingCategory? timingCategory,
+    bool isSipThroughout,
+  )?
+  onPlaceFoodInSlot;
+  final void Function(String foodId, String category, TimeSlot slot)?
+  onRemoveFoodFromSlot;
+  final void Function(
+    String foodId,
+    String category,
+    TimeSlot slot,
+    double delta,
+  )?
+  onAdjustSlotQuantity;
+  final void Function(
+    String foodId,
+    String category,
+    TimeSlot targetSlot,
+    double qty,
+    TimingCategory? timingCategory,
+  )?
+  onMoveSipFoodToSlot;
   final void Function(int subPhaseIndex, int foodIndex, double newQuantity)?
-      onScaleSubPhase;
+  onScaleSubPhase;
+  final MacroTargets? macroTargets;
   final bool showSwipeHint;
   final bool useImperial;
+  final double bodyWeightKg;
 
   @override
   Widget build(BuildContext context) {
@@ -149,6 +179,7 @@ class BrickNutritionSections extends StatelessWidget {
     required int? duringIndex,
     required List<String>? fallbackSegmentOrder,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isTransition = section.id.startsWith('T');
     final isDuring = _isDuringSection(section);
     final sportType = _resolveSportType(
@@ -163,7 +194,7 @@ class BrickNutritionSections extends StatelessWidget {
       sportType,
       isDuring: isDuring,
     );
-    final sectionColor = _getSectionColor(section);
+    final sectionColor = _getSectionColor(section, isDark);
 
     if (kDebugMode) {
       DebugLogger.info(
@@ -189,6 +220,9 @@ class BrickNutritionSections extends StatelessWidget {
         onScaleSubPhase: onScaleSubPhase!,
         onAddFood: (cat) => onAddFood(cat),
         showSwipeHint: showSwipeHint,
+        macroTargets: macroTargets,
+        bodyWeightKg: bodyWeightKg,
+        sportLabel: 'Brick',
       );
     }
 
@@ -221,6 +255,15 @@ class BrickNutritionSections extends StatelessWidget {
           onAdjustSlotQuantity: onAdjustSlotQuantity,
           onMoveSipFoodToSlot: onMoveSipFoodToSlot,
           showSwipeHint: showSwipeHint,
+          macroTargets: macroTargets,
+          bodyWeightKg: bodyWeightKg,
+          sportLabel: _sportDisplayName(sportType) ?? 'Brick',
+          carbsLow: _getCarbsLow(category),
+          carbsHigh: _getCarbsHigh(category),
+          sodiumLow: _getSodiumLow(category),
+          sodiumHigh: _getSodiumHigh(category),
+          fluidsLow: _getFluidsLow(category),
+          fluidsHigh: _getFluidsHigh(category),
         );
       }
     }
@@ -237,7 +280,15 @@ class BrickNutritionSections extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(context, displayTitle, sportType, isTransition, sectionColor, section.id),
+          _buildSectionHeader(
+            context,
+            displayTitle,
+            sportType,
+            isTransition,
+            sectionColor,
+            section.id,
+            isDark: isDark,
+          ),
           if (section.subtitle != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
@@ -257,6 +308,14 @@ class BrickNutritionSections extends StatelessWidget {
               section: section,
               category: category,
               useImperial: useImperial,
+              carbsLow: _getCarbsLow(category),
+              carbsHigh: _getCarbsHigh(category),
+              proteinLow: _getProteinLow(category),
+              proteinHigh: _getProteinHigh(category),
+              sodiumLow: _getSodiumLow(category),
+              sodiumHigh: _getSodiumHigh(category),
+              fluidsLow: _getFluidsLow(category),
+              fluidsHigh: _getFluidsHigh(category),
             ),
             const SizedBox(height: AppSpacing.md),
             ...section.foodItems.asMap().entries.map((entry) {
@@ -264,14 +323,17 @@ class BrickNutritionSections extends StatelessWidget {
               final food = entry.value;
               return Padding(
                 padding: EdgeInsets.only(
-                  bottom: index < section.foodItems.length - 1 ? AppSpacing.sm : 0,
+                  bottom: index < section.foodItems.length - 1
+                      ? AppSpacing.sm
+                      : 0,
                 ),
                 child: DismissibleFoodItem(
                   food: food,
                   category: category,
                   onSwap: () => onSwapFood(food.id, food.name, category),
                   onDelete: () => onDeleteFood(food.id, category),
-                  onQuantityChange: (newQuantity) => onUpdateQuantity(food.id, category, newQuantity),
+                  onQuantityChange: (newQuantity) =>
+                      onUpdateQuantity(food.id, category, newQuantity),
                   showSwipeHint: showSwipeHint,
                   useImperial: useImperial,
                 ),
@@ -295,8 +357,9 @@ class BrickNutritionSections extends StatelessWidget {
     String? sportType,
     bool isTransition,
     Color sectionColor,
-    String sectionId,
-  ) {
+    String sectionId, {
+    required bool isDark,
+  }) {
     return Row(
       children: [
         if (isTransition) ...[
@@ -307,7 +370,7 @@ class BrickNutritionSections extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
         ] else ...[
-          _getSportIcon(sportType, sectionId),
+          _getSportIcon(sportType, sectionId, isDark: isDark),
           const SizedBox(width: AppSpacing.sm),
         ],
         Expanded(
@@ -319,18 +382,57 @@ class BrickNutritionSections extends StatelessWidget {
             ),
           ),
         ),
+        if (macroTargets != null)
+          SizedBox(
+            width: 28,
+            height: 28,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              iconSize: 20,
+              icon: Icon(
+                Icons.help_outline_rounded,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                size: 20,
+              ),
+              onPressed: () {
+                final phase = _sectionIdToPhase(sectionId);
+                final sportLabel = _sportDisplayName(sportType) ?? 'Brick';
+                PhaseExplanationSheet.show(
+                  context,
+                  phase: phase,
+                  macroTargets: macroTargets!,
+                  bodyWeightKg: bodyWeightKg,
+                  sportLabel: sportLabel,
+                  useImperial: useImperial,
+                );
+              },
+            ),
+          ),
       ],
     );
   }
 
+  ExplanationPhase _sectionIdToPhase(String sectionId) {
+    if (sectionId.startsWith('before')) return ExplanationPhase.before;
+    if (sectionId.startsWith('after')) return ExplanationPhase.after;
+    if (sectionId == 'T1') return ExplanationPhase.transition1;
+    if (sectionId == 'T2') return ExplanationPhase.transition2;
+    if (sectionId.startsWith('during')) return ExplanationPhase.during;
+    return ExplanationPhase.during;
+  }
+
   /// Get sport-specific icon for section
-  Widget _getSportIcon(String? sportType, String sectionId) {
+  Widget _getSportIcon(
+    String? sportType,
+    String sectionId, {
+    required bool isDark,
+  }) {
     IconData iconData;
     Color iconColor;
 
     if (sportType == 'swimming') {
       iconData = FontAwesomeIcons.personSwimming;
-      iconColor = AppColors.electrolyte;
+      iconColor = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
     } else if (sportType == 'cycling') {
       iconData = FontAwesomeIcons.personBiking;
       iconColor = AppColors.orange;
@@ -348,16 +450,16 @@ class BrickNutritionSections extends StatelessWidget {
       iconColor = AppColors.orange;
     }
 
-    return Icon(
-      iconData,
-      size: AppIconSizes.md,
-      color: iconColor,
-    );
+    return Icon(iconData, size: AppIconSizes.md, color: iconColor);
   }
 
   /// Check if a section should show an informational message instead of macro targets.
   /// True for: swim sections with no foods, or transition sections with 0g carb targets and no foods.
-  bool _isEmptyNutritionSection(PlanSection section, bool isSwimming, bool isTransition) {
+  bool _isEmptyNutritionSection(
+    PlanSection section,
+    bool isSwimming,
+    bool isTransition,
+  ) {
     if (isSwimming && section.foodItems.isEmpty) return true;
     if (isTransition && section.foodItems.isEmpty) {
       // Check if targets are all zero (quick transition)
@@ -368,11 +470,17 @@ class BrickNutritionSections extends StatelessWidget {
   }
 
   /// Build informational message for sections that don't need nutrition
-  Widget _buildQuickTransitionMessage(BuildContext context, PlanSection section, bool isTransition) {
+  Widget _buildQuickTransitionMessage(
+    BuildContext context,
+    PlanSection section,
+    bool isTransition,
+  ) {
     String message;
     if (isTransition) {
       // Determine transition type from section ID
-      final transitionNumber = int.tryParse(section.id.replaceAll(RegExp(r'[^0-9]'), ''));
+      final transitionNumber = int.tryParse(
+        section.id.replaceAll(RegExp(r'[^0-9]'), ''),
+      );
       if (transitionNumber == 1) {
         message = 'Quick transition - start fueling on the bike';
       } else {
@@ -408,9 +516,12 @@ class BrickNutritionSections extends StatelessWidget {
     final idLower = section.id.toLowerCase();
     final titleLower = section.title.toLowerCase();
 
-    if (idLower.startsWith('before') || titleLower.startsWith('before')) return 'before';
-    if (idLower.startsWith('after') || titleLower.startsWith('after')) return 'after';
-    if (idLower.startsWith('t') || titleLower.startsWith('transition')) return 'transition';
+    if (idLower.startsWith('before') || titleLower.startsWith('before'))
+      return 'before';
+    if (idLower.startsWith('after') || titleLower.startsWith('after'))
+      return 'after';
+    if (idLower.startsWith('t') || titleLower.startsWith('transition'))
+      return 'transition';
 
     if (isDuring) {
       if (sportType == 'swimming') {
@@ -427,16 +538,21 @@ class BrickNutritionSections extends StatelessWidget {
   }
 
   /// Get color for section based on phase
-  Color _getSectionColor(PlanSection section) {
+  Color _getSectionColor(PlanSection section, bool isDark) {
     final idLower = section.id.toLowerCase();
     final titleLower = section.title.toLowerCase();
-    if (idLower.startsWith('before') || titleLower.startsWith('before')) return AppColors.orange;
-    if (idLower.startsWith('after') || titleLower.startsWith('after')) return AppColors.dragonfruit;
-    if (idLower.startsWith('t') || titleLower.startsWith('transition')) return AppColors.electrolyte;
-    if (idLower.startsWith('during_segment') || titleLower.startsWith('during')) {
-      return AppColors.electrolyte;
+    if (idLower.startsWith('before') || titleLower.startsWith('before'))
+      return AppColors.orange;
+    if (idLower.startsWith('after') || titleLower.startsWith('after'))
+      return AppColors.dragonfruit;
+    if (idLower.startsWith('t') || titleLower.startsWith('transition')) {
+      return isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
     }
-    return AppColors.electrolyte;
+    if (idLower.startsWith('during_segment') ||
+        titleLower.startsWith('during')) {
+      return isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
+    }
+    return isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
   }
 
   String? _resolveSportType(
@@ -444,7 +560,8 @@ class BrickNutritionSections extends StatelessWidget {
     int? duringIndex, {
     required List<String>? fallbackSegmentOrder,
   }) {
-    final segmentOrder = brick.brickMetadata?.segmentOrder ?? fallbackSegmentOrder;
+    final segmentOrder =
+        brick.brickMetadata?.segmentOrder ?? fallbackSegmentOrder;
 
     if (section.id.startsWith('during_segment_')) {
       final segmentIndex = int.tryParse(section.id.split('_').last);
@@ -458,12 +575,16 @@ class BrickNutritionSections extends StatelessWidget {
 
     final titleLower = section.title.toLowerCase();
     if (titleLower.contains('swim')) return 'swimming';
-    if (titleLower.contains('bike') || titleLower.contains('cycle') || titleLower.contains('ride')) {
+    if (titleLower.contains('bike') ||
+        titleLower.contains('cycle') ||
+        titleLower.contains('ride')) {
       return 'cycling';
     }
     if (titleLower.contains('run')) return 'running';
 
-    if (duringIndex != null && segmentOrder != null && duringIndex < segmentOrder.length) {
+    if (duringIndex != null &&
+        segmentOrder != null &&
+        duringIndex < segmentOrder.length) {
       return segmentOrder[duringIndex];
     }
 
@@ -474,7 +595,9 @@ class BrickNutritionSections extends StatelessWidget {
     if (section.id == 'before') return 'Before Brick';
     if (section.id == 'after') return 'After Brick';
     if (section.id.startsWith('T')) {
-      final transitionNumber = int.tryParse(section.id.replaceAll(RegExp(r'[^0-9]'), ''));
+      final transitionNumber = int.tryParse(
+        section.id.replaceAll(RegExp(r'[^0-9]'), ''),
+      );
       if (transitionNumber != null) return 'Transition $transitionNumber';
       return 'Transition';
     }
@@ -508,7 +631,9 @@ class BrickNutritionSections extends StatelessWidget {
   /// Falls back to total duration / segment count if specific segment not found.
   int _getSegmentDuration(int? duringIndex) {
     final segments = brick.brickMetadata?.segments;
-    if (segments != null && duringIndex != null && duringIndex < segments.length) {
+    if (segments != null &&
+        duringIndex != null &&
+        duringIndex < segments.length) {
       return segments[duringIndex].durationMinutes;
     }
     // Fallback: use total duration divided by number of during sections
@@ -527,5 +652,76 @@ class BrickNutritionSections extends StatelessWidget {
       default:
         return null;
     }
+  }
+
+  // Range helpers: resolve per-phase ranges from MacroTargets based on category
+  int? _getCarbsLow(String category) {
+    final mt = macroTargets;
+    if (mt == null) return null;
+    if (category.startsWith('before')) return mt.preRun.carbsLowG?.round();
+    if (category.startsWith('during')) return mt.duringRun.carbsLowG?.round();
+    if (category.startsWith('after')) return mt.postRun.carbsLowG?.round();
+    return null;
+  }
+
+  int? _getCarbsHigh(String category) {
+    final mt = macroTargets;
+    if (mt == null) return null;
+    if (category.startsWith('before')) return mt.preRun.carbsHighG?.round();
+    if (category.startsWith('during')) return mt.duringRun.carbsHighG?.round();
+    if (category.startsWith('after')) return mt.postRun.carbsHighG?.round();
+    return null;
+  }
+
+  int? _getProteinLow(String category) {
+    final mt = macroTargets;
+    if (mt == null) return null;
+    if (category.startsWith('before')) return mt.preRun.proteinLowG?.round();
+    if (category.startsWith('after')) return mt.postRun.proteinLowG?.round();
+    return null;
+  }
+
+  int? _getProteinHigh(String category) {
+    final mt = macroTargets;
+    if (mt == null) return null;
+    if (category.startsWith('before')) return mt.preRun.proteinHighG?.round();
+    if (category.startsWith('after')) return mt.postRun.proteinHighG?.round();
+    return null;
+  }
+
+  int? _getSodiumLow(String category) {
+    final mt = macroTargets;
+    if (mt == null) return null;
+    if (category.startsWith('before')) return mt.preRun.sodiumLowMg?.round();
+    if (category.startsWith('during')) return mt.duringRun.sodiumLowMg?.round();
+    if (category.startsWith('after')) return mt.postRun.sodiumLowMg?.round();
+    return null;
+  }
+
+  int? _getSodiumHigh(String category) {
+    final mt = macroTargets;
+    if (mt == null) return null;
+    if (category.startsWith('before')) return mt.preRun.sodiumHighMg?.round();
+    if (category.startsWith('during')) return mt.duringRun.sodiumHighMg?.round();
+    if (category.startsWith('after')) return mt.postRun.sodiumHighMg?.round();
+    return null;
+  }
+
+  int? _getFluidsLow(String category) {
+    final mt = macroTargets;
+    if (mt == null) return null;
+    if (category.startsWith('before')) return mt.preRun.fluidsLowMl?.round();
+    if (category.startsWith('during')) return mt.duringRun.fluidsLowMl?.round();
+    if (category.startsWith('after')) return mt.postRun.fluidsLowMl?.round();
+    return null;
+  }
+
+  int? _getFluidsHigh(String category) {
+    final mt = macroTargets;
+    if (mt == null) return null;
+    if (category.startsWith('before')) return mt.preRun.fluidsHighMl?.round();
+    if (category.startsWith('during')) return mt.duringRun.fluidsHighMl?.round();
+    if (category.startsWith('after')) return mt.postRun.fluidsHighMl?.round();
+    return null;
   }
 }

@@ -1,5 +1,6 @@
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/activity_completion.dart';
+import '../../domain/macro_targets.dart';
 import '../../domain/nutrition_plan.dart';
 
 /// Activity Detail Controller State
@@ -7,6 +8,7 @@ class ActivityDetailState {
   const ActivityDetailState({
     this.activity,
     this.nutritionPlan,
+    this.macroTargets,
     this.completion,
     this.scheduledDateTime,
     this.isSaving = false,
@@ -19,6 +21,7 @@ class ActivityDetailState {
 
   final Activity? activity;
   final NutritionPlan? nutritionPlan;
+  final MacroTargets? macroTargets;
   final ActivityCompletion? completion;
   final DateTime? scheduledDateTime;
   final bool isSaving;
@@ -34,6 +37,7 @@ class ActivityDetailState {
   ActivityDetailState copyWith({
     Activity? activity,
     NutritionPlan? nutritionPlan,
+    MacroTargets? macroTargets,
     ActivityCompletion? completion,
     DateTime? scheduledDateTime,
     bool? isSaving,
@@ -46,6 +50,7 @@ class ActivityDetailState {
     return ActivityDetailState(
       activity: activity ?? this.activity,
       nutritionPlan: nutritionPlan ?? this.nutritionPlan,
+      macroTargets: macroTargets ?? this.macroTargets,
       completion: completion ?? this.completion,
       scheduledDateTime: scheduledDateTime ?? this.scheduledDateTime,
       isSaving: isSaving ?? this.isSaving,

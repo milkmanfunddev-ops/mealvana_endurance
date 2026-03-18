@@ -99,12 +99,17 @@ class SportSettingsScreen extends ConsumerWidget {
                 ? null
                 : () async {
                     // Call controller to save all sport preferences to Supabase
-                    final controller = ref.read(settingsControllerProvider.notifier);
+                    final controller = ref.read(
+                      settingsControllerProvider.notifier,
+                    );
                     await controller.saveSportSettings();
 
                     if (context.mounted) {
                       // Show success confirmation
-                      MealvanaSnackbar.showInfo(context, 'Sport settings saved!');
+                      MealvanaSnackbar.showInfo(
+                        context,
+                        'Sport settings saved!',
+                      );
                     }
                   },
             width: double.infinity,
@@ -154,20 +159,15 @@ class SportSettingsScreen extends ConsumerWidget {
             ],
           ),
         ),
-        Switch(
+        KyleSwitch(
           value: state.giSensitivity ?? false,
           onChanged: (value) {
-            ref.read(settingsControllerProvider.notifier).updateGISensitivity(value);
+            ref
+                .read(settingsControllerProvider.notifier)
+                .updateGISensitivity(value);
           },
-          thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
-            return AppTheme.baseWhite;
-          }),
-          trackColor: WidgetStateProperty.resolveWith<Color>((states) {
-            if (states.contains(WidgetState.selected)) {
-              return AppTheme.primary600;
-            }
-            return AppTheme.baseGrey.withValues(alpha: 0.3);
-          }),
+          activeTrackColor: AppTheme.primary600,
+          inactiveTrackColor: AppTheme.baseGrey.withValues(alpha: 0.3),
         ),
       ],
     );
@@ -204,11 +204,15 @@ class SportSettingsScreen extends ConsumerWidget {
             suffixText: 'watts',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+              borderSide: BorderSide(
+                color: AppTheme.baseGrey.withValues(alpha: 0.3),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+              borderSide: BorderSide(
+                color: AppTheme.baseGrey.withValues(alpha: 0.3),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
@@ -220,7 +224,9 @@ class SportSettingsScreen extends ConsumerWidget {
           onChanged: (value) {
             final ftp = int.tryParse(value);
             if (ftp != null && ftp >= 0) {
-              ref.read(settingsControllerProvider.notifier).updateCyclingPreferences(ftpWatts: ftp);
+              ref
+                  .read(settingsControllerProvider.notifier)
+                  .updateCyclingPreferences(ftpWatts: ftp);
             }
           },
         ),
@@ -246,15 +252,20 @@ class SportSettingsScreen extends ConsumerWidget {
             final isSelected = state.typicalBikeBottles == bottles;
             return Expanded(
               child: GestureDetector(
-                onTap: () => ref.read(settingsControllerProvider.notifier)
+                onTap: () => ref
+                    .read(settingsControllerProvider.notifier)
                     .updateCyclingPreferences(typicalBikeBottles: bottles),
                 child: Container(
                   margin: EdgeInsets.only(right: bottles != 3 ? 8.w : 0),
                   padding: EdgeInsets.symmetric(vertical: 12.h),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
+                    color: isSelected
+                        ? AppTheme.primary600
+                        : AppTheme.baseWhite,
                     border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withValues(alpha: 0.3),
+                      color: isSelected
+                          ? AppTheme.primary600
+                          : AppTheme.baseGrey.withValues(alpha: 0.3),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(8.r),
@@ -263,7 +274,9 @@ class SportSettingsScreen extends ConsumerWidget {
                     bottles == 3 ? '3+' : '$bottles',
                     textAlign: TextAlign.center,
                     style: AppTheme.textStyle.copyWith(
-                      color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
+                      color: isSelected
+                          ? AppTheme.baseWhite
+                          : AppTheme.baseBlack,
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
                     ),
@@ -304,20 +317,15 @@ class SportSettingsScreen extends ConsumerWidget {
             ],
           ),
         ),
-        Switch(
+        KyleSwitch(
           value: state.hasAeroBottle ?? false,
           onChanged: (value) {
-            ref.read(settingsControllerProvider.notifier).updateCyclingPreferences(hasAeroBottle: value);
+            ref
+                .read(settingsControllerProvider.notifier)
+                .updateCyclingPreferences(hasAeroBottle: value);
           },
-          thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
-            return AppTheme.baseWhite;
-          }),
-          trackColor: WidgetStateProperty.resolveWith<Color>((states) {
-            if (states.contains(WidgetState.selected)) {
-              return AppTheme.primary600;
-            }
-            return AppTheme.baseGrey.withValues(alpha: 0.3);
-          }),
+          activeTrackColor: AppTheme.primary600,
+          inactiveTrackColor: AppTheme.baseGrey.withValues(alpha: 0.3),
         ),
       ],
     );
@@ -350,20 +358,15 @@ class SportSettingsScreen extends ConsumerWidget {
             ],
           ),
         ),
-        Switch(
+        KyleSwitch(
           value: state.hasBentoBox ?? false,
           onChanged: (value) {
-            ref.read(settingsControllerProvider.notifier).updateCyclingPreferences(hasBentoBox: value);
+            ref
+                .read(settingsControllerProvider.notifier)
+                .updateCyclingPreferences(hasBentoBox: value);
           },
-          thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
-            return AppTheme.baseWhite;
-          }),
-          trackColor: WidgetStateProperty.resolveWith<Color>((states) {
-            if (states.contains(WidgetState.selected)) {
-              return AppTheme.primary600;
-            }
-            return AppTheme.baseGrey.withValues(alpha: 0.3);
-          }),
+          activeTrackColor: AppTheme.primary600,
+          inactiveTrackColor: AppTheme.baseGrey.withValues(alpha: 0.3),
         ),
       ],
     );
@@ -408,11 +411,15 @@ class SportSettingsScreen extends ConsumerWidget {
             suffixText: 'per 100m',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+              borderSide: BorderSide(
+                color: AppTheme.baseGrey.withValues(alpha: 0.3),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppTheme.baseGrey.withValues(alpha: 0.3)),
+              borderSide: BorderSide(
+                color: AppTheme.baseGrey.withValues(alpha: 0.3),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
@@ -429,8 +436,11 @@ class SportSettingsScreen extends ConsumerWidget {
               final seconds = int.tryParse(parts[1]);
               if (minutes != null && seconds != null && seconds < 60) {
                 final totalSeconds = minutes * 60 + seconds;
-                ref.read(settingsControllerProvider.notifier)
-                    .updateSwimmingPreferences(cssPacePer100mSeconds: totalSeconds);
+                ref
+                    .read(settingsControllerProvider.notifier)
+                    .updateSwimmingPreferences(
+                      cssPacePer100mSeconds: totalSeconds,
+                    );
               }
             }
           },
@@ -466,20 +476,15 @@ class SportSettingsScreen extends ConsumerWidget {
             ],
           ),
         ),
-        Switch(
+        KyleSwitch(
           value: state.typicalWetsuit ?? false,
           onChanged: (value) {
-            ref.read(settingsControllerProvider.notifier).updateSwimmingPreferences(typicalWetsuit: value);
+            ref
+                .read(settingsControllerProvider.notifier)
+                .updateSwimmingPreferences(typicalWetsuit: value);
           },
-          thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
-            return AppTheme.baseWhite;
-          }),
-          trackColor: WidgetStateProperty.resolveWith<Color>((states) {
-            if (states.contains(WidgetState.selected)) {
-              return AppTheme.primary600;
-            }
-            return AppTheme.baseGrey.withValues(alpha: 0.3);
-          }),
+          activeTrackColor: AppTheme.primary600,
+          inactiveTrackColor: AppTheme.baseGrey.withValues(alpha: 0.3),
         ),
       ],
     );
@@ -508,17 +513,24 @@ class SportSettingsScreen extends ConsumerWidget {
             final isSelected = state.typicalSwimCapType == capType;
 
             return Container(
-              margin: EdgeInsets.only(bottom: index != capTypes.length - 1 ? 8.h : 0),
+              margin: EdgeInsets.only(
+                bottom: index != capTypes.length - 1 ? 8.h : 0,
+              ),
               child: GestureDetector(
-                onTap: () => ref.read(settingsControllerProvider.notifier)
+                onTap: () => ref
+                    .read(settingsControllerProvider.notifier)
                     .updateSwimmingPreferences(typicalSwimCapType: capType),
                 child: Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(16.w),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary600 : AppTheme.baseWhite,
+                    color: isSelected
+                        ? AppTheme.primary600
+                        : AppTheme.baseWhite,
                     border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey.withValues(alpha: 0.3),
+                      color: isSelected
+                          ? AppTheme.primary600
+                          : AppTheme.baseGrey.withValues(alpha: 0.3),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(8.r),
@@ -527,7 +539,9 @@ class SportSettingsScreen extends ConsumerWidget {
                     label,
                     textAlign: TextAlign.center,
                     style: AppTheme.textStyle.copyWith(
-                      color: isSelected ? AppTheme.baseWhite : AppTheme.baseBlack,
+                      color: isSelected
+                          ? AppTheme.baseWhite
+                          : AppTheme.baseBlack,
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
                     ),
@@ -546,11 +560,7 @@ class SportSettingsScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64.sp,
-            color: AppTheme.highlight600,
-          ),
+          Icon(Icons.error_outline, size: 64.sp, color: AppTheme.highlight600),
           SizedBox(height: 16.h),
           Text(
             'Error loading sport settings',

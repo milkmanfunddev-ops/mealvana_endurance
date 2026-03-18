@@ -137,7 +137,6 @@ class RunningTabContent extends ConsumerWidget {
         //     ],
         //   ),
         // ],
-
         const SizedBox(height: AppSpacing.xl),
 
         // INTENSITY DISTRIBUTION
@@ -521,6 +520,10 @@ class _ControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final enabledIconColor = isDark ? AppColors.cream : AppColors.orange;
+    final disabledIconColor = enabledIconColor.withValues(alpha: 0.4);
+
     return SizedBox(
       width: AppSizes.controlSize,
       height: AppSizes.controlSize,
@@ -547,10 +550,7 @@ class _ControlButton extends StatelessWidget {
         child: Icon(
           icon,
           size: AppIconSizes.controlIcon,
-          color: enabled
-              ? AppColors
-                    .cream // White/cream icon color to match Kyle's design
-              : AppColors.cream.withValues(alpha: 0.4),
+          color: enabled ? enabledIconColor : disabledIconColor,
         ),
       ),
     );

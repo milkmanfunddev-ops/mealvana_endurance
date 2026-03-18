@@ -1,306 +1,264 @@
-# Coach Mode Implementation Checklist
+# Coach Mode v2 - Implementation Checklist
 
-**Status**: Ready to Start
-**Updated**: 2025-12-25
-
----
-
-## Phase 0: Web Foundation (Days 1-5)
-
-### Vercel Setup
-- [ ] Install Vercel CLI: `npm i -g vercel`
-- [ ] Login: `vercel login`
-- [ ] Link project: `vercel link`
-- [ ] Create `vercel.json` in project root
-- [ ] Add environment variables in Vercel dashboard:
-  - [ ] `SUPABASE_URL`
-  - [ ] `SUPABASE_ANON_KEY`
-  - [ ] `SENTRY_DSN`
-- [ ] Configure custom domain: `enduranceapp.mealvana.io`
-- [ ] Test preview deployment: `vercel`
-- [ ] Test production deployment: `vercel --prod`
-
-### Web Testing
-- [ ] Run locally: `flutter run -d chrome`
-- [ ] Build succeeds: `flutter build web --release --wasm`
-- [ ] IndexedDB storage works
-- [ ] Supabase connection works
-- [ ] No dart:io compilation errors
-- [ ] OAuth redirect flow works
+**Created**: 2026-03-17
+**Status**: Planning Phase
+**Branch**: `develop`
 
 ---
 
-## Phase 1: Database & Edge Functions (Week 1)
+## Issue Summary
 
-### Database Migration
-- [ ] Create enum types:
-  - [ ] `relationship_status_enum` (pending, active, declined, archived)
-  - [ ] `permission_level_enum` (view_only, full_access, custom)
-- [ ] Create `coaches` table
-- [ ] Create `coach_athlete_relationships` table
-- [ ] Create `coach_feedback` table
-- [ ] Modify `nutrition_plans` table (add coach columns)
-- [ ] Modify `activities` table (add coach columns)
-- [ ] Modify `workout_notes` table (add coach columns)
-- [ ] Create 22 RLS policies
-- [ ] Create 15 indexes
-- [ ] Create 3 helper functions
-- [ ] Create 5 triggers
-- [ ] Test migration in dev environment
-- [ ] Deploy to production
-
-### Edge Functions
-- [ ] Create `create-coach-profile` function
-- [ ] Create `verify-coach-manual` function
-- [ ] Create `generate-invitation-link` function
-- [ ] Create `get-invitation-details` function
-- [ ] Create `accept-coach-invitation` function
-- [ ] Create `send-message` function
-- [ ] Deploy edge functions to Supabase
-- [ ] Test each function in isolation
-
-### Email Templates
-- [ ] Welcome email (coach approved)
-- [ ] Rejection email (coach rejected)
-- [ ] Invitation email (coach invites athlete)
-- [ ] Acceptance confirmation (athlete accepts)
-- [ ] Message notification (new message)
+| # | Issue | Priority | Complexity | Status |
+|---|-------|----------|------------|--------|
+| 1 | Athlete search not finding users by name | High | Low | Pending |
+| 2 | Child screens render full-screen instead of windowed on web | High | Medium | Pending |
+| 3 | Carb loading plan creation for athletes | Medium | Medium | Pending |
+| 4 | Activity creation fails ("activity not found") | Critical | Low | Pending |
+| 5 | Athlete code generation + coach pairing flow | High | High | Pending |
+| 6 | Coach portal as first screen on login | Medium | Low | Pending |
+| 7 | Coach reports (at least one real report) | Medium | Medium | Pending |
+| 8 | Coach sets nutrition targets for athletes | High | Medium | Pending |
+| 9 | Push athlete workout feedback to TrainingPeaks | Medium | High | Pending |
+| 10 | Import TP comments + bi-directional sync | Medium | High | Pending |
 
 ---
 
-## Phase 2: Flutter Feature Structure (Week 1-2)
+## Issue 1: Athlete Search Not Finding Users
 
-### Domain Models
-- [ ] `Coach` model
-- [ ] `CoachAthleteRelationship` model
-- [ ] `Invitation` model
-- [ ] `Message` model
+### Root Cause Analysis
+- Search uses `ilike` queries on Supabase `user_profiles` table
+- Multi-word search splits by space and tries first_name/last_name in both orders
+- Likely cause: Name updates not synced to Supabase, or search query construction issues
 
-### Repositories
-- [ ] `CoachRepository` (abstract interface)
-- [ ] `SupabaseCoachRepository` (implementation)
+### Fix Plan
+- [ ] Ensure athlete search always queries Supabase directly (not local Drift)
+- [ ] Add debounced real-time search with loading indicator
+- [ ] Verify that settings name changes upload to Supabase `user_profiles` immediately
+- [ ] Add helpful message: "No athletes found. Ask them to share their athlete code instead."
 
-### Services
-- [ ] `CoachService`
-- [ ] `InvitationService`
-- [ ] `MessagingService`
-
-### Controllers
-- [ ] `CoachRegistrationController` (@riverpod)
-- [ ] `CoachDashboardController` (@riverpod)
-- [ ] `InvitationController` (@riverpod)
-- [ ] `MessageController` (@riverpod)
-
-### Run code generation
-- [ ] `dart run build_runner build --delete-conflicting-outputs`
+### Files to Modify
+- `lib/features/coach_mode/data/coach_repository.dart` - `searchAthletesByNameOrEmail()`
+- `lib/features/coach_mode/presentation/widgets/portal_sidebar.dart` - Search UI
 
 ---
 
-## Phase 3: UI Screens (Week 2-3)
+## Issue 2: Child Screens Full-Screen on Web (Coach Portal)
 
-### Coach Registration
-- [ ] `CoachRegistrationScreen`
-  - [ ] Full name field
-  - [ ] Email field
-  - [ ] Phone field (optional)
-  - [ ] Specializations multi-select
-  - [ ] Bio text area
-  - [ ] Certification upload
-  - [ ] Insurance upload
-  - [ ] Submit button
-- [ ] Form validation
-- [ ] Loading states
-- [ ] Success/error handling
-- [ ] Pending verification message
+### Root Cause
+`_isCoachSession()` in `root_app_widget.dart` makes ALL screens pushed from coach portal full-width. When coach navigates to NewActivityScreen, AdjustMacrosScreen, ActivityDetailScreen etc., they render at full browser width.
 
-### Coach Dashboard
-- [ ] `CoachDashboardScreen`
-  - [ ] Athlete list
-  - [ ] Quick stats (total athletes, pending invites)
-  - [ ] Recent activity feed
-  - [ ] Search/filter
-- [ ] Empty state UI
-- [ ] "Invite Your First Athlete" CTA
-- [ ] Pull-to-refresh
+### Decision: Use standard 480px width (same as regular app)
 
-### Athlete Screens
-- [ ] `AthleteListScreen`
-  - [ ] Searchable list
-  - [ ] Status indicators
-  - [ ] Navigation to detail
-- [ ] `AthleteDetailScreen`
-  - [ ] Profile info
-  - [ ] Biometrics
-  - [ ] Food preferences
-  - [ ] Recent activities
-  - [ ] Nutrition plans
+### Fix Plan
+- [ ] Modify `_isCoachSession()` to only apply full-width to actual `/coach` routes
+- [ ] Exclude general app routes: `/distancepacegut`, `/plan`, `/adjust-macros`, `/events/create`
+- [ ] Test coach portal remains full-width, child screens are windowed (480px centered)
 
-### Invitation Screens
-- [ ] `GenerateInvitationScreen` (coach)
-  - [ ] Email input
-  - [ ] Permission level selector
-  - [ ] Custom message textarea
-  - [ ] Generate button
-  - [ ] Copy link CTA
-- [ ] `InvitationPreviewScreen` (athlete)
-  - [ ] Coach profile card
-  - [ ] Permission explanation
-  - [ ] Expiration countdown
-  - [ ] Accept/Decline buttons
-- [ ] `InvitationAcceptedScreen`
-  - [ ] Success message
-  - [ ] Coach contact info
-  - [ ] Navigate to dashboard
-
-### Messaging Screen
-- [ ] `MessageThreadScreen`
-  - [ ] Message list (scrollable)
-  - [ ] Message composer
-  - [ ] Send button
-  - [ ] Attachment upload
-  - [ ] Unread badge
-
-### Widgets
-- [ ] `CoachCard`
-- [ ] `AthleteCard`
-- [ ] `ActivityCard`
-- [ ] `PlanCard`
-- [ ] `ModeToggleWidget`
-- [ ] `MessageBubble`
+### Files to Modify
+- `lib/shared/widgets/root_app_widget.dart` - `_isCoachSession()` logic
 
 ---
 
-## Phase 4: Mode Toggle (Week 3)
+## Issue 3: Carb Loading Plan Creation for Athletes
 
-### Implementation
-- [ ] Create `AppModeProvider` (@riverpod)
-- [ ] Implement `ModeToggleWidget`
-- [ ] Add to app bar
-- [ ] Persist to SharedPreferences/localStorage
-- [ ] Sync to Supabase `user_profiles.preferred_mode`
+### Current State
+- Service layer already supports `forUserId` for coach access
+- Coach-athlete relationship validation is implemented
+- RLS policies exist for carb loading tables
 
-### Visual Indicators
-- [ ] Coach mode badge (blue)
-- [ ] Coach mode accent color
-- [ ] Navigation drawer updates
+### Decision: Available from both Events tab AND standalone Carb Loading tab
 
-### Navigation
-- [ ] Update GoRouter with coach routes
-- [ ] Redirect logic based on mode
-- [ ] Deep link support
+### Fix Plan
+- [ ] Add carb loading plan creation UI in coach portal athlete detail panel
+- [ ] Wire up `CarbLoadingService.createCarbLoadingPlan()` with `forUserId`
+- [ ] Add protocol selection (2-day vs 3-day) dialog
+- [ ] Show existing carb loading plans in Carb Loading tab
+- [ ] Enable creation from Events tab (linked to event) and standalone
+- [ ] Add delete/edit capabilities
 
----
-
-## Phase 5: Admin Verification (Week 3)
-
-### Admin Dashboard
-- [ ] Pending coaches list
-- [ ] Coach detail view (certifications, insurance)
-- [ ] Approve button
-- [ ] Reject button (with reason)
-- [ ] Verification checklist UI
-
-### Workflow
-- [ ] Email notifications on approval/rejection
-- [ ] Update coach status in database
-- [ ] Activity logging
+### Files to Modify
+- `lib/features/coach_mode/presentation/widgets/portal_athlete_detail_panel.dart`
+- `lib/features/coach_mode/presentation/providers/athlete_detail_controller.dart`
+- New widget: Carb loading creation dialog for coach portal
 
 ---
 
-## Phase 6: Testing (Week 4)
+## Issue 4: Activity Creation Fails ("Activity Not Found") - CRITICAL
 
-### Unit Tests
-- [ ] Coach model serialization
-- [ ] Invitation token generation
-- [ ] Permission checks
-- [ ] Message validation
+### Root Cause (CONFIRMED via logs)
+1. Activity created with `userId = athlete's ID` (correct)
+2. `ActivityDetailController.build()` uses `userIdProvider` = **coach's ID**
+3. Query: `WHERE userId = coachId AND id = activityId` = **NO MATCH**
 
-### Widget Tests
-- [ ] CoachDashboardScreen
-- [ ] MessageThreadScreen
-- [ ] ModeToggleWidget
+### Fix Plan
+- [ ] Pass `forUserId` through navigation extras from adjust-macros to activity detail
+- [ ] Update `ActivityDetailController.build()` to accept/use `forUserId`
+- [ ] Update `ActivitiesService.getActivityById()` for coach-access queries
+- [ ] Test full flow: Create → Adjust macros → View activity detail
 
-### Integration Tests
-- [ ] Coach registration flow
-- [ ] Invitation acceptance flow
-- [ ] Messaging flow
-
-### Edge Function Tests
-- [ ] All functions with valid inputs
-- [ ] All functions with invalid inputs
-- [ ] RLS policy enforcement
-
-### Cross-Browser Testing
-- [ ] Chrome
-- [ ] Firefox
-- [ ] Safari
-- [ ] Edge
-
-### Responsive Testing
-- [ ] Desktop (1920x1080)
-- [ ] Tablet (768x1024)
-- [ ] Mobile (375x667)
-
-### Performance Testing
-- [ ] Page load < 3 seconds
-- [ ] Bundle size < 3MB
-- [ ] Lighthouse score > 80
+### Files to Modify
+- `lib/features/nutrition_plan/presentation/providers/activity_detail_controller.dart`
+- `lib/features/nutrition_plan/presentation/screens/adjust_macros_screen.dart`
+- `lib/features/activities/application/activities_service.dart`
+- `lib/shared/core/app_router.dart`
 
 ---
 
-## Phase 7: Soft Launch (Week 5)
+## Issue 5: Athlete Code Generation + Coach Pairing Flow
 
-### Beta Coaches
-- [ ] Identify 5-10 beta coaches
-- [ ] Send personal invitations
-- [ ] Schedule 1-on-1 onboarding calls
-- [ ] Create onboarding documentation
+### Decisions
+- Time-limited code with **24-hour expiry**
+- When connected: Show coach name + disconnect button + chat button
+- Code-based pairing = primary connection method
 
-### Monitoring
-- [ ] Sentry error tracking configured
-- [ ] Analytics events configured
-- [ ] Error rate dashboard
+### Implementation Plan
 
-### Feedback Collection
-- [ ] Weekly feedback calls scheduled
-- [ ] Feedback form created
-- [ ] Bug report process established
+#### Athlete Side (Settings)
+- [ ] Add "Coach Connection" section to settings menu
+- [ ] If NOT connected: "Generate Pairing Code" button
+- [ ] Generate random 6-char alphanumeric code, store in Supabase with 24h expiry
+- [ ] Display code with copy + share + "Expires in X hours"
+- [ ] If CONNECTED: Show coach name, disconnect button, chat button
+- [ ] Disconnect archives the relationship with confirmation dialog
 
-### Public Launch (When Ready)
-- [ ] All beta feedback addressed
-- [ ] Error rate < 5%
-- [ ] Email announcement drafted
-- [ ] Social media posts prepared
+#### Coach Side (Portal)
+- [ ] Replace name/email search with code entry as primary "Add Athlete" method
+- [ ] Code entry field + "Connect" button
+- [ ] Validate code, create active relationship on valid code
+- [ ] Show success with athlete name
+- [ ] Keep name search as secondary fallback
 
----
+#### Database
+- [ ] Create `athlete_pairing_codes` table (Supabase + Drift):
+  - `id`, `user_id`, `code` (VARCHAR 6, UNIQUE), `created_at`, `expires_at`, `used_by_coach_id`, `used_at`
+- [ ] RLS policies: user creates/reads own codes, coaches read valid codes
+- [ ] Schema version bump
 
-## Post-Launch Tasks
-
-### Athlete Web Access
-- [ ] Athletes can log in via web
-- [ ] View coach-assigned plans
-- [ ] Messaging works both ways
-
-### Stripe Integration (Later)
-- [ ] Only when 20+ coaches
-- [ ] Or manual billing burdensome
-
-### Enhanced Features (Based on Feedback)
-- [ ] Real-time chat
-- [ ] Calendar scheduling
-- [ ] Advanced analytics
+### Files to Modify
+- `lib/features/settings/presentation/screens/settings_menu_screen.dart`
+- New: `coach_connection_screen.dart`
+- `lib/features/coach_mode/data/coach_repository.dart`
+- `lib/features/coach_mode/presentation/widgets/portal_sidebar.dart`
+- New migration: `athlete_pairing_codes` table
+- `lib/shared/database/app_database.dart`
 
 ---
 
-## Reference Files
+## Issue 6: Coach Portal as First Screen on Login
 
-| File | Purpose |
-|------|---------|
-| `/docs/coach_mode/DEPLOYMENT_ROADMAP.md` | Timeline and strategy |
-| `/docs/features/coach_mode/schema_analysis.md` | Database schema |
-| `/docs/web_mode/SETUP.md` | Web deployment guide |
-| `vercel.json` | Vercel configuration |
+### Fix Plan
+- [ ] In `TabsScreen`, detect if `kIsWeb && isCoach`
+- [ ] Set initial tab index to coach tab (or auto-navigate to `/coach`)
+- [ ] Ensure coaches can still navigate back to regular app tabs
+
+### Files to Modify
+- `lib/shared/widgets/tabs_screen.dart`
 
 ---
 
-**Last Updated**: 2025-12-25
+## Issue 7: Coach Reports
+
+### Decision: Show whatever data we have
+
+### Plan: "Weekly Athlete Summary" Report
+- [ ] Per-athlete summary for last 7 days:
+  - Activities completed / planned
+  - Average feedback rating (1-5 stars)
+  - Carb target adherence (%)
+  - Upcoming events (next 14 days)
+  - Unread messages
+- [ ] Replace "Coming Soon" in reports panel
+- [ ] Date range selection (This Week / Last Week / Custom)
+- [ ] Graceful "No data yet" states
+
+### Files to Modify
+- New: `portal_reports_panel.dart`
+- New: `coach_reports_controller.dart`
+- `lib/features/coach_mode/presentation/screens/coach_portal_screen.dart`
+- `lib/features/coach_mode/data/coach_repository.dart`
+
+---
+
+## Issue 8: Coach Sets Nutrition Targets for Athletes
+
+### Decision: Coach overrides directly (no approval)
+
+### Fix Plan
+- [ ] Add "Nutrition Targets" section in athlete detail panel
+- [ ] Reuse form from `nutrition_targets_screen.dart` in coach context
+- [ ] Write to athlete's `nutrition_target_overrides` with coach as modifier
+- [ ] Athlete's plans immediately use new targets
+- [ ] Show "Set by coach" indicator in athlete's targets screen
+
+### Files to Modify
+- `lib/features/coach_mode/presentation/widgets/portal_athlete_detail_panel.dart`
+- `lib/features/nutrition_plan/data/nutrition_plan_repository.dart`
+- `lib/features/settings/presentation/screens/nutrition_targets_screen.dart`
+- `lib/features/coach_mode/data/coach_repository.dart`
+
+---
+
+## Issue 9: Push Athlete Feedback to TrainingPeaks
+
+### Fix Plan
+- [ ] After post-workout feedback, check if TP connected
+- [ ] Format: "Mealvana Feedback: [rating] stars - [notes] - Carbs: [up/down/same]"
+- [ ] Call `POST /v2/workouts/{athleteId}/id/{workoutId}/comment`
+- [ ] Handle 403 (premium required) gracefully
+- [ ] Store write-back status, retry on failure
+
+### Files to Modify
+- `lib/features/integrations/data/training_peaks_api_client.dart`
+- `lib/features/integrations/application/tp_writeback_service.dart`
+- `lib/features/nutrition_plan/presentation/providers/activity_detail_controller.dart`
+
+---
+
+## Issue 10: Import TP Comments + Bi-directional Sync
+
+### Fix Plan
+- [ ] During TP sync, fetch workout comments/description
+- [ ] Store comments in activity model or separate table
+- [ ] Display TP coach comments in "Coach Feedback" section
+- [ ] Push athlete comments back to TP
+- [ ] Source indicator (Mealvana vs TrainingPeaks) per comment
+
+### Files to Modify
+- `lib/features/integrations/application/training_peaks_sync_service.dart`
+- `lib/features/integrations/application/training_peaks_transformer.dart`
+- `lib/features/integrations/data/training_peaks_api_client.dart`
+- `lib/features/nutrition_plan/presentation/widgets/activity_detail/`
+
+---
+
+## Implementation Order
+
+### Phase 1: Critical Fixes (Issues 4, 1, 2, 6)
+Bugs and UX blockers preventing coach mode from being usable.
+1. Issue 4 - Activity creation userId mismatch
+2. Issue 1 - Athlete search reliability
+3. Issue 2 - Full-screen child screens
+4. Issue 6 - Coach portal as first screen
+
+### Phase 2: Core Coach Features (Issues 5, 8, 3)
+Essential coach capabilities.
+5. Issue 5 - Time-limited pairing code flow
+6. Issue 8 - Coach sets nutrition targets
+7. Issue 3 - Carb loading plan creation
+
+### Phase 3: Reporting & TP Integration (Issues 7, 9, 10)
+Value-add features.
+8. Issue 7 - Weekly athlete summary report
+9. Issue 9 - Push feedback to TP
+10. Issue 10 - Import TP comments (bi-directional)
+
+---
+
+## Database Changes Needed
+- New `athlete_pairing_codes` table (Supabase + Drift)
+- Possibly extend `nutrition_target_overrides` with `set_by_coach_id`
+- Schema version bump for Drift changes
+
+---
+
+**Last Updated**: 2026-03-17

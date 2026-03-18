@@ -376,7 +376,15 @@ class NutritionPlanService {
       protein: totalProtein,
       fat: totalFat,
       sodium: totalSodium,
+      sodiumMin: pre.sodiumLowMg?.round(),
+      sodiumMax: pre.sodiumHighMg?.round(),
       fluids: (totalFluids * 0.033814).round(),
+      fluidsMin: pre.fluidsLowMl != null
+          ? (pre.fluidsLowMl! * 0.033814).round()
+          : null,
+      fluidsMax: pre.fluidsHighMl != null
+          ? (pre.fluidsHighMl! * 0.033814).round()
+          : null,
       carbsRange: 'Pre ${pre.carbsG.round()}g | During ${during.carbTotalG.round()}g | Post ${post.carbsG.round()}g',
       proteinRange: 'Pre ${pre.proteinG.round()}g | Post ${post.proteinG.round()}g',
       fatRange: 'Pre ${pre.fatCapG.round()}g | Post 0g',
@@ -541,7 +549,7 @@ class NutritionPlanService {
       }
 
       final response = await supabase.functions.invoke(
-        'generate-nutrition-plan-v2',
+        'generate-nutrition-plan-v3',
         body: requestData,
       );
 

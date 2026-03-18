@@ -1,192 +1,180 @@
-I/TRuntime.CctTransportBackend(27698): Making request to: https://firebaselogging.googleapis.com/v0cc/log/batch?format=json_proto3
-I/TRuntime.CctTransportBackend(27698): Status Code: 200
-Restarted application in 2,050ms.
-W/Sentry  (27698): Sentry has been already initialized. Previous configuration will be overwritten.
-D/sentry-native(27698): shutting down backend
-W/Sentry  (27698): Failed to shutdown the async connection async sender  within 0 ms. Trying to force it now.
-W/sentry-native(27698): sentry_close() called, but options was empty
-I/sentry-native(27698): using database path "/data/data/com.milkman.mealvanaendurance/cache/sentry/9f5b15b7ae6f78a1b5056948b8ce2792f3498c99/.sentry-native"
-D/sentry-native(27698): starting backend
-D/sentry-native(27698): using existing signal stack (size: 32768, flags: 0)
-D/sentry-native(27698): processing and pruning old runs
-W/Sentry  (27698): Current session is not ended, we'd need to end it.
-I/flutter (27698): supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-W/Sentry  (27698): Current session is not ended, we'd need to end it.
-I/flutter (27698): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (27698): │ 12:45:21.323 (+0:00:02.721108)
-I/flutter (27698): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (27698): │ ⚠️ [VERSION_CHECK] Schema resync required: local=4, remote=3
-I/flutter (27698): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (27698): ✅ Schema validation passed (22 tables verified)
-W/ContextImpl(27698): Failed to ensure /storage/emulated/0/Android/data/com.milkman.mealvanaendurance/files
-W/ContextImpl(27698): java.lang.IllegalStateException: Failed to prepare /storage/emulated/0/Android/data/com.milkman.mealvanaendurance/files
-W/ContextImpl(27698): 	at android.os.Parcel.createExceptionOrNull(Parcel.java:3381)
-W/ContextImpl(27698): 	at android.os.Parcel.createException(Parcel.java:3357)
-W/ContextImpl(27698): 	at android.os.Parcel.readException(Parcel.java:3340)
-W/ContextImpl(27698): 	at android.os.Parcel.readException(Parcel.java:3282)
-W/ContextImpl(27698): 	at android.os.storage.IStorageManager$Stub$Proxy.mkdirs(IStorageManager.java:1305)
-W/ContextImpl(27698): 	at android.os.storage.StorageManager.mkdirs(StorageManager.java:1421)
-W/ContextImpl(27698): 	at android.app.ContextImpl.ensureExternalDirsExistOrFilter(ContextImpl.java:3931)
-W/ContextImpl(27698): 	at android.app.ContextImpl.getExternalFilesDirs(ContextImpl.java:935)
-W/ContextImpl(27698): 	at android.app.ContextImpl.getExternalFilesDir(ContextImpl.java:924)
-W/ContextImpl(27698): 	at android.content.ContextWrapper.getExternalFilesDir(ContextWrapper.java:308)
-W/ContextImpl(27698): 	at io.sentry.android.core.DeviceInfoUtil.setDeviceIO(DeviceInfoUtil.java:230)
-W/ContextImpl(27698): 	at io.sentry.android.core.DeviceInfoUtil.collectDeviceInformation(DeviceInfoUtil.java:151)
-W/ContextImpl(27698): 	at io.sentry.android.core.InternalSentrySdk.serializeScope(InternalSentrySdk.java:93)
-W/ContextImpl(27698): 	at io.sentry.flutter.SentryFlutterPlugin.loadContexts(SentryFlutterPlugin.kt:474)
-W/ContextImpl(27698): 	at io.sentry.flutter.SentryFlutterPlugin.onMethodCall(SentryFlutterPlugin.kt:79)
-W/ContextImpl(27698): 	at io.flutter.plugin.common.MethodChannel$IncomingMethodCallHandler.onMessage(MethodChannel.java:267)
-W/ContextImpl(27698): 	at io.flutter.embedding.engine.dart.DartMessenger.invokeHandler(DartMessenger.java:292)
-W/ContextImpl(27698): 	at io.flutter.embedding.engine.dart.DartMessenger.lambda$dispatchMessageToQueue$0$io-flutter-embedding-engine-dart-DartMessenger(DartMessenger.java:319)
-W/ContextImpl(27698): 	at io.flutter.embedding.engine.dart.DartMessenger$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
-W/ContextImpl(27698): 	at android.os.Handler.handleCallback(Handler.java:1070)
-W/ContextImpl(27698): 	at android.os.Handler.dispatchMessage(Handler.java:125)
-W/ContextImpl(27698): 	at android.os.Looper.dispatchMessage(Looper.java:333)
-W/ContextImpl(27698): 	at android.os.Looper.loopOnce(Looper.java:263)
-W/ContextImpl(27698): 	at android.os.Looper.loop(Looper.java:367)
-W/ContextImpl(27698): 	at android.app.ActivityThread.main(ActivityThread.java:9287)
-W/ContextImpl(27698): 	at java.lang.reflect.Method.invoke(Native Method)
-W/ContextImpl(27698): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:566)
-W/ContextImpl(27698): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
-W/ContextImpl(27698): Caused by: android.os.RemoteException: Remote stack trace:
-W/ContextImpl(27698): 	at com.android.server.StorageManagerService.mkdirs(StorageManagerService.java:3770)
-W/ContextImpl(27698): 	at android.os.storage.IStorageManager$Stub.onTransact(IStorageManager.java:648)
-W/ContextImpl(27698): 	at android.os.Binder.execTransactInternal(Binder.java:1473)
-W/ContextImpl(27698): 	at android.os.Binder.execTransact(Binder.java:1418)
-W/ContextImpl(27698):
-W/ContextImpl(27698): Failed to ensure /storage/emulated/0/Android/data/com.milkman.mealvanaendurance/files
-W/ContextImpl(27698): java.lang.IllegalStateException: Failed to prepare /storage/emulated/0/Android/data/com.milkman.mealvanaendurance/files
-W/ContextImpl(27698): 	at android.os.Parcel.createExceptionOrNull(Parcel.java:3381)
-W/ContextImpl(27698): 	at android.os.Parcel.createException(Parcel.java:3357)
-W/ContextImpl(27698): 	at android.os.Parcel.readException(Parcel.java:3340)
-W/ContextImpl(27698): 	at android.os.Parcel.readException(Parcel.java:3282)
-W/ContextImpl(27698): 	at android.os.storage.IStorageManager$Stub$Proxy.mkdirs(IStorageManager.java:1305)
-W/ContextImpl(27698): 	at android.os.storage.StorageManager.mkdirs(StorageManager.java:1421)
-W/ContextImpl(27698): 	at android.app.ContextImpl.ensureExternalDirsExistOrFilter(ContextImpl.java:3931)
-W/ContextImpl(27698): 	at android.app.ContextImpl.getExternalFilesDirs(ContextImpl.java:935)
-W/ContextImpl(27698): 	at android.content.ContextWrapper.getExternalFilesDirs(ContextWrapper.java:313)
-W/ContextImpl(27698): 	at io.sentry.android.core.DeviceInfoUtil.getExternalStorageDep(DeviceInfoUtil.java:413)
-W/ContextImpl(27698): 	at io.sentry.android.core.DeviceInfoUtil.getExternalStorageStat(DeviceInfoUtil.java:401)
-W/ContextImpl(27698): 	at io.sentry.android.core.DeviceInfoUtil.setDeviceIO(DeviceInfoUtil.java:237)
-W/ContextImpl(27698): 	at io.sentry.android.core.DeviceInfoUtil.collectDeviceInformation(DeviceInfoUtil.java:151)
-W/ContextImpl(27698): 	at io.sentry.android.core.InternalSentrySdk.serializeScope(InternalSentrySdk.java:93)
-W/ContextImpl(27698): 	at io.sentry.flutter.SentryFlutterPlugin.loadContexts(SentryFlutterPlugin.kt:474)
-W/ContextImpl(27698): 	at io.sentry.flutter.SentryFlutterPlugin.onMethodCall(SentryFlutterPlugin.kt:79)
-W/ContextImpl(27698): 	at io.flutter.plugin.common.MethodChannel$IncomingMethodCallHandler.onMessage(MethodChannel.java:267)
-W/ContextImpl(27698): 	at io.flutter.embedding.engine.dart.DartMessenger.invokeHandler(DartMessenger.java:292)
-W/ContextImpl(27698): 	at io.flutter.embedding.engine.dart.DartMessenger.lambda$dispatchMessageToQueue$0$io-flutter-embedding-engine-dart-DartMessenger(DartMessenger.java:319)
-W/ContextImpl(27698): 	at io.flutter.embedding.engine.dart.DartMessenger$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
-W/ContextImpl(27698): 	at android.os.Handler.handleCallback(Handler.java:1070)
-W/ContextImpl(27698): 	at android.os.Handler.dispatchMessage(Handler.java:125)
-W/ContextImpl(27698): 	at android.os.Looper.dispatchMessage(Looper.java:333)
-W/ContextImpl(27698): 	at android.os.Looper.loopOnce(Looper.java:263)
-W/ContextImpl(27698): 	at android.os.Looper.loop(Looper.java:367)
-W/ContextImpl(27698): 	at android.app.ActivityThread.main(ActivityThread.java:9287)
-W/ContextImpl(27698): 	at java.lang.reflect.Method.invoke(Native Method)
-W/ContextImpl(27698): 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:566)
-W/ContextImpl(27698): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
-I/flutter (27698): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (27698): │ 12:45:32.843 (+0:00:14.241263)
-I/flutter (27698): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (27698): │ ⚠️ [VERSION_CHECK_SERVICE] Some dirty records failed to upload, creating backup
-I/flutter (27698): │ ⚠️ Data: {failedRepositories: 1}
-I/flutter (27698): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (27698): WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
-I/flutter (27698): Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
-I/flutter (27698): Here is the stacktrace from when the database was opened a second time:
-I/flutter (27698): #0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
-I/flutter (27698): #1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
-I/flutter (27698): #2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
-I/flutter (27698): #3      new _$AppDatabase (package:mealvana_endurance/shared/database/app_database.g.dart:26556:36)
-I/flutter (27698): #4      new AppDatabase (package:mealvana_endurance/shared/database/app_database.dart:121:19)
-I/flutter (27698): #5      appDatabaseProvider.<anonymous closure> (package:mealvana_endurance/shared/database/database_provider.dart:10:10)
-I/flutter (27698): #6      Provider.create (package:riverpod/src/providers/provider.dart:59:36)
-I/flutter (27698): #7      $ProviderElement.create (package:riverpod/src/providers/provider.dart:343:32)
-I/flutter (27698): #8      ProviderElement.buildState (package:riverpod/src/core/element.dart:633:28)
-I/flutter (27698): #9      ProviderElement._performRebuild (package:riverpod/src/core/element.dart:548:5)
-I/flutter (27698): #10     ProviderElement.flush (package:riverpod/src/core/element.dart:595:7)
-I/flutter (27698): #11     $ProviderBaseImpl._addListener (package:riverpod/src/core/provider/provider.dart:117:24)
-I/flutter (27698): #12     ProviderContainer.listen (package:riverpod/src/core/provider_container.dart:954:26)
-I/flutter (27698): #13     ProviderContainer.read (package:riverpod/src/core/provider_container.dart:911:17)
-I/flutter (27698): #14     Ref.read (package:riverpod/src/core/ref.dart:481:30)
-I/flutter (27698): #15     AppStartupService.initializeDatabase (package:mealvana_endurance/features/app_startup/application/app_startup_service.dart:44:22)
-I/flutter (27698): #16     AppStartup.build (package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart:129:24)
-I/flutter (27698): <asynchronous suspension>
-I/flutter (27698): #17     ElementWithFuture.handleFuture.<anonymous closure>.<anonymous closure> (package:riverpod/src/core/element.dart:220:9)
-I/flutter (27698): <asynchronous suspension>
-I/flutter (27698): This warning will only appear on debug builds.
-I/flutter (27698): PushNotificationService: Initialized with app ID: 335e597f...
-D/OneSignal(27698): [main] initWithContext(context: com.milkman.mealvanaendurance.MainActivity@e88b29f, appId: 335e597f-9862-4fa1-91f9-506d546ef953)
-D/OneSignal(27698): [main] initWithContext: SDK already initialized
-D/OneSignal(27698): [main] InAppMessagesManager.addLifecycleListener(listener: com.onesignal.flutter.OneSignalInAppMessages@3225763)
-D/OneSignal(27698): [main] InAppMessagesManager.addClickListener(listener: com.onesignal.flutter.OneSignalInAppMessages@3225763)
-D/OneSignal(27698): [main] NotificationsManager.addClickListener(handler: com.onesignal.flutter.OneSignalNotifications@5d18f60)
-D/OneSignal(27698): [main] login(externalId: BP4A.251205.006, jwtBearerToken: null)
-I/flutter (27698): PushNotificationService: Logged in user: BP4A.251205.006
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
-D/OneSignal(27698): [main] NotificationsManager.addForegroundLifecycleListener(listener: com.onesignal.flutter.OneSignalNotifications@5d18f60)
-D/OneSignal(27698): [main] NotificationsManager.addPermissionObserver(observer: com.onesignal.flutter.OneSignalNotifications@5d18f60)
-I/flutter (27698): PushNotificationService: Permission granted
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
-I/ImeTracker(27698): com.milkman.mealvanaendurance:f32bc64f: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
-D/InsetsController(27698): show(ime())
-D/InsetsController(27698): Setting requestedVisibleTypes to 511 (was 503)
-D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring on
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.view.ImeBackAnimationController@b287e6d
-D/VRI[MainActivity](27698): WindowInsets changed: ime:[0,0,0,953]
-I/ImeTracker(27698): com.milkman.mealvanaendurance:f32bc64f: onShown
-I/ImeTracker(27698): com.milkman.mealvanaendurance:e25f028f: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
-D/InsetsController(27698): show(ime())
-I/ImeTracker(27698): com.milkman.mealvanaendurance:e25f028f: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
-D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring on
-D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring off
-D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring on
-D/VRI[MainActivity](27698): WindowInsets changed: ime:[0,0,0,1085]
-I/ImeTracker(27698): system_server:2124234c: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
-I/flutter (27698): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (27698): │ AuthApiException(message: Invalid login credentials, statusCode: 400, code: invalid_credentials)
-I/flutter (27698): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (27698): │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)
-I/flutter (27698): │ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)
-I/flutter (27698): │ #2   EmailAuthService.signInWithEmail (package:mealvana_endurance/features/auth/application/email_auth_service.dart:400:15)
-I/flutter (27698): │ #3   <asynchronous suspension>
-I/flutter (27698): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (27698): │ 12:46:01.449 (+0:00:42.847064)
-I/flutter (27698): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (27698): │ ⛔ [EMAIL_AUTH] Email sign in failed
-I/flutter (27698): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (27698): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (27698): │ AuthApiException(message: Invalid login credentials, statusCode: 400, code: invalid_credentials)
-I/flutter (27698): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (27698): │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)
-I/flutter (27698): │ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)
-I/flutter (27698): │ #2   PostOnboardingAuthController.signInWithEmail (package:mealvana_endurance/features/auth/presentation/providers/post_onboarding_auth_controller.dart:267:15)
-I/flutter (27698): │ #3   <asynchronous suspension>
-I/flutter (27698): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (27698): │ 12:46:01.458 (+0:00:42.856523)
-I/flutter (27698): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (27698): │ ⛔ [AUTH] Post-onboarding auth: Email sign in failed
-I/flutter (27698): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/ImeTracker(27698): com.milkman.mealvanaendurance:a21a2f03: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
-D/InsetsController(27698): show(ime())
-I/ImeTracker(27698): com.milkman.mealvanaendurance:a21a2f03: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
-D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring on
-D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring off
-D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring on
-D/VRI[MainActivity](27698): WindowInsets changed: ime:[0,0,0,953]
-I/ImeTracker(27698): system_server:c1dc6a20: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
-I/ImeTracker(27698): com.milkman.mealvanaendurance:af553bb5: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
-D/InsetsController(27698): hide(ime())
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
-D/InsetsController(27698): Setting requestedVisibleTypes to 503 (was 511)
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
-D/VRI[MainActivity](27698): WindowInsets changed: ime:null
-I/ImeTracker(27698): system_server:507d4f79: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
-D/InputConnectionAdaptor(27698): The input method toggled cursor monitoring off
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@bcccd27
-D/WindowOnBackDispatcher(27698): setTopOnBackInvokedCallback (unwrapped): io.flutter.embedding.android.FlutterActivity$1@1dd358d
+Restarted application in 2,249ms.
+W/Sentry  (19434): Sentry has been already initialized. Previous configuration will be overwritten.
+D/sentry-native(19434): shutting down backend
+W/Sentry  (19434): Failed to shutdown the async connection async sender  within 0 ms. Trying to force it now.
+W/sentry-native(19434): sentry_close() called, but options was empty
+I/sentry-native(19434): using database path "/data/data/com.milkman.mealvanaendurance/cache/sentry/9f5b15b7ae6f78a1b5056948b8ce2792f3498c99/.sentry-native"
+D/sentry-native(19434): starting backend
+D/sentry-native(19434): using existing signal stack (size: 32768, flags: 0)
+D/sentry-native(19434): processing and pruning old runs
+W/Sentry  (19434): Current session is not ended, we'd need to end it.
+W/Sentry  (19434): Sentry has been already initialized. Previous configuration will be overwritten.
+D/sentry-native(19434): shutting down backend
+W/Sentry  (19434): Failed to shutdown the async connection async sender  within 0 ms. Trying to force it now.
+W/Sentry  (19434): Current session is not ended, we'd need to end it.
+W/Sentry  (19434): Not adding Envelope to offline storage because it already exists: /data/user/0/com.milkman.mealvanaendurance/cache/sentry/9f5b15b7ae6f78a1b5056948b8ce2792f3498c99/a1284f550147461596778204c09ea1df.envelope
+W/Sentry  (19434): Envelope rejected
+W/sentry-native(19434): sentry_close() called, but options was empty
+I/sentry-native(19434): using database path "/data/data/com.milkman.mealvanaendurance/cache/sentry/9f5b15b7ae6f78a1b5056948b8ce2792f3498c99/.sentry-native"
+D/sentry-native(19434): starting backend
+D/sentry-native(19434): using existing signal stack (size: 32768, flags: 0)
+D/sentry-native(19434): processing and pruning old runs
+W/Sentry  (19434): Current session is not ended, we'd need to end it.
+E/Sentry  (19434): Error reading and logging the response stream
+E/Sentry  (19434): java.io.InterruptedIOException: thread interrupted
+E/Sentry  (19434): 	at com.android.okhttp.okio.Timeout.throwIfReached(Timeout.java:147)
+E/Sentry  (19434): 	at com.android.okhttp.okio.Okio$1.write(Okio.java:75)
+E/Sentry  (19434): 	at com.android.okhttp.okio.AsyncTimeout$1.write(AsyncTimeout.java:157)
+E/Sentry  (19434): 	at com.android.okhttp.okio.RealBufferedSink.flush(RealBufferedSink.java:222)
+E/Sentry  (19434): 	at com.android.okhttp.internal.http.Http1xStream.finishRequest(Http1xStream.java:163)
+E/Sentry  (19434): 	at com.android.okhttp.internal.http.HttpEngine.readNetworkResponse(HttpEngine.java:748)
+E/Sentry  (19434): 	at com.android.okhttp.internal.http.HttpEngine.readResponse(HttpEngine.java:622)
+E/Sentry  (19434): 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.execute(HttpURLConnectionImpl.java:475)
+E/Sentry  (19434): 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponse(HttpURLConnectionImpl.java:411)
+E/Sentry  (19434): 	at com.android.okhttp.internal.huc.HttpURLConnectionImpl.getResponseCode(HttpURLConnectionImpl.java:542)
+E/Sentry  (19434): 	at com.android.okhttp.internal.huc.DelegatingHttpsURLConnection.getResponseCode(DelegatingHttpsURLConnection.java:106)
+E/Sentry  (19434): 	at com.android.okhttp.internal.huc.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:30)
+E/Sentry  (19434): 	at io.sentry.transport.HttpConnection.readAndLog(HttpConnection.java:178)
+E/Sentry  (19434): 	at io.sentry.transport.HttpConnection.send(HttpConnection.java:164)
+E/Sentry  (19434): 	at io.sentry.transport.AsyncHttpTransport$EnvelopeSender.flush(AsyncHttpTransport.java:299)
+E/Sentry  (19434): 	at io.sentry.transport.AsyncHttpTransport$EnvelopeSender.run(AsyncHttpTransport.java:244)
+E/Sentry  (19434): 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:520)
+E/Sentry  (19434): 	at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+E/Sentry  (19434): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+E/Sentry  (19434): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+E/Sentry  (19434): 	at java.lang.Thread.run(Thread.java:1564)
+D/Sentry  (19434): The transport failed to send the envelope with response code -1
+E/Sentry  (19434): Envelope submission failed
+E/Sentry  (19434): java.lang.IllegalStateException: The transport failed to send the envelope with response code -1
+E/Sentry  (19434): 	at io.sentry.transport.AsyncHttpTransport$EnvelopeSender.flush(AsyncHttpTransport.java:321)
+E/Sentry  (19434): 	at io.sentry.transport.AsyncHttpTransport$EnvelopeSender.run(AsyncHttpTransport.java:244)
+E/Sentry  (19434): 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:520)
+E/Sentry  (19434): 	at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+E/Sentry  (19434): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1154)
+E/Sentry  (19434): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:652)
+E/Sentry  (19434): 	at java.lang.Thread.run(Thread.java:1564)
+I/flutter (19434): supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+W/Sentry  (19434): Current session is not ended, we'd need to end it.
+I/flutter (19434): supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+I/flutter (19434): ✅ Schema validation passed (23 tables verified)
+I/flutter (19434): ✅ Schema validation passed (23 tables verified)
+I/flutter (19434): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (19434): │ 09:24:03.432 (+0:00:03.716566)
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ ⚠️ [DATABASE] Database corruption detected during startup - initiating recovery
+I/flutter (19434): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (19434): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (19434): │ SqliteException(5): while executing, database is locked, database is locked (code 5)
+I/flutter (19434): │   Causing statement: COMMIT TRANSACTION, parameters: 
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ #0   package:sqlite3/src/implementation/exception.dart 95:3                                       throwException
+I/flutter (19434): │ #1   package:sqlite3/src/implementation/database.dart 306:9                                       DatabaseImplementation.execute
+I/flutter (19434): │ #2   package:drift/src/sqlite3/database.dart 145:16                                               Sqlite3Delegate.runWithArgsSync
+I/flutter (19434): │ #3   package:drift/native.dart 425:30                                                             _NativeDelegate.runCustom.<fn>
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ 09:24:03.438 (+0:00:05.152908)
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ ⛔ [DATABASE] Database initialization failed
+I/flutter (19434): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (19434): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (19434): │ Exception: Database recovery failed: PathNotFoundException: Cannot delete file, path = '/data/user/0/com.milkman.mealvanaendurance/app_flutter/mealvana_endurance_db.sqlite' (OS Error: No such file or directory, errno = 2)
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ #0   AppDatabase.deleteAndResync (package:mealvana_endurance/shared/database/app_database.dart:458:7)
+I/flutter (19434): │ #1   <asynchronous suspension>
+I/flutter (19434): │ #2   AppStartupService.initializeDatabase (package:mealvana_endurance/features/app_startup/application/app_startup_service.dart:135:9)
+I/flutter (19434): │ #3   <asynchronous suspension>
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ 09:24:03.541 (+0:00:03.825684)
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ ⛔ [DATABASE] Database initialization failed
+I/flutter (19434): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (19434): WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
+I/flutter (19434): Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+I/flutter (19434): Here is the stacktrace from when the database was opened a second time:
+I/flutter (19434): #0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+I/flutter (19434): #1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+I/flutter (19434): #2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+I/flutter (19434): #3      new _$AppDatabase (package:mealvana_endurance/shared/database/app_database.g.dart:27707:36)
+I/flutter (19434): #4      new AppDatabase (package:mealvana_endurance/shared/database/app_database.dart:125:19)
+I/flutter (19434): #5      appDatabaseProvider.<anonymous closure> (package:mealvana_endurance/shared/database/database_provider.dart:10:10)
+I/flutter (19434): #6      Provider.create (package:riverpod/src/providers/provider.dart:59:36)
+I/flutter (19434): #7      $ProviderElement.create (package:riverpod/src/providers/provider.dart:343:32)
+I/flutter (19434): #8      ProviderElement.buildState (package:riverpod/src/core/element.dart:633:28)
+I/flutter (19434): #9      ProviderElement._performRebuild (package:riverpod/src/core/element.dart:548:5)
+I/flutter (19434): #10     ProviderElement.flush (package:riverpod/src/core/element.dart:595:7)
+I/flutter (19434): #11     $ProviderBaseImpl._addListener (package:riverpod/src/core/provider/provider.dart:117:24)
+I/flutter (19434): #12     ProviderContainer.listen (package:riverpod/src/core/provider_container.dart:954:26)
+I/flutter (19434): #13     ProviderContainer.read (package:riverpod/src/core/provider_container.dart:911:17)
+I/flutter (19434): #14     Ref.read (package:riverpod/src/core/ref.dart:481:30)
+I/flutter (19434): #15     AppStartup.build (package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart:142:28)
+I/flutter (19434): <asynchronous suspension>
+I/flutter (19434): #16     ElementWithFuture.handleFuture.<anonymous closure>.<anonymous closure> (package:riverpod/src/core/element.dart:220:9)
+I/flutter (19434): <asynchronous suspension>
+I/flutter (19434): This warning will only appear on debug builds.
+I/flutter (19434): PushNotificationService: Initialized with app ID: 335e597f...
+D/OneSignal(19434): [main] initWithContext(context: com.milkman.mealvanaendurance.MainActivity@b4569d9, appId: 335e597f-9862-4fa1-91f9-506d546ef953)
+D/OneSignal(19434): [main] initWithContext: SDK already initialized
+D/OneSignal(19434): [main] InAppMessagesManager.addLifecycleListener(listener: com.onesignal.flutter.OneSignalInAppMessages@14df5a0)
+D/OneSignal(19434): [main] InAppMessagesManager.addClickListener(listener: com.onesignal.flutter.OneSignalInAppMessages@14df5a0)
+D/OneSignal(19434): [main] NotificationsManager.addClickListener(handler: com.onesignal.flutter.OneSignalNotifications@2a451ff)
+D/OneSignal(19434): [main] login(externalId: BP4A.251205.006, jwtBearerToken: null)
+I/flutter (19434): PushNotificationService: Logged in user: BP4A.251205.006
+D/OneSignal(19434): [main] NotificationsManager.addForegroundLifecycleListener(listener: com.onesignal.flutter.OneSignalNotifications@2a451ff)
+D/OneSignal(19434): [main] NotificationsManager.addPermissionObserver(observer: com.onesignal.flutter.OneSignalNotifications@2a451ff)
+I/flutter (19434): PushNotificationService: Permission granted
+I/scudo   (19434): Can't populate more pages for size class 1104.
+I/flutter (19434): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (19434): │ SqliteException(5): while preparing statement, database is locked, database is locked (code 5)
+I/flutter (19434): │   Causing statement: SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ #0   package:sqlite3/src/implementation/exception.dart 95:3                                        throwException
+I/flutter (19434): │ #1   package:sqlite3/src/implementation/database.dart 373:9                                        DatabaseImplementation._prepareInternal
+I/flutter (19434): │ #2   package:sqlite3/src/implementation/database.dart 432:19                                       DatabaseImplementation.prepare
+I/flutter (19434): │ #3   package:sqlite3/src/ffi/implementation.dart 117:18                                            FfiDatabaseImplementation.prepare
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ 09:24:05.336 (+0:00:07.051528)
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ ⛔ [APP_STARTUP] App startup initialization failed
+I/flutter (19434): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (19434): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (19434): │ SqliteException(5): while preparing statement, database is locked, database is locked (code 5)
+I/flutter (19434): │   Causing statement: SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ #0   package:sqlite3/src/implementation/exception.dart 95:3                                        throwException
+I/flutter (19434): │ #1   package:sqlite3/src/implementation/database.dart 373:9                                        DatabaseImplementation._prepareInternal
+I/flutter (19434): │ #2   package:sqlite3/src/implementation/database.dart 432:19                                       DatabaseImplementation.prepare
+I/flutter (19434): │ #3   package:sqlite3/src/ffi/implementation.dart 117:18                                            FfiDatabaseImplementation.prepare
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ 09:24:05.735 (+0:00:07.449946)
+I/flutter (19434): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (19434): │ ⛔ [DATABASE] Database initialization failed
+I/flutter (19434): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (19434): WARNING (drift): It looks like you've created the database class AppDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database.
+I/flutter (19434): Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+I/flutter (19434): Here is the stacktrace from when the database was opened a second time:
+I/flutter (19434): #0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+I/flutter (19434): #1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+I/flutter (19434): #2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+I/flutter (19434): #3      new _$AppDatabase (package:mealvana_endurance/shared/database/app_database.g.dart:27707:36)
+I/flutter (19434): #4      new AppDatabase (package:mealvana_endurance/shared/database/app_database.dart:125:19)
+I/flutter (19434): #5      appDatabaseProvider.<anonymous closure> (package:mealvana_endurance/shared/database/database_provider.dart:10:10)
+I/flutter (19434): #6      Provider.create (package:riverpod/src/providers/provider.dart:59:36)
+I/flutter (19434): #7      $ProviderElement.create (package:riverpod/src/providers/provider.dart:343:32)
+I/flutter (19434): #8      ProviderElement.buildState (package:riverpod/src/core/element.dart:633:28)
+I/flutter (19434): #9      ProviderElement._performRebuild (package:riverpod/src/core/element.dart:548:5)
+I/flutter (19434): #10     ProviderElement.flush (package:riverpod/src/core/element.dart:595:7)
+I/flutter (19434): #11     $ProviderBaseImpl._addListener (package:riverpod/src/core/provider/provider.dart:117:24)
+I/flutter (19434): #12     ProviderContainer.listen (package:riverpod/src/core/provider_container.dart:954:26)
+I/flutter (19434): #13     ProviderContainer.read (package:riverpod/src/core/provider_container.dart:911:17)
+I/flutter (19434): #14     Ref.read (package:riverpod/src/core/ref.dart:481:30)
+I/flutter (19434): #15     AppStartup.build (package:mealvana_endurance/features/app_startup/application/app_startup_provider.dart:142:28)
+I/flutter (19434): <asynchronous suspension>
+I/flutter (19434): #16     ElementWithFuture.handleFuture.<anonymous closure>.<anonymous closure> (package:riverpod/src/core/element.dart:220:9)
+I/flutter (19434): <asynchronous suspension>
+I/flutter (19434): This warning will only appear on debug builds.
+D/OneSignal(19434): [main] login(externalId: BP4A.251205.006, jwtBearerToken: null)
+I/flutter (19434): PushNotificationService: Logged in user: BP4A.251205.006
+I/flutter (19434): PushNotificationService: Permission granted
+Application finished.
+
+Exited.

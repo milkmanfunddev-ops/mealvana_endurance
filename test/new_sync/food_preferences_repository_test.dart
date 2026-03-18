@@ -29,23 +29,29 @@ void main() {
     mockSentry = MockSentryReporter();
 
     // Set up Sentry to not throw on method calls
-    when(() => mockSentry.addBreadcrumb(
-          message: any(named: 'message'),
-          category: any(named: 'category'),
-          data: any(named: 'data'),
-        )).thenReturn(null);
-    when(() => mockSentry.reportDatabaseError(
-          any(),
-          operation: any(named: 'operation'),
-          table: any(named: 'table'),
-          stackTrace: any(named: 'stackTrace'),
-        )).thenAnswer((_) async {});
-    when(() => mockSentry.reportNetworkError(
-          any(),
-          url: any(named: 'url'),
-          method: any(named: 'method'),
-          stackTrace: any(named: 'stackTrace'),
-        )).thenAnswer((_) async {});
+    when(
+      () => mockSentry.addBreadcrumb(
+        message: any(named: 'message'),
+        category: any(named: 'category'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockSentry.reportDatabaseError(
+        any(),
+        operation: any(named: 'operation'),
+        table: any(named: 'table'),
+        stackTrace: any(named: 'stackTrace'),
+      ),
+    ).thenAnswer((_) async {});
+    when(
+      () => mockSentry.reportNetworkError(
+        any(),
+        url: any(named: 'url'),
+        method: any(named: 'method'),
+        stackTrace: any(named: 'stackTrace'),
+      ),
+    ).thenAnswer((_) async {});
   });
 
   tearDown(() async {
@@ -64,7 +70,7 @@ void main() {
       expect(repository.repositoryKey, 'food_preferences');
     });
 
-    test('dependencies should return ["users", "foods"]', () {
+    test('dependencies should return ["users", "template_foods"]', () {
       final mockSupabase = MockSupabaseClient();
       final repository = FoodPreferencesRepository(
         supabase: mockSupabase,
@@ -72,7 +78,7 @@ void main() {
         sentry: mockSentry,
       );
 
-      expect(repository.dependencies, ['users', 'foods']);
+      expect(repository.dependencies, ['users', 'template_foods']);
     });
 
     test('isStale should return true when never synced', () async {
@@ -100,20 +106,22 @@ void main() {
       expect(isStale, false);
     });
 
-    test('isStale should return true when synced more than 24 hours ago',
-        () async {
-      final mockSupabase = MockSupabaseClient();
-      final repository = FoodPreferencesRepository(
-        supabase: mockSupabase,
-        database: database,
-        sentry: mockSentry,
-      );
+    test(
+      'isStale should return true when synced more than 24 hours ago',
+      () async {
+        final mockSupabase = MockSupabaseClient();
+        final repository = FoodPreferencesRepository(
+          supabase: mockSupabase,
+          database: database,
+          sentry: mockSentry,
+        );
 
-      final oldSync = DateTime.now().subtract(const Duration(hours: 25));
-      await repository.setLastSyncTime(oldSync);
-      final isStale = await repository.isStale();
-      expect(isStale, true);
-    });
+        final oldSync = DateTime.now().subtract(const Duration(hours: 25));
+        await repository.setLastSyncTime(oldSync);
+        final isStale = await repository.isStale();
+        expect(isStale, true);
+      },
+    );
   });
 
   group('Timestamp Management', () {
@@ -129,8 +137,7 @@ void main() {
       expect(timestamp, null);
     });
 
-    test('setLastSyncTime and getLastSyncTime should work correctly',
-        () async {
+    test('setLastSyncTime and getLastSyncTime should work correctly', () async {
       final mockSupabase = MockSupabaseClient();
       final repository = FoodPreferencesRepository(
         supabase: mockSupabase,

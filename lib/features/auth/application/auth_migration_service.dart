@@ -11,17 +11,22 @@ part 'auth_migration_service.g.dart';
 
 /// Service for handling OAuth migration logic from anonymous profiles
 /// Extracted from UserRepository to follow FOA pattern
-@riverpod
-class AuthMigrationService extends _$AuthMigrationService {
-  Future<UserRepository> get _userRepository async => await ref.read(userRepositoryProvider.future);
-  AppDatabase get _database => ref.read(appDatabaseProvider);
-  SupabaseClient get _supabase => ref.read(appExternalDepsProvider).supabaseClient;
-  SentryReporter get _sentry => ref.read(sentryReporterProvider);
+///
+/// NOTE: This is a simple class with a function provider (NOT an AsyncNotifier).
+/// AsyncNotifier providers get disposed during async gaps, which breaks auth flows
+/// that call completeAuthentication() after Supabase auth calls.
+class AuthMigrationService {
+  AuthMigrationService({
+    required this.userRepository,
+    required this.database,
+    required this.supabase,
+    required this.sentry,
+  });
 
-  @override
-  void build() {
-    // Stateless service - no state to initialize
-  }
+  final UserRepository userRepository;
+  final AppDatabase database;
+  final SupabaseClient supabase;
+  final SentryReporter sentry;
 
   /// Migrate all data from anonymous user to OAuth user when signing into existing account
   /// This is called when account linking fails (account already exists) and user chooses to sign in
@@ -34,9 +39,9 @@ class AuthMigrationService extends _$AuthMigrationService {
     try {
       // Get the anonymous user's profile to preserve their data
       final anonymousProfile =
-          await (await _userRepository).getUserProfileById(fromAnonymousUserId);
+          await userRepository.getUserProfileById(fromAnonymousUserId);
       if (anonymousProfile == null) {
-        _sentry.addBreadcrumb(
+        sentry.addBreadcrumb(
           message: 'No anonymous profile found to migrate',
           category: 'auth',
           data: {'from_user_id': fromAnonymousUserId},
@@ -51,10 +56,10 @@ class AuthMigrationService extends _$AuthMigrationService {
       bool oauthUserHasData = false;
       try {
         oauthUserHasData =
-            await (await _userRepository).checkUserHasData(toOAuthUserId);
+            await userRepository.checkUserHasData(toOAuthUserId);
       } catch (e) {
         // FAIL SAFE: Assume data exists to prevent data loss on network error
-        _sentry.addBreadcrumb(
+        sentry.addBreadcrumb(
           message:
               'Error checking OAuth user data - assuming exists to prevent data loss',
           category: 'auth',
@@ -68,7 +73,7 @@ class AuthMigrationService extends _$AuthMigrationService {
         // - OAuth user has historical data on server (e.g., 50 activities from last year)
         // - Anonymous user has test/onboarding data from new device (e.g., 1 test activity)
         // - CORRECT BEHAVIOR: Keep OAuth data, discard anonymous data
-        _sentry.addBreadcrumb(
+        sentry.addBreadcrumb(
           message:
               'OAuth user exists on server - preserving existing data, discarding anonymous data',
           category: 'auth',
@@ -89,9 +94,9 @@ class AuthMigrationService extends _$AuthMigrationService {
           isAnonymous: false,
           updatedAt: DateTime.now(),
         );
-        await (await _userRepository).saveUserProfile(oauthProfile);
+        await userRepository.saveUserProfile(oauthProfile);
 
-        _sentry.addBreadcrumb(
+        sentry.addBreadcrumb(
           message:
               'Cleared anonymous data - OAuth user data will sync from server',
           category: 'auth',
@@ -105,7 +110,7 @@ class AuthMigrationService extends _$AuthMigrationService {
         // - OAuth user has NO data on server
         // - Anonymous user has fresh onboarding data from this device
         // - CORRECT BEHAVIOR: Keep anonymous data, migrate it to OAuth user
-        _sentry.addBreadcrumb(
+        sentry.addBreadcrumb(
           message: 'New OAuth account - migrating anonymous user data',
           category: 'auth',
           data: {
@@ -141,7 +146,7 @@ class AuthMigrationService extends _$AuthMigrationService {
           authProvider: authProvider,
         );
 
-        _sentry.addBreadcrumb(
+        sentry.addBreadcrumb(
           message:
               'Successfully migrated anonymous user data to new OAuth user',
           category: 'auth',
@@ -152,7 +157,7 @@ class AuthMigrationService extends _$AuthMigrationService {
         );
       }
     } catch (e, stackTrace) {
-      await _sentry.reportDatabaseError(
+      await sentry.reportDatabaseError(
         e,
         operation: 'migrateAnonymousUserData',
         table: 'multiple',
@@ -166,22 +171,22 @@ class AuthMigrationService extends _$AuthMigrationService {
   /// This must be called AFTER migrating child table data to free up the device_id
   Future<void> _deleteAnonymousUserFromSupabase(String anonymousUserId) async {
     try {
-      await _supabase.from('users').delete().eq('id', anonymousUserId);
+      await supabase.from('users').delete().eq('id', anonymousUserId);
 
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Deleted anonymous user from Supabase',
         category: 'auth',
         data: {'anonymous_user_id': anonymousUserId},
       );
     } catch (e, stackTrace) {
       // Log but don't throw - user may not exist in Supabase
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message:
             'Failed to delete anonymous user from Supabase (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
-      await _sentry.reportNetworkError(
+      await sentry.reportNetworkError(
         e,
         url: 'supabase:users:delete',
         method: 'DELETE',
@@ -202,13 +207,13 @@ class AuthMigrationService extends _$AuthMigrationService {
     try {
       // UPSERT user record with OAuth user ID and anonymous user's data
       // This works whether the OAuth user exists or not
-      await _supabase.from('users').upsert({
+      await supabase.from('users').upsert({
         'id': oauthUserId,
         'device_id': anonymousProfile.deviceId,
         'auth_user_id': oauthUserId,
         'auth_provider':
-            authProvider, // ✅ Uses parameter (apple, google, email)
-        'is_anonymous': false, // ✅ Always set to false for OAuth users
+            authProvider,
+        'is_anonymous': false,
         'gender': anonymousProfile.gender.name,
         'birthday': anonymousProfile.birthday.toIso8601String().split('T')[0],
         'height_feet': anonymousProfile.heightFeet,
@@ -231,13 +236,13 @@ class AuthMigrationService extends _$AuthMigrationService {
         'updated_at': DateTime.now().toIso8601String(),
       }, onConflict: 'id');
 
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Upserted OAuth user in Supabase with anonymous profile data',
         category: 'auth',
         data: {'oauth_user_id': oauthUserId, 'auth_provider': authProvider},
       );
     } catch (e, stackTrace) {
-      await _sentry.reportNetworkError(
+      await sentry.reportNetworkError(
         e,
         url: 'supabase:users:upsert',
         method: 'UPSERT',
@@ -257,20 +262,20 @@ class AuthMigrationService extends _$AuthMigrationService {
     // ============ EVENTS ============
     // Events have UNIQUE constraint on (user_id, event_date, event_name) - delete OAuth's first
     try {
-      await _supabase.from('events').delete().eq('user_id', toUserId);
+      await supabase.from('events').delete().eq('user_id', toUserId);
     } catch (e) {
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Failed to delete OAuth user events (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
     }
     try {
-      await _supabase
+      await supabase
           .from('events')
           .update({'user_id': toUserId}).eq('user_id', fromUserId);
     } catch (e) {
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Failed to migrate events (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
@@ -280,20 +285,20 @@ class AuthMigrationService extends _$AuthMigrationService {
     // ============ ACTIVITIES ============
     // Activities have UNIQUE constraint on (user_id, scheduled_date) - delete OAuth's first
     try {
-      await _supabase.from('activities').delete().eq('user_id', toUserId);
+      await supabase.from('activities').delete().eq('user_id', toUserId);
     } catch (e) {
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Failed to delete OAuth user activities (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
     }
     try {
-      await _supabase
+      await supabase
           .from('activities')
           .update({'user_id': toUserId}).eq('user_id', fromUserId);
     } catch (e) {
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Failed to migrate activities (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
@@ -303,23 +308,23 @@ class AuthMigrationService extends _$AuthMigrationService {
     // ============ FOOD PREFERENCES ============
     // Food preferences have UNIQUE constraint on (user_id, food_name) - delete OAuth's first
     try {
-      await _supabase
+      await supabase
           .from('food_preferences')
           .delete()
           .eq('user_id', toUserId);
     } catch (e) {
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Failed to delete OAuth user food_preferences (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
     }
     try {
-      await _supabase
+      await supabase
           .from('food_preferences')
           .update({'user_id': toUserId}).eq('user_id', fromUserId);
     } catch (e) {
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Failed to migrate food_preferences (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
@@ -329,20 +334,20 @@ class AuthMigrationService extends _$AuthMigrationService {
     // ============ USER FOODS ============
     // User foods have UNIQUE constraint on (user_id, food_name) - delete OAuth's first
     try {
-      await _supabase.from('user_foods').delete().eq('user_id', toUserId);
+      await supabase.from('user_foods').delete().eq('user_id', toUserId);
     } catch (e) {
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Failed to delete OAuth user user_foods (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
       );
     }
     try {
-      await _supabase
+      await supabase
           .from('user_foods')
           .update({'user_id': toUserId}).eq('user_id', fromUserId);
     } catch (e) {
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Failed to migrate user_foods (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
@@ -354,12 +359,12 @@ class AuthMigrationService extends _$AuthMigrationService {
     // Note: carb_loading_days is a CHILD table with ON DELETE CASCADE in Supabase,
     // so deleting plans will automatically delete associated days
     try {
-      await _supabase
+      await supabase
           .from('carb_loading_plans')
           .delete()
           .eq('user_id', toUserId);
     } catch (e) {
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message:
             'Failed to delete OAuth user carb_loading_plans (may not exist)',
         category: 'auth',
@@ -370,11 +375,11 @@ class AuthMigrationService extends _$AuthMigrationService {
     // Note: carb_loading_days does NOT have user_id column - it inherits
     // user ownership through carb_loading_plan_id foreign key
     try {
-      await _supabase
+      await supabase
           .from('carb_loading_plans')
           .update({'user_id': toUserId}).eq('user_id', fromUserId);
     } catch (e) {
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Failed to migrate carb_loading_plans (may not exist)',
         category: 'auth',
         data: {'error': e.toString()},
@@ -396,7 +401,7 @@ class AuthMigrationService extends _$AuthMigrationService {
   }) async {
     // STEP 1: Update user_id in all local child tables (activities, events, etc.)
     // This must happen BEFORE deleting the anonymous user profile
-    await _database.diagnosticDao.migrateUserData(fromUserId, toUserId);
+    await database.diagnosticDao.migrateUserData(fromUserId, toUserId);
 
     // Note: migrateUserData already deletes the anonymous user profile from the local DB
     // Now we just need to create/update the OAuth user profile
@@ -411,32 +416,32 @@ class AuthMigrationService extends _$AuthMigrationService {
     );
 
     // STEP 3: Save the migrated OAuth user profile
-    await (await _userRepository).saveUserProfile(migratedProfile);
+    await userRepository.saveUserProfile(migratedProfile);
   }
 
   /// Clear anonymous user's local data when OAuth user has existing data on server
   /// This prevents data loss - OAuth user's server data will be downloaded on next sync
   Future<void> _clearAnonymousUserLocalData(String anonymousUserId) async {
-    await _database.transaction(() async {
+    await database.transaction(() async {
       // Delete anonymous user's activities
-      await _database.customStatement(
+      await database.customStatement(
         'DELETE FROM activities WHERE user_id = ?',
         [anonymousUserId],
       );
 
       // Delete anonymous user's events
-      await _database.customStatement('DELETE FROM events WHERE user_id = ?', [
+      await database.customStatement('DELETE FROM events WHERE user_id = ?', [
         anonymousUserId,
       ]);
 
       // Delete anonymous user's food preferences
-      await _database.customStatement(
+      await database.customStatement(
         'DELETE FROM food_preferences_table WHERE user_id = ?',
         [anonymousUserId],
       );
 
       // Delete anonymous user's custom foods
-      await _database.customStatement(
+      await database.customStatement(
         'DELETE FROM user_foods WHERE user_id = ?',
         [anonymousUserId],
       );
@@ -445,7 +450,7 @@ class AuthMigrationService extends _$AuthMigrationService {
       // Delete child tables first (carb_loading_day_meals -> carb_loading_days -> carb_loading_plans)
 
       // Step 1: Delete carb_loading_day_meals via carb_loading_days via carb_loading_plans
-      await _database.customStatement(
+      await database.customStatement(
         '''
         DELETE FROM carb_loading_day_meals
         WHERE carb_loading_day_id IN (
@@ -459,7 +464,7 @@ class AuthMigrationService extends _$AuthMigrationService {
       );
 
       // Step 2: Delete carb_loading_days via carb_loading_plans
-      await _database.customStatement(
+      await database.customStatement(
         '''
         DELETE FROM carb_loading_days
         WHERE carb_loading_plan_id IN (
@@ -470,31 +475,31 @@ class AuthMigrationService extends _$AuthMigrationService {
       );
 
       // Step 3: Delete carb_loading_plans
-      await _database.customStatement(
+      await database.customStatement(
         'DELETE FROM carb_loading_plans WHERE user_id = ?',
         [anonymousUserId],
       );
 
       // Delete anonymous user's carb loading user foods
-      await _database.customStatement(
+      await database.customStatement(
         'DELETE FROM carb_loading_user_foods WHERE user_id = ?',
         [anonymousUserId],
       );
 
       // Delete anonymous user profile
-      await _database.customStatement('DELETE FROM users WHERE id = ?', [
+      await database.customStatement('DELETE FROM users WHERE id = ?', [
         anonymousUserId,
       ]);
     });
 
-    _sentry.addBreadcrumb(
+    sentry.addBreadcrumb(
       message: 'Cleared anonymous user local data',
       category: 'auth',
       data: {'anonymous_user_id': anonymousUserId},
     );
   }
 
-  /// ✨ UNIFIED: Complete authentication for ANY provider (Apple, Google, Email)
+  /// UNIFIED: Complete authentication for ANY provider (Apple, Google, Email)
   /// This is the single entry point for all post-authentication logic.
   ///
   /// Handles three scenarios:
@@ -527,7 +532,7 @@ class AuthMigrationService extends _$AuthMigrationService {
 
       if (needsMigration) {
         // SCENARIO 1: Sign-In with Migration (user ID changed)
-        _sentry.addBreadcrumb(
+        sentry.addBreadcrumb(
           message: 'Auth complete - migrating anonymous user data',
           category: 'auth',
           data: {
@@ -539,7 +544,7 @@ class AuthMigrationService extends _$AuthMigrationService {
         );
 
         final hasDataToMigrate =
-            await (await _userRepository).checkUserHasData(previousUserId);
+            await userRepository.checkUserHasData(previousUserId);
         if (hasDataToMigrate) {
           await migrateAnonymousUserData(
             fromAnonymousUserId: previousUserId,
@@ -552,7 +557,7 @@ class AuthMigrationService extends _$AuthMigrationService {
         }
       } else if (preservedUserId) {
         // SCENARIO 2: Account Linking (user ID preserved)
-        _sentry.addBreadcrumb(
+        sentry.addBreadcrumb(
           message: 'Auth complete - account linked',
           category: 'auth',
           data: {
@@ -565,14 +570,14 @@ class AuthMigrationService extends _$AuthMigrationService {
         // Update both local and remote database
         // CRITICAL: Set authUserId to newUserId for email linking
         // This ensures userIdProvider can find the profile by authUserId
-        await (await _userRepository).updateAuthProvider(
+        await userRepository.updateAuthProvider(
           authProvider: authProvider,
           isAnonymous: false,
           authUserId: newUserId,
         );
       } else {
         // SCENARIO 3: Fresh Login (no migration needed)
-        _sentry.addBreadcrumb(
+        sentry.addBreadcrumb(
           message: 'Auth complete - fresh login',
           category: 'auth',
           data: {
@@ -587,7 +592,7 @@ class AuthMigrationService extends _$AuthMigrationService {
 
       return dataMigrated;
     } catch (e, stackTrace) {
-      await _sentry.reportDatabaseError(
+      await sentry.reportDatabaseError(
         e,
         operation: 'completeAuthentication',
         table: 'user_profiles',
@@ -623,10 +628,10 @@ class AuthMigrationService extends _$AuthMigrationService {
       if (needsMigration) {
         // Check if the anonymous user actually has data worth migrating
         final hasDataToMigrate =
-            await (await _userRepository).checkUserHasData(previousUserId);
+            await userRepository.checkUserHasData(previousUserId);
 
         if (hasDataToMigrate) {
-          _sentry.addBreadcrumb(
+          sentry.addBreadcrumb(
             message: 'Migrating anonymous user data during sign-in',
             category: 'auth',
             data: {
@@ -643,7 +648,7 @@ class AuthMigrationService extends _$AuthMigrationService {
           );
           dataMigrated = true;
         } else {
-          _sentry.addBreadcrumb(
+          sentry.addBreadcrumb(
             message: 'Skipping migration - anonymous user has no data',
             category: 'auth',
             data: {
@@ -654,13 +659,13 @@ class AuthMigrationService extends _$AuthMigrationService {
           // Try to update auth provider, but fallback if user is missing
           // This handles race conditions where AppStartupService might have cleared the anonymous user
           try {
-            await (await _userRepository).updateAuthProvider(
+            await userRepository.updateAuthProvider(
               authProvider: authProvider,
               isAnonymous: false,
             );
           } catch (e) {
             if (e.toString().contains('No current user found')) {
-              _sentry.addBreadcrumb(
+              sentry.addBreadcrumb(
                 message:
                     'User missing during auth update - treating as fresh login',
                 category: 'auth',
@@ -676,7 +681,7 @@ class AuthMigrationService extends _$AuthMigrationService {
         // This handles:
         // - User signing back into their existing account
         // - User was not anonymous before sign-in
-        _sentry.addBreadcrumb(
+        sentry.addBreadcrumb(
           message: 'Updating auth provider (no migration needed)',
           category: 'auth',
           data: {
@@ -692,7 +697,7 @@ class AuthMigrationService extends _$AuthMigrationService {
 
       return dataMigrated;
     } catch (e, stackTrace) {
-      await _sentry.reportDatabaseError(
+      await sentry.reportDatabaseError(
         e,
         operation: 'handleSignInCompletion',
         table: 'user_profiles',
@@ -704,7 +709,7 @@ class AuthMigrationService extends _$AuthMigrationService {
 
   /// Handle fresh login (fetch remote profile or create new in Supabase)
   Future<void> _handleFreshLogin(String userId, String authProvider) async {
-    _sentry.addBreadcrumb(
+    sentry.addBreadcrumb(
       message: 'Starting fresh login flow',
       category: 'auth',
       data: {'user_id': userId, 'auth_provider': authProvider},
@@ -712,12 +717,12 @@ class AuthMigrationService extends _$AuthMigrationService {
 
     // Fetch user profile from Supabase (for existing accounts)
     final remoteProfile =
-        await (await _userRepository).fetchAndSaveRemoteProfile(userId);
+        await userRepository.fetchAndSaveRemoteProfile(userId);
 
     if (remoteProfile != null) {
       // User exists in Supabase - update profile directly (no second lookup)
       // This fixes the "No current user found" error by avoiding getCurrentUser() race condition
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Fresh login - profile found in Supabase, updating directly',
         category: 'auth',
         data: {
@@ -738,9 +743,9 @@ class AuthMigrationService extends _$AuthMigrationService {
         updatedAt: DateTime.now(),
       );
 
-      await (await _userRepository).saveUserProfile(updatedProfile);
+      await userRepository.saveUserProfile(updatedProfile);
 
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Fresh login - profile updated successfully',
         category: 'auth',
         data: {
@@ -750,9 +755,9 @@ class AuthMigrationService extends _$AuthMigrationService {
         },
       );
     } else {
-      // 🚨 CRITICAL: Profile not found in Supabase - create it NOW
+      // CRITICAL: Profile not found in Supabase - create it NOW
       // This happens when user signs in for first time or after local DB wipe
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Fresh login - profile NOT found in Supabase, creating it',
         category: 'auth',
         data: {'user_id': userId, 'auth_provider': authProvider},
@@ -778,10 +783,10 @@ class AuthMigrationService extends _$AuthMigrationService {
         updatedAt: now,
       );
 
-      await (await _userRepository).saveUserProfile(newProfile);
-      await (await _userRepository).createUserInSupabase(userId, newProfile);
+      await userRepository.saveUserProfile(newProfile);
+      await userRepository.createUserInSupabase(userId, newProfile);
 
-      _sentry.addBreadcrumb(
+      sentry.addBreadcrumb(
         message: 'Fresh login - new profile created successfully',
         category: 'auth',
         data: {
@@ -792,4 +797,21 @@ class AuthMigrationService extends _$AuthMigrationService {
       );
     }
   }
+}
+
+/// Riverpod provider for AuthMigrationService
+/// Uses a simple async function provider (NOT AsyncNotifier) to prevent disposal during auth flows
+@riverpod
+Future<AuthMigrationService> authMigrationService(Ref ref) async {
+  final userRepository = await ref.watch(userRepositoryProvider.future);
+  final database = ref.watch(appDatabaseProvider);
+  final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
+  final sentry = ref.watch(sentryReporterProvider);
+
+  return AuthMigrationService(
+    userRepository: userRepository,
+    database: database,
+    supabase: supabase,
+    sentry: sentry,
+  );
 }

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../shared/services/logging_service.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_message.dart';
 
@@ -30,41 +33,60 @@ class AthleteFeedbackState {
 @riverpod
 class AthleteFeedbackController extends _$AthleteFeedbackController {
   CoachService get _coachService => ref.read(coachServiceProvider);
+  AppLogger get _logger => ref.read(appLoggerProvider);
 
   @override
   FutureOr<AthleteFeedbackState> build() async {
     return _loadMessages();
   }
 
+  /// Load local messages immediately, sync in background
   Future<AthleteFeedbackState> _loadMessages() async {
-    // Get all active coach relationships for this athlete
+    // 1. Load local data IMMEDIATELY
     final coaches = await _coachService.getMyCoaches();
 
     if (coaches.isEmpty) {
+      // Still try background sync - we may not have synced relationships yet
+      unawaited(_backgroundSync());
       return const AthleteFeedbackState();
     }
 
-    // Collect all messages from all coaches
     final allMessages = <CoachMessage>[];
 
     for (final relationship in coaches) {
-      // Get conversation with this coach
       final messages = await _coachService.getConversation(
         coachUserId: relationship.coachUserId,
         athleteUserId: relationship.athleteUserId,
       );
 
-      // Filter to only messages from coach (not athlete's own messages)
       final coachMessages = messages.where((m) => m.isSentByCoach);
       allMessages.addAll(coachMessages);
     }
 
-    // Sort by date (newest first)
     allMessages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    // 2. Background sync (fire-and-forget) - fixes bug where new coach messages weren't showing
+    unawaited(_backgroundSync());
 
     return AthleteFeedbackState(
       allMessages: allMessages,
     );
+  }
+
+  /// Background sync: fetches latest relationships and coach data, then refreshes UI
+  Future<void> _backgroundSync() async {
+    try {
+      await _coachService.syncRelationshipsFromSupabase();
+      await _coachService.syncMyCoachesData();
+      ref.invalidateSelf();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Background sync failed',
+        context: 'ATHLETE_FEEDBACK_CONTROLLER',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   Future<void> refresh() async {

@@ -170,6 +170,7 @@ class FoodOperationsService {
     if (quantity != 1 &&
         item.displayNamePlural?.isEmpty != false &&
         !label.contains(' ') &&
+        !label.contains('+') &&
         !label.toLowerCase().endsWith('s')) {
       label = '${label}s';
     }

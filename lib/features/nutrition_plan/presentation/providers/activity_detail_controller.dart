@@ -303,6 +303,14 @@ class ActivityDetailController extends _$ActivityDetailController {
           activity: completedActivity,
         );
 
+        // Fire-and-forget: push feedback to TrainingPeaks
+        unawaited(_pushFeedbackToTrainingPeaks(
+          user.id,
+          completedActivity,
+          overallSatisfaction,
+          textNotes,
+        ));
+
         // Reload activity to get updated completion data
         ref.invalidateSelf();
 
@@ -1629,6 +1637,27 @@ class ActivityDetailController extends _$ActivityDetailController {
       await prefs.setBool(swipeHintShownKey, true);
     } catch (e) {
       // Silently fail
+    }
+  }
+
+  /// Fire-and-forget push of completion feedback to TrainingPeaks.
+  /// Catches all errors — feedback push must never block completion.
+  Future<void> _pushFeedbackToTrainingPeaks(
+    String userId,
+    Activity activity,
+    int rating,
+    String? notes,
+  ) async {
+    try {
+      final service = await ref.read(tpWritebackServiceProvider.future);
+      await service.pushCompletionFeedback(
+        userId: userId,
+        activity: activity,
+        rating: rating,
+        notes: notes,
+      );
+    } catch (e) {
+      DebugLogger.error('TP feedback push failed (non-blocking): $e');
     }
   }
 

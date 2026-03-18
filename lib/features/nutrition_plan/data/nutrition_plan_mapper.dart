@@ -296,12 +296,26 @@ class NutritionPlanMapper {
             ((post['sodium_mg'] as num?) ?? 0);
         final totalCalories = (totalCarbs * 4 + totalProtein * 4 + totalFat * 9)
             .round();
+        // Extract pre-workout range fields (V4)
+        final preSodiumLow = pre['sodium_low_mg'] as num?;
+        final preSodiumHigh = pre['sodium_high_mg'] as num?;
+        final preFluidsLow = pre['water_low_ml'] as num?;
+        final preFluidsHigh = pre['water_high_ml'] as num?;
+
         macroTargets = PlanMacroSummary(
           calories: totalCalories,
           carbs: totalCarbs.round(),
           protein: totalProtein.round(),
           fat: totalFat.round(),
           sodium: totalSodium.round(),
+          sodiumMin: preSodiumLow?.round(),
+          sodiumMax: preSodiumHigh?.round(),
+          fluidsMin: preFluidsLow != null
+              ? (preFluidsLow * 0.033814).round()
+              : null,
+          fluidsMax: preFluidsHigh != null
+              ? (preFluidsHigh * 0.033814).round()
+              : null,
         );
       } catch (e) {
         DebugLogger.error('Error parsing macro_targets (snake_case): $e');

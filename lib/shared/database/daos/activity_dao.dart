@@ -61,13 +61,4 @@ class ActivityDao extends DatabaseAccessor<AppDatabase>
     return await query.getSingleOrNull();
   }
 
-  /// Get all activities for a user that contain nutrition plans.
-  Future<List<Activity>> getActivitiesWithNutritionPlans(String userId) async {
-    final query = select(activitiesTable)
-      ..where(
-        (tbl) => tbl.userId.equals(userId) & tbl.nutritionPlanData.isNotNull(),
-      )
-      ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
-    return await query.get();
-  }
 }

@@ -7,6 +7,7 @@ import '../widgets/activity_detail/activity_detail_action_buttons.dart';
 import '../widgets/activity_detail/nutrition_sections_builder.dart';
 import '../widgets/activity_detail/no_nutrition_plan_state.dart';
 import '../widgets/activity_detail/single_sport_hero_image.dart';
+import '../widgets/activity_detail/activity_coach_notes_widget.dart';
 import '../widgets/activity_detail/activity_schedule_info.dart';
 import '../widgets/activity_detail/brick_header.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -22,7 +23,6 @@ import '../providers/activity_detail_state.dart';
 import '../widgets/stale_plan_warning.dart';
 import '../widgets/low_fuel_risk_badge.dart';
 import '../../../personal_templates/presentation/widgets/save_template_dialog.dart';
-import '../../../personal_templates/presentation/widgets/macro_comparison_banner.dart';
 import '../../../personal_templates/presentation/providers/personal_templates_controller.dart';
 
 /// Activity Detail Screen - Refactored with extracted widgets
@@ -33,15 +33,15 @@ class ActivityDetailScreen extends ConsumerStatefulWidget {
     required this.activityId,
     this.isNewActivity = false,
     this.isCoachView = false,
-    this.templateComparison,
+    this.fromTemplate = false,
   });
 
   final String activityId;
   final bool isNewActivity;
   final bool isCoachView;
 
-  /// Template vs recommended macro comparison data (shown as banner when non-null)
-  final TemplateComparisonData? templateComparison;
+  /// True when this activity was created from a template (hide "Save as Template" button)
+  final bool fromTemplate;
 
   @override
   ConsumerState<ActivityDetailScreen> createState() =>
@@ -51,7 +51,6 @@ class ActivityDetailScreen extends ConsumerStatefulWidget {
 class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   bool _hasShownSwipeHint = false;
   bool _swipeHintChecked = false;
-  bool _templateBannerDismissed = false;
 
   @override
   void initState() {
@@ -210,6 +209,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         children: [
           const SizedBox(height: AppSpacing.xxl),
           _buildHeroSection(context, state),
+
+          // Coach notes from TrainingPeaks / Final Surge
+          if (activity.syncedFromProvider != null &&
+              activity.notes != null &&
+              activity.notes!.trim().isNotEmpty)
+            ActivityCoachNotesWidget(activity: activity),
+
           const SizedBox(height: AppSpacing.lg),
 
           // Stale plan warning (shown when needsNutritionRefresh is true)
@@ -221,19 +227,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
           ],
-
-          // Template comparison banner (shown when plan was applied from a template)
-          if (widget.templateComparison != null && !_templateBannerDismissed)
-            MacroComparisonBanner(
-              templateCarbsG: widget.templateComparison!.templateCarbsG,
-              targetCarbsG: widget.templateComparison!.targetCarbsG,
-              templateProteinG: widget.templateComparison!.templateProteinG,
-              targetProteinG: widget.templateComparison!.targetProteinG,
-              templateSodiumMg: widget.templateComparison!.templateSodiumMg,
-              targetSodiumMg: widget.templateComparison!.targetSodiumMg,
-              onDismiss: () =>
-                  setState(() => _templateBannerDismissed = true),
-            ),
 
           // Low fuel risk badge (shown when carbs are 33%+ below target)
           if (state.nutritionPlan != null)
@@ -303,6 +296,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             isNewActivity: widget.isNewActivity,
             isCoachView: widget.isCoachView,
             onSave: () => _saveWorkout(context, state),
+            onSaveAsTemplate: (widget.isNewActivity && !widget.isCoachView && !widget.fromTemplate && state.nutritionPlan != null)
+                ? () => _showSaveTemplateDialog(context)
+                : null,
             onComplete: (rating, notes, {isBrick = false, carbAdjustment}) =>
                 _handleCompletion(context, state, rating, notes,
                     isBrick: isBrick, carbAdjustment: carbAdjustment),
@@ -668,23 +664,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       return;
     }
 
-    // Format duration for display
-    final durationMinutes = activity.durationMinutes ?? 0;
-    final hours = durationMinutes ~/ 60;
-    final mins = durationMinutes % 60;
-    final durationDisplay = hours > 0
-        ? '${hours}h ${mins.toString().padLeft(2, '0')}m'
-        : '${mins}m';
-
-    // Format distance for display
-    String? distanceDisplay;
-    if (activity.distanceMiles != null && activity.distanceMiles! > 0) {
-      final miles = activity.distanceMiles!;
-      distanceDisplay = miles == miles.roundToDouble()
-          ? '${miles.round()} miles'
-          : '${miles.toStringAsFixed(1)} miles';
-    }
-
     final activityTypeDisplay = activity.isBrick
         ? 'Brick'
         : activity.activityType.displayName;
@@ -695,8 +674,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       context,
       defaultName: defaultName,
       activityTypeDisplay: activityTypeDisplay,
-      durationDisplay: durationDisplay,
-      distanceDisplay: distanceDisplay,
     );
 
     if (templateName == null || !mounted) return;
@@ -705,7 +682,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       personalTemplatesControllerProvider.notifier,
     );
 
-    final success = await templatesController.saveTemplate(
+    final result = await templatesController.saveTemplate(
       activity: activity,
       nutritionPlan: nutritionPlan,
       templateName: templateName,
@@ -713,22 +690,33 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
     if (!mounted) return;
 
-    if (success) {
-      MealvanaSnackbar.showSuccess(context, 'Template saved!');
-    } else {
-      // Check if it's a limit issue
-      final count = await templatesController.getTemplateCount();
-      if (count >= kMaxTemplateCount) {
+    switch (result) {
+      case SaveTemplateResult.success:
+        // Also save the workout itself
+        final controller = _getControllerNotifier();
+        await controller.saveActivity();
+        if (!mounted) return;
+
+        controller.trackEvent('workout_saved_with_template', {
+          'activity_id': activity.id,
+          'template_name': templateName,
+          'is_new_activity': widget.isNewActivity,
+        });
+
+        MealvanaSnackbar.showSuccess(context, 'Workout and template saved!');
+        if (widget.isNewActivity) {
+          context.go('/main');
+        }
+      case SaveTemplateResult.limitReached:
         MealvanaSnackbar.showWarning(
           context,
           'Template limit reached ($kMaxTemplateCount). Delete one to save a new template.',
         );
-      } else {
+      case SaveTemplateResult.error:
         MealvanaSnackbar.showError(
           context,
           'Failed to save template. Please try again.',
         );
-      }
     }
   }
 

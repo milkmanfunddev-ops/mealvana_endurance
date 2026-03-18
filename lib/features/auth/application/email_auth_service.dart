@@ -141,7 +141,7 @@ class EmailAuthService extends _$EmailAuthService {
       });
 
       // Complete authentication (unified flow for all providers)
-      final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+      final authMigrationService = await ref.read(authMigrationServiceProvider.future);
       await authMigrationService.completeAuthentication(
         previousUserId: anonymousUserId,
         wasAnonymous: currentUser.isAnonymous,
@@ -243,15 +243,32 @@ class EmailAuthService extends _$EmailAuthService {
         'email_confirmed': response.user!.emailConfirmedAt != null,
       });
 
-      // Complete authentication (creates UserProfile)
-      final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+      // Check for temp user ID from onboarding (used before email registration)
+      // Activities synced from Training Peaks / Final Surge during onboarding are
+      // stored locally under this temp UUID and need to be migrated to the real user.
+      final prefs = ref.read(sharedPreferencesProvider);
+      final tempUserId = prefs.getString('onboarding_temp_user_id');
+
+      _logger.info('Checking for onboarding temp user', context: 'EMAIL_AUTH', data: {
+        'has_temp_user_id': tempUserId != null,
+        'temp_user_id': tempUserId,
+      });
+
+      // Complete authentication (creates UserProfile + migrates temp data if present)
+      final authMigrationService = await ref.read(authMigrationServiceProvider.future);
       await authMigrationService.completeAuthentication(
-        previousUserId: null, // No previous user during onboarding
-        wasAnonymous: false,
+        previousUserId: tempUserId, // Migrate data from temp onboarding user
+        wasAnonymous: tempUserId != null, // Trigger migration when temp user exists
         newUserId: newUserId,
         authProvider: 'email',
         preservedUserId: false, // New user ID created
       );
+
+      // Clear the temp user ID after successful migration
+      if (tempUserId != null) {
+        await prefs.remove('onboarding_temp_user_id');
+        _logger.info('Cleared onboarding temp user ID after migration', context: 'EMAIL_AUTH');
+      }
 
       // CRITICAL: Invalidate userIdProvider to force re-read with new user
       ref.invalidate(userIdProvider);
@@ -321,12 +338,22 @@ class EmailAuthService extends _$EmailAuthService {
 
       // CRITICAL: Capture anonymous user ID BEFORE signing in
       // This allows us to migrate their data after the session switch
-      final previousUserId = _supabase.auth.currentUser?.id;
-      final wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+      var previousUserId = _supabase.auth.currentUser?.id;
+      var wasAnonymous = _supabase.auth.currentUser?.isAnonymous ?? false;
+
+      // Also check for temp onboarding user ID (used when no Supabase session exists)
+      // This handles the case where user synced with TP/FS during onboarding then signs in
+      final prefs = ref.read(sharedPreferencesProvider);
+      final tempUserId = prefs.getString('onboarding_temp_user_id');
+      if (previousUserId == null && tempUserId != null) {
+        previousUserId = tempUserId;
+        wasAnonymous = true;
+      }
 
       _logger.info('Capturing user state before sign-in', context: 'EMAIL_AUTH', data: {
         'previous_user_id': previousUserId,
         'was_anonymous': wasAnonymous,
+        'had_temp_user_id': tempUserId != null,
       });
 
       // Sign in with Supabase
@@ -347,7 +374,7 @@ class EmailAuthService extends _$EmailAuthService {
       });
 
       // Complete authentication (unified flow for all providers)
-      final authMigrationService = ref.read(authMigrationServiceProvider.notifier);
+      final authMigrationService = await ref.read(authMigrationServiceProvider.future);
       final dataMigrated = await authMigrationService.completeAuthentication(
         previousUserId: previousUserId,
         wasAnonymous: wasAnonymous,
@@ -355,6 +382,12 @@ class EmailAuthService extends _$EmailAuthService {
         authProvider: 'email',
         preservedUserId: false, // ID changed during sign-in
       );
+
+      // Clear temp user ID after successful migration
+      if (tempUserId != null) {
+        await prefs.remove('onboarding_temp_user_id');
+        _logger.info('Cleared onboarding temp user ID after sign-in migration', context: 'EMAIL_AUTH');
+      }
 
       // CRITICAL: Invalidate userIdProvider to force re-read after auth change
       ref.invalidate(userIdProvider);

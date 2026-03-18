@@ -53,10 +53,7 @@ class ToggleCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: AppRadius.cardRadius,
-        border: Border.all(
-          color: AppColors.borderLightSecondary,
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.borderLightSecondary, width: 1),
       ),
       child: Row(
         children: [
@@ -65,10 +62,7 @@ class ToggleCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.sm),
               child: emoji != null
-                  ? Text(
-                      emoji!,
-                      style: const TextStyle(fontSize: 24),
-                    )
+                  ? Text(emoji!, style: const TextStyle(fontSize: 24))
                   : Icon(
                       icon,
                       size: 24,
@@ -107,17 +101,12 @@ class ToggleCard extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
 
           // Toggle switch
-          Switch.adaptive(
+          KyleSwitch(
             value: value,
             onChanged: enabled ? onChanged : null,
+            enabled: enabled,
             activeTrackColor: AppColors.orange,
-            thumbColor: WidgetStateProperty.all(Colors.white),
-            trackColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected)) {
-                return AppColors.orange.withValues(alpha: 0.5);
-              }
-              return AppColors.inactive.withValues(alpha: 0.3);
-            }),
+            inactiveTrackColor: AppColors.inactive.withValues(alpha: 0.3),
           ),
         ],
       ),
@@ -173,17 +162,12 @@ class ToggleRow extends StatelessWidget {
               ],
             ),
           ),
-          Switch.adaptive(
+          KyleSwitch(
             value: value,
             onChanged: enabled ? onChanged : null,
+            enabled: enabled,
             activeTrackColor: AppColors.orange,
-            thumbColor: WidgetStateProperty.all(Colors.white),
-            trackColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected)) {
-                return AppColors.orange.withValues(alpha: 0.5);
-              }
-              return AppColors.inactive.withValues(alpha: 0.3);
-            }),
+            inactiveTrackColor: AppColors.inactive.withValues(alpha: 0.3),
           ),
         ],
       ),

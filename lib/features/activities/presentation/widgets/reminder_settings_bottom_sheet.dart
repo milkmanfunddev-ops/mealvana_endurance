@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/kyle_switch.dart';
 import '../../domain/activity_reminder.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
@@ -17,10 +18,12 @@ class ReminderSettingsBottomSheet extends StatefulWidget {
   final Function(ActivityReminder? reminder) onSave;
 
   @override
-  State<ReminderSettingsBottomSheet> createState() => _ReminderSettingsBottomSheetState();
+  State<ReminderSettingsBottomSheet> createState() =>
+      _ReminderSettingsBottomSheetState();
 }
 
-class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomSheet> {
+class _ReminderSettingsBottomSheetState
+    extends State<ReminderSettingsBottomSheet> {
   late bool _noReminderNeeded;
   late int _daysBefore;
   late String _timeOfDay;
@@ -68,7 +71,8 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
 
     if (pickedTime != null) {
       setState(() {
-        _timeOfDay = '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}';
+        _timeOfDay =
+            '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}';
       });
     }
   }
@@ -214,7 +218,11 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.access_time, size: 20.sp, color: AppTheme.baseGrey),
+                    Icon(
+                      Icons.access_time,
+                      size: 20.sp,
+                      color: AppTheme.baseGrey,
+                    ),
                     SizedBox(width: 12.w),
                     Text(
                       _formatTime(_timeOfDay),
@@ -245,18 +253,13 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                       style: AppTheme.textStyle.copyWith(fontSize: 14.sp),
                     ),
                   ),
-                  Switch(
+                  KyleSwitch(
                     value: _isRecurring,
                     onChanged: (value) => setState(() => _isRecurring = value),
-                    thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
-                      return AppTheme.baseWhite;
-                    }),
-                    trackColor: WidgetStateProperty.resolveWith<Color>((states) {
-                      if (states.contains(WidgetState.selected)) {
-                        return AppTheme.primary600;
-                      }
-                      return AppTheme.baseGrey.withValues(alpha: 0.3);
-                    }),
+                    activeTrackColor: AppTheme.primary600,
+                    inactiveTrackColor: AppTheme.baseGrey.withValues(
+                      alpha: 0.3,
+                    ),
                   ),
                 ],
               ),
@@ -324,11 +327,7 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                 ),
               ),
               child: isSelected
-                  ? Icon(
-                      Icons.check,
-                      size: 12.sp,
-                      color: AppTheme.baseWhite,
-                    )
+                  ? Icon(Icons.check, size: 12.sp, color: AppTheme.baseWhite)
                   : null,
             ),
             SizedBox(width: 12.w),

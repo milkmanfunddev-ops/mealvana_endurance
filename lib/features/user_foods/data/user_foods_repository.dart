@@ -8,6 +8,7 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/data/syncable_repository.dart';
+import '../../../shared/services/sync/sync_dependency_graph.dart';
 
 part 'user_foods_repository.g.dart';
 
@@ -30,7 +31,8 @@ class UserFoodsRepository with SyncableRepository {
   String get repositoryKey => 'user_foods';
 
   @override
-  List<String> get dependencies => ['users']; // Level 1 - depends on users
+  List<String> get dependencies =>
+      SyncDependencyGraph.dependenciesFor(repositoryKey);
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {

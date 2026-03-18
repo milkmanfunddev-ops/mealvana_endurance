@@ -258,113 +258,115 @@ class DataSyncService {
     String userId,
   ) async {
     try {
-      // Sync foods (nutrition_foods from edge function)
-      final nutritionFoods = data['nutrition_foods'] as List<dynamic>?;
-      if (nutritionFoods != null && nutritionFoods.isNotEmpty) {
-        await _foodRepository.syncFromDownloadedData(foods: nutritionFoods);
-      }
+      await _database.transaction(() async {
+        // Sync foods (nutrition_foods from edge function)
+        final nutritionFoods = data['nutrition_foods'] as List<dynamic>?;
+        if (nutritionFoods != null && nutritionFoods.isNotEmpty) {
+          await _foodRepository.syncFromDownloadedData(foods: nutritionFoods);
+        }
 
-      // Sync carb loading foods
-      final carbLoadingFoods = data['carb_loading_foods'] as List<dynamic>?;
-      if (carbLoadingFoods != null && carbLoadingFoods.isNotEmpty) {
-        await _carbLoadingFoodSyncService.syncFromDownloadedData(
-          carbLoadingFoods: carbLoadingFoods,
-        );
-      }
-
-      // Sync activities
-      final activities = data['activities'] as List<dynamic>?;
-      if (activities != null) {
-        for (final activityData in activities) {
-          await _activitySyncHandler.upsertActivity(
-            activityData as Map<String, dynamic>,
+        // Sync carb loading foods
+        final carbLoadingFoods = data['carb_loading_foods'] as List<dynamic>?;
+        if (carbLoadingFoods != null && carbLoadingFoods.isNotEmpty) {
+          await _carbLoadingFoodSyncService.syncFromDownloadedData(
+            carbLoadingFoods: carbLoadingFoods,
           );
         }
-      }
 
-      // Sync events
-      final events = data['events'] as List<dynamic>?;
-      if (events != null) {
-        for (final eventData in events) {
-          final eventMap = eventData as Map<String, dynamic>;
-          await _eventSyncHandler.upsertEvent(
-            eventMap,
-            eventMap['user_id'] as String,
+        // Sync activities
+        final activities = data['activities'] as List<dynamic>?;
+        if (activities != null) {
+          for (final activityData in activities) {
+            await _activitySyncHandler.upsertActivity(
+              activityData as Map<String, dynamic>,
+            );
+          }
+        }
+
+        // Sync events
+        final events = data['events'] as List<dynamic>?;
+        if (events != null) {
+          for (final eventData in events) {
+            final eventMap = eventData as Map<String, dynamic>;
+            await _eventSyncHandler.upsertEvent(
+              eventMap,
+              eventMap['user_id'] as String,
+            );
+          }
+        }
+
+        // Sync carb loading plans
+        final carbLoadingPlans = data['carb_loading_plans'] as List<dynamic>?;
+        if (carbLoadingPlans != null) {
+          for (final planData in carbLoadingPlans) {
+            await _carbLoadingSyncHandler.upsertCarbLoadingPlan(
+              planData as Map<String, dynamic>,
+            );
+          }
+        }
+
+        // Sync carb loading days
+        final carbLoadingDays = data['carb_loading_days'] as List<dynamic>?;
+        if (carbLoadingDays != null) {
+          for (final dayData in carbLoadingDays) {
+            await _carbLoadingSyncHandler.upsertCarbLoadingDay(
+              dayData as Map<String, dynamic>,
+            );
+          }
+        }
+
+        // Sync food preferences
+        final foodPreferences = data['food_preferences'] as List<dynamic>?;
+        if (foodPreferences != null && foodPreferences.isNotEmpty) {
+          await _foodPreferenceSyncHandler.syncFoodPreferencesFromEdgeFunction(
+            foodPreferences,
           );
         }
-      }
 
-      // Sync carb loading plans
-      final carbLoadingPlans = data['carb_loading_plans'] as List<dynamic>?;
-      if (carbLoadingPlans != null) {
-        for (final planData in carbLoadingPlans) {
-          await _carbLoadingSyncHandler.upsertCarbLoadingPlan(
-            planData as Map<String, dynamic>,
+        // Sync coach record if user is an approved coach
+        final coachRecord = data['coach_record'] as Map<String, dynamic>?;
+        if (coachRecord != null) {
+          await _coachSyncHandler.syncCoachRecord(coachRecord);
+        }
+
+        // Sync coach-athlete relationships
+        final relationships =
+            data['coach_athlete_relationships'] as List<dynamic>?;
+        if (relationships != null && relationships.isNotEmpty) {
+          await _coachSyncHandler.syncCoachAthleteRelationships(relationships);
+        }
+
+        // Sync athlete data for coaches
+        final athleteEvents = data['athlete_events'] as List<dynamic>?;
+        if (athleteEvents != null && athleteEvents.isNotEmpty) {
+          await _eventSyncHandler.syncAthleteEvents(athleteEvents);
+        }
+
+        final athleteActivities = data['athlete_activities'] as List<dynamic>?;
+        if (athleteActivities != null && athleteActivities.isNotEmpty) {
+          await _activitySyncHandler.syncAthleteActivities(athleteActivities);
+        }
+
+        final athleteProfiles = data['athlete_profiles'] as List<dynamic>?;
+        if (athleteProfiles != null && athleteProfiles.isNotEmpty) {
+          await _coachSyncHandler.syncAthleteProfiles(athleteProfiles);
+        }
+
+        final athleteCarbLoadingPlans =
+            data['athlete_carb_loading_plans'] as List<dynamic>?;
+        if (athleteCarbLoadingPlans != null &&
+            athleteCarbLoadingPlans.isNotEmpty) {
+          await _carbLoadingSyncHandler.syncAthleteCarbLoadingPlans(
+            athleteCarbLoadingPlans,
           );
         }
-      }
 
-      // Sync carb loading days
-      final carbLoadingDays = data['carb_loading_days'] as List<dynamic>?;
-      if (carbLoadingDays != null) {
-        for (final dayData in carbLoadingDays) {
-          await _carbLoadingSyncHandler.upsertCarbLoadingDay(
-            dayData as Map<String, dynamic>,
-          );
+        // Sync coach profiles for athletes
+        final coachProfiles = data['coach_profiles'] as List<dynamic>?;
+        if (coachProfiles != null && coachProfiles.isNotEmpty) {
+          await _coachSyncHandler.syncCoachProfiles(coachProfiles);
         }
-      }
-
-      // Sync food preferences
-      final foodPreferences = data['food_preferences'] as List<dynamic>?;
-      if (foodPreferences != null && foodPreferences.isNotEmpty) {
-        await _foodPreferenceSyncHandler.syncFoodPreferencesFromEdgeFunction(
-          foodPreferences,
-        );
-      }
-
-      // Sync coach record if user is an approved coach
-      final coachRecord = data['coach_record'] as Map<String, dynamic>?;
-      if (coachRecord != null) {
-        await _coachSyncHandler.syncCoachRecord(coachRecord);
-      }
-
-      // Sync coach-athlete relationships
-      final relationships =
-          data['coach_athlete_relationships'] as List<dynamic>?;
-      if (relationships != null && relationships.isNotEmpty) {
-        await _coachSyncHandler.syncCoachAthleteRelationships(relationships);
-      }
-
-      // Sync athlete data for coaches
-      final athleteEvents = data['athlete_events'] as List<dynamic>?;
-      if (athleteEvents != null && athleteEvents.isNotEmpty) {
-        await _eventSyncHandler.syncAthleteEvents(athleteEvents);
-      }
-
-      final athleteActivities = data['athlete_activities'] as List<dynamic>?;
-      if (athleteActivities != null && athleteActivities.isNotEmpty) {
-        await _activitySyncHandler.syncAthleteActivities(athleteActivities);
-      }
-
-      final athleteProfiles = data['athlete_profiles'] as List<dynamic>?;
-      if (athleteProfiles != null && athleteProfiles.isNotEmpty) {
-        await _coachSyncHandler.syncAthleteProfiles(athleteProfiles);
-      }
-
-      final athleteCarbLoadingPlans =
-          data['athlete_carb_loading_plans'] as List<dynamic>?;
-      if (athleteCarbLoadingPlans != null &&
-          athleteCarbLoadingPlans.isNotEmpty) {
-        await _carbLoadingSyncHandler.syncAthleteCarbLoadingPlans(
-          athleteCarbLoadingPlans,
-        );
-      }
-
-      // Sync coach profiles for athletes
-      final coachProfiles = data['coach_profiles'] as List<dynamic>?;
-      if (coachProfiles != null && coachProfiles.isNotEmpty) {
-        await _coachSyncHandler.syncCoachProfiles(coachProfiles);
-      }
+      });
     } catch (e, stackTrace) {
       _logger.error(
         '[EDGE_SYNC] Failed to sync edge function data to local DB',

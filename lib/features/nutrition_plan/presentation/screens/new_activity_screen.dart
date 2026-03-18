@@ -20,6 +20,14 @@ import '../widgets/new_activity/brick/brick_tab_content.dart';
 import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/widgets/app_date_picker.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../personal_templates/presentation/providers/personal_templates_controller.dart';
+import '../../../personal_templates/presentation/widgets/template_picker_sheet.dart';
+import '../../../personal_templates/application/template_scaling_service.dart';
+import '../../domain/nutrition_plan.dart';
+import '../../data/nutrition_plan_mapper.dart';
+import '../providers/macro_targets_controller.dart';
+import '../../../activities/application/activities_service.dart';
+import '../../../activities/presentation/providers/activities_controller.dart';
 
 /// New Activity Screen - Kyle's Unified Design
 ///
@@ -462,19 +470,193 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
             ),
           ),
 
-          // Generate Button (fixed at bottom)
+          // Action Buttons (fixed at bottom)
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: NewActivityGenerateButton(
-              isGenerating: coordinatorState.isGenerating,
-              onPressed: () => _handleGeneratePlan(coordinator),
+            child: _buildBottomButtons(
+              context,
+              coordinator,
+              coordinatorState,
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// Build the bottom action buttons: Generate Plan + Use Template (side-by-side)
+  Widget _buildBottomButtons(
+    BuildContext context,
+    NewActivityCoordinator coordinator,
+    NewActivityCoordinatorState coordinatorState,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Check if user has templates for the current sport
+    final templatesAsync = ref.watch(personalTemplatesControllerProvider);
+    final hasTemplates = templatesAsync.whenOrNull(
+          data: (templates) => templates.any((t) {
+            final sportType =
+                _sportTabToActivityType(coordinatorState.selectedTab);
+            return t.activityType == sportType;
+          }),
+        ) ??
+        false;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: AppSpacing.lg,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.blackberry : AppColors.cream,
+        boxShadow: [
+          BoxShadow(
+            color:
+                (isDark ? Colors.black : Colors.grey).withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: KylePrimaryButton(
+              text: 'Generate Plan',
+              onPressed: coordinatorState.isGenerating
+                  ? null
+                  : () => _handleGeneratePlan(coordinator),
+              isLoading: coordinatorState.isGenerating,
+            ),
+          ),
+          if (hasTemplates) ...[
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: KyleSecondaryButton(
+                text: 'Use Template',
+                onPressed: coordinatorState.isGenerating
+                    ? null
+                    : () => _handleUseTemplate(
+                          context,
+                          coordinator,
+                          coordinatorState,
+                        ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Convert SportTab enum to activity type string
+  String _sportTabToActivityType(SportTab tab) {
+    switch (tab) {
+      case SportTab.running:
+        return 'running';
+      case SportTab.cycling:
+        return 'cycling';
+      case SportTab.swimming:
+        return 'swimming';
+      case SportTab.brick:
+        return 'brick';
+    }
+  }
+
+  /// Handle "Use My Template" button press
+  Future<void> _handleUseTemplate(
+    BuildContext context,
+    NewActivityCoordinator coordinator,
+    NewActivityCoordinatorState coordinatorState,
+  ) async {
+    try {
+      final templatesController =
+          ref.read(personalTemplatesControllerProvider.notifier);
+      final sportType =
+          _sportTabToActivityType(coordinatorState.selectedTab);
+
+      // Get templates for current sport
+      final templates =
+          await templatesController.getTemplatesForSport(sportType);
+
+      if (templates.isEmpty || !mounted) return;
+
+      // Show picker
+      final result = await TemplatePickerSheet.show(
+        context,
+        templates: templates,
+      );
+
+      if (result == null || !mounted) return;
+
+      // Generate macros to create the activity and get recommended targets
+      await coordinator.generateMacros(
+        activityId: widget.activityId,
+        eventId: widget.eventId,
+        forUserId: widget.forUserId,
+      );
+
+      if (!mounted) return;
+
+      // Get the activity ID created by macro generation
+      final macroState =
+          ref.read(macroTargetsControllerProvider).value;
+      final activityId = macroState?.activityId;
+
+      if (activityId == null || activityId.isEmpty) {
+        MealvanaSnackbar.showError(context, 'Failed to create activity');
+        return;
+      }
+
+      // Parse the template's plan data into a NutritionPlan
+      final templatePlan = NutritionPlanMapper.fromJson(result.template.planData);
+      NutritionPlan planToApply;
+
+      if (result.scaleToFit && macroState?.macroTargets != null) {
+        planToApply = TemplateScalingService.scalePlanWithTargets(
+          plan: templatePlan,
+          targets: macroState!.macroTargets!,
+        );
+      } else {
+        planToApply = templatePlan;
+      }
+
+      // Load the activity, update with template plan data, and save
+      final userId = await ref.read(userIdProvider.future);
+      final activitiesService = ref.read(activitiesServiceProvider);
+      final activity = await activitiesService.getActivityById(
+        userId,
+        activityId,
+      );
+
+      if (activity != null) {
+        final updatedActivity = activity.copyWith(
+          nutritionPlanData: planToApply.toJson(),
+        );
+        await ref
+            .read(activitiesControllerProvider.notifier)
+            .updateActivity(updatedActivity);
+      }
+
+      if (!mounted) return;
+
+      // Navigate to activity detail screen (skip adjust-macros)
+      final isCoachView = widget.forUserId != null;
+      context.push('/current-plan', extra: {
+        'activityId': activityId,
+        'isNewActivity': true,
+        'fromTemplate': true,
+        if (isCoachView) 'isCoachView': true,
+      });
+    } catch (e) {
+      DebugLogger.error('Error applying template: $e');
+      if (!mounted) return;
+      final message = e.toString().replaceFirst('Exception: ', '');
+      MealvanaSnackbar.showError(context, message);
+    }
   }
 
   /// Handles the Generate Plan button press

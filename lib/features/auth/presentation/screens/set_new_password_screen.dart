@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../application/email_auth_service.dart';
@@ -17,8 +18,7 @@ class SetNewPasswordScreen extends ConsumerStatefulWidget {
       _SetNewPasswordScreenState();
 }
 
-class _SetNewPasswordScreenState
-    extends ConsumerState<SetNewPasswordScreen> {
+class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -36,17 +36,12 @@ class _SetNewPasswordScreenState
   Future<void> _handleSetPassword() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final controller =
-        ref.read(passwordRecoveryControllerProvider.notifier);
+    final controller = ref.read(passwordRecoveryControllerProvider.notifier);
 
-    final success =
-        await controller.setNewPassword(_passwordController.text);
+    final success = await controller.setNewPassword(_passwordController.text);
 
     if (success && mounted) {
-      MealvanaSnackbar.showSuccess(
-        context,
-        'Password reset successfully',
-      );
+      MealvanaSnackbar.showSuccess(context, 'Password reset successfully');
       // Pop all recovery screens back to login
       context.go('/auth/email-login');
     } else if (!success && mounted) {
@@ -207,8 +202,7 @@ class _SetNewPasswordScreenState
                   text: asyncState.isLoading
                       ? 'Resetting...'
                       : 'Reset Password',
-                  onPressed:
-                      asyncState.isLoading ? null : _handleSetPassword,
+                  onPressed: asyncState.isLoading ? null : _handleSetPassword,
                 ),
 
                 const SizedBox(height: AppSpacing.md),
@@ -238,24 +232,13 @@ class _SetNewPasswordScreenState
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                FontAwesomeIcons.arrowLeft,
-                size: AppIconSizes.controlIcon,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              onPressed: () => context.pop(),
-            ),
+          CustomAppBarBackButton(
+            onPressed: () => context.pop(),
+            margin: EdgeInsets.zero,
+            iconColor: Theme.of(context).colorScheme.onSurface,
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
         ],
       ),

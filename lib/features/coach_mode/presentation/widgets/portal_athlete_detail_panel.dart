@@ -15,6 +15,8 @@ import '../../domain/coach_athlete_relationship.dart';
 import '../providers/athlete_detail_controller.dart';
 import '../screens/coach_chat_screen.dart';
 import 'portal_athlete_profile_form.dart';
+import 'create_carb_loading_dialog.dart';
+import 'portal_nutrition_targets_form.dart';
 
 /// Right panel showing athlete details within the coach portal
 class PortalAthleteDetailPanel extends ConsumerStatefulWidget {
@@ -92,7 +94,7 @@ class _PortalAthleteDetailPanelState
 
   Widget _buildContent(AthleteDetailState state) {
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Column(
         children: [
           // Athlete header
@@ -108,6 +110,7 @@ class _PortalAthleteDetailPanelState
               dividerColor: AppColors.blackberryLight,
               tabs: [
                 const Tab(icon: Icon(Icons.person, size: 18), text: 'Profile'),
+                const Tab(icon: Icon(Icons.tune, size: 18), text: 'Targets'),
                 Tab(
                   icon: const Icon(Icons.calendar_today, size: 18),
                   text: 'Events (${state.events.length})',
@@ -130,6 +133,7 @@ class _PortalAthleteDetailPanelState
             child: TabBarView(
               children: [
                 _buildProfileTab(state),
+                _buildNutritionTargetsTab(state),
                 _buildEventsTab(state),
                 _buildCarbLoadingTab(state),
                 _buildActivitiesTab(state),
@@ -244,6 +248,14 @@ class _PortalAthleteDetailPanelState
     );
   }
 
+  Widget _buildNutritionTargetsTab(AthleteDetailState state) {
+    return PortalNutritionTargetsForm(
+      key: ValueKey('targets_${state.relationship.athleteUserId}'),
+      relationshipId: widget.relationshipId,
+      athleteProfile: state.athleteProfile,
+    );
+  }
+
   Widget _buildEventsTab(AthleteDetailState state) {
     return Stack(
       children: [
@@ -335,6 +347,34 @@ class _PortalAthleteDetailPanelState
     }
   }
 
+  Future<void> _showCreateCarbLoadingDialog(AthleteDetailState state) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => CreateCarbLoadingDialog(
+        events: state.events,
+        athleteWeightPounds: state.athleteProfile?.weightPounds,
+      ),
+    );
+    if (result == null || !mounted) return;
+
+    try {
+      await ref
+          .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
+          .createCarbLoadingPlan(
+            eventId: result['eventId'] as String?,
+            protocolDays: result['protocolDays'] as int,
+            raceDate: result['raceDate'] as DateTime,
+            bodyWeightPounds: result['bodyWeightPounds'] as double,
+          );
+
+      if (!mounted) return;
+      MealvanaSnackbar.showSuccess(context, 'Carb loading plan created');
+    } catch (e) {
+      if (!mounted) return;
+      MealvanaSnackbar.showError(context, 'Failed to create plan: $e');
+    }
+  }
+
   Widget _buildCarbLoadingTab(AthleteDetailState state) {
     return Stack(
       children: [
@@ -408,12 +448,7 @@ class _PortalAthleteDetailPanelState
             mini: true,
             backgroundColor: AppColors.electrolyte,
             foregroundColor: AppColors.blackberryDark,
-            onPressed: () {
-              MealvanaSnackbar.showInfo(
-                context,
-                'Carb loading plan creation coming soon. Create an event first, then generate from the event detail.',
-              );
-            },
+            onPressed: () => _showCreateCarbLoadingDialog(state),
             child: const Icon(Icons.add),
           ),
         ),

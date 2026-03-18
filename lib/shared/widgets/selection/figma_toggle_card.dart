@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/kyle_switch.dart';
 import '../../../theme/kyle_design/app_colors.dart';
 
 /// Toggle card widget matching Figma onboarding design
@@ -63,14 +64,11 @@ class FigmaToggleCard extends StatelessWidget {
             height: 48,
             child: FittedBox(
               fit: BoxFit.contain,
-              child: Switch(
+              child: KyleSwitch(
                 value: value,
                 onChanged: onChanged,
                 activeTrackColor: AppColors.electrolyte,
-                activeThumbColor: const Color(0xFF1A1A1A),
-                inactiveThumbColor: Colors.black,
                 inactiveTrackColor: AppColors.textDark.withValues(alpha: 0.3),
-                trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
               ),
             ),
           ),

@@ -10,11 +10,13 @@ class ContextualBanner extends StatelessWidget {
     required this.macroTargets,
     required this.shortRunText,
     required this.longRunText,
+    this.bodyWeightKg = 70.0,
   });
 
   final MacroTargets macroTargets;
   final String shortRunText;
   final String longRunText;
+  final double bodyWeightKg;
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +89,7 @@ class ContextualBanner extends StatelessWidget {
 
   /// Check if there are any validation issues across all macro fields
   bool _hasAnyValidationIssues() {
-    final bodyWeightKg = 70.0; // TODO: Get from user profile - using average for now
+    final bodyWeightKg = this.bodyWeightKg;
     final durationH = macroTargets.metrics.durationH;
     
     // Check pre-run macros

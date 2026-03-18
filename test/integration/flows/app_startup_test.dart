@@ -318,19 +318,14 @@ void main() {
     test('fresh install should navigate to welcome', () async {
       logTestHeading('Navigation - Fresh Install → /welcome');
 
-      // Test the navigation decision logic directly
       const hasUser = false;
       const hasCompletedOnboarding = false;
-      const activityIdNeedingFeedback = null;
 
-      // Determine expected route
       String expectedRoute;
       if (!hasUser) {
         expectedRoute = '/welcome';
       } else if (!hasCompletedOnboarding) {
         expectedRoute = '/onboarding/food-preferences';
-      } else if (activityIdNeedingFeedback != null) {
-        expectedRoute = '/plan-how-well/$activityIdNeedingFeedback';
       } else {
         expectedRoute = '/main';
       }
@@ -353,15 +348,12 @@ void main() {
 
       const hasUser = true;
       const hasCompletedOnboarding = false;
-      const activityIdNeedingFeedback = null;
 
       String expectedRoute;
       if (!hasUser) {
         expectedRoute = '/welcome';
       } else if (!hasCompletedOnboarding) {
         expectedRoute = '/onboarding/food-preferences';
-      } else if (activityIdNeedingFeedback != null) {
-        expectedRoute = '/plan-how-well/$activityIdNeedingFeedback';
       } else {
         expectedRoute = '/main';
       }
@@ -384,15 +376,12 @@ void main() {
 
       const hasUser = true;
       const hasCompletedOnboarding = true;
-      const activityIdNeedingFeedback = null;
 
       String expectedRoute;
       if (!hasUser) {
         expectedRoute = '/welcome';
       } else if (!hasCompletedOnboarding) {
         expectedRoute = '/onboarding/food-preferences';
-      } else if (activityIdNeedingFeedback != null) {
-        expectedRoute = '/plan-how-well/$activityIdNeedingFeedback';
       } else {
         expectedRoute = '/main';
       }
@@ -408,34 +397,6 @@ void main() {
       expect(expectedRoute, equals('/main'));
 
       logTestPass('Completed user navigation verified');
-    });
-
-    test('activity needing feedback should navigate to feedback screen', () async {
-      logTestHeading('Navigation - Pending Feedback → /plan-how-well');
-
-      const hasUser = true;
-      const hasCompletedOnboarding = true;
-      const int activityIdNeedingFeedback = 123;
-
-      String expectedRoute;
-      if (!hasUser) {
-        expectedRoute = '/welcome';
-      } else if (!hasCompletedOnboarding) {
-        expectedRoute = '/onboarding/food-preferences';
-      } else      expectedRoute = '/plan-how-well/$activityIdNeedingFeedback';
-    
-
-      logTestResult('expected_route', expectedRoute);
-
-      logAssertion(
-        'Route is /plan-how-well/123',
-        passed: expectedRoute == '/plan-how-well/123',
-        reason: 'Activity needing feedback triggers feedback screen',
-      );
-
-      expect(expectedRoute, equals('/plan-how-well/123'));
-
-      logTestPass('Pending feedback navigation verified');
     });
   });
 }

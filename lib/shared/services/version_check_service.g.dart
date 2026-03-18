@@ -12,7 +12,7 @@ part of 'version_check_service.dart';
 ///
 /// This service queries the app_config table in Supabase to determine if:
 /// 1. The app version meets the minimum required version
-/// 2. The local schema version matches the remote schema version
+/// 2. The local schema version is within the server-supported schema window
 ///
 /// Results are cached in SharedPreferences to handle network failures gracefully.
 
@@ -23,7 +23,7 @@ const versionCheckServiceProvider = VersionCheckServiceProvider._();
 ///
 /// This service queries the app_config table in Supabase to determine if:
 /// 1. The app version meets the minimum required version
-/// 2. The local schema version matches the remote schema version
+/// 2. The local schema version is within the server-supported schema window
 ///
 /// Results are cached in SharedPreferences to handle network failures gracefully.
 
@@ -39,7 +39,7 @@ final class VersionCheckServiceProvider
   ///
   /// This service queries the app_config table in Supabase to determine if:
   /// 1. The app version meets the minimum required version
-  /// 2. The local schema version matches the remote schema version
+  /// 2. The local schema version is within the server-supported schema window
   ///
   /// Results are cached in SharedPreferences to handle network failures gracefully.
   const VersionCheckServiceProvider._()

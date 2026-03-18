@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/data/syncable_repository.dart';
+import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/services/logging_service.dart';
 import '../domain/carb_loading_food.dart' as domain;
 import '../domain/meal_type.dart' show MealType;
@@ -19,9 +20,9 @@ class CarbLoadingFoodRepository with SyncableRepository {
     required AppDatabase database,
     required SupabaseClient supabase,
     required AppLogger logger,
-  })  : _database = database,
-        _supabase = supabase,
-        _logger = logger;
+  }) : _database = database,
+       _supabase = supabase,
+       _logger = logger;
 
   final AppDatabase _database;
   final SupabaseClient _supabase;
@@ -35,7 +36,8 @@ class CarbLoadingFoodRepository with SyncableRepository {
   String get repositoryKey => 'carb_loading_foods';
 
   @override
-  List<String> get dependencies => []; // Global table - no dependencies
+  List<String> get dependencies =>
+      SyncDependencyGraph.dependenciesFor(repositoryKey);
 
   /// Override isStale to force sync when local database is empty.
   /// This handles the case where SharedPreferences has a "fresh" timestamp
@@ -43,7 +45,9 @@ class CarbLoadingFoodRepository with SyncableRepository {
   @override
   Future<bool> isStale() async {
     // First check if local database has any foods
-    final localFoods = await _database.select(_database.carbLoadingFoodsTable).get();
+    final localFoods = await _database
+        .select(_database.carbLoadingFoodsTable)
+        .get();
     if (localFoods.isEmpty) {
       _logger.debug(
         'Forcing sync - no local carb loading foods found',
@@ -68,8 +72,10 @@ class CarbLoadingFoodRepository with SyncableRepository {
       // Query all carb loading foods from Supabase
       final response = await _supabase
           .from('carb_loading_foods')
-          .select('id, name, display_name, display_name_plural, carbs_per_serving, '
-                  'image_address, is_default, meal_types, created_at')
+          .select(
+            'id, name, display_name, display_name_plural, carbs_per_serving, '
+            'image_address, is_default, meal_types, created_at',
+          )
           .order('display_name');
 
       final List<dynamic> foodsData = response as List<dynamic>;
@@ -91,7 +97,8 @@ class CarbLoadingFoodRepository with SyncableRepository {
 
           // Convert meal_types array from PostgreSQL format to String
           // Production schema: meal_types text[] (e.g., ['breakfast', 'lunch'])
-          final mealTypesFromDb = foodJson['meal_types'] as List<dynamic>? ?? [];
+          final mealTypesFromDb =
+              foodJson['meal_types'] as List<dynamic>? ?? [];
           final mealTypesArray = mealTypesFromDb.isEmpty
               ? null
               : '{${mealTypesFromDb.join(',')}}';
@@ -110,7 +117,9 @@ class CarbLoadingFoodRepository with SyncableRepository {
             id: foodId,
             name: foodJson['name'] as String,
             displayName: displayName,
-            displayNamePlural: Value(foodJson['display_name_plural'] as String?),
+            displayNamePlural: Value(
+              foodJson['display_name_plural'] as String?,
+            ),
             carbsPerServing: (foodJson['carbs_per_serving'] as num).toDouble(),
             imageAddress: Value(foodJson['image_address'] as String? ?? ''),
             isDefault: Value(foodJson['is_default'] as bool? ?? true),
@@ -167,7 +176,9 @@ class CarbLoadingFoodRepository with SyncableRepository {
 
   /// Get foods suitable for a specific meal type
   /// REFACTORED: More forgiving filtering - includes foods with null/empty meal_types
-  Future<List<domain.CarbLoadingFood>> getFoodsByMealType(int mealTypeId) async {
+  Future<List<domain.CarbLoadingFood>> getFoodsByMealType(
+    int mealTypeId,
+  ) async {
     _logger.debug(
       'Querying foods for meal type',
       context: 'CARB_LOADING_FOOD_REPOSITORY',
@@ -185,17 +196,20 @@ class CarbLoadingFoodRepository with SyncableRepository {
     );
 
     // Filter foods that have this meal type in their array
-    final filteredFoods = allFoods.where((food) {
-      // If meal_types is null or empty, include the food (works for all meal types)
-      if (food.mealTypes == null || food.mealTypes!.isEmpty) {
-        return true;  // Changed from false to true - more forgiving!
-      }
+    final filteredFoods = allFoods
+        .where((food) {
+          // If meal_types is null or empty, include the food (works for all meal types)
+          if (food.mealTypes == null || food.mealTypes!.isEmpty) {
+            return true; // Changed from false to true - more forgiving!
+          }
 
-      final mealTypes = _parseMealTypesArray(food.mealTypes);
-      final matches = mealTypes.isEmpty || mealTypes.contains(mealTypeId);
+          final mealTypes = _parseMealTypesArray(food.mealTypes);
+          final matches = mealTypes.isEmpty || mealTypes.contains(mealTypeId);
 
-      return matches;
-    }).map((food) => _convertToFoodDomain(food)).toList();
+          return matches;
+        })
+        .map((food) => _convertToFoodDomain(food))
+        .toList();
 
     _logger.debug(
       'After filtering foods',
@@ -207,7 +221,9 @@ class CarbLoadingFoodRepository with SyncableRepository {
       _logger.warning(
         'No foods matched filter',
         context: 'CARB_LOADING_FOOD_REPOSITORY',
-        data: {'sampleMealTypes': allFoods.take(3).map((f) => f.mealTypes).toList()},
+        data: {
+          'sampleMealTypes': allFoods.take(3).map((f) => f.mealTypes).toList(),
+        },
       );
     }
 
@@ -226,7 +242,9 @@ class CarbLoadingFoodRepository with SyncableRepository {
   }
 
   /// Search foods by name
-  Future<List<domain.CarbLoadingFood>> searchFoodsByName(String searchTerm) async {
+  Future<List<domain.CarbLoadingFood>> searchFoodsByName(
+    String searchTerm,
+  ) async {
     final query = _database.select(_database.carbLoadingFoodsTable)
       ..where((tbl) => tbl.displayName.contains(searchTerm));
 
@@ -309,12 +327,17 @@ class CarbLoadingFoodRepository with SyncableRepository {
     return _database
         .select(_database.carbLoadingFoodsTable)
         .watch()
-        .map((foods) => foods.map((food) => _convertToFoodDomain(food)).toList());
+        .map(
+          (foods) => foods.map((food) => _convertToFoodDomain(food)).toList(),
+        );
   }
 
   /// Watch foods by meal type (for real-time updates)
   Stream<List<domain.CarbLoadingFood>> watchFoodsByMealType(int mealTypeId) {
-    return _database.select(_database.carbLoadingFoodsTable).watch().map(
+    return _database
+        .select(_database.carbLoadingFoodsTable)
+        .watch()
+        .map(
           (foods) => foods
               .where((food) {
                 if (food.mealTypes == null) return false;

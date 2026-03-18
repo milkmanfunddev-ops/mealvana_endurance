@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/activities/presentation/screens/activities_list_screen.dart';
 import '../../features/calendar/presentation/providers/calendar_view_provider.dart';
 import '../../features/calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../features/coach_mode/presentation/providers/coach_dashboard_controller.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
@@ -31,6 +32,27 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialTabIndex;
+
+    // On web, auto-navigate to coach portal if user is a coach
+    if (kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _autoNavigateToCoachIfNeeded();
+      });
+    }
+  }
+
+  Future<void> _autoNavigateToCoachIfNeeded() async {
+    try {
+      final dashboardAsync = await ref.read(
+        coachDashboardControllerProvider.future,
+      );
+      if (!mounted) return;
+      if (dashboardAsync.isCoach) {
+        context.go('/coach');
+      }
+    } catch (_) {
+      // Not a coach or network error — stay on activities tab
+    }
   }
 
   @override

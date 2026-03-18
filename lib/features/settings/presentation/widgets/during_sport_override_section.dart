@@ -38,10 +38,12 @@ class DuringSportOverrideSection extends StatelessWidget {
             children: [
               Icon(sportIcon, size: 18, color: AppColors.electrolyte),
               const SizedBox(width: AppSpacing.xs),
-              Text(
-                'During $sportLabel (per hour)',
-                style: AppTextStyles.subtitle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
+              Expanded(
+                child: Text(
+                  'During $sportLabel (per hour)',
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
             ],

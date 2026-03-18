@@ -191,26 +191,46 @@ class ActivityDetailHelpers {
     return AppColors.electrolyte;
   }
 
-  /// Get color for macro value based on deviation from target
-  /// Returns red shades if significantly off from target
+  /// Unified range-based color logic for macro values.
+  ///
+  /// When [low]/[high] are provided (range mode):
+  ///   - Green: actual is within [low, high]
+  ///   - Yellow: actual is within 20% margin outside range
+  ///   - Red: actual is more than 20% outside range
+  ///
+  /// When only [target] is provided (ratio mode):
+  ///   - Green: 80-120% of target
+  ///   - Yellow: 60-80% or 120-150% of target
+  ///   - Red: <60% or >150% of target
+  static Color getMacroRangeColor(
+    BuildContext context,
+    int actual,
+    int target, {
+    int? low,
+    int? high,
+  }) {
+    const inRangeColor = AppColors.electrolyte; // vibrant teal for on-target
+
+    // Range mode: compare against band
+    if (low != null && high != null && (low > 0 || high > 0)) {
+      if (actual >= low && actual <= high) return inRangeColor;
+      final margin = (high - low) * 0.2;
+      if (actual >= low - margin && actual <= high + margin) {
+        return AppColors.dragonfruit; // within 20% margin
+      }
+      return AppColors.dragonfruitDark; // >20% outside
+    }
+
+    // Ratio mode: compare against single target
+    if (target <= 0) return inRangeColor;
+    final ratio = actual / target;
+    if (ratio >= 0.8 && ratio <= 1.2) return inRangeColor;
+    if (ratio >= 0.6 && ratio <= 1.5) return AppColors.dragonfruit;
+    return AppColors.dragonfruitDark;
+  }
+
+  /// Legacy alias — delegates to [getMacroRangeColor] in ratio mode.
   static Color getMacroDeviationColor(BuildContext context, int actual, int target) {
-    // If target is 0, can't calculate deviation
-    if (target == 0) return Theme.of(context).colorScheme.onSurface;
-
-    // Calculate percentage deviation from target
-    final deviation = ((actual - target).abs() / target * 100);
-
-    // > 30% off target: darker red (more visible)
-    if (deviation > 30) {
-      return AppColors.dragonfruitDark;
-    }
-    // 15-30% off target: medium red
-    else if (deviation > 15) {
-      return AppColors.dragonfruit;
-    }
-    // Within 15% tolerance: normal color
-    else {
-      return Theme.of(context).colorScheme.onSurface;
-    }
+    return getMacroRangeColor(context, actual, target);
   }
 }

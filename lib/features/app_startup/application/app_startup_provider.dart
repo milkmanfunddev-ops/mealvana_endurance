@@ -15,7 +15,6 @@ class AppStartupData {
   const AppStartupData({
     required this.user,
     required this.hasCompletedOnboarding,
-    this.activityIdNeedingFeedback,
     this.isLoggedOut = false,
     this.forceUpgradeRequired = false,
     this.currentVersion,
@@ -27,7 +26,6 @@ class AppStartupData {
 
   final UserProfile? user;
   final bool hasCompletedOnboarding;
-  final String? activityIdNeedingFeedback;
 
   /// True when user has logged out but still has local data
   /// In this state: no Supabase session, but local profile exists with onboardingCompleted = true
@@ -153,9 +151,6 @@ class AppStartup extends _$AppStartup {
       );
       final hasCompletedOnboarding = user?.onboardingCompleted ?? false;
 
-      // Check for pending feedback
-      final activityIdNeedingFeedback = await startupService.checkForPendingFeedback();
-
       // Track startup completion in Sentry
       final sentry = ref.read(appExternalDepsProvider).sentry;
       sentry.addBreadcrumb(
@@ -173,7 +168,6 @@ class AppStartup extends _$AppStartup {
       return AppStartupData(
         user: user,
         hasCompletedOnboarding: hasCompletedOnboarding,
-        activityIdNeedingFeedback: activityIdNeedingFeedback,
         isLoggedOut: isLoggedOut,
       );
     } catch (e, stackTrace) {

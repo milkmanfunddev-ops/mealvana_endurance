@@ -4,7 +4,6 @@ import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
-
 /// Kyle's Design System Theme Configuration
 /// Implements dual theme system with exact Figma specifications
 class AppTheme {
@@ -32,10 +31,13 @@ class AppTheme {
       brightness: Brightness.light,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.cream,
-      
+
       // Typography
-      textTheme: _buildTextTheme(AppColors.textLight, AppColors.textLightSecondary),
-      
+      textTheme: _buildTextTheme(
+        AppColors.textLight,
+        AppColors.textLightSecondary,
+      ),
+
       // App Bar
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -50,7 +52,7 @@ class AppTheme {
           color: AppColors.textLight,
         ),
       ),
-      
+
       // Elevated Buttons
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -58,41 +60,38 @@ class AppTheme {
           foregroundColor: AppColors.textLight,
           elevation: 0,
           shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.buttonRadius,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
           padding: AppSpacing.buttonPadding,
           textStyle: AppTextStyles.buttonPrimary,
         ),
       ),
-      
+
       // Outlined Buttons
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: AppColors.orange,
           side: const BorderSide(color: AppColors.orange, width: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.buttonRadius,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
           padding: AppSpacing.buttonPadding,
           textStyle: AppTextStyles.buttonPrimary,
         ),
       ),
-      
+
       // Text Buttons
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: AppColors.dragonfruit,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.smRadius,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.smRadius),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
           textStyle: AppTextStyles.buttonTertiary,
         ),
       ),
-      
+
       // Input Fields
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -121,7 +120,7 @@ class AppTheme {
           color: AppColors.textLightSecondary,
         ),
       ),
-      
+
       // Cards
       cardTheme: CardThemeData(
         color: AppColors.surfaceLight,
@@ -133,15 +132,13 @@ class AppTheme {
         ),
         margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       ),
-      
+
       // List Tiles
       listTileTheme: ListTileThemeData(
         contentPadding: AppSpacing.listItemPadding,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.cardRadius,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.cardRadius),
       ),
-      
+
       // Bottom Navigation
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: AppColors.cream,
@@ -152,7 +149,7 @@ class AppTheme {
         selectedLabelStyle: AppTextStyles.smallLabel,
         unselectedLabelStyle: AppTextStyles.smallLabel,
       ),
-      
+
       // Tab Bar
       tabBarTheme: TabBarThemeData(
         labelStyle: AppTextStyles.tabSelector.copyWith(
@@ -165,7 +162,7 @@ class AppTheme {
           borderSide: BorderSide(color: AppColors.orange, width: 2),
         ),
       ),
-      
+
       // Segmented Buttons
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
@@ -191,11 +188,14 @@ class AppTheme {
           ),
           textStyle: WidgetStateProperty.all(AppTextStyles.segmentedControl),
           padding: WidgetStateProperty.all(
-            const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
           ),
         ),
       ),
-      
+
       // Sliders
       sliderTheme: SliderThemeData(
         activeTrackColor: AppColors.electrolyte,
@@ -207,36 +207,40 @@ class AppTheme {
           color: AppColors.textLight,
         ),
       ),
-      
+
       // Switches
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppColors.electrolyte;
+          if (states.contains(WidgetState.disabled)) {
+            return Colors.white.withValues(alpha: 0.65);
           }
-          return AppColors.surfaceLight;
+          return Colors.white;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppColors.electrolyte.withOpacity(0.5);
+          if (states.contains(WidgetState.disabled)) {
+            return AppColors.borderLightSecondary.withValues(alpha: 0.5);
           }
-          return AppColors.borderLightSecondary;
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.electrolyteDark;
+          }
+          return AppColors.borderLightSecondary.withValues(alpha: 0.8);
         }),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
-      
+
       // Icons
       iconTheme: const IconThemeData(
         color: AppColors.textLight,
         size: AppIconSizes.md,
       ),
-      
+
       // Dividers
       dividerTheme: DividerThemeData(
         color: AppColors.borderLightSecondary,
         thickness: 1,
         space: 1,
       ),
-      
+
       // Date Picker
       datePickerTheme: DatePickerThemeData(
         headerHeadlineStyle: AppTextStyles.datePickerHeader.copyWith(
@@ -284,10 +288,13 @@ class AppTheme {
       brightness: Brightness.dark,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.blackberry,
-      
+
       // Typography
-      textTheme: _buildTextTheme(AppColors.textDark, AppColors.textDarkSecondary),
-      
+      textTheme: _buildTextTheme(
+        AppColors.textDark,
+        AppColors.textDarkSecondary,
+      ),
+
       // App Bar
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -302,7 +309,7 @@ class AppTheme {
           color: AppColors.textDark,
         ),
       ),
-      
+
       // Elevated Buttons
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -310,41 +317,38 @@ class AppTheme {
           foregroundColor: AppColors.textDark,
           elevation: 0,
           shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.buttonRadius,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
           padding: AppSpacing.buttonPadding,
           textStyle: AppTextStyles.buttonPrimary,
         ),
       ),
-      
+
       // Outlined Buttons
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: AppColors.orange,
           side: const BorderSide(color: AppColors.orange, width: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.buttonRadius,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
           padding: AppSpacing.buttonPadding,
           textStyle: AppTextStyles.buttonPrimary,
         ),
       ),
-      
+
       // Text Buttons
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: AppColors.dragonfruit,
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.smRadius,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.smRadius),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
           textStyle: AppTextStyles.buttonTertiary,
         ),
       ),
-      
+
       // Input Fields
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -373,7 +377,7 @@ class AppTheme {
           color: AppColors.textDarkSecondary,
         ),
       ),
-      
+
       // Cards
       cardTheme: CardThemeData(
         color: AppColors.surfaceDark,
@@ -385,15 +389,13 @@ class AppTheme {
         ),
         margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       ),
-      
+
       // List Tiles
       listTileTheme: ListTileThemeData(
         contentPadding: AppSpacing.listItemPadding,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.cardRadius,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.cardRadius),
       ),
-      
+
       // Bottom Navigation
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: AppColors.blackberry,
@@ -404,7 +406,7 @@ class AppTheme {
         selectedLabelStyle: AppTextStyles.smallLabel,
         unselectedLabelStyle: AppTextStyles.smallLabel,
       ),
-      
+
       // Tab Bar
       tabBarTheme: TabBarThemeData(
         labelStyle: AppTextStyles.tabSelector.copyWith(
@@ -417,7 +419,7 @@ class AppTheme {
           borderSide: BorderSide(color: AppColors.orange, width: 2),
         ),
       ),
-      
+
       // Segmented Buttons
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
@@ -443,11 +445,14 @@ class AppTheme {
           ),
           textStyle: WidgetStateProperty.all(AppTextStyles.segmentedControl),
           padding: WidgetStateProperty.all(
-            const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
           ),
         ),
       ),
-      
+
       // Sliders
       sliderTheme: SliderThemeData(
         activeTrackColor: AppColors.electrolyte,
@@ -459,36 +464,40 @@ class AppTheme {
           color: AppColors.textDark,
         ),
       ),
-      
+
       // Switches
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return Colors.white.withValues(alpha: 0.65);
+          }
+          return Colors.white;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) {
+            return AppColors.borderDarkSecondary.withValues(alpha: 0.5);
+          }
           if (states.contains(WidgetState.selected)) {
             return AppColors.electrolyte;
           }
-          return AppColors.surfaceDark;
+          return AppColors.borderDarkSecondary.withValues(alpha: 0.8);
         }),
-        trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppColors.electrolyte.withOpacity(0.5);
-          }
-          return AppColors.borderDarkSecondary;
-        }),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
-      
+
       // Icons
       iconTheme: const IconThemeData(
         color: AppColors.textDark,
         size: AppIconSizes.md,
       ),
-      
+
       // Dividers
       dividerTheme: DividerThemeData(
         color: AppColors.borderDarkSecondary,
         thickness: 1,
         space: 1,
       ),
-      
+
       // Date Picker
       datePickerTheme: DatePickerThemeData(
         headerHeadlineStyle: AppTextStyles.datePickerHeader.copyWith(
@@ -502,9 +511,7 @@ class AppTheme {
         weekdayStyle: AppTextStyles.calendarDayLetter.copyWith(
           color: AppColors.textDarkSecondary,
         ),
-        dayStyle: AppTextStyles.calendarDay.copyWith(
-          color: AppColors.textDark,
-        ),
+        dayStyle: AppTextStyles.calendarDay.copyWith(color: AppColors.textDark),
         yearStyle: AppTextStyles.calendarDay.copyWith(
           color: AppColors.textDark,
         ),

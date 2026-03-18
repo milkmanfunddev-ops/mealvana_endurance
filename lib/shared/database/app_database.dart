@@ -33,6 +33,8 @@ import 'tables/coach_messages_table.dart';
 import 'tables/template_foods_table.dart';
 import 'tables/templates_table.dart';
 import 'tables/tp_writeback_table.dart';
+import 'tables/personal_templates_table.dart';
+import 'tables/athlete_pairing_codes_table.dart';
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
@@ -107,6 +109,12 @@ part 'app_database.g.dart';
 
     // TrainingPeaks write-back tracking
     TpWritebackTable,
+
+    // Personal nutrition plan templates
+    PersonalTemplatesTable,
+
+    // Athlete pairing codes for coach connections
+    AthletePairingCodesTable,
   ],
   daos: [
     UserDao,
@@ -135,9 +143,11 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 4: Adds template_foods and templates tables for nutrition templates.
+  /// Schema version 6: Adds athlete_pairing_codes table for coach-athlete connections.
+  /// v5 added personal_templates table for user-saved nutrition plan templates.
+  /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 4;
+  int get schemaVersion => 6;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).

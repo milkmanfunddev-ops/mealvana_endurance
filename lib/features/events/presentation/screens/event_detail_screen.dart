@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/events_controller.dart';
 import '../widgets/event_header_card.dart';
 import '../widgets/event_details_card.dart';
@@ -29,10 +30,7 @@ import 'event_form_screen.dart';
 class EventDetailScreen extends ConsumerWidget {
   final String eventId;
 
-  const EventDetailScreen({
-    super.key,
-    required this.eventId,
-  });
+  const EventDetailScreen({super.key, required this.eventId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,14 +42,7 @@ class EventDetailScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            FontAwesomeIcons.chevronLeft,
-            size: AppIconSizes.sm,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        leading: const CustomAppBarBackButton(),
         title: Text(
           'Event Details',
           style: AppTextStyles.sectionTitle.copyWith(
@@ -83,9 +74,7 @@ class EventDetailScreen extends ConsumerWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => EventFormScreen(
-                        event: event,
-                      ),
+                      builder: (context) => EventFormScreen(event: event),
                     ),
                   ).then((_) {
                     ref.invalidate(eventDetailProvider(eventId));
@@ -147,18 +136,12 @@ class EventDetailScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Event Header Card
-                EventHeaderCard(
-                  activity: activity,
-                  event: event,
-                ),
+                EventHeaderCard(activity: activity, event: event),
 
                 const SizedBox(height: AppSpacing.md),
 
                 // Event Details Card
-                EventDetailsCard(
-                  activity: activity,
-                  event: event,
-                ),
+                EventDetailsCard(activity: activity, event: event),
 
                 const SizedBox(height: AppSpacing.md),
 
@@ -180,9 +163,7 @@ class EventDetailScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.electrolyte,
-          ),
+          child: CircularProgressIndicator(color: AppColors.electrolyte),
         ),
         error: (error, stack) => SingleChildScrollView(
           child: Column(
@@ -192,7 +173,9 @@ class EventDetailScreen extends ConsumerWidget {
 
               // Error message card
               BaseCard(
-                margin: AppSpacing.screenPaddingHorizontal.copyWith(top: AppSpacing.lg),
+                margin: AppSpacing.screenPaddingHorizontal.copyWith(
+                  top: AppSpacing.lg,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

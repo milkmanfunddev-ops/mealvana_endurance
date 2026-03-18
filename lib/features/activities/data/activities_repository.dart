@@ -9,6 +9,7 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/activity.dart' as domain;
@@ -74,7 +75,8 @@ class ActivitiesRepository with SyncableRepository {
   String get repositoryKey => 'activities';
 
   @override
-  List<String> get dependencies => ['users'];
+  List<String> get dependencies =>
+      SyncDependencyGraph.dependenciesFor(repositoryKey);
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
@@ -437,19 +439,24 @@ class ActivitiesRepository with SyncableRepository {
           .from('activities')
           .upsert(payload, onConflict: onConflict);
     } catch (e) {
-      if (!_isMissingConflictConstraintError(e) ||
-          fallbackOnConflict == null ||
-          fallbackOnConflict == onConflict) {
+      final canFallback =
+          fallbackOnConflict != null &&
+          fallbackOnConflict != onConflict &&
+          (_isMissingConflictConstraintError(e) ||
+              _isDuplicateKeyOnDifferentColumn(e, onConflict));
+
+      if (!canFallback) {
         rethrow;
       }
 
       _logger.warning(
-        'Supabase missing ON CONFLICT target, retrying with fallback target',
+        'Supabase upsert conflict mismatch, retrying with fallback target',
         context: 'ACTIVITIES_REPOSITORY',
         error: e,
         data: {
           'onConflict': onConflict,
           'fallbackOnConflict': fallbackOnConflict,
+          'errorCode': _postgrestErrorCode(e),
         },
       );
 
@@ -478,6 +485,34 @@ class ActivitiesRepository with SyncableRepository {
     return message.contains(
       'no unique or exclusion constraint matching the on conflict specification',
     );
+  }
+
+  /// Detects when a 23505 (unique constraint violation) occurs on a column
+  /// that is NOT part of the onConflict target. This happens when the upsert
+  /// conflict columns don't match an existing row (e.g. user_id changed) but
+  /// the primary key (id) already exists under a different user. In this case,
+  /// falling back to onConflict: 'id' will correctly UPDATE instead of INSERT.
+  bool _isDuplicateKeyOnDifferentColumn(Object error, String onConflict) {
+    if (error is! PostgrestException || error.code != '23505') {
+      return false;
+    }
+    // Only fall back when the violated constraint is NOT the same as onConflict.
+    // e.g. onConflict='user_id,synced_from_provider,provider_workout_id' but
+    // the violated constraint is 'activities_id_new_unique' (the id column).
+    final details = (error.details ?? '').toString().toLowerCase();
+    final message = error.message.toLowerCase();
+    final conflictColumns = onConflict
+        .toLowerCase()
+        .split(',')
+        .map((c) => c.trim())
+        .toSet();
+    // If the violated constraint mentions 'id' and 'id' is not in the
+    // onConflict columns, the fallback to onConflict:'id' should work.
+    final violatesIdConstraint =
+        details.contains('key (id)') ||
+        message.contains('activities_id_new_unique') ||
+        message.contains('activities_pkey');
+    return violatesIdConstraint && !conflictColumns.contains('id');
   }
 
   // ========================================================================
@@ -518,10 +553,16 @@ class ActivitiesRepository with SyncableRepository {
         _logger.warning(
           'Immediate upload failed; record stays dirty for retry',
           context: 'ACTIVITIES_REPOSITORY',
-          error: e, stackTrace: stackTrace,
+          error: e,
+          stackTrace: stackTrace,
           data: {'operation': 'create', 'recordId': activityWithId.id},
         );
-        _sentry.reportNetworkError(e, url: 'supabase:activities:create', method: 'INSERT', stackTrace: stackTrace);
+        _sentry.reportNetworkError(
+          e,
+          url: 'supabase:activities:create',
+          method: 'INSERT',
+          stackTrace: stackTrace,
+        );
       }
 
       return activityWithId;
@@ -554,15 +595,24 @@ class ActivitiesRepository with SyncableRepository {
       // Attempt background upload (non-blocking)
       unawaited(() async {
         try {
-          await _uploadActivityToSupabase(activityWithDirtyFlag, operation: 'update');
+          await _uploadActivityToSupabase(
+            activityWithDirtyFlag,
+            operation: 'update',
+          );
         } catch (e, stackTrace) {
           _logger.warning(
             'Immediate upload failed; record stays dirty for retry',
             context: 'ACTIVITIES_REPOSITORY',
-            error: e, stackTrace: stackTrace,
+            error: e,
+            stackTrace: stackTrace,
             data: {'operation': 'update', 'recordId': activityWithDirtyFlag.id},
           );
-          _sentry.reportNetworkError(e, url: 'supabase:activities:update', method: 'UPSERT', stackTrace: stackTrace);
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:activities:update',
+            method: 'UPSERT',
+            stackTrace: stackTrace,
+          );
         }
       }());
 
@@ -603,10 +653,16 @@ class ActivitiesRepository with SyncableRepository {
           _logger.warning(
             'Immediate upload failed; record stays dirty for retry',
             context: 'ACTIVITIES_REPOSITORY',
-            error: e, stackTrace: stackTrace,
+            error: e,
+            stackTrace: stackTrace,
             data: {'operation': 'delete', 'recordId': activityId},
           );
-          _sentry.reportNetworkError(e, url: 'supabase:activities:delete', method: 'DELETE', stackTrace: stackTrace);
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:activities:delete',
+            method: 'DELETE',
+            stackTrace: stackTrace,
+          );
         }
       }());
     } catch (e, stackTrace) {
@@ -1011,10 +1067,16 @@ class ActivitiesRepository with SyncableRepository {
         _logger.warning(
           'Immediate upload failed; record stays dirty for retry',
           context: 'ACTIVITIES_REPOSITORY',
-          error: e, stackTrace: stackTrace,
+          error: e,
+          stackTrace: stackTrace,
           data: {'operation': operation, 'recordId': activityId},
         );
-        _sentry.reportNetworkError(e, url: 'supabase:activities:$operation', method: 'UPSERT', stackTrace: stackTrace);
+        _sentry.reportNetworkError(
+          e,
+          url: 'supabase:activities:$operation',
+          method: 'UPSERT',
+          stackTrace: stackTrace,
+        );
       }
     }());
   }
@@ -1229,7 +1291,6 @@ class ActivitiesRepository with SyncableRepository {
     return activities;
   }
 
-
   Future<List<Activity>> _hydrateProviderActivitiesFromRemote({
     required String userId,
     required List<String> providerVariants,
@@ -1327,15 +1388,27 @@ class ActivitiesRepository with SyncableRepository {
 
       unawaited(() async {
         try {
-          await _uploadActivityToSupabase(activityWithFlags, operation: 'update');
+          await _uploadActivityToSupabase(
+            activityWithFlags,
+            operation: 'update',
+          );
         } catch (e, stackTrace) {
           _logger.warning(
             'Immediate upload failed; record stays dirty for retry',
             context: 'ACTIVITIES_REPOSITORY',
-            error: e, stackTrace: stackTrace,
-            data: {'operation': 'provider_update', 'recordId': activityWithFlags.id},
+            error: e,
+            stackTrace: stackTrace,
+            data: {
+              'operation': 'provider_update',
+              'recordId': activityWithFlags.id,
+            },
           );
-          _sentry.reportNetworkError(e, url: 'supabase:activities:provider_update', method: 'UPSERT', stackTrace: stackTrace);
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:activities:provider_update',
+            method: 'UPSERT',
+            stackTrace: stackTrace,
+          );
         }
       }());
 
@@ -1779,10 +1852,16 @@ class ActivitiesRepository with SyncableRepository {
             _logger.warning(
               'Immediate upload failed; record stays dirty for retry',
               context: 'ACTIVITIES_REPOSITORY',
-              error: e, stackTrace: stackTrace,
+              error: e,
+              stackTrace: stackTrace,
               data: {'operation': 'delete', 'recordId': brickId},
             );
-            _sentry.reportNetworkError(e, url: 'supabase:activities:delete', method: 'DELETE', stackTrace: stackTrace);
+            _sentry.reportNetworkError(
+              e,
+              url: 'supabase:activities:delete',
+              method: 'DELETE',
+              stackTrace: stackTrace,
+            );
           }
         }());
       }

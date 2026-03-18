@@ -7,6 +7,7 @@ import '../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../core/utils/debug_logger.dart';
 import '../../../shared/data/syncable_repository.dart';
@@ -32,7 +33,8 @@ class UserRepository with SyncableRepository {
   String get repositoryKey => 'users';
 
   @override
-  List<String> get dependencies => []; // Level 0 - no dependencies
+  List<String> get dependencies =>
+      SyncDependencyGraph.dependenciesFor(repositoryKey);
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
@@ -259,9 +261,17 @@ class UserRepository with SyncableRepository {
           sentry.addBreadcrumb(
             message: 'Immediate upload failed; record stays dirty for retry',
             category: 'sync',
-            data: {'operation': 'update_profile', 'recordId': updatedProfile.id},
+            data: {
+              'operation': 'update_profile',
+              'recordId': updatedProfile.id,
+            },
           );
-          await sentry.reportNetworkError(e, url: 'supabase:users:update_profile', method: 'UPSERT', stackTrace: stackTrace);
+          await sentry.reportNetworkError(
+            e,
+            url: 'supabase:users:update_profile',
+            method: 'UPSERT',
+            stackTrace: stackTrace,
+          );
         }
       }
 
@@ -321,14 +331,25 @@ class UserRepository with SyncableRepository {
       }
 
       try {
-        await supabase.from('users').update(updateData).eq('id', currentUser.id);
+        await supabase
+            .from('users')
+            .update(updateData)
+            .eq('id', currentUser.id);
       } catch (e, stackTrace) {
         sentry.addBreadcrumb(
           message: 'Immediate upload failed; record stays dirty for retry',
           category: 'sync',
-          data: {'operation': 'update_auth_provider', 'recordId': currentUser.id},
+          data: {
+            'operation': 'update_auth_provider',
+            'recordId': currentUser.id,
+          },
         );
-        await sentry.reportNetworkError(e, url: 'supabase:users:update_auth_provider', method: 'UPDATE', stackTrace: stackTrace);
+        await sentry.reportNetworkError(
+          e,
+          url: 'supabase:users:update_auth_provider',
+          method: 'UPDATE',
+          stackTrace: stackTrace,
+        );
       }
 
       sentry.addBreadcrumb(
@@ -586,9 +607,17 @@ class UserRepository with SyncableRepository {
         sentry.addBreadcrumb(
           message: 'Immediate upload failed; record stays dirty for retry',
           category: 'sync',
-          data: {'operation': 'reset_anonymous_user', 'recordId': newAnonymousUserId},
+          data: {
+            'operation': 'reset_anonymous_user',
+            'recordId': newAnonymousUserId,
+          },
         );
-        await sentry.reportNetworkError(e, url: 'supabase:users:reset_anonymous_user', method: 'UPSERT', stackTrace: stackTrace);
+        await sentry.reportNetworkError(
+          e,
+          url: 'supabase:users:reset_anonymous_user',
+          method: 'UPSERT',
+          stackTrace: stackTrace,
+        );
       }
 
       sentry.addBreadcrumb(
@@ -912,7 +941,8 @@ class UserRepository with SyncableRepository {
       // Nutrition target overrides
       nutritionTargetOverrides: userData['nutrition_target_overrides'] != null
           ? NutritionTargetOverrides.fromJson(
-              userData['nutrition_target_overrides'] as Map<String, dynamic>)
+              userData['nutrition_target_overrides'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -1010,9 +1040,5 @@ Future<UserRepository> userRepository(Ref ref) async {
   final sentry = ref.watch(sentryReporterProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;
 
-  return UserRepository(
-    database: database,
-    supabase: supabase,
-    sentry: sentry,
-  );
+  return UserRepository(database: database, supabase: supabase, sentry: sentry);
 }

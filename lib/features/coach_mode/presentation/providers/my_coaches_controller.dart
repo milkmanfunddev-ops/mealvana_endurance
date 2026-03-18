@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../shared/services/logging_service.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
 
@@ -45,24 +46,22 @@ class MyCoachesState {
 @riverpod
 class MyCoachesController extends _$MyCoachesController {
   CoachService get _coachService => ref.read(coachServiceProvider);
+  AppLogger get _logger => ref.read(appLoggerProvider);
 
   @override
   FutureOr<MyCoachesState> build() async {
     return _loadCoaches();
   }
 
+  /// Load local data immediately, sync in background
   Future<MyCoachesState> _loadCoaches() async {
     try {
-      // Sync relationships from Supabase first to get latest data
-      // This ensures we see when coaches accept/decline our requests
-      await _coachService.syncRelationshipsFromSupabase();
-
-      // Sync coach data (names, etc.) from Supabase
-      // This ensures we have coach first_name/last_name in local DB
-      await _coachService.syncMyCoachesData();
-
+      // 1. Load local data IMMEDIATELY
       final activeCoaches = await _coachService.getMyCoaches();
       final pendingRequests = await _coachService.getPendingCoachRequests();
+
+      // 2. Background sync (fire-and-forget)
+      unawaited(_backgroundSync());
 
       return MyCoachesState(
         activeCoaches: activeCoaches,
@@ -71,6 +70,22 @@ class MyCoachesController extends _$MyCoachesController {
     } catch (e) {
       return MyCoachesState(
         error: 'Failed to load coaches: $e',
+      );
+    }
+  }
+
+  /// Background sync: fetches latest data from Supabase, then refreshes UI
+  Future<void> _backgroundSync() async {
+    try {
+      await _coachService.syncRelationshipsFromSupabase();
+      await _coachService.syncMyCoachesData();
+      ref.invalidateSelf();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Background sync failed',
+        context: 'MY_COACHES_CONTROLLER',
+        error: e,
+        stackTrace: stackTrace,
       );
     }
   }

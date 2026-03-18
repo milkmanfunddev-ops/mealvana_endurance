@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/kyle_switch.dart';
 import '../../../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../../../theme/kyle_design/app_colors.dart';
@@ -42,10 +43,10 @@ class FastedToggle extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              Switch.adaptive(
+              KyleSwitch(
                 value: isFasted,
                 onChanged: onChanged,
-                activeColor: AppColors.electrolyte,
+                activeTrackColor: AppColors.electrolyte,
               ),
             ],
           ),
@@ -55,11 +56,13 @@ class FastedToggle extends StatelessWidget {
               child: Text(
                 showWarning
                     ? (warningText ??
-                        'Fasted training is not recommended for longer or harder workouts. Consider fueling before.')
+                          'Fasted training is not recommended for longer or harder workouts. Consider fueling before.')
                     : (infoText ??
-                        'Fasted training can support metabolic adaptations for easy, short workouts. Post-workout nutrition will be prioritized.'),
+                          'Fasted training can support metabolic adaptations for easy, short workouts. Post-workout nutrition will be prioritized.'),
                 style: AppTextStyles.smallLabel.copyWith(
-                  color: showWarning ? AppColors.orange : AppColors.textLightSecondary,
+                  color: showWarning
+                      ? AppColors.orange
+                      : AppColors.textLightSecondary,
                 ),
               ),
             ),

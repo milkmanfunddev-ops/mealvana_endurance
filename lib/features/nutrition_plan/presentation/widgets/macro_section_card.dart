@@ -14,6 +14,7 @@ class MacroSectionCard extends StatefulWidget {
     required this.isExpanded,
     required this.onValueChanged,
     this.useMetric = false,
+    this.bodyWeightKg = 70.0,
   });
 
   final String title;
@@ -22,6 +23,7 @@ class MacroSectionCard extends StatefulWidget {
   final bool isExpanded;
   final void Function(MacroField field, double newValue) onValueChanged;
   final bool useMetric;
+  final double bodyWeightKg;
 
   @override
   State<MacroSectionCard> createState() => _MacroSectionCardState();
@@ -504,7 +506,7 @@ class _MacroSectionCardState extends State<MacroSectionCard>
   String? _getValidationMessage(MacroField field, double value) {
     // For validation, we need body weight and duration from the macro targets
     final metrics = widget.macroTargets.metrics;
-    final bodyWeightKg = 70.0; // TODO: Get from user profile - using average for now
+    final bodyWeightKg = widget.bodyWeightKg;
     final durationH = metrics.durationH;
 
     // Use validation ranges based on ISSN research

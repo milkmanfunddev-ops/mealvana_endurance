@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../shared/services/logging_service.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach.dart';
 import '../../domain/coach_athlete_relationship.dart';
@@ -53,13 +54,14 @@ class CoachDashboardState {
 @riverpod
 class CoachDashboardController extends _$CoachDashboardController {
   CoachService get _coachService => ref.read(coachServiceProvider);
+  AppLogger get _logger => ref.read(appLoggerProvider);
 
   @override
   FutureOr<CoachDashboardState> build() async {
     return _loadDashboard();
   }
 
-  /// Load all dashboard data
+  /// Load local data immediately, sync in background
   Future<CoachDashboardState> _loadDashboard() async {
     try {
       final coachInfo = await _coachService.getCurrentCoachInfo();
@@ -70,15 +72,12 @@ class CoachDashboardController extends _$CoachDashboardController {
         );
       }
 
-      // Sync relationships from Supabase first to get latest data
-      // This ensures we see requests created by athletes on other devices
-      await _coachService.syncRelationshipsFromSupabase();
-
-      // Also sync athlete profiles so we have their names for display
-      await _coachService.syncMyAthletesProfiles();
-
+      // 1. Load local data IMMEDIATELY
       final activeAthletes = await _coachService.getMyAthletes();
       final pendingRequests = await _coachService.getPendingAthleteRequests();
+
+      // 2. Background sync (fire-and-forget)
+      unawaited(_backgroundSync());
 
       return CoachDashboardState(
         coachInfo: coachInfo,
@@ -88,6 +87,22 @@ class CoachDashboardController extends _$CoachDashboardController {
     } catch (e) {
       return CoachDashboardState(
         error: 'Failed to load dashboard: ${e.toString()}',
+      );
+    }
+  }
+
+  /// Background sync: fetches latest data from Supabase, then refreshes UI
+  Future<void> _backgroundSync() async {
+    try {
+      await _coachService.syncRelationshipsFromSupabase();
+      await _coachService.syncMyAthletesProfiles();
+      ref.invalidateSelf();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Background sync failed',
+        context: 'COACH_DASHBOARD_CONTROLLER',
+        error: e,
+        stackTrace: stackTrace,
       );
     }
   }

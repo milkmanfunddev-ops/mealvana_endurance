@@ -730,6 +730,32 @@ function calculateMacrosV3(input: MacroInputV3) {
     pre_run_water_ml: preWorkout.hydration,
     pre_run_meal_type: preWorkout.meal_type,
 
+    // V4-compatible range fields (sodium/hydration only)
+    pre_run_sodium_low_mg: (() => {
+      if (preWorkout.meal_type === 'full_meal') return 200;
+      if (preWorkout.meal_type === 'snack') return 100;
+      if (preWorkout.meal_type === 'top_up') return 0;
+      return 0;
+    })(),
+    pre_run_sodium_high_mg: (() => {
+      if (preWorkout.meal_type === 'full_meal') return 2000;
+      if (preWorkout.meal_type === 'snack') return 1000;
+      if (preWorkout.meal_type === 'top_up') return 400;
+      return 0;
+    })(),
+    pre_run_water_low_ml: (() => {
+      if (preWorkout.meal_type === 'full_meal') return Math.max(200, Math.round(preWorkout.hydration * 0.50));
+      if (preWorkout.meal_type === 'snack') return Math.max(150, Math.round(preWorkout.hydration * 0.50));
+      if (preWorkout.meal_type === 'top_up') return 0;
+      return 0;
+    })(),
+    pre_run_water_high_ml: (() => {
+      if (preWorkout.meal_type === 'full_meal') return Math.max(600, Math.round(preWorkout.hydration * 1.50));
+      if (preWorkout.meal_type === 'snack') return Math.max(500, Math.round(preWorkout.hydration * 1.50));
+      if (preWorkout.meal_type === 'top_up') return 500;
+      return 0;
+    })(),
+
     // During-workout (normalized field names)
     during_rate_g_per_h: duringCarbs.rate_gph,
     during_total_g: Math.round(duringCarbs.rate_gph * durationH),
@@ -839,7 +865,8 @@ function getSegmentDistanceMiles(segment: BrickSegmentInput): number {
  * Design:
  * - Pre-workout: Reuse v3 calculatePreWorkoutMacros (supports hours_before, fasted)
  * - During per-segment: v3 carb rate + hydration per segment; swimming gets 0
- * - Transitions: Fixed values from v2 (T1: 20g carbs/200ml/150mg; T2: 25g/150ml/100mg)
+ * - Transitions: Weight-based carbs (T1: 0.3 g/kg, T2: 0.35 g/kg) for ≥180min; fixed sodium/hydration
+ * - Brick penalty: 20% carb reduction for run segments that follow a bike segment
  * - Post-workout: Reuse v3 post-workout functions (fasted boost, duration-aware)
  * - Energy: Sum per-segment MET-based gross/net calories
  */
@@ -887,7 +914,8 @@ function calculateBrickMacrosV3(input: MacroInputV3) {
   let totalDistanceKm = 0;
   let totalDistanceMi = 0;
 
-  for (const segment of segments) {
+  for (let segIdx = 0; segIdx < segments.length; segIdx++) {
+    const segment = segments[segIdx];
     const sport = segment.sport;
     const durationMin = segment.duration_minutes;
     const durationH = durationMin / 60;
@@ -895,6 +923,10 @@ function calculateBrickMacrosV3(input: MacroInputV3) {
     const intensityDist = input.intensity_distribution
       ? getIntensityDistribution(input.intensity_distribution, met)
       : intensityDistFromLabel(segment.intensity || 'moderate');
+
+    // Brick penalty: 20% carb reduction for run after bike (GI blood diversion)
+    const prevSport = segIdx > 0 ? segments[segIdx - 1].sport : null;
+    const brickPenalty = (sport === 'running' && prevSport === 'cycling') ? 0.80 : 1.0;
 
     // Energy
     const grossCal = calculateGrossCalories(weightKg, durationMin, met);
@@ -933,11 +965,14 @@ function calculateBrickMacrosV3(input: MacroInputV3) {
         input.temp_c ?? null, input.humidity_pct ?? null
       );
 
+      // Apply brick penalty to carbs (20% reduction for run after bike)
+      const adjustedCarbRate = carbResult.rate_gph * brickPenalty;
+
       duringSegments.push({
         segment_order: segment.order,
         sport,
         duration_minutes: durationMin,
-        carbs_g: Math.round(carbResult.rate_gph * durationH),
+        carbs_g: Math.round(adjustedCarbRate * durationH),
         protein_g: 0,
         fat_g: 0,
         sodium_mg: hydrationResult.sodium_total_mg,
@@ -947,7 +982,7 @@ function calculateBrickMacrosV3(input: MacroInputV3) {
     }
   }
 
-  // ---- Transitions (fixed values from v2) ----
+  // ---- Transitions (weight-based carbs, fixed sodium/hydration) ----
   const transitions: Array<{
     transition_name: string;
     after_sport: string;
@@ -964,19 +999,30 @@ function calculateBrickMacrosV3(input: MacroInputV3) {
   for (let i = 0; i < segments.length - 1; i++) {
     const transitionName = i === 0 ? 'T1' : 'T2';
 
-    // Distance-based transition targets
+    // Weight-based transition carbs; fixed sodium/hydration by duration
     let transitionCarbs: number, transitionSodium: number, transitionWater: number;
     if (totalDurationMin < 90) {
+      // Sprint: no transition nutrition needed
       transitionCarbs = 0; transitionSodium = 0; transitionWater = 0;
     } else if (totalDurationMin < 180) {
+      // Short Olympic: water only
       transitionCarbs = 0; transitionSodium = 0; transitionWater = 50;
-    } else if (totalDurationMin < 420) {
-      if (i === 0) { transitionCarbs = 25; transitionSodium = 150; transitionWater = 150; }
-      else { transitionCarbs = 10; transitionSodium = 100; transitionWater = 100; }
     } else {
-      // Ironman (420+ min)
-      if (i === 0) { transitionCarbs = 30; transitionSodium = 200; transitionWater = 200; }
-      else { transitionCarbs = 25; transitionSodium = 150; transitionWater = 150; }
+      // Olympic/70.3/Ironman (≥180min): weight-based carbs
+      // T1 (swim→bike): 0.3 g/kg; T2 (bike→run): 0.35 g/kg
+      const carbsPerKg = i === 0 ? 0.3 : 0.35;
+      transitionCarbs = Math.round(weightKg * carbsPerKg);
+
+      // Sodium/hydration: fixed by total duration tier
+      if (totalDurationMin < 420) {
+        // Olympic/70.3
+        if (i === 0) { transitionSodium = 150; transitionWater = 150; }
+        else { transitionSodium = 100; transitionWater = 100; }
+      } else {
+        // Ironman (420+ min)
+        if (i === 0) { transitionSodium = 200; transitionWater = 200; }
+        else { transitionSodium = 150; transitionWater = 150; }
+      }
     }
 
     transitions.push({

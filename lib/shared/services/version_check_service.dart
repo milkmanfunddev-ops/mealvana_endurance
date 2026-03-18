@@ -11,6 +11,7 @@ import '../models/dirty_record_backup.dart';
 import '../models/upload_error.dart';
 import 'dirty_record_backup_service.dart';
 import 'logging_service.dart';
+import 'sync/sync_dependency_graph.dart';
 
 // Repository imports for uploadDirtyRecords
 import '../../features/activities/data/activities_repository.dart';
@@ -249,23 +250,7 @@ class VersionCheckService {
       // Without this, controllers calling ensureSynced() after the DB is recreated
       // would see stale-but-recent timestamps and skip syncing, leaving the DB empty.
       final prefs = await SharedPreferences.getInstance();
-      const repoKeys = [
-        'users',
-        'foods',
-        'carb_loading_foods',
-        'activities',
-        'events',
-        'food_preferences',
-        'user_foods',
-        'coaches',
-        'coach_athlete_relationships',
-        'carb_loading_plans',
-        'carb_loading_days',
-        'carb_loading_day_meals',
-        'coach_messages',
-        'template_foods',
-        'templates',
-      ];
+      final repoKeys = SyncDependencyGraph.repositoryKeys;
       for (final key in repoKeys) {
         await prefs.remove('${key}_last_sync');
       }

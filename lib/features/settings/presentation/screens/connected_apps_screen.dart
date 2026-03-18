@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/navigation/figma_onboarding_footer.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 
 import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
@@ -22,11 +22,7 @@ import '../../../../shared/services/preferences_service.dart';
 /// - Auto-imports workouts after connecting
 /// - Shows "Notify Me" for coming soon providers
 class ConnectedAppsScreen extends ConsumerStatefulWidget {
-  const ConnectedAppsScreen({
-    super.key,
-    this.onContinue,
-    this.onBack,
-  });
+  const ConnectedAppsScreen({super.key, this.onContinue, this.onBack});
 
   /// Callback to advance to next page in onboarding PageView
   /// If null, screen is in settings mode
@@ -36,7 +32,8 @@ class ConnectedAppsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
 
   @override
-  ConsumerState<ConnectedAppsScreen> createState() => _ConnectedAppsScreenState();
+  ConsumerState<ConnectedAppsScreen> createState() =>
+      _ConnectedAppsScreenState();
 }
 
 class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
@@ -90,17 +87,17 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     WidgetRef ref,
     AsyncValue<ConnectTrainingState> state,
   ) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
     return Scaffold(
-      backgroundColor: AppColors.blackberry,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.blackberry,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark),
-          onPressed: () => context.pop(),
-        ),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        leading: const CustomAppBarBackButton(),
         title: Text(
           'Connected Apps',
-          style: AppTextStyles.sectionTitle.copyWith(color: AppColors.textDark),
+          style: AppTextStyles.sectionTitle.copyWith(color: onSurface),
         ),
         centerTitle: true,
       ),
@@ -126,7 +123,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     AsyncValue<ConnectTrainingState> state,
   ) {
     return Scaffold(
-      backgroundColor: AppColors.blackberry,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           // Main content
@@ -148,18 +145,22 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
                     // Integration providers list
                     Expanded(
                       child: state.when(
-                        data: (data) => _buildOnboardingProvidersList(context, ref, data),
+                        data: (data) =>
+                            _buildOnboardingProvidersList(context, ref, data),
                         loading: () => const Center(
-                          child: CircularProgressIndicator(color: AppColors.dragonfruit),
+                          child: CircularProgressIndicator(
+                            color: AppColors.dragonfruit,
+                          ),
                         ),
-                        error: (error, _) => _buildError(context, ref, error.toString()),
+                        error: (error, _) =>
+                            _buildError(context, ref, error.toString()),
                       ),
                     ),
 
                     const SizedBox(height: AppSpacing.lg),
 
                     // Skip button
-                    _buildSkipButton(ref),
+                    _buildSkipButton(context, ref),
 
                     const SizedBox(height: AppSpacing.md),
                   ],
@@ -184,17 +185,20 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   }
 
   Widget _buildOnboardingHeader(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Connect Your Training',
-          style: AppTextStyles.pageTitle.copyWith(color: AppColors.textDark),
+          style: AppTextStyles.pageTitle.copyWith(color: onSurface),
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Import your upcoming workouts to get personalized nutrition plans for each session.',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textDarkSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(color: onSurfaceVariant),
         ),
       ],
     );
@@ -206,12 +210,21 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     WidgetRef ref,
     ConnectTrainingState data,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
+    final finalSurgeLogo = isDark
+        ? 'assets/images/integrations/final_surge_wordmark_white.svg'
+        : 'assets/images/integrations/final_surge_wordmark.svg';
+    final trainingPeaksLogo = isDark
+        ? 'assets/images/integrations/training_peaks_horizontal_dark.jpg'
+        : 'assets/images/integrations/training_peaks_horizontal_logo.png';
+
     return ListView(
       children: [
         // Header text
         Text(
           'Connect your training platforms to automatically import workouts and generate nutrition plans.',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textDarkSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(color: onSurfaceVariant),
         ),
 
         const SizedBox(height: AppSpacing.lg),
@@ -220,11 +233,12 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Logo includes wordmark - no separate text label needed
         IntegrationProviderCard(
           name: 'Final Surge',
-          iconPath: 'assets/images/integrations/final_surge_wordmark_white.svg',
+          iconPath: finalSurgeLogo,
           logoHeight: 18,
           isAvailable: true,
           isConnected: data.isFinalSurgeConnected,
-          isConnecting: data.isConnecting && data.connectingProvider == 'final_surge',
+          isConnecting:
+              data.isConnecting && data.connectingProvider == 'final_surge',
           isSyncing: data.syncingProvider == 'final_surge',
           athleteName: data.finalSurgeAthleteName,
           lastSyncAt: data.finalSurgeLastSyncAt,
@@ -241,7 +255,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
             padding: const EdgeInsets.only(left: AppSpacing.md),
             child: Text(
               'Last sync: ${data.importedWorkoutsCount} workouts imported',
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textDarkSecondary),
+              style: AppTextStyles.bodySmall.copyWith(color: onSurfaceVariant),
             ),
           ),
         ],
@@ -252,11 +266,12 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Larger height because logo has built-in dark background padding
         IntegrationProviderCard(
           name: 'TrainingPeaks',
-          iconPath: 'assets/images/integrations/training_peaks_horizontal_dark.jpg',
+          iconPath: trainingPeaksLogo,
           logoHeight: 38,
           isAvailable: true,
           isConnected: data.isTrainingPeaksConnected,
-          isConnecting: data.isConnecting && data.connectingProvider == 'training_peaks',
+          isConnecting:
+              data.isConnecting && data.connectingProvider == 'training_peaks',
           isSyncing: data.syncingProvider == 'training_peaks',
           athleteName: data.trainingPeaksAthleteName,
           lastSyncAt: data.trainingPeaksLastSyncAt,
@@ -278,12 +293,16 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
                   if (data.importedWorkoutsCount > 0)
                     Text(
                       'Last sync: ${data.importedWorkoutsCount} workouts imported',
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textDarkSecondary),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: onSurfaceVariant,
+                      ),
                     ),
                   if (data.hasNextEvent && data.nextEventName != null)
                     Text(
                       'Next event: ${data.nextEventName}',
-                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.success),
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.success,
+                      ),
                     ),
                 ],
               ),
@@ -319,12 +338,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
             ),
             child: Row(
               children: [
-                Icon(Icons.error_outline, color: AppColors.dragonfruit, size: 20),
+                Icon(
+                  Icons.error_outline,
+                  color: AppColors.dragonfruit,
+                  size: 20,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     data.errorMessage!,
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.dragonfruit),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.dragonfruit,
+                    ),
                   ),
                 ),
               ],
@@ -336,7 +361,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         const SizedBox(height: AppSpacing.xl),
         Text(
           'Tip: Long-press "Sync Now" to disconnect',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textDarkSecondary),
+          style: AppTextStyles.bodySmall.copyWith(color: onSurfaceVariant),
           textAlign: TextAlign.center,
         ),
       ],
@@ -351,17 +376,26 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     WidgetRef ref,
     ConnectTrainingState data,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final finalSurgeLogo = isDark
+        ? 'assets/images/integrations/final_surge_wordmark_white.svg'
+        : 'assets/images/integrations/final_surge_wordmark.svg';
+    final trainingPeaksLogo = isDark
+        ? 'assets/images/integrations/training_peaks_horizontal_dark.jpg'
+        : 'assets/images/integrations/training_peaks_horizontal_logo.png';
+
     return ListView(
       children: [
         // Final Surge - fully integrated
         // Logo includes wordmark - no separate text label needed
         IntegrationProviderCard(
           name: 'Final Surge',
-          iconPath: 'assets/images/integrations/final_surge_wordmark_white.svg',
+          iconPath: finalSurgeLogo,
           logoHeight: 18,
           isAvailable: true,
           isConnected: data.isFinalSurgeConnected,
-          isConnecting: data.isConnecting && data.connectingProvider == 'final_surge',
+          isConnecting:
+              data.isConnecting && data.connectingProvider == 'final_surge',
           isSyncing: data.syncingProvider == 'final_surge',
           athleteName: data.finalSurgeAthleteName,
           lastSyncAt: data.finalSurgeLastSyncAt,
@@ -379,11 +413,12 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Larger height because logo has built-in dark background padding
         IntegrationProviderCard(
           name: 'TrainingPeaks',
-          iconPath: 'assets/images/integrations/training_peaks_horizontal_dark.jpg',
+          iconPath: trainingPeaksLogo,
           logoHeight: 38,
           isAvailable: true,
           isConnected: data.isTrainingPeaksConnected,
-          isConnecting: data.isConnecting && data.connectingProvider == 'training_peaks',
+          isConnecting:
+              data.isConnecting && data.connectingProvider == 'training_peaks',
           isSyncing: data.syncingProvider == 'training_peaks',
           athleteName: data.trainingPeaksAthleteName,
           lastSyncAt: data.trainingPeaksLastSyncAt,
@@ -407,6 +442,9 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   }
 
   Widget _buildError(BuildContext context, WidgetRef ref, String error) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -419,12 +457,12 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           const SizedBox(height: AppSpacing.md),
           Text(
             'Something went wrong',
-            style: AppTextStyles.sectionTitle.copyWith(color: AppColors.textDark),
+            style: AppTextStyles.sectionTitle.copyWith(color: onSurface),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
             error,
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textDarkSecondary),
+            style: AppTextStyles.bodySmall.copyWith(color: onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -437,14 +475,14 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     );
   }
 
-  Widget _buildSkipButton(WidgetRef ref) {
+  Widget _buildSkipButton(BuildContext context, WidgetRef ref) {
     return Center(
       child: TextButton(
         onPressed: () => _skipConnection(ref),
         child: Text(
           'Skip for now',
           style: AppTextStyles.buttonTertiary.copyWith(
-            color: AppColors.textDarkSecondary,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             decoration: TextDecoration.underline,
           ),
         ),
@@ -458,13 +496,19 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     required bool isOnboardingMode,
     required double spacing,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final widgets = <Widget>[];
     for (var i = 0; i < _comingSoonProviders.length; i++) {
       final provider = _comingSoonProviders[i];
+      final iconPath = provider.key == 'strava'
+          ? (isDark
+                ? 'assets/images/integrations/strava_compatible_white.svg'
+                : 'assets/images/integrations/strava_compatible_logo.png')
+          : provider.iconPath;
       widgets.add(
         IntegrationProviderCard(
           name: provider.name,
-          iconPath: provider.iconPath,
+          iconPath: iconPath,
           logoHeight: provider.logoHeight,
           isAvailable: false,
           isConnected: false,
@@ -500,7 +544,9 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       _notifiedProviders.add(provider);
     });
 
-    ref.read(connectTrainingControllerProvider.notifier).trackNotifyMe(
+    ref
+        .read(connectTrainingControllerProvider.notifier)
+        .trackNotifyMe(
           provider: provider,
           source: isOnboardingMode ? 'onboarding' : 'settings',
         );
@@ -523,7 +569,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
-  Future<void> _connectTrainingPeaks(BuildContext context, WidgetRef ref) async {
+  Future<void> _connectTrainingPeaks(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectTrainingPeaks();
 
@@ -536,7 +585,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   // Onboarding Mode Connection Methods (with auto-import)
   // ============================================================
 
-  Future<void> _connectFinalSurgeOnboarding(BuildContext context, WidgetRef ref) async {
+  Future<void> _connectFinalSurgeOnboarding(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectFinalSurge();
 
@@ -559,20 +611,14 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         );
 
         if (result.success && result.hasChanges) {
-          MealvanaSnackbar.showSuccess(
-            context,
-            message,
-          );
+          MealvanaSnackbar.showSuccess(context, message);
         } else if (!result.success || state?.errorMessage != null) {
           MealvanaSnackbar.showError(
             context,
             'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
           );
         } else {
-          MealvanaSnackbar.showInfo(
-            context,
-            message,
-          );
+          MealvanaSnackbar.showInfo(context, message);
         }
       }
 
@@ -586,7 +632,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
-  Future<void> _connectTrainingPeaksOnboarding(BuildContext context, WidgetRef ref) async {
+  Future<void> _connectTrainingPeaksOnboarding(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectTrainingPeaks();
 
@@ -601,7 +650,8 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
       if (context.mounted) {
         final state = ref.read(connectTrainingControllerProvider).value;
-        final eventInfo = state?.hasNextEvent == true && state?.nextEventName != null
+        final eventInfo =
+            state?.hasNextEvent == true && state?.nextEventName != null
             ? '\nNext event: ${state!.nextEventName}'
             : '';
         final message = buildWorkoutSyncMessage(
@@ -612,20 +662,14 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         );
 
         if (result.success && result.hasChanges) {
-          MealvanaSnackbar.showSuccess(
-            context,
-            '$message$eventInfo',
-          );
+          MealvanaSnackbar.showSuccess(context, '$message$eventInfo');
         } else if (!result.success || state?.errorMessage != null) {
           MealvanaSnackbar.showError(
             context,
             'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
           );
         } else {
-          MealvanaSnackbar.showInfo(
-            context,
-            '$message$eventInfo',
-          );
+          MealvanaSnackbar.showInfo(context, '$message$eventInfo');
         }
       }
 
@@ -643,7 +687,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   // Shared Disconnect Methods
   // ============================================================
 
-  Future<void> _disconnectFinalSurge(BuildContext context, WidgetRef ref) async {
+  Future<void> _disconnectFinalSurge(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     await controller.disconnectFinalSurge();
 
@@ -652,7 +699,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
-  Future<void> _disconnectTrainingPeaks(BuildContext context, WidgetRef ref) async {
+  Future<void> _disconnectTrainingPeaks(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     await controller.disconnectTrainingPeaks();
 
@@ -666,8 +716,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   // ============================================================
 
   /// Sync Final Surge and update local synced state
-  Future<void> _syncFinalSurgeWithState(BuildContext context, WidgetRef ref) async {
-    await syncFinalSurge(context, ref);
+  Future<void> _syncFinalSurgeWithState(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    await syncFinalSurge(context, ref, showLoadingSnackbar: false);
 
     // Check if sync was successful (no error message)
     final state = ref.read(connectTrainingControllerProvider).value;
@@ -679,8 +732,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   }
 
   /// Sync TrainingPeaks and update local synced state
-  Future<void> _syncTrainingPeaksWithState(BuildContext context, WidgetRef ref) async {
-    await syncTrainingPeaks(context, ref);
+  Future<void> _syncTrainingPeaksWithState(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    await syncTrainingPeaks(context, ref, showLoadingSnackbar: false);
 
     // Check if sync was successful (no error message)
     final state = ref.read(connectTrainingControllerProvider).value;
@@ -699,6 +755,8 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final prefs = ref.watch(preferencesServiceProvider);
     final enabled = prefs.tpWritebackEnabled;
     final premiumBlocked = prefs.tpWritebackPremiumBlocked;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -711,9 +769,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
                 Text(
                   'Write-Back to TrainingPeaks',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: premiumBlocked
-                        ? AppColors.textDarkSecondary
-                        : AppColors.textDark,
+                    color: premiumBlocked ? onSurfaceVariant : onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -722,14 +778,15 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
                       ? 'Requires TrainingPeaks Premium'
                       : 'Add nutrition plan summary to workout descriptions',
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textDarkSecondary,
+                    color: onSurfaceVariant,
                   ),
                 ),
               ],
             ),
           ),
-          Switch.adaptive(
+          KyleSwitch(
             value: enabled,
+            enabled: !premiumBlocked,
             onChanged: premiumBlocked
                 ? null
                 : (value) async {

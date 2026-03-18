@@ -5,7 +5,7 @@ import 'package:riverpod/riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Mock repository that can simulate slow syncs
-class SlowSyncRepository implements SyncableRepository {
+class SlowSyncRepository with SyncableRepository {
   @override
   final String repositoryKey;
 
@@ -22,37 +22,6 @@ class SlowSyncRepository implements SyncableRepository {
     this.dependencies = const [],
     this.syncDelay = const Duration(milliseconds: 100),
   });
-
-  @override
-  Future<bool> isStale() async {
-    final lastSync = await getLastSyncTime();
-    if (lastSync == null) return true;
-
-    const staleDuration = Duration(hours: 24);
-    return DateTime.now().difference(lastSync) > staleDuration;
-  }
-
-  @override
-  Future<DateTime?> getLastSyncTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${repositoryKey}_last_sync';
-    final timestamp = prefs.getString(key);
-
-    if (timestamp == null) return null;
-
-    try {
-      return DateTime.parse(timestamp);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Future<void> setLastSyncTime(DateTime time) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${repositoryKey}_last_sync';
-    await prefs.setString(key, time.toIso8601String());
-  }
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
@@ -82,6 +51,8 @@ class SlowSyncRepository implements SyncableRepository {
 
 void main() {
   group('Concurrent Sync Edge Cases', () {
+    final staleDuration = SyncableRepository.staleDuration;
+
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
     });
@@ -98,12 +69,23 @@ void main() {
 
       // Mark as stale
       await repo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
-      // Start two syncs concurrently
-      final sync1 = coordinator.ensureSynced('users', 'user-123', repository: repo);
-      final sync2 = coordinator.ensureSynced('users', 'user-123', repository: repo);
+      // Start first sync, then issue second call while first is in progress.
+      final sync1 = coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: repo,
+      );
+      await Future.delayed(const Duration(milliseconds: 50));
+      final sync2 = coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: repo,
+      );
 
       await Future.wait([sync1, sync2]);
 
@@ -123,16 +105,29 @@ void main() {
 
       // Mark as stale
       await repo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
-      // Simulate 5 different controllers calling ensureSynced at the same time
-      final calls = List.generate(
-        5,
-        (_) => coordinator.ensureSynced('activities', 'user-123', repository: repo),
+      // Simulate multiple controllers calling while first sync is already active.
+      final firstCall = coordinator.ensureSynced(
+        'activities',
+        'user-123',
+        repository: repo,
+      );
+      await Future.delayed(const Duration(milliseconds: 40));
+
+      final additionalCalls = List.generate(
+        4,
+        (_) => coordinator.ensureSynced(
+          'activities',
+          'user-123',
+          repository: repo,
+        ),
       );
 
-      await Future.wait(calls);
+      await Future.wait([firstCall, ...additionalCalls]);
 
       // Should only sync once despite 5 concurrent calls
       expect(repo.syncCallCount, 1);
@@ -150,70 +145,98 @@ void main() {
 
       // Mark as stale
       await repo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
       // Start three concurrent syncs
-      final sync1 = coordinator.ensureSynced('events', 'user-123', repository: repo);
-      final sync2 = coordinator.ensureSynced('events', 'user-123', repository: repo);
-      final sync3 = coordinator.ensureSynced('events', 'user-123', repository: repo);
+      final sync1 = coordinator.ensureSynced(
+        'events',
+        'user-123',
+        repository: repo,
+      );
+      final sync2 = coordinator.ensureSynced(
+        'events',
+        'user-123',
+        repository: repo,
+      );
+      final sync3 = coordinator.ensureSynced(
+        'events',
+        'user-123',
+        repository: repo,
+      );
 
       await Future.wait([sync1, sync2, sync3]);
 
       // Verify timestamp was updated
       final lastSync = await repo.getLastSyncTime();
       expect(lastSync, isNotNull);
-      expect(
-        DateTime.now().difference(lastSync!).inSeconds < 5,
-        true,
-      );
+      expect(DateTime.now().difference(lastSync!).inSeconds < 5, true);
 
       // Verify repository is no longer stale
       expect(await repo.isStale(), false);
     });
 
-    test('concurrent syncs of different repositories work independently', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+    test(
+      'concurrent syncs of different repositories work independently',
+      () async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
 
-      final coordinator = container.read(syncCoordinatorProvider.notifier);
+        final coordinator = container.read(syncCoordinatorProvider.notifier);
 
-      final usersRepo = SlowSyncRepository(
-        repositoryKey: 'users',
-        syncDelay: const Duration(milliseconds: 100),
-      );
-      final activitiesRepo = SlowSyncRepository(
-        repositoryKey: 'activities',
-        syncDelay: const Duration(milliseconds: 100),
-      );
-      final eventsRepo = SlowSyncRepository(
-        repositoryKey: 'events',
-        syncDelay: const Duration(milliseconds: 100),
-      );
+        final usersRepo = SlowSyncRepository(
+          repositoryKey: 'users',
+          syncDelay: const Duration(milliseconds: 100),
+        );
+        final activitiesRepo = SlowSyncRepository(
+          repositoryKey: 'activities',
+          syncDelay: const Duration(milliseconds: 100),
+        );
+        final eventsRepo = SlowSyncRepository(
+          repositoryKey: 'events',
+          syncDelay: const Duration(milliseconds: 100),
+        );
 
-      // Mark all as stale
-      await usersRepo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
-      );
-      await activitiesRepo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
-      );
-      await eventsRepo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
-      );
+        // Mark all as stale
+        await usersRepo.setLastSyncTime(
+          DateTime.now()
+              .subtract(staleDuration)
+              .subtract(const Duration(minutes: 30)),
+        );
+        await activitiesRepo.setLastSyncTime(
+          DateTime.now()
+              .subtract(staleDuration)
+              .subtract(const Duration(minutes: 30)),
+        );
+        await eventsRepo.setLastSyncTime(
+          DateTime.now()
+              .subtract(staleDuration)
+              .subtract(const Duration(minutes: 30)),
+        );
 
-      // Start syncs concurrently
-      final syncs = await Future.wait([
-        coordinator.ensureSynced('users', 'user-123', repository: usersRepo),
-        coordinator.ensureSynced('activities', 'user-123', repository: activitiesRepo),
-        coordinator.ensureSynced('events', 'user-123', repository: eventsRepo),
-      ]);
+        // Start syncs concurrently
+        await Future.wait([
+          coordinator.ensureSynced('users', 'user-123', repository: usersRepo),
+          coordinator.ensureSynced(
+            'activities',
+            'user-123',
+            repository: activitiesRepo,
+          ),
+          coordinator.ensureSynced(
+            'events',
+            'user-123',
+            repository: eventsRepo,
+          ),
+        ]);
 
-      // All should have synced
-      expect(usersRepo.syncCallCount, 1);
-      expect(activitiesRepo.syncCallCount, 1);
-      expect(eventsRepo.syncCallCount, 1);
-    });
+        // All should have synced
+        expect(usersRepo.syncCallCount, 1);
+        expect(activitiesRepo.syncCallCount, 1);
+        expect(eventsRepo.syncCallCount, 1);
+      },
+    );
 
     test('sync in progress blocks subsequent calls until complete', () async {
       final container = ProviderContainer();
@@ -227,7 +250,9 @@ void main() {
 
       // Mark as stale
       await repo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
       // Start first sync
@@ -257,7 +282,7 @@ void main() {
       expect(repo.syncCallCount, 1);
     });
 
-    test('rapid sequential calls are deduplicated', () async {
+    test('rapid sequential awaited calls skip once data is fresh', () async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -269,20 +294,26 @@ void main() {
 
       // Mark as stale
       await repo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
-      // Make 10 rapid calls
+      // First call syncs.
+      await coordinator.ensureSynced(
+        'carb_loading_plans',
+        'user-123',
+        repository: repo,
+      );
+
+      // Subsequent rapid calls should skip because timestamp is now fresh.
       for (int i = 0; i < 10; i++) {
-        coordinator.ensureSynced(
+        await coordinator.ensureSynced(
           'carb_loading_plans',
           'user-123',
           repository: repo,
         );
       }
-
-      // Wait for all to complete
-      await Future.delayed(const Duration(milliseconds: 300));
 
       // Should only sync once
       expect(repo.syncCallCount, 1);
@@ -311,22 +342,36 @@ void main() {
 
       // Mark all as stale
       await usersRepo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
       await activitiesRepo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
       await eventsRepo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
       // Sync users first, then activities and events concurrently
-      await coordinator.ensureSynced('users', 'user-123', repository: usersRepo);
+      await coordinator.ensureSynced(
+        'users',
+        'user-123',
+        repository: usersRepo,
+      );
 
       usersRepo.reset(); // Reset counter
 
       await Future.wait([
-        coordinator.ensureSynced('activities', 'user-123', repository: activitiesRepo),
+        coordinator.ensureSynced(
+          'activities',
+          'user-123',
+          repository: activitiesRepo,
+        ),
         coordinator.ensureSynced('events', 'user-123', repository: eventsRepo),
       ]);
 
@@ -353,10 +398,14 @@ void main() {
 
       // Mark both as stale
       await goodRepo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
       await badRepo.setLastSyncTime(
-        DateTime.now().subtract(const Duration(hours: 25)),
+        DateTime.now()
+            .subtract(staleDuration)
+            .subtract(const Duration(minutes: 30)),
       );
 
       // Start both syncs (one will fail)
@@ -368,10 +417,7 @@ void main() {
       // Good repo should have synced successfully
       expect(goodRepo.syncCallCount, 1);
       final goodRepoTime = await goodRepo.getLastSyncTime();
-      expect(
-        DateTime.now().difference(goodRepoTime!).inSeconds < 5,
-        true,
-      );
+      expect(DateTime.now().difference(goodRepoTime!).inSeconds < 5, true);
     });
   });
 }

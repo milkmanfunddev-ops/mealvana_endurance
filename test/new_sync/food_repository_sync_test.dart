@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:drift/drift.dart' show Value;
+import 'package:drift/native.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/data/food_repository.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
@@ -8,52 +10,75 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Mocks
 class MockSupabaseClient extends Mock implements SupabaseClient {}
-class MockPostgrestFilterBuilder extends Mock implements PostgrestFilterBuilder {}
-class MockAppDatabase extends Mock implements AppDatabase {}
+
+class MockPostgrestFilterBuilder extends Mock
+    implements PostgrestFilterBuilder {}
+
 class MockAppLogger extends Mock implements AppLogger {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late MockSupabaseClient mockSupabase;
-  late MockAppDatabase mockDatabase;
+  late AppDatabase database;
   late MockAppLogger mockLogger;
   late FoodRepository repository;
 
-  setUpAll(() async {
-    // Initialize SharedPreferences with in-memory values
-    SharedPreferences.setMockInitialValues({});
-  });
+  Future<void> insertLocalFood({
+    String id = '00000000-0000-0000-0000-000000000001',
+  }) async {
+    await database
+        .into(database.foodsTable)
+        .insert(
+          FoodsTableCompanion.insert(id: id, name: const Value('Test Food')),
+        );
+  }
 
-  setUp(() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+
     mockSupabase = MockSupabaseClient();
-    mockDatabase = MockAppDatabase();
+    database = AppDatabase.forTesting(NativeDatabase.memory());
     mockLogger = MockAppLogger();
 
     // Setup default logger behavior to avoid null errors
-    when(() => mockLogger.info(any(), context: any(named: 'context'), data: any(named: 'data')))
-        .thenReturn(null);
-    when(() => mockLogger.debug(any(), context: any(named: 'context'), data: any(named: 'data')))
-        .thenReturn(null);
-    when(() => mockLogger.error(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      stackTrace: any(named: 'stackTrace'),
-      data: any(named: 'data'),
-    )).thenReturn(null);
-    when(() => mockLogger.warning(
-      any(),
-      context: any(named: 'context'),
-      error: any(named: 'error'),
-      data: any(named: 'data'),
-    )).thenReturn(null);
+    when(
+      () => mockLogger.info(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.debug(
+        any(),
+        context: any(named: 'context'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.error(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        stackTrace: any(named: 'stackTrace'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
+    when(
+      () => mockLogger.warning(
+        any(),
+        context: any(named: 'context'),
+        error: any(named: 'error'),
+        data: any(named: 'data'),
+      ),
+    ).thenReturn(null);
 
-    repository = FoodRepository(
-      mockSupabase,
-      mockDatabase,
-      logger: mockLogger,
-    );
+    repository = FoodRepository(mockSupabase, database, logger: mockLogger);
+  });
+
+  tearDown(() async {
+    await database.close();
   });
 
   group('SyncableRepository Implementation', () {
@@ -88,13 +113,12 @@ void main() {
       expect(lastSync, isNotNull);
 
       // Should be within 1 second of the original time (accounting for serialization)
-      expect(
-        lastSync!.difference(now).abs().inSeconds,
-        lessThan(2),
-      );
+      expect(lastSync!.difference(now).abs().inSeconds, lessThan(2));
     });
 
     test('isStale returns false after recent sync', () async {
+      await insertLocalFood();
+
       // Set a recent sync time
       await repository.setLastSyncTime(DateTime.now());
 
@@ -104,6 +128,8 @@ void main() {
     });
 
     test('isStale returns true after 25 hours', () async {
+      await insertLocalFood();
+
       // Set a sync time 25 hours ago
       final oldTime = DateTime.now().subtract(const Duration(hours: 25));
       await repository.setLastSyncTime(oldTime);
@@ -120,7 +146,9 @@ void main() {
       const userId = 'test-user-id'; // Not actually used since foods are global
 
       // Mock Supabase to throw an exception
-      when(() => mockSupabase.from(any())).thenThrow(Exception('Network error'));
+      when(
+        () => mockSupabase.from(any()),
+      ).thenThrow(Exception('Network error'));
 
       // Act
       final result = await repository.syncFromRemote(userId);
@@ -130,12 +158,14 @@ void main() {
       expect(result.error, contains('Network error'));
 
       // Verify error was logged
-      verify(() => mockLogger.error(
-        any(),
-        context: 'FOOD_REPOSITORY',
-        error: any(named: 'error'),
-        stackTrace: any(named: 'stackTrace'),
-      )).called(1);
+      verify(
+        () => mockLogger.error(
+          any(),
+          context: 'FOOD_REPOSITORY',
+          error: any(named: 'error'),
+          stackTrace: any(named: 'stackTrace'),
+        ),
+      ).called(1);
     });
 
     test('logs info message indicating global reference data', () async {
@@ -149,11 +179,13 @@ void main() {
       await repository.syncFromRemote(userId);
 
       // Assert - verify that we log a note about global reference data
-      verify(() => mockLogger.info(
-        'Syncing foods from Supabase',
-        context: 'FOOD_REPOSITORY',
-        data: {'note': 'Global reference data - userId not used'},
-      )).called(1);
+      verify(
+        () => mockLogger.info(
+          'Syncing foods from Supabase',
+          context: 'FOOD_REPOSITORY',
+          data: {'note': 'Global reference data - userId not used'},
+        ),
+      ).called(1);
     });
   });
 
@@ -171,10 +203,12 @@ void main() {
       expect(result.error, isNull);
 
       // Verify debug log was called
-      verify(() => mockLogger.debug(
-        'Foods are read-only - no dirty records to upload',
-        context: 'FOOD_REPOSITORY',
-      )).called(1);
+      verify(
+        () => mockLogger.debug(
+          'Foods are read-only - no dirty records to upload',
+          context: 'FOOD_REPOSITORY',
+        ),
+      ).called(1);
     });
 
     test('does not make any Supabase calls', () async {
@@ -193,10 +227,17 @@ void main() {
     test('foods are global reference data independent of user', () {
       // This is a documentation test to verify our understanding
       // Foods table is global seed data that applies to all users
-      expect(repository.dependencies, isEmpty,
-          reason: 'Foods should have no dependencies as they are Level 0 seed data');
-      expect(repository.repositoryKey, equals('foods'),
-          reason: 'Repository key identifies foods as global reference');
+      expect(
+        repository.dependencies,
+        isEmpty,
+        reason:
+            'Foods should have no dependencies as they are Level 0 seed data',
+      );
+      expect(
+        repository.repositoryKey,
+        equals('foods'),
+        reason: 'Repository key identifies foods as global reference',
+      );
     });
   });
 }

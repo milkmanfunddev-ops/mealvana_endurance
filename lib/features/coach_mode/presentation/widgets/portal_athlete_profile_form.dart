@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/kyle_switch.dart';
 
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
@@ -409,11 +410,9 @@ class _PortalAthleteProfileFormState
                 ),
               ),
             ),
-            Switch(
+            KyleSwitch(
               value: value,
-              activeThumbColor: AppColors.blackberryDark,
               activeTrackColor: AppColors.electrolyte,
-              inactiveThumbColor: AppColors.textDarkSecondary,
               inactiveTrackColor: AppColors.blackberryLight,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               onChanged: onChanged,

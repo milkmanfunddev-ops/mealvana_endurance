@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/kyle_switch.dart';
 import '../../domain/feedback_data.dart';
 import '../providers/survey_controller.dart';
 import '../../../../shared/widgets/primary_button.dart';
@@ -8,10 +9,7 @@ import '../../../../theme/app_theme.dart';
 
 /// Second page of survey: Reminder setup or feedback on missed expectations
 class SurveyPage2 extends ConsumerWidget {
-  const SurveyPage2({
-    super.key,
-    required this.onSubmit,
-  });
+  const SurveyPage2({super.key, required this.onSubmit});
 
   final VoidCallback onSubmit;
 
@@ -30,40 +28,39 @@ class SurveyPage2 extends ConsumerWidget {
       ),
       data: (state) {
         final content = controller.getPageContent(2);
-        
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                content['title']!,
-                style: AppTheme.titleStyle,
-              ),
+              Text(content['title']!, style: AppTheme.titleStyle),
               const SizedBox(height: 8),
               Text(
                 content['subtitle']!,
                 style: AppTheme.textStyle.copyWith(color: AppTheme.baseGrey),
               ),
               const SizedBox(height: 32),
-              
+
               // Show different content based on reuse intent
               if (state.reuseIntent == ReuseIntent.yes)
                 _buildReminderSection(context, state, controller)
               else
                 _buildFeedbackSection(state, controller),
-              
+
               const SizedBox(height: 40),
-              
+
               // Submit Button
               SizedBox(
                 width: double.infinity,
                 child: PrimaryButton(
                   text: state.isSubmitting ? 'Submitting...' : 'Submit',
-                  onPressed: (state.isPage2Complete && !state.isSubmitting) ? onSubmit : null,
+                  onPressed: (state.isPage2Complete && !state.isSubmitting)
+                      ? onSubmit
+                      : null,
                 ),
               ),
-              
+
               const SizedBox(height: 32),
             ],
           ),
@@ -72,16 +69,17 @@ class SurveyPage2 extends ConsumerWidget {
     );
   }
 
-  Widget _buildReminderSection(BuildContext context, SurveyState state, SurveyController controller) {
+  Widget _buildReminderSection(
+    BuildContext context,
+    SurveyState state,
+    SurveyController controller,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Reminder Options',
-          style: AppTheme.subtitleStyle,
-        ),
+        Text('Reminder Options', style: AppTheme.subtitleStyle),
         const SizedBox(height: 16),
-        
+
         // Option 1: No reminder needed
         _buildReminderOption(
           state,
@@ -90,12 +88,12 @@ class SurveyPage2 extends ConsumerWidget {
           'No reminder needed',
           isSelected: state.noReminderNeeded,
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Option 2: Set a reminder with editable date/time
         _buildEditableReminderOption(context, state, controller),
-        
+
         // Show recurring toggle below reminder options if reminder is enabled
         if (!state.noReminderNeeded) ...[
           const SizedBox(height: 20),
@@ -139,11 +137,7 @@ class SurveyPage2 extends ConsumerWidget {
                 ),
               ),
               child: isSelected
-                  ? const Icon(
-                      Icons.check,
-                      size: 12,
-                      color: AppTheme.baseWhite,
-                    )
+                  ? const Icon(Icons.check, size: 12, color: AppTheme.baseWhite)
                   : null,
             ),
             const SizedBox(width: 12),
@@ -161,19 +155,37 @@ class SurveyPage2 extends ConsumerWidget {
     );
   }
 
-  Widget _buildEditableReminderOption(BuildContext context, SurveyState state, SurveyController controller) {
+  Widget _buildEditableReminderOption(
+    BuildContext context,
+    SurveyState state,
+    SurveyController controller,
+  ) {
     final isSelected = !state.noReminderNeeded;
-    final reminderDate = state.customReminderDate ?? 
-        DateTime.now().copyWith(hour: 17, minute: 0).add(
-          Duration(days: (DateTime.thursday - DateTime.now().weekday) % 7)
-        );
+    final reminderDate =
+        state.customReminderDate ??
+        DateTime.now()
+            .copyWith(hour: 17, minute: 0)
+            .add(
+              Duration(days: (DateTime.thursday - DateTime.now().weekday) % 7),
+            );
 
-    final weekday = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][reminderDate.weekday];
-    final hour12 = reminderDate.hour > 12 ? reminderDate.hour - 12 : (reminderDate.hour == 0 ? 12 : reminderDate.hour);
+    final weekday = [
+      '',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ][reminderDate.weekday];
+    final hour12 = reminderDate.hour > 12
+        ? reminderDate.hour - 12
+        : (reminderDate.hour == 0 ? 12 : reminderDate.hour);
     final amPm = reminderDate.hour >= 12 ? 'PM' : 'AM';
     final minute = reminderDate.minute.toString().padLeft(2, '0');
     final dateStr = '${reminderDate.month}/${reminderDate.day}';
-    
+
     return GestureDetector(
       onTap: () => controller.setNoReminderNeeded(false),
       child: Container(
@@ -197,9 +209,13 @@ class SurveyPage2 extends ConsumerWidget {
                   height: 20,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isSelected ? AppTheme.primary600 : Colors.transparent,
+                    color: isSelected
+                        ? AppTheme.primary600
+                        : Colors.transparent,
                     border: Border.all(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey,
+                      color: isSelected
+                          ? AppTheme.primary600
+                          : AppTheme.baseGrey,
                       width: 2,
                     ),
                   ),
@@ -216,14 +232,16 @@ class SurveyPage2 extends ConsumerWidget {
                   child: Text(
                     'Set a reminder',
                     style: AppTheme.textStyle.copyWith(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.baseBlack,
+                      color: isSelected
+                          ? AppTheme.primary600
+                          : AppTheme.baseBlack,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
               ],
             ),
-            
+
             // Show date/time pickers if reminder is selected
             if (isSelected) ...[
               const SizedBox(height: 16),
@@ -239,9 +257,13 @@ class SurveyPage2 extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => _showDatePicker(context, reminderDate, controller),
+                      onTap: () =>
+                          _showDatePicker(context, reminderDate, controller),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.baseWhite,
                           border: Border.all(color: AppTheme.baseGrey),
@@ -249,7 +271,11 @@ class SurveyPage2 extends ConsumerWidget {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today, size: 20, color: AppTheme.baseGrey),
+                            const Icon(
+                              Icons.calendar_today,
+                              size: 20,
+                              color: AppTheme.baseGrey,
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               '$weekday, $dateStr',
@@ -263,9 +289,13 @@ class SurveyPage2 extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => _showTimePicker(context, reminderDate, controller),
+                      onTap: () =>
+                          _showTimePicker(context, reminderDate, controller),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
                         decoration: BoxDecoration(
                           color: AppTheme.baseWhite,
                           border: Border.all(color: AppTheme.baseGrey),
@@ -273,7 +303,11 @@ class SurveyPage2 extends ConsumerWidget {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.access_time, size: 20, color: AppTheme.baseGrey),
+                            const Icon(
+                              Icons.access_time,
+                              size: 20,
+                              color: AppTheme.baseGrey,
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               '$hour12:$minute $amPm',
@@ -304,34 +338,24 @@ class SurveyPage2 extends ConsumerWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              'Repeat this reminder',
-              style: AppTheme.textStyle,
-            ),
+            child: Text('Repeat this reminder', style: AppTheme.textStyle),
           ),
-          Switch(
+          KyleSwitch(
             value: state.isRecurring,
             onChanged: controller.setIsRecurring,
-            thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
-              if (states.contains(WidgetState.selected)) {
-                return AppTheme.baseWhite;
-              }
-              return AppTheme.baseWhite;
-            }),
-            trackColor: WidgetStateProperty.resolveWith<Color>((states) {
-              if (states.contains(WidgetState.selected)) {
-                return AppTheme.primary600;
-              }
-              return AppTheme.baseGrey.withValues(alpha: 0.3);
-            }),
+            activeTrackColor: AppTheme.primary600,
+            inactiveTrackColor: AppTheme.baseGrey.withValues(alpha: 0.3),
           ),
         ],
       ),
     );
   }
 
-
-  void _showDatePicker(BuildContext context, DateTime selectedDate, SurveyController controller) {
+  void _showDatePicker(
+    BuildContext context,
+    DateTime selectedDate,
+    SurveyController controller,
+  ) {
     showAppDatePicker(
       context: context,
       initialDate: selectedDate,
@@ -351,7 +375,11 @@ class SurveyPage2 extends ConsumerWidget {
     });
   }
 
-  void _showTimePicker(BuildContext context, DateTime selectedDate, SurveyController controller) {
+  void _showTimePicker(
+    BuildContext context,
+    DateTime selectedDate,
+    SurveyController controller,
+  ) {
     showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(selectedDate),
@@ -373,12 +401,9 @@ class SurveyPage2 extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'What missed your expectations?',
-          style: AppTheme.subtitleStyle,
-        ),
+        Text('What missed your expectations?', style: AppTheme.subtitleStyle),
         const SizedBox(height: 16),
-        
+
         // Missed reason options
         ...MissedReason.values.map((reason) {
           final isSelected = state.missedReason == reason;
@@ -404,9 +429,13 @@ class SurveyPage2 extends ConsumerWidget {
                       height: 20,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isSelected ? AppTheme.primary600 : Colors.transparent,
+                        color: isSelected
+                            ? AppTheme.primary600
+                            : Colors.transparent,
                         border: Border.all(
-                          color: isSelected ? AppTheme.primary600 : AppTheme.baseGrey,
+                          color: isSelected
+                              ? AppTheme.primary600
+                              : AppTheme.baseGrey,
                           width: 2,
                         ),
                       ),
@@ -423,7 +452,9 @@ class SurveyPage2 extends ConsumerWidget {
                       child: Text(
                         reason.label,
                         style: AppTheme.textStyle.copyWith(
-                          color: isSelected ? AppTheme.primary600 : AppTheme.baseBlack,
+                          color: isSelected
+                              ? AppTheme.primary600
+                              : AppTheme.baseBlack,
                         ),
                       ),
                     ),
@@ -433,7 +464,7 @@ class SurveyPage2 extends ConsumerWidget {
             ),
           );
         }),
-        
+
         // Other reason text field (shown when "Other" is selected)
         if (state.missedReason == MissedReason.other) ...[
           const SizedBox(height: 16),
@@ -447,7 +478,10 @@ class SurveyPage2 extends ConsumerWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppTheme.primary600, width: 2),
+                borderSide: const BorderSide(
+                  color: AppTheme.primary600,
+                  width: 2,
+                ),
               ),
             ),
             maxLines: 3,

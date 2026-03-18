@@ -9,7 +9,11 @@ import '../../../activities/domain/activity.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../events/domain/event.dart';
 import '../../../carb_loading/domain/carb_loading_plan_simple.dart';
+import '../../../nutrition_plan/domain/nutrition_target_overrides.dart';
+import '../../../carb_loading/application/carb_loading_service.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 import '../../application/coach_service.dart';
+import '../../data/coach_repository.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../../domain/coach_message.dart';
 import 'athlete_data_sync_provider.dart';
@@ -334,6 +338,61 @@ class AthleteDetailController extends _$AthleteDetailController {
       );
 
       // Reload data from local database (now fresh)
+      return await _loadAthleteDetails(currentState.relationship.id);
+    });
+  }
+
+  /// Save nutrition target overrides for athlete
+  Future<void> saveNutritionTargets(NutritionTargetOverrides overrides) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(coachRepositoryProvider);
+
+      // Apply guardrails
+      final clamped = NutritionTargetGuardrails.clampAll(overrides);
+
+      // Write to Supabase
+      await repo.updateAthleteNutritionTargets(
+        athleteUserId: currentState.relationship.athleteUserId,
+        overridesJson: clamped.hasAnyOverride ? clamped.toJson() : null,
+      );
+
+      // Update local state with the new overrides
+      final updatedProfile = currentState.athleteProfile?.copyWith(
+        nutritionTargetOverrides: clamped.hasAnyOverride ? clamped : null,
+      );
+
+      return currentState.copyWith(athleteProfile: updatedProfile);
+    });
+  }
+
+  /// Create carb loading plan for athlete
+  Future<void> createCarbLoadingPlan({
+    String? eventId,
+    required int protocolDays,
+    required DateTime raceDate,
+    required double bodyWeightPounds,
+  }) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = await AsyncValue.guard(() async {
+      final coachUserId = await ref.read(userIdProvider.future);
+      final service = ref.read(carbLoadingServiceProvider);
+
+      await service.createCarbLoadingPlan(
+        deviceId: coachUserId,
+        userId: coachUserId,
+        forUserId: currentState.relationship.athleteUserId,
+        eventId: eventId,
+        protocolDays: protocolDays,
+        raceDate: raceDate,
+        bodyWeightPounds: bodyWeightPounds,
+      );
+
+      // Reload to pick up the new plan
       return await _loadAthleteDetails(currentState.relationship.id);
     });
   }

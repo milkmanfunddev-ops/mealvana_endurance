@@ -12,7 +12,11 @@ import 'providers/connect_training_controller.dart';
 /// and are used by both the onboarding and settings integration screens.
 
 /// Syncs Final Surge workouts and shows appropriate feedback.
-Future<void> syncFinalSurge(BuildContext context, WidgetRef ref) async {
+Future<void> syncFinalSurge(
+  BuildContext context,
+  WidgetRef ref, {
+  bool showLoadingSnackbar = true,
+}) async {
   debugPrint('🔄 Starting Final Surge sync...');
 
   final currentState = ref.read(connectTrainingControllerProvider).value;
@@ -30,7 +34,9 @@ Future<void> syncFinalSurge(BuildContext context, WidgetRef ref) async {
 
   // Capture messenger so we can dismiss even if the originating widget unmounts.
   final messenger = ScaffoldMessenger.maybeOf(context);
-  MealvanaSnackbar.showLoading(context, 'Syncing Final Surge workouts...');
+  if (showLoadingSnackbar) {
+    MealvanaSnackbar.showLoading(context, 'Syncing Final Surge workouts...');
+  }
 
   SyncResult result = const SyncResult(success: true);
   try {
@@ -40,8 +46,10 @@ Future<void> syncFinalSurge(BuildContext context, WidgetRef ref) async {
       '✅ Final Surge sync complete: ${result.newWorkouts} workouts imported',
     );
   } finally {
-    messenger?.hideCurrentSnackBar();
-    debugPrint('✅ Loading snackbar dismissed');
+    if (showLoadingSnackbar) {
+      messenger?.hideCurrentSnackBar();
+      debugPrint('✅ Loading snackbar dismissed');
+    }
   }
 
   // Show result if context is still valid
@@ -81,7 +89,11 @@ Future<void> syncFinalSurge(BuildContext context, WidgetRef ref) async {
 }
 
 /// Syncs TrainingPeaks workouts and shows appropriate feedback.
-Future<void> syncTrainingPeaks(BuildContext context, WidgetRef ref) async {
+Future<void> syncTrainingPeaks(
+  BuildContext context,
+  WidgetRef ref, {
+  bool showLoadingSnackbar = true,
+}) async {
   debugPrint('🔄 Starting TrainingPeaks sync...');
 
   final currentState = ref.read(connectTrainingControllerProvider).value;
@@ -99,7 +111,9 @@ Future<void> syncTrainingPeaks(BuildContext context, WidgetRef ref) async {
 
   // Capture messenger so we can dismiss even if the originating widget unmounts.
   final messenger = ScaffoldMessenger.maybeOf(context);
-  MealvanaSnackbar.showLoading(context, 'Syncing TrainingPeaks workouts...');
+  if (showLoadingSnackbar) {
+    MealvanaSnackbar.showLoading(context, 'Syncing TrainingPeaks workouts...');
+  }
 
   TrainingPeaksSyncResult result = const TrainingPeaksSyncResult(success: true);
   try {
@@ -110,8 +124,10 @@ Future<void> syncTrainingPeaks(BuildContext context, WidgetRef ref) async {
       '✅ TrainingPeaks sync complete: ${result.newWorkouts} workouts imported',
     );
   } finally {
-    messenger?.hideCurrentSnackBar();
-    debugPrint('✅ Loading snackbar dismissed');
+    if (showLoadingSnackbar) {
+      messenger?.hideCurrentSnackBar();
+      debugPrint('✅ Loading snackbar dismissed');
+    }
   }
 
   debugPrint('🔍 Checking context.mounted: ${context.mounted}');

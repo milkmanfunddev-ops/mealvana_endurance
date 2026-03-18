@@ -7,6 +7,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../domain/feedback_data.dart';
 
@@ -45,7 +46,8 @@ class FeedbackRepository with SyncableRepository {
   String get repositoryKey => 'feedback';
 
   @override
-  List<String> get dependencies => ['users'];
+  List<String> get dependencies =>
+      SyncDependencyGraph.dependenciesFor(repositoryKey);
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
@@ -244,10 +246,16 @@ class FeedbackRepository with SyncableRepository {
       _logger.warning(
         'Immediate upload failed; record stays dirty for retry',
         context: 'FEEDBACK_REPOSITORY',
-        error: e, stackTrace: stackTrace,
+        error: e,
+        stackTrace: stackTrace,
         data: {'operation': 'create', 'recordId': localId},
       );
-      _sentry.reportNetworkError(e, url: 'supabase:feedback:create', method: 'INSERT', stackTrace: stackTrace);
+      _sentry.reportNetworkError(
+        e,
+        url: 'supabase:feedback:create',
+        method: 'INSERT',
+        stackTrace: stackTrace,
+      );
     }
   }
 

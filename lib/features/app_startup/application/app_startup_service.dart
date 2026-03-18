@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:convert';
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
 import '../../../shared/services/device_info_service.dart';
+import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/notification_service.dart';
-import '../../../shared/services/push_notification_service.dart';
 import '../../../shared/services/app_config.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/database/app_database.dart';
@@ -118,15 +118,44 @@ class AppStartupService {
         }
       }
 
-      // CRITICAL: Run database health check after initialization
-      // This detects SQLite corruption early before it causes crashes
-      final isHealthy = await db.diagnosticDao.isDatabaseHealthy();
+      // Database health check: fast query check every startup,
+      // full PRAGMA integrity_check only once every 24 hours
+      bool isHealthy;
+      final prefs = await SharedPreferences.getInstance();
+      final lastFullCheck = prefs.getInt('last_full_db_health_check') ?? 0;
+      final hoursSinceFullCheck = DateTime.now().millisecondsSinceEpoch - lastFullCheck;
+      final needsFullCheck = hoursSinceFullCheck > const Duration(hours: 24).inMilliseconds;
+
+      if (needsFullCheck) {
+        // Full PRAGMA integrity_check (slow but thorough)
+        isHealthy = await db.diagnosticDao.isDatabaseHealthy();
+        if (isHealthy) {
+          await prefs.setInt('last_full_db_health_check', DateTime.now().millisecondsSinceEpoch);
+        }
+      } else {
+        // Fast query check (SELECT COUNT(*) FROM users)
+        isHealthy = await db.diagnosticDao.canExecuteQueries();
+      }
 
       if (!isHealthy) {
         _logger.warning(
           'Database corruption detected during startup - initiating recovery',
           context: 'DATABASE',
         );
+
+        // Best-effort: upload dirty records before deleting the database
+        try {
+          final userId = _supabase.auth.currentUser?.id;
+          if (userId != null) {
+            await ref.read(syncCoordinatorProvider.notifier).uploadAllDirtyRecords(userId);
+          }
+        } catch (e) {
+          _logger.warning(
+            'Could not upload dirty records before corruption recovery',
+            context: 'DATABASE',
+            data: {'error': e.toString()},
+          );
+        }
 
         // Close current database connection
         await db.close();
@@ -144,7 +173,8 @@ class AppStartupService {
           throw Exception('Fresh database creation failed after corruption recovery');
         }
 
-        // Trigger full sync will happen automatically when user session is detected
+        // Reset full check timestamp so next startup runs full check
+        await prefs.setInt('last_full_db_health_check', 0);
       }
 
     } catch (e, stackTrace) {
@@ -189,10 +219,7 @@ class AppStartupService {
         // 3. Check user session for analytics identification
         await checkUserSession();
 
-        // 4. Initialize push notifications
-        await _initializePushNotifications();
-
-        // 5. Sync is_coach status from Supabase (for coach mode)
+        // 4. Sync is_coach status from Supabase (for coach mode)
         // This picks up any admin approvals since last app launch
         await _syncCoachStatus();
       } catch (e, stackTrace) {
@@ -215,7 +242,6 @@ class AppStartupService {
       await _analytics.initialize();
       await _analytics.identifyUser(deviceId);
       NotificationService.configure(_analytics);
-      PushNotificationService.configure(_analytics);
 
       // Track app opened event with session ID
       final sessionId = const Uuid().v4();
@@ -255,33 +281,6 @@ class AppStartupService {
         stackTrace: stackTrace,
       );
       // Don't rethrow - app should continue even if coach sync fails
-    }
-  }
-
-  /// Initialize OneSignal push notification service
-  Future<void> _initializePushNotifications() async {
-    try {
-      final config = ref.read(appConfigProvider);
-
-      if (config.oneSignalAppId.isEmpty) return;
-
-      // Initialize OneSignal
-      await PushNotificationService.initialize(config.oneSignalAppId);
-
-      // Login with device ID for user targeting
-      final deviceId = DeviceInfoService.instance.deviceId;
-      await PushNotificationService.login(deviceId);
-
-      // Request permission - shows iOS prompt if not already granted
-      await PushNotificationService.requestPermission();
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Push notification initialization failed',
-        context: 'PUSH_NOTIFICATIONS',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      // Don't rethrow - app should continue even if push notifications fail
     }
   }
 
@@ -392,57 +391,6 @@ class AppStartupService {
         stackTrace: stackTrace,
       );
       // Don't rethrow - app should continue even if fallback fails
-    }
-  }
-
-  /// Check for activities that need feedback after run time has passed
-  /// Also checks for notification-based navigation
-  Future<String?> checkForPendingFeedback() async {
-    try {
-      final notificationActivityId = NotificationService.getPendingNavigationActivityId();
-      if (notificationActivityId != null) {
-        return notificationActivityId;
-      }
-
-      final database = ref.read(appDatabaseProvider);
-      final currentAuthUserId = _supabase.auth.currentUser?.id;
-
-      // Check if we have a current user
-      final user = await database.userDao.getCurrentUserProfile(
-        currentAuthUserId: currentAuthUserId,
-      );
-      if (user == null) return null;
-
-      // Get plans that have a run date/time in the past but no feedback yet
-      final now = DateTime.now();
-      final planActivities = await database.activityDao.getActivitiesWithNutritionPlans(user.id);
-
-      for (final activity in planActivities) {
-        final planDataRaw = activity.nutritionPlanData;
-        if (planDataRaw == null || planDataRaw.isEmpty) continue;
-
-        final planJson = jsonDecode(planDataRaw) as Map<String, dynamic>;
-        final runDateTimeString = planJson['runDateTime'] as String?;
-        if (runDateTimeString == null) continue;
-
-        final runDateTime = DateTime.tryParse(runDateTimeString);
-        if (runDateTime == null || runDateTime.isAfter(now)) continue;
-
-        final hasRating = planJson['planRating'] != null;
-        final hasNotes = (planJson['journalNotes'] as String?)?.isNotEmpty ?? false;
-
-        if (!hasRating && !hasNotes) {
-          return activity.id;
-        }
-      }
-
-      return null; // No plans need feedback
-    } catch (e) {
-      _logger.error('Error checking for pending feedback',
-        context: 'FEEDBACK_CHECK',
-        error: e
-      );
-      return null; // Continue without feedback check if it fails
     }
   }
 

@@ -9,6 +9,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sync/sync_dependency_graph.dart';
 
 /// Repository for nutrition templates (read-only reference data).
 ///
@@ -17,7 +18,7 @@ import '../../../shared/services/logging_service.dart';
 /// cached locally in Drift.
 class TemplatesRepository with SyncableRepository {
   TemplatesRepository(this._supabase, this._database, {AppLogger? logger})
-      : _logger = logger ?? const NoopAppLogger();
+    : _logger = logger ?? const NoopAppLogger();
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
@@ -31,13 +32,14 @@ class TemplatesRepository with SyncableRepository {
   String get repositoryKey => 'templates';
 
   @override
-  List<String> get dependencies => ['template_foods'];
+  List<String> get dependencies =>
+      SyncDependencyGraph.dependenciesFor(repositoryKey);
 
   @override
   Future<bool> isStale() async {
-    final localCount = await (_database.select(_database.templatesTable)
-          ..where((t) => t.isActive.equals(true)))
-        .get();
+    final localCount = await (_database.select(
+      _database.templatesTable,
+    )..where((t) => t.isActive.equals(true))).get();
     if (localCount.isEmpty) {
       _logger.debug(
         'Forcing sync - no local templates found',
@@ -104,24 +106,23 @@ class TemplatesRepository with SyncableRepository {
   /// Get templates filtered by meal type
   Future<List<TemplateEntry>> getTemplatesByMealType(String mealType) async {
     return (_database.select(_database.templatesTable)
-          ..where((t) =>
-              t.isActive.equals(true) & t.mealType.equals(mealType))
+          ..where((t) => t.isActive.equals(true) & t.mealType.equals(mealType))
           ..orderBy([(t) => OrderingTerm.asc(t.sortOrder)]))
         .get();
   }
 
   /// Get a template by ID
   Future<TemplateEntry?> getTemplateById(String id) async {
-    return (_database.select(_database.templatesTable)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    return (_database.select(
+      _database.templatesTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
   /// Get a template by slug
   Future<TemplateEntry?> getTemplateBySlug(String slug) async {
-    return (_database.select(_database.templatesTable)
-          ..where((t) => t.slug.equals(slug)))
-        .getSingleOrNull();
+    return (_database.select(
+      _database.templatesTable,
+    )..where((t) => t.slug.equals(slug))).getSingleOrNull();
   }
 
   // ========================================================================
@@ -159,17 +160,29 @@ class TemplatesRepository with SyncableRepository {
         notes: Value(json['notes'] as String?),
         foods: Value(foodsJson),
         totalCarbsG: Value((json['total_carbs_g'] as num?)?.toDouble() ?? 0),
-        totalProteinG: Value((json['total_protein_g'] as num?)?.toDouble() ?? 0),
+        totalProteinG: Value(
+          (json['total_protein_g'] as num?)?.toDouble() ?? 0,
+        ),
         totalFatG: Value((json['total_fat_g'] as num?)?.toDouble() ?? 0),
-        totalSodiumMg: Value((json['total_sodium_mg'] as num?)?.toDouble() ?? 0),
+        totalSodiumMg: Value(
+          (json['total_sodium_mg'] as num?)?.toDouble() ?? 0,
+        ),
         totalFluidMl: Value((json['total_fluid_ml'] as num?)?.toDouble() ?? 0),
         totalCalories: Value((json['total_calories'] as num?)?.toInt() ?? 0),
-        validationStatus: Value(json['validation_status'] as String? ?? 'unvalidated'),
+        validationStatus: Value(
+          json['validation_status'] as String? ?? 'unvalidated',
+        ),
         isActive: Value(json['is_active'] as bool? ?? true),
         sortOrder: Value(json['sort_order'] as int? ?? 0),
         foodNames: Value(_arrayToJsonString(json['food_names'])),
-        createdAt: Value(DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now()),
-        updatedAt: Value(DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now()),
+        createdAt: Value(
+          DateTime.tryParse(json['created_at'] as String? ?? '') ??
+              DateTime.now(),
+        ),
+        updatedAt: Value(
+          DateTime.tryParse(json['updated_at'] as String? ?? '') ??
+              DateTime.now(),
+        ),
       );
     }).toList();
 

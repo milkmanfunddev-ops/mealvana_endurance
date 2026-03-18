@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/macro_targets.dart' as targets_model;
 import '../../domain/nutrition_plan.dart';
+import '../utils/activity_detail_helpers.dart';
 import '../utils/unit_formatter.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 
@@ -117,7 +118,7 @@ class MacroTargetsWidget extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
 
-          // Sodium progress bar
+          // Sodium progress bar (aggregate total — ratio-based coloring only)
           _buildProgressItem(
             'Sodium',
             currentSodium,
@@ -127,7 +128,7 @@ class MacroTargetsWidget extends StatelessWidget {
           ),
           SizedBox(height: 16.h),
 
-          // Fluids progress bar - now showing in ml instead of L
+          // Fluids progress bar (aggregate total — ratio-based coloring only)
           _buildProgressItem(
             'Fluids',
             currentFluids.round(),
@@ -191,24 +192,13 @@ class MacroTargetsWidget extends StatelessWidget {
     );
   }
 
-  /// Get color based on progress towards target using theme colors
-  /// Green: 80-120% of target (close to target)
-  /// Yellow: 120-150% of target (significantly over)
-  /// Red: <80% or >150% of target (way off)
+  /// Delegates to the unified color utility for ratio-based coloring.
+  /// Maps theme colors to the shared palette.
   Color _getColorForProgress(int current, int target) {
     if (target <= 0) return AppTheme.baseGrey;
-
     final ratio = current / target;
-
-    if (ratio >= 0.8 && ratio <= 1.2) {
-      // Close to target (80-120%) - Success Green
-      return AppTheme.primary600;
-    } else if (ratio > 1.2 && ratio <= 1.5) {
-      // Significantly over (120-150%) - Warning Yellow
-      return AppTheme.warning500;
-    } else {
-      // Way off (<80% or >150%) - Error Red
-      return AppTheme.highlight400;
-    }
+    if (ratio >= 0.8 && ratio <= 1.2) return AppTheme.primary600;
+    if (ratio >= 0.6 && ratio <= 1.5) return AppTheme.warning500;
+    return AppTheme.highlight400;
   }
 }

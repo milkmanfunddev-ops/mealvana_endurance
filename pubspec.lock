@@ -385,6 +385,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.3"
+  dispose_scope:
+    dependency: transitive
+    description:
+      name: dispose_scope
+      sha256: "48ec38ca2631c53c4f8fa96b294c801e55c335db5e3fb9f82cede150cfe5a2af"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   drift:
     dependency: "direct main"
     description:
@@ -401,6 +409,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.29.0"
+  equatable:
+    dependency: transitive
+    description:
+      name: equatable
+      sha256: "3e0141505477fd8ad55d6eb4e7776d3fe8430be8e497ccb1521370c3f21a3e2b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.8"
   fake_async:
     dependency: transitive
     description:
@@ -1052,14 +1068,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
-  onesignal_flutter:
-    dependency: "direct main"
-    description:
-      name: onesignal_flutter
-      sha256: b5bb43bf496ddb5e3975ba54c6477cc2d1fcd18fb3698f195d2e0bfd376ddafd
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.3.4"
   package_config:
     dependency: transitive
     description:
@@ -1148,6 +1156,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
+  patrol:
+    dependency: "direct dev"
+    description:
+      name: patrol
+      sha256: ca7d659c58ef735e27c4300af43cc367b67a129a0a1720082dc21b5a096efb1c
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.3.0"
+  patrol_finders:
+    dependency: transitive
+    description:
+      name: patrol_finders
+      sha256: ac0bfaf3eaaa6cc3d49c8a365329cc7f4361a5f486f1adb45edc96dbfc854da9
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.0"
+  patrol_log:
+    dependency: transitive
+    description:
+      name: patrol_log
+      sha256: b3bd2862c15bd6b163763d7d2a80ae07c24af6da07d62d202798ceea327045d7
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.1"
   pdf:
     dependency: "direct main"
     description:

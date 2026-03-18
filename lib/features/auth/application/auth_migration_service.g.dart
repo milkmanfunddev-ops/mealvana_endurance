@@ -8,18 +8,27 @@ part of 'auth_migration_service.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Service for handling OAuth migration logic from anonymous profiles
-/// Extracted from UserRepository to follow FOA pattern
+/// Riverpod provider for AuthMigrationService
+/// Uses a simple async function provider (NOT AsyncNotifier) to prevent disposal during auth flows
 
-@ProviderFor(AuthMigrationService)
+@ProviderFor(authMigrationService)
 const authMigrationServiceProvider = AuthMigrationServiceProvider._();
 
-/// Service for handling OAuth migration logic from anonymous profiles
-/// Extracted from UserRepository to follow FOA pattern
+/// Riverpod provider for AuthMigrationService
+/// Uses a simple async function provider (NOT AsyncNotifier) to prevent disposal during auth flows
+
 final class AuthMigrationServiceProvider
-    extends $NotifierProvider<AuthMigrationService, void> {
-  /// Service for handling OAuth migration logic from anonymous profiles
-  /// Extracted from UserRepository to follow FOA pattern
+    extends
+        $FunctionalProvider<
+          AsyncValue<AuthMigrationService>,
+          AuthMigrationService,
+          FutureOr<AuthMigrationService>
+        >
+    with
+        $FutureModifier<AuthMigrationService>,
+        $FutureProvider<AuthMigrationService> {
+  /// Riverpod provider for AuthMigrationService
+  /// Uses a simple async function provider (NOT AsyncNotifier) to prevent disposal during auth flows
   const AuthMigrationServiceProvider._()
     : super(
         from: null,
@@ -36,38 +45,15 @@ final class AuthMigrationServiceProvider
 
   @$internal
   @override
-  AuthMigrationService create() => AuthMigrationService();
+  $FutureProviderElement<AuthMigrationService> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
 
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(void value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<void>(value),
-    );
+  @override
+  FutureOr<AuthMigrationService> create(Ref ref) {
+    return authMigrationService(ref);
   }
 }
 
 String _$authMigrationServiceHash() =>
-    r'7f0dd9d4e5c9e3d362a1aa690df113453366bb32';
-
-/// Service for handling OAuth migration logic from anonymous profiles
-/// Extracted from UserRepository to follow FOA pattern
-
-abstract class _$AuthMigrationService extends $Notifier<void> {
-  void build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    build();
-    final ref = this.ref as $Ref<void, void>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<void, void>,
-              void,
-              Object?,
-              Object?
-            >;
-    element.handleValue(ref, null);
-  }
-}
+    r'b71a281a4104a25cb4ed2b022a0a236638a7302c';

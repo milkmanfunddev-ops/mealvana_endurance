@@ -120,8 +120,9 @@ class MacroTargetBadgesWidget extends StatelessWidget {
   /// Build individual macro badge
   Widget _buildMacroBadge(MacroType macroType, int current, int target) {
     final unit = _getMacroUnit(macroType);
+    final rangeText = _getRangeText(macroType);
     final ratioWithUnit = '$current/$target$unit';
-    final label = _getMacroLabel(macroType);
+    final label = rangeText != null ? '${ _getMacroLabel(macroType)} ($rangeText)' : _getMacroLabel(macroType);
     final color = _getMacroColor(macroType);
 
     return Container(
@@ -157,6 +158,89 @@ class MacroTargetBadgesWidget extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Get range text for macro badges (all phases)
+  String? _getRangeText(MacroType macroType) {
+    switch (phase) {
+      case RunPhase.beforeRun:
+        return _getPreRunRange(macroType);
+      case RunPhase.duringRun:
+        return _getDuringRunRange(macroType);
+      case RunPhase.afterRun:
+        return _getPostRunRange(macroType);
+    }
+  }
+
+  String? _getPreRunRange(MacroType macroType) {
+    final pre = targets.preRun;
+    switch (macroType) {
+      case MacroType.carbs:
+        if (pre.carbsLowG != null && pre.carbsHighG != null) {
+          return '${pre.carbsLowG!.round()}-${pre.carbsHighG!.round()}';
+        }
+        return null;
+      case MacroType.sodium:
+        if (pre.sodiumLowMg != null && pre.sodiumHighMg != null) {
+          return '${pre.sodiumLowMg!.round()}-${pre.sodiumHighMg!.round()}';
+        }
+        return null;
+      case MacroType.fluids:
+        if (pre.fluidsLowMl != null && pre.fluidsHighMl != null) {
+          return '${pre.fluidsLowMl!.round()}-${pre.fluidsHighMl!.round()}';
+        }
+        return null;
+      case MacroType.protein:
+        if (pre.proteinLowG != null && pre.proteinHighG != null) {
+          return '${pre.proteinLowG!.round()}-${pre.proteinHighG!.round()}';
+        }
+        return null;
+    }
+  }
+
+  String? _getDuringRunRange(MacroType macroType) {
+    final during = targets.duringRun;
+    switch (macroType) {
+      case MacroType.sodium:
+        if (during.sodiumLowMg != null && during.sodiumHighMg != null) {
+          return '${during.sodiumLowMg!.round()}-${during.sodiumHighMg!.round()}';
+        }
+        return null;
+      case MacroType.fluids:
+        if (during.fluidsLowMl != null && during.fluidsHighMl != null) {
+          return '${during.fluidsLowMl!.round()}-${during.fluidsHighMl!.round()}';
+        }
+        return null;
+      case MacroType.carbs:
+      case MacroType.protein:
+        return null; // During run doesn't have carbs/protein ranges
+    }
+  }
+
+  String? _getPostRunRange(MacroType macroType) {
+    final post = targets.postRun;
+    switch (macroType) {
+      case MacroType.carbs:
+        if (post.carbsLowG != null && post.carbsHighG != null) {
+          return '${post.carbsLowG!.round()}-${post.carbsHighG!.round()}';
+        }
+        return null;
+      case MacroType.protein:
+        if (post.proteinLowG != null && post.proteinHighG != null) {
+          return '${post.proteinLowG!.round()}-${post.proteinHighG!.round()}';
+        }
+        return null;
+      case MacroType.sodium:
+        if (post.sodiumLowMg != null && post.sodiumHighMg != null) {
+          return '${post.sodiumLowMg!.round()}-${post.sodiumHighMg!.round()}';
+        }
+        return null;
+      case MacroType.fluids:
+        if (post.fluidsLowMl != null && post.fluidsHighMl != null) {
+          return '${post.fluidsLowMl!.round()}-${post.fluidsHighMl!.round()}';
+        }
+        return null;
+    }
   }
 
   /// Get label for macro type

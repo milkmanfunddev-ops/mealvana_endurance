@@ -153,38 +153,6 @@ class NutritionPlanRepository {
     }
   }
 
-  /// Update plan feedback (rating and journal notes) by activity ID.
-  Future<void> updatePlanFeedbackForActivity({
-    required String activityId,
-    int? rating,
-    String? notes,
-  }) async {
-    try {
-      final activity = await _getActivityRowWithPlan(activityId);
-      if (activity == null) {
-        throw Exception('Plan not found for activity $activityId');
-      }
-
-      final planJson = _decodePlanJson(activity.nutritionPlanData!);
-      if (rating != null) planJson['planRating'] = rating;
-      if (notes != null) planJson['journalNotes'] = notes;
-      planJson.remove('runDateTime');
-
-      await database.activityDao.setActivityNutritionPlan(
-        activityId: activity.id,
-        planData: jsonEncode(planJson),
-      );
-
-      DebugLogger.info(
-        '✅ Plan feedback updated for activity $activityId (rating=$rating, notes=$notes)',
-      );
-    } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to update plan feedback', error: e, stackTrace: stackTrace);
-      await sentry.reportDatabaseError(e, stackTrace: stackTrace, operation: 'updatePlanFeedback');
-      rethrow;
-    }
-  }
-
   /// Update plan run date/time (store in JSON planData since runDateTime field doesn't exist)
   Future<void> updatePlanRunDateTimeForActivity(String activityId, DateTime runDateTime) async {
     try {

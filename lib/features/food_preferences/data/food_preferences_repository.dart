@@ -6,6 +6,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
+import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../auth/domain/user_preferences.dart';
 
@@ -30,7 +31,8 @@ class FoodPreferencesRepository with SyncableRepository {
   String get repositoryKey => 'food_preferences';
 
   @override
-  List<String> get dependencies => ['users', 'template_foods']; // Needs users and template_foods to validate
+  List<String> get dependencies =>
+      SyncDependencyGraph.dependenciesFor(repositoryKey);
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
@@ -137,7 +139,7 @@ class FoodPreferencesRepository with SyncableRepository {
       // Batch upload to Supabase
       await supabase
           .from('food_preferences')
-          .upsert(preferencesToUpload, onConflict: 'id');
+          .upsert(preferencesToUpload, onConflict: 'user_id,food_name');
 
       sentry.addBreadcrumb(
         message: 'Uploaded food preferences to Supabase',
@@ -201,7 +203,12 @@ class FoodPreferencesRepository with SyncableRepository {
               category: 'sync',
               data: {'operation': 'upsert_preferences', 'recordId': userId},
             );
-            await sentry.reportNetworkError(e, url: 'supabase:food_preferences:upsert', method: 'UPSERT', stackTrace: stackTrace);
+            await sentry.reportNetworkError(
+              e,
+              url: 'supabase:food_preferences:upsert',
+              method: 'UPSERT',
+              stackTrace: stackTrace,
+            );
           }
         }());
       }
@@ -394,7 +401,7 @@ class FoodPreferencesRepository with SyncableRepository {
 
     await supabase
         .from('food_preferences')
-        .upsert(preferencesToUpload, onConflict: 'id');
+        .upsert(preferencesToUpload, onConflict: 'user_id,food_name');
   }
 }
 

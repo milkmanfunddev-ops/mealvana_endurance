@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wiredash/wiredash.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -25,14 +26,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          FontAwesomeIcons.arrowLeft,
-          size: AppIconSizes.md,
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
+      leading: const CustomAppBarBackButton(),
       title: Text(
         'Help & Feedback',
         style: AppTextStyles.sectionTitle.copyWith(

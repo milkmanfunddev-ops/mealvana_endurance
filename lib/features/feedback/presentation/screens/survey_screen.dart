@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/survey_controller.dart';
 import 'survey_page_1.dart';
 import 'survey_page_2.dart';
@@ -9,10 +10,7 @@ import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Main survey screen that handles navigation between survey pages
 class SurveyScreen extends ConsumerStatefulWidget {
-  const SurveyScreen({
-    super.key,
-    this.planName,
-  });
+  const SurveyScreen({super.key, this.planName});
 
   final String? planName;
 
@@ -50,19 +48,22 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
 
   Future<void> _submitSurvey() async {
     final controller = ref.read(surveyControllerProvider.notifier);
-    
+
     final success = await controller.submitSurvey(planName: widget.planName);
-    
+
     if (mounted) {
       if (success) {
         // Show success message and navigate to tabs
         MealvanaSnackbar.showSuccess(context, 'Thank you for your feedback!');
-        
+
         // Navigate to tabs screen (replace current route)
         context.go('/main');
       } else {
         // Show error message
-        MealvanaSnackbar.showWarning(context, 'Failed to submit survey. Please try again.');
+        MealvanaSnackbar.showWarning(
+          context,
+          'Failed to submit survey. Please try again.',
+        );
       }
     }
   }
@@ -71,18 +72,12 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Quick Survey',
-          style: AppTheme.subtitleStyle,
-        ),
+        title: Text('Quick Survey', style: AppTheme.subtitleStyle),
         backgroundColor: AppTheme.baseWhite,
         foregroundColor: AppTheme.baseBlack,
         elevation: 0,
         leading: _currentPage > 0
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _goToPreviousPage,
-              )
+            ? CustomAppBarBackButton(onPressed: _goToPreviousPage)
             : IconButton(
                 icon: const Icon(Icons.close),
                 onPressed: () {
@@ -99,7 +94,7 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
             onPressed: () async {
               final controller = ref.read(surveyControllerProvider.notifier);
               final success = await controller.sendTestNotification();
-              
+
               if (mounted) {
                 if (success) {
                   MealvanaSnackbar.showSuccess(
@@ -142,7 +137,9 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
                   child: LinearProgressIndicator(
                     value: (_currentPage + 1) / 2,
                     backgroundColor: AppTheme.baseGrey,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary600),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppTheme.primary600,
+                    ),
                     minHeight: 4,
                   ),
                 ),
@@ -154,12 +151,13 @@ class _SurveyScreenState extends ConsumerState<SurveyScreen> {
               ],
             ),
           ),
-          
+
           // Page content
           Expanded(
             child: PageView(
               controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(), // Disable swipe navigation
+              physics:
+                  const NeverScrollableScrollPhysics(), // Disable swipe navigation
               onPageChanged: (page) {
                 setState(() {
                   _currentPage = page;

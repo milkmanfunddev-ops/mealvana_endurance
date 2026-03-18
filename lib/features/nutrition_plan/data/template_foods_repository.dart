@@ -9,6 +9,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sync/sync_dependency_graph.dart';
 
 /// Repository for template food ingredients (read-only reference data).
 ///
@@ -16,7 +17,7 @@ import '../../../shared/services/logging_service.dart';
 /// They are synced from Supabase and cached locally in Drift.
 class TemplateFoodsRepository with SyncableRepository {
   TemplateFoodsRepository(this._supabase, this._database, {AppLogger? logger})
-      : _logger = logger ?? const NoopAppLogger();
+    : _logger = logger ?? const NoopAppLogger();
 
   final SupabaseClient _supabase;
   final AppDatabase _database;
@@ -30,14 +31,15 @@ class TemplateFoodsRepository with SyncableRepository {
   String get repositoryKey => 'template_foods';
 
   @override
-  List<String> get dependencies => []; // Level 0 - reference data
+  List<String> get dependencies =>
+      SyncDependencyGraph.dependenciesFor(repositoryKey);
 
   @override
   Future<bool> isStale() async {
     // Force sync if local table is empty
-    final localCount = await (_database.select(_database.templateFoodsTable)
-          ..where((t) => t.isActive.equals(true)))
-        .get();
+    final localCount = await (_database.select(
+      _database.templateFoodsTable,
+    )..where((t) => t.isActive.equals(true))).get();
     if (localCount.isEmpty) {
       _logger.debug(
         'Forcing sync - no local template foods found',
@@ -103,27 +105,31 @@ class TemplateFoodsRepository with SyncableRepository {
 
   /// Get a template food by name
   Future<TemplateFoodEntry?> getTemplateFoodByName(String name) async {
-    return (_database.select(_database.templateFoodsTable)
-          ..where((t) => t.name.equals(name)))
-        .getSingleOrNull();
+    return (_database.select(
+      _database.templateFoodsTable,
+    )..where((t) => t.name.equals(name))).getSingleOrNull();
   }
 
   /// Get all active template foods that should show in preferences
   Future<List<TemplateFoodEntry>> getFoodsForPreferences() async {
     return (_database.select(_database.templateFoodsTable)
-          ..where((t) =>
-              t.isActive.equals(true) & t.showInPreferences.equals(true))
+          ..where(
+            (t) => t.isActive.equals(true) & t.showInPreferences.equals(true),
+          )
           ..orderBy([(t) => OrderingTerm.asc(t.displayName)]))
         .get();
   }
 
   /// Get foods suitable for swap in a given phase
   Future<List<TemplateFoodEntry>> getFoodsForSwap(String phase) async {
-    final allFoods = await (_database.select(_database.templateFoodsTable)
-          ..where((t) =>
-              t.isActive.equals(true) & t.showInPreferences.equals(true))
-          ..orderBy([(t) => OrderingTerm.asc(t.displayName)]))
-        .get();
+    final allFoods =
+        await (_database.select(_database.templateFoodsTable)
+              ..where(
+                (t) =>
+                    t.isActive.equals(true) & t.showInPreferences.equals(true),
+              )
+              ..orderBy([(t) => OrderingTerm.asc(t.displayName)]))
+            .get();
 
     // Filter by phase category (stored as JSON array in categories)
     final phaseCategory = _phaseToCategoryName(phase);
@@ -152,9 +158,11 @@ class TemplateFoodsRepository with SyncableRepository {
 
   /// Get all drink pool items for a given phase
   Future<List<TemplateFoodEntry>> getDrinkPoolForPhase(String phase) async {
-    final allDrinks = await (_database.select(_database.templateFoodsTable)
-          ..where((t) => t.isDrinkPool.equals(true) & t.isActive.equals(true)))
-        .get();
+    final allDrinks =
+        await (_database.select(_database.templateFoodsTable)..where(
+              (t) => t.isDrinkPool.equals(true) & t.isActive.equals(true),
+            ))
+            .get();
 
     // Filter by phase (stored as JSON array in drinkPoolPhases)
     return allDrinks.where((drink) {
@@ -197,16 +205,26 @@ class TemplateFoodsRepository with SyncableRepository {
         activityTypes: Value(_arrayToJsonString(json['activity_types'])),
         categories: Value(_arrayToJsonString(json['categories'])),
         isElectrolyte: Value(json['is_electrolyte'] as bool? ?? false),
-        requiresPreparation: Value(json['requires_preparation'] as bool? ?? false),
+        requiresPreparation: Value(
+          json['requires_preparation'] as bool? ?? false,
+        ),
         caffeineMg: Value((json['caffeine_mg'] as num?)?.toDouble()),
         potassiumMg: Value((json['potassium_mg'] as num?)?.toDouble()),
         isDrinkPool: Value(json['is_drink_pool'] as bool? ?? false),
         drinkPoolPhases: Value(_arrayToJsonString(json['drink_pool_phases'])),
         // LP solver columns (unified food table)
-        maxServingsBefore: Value((json['max_servings_before'] as num?)?.toInt() ?? 4),
-        maxServingsDuring: Value((json['max_servings_during'] as num?)?.toInt() ?? 4),
-        maxServingsAfter: Value((json['max_servings_after'] as num?)?.toInt() ?? 4),
-        toExcludeFromSolver: Value(json['to_exclude_from_solver'] as bool? ?? false),
+        maxServingsBefore: Value(
+          (json['max_servings_before'] as num?)?.toInt() ?? 4,
+        ),
+        maxServingsDuring: Value(
+          (json['max_servings_during'] as num?)?.toInt() ?? 4,
+        ),
+        maxServingsAfter: Value(
+          (json['max_servings_after'] as num?)?.toInt() ?? 4,
+        ),
+        toExcludeFromSolver: Value(
+          json['to_exclude_from_solver'] as bool? ?? false,
+        ),
         isEssential: Value(json['is_essential'] as bool? ?? false),
         showInPreferences: Value(json['show_in_preferences'] as bool? ?? true),
         displayNamePlural: Value(json['display_name_plural'] as String?),
@@ -216,8 +234,14 @@ class TemplateFoodsRepository with SyncableRepository {
         servingUnit: Value(json['serving_unit'] as String?),
         servingQualifier: Value(json['serving_qualifier'] as String?),
         isLiquid: Value(json['is_liquid'] as bool? ?? false),
-        createdAt: Value(DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now()),
-        updatedAt: Value(DateTime.tryParse(json['updated_at'] as String? ?? '') ?? DateTime.now()),
+        createdAt: Value(
+          DateTime.tryParse(json['created_at'] as String? ?? '') ??
+              DateTime.now(),
+        ),
+        updatedAt: Value(
+          DateTime.tryParse(json['updated_at'] as String? ?? '') ??
+              DateTime.now(),
+        ),
       );
     }).toList();
 
@@ -249,7 +273,9 @@ class TemplateFoodsRepository with SyncableRepository {
 }
 
 /// Riverpod provider for TemplateFoodsRepository
-final templateFoodsRepositoryProvider = Provider<TemplateFoodsRepository>((ref) {
+final templateFoodsRepositoryProvider = Provider<TemplateFoodsRepository>((
+  ref,
+) {
   final database = ref.watch(appDatabaseProvider);
   final logger = ref.watch(appLoggerProvider);
   final supabase = ref.watch(appExternalDepsProvider).supabaseClient;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../domain/coach_chat_state.dart';
@@ -12,10 +12,7 @@ import '../widgets/chat_message_bubble.dart';
 /// Unified chat screen for coach-athlete conversations
 /// Works for both coaches and athletes - role is detected from relationship
 class CoachChatScreen extends ConsumerStatefulWidget {
-  const CoachChatScreen({
-    super.key,
-    required this.relationshipId,
-  });
+  const CoachChatScreen({super.key, required this.relationshipId});
 
   final String relationshipId;
 
@@ -65,18 +62,18 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     );
 
     // Scroll to bottom when messages change
-    ref.listen(
-      coachChatControllerProvider(widget.relationshipId),
-      (previous, next) {
-        if (next.hasValue) {
-          final prevCount = previous?.value?.allMessages.length ?? 0;
-          final nextCount = next.value?.allMessages.length ?? 0;
-          if (nextCount > prevCount) {
-            _scrollToBottom();
-          }
+    ref.listen(coachChatControllerProvider(widget.relationshipId), (
+      previous,
+      next,
+    ) {
+      if (next.hasValue) {
+        final prevCount = previous?.value?.allMessages.length ?? 0;
+        final nextCount = next.value?.allMessages.length ?? 0;
+        if (nextCount > prevCount) {
+          _scrollToBottom();
         }
-      },
-    );
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.blackberry,
@@ -100,12 +97,14 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
               ),
             ],
           ),
-          loading: () => const Text('Chat', style: TextStyle(color: AppColors.cream)),
-          error: (_, __) => const Text('Chat', style: TextStyle(color: AppColors.cream)),
+          loading: () =>
+              const Text('Chat', style: TextStyle(color: AppColors.cream)),
+          error: (_, __) =>
+              const Text('Chat', style: TextStyle(color: AppColors.cream)),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+        leading: const CustomAppBarBackButton(
+          iconColor: AppColors.cream,
+          backgroundColor: AppColors.blackberry,
         ),
         actions: [
           IconButton(
@@ -113,7 +112,8 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
             onPressed: () {
               ref
                   .read(
-                      coachChatControllerProvider(widget.relationshipId).notifier)
+                    coachChatControllerProvider(widget.relationshipId).notifier,
+                  )
                   .refresh();
             },
           ),
@@ -165,8 +165,11 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
               ),
               onPressed: () {
                 ref
-                    .read(coachChatControllerProvider(widget.relationshipId)
-                        .notifier)
+                    .read(
+                      coachChatControllerProvider(
+                        widget.relationshipId,
+                      ).notifier,
+                    )
                     .refresh();
               },
               icon: const Icon(Icons.refresh),
@@ -213,7 +216,8 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
         final isFromCurrentUser = message.senderUserId == state.currentUserId;
 
         // Show date separator if this is the first message or a different day
-        final showDateSeparator = index == 0 ||
+        final showDateSeparator =
+            index == 0 ||
             !_isSameDay(
               messages[index].createdAt,
               messages[index - 1].createdAt,
@@ -241,9 +245,7 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
       child: Row(
         children: [
           Expanded(
-            child: Divider(
-              color: AppColors.textDarkSecondary.withOpacity(0.2),
-            ),
+            child: Divider(color: AppColors.textDarkSecondary.withOpacity(0.2)),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -257,9 +259,7 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
             ),
           ),
           Expanded(
-            child: Divider(
-              color: AppColors.textDarkSecondary.withOpacity(0.2),
-            ),
+            child: Divider(color: AppColors.textDarkSecondary.withOpacity(0.2)),
           ),
         ],
       ),
@@ -288,7 +288,7 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
         'Thursday',
         'Friday',
         'Saturday',
-        'Sunday'
+        'Sunday',
       ];
       return dayNames[date.weekday - 1];
     } else {
@@ -332,7 +332,11 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     );
   }
 
-  Widget _buildErrorBanner(BuildContext context, CoachChatState state, WidgetRef ref) {
+  Widget _buildErrorBanner(
+    BuildContext context,
+    CoachChatState state,
+    WidgetRef ref,
+  ) {
     return Container(
       color: AppColors.dragonfruit.withOpacity(0.2),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -347,18 +351,20 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
           Expanded(
             child: Text(
               state.error!,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.cream,
-              ),
+              style: const TextStyle(fontSize: 12, color: AppColors.cream),
             ),
           ),
-          if (state.pendingMessages.any((m) => m.status == MessageStatus.failed))
+          if (state.pendingMessages.any(
+            (m) => m.status == MessageStatus.failed,
+          ))
             TextButton(
               onPressed: () {
                 ref
                     .read(
-                        coachChatControllerProvider(widget.relationshipId).notifier)
+                      coachChatControllerProvider(
+                        widget.relationshipId,
+                      ).notifier,
+                    )
                     .retryFailedMessages();
               },
               child: const Text(
@@ -370,15 +376,12 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
               ),
             ),
           IconButton(
-            icon: const Icon(
-              Icons.close,
-              size: 18,
-              color: AppColors.cream,
-            ),
+            icon: const Icon(Icons.close, size: 18, color: AppColors.cream),
             onPressed: () {
               ref
                   .read(
-                      coachChatControllerProvider(widget.relationshipId).notifier)
+                    coachChatControllerProvider(widget.relationshipId).notifier,
+                  )
                   .clearError();
             },
           ),

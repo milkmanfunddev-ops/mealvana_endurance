@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 
 import '../../domain/coach_message.dart';
 import '../providers/athlete_feedback_controller.dart';
@@ -16,10 +16,7 @@ class AthleteFeedbackScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Coach Messages'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
+        leading: const CustomAppBarBackButton(),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -31,7 +28,8 @@ class AthleteFeedbackScreen extends ConsumerWidget {
       ),
       body: feedbackAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => _buildErrorView(context, error.toString(), ref),
+        error: (error, stack) =>
+            _buildErrorView(context, error.toString(), ref),
         data: (state) => _buildContent(context, state),
       ),
     );
@@ -172,16 +170,16 @@ class AthleteFeedbackScreen extends ConsumerWidget {
             const SizedBox(height: 12),
 
             // Message text
-            Text(
-              message.messageText,
-              style: theme.textTheme.bodyMedium,
-            ),
+            Text(message.messageText, style: theme.textTheme.bodyMedium),
 
             // Activity link if applicable
             if (message.isActivityComment) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
@@ -210,7 +208,10 @@ class AthleteFeedbackScreen extends ConsumerWidget {
             if (message.isNutritionPlanComment) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
@@ -246,8 +247,8 @@ class AthleteFeedbackScreen extends ConsumerWidget {
     final (label, icon, color) = message.isActivityComment
         ? ('Activity', Icons.directions_run, Colors.green)
         : message.isNutritionPlanComment
-            ? ('Nutrition', Icons.restaurant, Colors.orange)
-            : ('Message', Icons.chat_bubble_outline, theme.colorScheme.primary);
+        ? ('Nutrition', Icons.restaurant, Colors.orange)
+        : ('Message', Icons.chat_bubble_outline, theme.colorScheme.primary);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

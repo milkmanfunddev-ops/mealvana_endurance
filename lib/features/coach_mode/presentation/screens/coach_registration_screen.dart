@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../providers/coach_registration_controller.dart';
 
 /// Coach Registration Screen
@@ -43,10 +44,7 @@ class _CoachRegistrationScreenState
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(FontAwesomeIcons.chevronLeft),
-          onPressed: () => context.pop(),
-        ),
+        leading: const CustomAppBarBackButton(),
         title: Text(
           'Become a Coach',
           style: AppTextStyles.sectionTitle.copyWith(
@@ -136,19 +134,17 @@ class _CoachRegistrationScreenState
                         border: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.2),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.2),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -211,19 +207,17 @@ class _CoachRegistrationScreenState
                         border: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.2),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.2),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -286,19 +280,17 @@ class _CoachRegistrationScreenState
                         border: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.2),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.2),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -363,19 +355,17 @@ class _CoachRegistrationScreenState
                         border: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.2),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: AppRadius.inputRadius,
                           borderSide: BorderSide(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.2),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(

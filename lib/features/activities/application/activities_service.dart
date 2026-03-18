@@ -54,6 +54,7 @@ class ActivitiesService {
               tbl.userId.lower().equals(userId.toLowerCase()) &
               tbl.scheduledDateTime.isBetweenValues(startDate, endDate) &
               tbl.deletedAt.isNull() &
+              tbl.status.equals('draft').not() &
               (tbl.status.equals('archivedForBrick') |
                       tbl.status.equals('archived_for_brick'))
                   .not(),
@@ -93,6 +94,7 @@ class ActivitiesService {
           (tbl) =>
               tbl.userId.lower().equals(userId.toLowerCase()) &
               tbl.deletedAt.isNull() &
+              tbl.status.equals('draft').not() &
               (tbl.status.equals('archivedForBrick') |
                       tbl.status.equals('archived_for_brick'))
                   .not(),
@@ -108,6 +110,38 @@ class ActivitiesService {
     } catch (e) {
       _logger.error('Error getting all activities', error: e);
       rethrow;
+    }
+  }
+
+  /// Delete all draft activities for a user.
+  /// Called when the activities list screen loads to clean up abandoned drafts.
+  Future<int> cleanupDraftActivities(String userId) async {
+    try {
+      final query = _database.select(_database.activitiesTable)
+        ..where(
+          (tbl) =>
+              tbl.userId.lower().equals(userId.toLowerCase()) &
+              tbl.status.equals('draft') &
+              tbl.deletedAt.isNull(),
+        );
+
+      final drafts = await query.get();
+      if (drafts.isEmpty) return 0;
+
+      for (final draft in drafts) {
+        await (_database.delete(_database.activitiesTable)
+              ..where((tbl) => tbl.id.equals(draft.id)))
+            .go();
+      }
+
+      _logger.info(
+        'Cleaned up ${drafts.length} draft activities',
+        context: 'ACTIVITIES_SERVICE',
+      );
+      return drafts.length;
+    } catch (e) {
+      _logger.error('Error cleaning up draft activities', error: e);
+      return 0;
     }
   }
 

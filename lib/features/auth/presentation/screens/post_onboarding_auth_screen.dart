@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/auth/auth_listener_service.dart';
@@ -19,22 +20,30 @@ import '../../domain/auth_exceptions.dart';
 /// Offers Apple Sign-In, Google Sign-In, Email/Password, or Skip
 class PostOnboardingAuthScreen extends ConsumerStatefulWidget {
   const PostOnboardingAuthScreen({super.key, this.mode = 'signup'});
-  
+
   final String mode;
 
   @override
-  ConsumerState<PostOnboardingAuthScreen> createState() => _PostOnboardingAuthScreenState();
+  ConsumerState<PostOnboardingAuthScreen> createState() =>
+      _PostOnboardingAuthScreenState();
 }
 
-class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScreen> {
+class _PostOnboardingAuthScreenState
+    extends ConsumerState<PostOnboardingAuthScreen> {
   @override
   void initState() {
     super.initState();
 
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': 'Post-Onboarding Auth',
-      'mode': widget.mode,
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': 'Post-Onboarding Auth',
+            'mode': widget.mode,
+          },
+        );
   }
 
   Future<void> _handleAppleSignIn() async {
@@ -161,34 +170,51 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     );
   }
 
-  Future<void> _showAccountExistsDialog(BuildContext context, String provider, String? email) async {
+  Future<void> _showAccountExistsDialog(
+    BuildContext context,
+    String provider,
+    String? email,
+  ) async {
     final contentService = ref.read(contentServiceProvider);
-    
+
     // Dialog implementation using standard showDialog for now
     // In the future we should use a styled dialog from Kyle design system
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(contentService.getValue('auth.error.account_exists_title', defaultValue: 'Account Already Exists')),
+        title: Text(
+          contentService.getValue(
+            'auth.error.account_exists_title',
+            defaultValue: 'Account Already Exists',
+          ),
+        ),
         content: Text(
           contentService.getValue(
-            'auth.error.account_exists_message', 
-            defaultValue: 'This $provider account ${email != null ? "($email) " : ""}is already linked to another user.'
-          )
+            'auth.error.account_exists_message',
+            defaultValue:
+                'This $provider account ${email != null ? "($email) " : ""}is already linked to another user.',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Cancel
             },
-            child: Text(contentService.getValue('common.cancel', defaultValue: 'Cancel')),
+            child: Text(
+              contentService.getValue('common.cancel', defaultValue: 'Cancel'),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               context.push('/auth/email-signup');
             },
-            child: Text(contentService.getValue('auth.error.use_email', defaultValue: 'Use Email Instead')),
+            child: Text(
+              contentService.getValue(
+                'auth.error.use_email',
+                defaultValue: 'Use Email Instead',
+              ),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -201,17 +227,22 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
               }
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.dragonfruit),
-            child: Text(contentService.getValue('auth.error.login_lose_data', defaultValue: 'Log In')),
+            child: Text(
+              contentService.getValue(
+                'auth.error.login_lose_data',
+                defaultValue: 'Log In',
+              ),
+            ),
           ),
         ],
       ),
     );
   }
-  
+
   Future<void> _signInWithGoogle() async {
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final success = await controller.signInWithGoogle();
-    
+
     // On web, the OAuth flow triggers a redirect, so we shouldn't navigate manually
     if (kIsWeb) return;
 
@@ -224,7 +255,7 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
   Future<void> _signInWithApple() async {
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final success = await controller.signInWithApple();
-    
+
     // On web, the OAuth flow triggers a redirect, so we shouldn't navigate manually
     if (kIsWeb) return;
 
@@ -241,23 +272,28 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     logger.info('Navigating to email signup screen', context: 'NAV');
     final result = await context.push('/auth/email-signup');
 
-    logger.info('Email signup returned', context: 'NAV', data: {
-      'result': result,
-      'mounted': mounted,
-    });
+    logger.info(
+      'Email signup returned',
+      context: 'NAV',
+      data: {'result': result, 'mounted': mounted},
+    );
 
     // If email signup successful, save onboarding data and navigate to main app
     if (result == true && mounted) {
-      logger.info('Email signup successful, saving onboarding data', context: 'NAV');
+      logger.info(
+        'Email signup successful, saving onboarding data',
+        context: 'NAV',
+      );
       await _saveOnboardingDataAndNavigate(
         authProvider: 'email',
         isAnonymous: false,
       );
     } else {
-      logger.info('Email signup did not return true or widget unmounted', context: 'NAV', data: {
-        'result': result,
-        'mounted': mounted,
-      });
+      logger.info(
+        'Email signup did not return true or widget unmounted',
+        context: 'NAV',
+        data: {'result': result, 'mounted': mounted},
+      );
     }
   }
 
@@ -299,13 +335,16 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     bool isAnonymous = true,
   }) async {
     final logger = ref.read(appExternalDepsProvider).logger;
-    final onboardingController = ref.read(onboardingControllerProvider.notifier);
+    final onboardingController = ref.read(
+      onboardingControllerProvider.notifier,
+    );
     final contentService = ref.read(contentServiceProvider);
 
-    logger.info('Starting saveAllOnboardingData', context: 'NAV', data: {
-      'authProvider': authProvider,
-      'isAnonymous': isAnonymous,
-    });
+    logger.info(
+      'Starting saveAllOnboardingData',
+      context: 'NAV',
+      data: {'authProvider': authProvider, 'isAnonymous': isAnonymous},
+    );
 
     // Save all cached onboarding data (saves to Drift only, marks for background upload)
     final success = await onboardingController.saveAllOnboardingData(
@@ -313,13 +352,17 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
       isAnonymous: isAnonymous,
     );
 
-    logger.info('saveAllOnboardingData completed', context: 'NAV', data: {
-      'success': success,
-      'mounted': mounted,
-    });
+    logger.info(
+      'saveAllOnboardingData completed',
+      context: 'NAV',
+      data: {'success': success, 'mounted': mounted},
+    );
 
     if (!mounted) {
-      logger.info('Widget unmounted after save, aborting navigation', context: 'NAV');
+      logger.info(
+        'Widget unmounted after save, aborting navigation',
+        context: 'NAV',
+      );
       return;
     }
 
@@ -328,10 +371,11 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
       final authService = ref.read(authServiceProvider);
       final currentUser = await authService.getCurrentUser();
 
-      logger.info('Navigating to /main', context: 'NAV', data: {
-        'hasUser': currentUser != null,
-        'userId': currentUser?.id,
-      });
+      logger.info(
+        'Navigating to /main',
+        context: 'NAV',
+        data: {'hasUser': currentUser != null, 'userId': currentUser?.id},
+      );
 
       // Navigate to main app immediately after local save
       context.go('/main');
@@ -339,15 +383,21 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
       // Trigger background sync to upload data to Supabase (non-blocking)
       if (currentUser != null) {
         unawaited(
-          ref.read(syncCoordinatorProvider.notifier).sync(
-            userId: currentUser.id,
-            trigger: SyncTrigger.manual, // Using manual trigger for post-onboarding sync
-          ),
+          ref
+              .read(syncCoordinatorProvider.notifier)
+              .sync(
+                userId: currentUser.id,
+                trigger: SyncTrigger
+                    .manual, // Using manual trigger for post-onboarding sync
+              ),
         );
       }
     } else {
       // Show error if save failed
-      logger.error('saveAllOnboardingData FAILED - NOT navigating to /main', context: 'NAV');
+      logger.error(
+        'saveAllOnboardingData FAILED - NOT navigating to /main',
+        context: 'NAV',
+      );
       MealvanaSnackbar.showError(
         context,
         contentService.getValue(
@@ -377,132 +427,146 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-              const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.xl),
 
-              // Title
-              Text(
-                contentService.getValue(
-                  isLogin ? 'auth.login.title' : 'auth.post_onboarding.title',
-                  defaultValue: isLogin ? 'Log In' : 'Create Your Account',
-                ),
-                style: AppTextStyles.sectionTitle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 28,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: AppSpacing.sm),
-
-              // Subtitle
-              Text(
-                contentService.getValue(
-                  isLogin ? 'auth.login.subtitle' : 'auth.post_onboarding.subtitle',
-                  defaultValue: isLogin ? 'Welcome back' : 'Secure your data and sync across devices',
-                ),
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: AppSpacing.xxl),
-
-              if (!isLogin) ...[
-                // Hero text
-                Text(
-                  contentService.getValue(
-                    'auth.post_onboarding.hero_text',
-                    defaultValue: 'Save your nutrition plans, training progress, and preferences with a free account.',
-                  ),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 16,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: AppSpacing.xxl),
-
-                // Benefits card
-                _buildBenefitsCard(context, contentService, isDark),
-
-                const SizedBox(height: AppSpacing.xxxl),
-              ],
-
-              // Apple Sign-In button
-              _buildOAuthButton(
-                context: context,
-                label: contentService.getValue(
-                  'auth.post_onboarding.apple_button',
-                  defaultValue: 'Continue with Apple',
-                ),
-                icon: FontAwesomeIcons.apple,
-                onPressed: asyncState.isLoading ? null : _handleAppleSignIn,
-                isLoading: asyncState.isLoading,
-              ),
-
-              const SizedBox(height: AppSpacing.md),
-
-              // Google Sign-In button
-              _buildOAuthButton(
-                context: context,
-                label: contentService.getValue(
-                  'auth.post_onboarding.google_button',
-                  defaultValue: 'Continue with Google',
-                ),
-                icon: FontAwesomeIcons.google,
-                onPressed: asyncState.isLoading ? null : _handleGoogleSignIn,
-                isLoading: asyncState.isLoading,
-              ),
-
-              const SizedBox(height: AppSpacing.md),
-
-              // Email button
-              KylePrimaryButton(
-                text: contentService.getValue(
-                  isLogin ? 'auth.login.email_button' : 'auth.post_onboarding.email_button',
-                  defaultValue: isLogin ? 'Log in with Email' : 'Sign up with Email',
-                ),
-                onPressed: asyncState.isLoading 
-                  ? null 
-                  : (isLogin ? _handleEmailLogin : _handleEmailSignUp),
-              ),
-
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Skip button (only for signup mode)
-              if (!isLogin) ...[
-                TextButton(
-                  onPressed: asyncState.isLoading ? null : _handleSkip,
-                  child: Text(
+                  // Title
+                  Text(
                     contentService.getValue(
-                      'auth.post_onboarding.skip_button',
-                      defaultValue: 'Continue without signing in',
+                      isLogin
+                          ? 'auth.login.title'
+                          : 'auth.post_onboarding.title',
+                      defaultValue: isLogin ? 'Log In' : 'Create Your Account',
+                    ),
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 28,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: AppSpacing.sm),
+
+                  // Subtitle
+                  Text(
+                    contentService.getValue(
+                      isLogin
+                          ? 'auth.login.subtitle'
+                          : 'auth.post_onboarding.subtitle',
+                      defaultValue: isLogin
+                          ? 'Welcome back'
+                          : 'Secure your data and sync across devices',
                     ),
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      decoration: TextDecoration.underline,
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
 
-                const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.xxl),
 
-                // Skip reminder text
-                Text(
-                  contentService.getValue(
-                    'auth.post_onboarding.skip_reminder',
-                    defaultValue: 'You can always create an account later in Settings',
+                  if (!isLogin) ...[
+                    // Hero text
+                    Text(
+                      contentService.getValue(
+                        'auth.post_onboarding.hero_text',
+                        defaultValue:
+                            'Save your nutrition plans, training progress, and preferences with a free account.',
+                      ),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: AppSpacing.xxl),
+
+                    // Benefits card
+                    _buildBenefitsCard(context, contentService, isDark),
+
+                    const SizedBox(height: AppSpacing.xxxl),
+                  ],
+
+                  // Apple Sign-In button
+                  _buildOAuthButton(
+                    context: context,
+                    label: contentService.getValue(
+                      'auth.post_onboarding.apple_button',
+                      defaultValue: 'Continue with Apple',
+                    ),
+                    icon: FontAwesomeIcons.apple,
+                    onPressed: asyncState.isLoading ? null : _handleAppleSignIn,
+                    isLoading: asyncState.isLoading,
                   ),
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
 
-              const SizedBox(height: AppSpacing.xxl),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Google Sign-In button
+                  _buildOAuthButton(
+                    context: context,
+                    label: contentService.getValue(
+                      'auth.post_onboarding.google_button',
+                      defaultValue: 'Continue with Google',
+                    ),
+                    icon: FontAwesomeIcons.google,
+                    onPressed: asyncState.isLoading
+                        ? null
+                        : _handleGoogleSignIn,
+                    isLoading: asyncState.isLoading,
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Email button
+                  KylePrimaryButton(
+                    text: contentService.getValue(
+                      isLogin
+                          ? 'auth.login.email_button'
+                          : 'auth.post_onboarding.email_button',
+                      defaultValue: isLogin
+                          ? 'Log in with Email'
+                          : 'Sign up with Email',
+                    ),
+                    onPressed: asyncState.isLoading
+                        ? null
+                        : (isLogin ? _handleEmailLogin : _handleEmailSignUp),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xxl),
+
+                  // Skip button (only for signup mode)
+                  if (!isLogin) ...[
+                    TextButton(
+                      onPressed: asyncState.isLoading ? null : _handleSkip,
+                      child: Text(
+                        contentService.getValue(
+                          'auth.post_onboarding.skip_button',
+                          defaultValue: 'Continue without signing in',
+                        ),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.sm),
+
+                    // Skip reminder text
+                    Text(
+                      contentService.getValue(
+                        'auth.post_onboarding.skip_reminder',
+                        defaultValue:
+                            'You can always create an account later in Settings',
+                      ),
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+
+                  const SizedBox(height: AppSpacing.xxl),
                 ],
               ),
             ),
@@ -540,7 +604,10 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, {bool isLoading = false}) {
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context, {
+    bool isLoading = false,
+  }) {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -551,21 +618,14 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
           // Custom back button (disabled during loading)
           Opacity(
             opacity: isLoading ? 0.5 : 1.0,
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: Icon(
-                  FontAwesomeIcons.arrowLeft,
-                  size: AppIconSizes.controlIcon,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                onPressed: isLoading ? null : () => context.pop(),
-              ),
+            child: CustomAppBarBackButton(
+              onPressed: () => context.pop(),
+              enabled: !isLoading,
+              margin: EdgeInsets.zero,
+              iconColor: Theme.of(context).colorScheme.onSurface,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.1),
             ),
           ),
         ],
@@ -573,7 +633,11 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
     );
   }
 
-  Widget _buildBenefitsCard(BuildContext context, ContentService contentService, bool isDark) {
+  Widget _buildBenefitsCard(
+    BuildContext context,
+    ContentService contentService,
+    bool isDark,
+  ) {
     // Get benefits list from content service
     final benefitsList = [
       contentService.getValue(
@@ -598,8 +662,8 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark
-          ? AppColors.blackberry.withOpacity(0.3)
-          : AppColors.electrolyte.withOpacity(0.1),
+            ? AppColors.blackberry.withOpacity(0.3)
+            : AppColors.electrolyte.withOpacity(0.1),
         borderRadius: AppRadius.cardRadius,
         border: Border.all(
           color: AppColors.electrolyte.withOpacity(0.3),
@@ -634,28 +698,30 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
           const SizedBox(height: AppSpacing.md),
 
           // Benefits list
-          ...benefitsList.map((benefit) => Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  FontAwesomeIcons.check,
-                  size: AppIconSizes.sm,
-                  color: AppColors.electrolyte,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    benefit,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
+          ...benefitsList.map(
+            (benefit) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    FontAwesomeIcons.check,
+                    size: AppIconSizes.sm,
+                    color: AppColors.electrolyte,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      benefit,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -677,8 +743,8 @@ class _PostOnboardingAuthScreenState extends ConsumerState<PostOnboardingAuthScr
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: isDark
-            ? AppColors.blackberry.withOpacity(0.5)
-            : Colors.white,
+              ? AppColors.blackberry.withOpacity(0.5)
+              : Colors.white,
           foregroundColor: Theme.of(context).colorScheme.onSurface,
           elevation: isDark ? 0 : 2,
           shape: RoundedRectangleBorder(

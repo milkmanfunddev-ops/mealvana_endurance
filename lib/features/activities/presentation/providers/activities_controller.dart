@@ -32,27 +32,16 @@ class ActivitiesController extends _$ActivitiesController {
 
     final userId = await ref.read(userIdProvider.future);
 
-    // NEW SYNC PATTERN: Ensure activities (and dependencies) are synced
-    // This checks staleness and syncs only when needed (>24h since last sync)
-    try {
-      await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
-            'activities',
-            userId,
-            repository: ref.read(activitiesRepositoryProvider),
-          );
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Sync failed during activities load',
-        context: 'ACTIVITIES_CONTROLLER',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      // Don't rethrow - continue with cached data
-      // User sees cached data, error is logged for debugging
-    }
+    // Clean up any abandoned draft activities before loading
+    await _service.cleanupDraftActivities(userId);
 
-    // Background integration sync (non-blocking, fire-and-forget)
-    // Only invalidates if sync actually ran (not skipped due to freshness)
+    // 1. Load local data IMMEDIATELY (no blocking sync)
+    final localData = await _service.getAllActivities(userId);
+
+    // 2. Background sync (fire-and-forget) - syncs if stale, then refreshes UI
+    unawaited(_backgroundSync(userId));
+
+    // 3. Background integration sync (non-blocking, fire-and-forget)
     unawaited(
       ref
           .read(integrationSyncCoordinatorProvider.notifier)
@@ -61,11 +50,29 @@ class ActivitiesController extends _$ActivitiesController {
         if (anySynced) {
           ref.invalidateSelf();
         }
-      }).catchError((_) {}), // Silent failure, already logged in coordinator
+      }).catchError((_) {}),
     );
 
-    // Load from local database (now guaranteed to be synced or using cached data)
-    return _service.getAllActivities(userId);
+    return localData;
+  }
+
+  /// Background sync: ensures data is fresh, then refreshes UI
+  Future<void> _backgroundSync(String userId) async {
+    try {
+      await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
+            'activities',
+            userId,
+            repository: ref.read(activitiesRepositoryProvider),
+          );
+      ref.invalidateSelf();
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Background sync failed',
+        context: 'ACTIVITIES_CONTROLLER',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   /// Create a new activity

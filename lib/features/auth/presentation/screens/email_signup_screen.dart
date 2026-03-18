@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/auth/auth_listener_service.dart';
@@ -42,9 +43,10 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     // Track screen view only once
     if (!_hasTrackedScreenView) {
       _hasTrackedScreenView = true;
-      ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-        'screen_name': 'Email Signup',
-      });
+      ref
+          .read(appExternalDepsProvider)
+          .analytics
+          .track('screen_viewed', properties: {'screen_name': 'Email Signup'});
     }
   }
 
@@ -68,20 +70,14 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     // Additional validation as safety check
     if (email.isEmpty) {
       if (mounted) {
-        MealvanaSnackbar.showError(
-          context,
-          'Please enter your email address',
-        );
+        MealvanaSnackbar.showError(context, 'Please enter your email address');
       }
       return;
     }
 
     if (password.isEmpty) {
       if (mounted) {
-        MealvanaSnackbar.showError(
-          context,
-          'Please enter your password',
-        );
+        MealvanaSnackbar.showError(context, 'Please enter your password');
       }
       return;
     }
@@ -138,26 +134,38 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
     }
   }
 
-  Future<void> _showAccountExistsDialog(BuildContext context, String attemptedEmail, String? existingEmail) async {
+  Future<void> _showAccountExistsDialog(
+    BuildContext context,
+    String attemptedEmail,
+    String? existingEmail,
+  ) async {
     final contentService = ref.read(contentServiceProvider);
     final displayEmail = existingEmail ?? attemptedEmail;
 
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(contentService.getValue('auth.error.account_exists_title', defaultValue: 'Account Already Exists')),
+        title: Text(
+          contentService.getValue(
+            'auth.error.account_exists_title',
+            defaultValue: 'Account Already Exists',
+          ),
+        ),
         content: Text(
           contentService.getValue(
             'auth.error.email_already_registered',
-            defaultValue: 'An account with $displayEmail already exists. Would you like to sign in instead?'
-          )
+            defaultValue:
+                'An account with $displayEmail already exists. Would you like to sign in instead?',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop(); // Cancel
             },
-            child: Text(contentService.getValue('common.cancel', defaultValue: 'Cancel')),
+            child: Text(
+              contentService.getValue('common.cancel', defaultValue: 'Cancel'),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -166,7 +174,12 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
               context.push('/auth/email-login');
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.electrolyte),
-            child: Text(contentService.getValue('auth.error.sign_in_instead', defaultValue: 'Sign In')),
+            child: Text(
+              contentService.getValue(
+                'auth.error.sign_in_instead',
+                defaultValue: 'Sign In',
+              ),
+            ),
           ),
         ],
       ),
@@ -276,8 +289,8 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
-                          ? FontAwesomeIcons.eye
-                          : FontAwesomeIcons.eyeSlash,
+                            ? FontAwesomeIcons.eye
+                            : FontAwesomeIcons.eyeSlash,
                         size: AppIconSizes.controlIcon,
                       ),
                       onPressed: () {
@@ -320,8 +333,8 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword
-                          ? FontAwesomeIcons.eye
-                          : FontAwesomeIcons.eyeSlash,
+                            ? FontAwesomeIcons.eye
+                            : FontAwesomeIcons.eyeSlash,
                         size: AppIconSizes.controlIcon,
                       ),
                       onPressed: () {
@@ -352,11 +365,11 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                 KylePrimaryButton(
                   text: contentService.getValue(
                     asyncState.isLoading
-                      ? 'auth.email_signup.creating_button'
-                      : 'auth.email_signup.create_button',
+                        ? 'auth.email_signup.creating_button'
+                        : 'auth.email_signup.create_button',
                     defaultValue: asyncState.isLoading
-                      ? 'Creating Account...'
-                      : 'Create Account',
+                        ? 'Creating Account...'
+                        : 'Create Account',
                   ),
                   onPressed: asyncState.isLoading ? null : _handleCreateAccount,
                 ),
@@ -390,21 +403,13 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
       title: Row(
         children: [
           // Custom back button
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                FontAwesomeIcons.arrowLeft,
-                size: AppIconSizes.controlIcon,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              onPressed: () => context.pop(),
-            ),
+          CustomAppBarBackButton(
+            onPressed: () => context.pop(),
+            margin: EdgeInsets.zero,
+            iconColor: Theme.of(context).colorScheme.onSurface,
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.1),
           ),
         ],
       ),

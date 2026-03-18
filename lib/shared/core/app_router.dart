@@ -38,14 +38,11 @@ import '../../features/settings/presentation/screens/food_preferences_hub_screen
 import '../../features/settings/presentation/screens/sport_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/personal_templates/presentation/screens/personal_templates_screen.dart';
-import '../../features/personal_templates/presentation/widgets/macro_comparison_banner.dart';
 import '../../features/settings/presentation/screens/connected_apps_screen.dart';
 import '../../features/settings/presentation/screens/nutrition_targets_screen.dart';
+import '../../features/settings/presentation/screens/coach_connection_screen.dart';
 import '../core/screen_mode.dart';
 import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
-import '../../features/user_journal/presentation/screens/plan_how_well_screen.dart';
-import '../../features/user_journal/presentation/screens/voice_notes_list_screen.dart';
-import '../../features/user_journal/presentation/screens/voice_memo_screen.dart';
 import '../../features/carb_loading/presentation/screens/carb_loading_food_selection_screen.dart';
 import '../../features/carb_loading/presentation/screens/create_custom_carb_loading_food_screen.dart';
 import '../../features/carb_loading/domain/meal_type.dart';
@@ -145,10 +142,6 @@ class AppRouter {
             // This allows them to sign in and access their existing data
             if (appStartupData.isLoggedOut) {
               return '/welcome';
-            }
-            // User has pending feedback to provide
-            if (appStartupData.activityIdNeedingFeedback != null) {
-              return '/plan-how-well/${appStartupData.activityIdNeedingFeedback}';
             }
             // User is fully onboarded - go to main app
             return '/main';
@@ -371,8 +364,7 @@ class AppRouter {
             activityId: activityId,
             isNewActivity: extra?['isNewActivity'] as bool? ?? false,
             isCoachView: extra?['isCoachView'] as bool? ?? false,
-            templateComparison:
-                extra?['templateComparison'] as TemplateComparisonData?,
+            fromTemplate: extra?['fromTemplate'] as bool? ?? false,
           );
         },
       ),
@@ -395,8 +387,7 @@ class AppRouter {
             activityId: activityId,
             isNewActivity: extra?['isNewActivity'] as bool? ?? false,
             isCoachView: extra?['isCoachView'] as bool? ?? false,
-            templateComparison:
-                extra?['templateComparison'] as TemplateComparisonData?,
+            fromTemplate: extra?['fromTemplate'] as bool? ?? false,
           );
         },
       ),
@@ -508,6 +499,13 @@ class AppRouter {
         path: '/settings/templates',
         name: 'settings-templates',
         builder: (context, state) => const PersonalTemplatesScreen(),
+      ),
+
+      // Coach Connection Screen - Athlete generates pairing codes & manages coach
+      GoRoute(
+        path: '/settings/coach-connection',
+        name: 'settings-coach-connection',
+        builder: (context, state) => const CoachConnectionScreen(),
       ),
 
       // Food Preferences Consolidated Screen - All food-related settings in one place (DEPRECATED - kept for backward compatibility)
@@ -661,47 +659,6 @@ class AppRouter {
           return CreateCustomCarbLoadingFoodScreen(
             dayId: extra?['dayId'] as int,
             mealType: extra?['mealType'] as MealType,
-          );
-        },
-      ),
-
-      // User Journal Routes
-      
-      // Plan Rating Screen - Rate how well a nutrition plan worked
-      GoRoute(
-        path: '/plan-how-well/:activityId',
-        name: 'plan-how-well',
-        builder: (context, state) {
-          final activityId = state.pathParameters['activityId']!;
-          return PlanHowWellScreen(activityId: activityId);
-        },
-      ),
-      
-      // Voice Notes List Screen - View all saved notes
-      GoRoute(
-        path: '/voice-notes',
-        name: 'voice-notes',
-        builder: (context, state) => const VoiceNotesListScreen(),
-      ),
-      
-      // Voice Memo Screen - Redirect to workout notes tab
-      // Keeping for backward compatibility but redirects to tabs
-      GoRoute(
-        path: '/voice-memo/:activityId',
-        name: 'voice-memo',
-        builder: (context, state) {
-          final activityId = state.pathParameters['activityId']!;
-          int? rating;
-          final extra = state.extra;
-          if (extra is Map<String, dynamic>) {
-            rating = extra['rating'] as int?;
-          } else {
-            final ratingParam = state.uri.queryParameters['rating'];
-            rating = ratingParam != null ? int.tryParse(ratingParam) : null;
-          }
-          return VoiceMemoScreen(
-            activityId: activityId,
-            rating: rating,
           );
         },
       ),

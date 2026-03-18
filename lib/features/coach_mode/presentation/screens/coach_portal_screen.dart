@@ -5,7 +5,7 @@ import '../providers/coach_dashboard_controller.dart';
 import '../providers/coach_portal_controller.dart';
 import '../widgets/portal_sidebar.dart';
 import '../widgets/portal_athlete_detail_panel.dart';
-import '../widgets/portal_reports_placeholder.dart';
+import '../widgets/portal_reports_panel.dart';
 import '../widgets/portal_messages_panel.dart';
 
 /// Unified full-screen coach portal with split-panel layout
@@ -65,7 +65,7 @@ class CoachPortalScreen extends ConsumerWidget {
           relationshipId: portalState.selectedRelationshipId!,
         );
       case PortalSection.reports:
-        return const PortalReportsPlaceholder();
+        return const PortalReportsPanel();
       case PortalSection.messages:
         return const PortalMessagesPanel();
     }

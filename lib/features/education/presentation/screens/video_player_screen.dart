@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 
 /// Full-screen video player using chewie + video_player
 class VideoPlayerScreen extends ConsumerStatefulWidget {
@@ -91,9 +92,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: const CustomAppBarBackButton(
+          iconColor: Colors.white,
+          backgroundColor: Color(0x33000000),
         ),
         title: Text(
           widget.title,

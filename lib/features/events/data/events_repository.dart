@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../carb_loading/data/carb_loading_repository.dart';
@@ -30,7 +30,7 @@ EventsRepository eventsRepository(Ref ref) {
 
 /// Repository for managing events following FOA pattern
 /// Prepares for server-authoritative sync with edge functions
-class EventsRepository implements SyncableRepository {
+class EventsRepository with SyncableRepository {
   const EventsRepository({
     required SupabaseClient supabase,
     required AppDatabase database,
@@ -57,38 +57,8 @@ class EventsRepository implements SyncableRepository {
   String get repositoryKey => 'events';
 
   @override
-  List<String> get dependencies => ['users'];
-
-  @override
-  Future<bool> isStale() async {
-    final lastSync = await getLastSyncTime();
-    if (lastSync == null) return true;
-
-    const staleDuration = Duration(hours: 24);
-    return DateTime.now().difference(lastSync) > staleDuration;
-  }
-
-  @override
-  Future<DateTime?> getLastSyncTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${repositoryKey}_last_sync';
-    final timestamp = prefs.getString(key);
-
-    if (timestamp == null) return null;
-
-    try {
-      return DateTime.parse(timestamp);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  @override
-  Future<void> setLastSyncTime(DateTime time) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '${repositoryKey}_last_sync';
-    await prefs.setString(key, time.toIso8601String());
-  }
+  List<String> get dependencies =>
+      SyncDependencyGraph.dependenciesFor(repositoryKey);
 
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
@@ -282,10 +252,16 @@ class EventsRepository implements SyncableRepository {
         _logger.warning(
           'Immediate upload failed; record stays dirty for retry',
           context: 'EVENTS_REPOSITORY',
-          error: e, stackTrace: stackTrace,
+          error: e,
+          stackTrace: stackTrace,
           data: {'operation': 'create', 'recordId': createdEvent.id},
         );
-        _sentry.reportNetworkError(e, url: 'supabase:events:create', method: 'INSERT', stackTrace: stackTrace);
+        _sentry.reportNetworkError(
+          e,
+          url: 'supabase:events:create',
+          method: 'INSERT',
+          stackTrace: stackTrace,
+        );
       }
       if (uploaded) {
         createdEvent = createdEvent.copyWith(
@@ -330,10 +306,16 @@ class EventsRepository implements SyncableRepository {
           _logger.warning(
             'Immediate upload failed; record stays dirty for retry',
             context: 'EVENTS_REPOSITORY',
-            error: e, stackTrace: stackTrace,
+            error: e,
+            stackTrace: stackTrace,
             data: {'operation': 'update', 'recordId': eventWithDirtyFlag.id},
           );
-          _sentry.reportNetworkError(e, url: 'supabase:events:update', method: 'UPSERT', stackTrace: stackTrace);
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:events:update',
+            method: 'UPSERT',
+            stackTrace: stackTrace,
+          );
         }
       }());
 
@@ -392,10 +374,16 @@ class EventsRepository implements SyncableRepository {
           _logger.warning(
             'Immediate upload failed; record stays dirty for retry',
             context: 'EVENTS_REPOSITORY',
-            error: e, stackTrace: stackTrace,
+            error: e,
+            stackTrace: stackTrace,
             data: {'operation': 'delete', 'recordId': eventId},
           );
-          _sentry.reportNetworkError(e, url: 'supabase:events:delete', method: 'DELETE', stackTrace: stackTrace);
+          _sentry.reportNetworkError(
+            e,
+            url: 'supabase:events:delete',
+            method: 'DELETE',
+            stackTrace: stackTrace,
+          );
         }
       }());
     } catch (e, stackTrace) {
