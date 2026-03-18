@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "chmod +x scripts/build_web.sh && APP_ENVIRONMENT=prod SUPABASE_URL=https://wvmvsodrvbkxfydabqed.supabase.co SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2bXZzb2RydmJreGZ5ZGFicWVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyOTMxMDcsImV4cCI6MjA3MDg2OTEwN30.pG2IYdEIIFS8_zPxzr6pZplzWQqvD13dvslrpFMAPCk ./scripts/build_web.sh",
+  "buildCommand": "chmod +x scripts/build_web.sh && ./scripts/build_web.sh",
   "installCommand": "if cd flutter; then git pull && cd ..; else git clone https://github.com/flutter/flutter.git --depth 1 --branch stable; fi && flutter/bin/flutter doctor",
   "outputDirectory": "build/web",
   "framework": null,
