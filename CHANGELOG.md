@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.0] - 2026-03-18
+
+### Added
+- **Coach Mode v2**: Full coach-athlete pairing system with code-based athlete onboarding and web dashboard access for approved coaches
+- **Product Catalog**: New product catalog with Shopify import and catalog search for discovering nutrition products
+- **Sport-Specific Target Overrides**: During-workout nutrition targets now adjust per sport type with 90-minute duration gating for advanced recommendations
+
+### Changed
+- **Major Codebase Refactoring**: 7-phase cleanup removing 22 dead code files (~5,000 lines), extracting shared utilities, splitting large widgets and controllers into focused modules, and consolidating event screens — resulting in a significantly more maintainable codebase
+- **Web Deployment Hardening**: Moved secrets from config files to environment variables, gated coach routes to approved users, and forced production Supabase for web builds
+- **UI Polish**: Refined swap food screen layout and interactions
+
+### Fixed
+- Fixed 6 before-run nutrition issues including food suitability, timing, and portion calculations with comprehensive test coverage
+- Fixed NutritionPlan mapper calls and test parameter handling
+- Various stability improvements
+
+---
+
 ## [1.15.0] - 2026-03-10
 
 ### Added
@@ -91,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Release Date | Highlights |
 |---------|--------------|------------|
+| 1.16.0  | Mar 2026     | Coach Mode v2, product catalog, sport-specific targets, major refactoring |
 | 1.15.0  | Mar 2026     | Redesigned during-activity nutrition, template foods, user-driven placement |
 | 2.0.0   | Dec 2024     | Dietary preferences, allergies, enhanced sync |
 | 1.0.0   | Dec 2024     | Initial App Store release |
