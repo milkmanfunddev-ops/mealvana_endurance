@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/widgets/buttons/search_openfoodfacts_button.dart';
 import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
 import '../providers/swap_food_controller.dart';
@@ -709,14 +708,6 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                   hintText: 'Search for food...',
                 ),
 
-                // "Search OpenFoodFacts" button (always shown when searching locally)
-                if (state.searchQuery.isNotEmpty &&
-                    state.openFoodFactsResults.isEmpty &&
-                    !state.isSearchingOpenFoodFacts)
-                  SearchOpenFoodFactsButton(
-                    onPressed: () => _onSearchButtonPressed(state.searchQuery),
-                  ),
-
                 // Clear search button (when showing OpenFoodFacts results)
                 if (state.openFoodFactsResults.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.sm),
@@ -851,6 +842,10 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
           ref.read(swapFoodControllerProvider(_params).notifier).toggleMyFoodsExpanded();
         },
         isUserFood: _isUserFood,
+        showOpenFoodFactsButton: state.searchQuery.isNotEmpty &&
+            state.openFoodFactsResults.isEmpty &&
+            !state.isSearchingOpenFoodFacts,
+        onSearchOpenFoodFacts: () => _onSearchButtonPressed(state.searchQuery),
       );
     }
   }

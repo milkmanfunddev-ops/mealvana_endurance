@@ -21,38 +21,14 @@ class CatalogSectionWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     // Show loading spinner while searching
     if (isSearchingCatalog && catalogResults.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: Row(
-                children: [
-                  Icon(
-                    FontAwesomeIcons.store,
-                    size: AppIconSizes.sm,
-                    color: AppColors.electrolyte,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    'Product Catalog',
-                    style: AppTextStyles.sectionTitle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(AppSpacing.md),
-              child: SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          ],
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Center(
+          child: SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
         ),
       );
     }
@@ -61,58 +37,11 @@ class CatalogSectionWidget extends StatelessWidget {
     if (catalogResults.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.md),
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section header
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Row(
-              children: [
-                Icon(
-                  FontAwesomeIcons.store,
-                  size: AppIconSizes.sm,
-                  color: AppColors.electrolyte,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Product Catalog',
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.electrolyte.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${catalogResults.length}',
-                    style: AppTextStyles.smallLabel.copyWith(
-                      color: AppColors.electrolyte,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                if (isSearchingCatalog)
-                  const Padding(
-                    padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: SizedBox(
-                      height: 14,
-                      width: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          // Catalog result cards
+          // Catalog result cards (no header)
           ...catalogResults.map((result) => Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: _CatalogCard(
@@ -135,6 +64,9 @@ class _CatalogCard extends StatelessWidget {
     required this.result,
     required this.onTap,
   });
+
+  String _capitalize(String text) =>
+      text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +111,7 @@ class _CatalogCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      result.displayName,
+                      _capitalize(result.displayName),
                       style: AppTextStyles.foodTitle.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),

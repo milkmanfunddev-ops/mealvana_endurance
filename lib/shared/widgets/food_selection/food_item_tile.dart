@@ -62,6 +62,9 @@ class FoodItemTile extends StatelessWidget {
     );
   }
 
+  String _capitalize(String text) =>
+      text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
+
   /// Build simple item (for swap/add screens)
   Widget _buildSimpleItem(BuildContext context) {
     return BaseCard(
@@ -94,7 +97,7 @@ class FoodItemTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      food.displayName ?? food.name,
+                      _capitalize(food.displayName ?? food.name),
                       style: AppTextStyles.foodTitle.copyWith(
                         color: isAvoided
                           ? AppColors.dragonfruit

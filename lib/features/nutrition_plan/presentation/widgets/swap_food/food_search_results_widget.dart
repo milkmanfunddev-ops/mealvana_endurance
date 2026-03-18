@@ -5,6 +5,7 @@ import '../../../domain/food.dart';
 import 'food_card_widget.dart';
 import 'catalog_section_widget.dart';
 import '../../../../barcode_scanning/application/catalog_search_service.dart';
+import '../../../../../shared/widgets/buttons/search_openfoodfacts_button.dart';
 
 /// Widget for displaying all search results (foods, catalog, OpenFoodFacts)
 /// Handles empty states and organizes results by section
@@ -23,6 +24,8 @@ class FoodSearchResultsWidget extends StatelessWidget {
   final void Function(dynamic) onOpenFoodFactsResultTap;
   final VoidCallback onMyFoodsSectionToggle;
   final bool Function(Food) isUserFood;
+  final VoidCallback? onSearchOpenFoodFacts;
+  final bool showOpenFoodFactsButton;
 
   const FoodSearchResultsWidget({
     super.key,
@@ -40,6 +43,8 @@ class FoodSearchResultsWidget extends StatelessWidget {
     required this.onOpenFoodFactsResultTap,
     required this.onMyFoodsSectionToggle,
     required this.isUserFood,
+    this.onSearchOpenFoodFacts,
+    this.showOpenFoodFactsButton = false,
   });
 
   @override
@@ -127,6 +132,15 @@ class FoodSearchResultsWidget extends StatelessWidget {
           isSearchingCatalog: isSearchingCatalog,
           onCatalogResultTap: onCatalogResultTap,
         ),
+
+        // Search OpenFoodFacts button at bottom of results
+        if (showOpenFoodFactsButton && onSearchOpenFoodFacts != null)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.md),
+            child: SearchOpenFoodFactsButton(
+              onPressed: onSearchOpenFoodFacts!,
+            ),
+          ),
       ],
     );
   }
@@ -236,6 +250,9 @@ class _OpenFoodFactsCard extends StatelessWidget {
     required this.onTap,
   });
 
+  String _capitalize(String text) =>
+      text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
+
   @override
   Widget build(BuildContext context) {
     return BaseCard(
@@ -279,7 +296,7 @@ class _OpenFoodFactsCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      result.displayName ?? 'Unknown Product',
+                      _capitalize(result.displayName ?? 'Unknown Product'),
                       style: AppTextStyles.foodTitle.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),

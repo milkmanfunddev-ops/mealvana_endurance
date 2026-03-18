@@ -19,6 +19,9 @@ class SelectedFoodDisplayWidget extends StatelessWidget {
     required this.onClear,
   });
 
+  String _capitalize(String text) =>
+      text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
+
   @override
   Widget build(BuildContext context) {
     final totalCarbs = (food.carbsPerServing ?? 0) * quantity;
@@ -55,7 +58,7 @@ class SelectedFoodDisplayWidget extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        food.displayName ?? food.name,
+                        _capitalize(food.displayName ?? food.name),
                         style: AppTextStyles.foodTitle.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),

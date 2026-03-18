@@ -99,3 +99,4 @@ secrets/
 tool/.final_surge_token.json
 tool/.training_peaks_token.json
 .vercel
+.env*.local

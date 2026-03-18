@@ -52,7 +52,7 @@ class FoodCardWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      food.displayName ?? food.name,
+                      _capitalize(food.displayName ?? food.name),
                       style: AppTextStyles.foodTitle.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
@@ -97,6 +97,9 @@ class FoodCardWidget extends StatelessWidget {
       ),
     );
   }
+
+  String _capitalize(String text) =>
+      text.isEmpty ? text : '${text[0].toUpperCase()}${text.substring(1)}';
 
   /// Get the appropriate icon for a food based on its name
   IconData _getFoodIcon(String foodName) {
