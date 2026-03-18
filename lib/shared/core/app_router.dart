@@ -32,7 +32,8 @@ import '../../features/nutrition_plan/presentation/screens/swap_food_screen.dart
 import '../../features/barcode_scanning/presentation/screens/barcode_scanner_screen.dart';
 import '../../features/settings/presentation/screens/sport_settings_screen.dart';
 import '../../features/settings/presentation/screens/preferences_screen.dart';
-import '../../features/settings/presentation/screens/food_preferences_screen.dart' as settings;
+import '../../features/settings/presentation/screens/food_preferences_screen.dart'
+    as settings;
 import '../../features/settings/presentation/screens/food_settings_consolidated_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/sport_preferences_hub_screen.dart';
@@ -54,14 +55,13 @@ import '../../features/education/presentation/screens/video_player_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
 import '../screens/food_detail_screen.dart';
 // Coach mode screens
-import '../../features/coach_mode/presentation/screens/coach_dashboard_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
-import '../../features/coach_mode/presentation/screens/athlete_detail_screen.dart';
 import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
 import '../../features/coach_mode/presentation/screens/athlete_feedback_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_registration_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_directory_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
+import '../../features/coach_mode/application/coach_service.dart';
 
 /// Notifier that triggers GoRouter redirect re-evaluation on auth state changes.
 /// Used by AuthListenerService to signal sign-out/sign-in events.
@@ -95,7 +95,8 @@ class AppRouter {
         }
 
         // Public routes that don't require auth (welcome, onboarding, auth screens)
-        final isPublicRoute = currentPath == '/welcome' ||
+        final isPublicRoute =
+            currentPath == '/welcome' ||
             currentPath.startsWith('/onboarding') ||
             currentPath.startsWith('/auth');
 
@@ -171,8 +172,10 @@ class AppRouter {
             // Also check for explicit extra data (for testing or direct navigation)
             final extra = state.extra as Map<String, dynamic>?;
             if (extra != null) {
-              currentVersion = extra['currentVersion'] as String? ?? currentVersion;
-              requiredVersion = extra['requiredVersion'] as String? ?? requiredVersion;
+              currentVersion =
+                  extra['currentVersion'] as String? ?? currentVersion;
+              requiredVersion =
+                  extra['requiredVersion'] as String? ?? requiredVersion;
             }
 
             return ForceUpgradeScreen(
@@ -183,583 +186,601 @@ class AppRouter {
         ),
 
         // Welcome Screen
-      GoRoute(
-        path: '/welcome',
-        name: 'welcome',
-        builder: (context, state) => const WelcomeScreen(),
-      ),
-      
-      // Onboarding Flow (PageView-based with swipe navigation)
-      GoRoute(
-        path: '/onboarding',
-        name: 'onboarding',
-        builder: (context, state) => const OnboardingPageViewScreen(),
-      ),
+        GoRoute(
+          path: '/welcome',
+          name: 'welcome',
+          builder: (context, state) => const WelcomeScreen(),
+        ),
 
-      // Authentication Flow (Post-Onboarding)
-      GoRoute(
-        path: '/auth/post-onboarding',
-        name: 'auth-post-onboarding',
-        builder: (context, state) {
-          final mode = state.uri.queryParameters['mode'] ?? 'signup';
-          return PostOnboardingAuthScreen(mode: mode);
-        },
-      ),
+        // Onboarding Flow (PageView-based with swipe navigation)
+        GoRoute(
+          path: '/onboarding',
+          name: 'onboarding',
+          builder: (context, state) => const OnboardingPageViewScreen(),
+        ),
 
-      GoRoute(
-        path: '/auth/email-signup',
-        name: 'auth-email-signup',
-        builder: (context, state) => const EmailSignupScreen(),
-      ),
+        // Authentication Flow (Post-Onboarding)
+        GoRoute(
+          path: '/auth/post-onboarding',
+          name: 'auth-post-onboarding',
+          builder: (context, state) {
+            final mode = state.uri.queryParameters['mode'] ?? 'signup';
+            return PostOnboardingAuthScreen(mode: mode);
+          },
+        ),
 
-      GoRoute(
-        path: '/auth/email-login',
-        name: 'auth-email-login',
-        builder: (context, state) => const EmailLoginScreen(),
-      ),
+        GoRoute(
+          path: '/auth/email-signup',
+          name: 'auth-email-signup',
+          builder: (context, state) => const EmailSignupScreen(),
+        ),
 
-      // Password Recovery Flow
-      GoRoute(
-        path: '/auth/forgot-password',
-        name: 'auth-forgot-password',
-        builder: (context, state) => const ForgotPasswordScreen(),
-      ),
+        GoRoute(
+          path: '/auth/email-login',
+          name: 'auth-email-login',
+          builder: (context, state) => const EmailLoginScreen(),
+        ),
 
-      GoRoute(
-        path: '/auth/verify-reset-code',
-        name: 'auth-verify-reset-code',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          final email = extra?['email'] as String? ?? '';
-          return VerifyResetCodeScreen(email: email);
-        },
-      ),
+        // Password Recovery Flow
+        GoRoute(
+          path: '/auth/forgot-password',
+          name: 'auth-forgot-password',
+          builder: (context, state) => const ForgotPasswordScreen(),
+        ),
 
-      GoRoute(
-        path: '/auth/set-new-password',
-        name: 'auth-set-new-password',
-        builder: (context, state) => const SetNewPasswordScreen(),
-      ),
+        GoRoute(
+          path: '/auth/verify-reset-code',
+          name: 'auth-verify-reset-code',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            final email = extra?['email'] as String? ?? '';
+            return VerifyResetCodeScreen(email: email);
+          },
+        ),
 
-      // REDIRECTED: Old routes now point to NewActivityScreen (multi-sport Kyle design)
-      // Supports pre-population from synced activities and events
-      GoRoute(
-        path: '/distancepacegut',
-        name: 'distancepacegut',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return NewActivityScreen(
-            initialDate: extra?['initialDate'] as DateTime?,
-            initialDistance: extra?['distance'] as double?,
-            initialPace: extra?['goalPace'] as double?,
-            activityId: extra?['activityId'] as String?,
-            eventId: extra?['eventId'] as String?,
-            forUserId: extra?['forUserId'] as String?, // NEW: For coach creating for athlete
-            // Activity type for tab selection
-            activityType: extra?['activityType'] as String?,
-            // Cycling-specific parameters
-            cyclingSpeedMph: extra?['cyclingSpeedMph'] as double?,
-            cyclingTerrain: extra?['cyclingTerrain'] as String?,
-            cyclingIndoorOutdoor: extra?['cyclingIndoorOutdoor'] as String?,
-            cyclingElevationGainFt: extra?['cyclingElevationGainFt'] as int?,
-            cyclingSessionGoal: extra?['cyclingSessionGoal'] as String?,
-            // Swimming-specific parameters
-            swimmingPacePer100mSeconds: extra?['swimmingPacePer100mSeconds'] as int?,
-            swimmingPoolOrOpenWater: extra?['swimmingPoolOrOpenWater'] as String?,
-            swimmingWaterTempC: extra?['swimmingWaterTempC'] as double?,
-            // Shared parameters
-            intensityTarget: extra?['intensityTarget'] as String?,
-            timeBeforeMinutes: extra?['timeBeforeMinutes'] as int?,
-            // Brick event subtype distances
-            brickSwimDistanceMeters: extra?['brickSwimDistanceMeters'] as double?,
-            brickBikeDistanceMiles: extra?['brickBikeDistanceMiles'] as double?,
-            brickRunDistanceMiles: extra?['brickRunDistanceMiles'] as double?,
-          );
-        },
-      ),
+        GoRoute(
+          path: '/auth/set-new-password',
+          name: 'auth-set-new-password',
+          builder: (context, state) => const SetNewPasswordScreen(),
+        ),
 
-      // Alias for distance-pace-gut-entry (for consistency)
-      // REDIRECTED: Now points to NewActivityScreen instead of old DistancePaceGutEntryScreen
-      GoRoute(
-        path: '/distance-pace-gut-entry',
-        name: 'distance-pace-gut-entry',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return NewActivityScreen(
-            initialDate: extra?['initialDate'] as DateTime?,
-            initialDistance: extra?['distance'] as double?,
-            initialPace: extra?['goalPace'] as double?,
-            activityId: extra?['activityId'] as String?,
-            eventId: extra?['eventId'] as String?,
-            forUserId: extra?['forUserId'] as String?, // NEW: For coach creating for athlete
-            // Activity type for tab selection
-            activityType: extra?['activityType'] as String?,
-            // Cycling-specific parameters
-            cyclingSpeedMph: extra?['cyclingSpeedMph'] as double?,
-            cyclingTerrain: extra?['cyclingTerrain'] as String?,
-            cyclingIndoorOutdoor: extra?['cyclingIndoorOutdoor'] as String?,
-            cyclingElevationGainFt: extra?['cyclingElevationGainFt'] as int?,
-            cyclingSessionGoal: extra?['cyclingSessionGoal'] as String?,
-            // Swimming-specific parameters
-            swimmingPacePer100mSeconds: extra?['swimmingPacePer100mSeconds'] as int?,
-            swimmingPoolOrOpenWater: extra?['swimmingPoolOrOpenWater'] as String?,
-            swimmingWaterTempC: extra?['swimmingWaterTempC'] as double?,
-            // Shared parameters
-            intensityTarget: extra?['intensityTarget'] as String?,
-            timeBeforeMinutes: extra?['timeBeforeMinutes'] as int?,
-            // Brick event subtype distances
-            brickSwimDistanceMeters: extra?['brickSwimDistanceMeters'] as double?,
-            brickBikeDistanceMiles: extra?['brickBikeDistanceMiles'] as double?,
-            brickRunDistanceMiles: extra?['brickRunDistanceMiles'] as double?,
-          );
-        },
-      ),
-      // Main tabs screen (after onboarding)
-      GoRoute(
-        path: '/main',
-        name: 'main',
-        builder: (context, state) {
-          // Support tab query parameter to navigate to specific tab
-          final tabParam = state.uri.queryParameters['tab'];
-          int initialTab = 0;
-          
-          switch (tabParam) {
-            case 'notes':
-            case 'workout-notes':
-              initialTab = 1;
-              break;
-            case 'survey':
-              initialTab = 2;
-              break;
-            case 'learn':
-              initialTab = 2;
-              break;
-            case 'settings':
-              initialTab = 3;
-              break;
-            default:
-              initialTab = 0;
-          }
-          
-          return TabsScreen(initialTabIndex: initialTab);
-        },
-      ),
+        // REDIRECTED: Old routes now point to NewActivityScreen (multi-sport Kyle design)
+        // Supports pre-population from synced activities and events
+        GoRoute(
+          path: '/distancepacegut',
+          name: 'distancepacegut',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return NewActivityScreen(
+              initialDate: extra?['initialDate'] as DateTime?,
+              initialDistance: extra?['distance'] as double?,
+              initialPace: extra?['goalPace'] as double?,
+              activityId: extra?['activityId'] as String?,
+              eventId: extra?['eventId'] as String?,
+              forUserId:
+                  extra?['forUserId']
+                      as String?, // NEW: For coach creating for athlete
+              // Activity type for tab selection
+              activityType: extra?['activityType'] as String?,
+              // Cycling-specific parameters
+              cyclingSpeedMph: extra?['cyclingSpeedMph'] as double?,
+              cyclingTerrain: extra?['cyclingTerrain'] as String?,
+              cyclingIndoorOutdoor: extra?['cyclingIndoorOutdoor'] as String?,
+              cyclingElevationGainFt: extra?['cyclingElevationGainFt'] as int?,
+              cyclingSessionGoal: extra?['cyclingSessionGoal'] as String?,
+              // Swimming-specific parameters
+              swimmingPacePer100mSeconds:
+                  extra?['swimmingPacePer100mSeconds'] as int?,
+              swimmingPoolOrOpenWater:
+                  extra?['swimmingPoolOrOpenWater'] as String?,
+              swimmingWaterTempC: extra?['swimmingWaterTempC'] as double?,
+              // Shared parameters
+              intensityTarget: extra?['intensityTarget'] as String?,
+              timeBeforeMinutes: extra?['timeBeforeMinutes'] as int?,
+              // Brick event subtype distances
+              brickSwimDistanceMeters:
+                  extra?['brickSwimDistanceMeters'] as double?,
+              brickBikeDistanceMiles:
+                  extra?['brickBikeDistanceMiles'] as double?,
+              brickRunDistanceMiles: extra?['brickRunDistanceMiles'] as double?,
+            );
+          },
+        ),
 
-      // Activity Detail Screen - Shows nutrition plan and activity details
-      // SIMPLIFIED: Only activityId is required - all data loaded from database
-      GoRoute(
-        path: '/plan',
-        name: 'plan',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          final activityId = extra?['activityId'] as String?;
-          if (activityId == null) {
-            return const Scaffold(
-              body: Center(
-                child: Text('Missing activity ID'),
+        // Alias for distance-pace-gut-entry (for consistency)
+        // REDIRECTED: Now points to NewActivityScreen instead of old DistancePaceGutEntryScreen
+        GoRoute(
+          path: '/distance-pace-gut-entry',
+          name: 'distance-pace-gut-entry',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return NewActivityScreen(
+              initialDate: extra?['initialDate'] as DateTime?,
+              initialDistance: extra?['distance'] as double?,
+              initialPace: extra?['goalPace'] as double?,
+              activityId: extra?['activityId'] as String?,
+              eventId: extra?['eventId'] as String?,
+              forUserId:
+                  extra?['forUserId']
+                      as String?, // NEW: For coach creating for athlete
+              // Activity type for tab selection
+              activityType: extra?['activityType'] as String?,
+              // Cycling-specific parameters
+              cyclingSpeedMph: extra?['cyclingSpeedMph'] as double?,
+              cyclingTerrain: extra?['cyclingTerrain'] as String?,
+              cyclingIndoorOutdoor: extra?['cyclingIndoorOutdoor'] as String?,
+              cyclingElevationGainFt: extra?['cyclingElevationGainFt'] as int?,
+              cyclingSessionGoal: extra?['cyclingSessionGoal'] as String?,
+              // Swimming-specific parameters
+              swimmingPacePer100mSeconds:
+                  extra?['swimmingPacePer100mSeconds'] as int?,
+              swimmingPoolOrOpenWater:
+                  extra?['swimmingPoolOrOpenWater'] as String?,
+              swimmingWaterTempC: extra?['swimmingWaterTempC'] as double?,
+              // Shared parameters
+              intensityTarget: extra?['intensityTarget'] as String?,
+              timeBeforeMinutes: extra?['timeBeforeMinutes'] as int?,
+              // Brick event subtype distances
+              brickSwimDistanceMeters:
+                  extra?['brickSwimDistanceMeters'] as double?,
+              brickBikeDistanceMiles:
+                  extra?['brickBikeDistanceMiles'] as double?,
+              brickRunDistanceMiles: extra?['brickRunDistanceMiles'] as double?,
+            );
+          },
+        ),
+        // Main tabs screen (after onboarding)
+        GoRoute(
+          path: '/main',
+          name: 'main',
+          builder: (context, state) {
+            // Support tab query parameter to navigate to specific tab
+            final tabParam = state.uri.queryParameters['tab'];
+            int initialTab = 0;
+
+            switch (tabParam) {
+              case 'notes':
+              case 'workout-notes':
+                initialTab = 1;
+                break;
+              case 'survey':
+                initialTab = 2;
+                break;
+              case 'learn':
+                initialTab = 2;
+                break;
+              case 'settings':
+                initialTab = 3;
+                break;
+              default:
+                initialTab = 0;
+            }
+
+            return TabsScreen(initialTabIndex: initialTab);
+          },
+        ),
+
+        // Activity Detail Screen - Shows nutrition plan and activity details
+        // SIMPLIFIED: Only activityId is required - all data loaded from database
+        GoRoute(
+          path: '/plan',
+          name: 'plan',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            final activityId = extra?['activityId'] as String?;
+            if (activityId == null) {
+              return const Scaffold(
+                body: Center(child: Text('Missing activity ID')),
+              );
+            }
+            return ActivityDetailScreen(
+              activityId: activityId,
+              isNewActivity: extra?['isNewActivity'] as bool? ?? false,
+              isCoachView: extra?['isCoachView'] as bool? ?? false,
+              fromTemplate: extra?['fromTemplate'] as bool? ?? false,
+            );
+          },
+        ),
+
+        // Activity Detail Screen alias - for navigation from adjust macros
+        GoRoute(
+          path: '/current-plan',
+          name: 'current-plan',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            final activityId = extra?['activityId'] as String?;
+            if (activityId == null) {
+              return const Scaffold(
+                body: Center(child: Text('Missing activity ID')),
+              );
+            }
+            return ActivityDetailScreen(
+              activityId: activityId,
+              isNewActivity: extra?['isNewActivity'] as bool? ?? false,
+              isCoachView: extra?['isCoachView'] as bool? ?? false,
+              fromTemplate: extra?['fromTemplate'] as bool? ?? false,
+            );
+          },
+        ),
+
+        // Adjust Macros Screen - Fine-tune macro targets before generating plan
+        GoRoute(
+          path: '/adjust-macros',
+          name: 'adjust-macros',
+          builder: (context, state) => const AdjustMacrosScreen(),
+        ),
+
+        // Education / Learn
+        GoRoute(
+          path: '/learn',
+          name: 'learn',
+          builder: (context, state) => const EducationScreen(),
+        ),
+
+        // Video Player
+        GoRoute(
+          path: '/learn/video',
+          name: 'learn-video',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return VideoPlayerScreen(
+              title: extra?['title'] as String? ?? '',
+              videoUrl: extra?['videoUrl'] as String? ?? '',
+            );
+          },
+        ),
+
+        // Events list
+        GoRoute(
+          path: '/events',
+          name: 'events-list',
+          builder: (context, state) => const EventsListScreen(),
+        ),
+
+        // Event creation - supports coach creating for athlete
+        GoRoute(
+          path: '/events/create',
+          name: 'events-create',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return EventFormScreen(forUserId: extra?['forUserId'] as String?);
+          },
+        ),
+
+        // Pro Version Screen - Premium features showcase
+        GoRoute(
+          path: '/pro',
+          name: 'pro-version',
+          builder: (context, state) => const ProVersionScreen(),
+        ),
+
+        // Settings Screen - User profile and preferences
+        GoRoute(
+          path: '/settings',
+          name: 'settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
+
+        // Connected Apps Screen - Training platform integrations (Final Surge, etc.)
+        GoRoute(
+          path: '/settings/connected-apps',
+          name: 'settings-connected-apps',
+          builder: (context, state) => const ConnectedAppsScreen(),
+        ),
+
+        // Preferences Screen - Edit profile and preferences with save button
+        GoRoute(
+          path: '/settings/preferences',
+          name: 'settings-preferences',
+          builder: (context, state) => const PreferencesScreen(),
+        ),
+
+        // Sport Settings Screen - Cycling, swimming, and sport-specific preferences
+        GoRoute(
+          path: '/settings/sport-settings',
+          name: 'settings-sport-settings',
+          builder: (context, state) => const SportSettingsScreen(),
+        ),
+
+        // Food Preferences Hub - 2-tier navigation hub for all food settings
+        GoRoute(
+          path: '/settings/food-preferences-hub',
+          name: 'settings-food-preferences-hub',
+          builder: (context, state) => const FoodPreferencesHubScreen(),
+        ),
+
+        // Sport Preferences Hub - 2-tier navigation hub for all sport settings
+        GoRoute(
+          path: '/settings/sport-preferences-hub',
+          name: 'settings-sport-preferences-hub',
+          builder: (context, state) => const SportPreferencesHubScreen(),
+        ),
+
+        // Nutrition Targets - User-configured default macro target overrides
+        GoRoute(
+          path: '/settings/nutrition-targets',
+          name: 'settings-nutrition-targets',
+          builder: (context, state) => const NutritionTargetsScreen(),
+        ),
+
+        // Personal Templates Screen - Manage saved nutrition plan templates
+        GoRoute(
+          path: '/settings/templates',
+          name: 'settings-templates',
+          builder: (context, state) => const PersonalTemplatesScreen(),
+        ),
+
+        // Coach Connection Screen - Athlete generates pairing codes & manages coach
+        GoRoute(
+          path: '/settings/coach-connection',
+          name: 'settings-coach-connection',
+          builder: (context, state) => const CoachConnectionScreen(),
+        ),
+
+        // Food Preferences Consolidated Screen - All food-related settings in one place (DEPRECATED - kept for backward compatibility)
+        GoRoute(
+          path: '/settings/food-preferences-consolidated',
+          name: 'settings-food-preferences-consolidated',
+          builder: (context, state) => const FoodSettingsConsolidatedScreen(),
+        ),
+
+        // Food Preferences Screen - Edit food preferences from settings
+        GoRoute(
+          path: '/settings/food-preferences',
+          name: 'settings-food-preferences',
+          builder: (context, state) => const settings.FoodPreferencesScreen(),
+        ),
+
+        // Dietary Preference Settings Screen - Reuses onboarding screen with settings mode
+        GoRoute(
+          path: '/settings/dietary-preference',
+          name: 'settings-dietary-preference',
+          builder: (context, state) =>
+              const DietaryPreferenceScreen(mode: ScreenMode.settings),
+        ),
+
+        // Allergies Settings Screen - Reuses onboarding screen with settings mode
+        GoRoute(
+          path: '/settings/allergies',
+          name: 'settings-allergies',
+          builder: (context, state) =>
+              const AllergiesScreen(mode: ScreenMode.settings),
+        ),
+
+        // Running Details Settings Screen - Reuses onboarding screen with settings mode
+        GoRoute(
+          path: '/settings/running-details',
+          name: 'settings-running-details',
+          builder: (context, state) =>
+              const RunningDetailsScreen(mode: ScreenMode.settings),
+        ),
+
+        // Cycling Details Settings Screen - Reuses onboarding screen with settings mode
+        GoRoute(
+          path: '/settings/cycling-details',
+          name: 'settings-cycling-details',
+          builder: (context, state) =>
+              const CyclingDetailsScreen(mode: ScreenMode.settings),
+        ),
+
+        // Swimming Details Settings Screen - Reuses onboarding screen with settings mode
+        GoRoute(
+          path: '/settings/swimming-details',
+          name: 'settings-swimming-details',
+          builder: (context, state) =>
+              const SwimmingDetailsScreen(mode: ScreenMode.settings),
+        ),
+
+        // Add Food Screen - Add foods from settings food preferences
+        GoRoute(
+          path: '/settings/food-preferences/add-food',
+          name: 'settings-add-food',
+          builder: (context, state) => const AddFoodScreen(),
+        ),
+
+        // Help & Feedback Screen - Support and feedback collection
+        GoRoute(
+          path: '/help',
+          name: 'help-feedback',
+          builder: (context, state) => const HelpFeedbackScreen(),
+        ),
+
+        // Swap/Add Food Screen - Add or swap foods in nutrition plan
+        // SIMPLIFIED: Only activityId is needed - eliminates provider instance mismatches
+        GoRoute(
+          path: '/swap-food',
+          name: 'swap-food',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            final activityId = extra?['activityId'] as String?;
+            final isNewActivity = extra?['isNewActivity'] as bool? ?? false;
+            final isCoachView = extra?['isCoachView'] as bool? ?? false;
+            if (activityId == null) {
+              return const Scaffold(
+                body: Center(child: Text('Missing activity')),
+              );
+            }
+            return SwapFoodScreen(
+              foodToSwapId: extra?['foodToSwapId'] as String?,
+              foodToSwapName: extra?['foodToSwapName'] as String?,
+              category: extra?['category'] as String? ?? 'before_run',
+              activityId: activityId,
+              isNewActivity: isNewActivity,
+              isCoachView: isCoachView,
+            );
+          },
+        ),
+
+        // Barcode Scanner Screen - Scan barcodes to add/swap foods
+        GoRoute(
+          path: '/barcode-scanner',
+          name: 'barcode-scanner',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return BarcodeScannerScreen(
+              category: extra?['category'] as String? ?? 'before_run',
+              foodToSwapId: extra?['foodToSwapId'] as String?,
+              foodToSwapName: extra?['foodToSwapName'] as String?,
+            );
+          },
+        ),
+
+        // Food Detail Screen - Unified screen for adding/editing foods
+        // Returns FoodDetailResult when saved, 'DELETE:foodId' when deleted, or null when cancelled
+        GoRoute(
+          path: '/food-detail',
+          name: 'food-detail',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            if (extra == null) {
+              return const Scaffold(
+                body: Center(child: Text('Missing food data')),
+              );
+            }
+            return FoodDetailScreen(
+              foodData: extra['foodData'] as FoodDetailData,
+              mode: extra['mode'] as FoodDetailMode,
+              screenContext:
+                  extra['screenContext'] as FoodDetailContext? ??
+                  FoodDetailContext.addFood,
+              preSelectedCategories:
+                  extra['preSelectedCategories'] as List<int>?,
+              showCategories: extra['showCategories'] as bool? ?? true,
+              showProductType: extra['showProductType'] as bool? ?? true,
+              allowDelete: extra['allowDelete'] as bool? ?? false,
+            );
+          },
+        ),
+
+        // Carb Loading Food Selection Screen - Select foods for carb loading meals
+        GoRoute(
+          path: '/carb-loading-select-food',
+          name: 'carb-loading-select-food',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return CarbLoadingFoodSelectionScreen(
+              dayId: extra?['dayId'] as String,
+              mealType: extra?['mealType'] as MealType,
+            );
+          },
+        ),
+
+        // Create Custom Carb Loading Food Screen - Manual food entry
+        GoRoute(
+          path: '/create-custom-carb-loading-food',
+          name: 'create-custom-carb-loading-food',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return CreateCustomCarbLoadingFoodScreen(
+              dayId: extra?['dayId'] as int,
+              mealType: extra?['mealType'] as MealType,
+            );
+          },
+        ),
+
+        // ============================================================================
+        // COACH MODE ROUTES
+        // Web-only: /coach, /coach/apply, /coach/athlete/:id (coach features)
+        // Mobile-only: /my-coaches, /coach-directory, /athlete/feedback (athlete features)
+        // ============================================================================
+
+        // Coach Portal - Unified full-screen dashboard for coaches (WEB ONLY)
+        GoRoute(
+          path: '/coach',
+          name: 'coach-dashboard',
+          redirect: (context, state) async {
+            if (!kIsWeb) return '/settings';
+
+            final coachService = ref.read(coachServiceProvider);
+            var isApprovedCoach = await coachService.isCurrentUserCoach();
+            if (!isApprovedCoach) {
+              isApprovedCoach = await coachService
+                  .syncCurrentCoachDataFromSupabase();
+            }
+
+            return isApprovedCoach ? null : '/settings';
+          },
+          builder: (context, state) => const CoachPortalScreen(),
+        ),
+
+        // Athlete Detail - Redirect to portal (handled within portal now)
+        GoRoute(
+          path: '/coach/athlete/:relationshipId',
+          name: 'coach-athlete-detail',
+          redirect: (context, state) => '/coach',
+        ),
+
+        // My Coaches - Athlete's view of connected coaches (MOBILE ONLY)
+        GoRoute(
+          path: '/my-coaches',
+          name: 'my-coaches',
+          redirect: (context, state) => kIsWeb ? '/settings' : null,
+          builder: (context, state) => const MyCoachesScreen(),
+        ),
+
+        // Athlete Feedback - Athletes view messages from coaches (MOBILE ONLY)
+        GoRoute(
+          path: '/athlete/feedback',
+          name: 'athlete-feedback',
+          redirect: (context, state) => kIsWeb ? '/settings' : null,
+          builder: (context, state) => const AthleteFeedbackScreen(),
+        ),
+
+        // Coach Registration - Apply to become a coach (WEB ONLY)
+        GoRoute(
+          path: '/coach/apply',
+          name: 'coach-apply',
+          redirect: (context, state) => kIsWeb ? null : '/settings',
+          builder: (context, state) => const CoachRegistrationScreen(),
+        ),
+
+        // Coach Directory - Athletes browse and request coaches (MOBILE ONLY)
+        GoRoute(
+          path: '/coach-directory',
+          name: 'coach-directory',
+          redirect: (context, state) => kIsWeb ? '/settings' : null,
+          builder: (context, state) => const CoachDirectoryScreen(),
+        ),
+
+        // Coach Chat - Unified chat screen for both coaches and athletes
+        // Accessible on both web and mobile platforms
+        GoRoute(
+          path: '/chat/:relationshipId',
+          name: 'coach-chat',
+          builder: (context, state) {
+            final relationshipId = state.pathParameters['relationshipId']!;
+            return CoachChatScreen(relationshipId: relationshipId);
+          },
+        ),
+      ],
+
+      // Error handling
+      errorBuilder: (context, state) => Scaffold(
+        appBar: AppBar(title: const Text('Page Not Found')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64),
+              const SizedBox(height: 16),
+              Text(
+                'Page not found',
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
-            );
-          }
-          return ActivityDetailScreen(
-            activityId: activityId,
-            isNewActivity: extra?['isNewActivity'] as bool? ?? false,
-            isCoachView: extra?['isCoachView'] as bool? ?? false,
-            fromTemplate: extra?['fromTemplate'] as bool? ?? false,
-          );
-        },
-      ),
-
-      // Activity Detail Screen alias - for navigation from adjust macros
-      GoRoute(
-        path: '/current-plan',
-        name: 'current-plan',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          final activityId = extra?['activityId'] as String?;
-          if (activityId == null) {
-            return const Scaffold(
-              body: Center(
-                child: Text('Missing activity ID'),
+              const SizedBox(height: 8),
+              Text(
+                'The page you\'re looking for doesn\'t exist.',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-            );
-          }
-          return ActivityDetailScreen(
-            activityId: activityId,
-            isNewActivity: extra?['isNewActivity'] as bool? ?? false,
-            isCoachView: extra?['isCoachView'] as bool? ?? false,
-            fromTemplate: extra?['fromTemplate'] as bool? ?? false,
-          );
-        },
-      ),
-      
-      // Adjust Macros Screen - Fine-tune macro targets before generating plan
-      GoRoute(
-        path: '/adjust-macros',
-        name: 'adjust-macros',
-        builder: (context, state) => const AdjustMacrosScreen(),
-      ),
-
-      // Education / Learn
-      GoRoute(
-        path: '/learn',
-        name: 'learn',
-        builder: (context, state) => const EducationScreen(),
-      ),
-
-      // Video Player
-      GoRoute(
-        path: '/learn/video',
-        name: 'learn-video',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return VideoPlayerScreen(
-            title: extra?['title'] as String? ?? '',
-            videoUrl: extra?['videoUrl'] as String? ?? '',
-          );
-        },
-      ),
-
-      // Events list
-      GoRoute(
-        path: '/events',
-        name: 'events-list',
-        builder: (context, state) => const EventsListScreen(),
-      ),
-
-      // Event creation - supports coach creating for athlete
-      GoRoute(
-        path: '/events/create',
-        name: 'events-create',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return EventFormScreen(
-            forUserId: extra?['forUserId'] as String?,
-          );
-        },
-      ),
-
-      // Pro Version Screen - Premium features showcase
-      GoRoute(
-        path: '/pro',
-        name: 'pro-version',
-        builder: (context, state) => const ProVersionScreen(),
-      ),
-
-      // Settings Screen - User profile and preferences
-      GoRoute(
-        path: '/settings',
-        name: 'settings',
-        builder: (context, state) => const SettingsScreen(),
-      ),
-
-      // Connected Apps Screen - Training platform integrations (Final Surge, etc.)
-      GoRoute(
-        path: '/settings/connected-apps',
-        name: 'settings-connected-apps',
-        builder: (context, state) => const ConnectedAppsScreen(),
-      ),
-
-      // Preferences Screen - Edit profile and preferences with save button
-      GoRoute(
-        path: '/settings/preferences',
-        name: 'settings-preferences',
-        builder: (context, state) => const PreferencesScreen(),
-      ),
-
-      // Sport Settings Screen - Cycling, swimming, and sport-specific preferences
-      GoRoute(
-        path: '/settings/sport-settings',
-        name: 'settings-sport-settings',
-        builder: (context, state) => const SportSettingsScreen(),
-      ),
-
-      // Food Preferences Hub - 2-tier navigation hub for all food settings
-      GoRoute(
-        path: '/settings/food-preferences-hub',
-        name: 'settings-food-preferences-hub',
-        builder: (context, state) => const FoodPreferencesHubScreen(),
-      ),
-
-      // Sport Preferences Hub - 2-tier navigation hub for all sport settings
-      GoRoute(
-        path: '/settings/sport-preferences-hub',
-        name: 'settings-sport-preferences-hub',
-        builder: (context, state) => const SportPreferencesHubScreen(),
-      ),
-
-      // Nutrition Targets - User-configured default macro target overrides
-      GoRoute(
-        path: '/settings/nutrition-targets',
-        name: 'settings-nutrition-targets',
-        builder: (context, state) => const NutritionTargetsScreen(),
-      ),
-
-      // Personal Templates Screen - Manage saved nutrition plan templates
-      GoRoute(
-        path: '/settings/templates',
-        name: 'settings-templates',
-        builder: (context, state) => const PersonalTemplatesScreen(),
-      ),
-
-      // Coach Connection Screen - Athlete generates pairing codes & manages coach
-      GoRoute(
-        path: '/settings/coach-connection',
-        name: 'settings-coach-connection',
-        builder: (context, state) => const CoachConnectionScreen(),
-      ),
-
-      // Food Preferences Consolidated Screen - All food-related settings in one place (DEPRECATED - kept for backward compatibility)
-      GoRoute(
-        path: '/settings/food-preferences-consolidated',
-        name: 'settings-food-preferences-consolidated',
-        builder: (context, state) => const FoodSettingsConsolidatedScreen(),
-      ),
-
-      // Food Preferences Screen - Edit food preferences from settings
-      GoRoute(
-        path: '/settings/food-preferences',
-        name: 'settings-food-preferences',
-        builder: (context, state) => const settings.FoodPreferencesScreen(),
-      ),
-
-      // Dietary Preference Settings Screen - Reuses onboarding screen with settings mode
-      GoRoute(
-        path: '/settings/dietary-preference',
-        name: 'settings-dietary-preference',
-        builder: (context, state) => const DietaryPreferenceScreen(mode: ScreenMode.settings),
-      ),
-
-      // Allergies Settings Screen - Reuses onboarding screen with settings mode
-      GoRoute(
-        path: '/settings/allergies',
-        name: 'settings-allergies',
-        builder: (context, state) => const AllergiesScreen(mode: ScreenMode.settings),
-      ),
-
-      // Running Details Settings Screen - Reuses onboarding screen with settings mode
-      GoRoute(
-        path: '/settings/running-details',
-        name: 'settings-running-details',
-        builder: (context, state) => const RunningDetailsScreen(mode: ScreenMode.settings),
-      ),
-
-      // Cycling Details Settings Screen - Reuses onboarding screen with settings mode
-      GoRoute(
-        path: '/settings/cycling-details',
-        name: 'settings-cycling-details',
-        builder: (context, state) => const CyclingDetailsScreen(mode: ScreenMode.settings),
-      ),
-
-      // Swimming Details Settings Screen - Reuses onboarding screen with settings mode
-      GoRoute(
-        path: '/settings/swimming-details',
-        name: 'settings-swimming-details',
-        builder: (context, state) => const SwimmingDetailsScreen(mode: ScreenMode.settings),
-      ),
-
-      // Add Food Screen - Add foods from settings food preferences
-      GoRoute(
-        path: '/settings/food-preferences/add-food',
-        name: 'settings-add-food',
-        builder: (context, state) => const AddFoodScreen(),
-      ),
-
-      // Help & Feedback Screen - Support and feedback collection
-      GoRoute(
-        path: '/help',
-        name: 'help-feedback',
-        builder: (context, state) => const HelpFeedbackScreen(),
-      ),
-      
-      // Swap/Add Food Screen - Add or swap foods in nutrition plan
-      // SIMPLIFIED: Only activityId is needed - eliminates provider instance mismatches
-      GoRoute(
-        path: '/swap-food',
-        name: 'swap-food',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          final activityId = extra?['activityId'] as String?;
-          final isNewActivity = extra?['isNewActivity'] as bool? ?? false;
-          final isCoachView = extra?['isCoachView'] as bool? ?? false;
-          if (activityId == null) {
-            return const Scaffold(
-              body: Center(
-                child: Text('Missing activity'),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => context.go('/welcome'),
+                child: const Text('Go Home'),
               ),
-            );
-          }
-          return SwapFoodScreen(
-            foodToSwapId: extra?['foodToSwapId'] as String?,
-            foodToSwapName: extra?['foodToSwapName'] as String?,
-            category: extra?['category'] as String? ?? 'before_run',
-            activityId: activityId,
-            isNewActivity: isNewActivity,
-            isCoachView: isCoachView,
-          );
-        },
-      ),
-
-      // Barcode Scanner Screen - Scan barcodes to add/swap foods
-      GoRoute(
-        path: '/barcode-scanner',
-        name: 'barcode-scanner',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return BarcodeScannerScreen(
-            category: extra?['category'] as String? ?? 'before_run',
-            foodToSwapId: extra?['foodToSwapId'] as String?,
-            foodToSwapName: extra?['foodToSwapName'] as String?,
-          );
-        },
-      ),
-
-      // Food Detail Screen - Unified screen for adding/editing foods
-      // Returns FoodDetailResult when saved, 'DELETE:foodId' when deleted, or null when cancelled
-      GoRoute(
-        path: '/food-detail',
-        name: 'food-detail',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          if (extra == null) {
-            return const Scaffold(
-              body: Center(child: Text('Missing food data')),
-            );
-          }
-          return FoodDetailScreen(
-            foodData: extra['foodData'] as FoodDetailData,
-            mode: extra['mode'] as FoodDetailMode,
-            screenContext: extra['screenContext'] as FoodDetailContext? ?? FoodDetailContext.addFood,
-            preSelectedCategories: extra['preSelectedCategories'] as List<int>?,
-            showCategories: extra['showCategories'] as bool? ?? true,
-            showProductType: extra['showProductType'] as bool? ?? true,
-            allowDelete: extra['allowDelete'] as bool? ?? false,
-          );
-        },
-      ),
-
-      // Carb Loading Food Selection Screen - Select foods for carb loading meals
-      GoRoute(
-        path: '/carb-loading-select-food',
-        name: 'carb-loading-select-food',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return CarbLoadingFoodSelectionScreen(
-            dayId: extra?['dayId'] as String,
-            mealType: extra?['mealType'] as MealType,
-          );
-        },
-      ),
-
-      // Create Custom Carb Loading Food Screen - Manual food entry
-      GoRoute(
-        path: '/create-custom-carb-loading-food',
-        name: 'create-custom-carb-loading-food',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return CreateCustomCarbLoadingFoodScreen(
-            dayId: extra?['dayId'] as int,
-            mealType: extra?['mealType'] as MealType,
-          );
-        },
-      ),
-
-      // ============================================================================
-      // COACH MODE ROUTES
-      // Web-only: /coach, /coach/apply, /coach/athlete/:id (coach features)
-      // Mobile-only: /my-coaches, /coach-directory, /athlete/feedback (athlete features)
-      // ============================================================================
-
-      // Coach Portal - Unified full-screen dashboard for coaches (WEB ONLY)
-      GoRoute(
-        path: '/coach',
-        name: 'coach-dashboard',
-        redirect: (context, state) => kIsWeb ? null : '/settings',
-        builder: (context, state) => const CoachPortalScreen(),
-      ),
-
-      // Athlete Detail - Redirect to portal (handled within portal now)
-      GoRoute(
-        path: '/coach/athlete/:relationshipId',
-        name: 'coach-athlete-detail',
-        redirect: (context, state) => '/coach',
-      ),
-
-      // My Coaches - Athlete's view of connected coaches (MOBILE ONLY)
-      GoRoute(
-        path: '/my-coaches',
-        name: 'my-coaches',
-        redirect: (context, state) => kIsWeb ? '/settings' : null,
-        builder: (context, state) => const MyCoachesScreen(),
-      ),
-
-      // Athlete Feedback - Athletes view messages from coaches (MOBILE ONLY)
-      GoRoute(
-        path: '/athlete/feedback',
-        name: 'athlete-feedback',
-        redirect: (context, state) => kIsWeb ? '/settings' : null,
-        builder: (context, state) => const AthleteFeedbackScreen(),
-      ),
-
-      // Coach Registration - Apply to become a coach (WEB ONLY)
-      GoRoute(
-        path: '/coach/apply',
-        name: 'coach-apply',
-        redirect: (context, state) => kIsWeb ? null : '/settings',
-        builder: (context, state) => const CoachRegistrationScreen(),
-      ),
-
-      // Coach Directory - Athletes browse and request coaches (MOBILE ONLY)
-      GoRoute(
-        path: '/coach-directory',
-        name: 'coach-directory',
-        redirect: (context, state) => kIsWeb ? '/settings' : null,
-        builder: (context, state) => const CoachDirectoryScreen(),
-      ),
-
-      // Coach Chat - Unified chat screen for both coaches and athletes
-      // Accessible on both web and mobile platforms
-      GoRoute(
-        path: '/chat/:relationshipId',
-        name: 'coach-chat',
-        builder: (context, state) {
-          final relationshipId = state.pathParameters['relationshipId']!;
-          return CoachChatScreen(relationshipId: relationshipId);
-        },
-      ),
-    ],
-
-    // Error handling
-    errorBuilder: (context, state) => Scaffold(
-      appBar: AppBar(
-        title: const Text('Page Not Found'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Page not found',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'The page you\'re looking for doesn\'t exist.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => context.go('/welcome'),
-              child: const Text('Go Home'),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   });
 
