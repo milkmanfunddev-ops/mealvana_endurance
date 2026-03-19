@@ -626,6 +626,34 @@ shorebird release ios                   # Create iOS release
 shorebird patch ios                     # Push iOS update
 ```
 
+**Edge Function Deployment (Supabase CLI)**:
+
+Deploy individual edge functions using `supabase functions deploy`. The `_shared/` folder is automatically bundled with each function.
+
+```bash
+# Project refs
+# Dev:  vlmtsdzpnjnavdgytcmi
+# Prod: wvmvsodrvbkxfydabqed
+
+# Deploy a single function to dev
+supabase functions deploy <function-name> --project-ref vlmtsdzpnjnavdgytcmi --no-verify-jwt
+
+# Deploy a single function to prod
+supabase functions deploy <function-name> --project-ref wvmvsodrvbkxfydabqed --no-verify-jwt
+
+# Examples:
+supabase functions deploy lookup-product --project-ref vlmtsdzpnjnavdgytcmi --no-verify-jwt
+supabase functions deploy generate-nutrition-plan-v3 --project-ref wvmvsodrvbkxfydabqed --no-verify-jwt
+
+# List deployed functions
+supabase functions list --project-ref vlmtsdzpnjnavdgytcmi
+```
+
+**Important**: When modifying files in `supabase/functions/_shared/`, you must redeploy ALL functions that import from the changed shared files. Key shared dependency chains:
+- `_shared/nutrition/constants.ts` & `types.ts` → `generate-nutrition-plan-v2`, `generate-nutrition-plan-v3`
+- `_shared/nutrition/template-food-queries.ts` → `generate-nutrition-plan-v2`, `generate-nutrition-plan-v3`
+- `_shared/nutrition/food-queries.ts` → `generate-nutrition-plan` (v1)
+
 **Web Deployment Prerequisites:**
 Before implementing web repositories, complete these setup steps:
 1. Add `sqlite3_web: ^0.1.0` and `drift_web: ^2.20.0` to pubspec.yaml

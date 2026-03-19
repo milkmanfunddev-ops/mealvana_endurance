@@ -82,7 +82,11 @@ class UserFoodCrudService {
       // Generate unique UUID for this food
       final foodId = _uuid.v4();
 
-      final categoryNames = _mapCategoryIdsToNames(categoryIds);
+      // Auto-assign categories from product_type if user hasn't set any
+      final effectiveCategoryIds = categoryIds.isEmpty
+          ? _inferCategoriesFromProductType(normalizedProductType)
+          : categoryIds;
+      final categoryNames = _mapCategoryIdsToNames(effectiveCategoryIds);
 
       // OFFLINE-FIRST: Save to Drift IMMEDIATELY with dirty flag
       await _database.foodsDao.saveUserFood(
@@ -471,6 +475,35 @@ class UserFoodCrudService {
           : null,
       servingQualifier: null,
     );
+  }
+
+  /// Infer default category IDs from product_type when user hasn't set categories.
+  /// 1 = before_run, 2 = during_run, 3 = after_run
+  List<int> _inferCategoriesFromProductType(String? productType) {
+    switch (productType) {
+      case 'gel':
+      case 'chew':
+      case 'drink_mix':
+      case 'sports_drink':
+      case 'hydration_with_carbs':
+        return [2]; // during only
+      case 'bar':
+      case 'waffle':
+      case 'solid_carb_snacks':
+        return [1, 2]; // before + during
+      case 'real_food':
+      case 'real_food_carbs':
+        return [1, 3]; // before + after
+      case 'recovery_shake':
+      case 'protein_recovery':
+        return [3]; // after only
+      case 'electrolyte_only':
+      case 'electrolytes_fluids':
+      case 'capsule':
+        return [2]; // during only
+      default:
+        return [1, 2, 3]; // all phases (including 'import' and null)
+    }
   }
 
   List<String> _mapCategoryIdsToNames(List<int> categoryIds) {

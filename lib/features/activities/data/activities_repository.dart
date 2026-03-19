@@ -216,6 +216,77 @@ class ActivitiesRepository with SyncableRepository {
         }
       }
 
+      // Ensure parent bricks exist for sub-activities, even if the parent
+      // isn't dirty itself. Without this, sub-activities fail the FK constraint
+      // when the parent brick was never uploaded or isn't in the dirty set.
+      if (subActivities.isNotEmpty) {
+        final dirtyParentIds = parentBricks.map((b) => b.id).toSet();
+        final missingParentIds = subActivities
+            .map((s) => s.brickId!)
+            .toSet()
+            .difference(dirtyParentIds);
+
+        if (missingParentIds.isNotEmpty) {
+          final missingParents = await (_database.select(
+            _database.activitiesTable,
+          )..where((t) => t.id.isIn(missingParentIds))).get();
+
+          final foundParentIds = missingParents.map((p) => p.id).toSet();
+
+          if (missingParents.isNotEmpty) {
+            parentBricks.addAll(missingParents);
+            _logger.info(
+              'Including non-dirty parent bricks for sub-activity FK',
+              context: 'ACTIVITIES_REPOSITORY',
+              data: {'parentIds': foundParentIds.toList()},
+            );
+          }
+
+          // Parents that don't exist locally at all — these sub-activities
+          // are truly orphaned. Clear their brick_id locally so the FK
+          // constraint doesn't block upload, then move them to the regular
+          // batch (re-read from DB so the payload reflects the null).
+          final orphanedBrickIds = missingParentIds.difference(foundParentIds);
+          if (orphanedBrickIds.isNotEmpty) {
+            final orphanedSubIds = subActivities
+                .where((s) => orphanedBrickIds.contains(s.brickId))
+                .map((s) => s.id)
+                .toList();
+
+            _logger.warning(
+              'Clearing brick_id on orphaned sub-activities '
+              '(parent brick not found locally or remotely)',
+              context: 'ACTIVITIES_REPOSITORY',
+              data: {
+                'orphanedBrickIds': orphanedBrickIds.toList(),
+                'subActivityIds': orphanedSubIds,
+              },
+            );
+
+            // Update local DB: clear brick_id and restore status to
+            // 'planned' so the activities reappear as standalone.
+            // (archivedForBrick + no brick_id = invisible ghost)
+            await (_database.update(
+              _database.activitiesTable,
+            )..where((t) => t.id.isIn(orphanedSubIds))).write(
+              const ActivitiesTableCompanion(
+                brickId: Value(null),
+                status: Value('planned'),
+              ),
+            );
+
+            // Re-read the corrected records and move to regular batch
+            final corrected = await (_database.select(
+              _database.activitiesTable,
+            )..where((t) => t.id.isIn(orphanedSubIds))).get();
+            subActivities.removeWhere(
+              (s) => orphanedBrickIds.contains(s.brickId),
+            );
+            regularActivities.addAll(corrected);
+          }
+        }
+      }
+
       final uploadedIds = <String>{};
       final failedIds = <String>{};
 
@@ -906,10 +977,16 @@ class ActivitiesRepository with SyncableRepository {
     domain.Activity existing,
     domain.Activity incoming,
   ) {
-    return existing.copyWith(
+    return domain.Activity(
+      // identity
+      id: existing.id,
+      userId: existing.userId,
+
+      // provider-owned workout data (allow null overwrites)
       activityType: incoming.activityType,
       title: incoming.title,
       scheduledDateTime: incoming.scheduledDateTime,
+      status: existing.status,
       distanceMiles: incoming.distanceMiles,
       durationMinutes: incoming.durationMinutes,
       paceTargetMinutesPerMile: incoming.paceTargetMinutesPerMile,
@@ -926,6 +1003,27 @@ class ActivitiesRepository with SyncableRepository {
       intensityDistribution: incoming.intensityDistribution,
       timeBeforeMinutes: incoming.timeBeforeMinutes,
       notes: incoming.notes,
+
+      // preserve local completion and nutrition data
+      completedAt: existing.completedAt,
+      completionRating: existing.completionRating,
+      completionNotes: existing.completionNotes,
+      actualDistanceMiles: existing.actualDistanceMiles,
+      actualDurationMinutes: existing.actualDurationMinutes,
+      nutritionPlanData: existing.nutritionPlanData,
+
+      // preserve local metadata
+      createdAt: existing.createdAt,
+      updatedAt: existing.updatedAt,
+      deletedAt: existing.deletedAt,
+      reminderEnabled: existing.reminderEnabled,
+      reminderDaysBefore: existing.reminderDaysBefore,
+      reminderTimeOfDay: existing.reminderTimeOfDay,
+      reminderRecurring: existing.reminderRecurring,
+      needsUpload: existing.needsUpload,
+      localUpdatedAt: existing.localUpdatedAt,
+
+      // provider sync tracking
       syncedFromProvider: incoming.syncedFromProvider,
       providerWorkoutId: incoming.providerWorkoutId,
       providerWorkoutUrl: incoming.providerWorkoutUrl,
@@ -937,6 +1035,10 @@ class ActivitiesRepository with SyncableRepository {
       providerDeletedAt: incoming.providerDeletedAt,
       providerScheduledAt: incoming.providerScheduledAt,
       scheduleChangedAt: incoming.scheduleChangedAt,
+
+      // preserve brick grouping metadata
+      brickMetadata: existing.brickMetadata,
+      brickId: existing.brickId,
     );
   }
 

@@ -69,6 +69,17 @@ void main() {
           equals(FinalSurgeDefaults.swimmingDurationMinutes),
         );
       });
+
+      test('parses PlannedTime string in HH:MM:SS format', () {
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.cyclingMissingData,
+        )..['PlannedTime'] = '0:45:00';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.activity.durationMinutes, equals(45));
+      });
     });
 
     // =========================================================================
@@ -96,16 +107,10 @@ void main() {
         expect(result, isNotNull);
 
         // 9:12 = 9 + 12/60 = 9.2
-        expect(
-          result!.paceMinMinutesPerMile,
-          closeTo(9.2, 0.01),
-        );
+        expect(result!.paceMinMinutesPerMile, closeTo(9.2, 0.01));
 
         // 10:01 = 10 + 1/60 ≈ 10.0167
-        expect(
-          result.paceMaxMinutesPerMile,
-          closeTo(10.0167, 0.01),
-        );
+        expect(result.paceMaxMinutesPerMile, closeTo(10.0167, 0.01));
 
         // Midpoint
         final expectedMidpoint = (9.2 + 10.0167) / 2;
@@ -140,43 +145,48 @@ void main() {
         );
       });
 
-      test('handles empty description - calculates pace from distance/time', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutDescription'] = '';
+      test(
+        'handles empty description - calculates pace from distance/time',
+        () {
+          final workout = Map<String, dynamic>.from(
+            FinalSurgeFixtures.runningWorkoutComplete,
+          )..['WorkoutDescription'] = '';
 
-        final result = transformer.transform(workout, testUserId);
+          final result = transformer.transform(workout, testUserId);
 
-        expect(result, isNotNull);
-        // With empty description but valid distance (10mi) and time (80min),
-        // pace is calculated: 80/10 = 8.0 min/mi
-        expect(
-          result!.activity.paceTargetMinutesPerMile,
-          equals(8.0),
-        );
-      });
+          expect(result, isNotNull);
+          // With empty description but valid distance (10mi) and time (80min),
+          // pace is calculated: 80/10 = 8.0 min/mi
+          expect(result!.activity.paceTargetMinutesPerMile, equals(8.0));
+        },
+      );
 
-      test('calculates pace from distance and time when no pace in description', () {
-        // This tests the key fix for Final Surge integration:
-        // When PlannedPace is null and description has no pace info,
-        // calculate pace = duration / distance
-        final result = transformer.transform(
-          FinalSurgeFixtures.runningWorkoutCalculatedPace,
-          testUserId,
-        );
+      test(
+        'calculates pace from distance and time when no pace in description',
+        () {
+          // This tests the key fix for Final Surge integration:
+          // When PlannedPace is null and description has no pace info,
+          // calculate pace = duration / distance
+          final result = transformer.transform(
+            FinalSurgeFixtures.runningWorkoutCalculatedPace,
+            testUserId,
+          );
 
-        expect(result, isNotNull);
-        // 90 minutes / 12 miles = 7.5 min/mile pace
-        expect(result!.activity.paceTargetMinutesPerMile, closeTo(7.5, 0.01));
-        // No min/max pace for calculated values
-        expect(result.paceMinMinutesPerMile, isNull);
-        expect(result.paceMaxMinutesPerMile, isNull);
-      });
+          expect(result, isNotNull);
+          // 90 minutes / 12 miles = 7.5 min/mile pace
+          expect(result!.activity.paceTargetMinutesPerMile, closeTo(7.5, 0.01));
+          // No min/max pace for calculated values
+          expect(result.paceMinMinutesPerMile, isNull);
+          expect(result.paceMaxMinutesPerMile, isNull);
+        },
+      );
 
       test('prefers description pace over calculated pace', () {
         // When both description and distance/time are available,
         // description pace should take precedence
         final result = transformer.transform(
-          FinalSurgeFixtures.runningWorkoutComplete, // Has "@ 8:00" in description
+          FinalSurgeFixtures
+              .runningWorkoutComplete, // Has "@ 8:00" in description
           testUserId,
         );
 
@@ -400,6 +410,252 @@ void main() {
     });
 
     // =========================================================================
+    // CYCLING SPEED DERIVATION TESTS
+    // =========================================================================
+    group('Cycling speed derivation', () {
+      test('derives cycling speed when Final Surge provides duration', () {
+        final workout =
+            Map<String, dynamic>.from(FinalSurgeFixtures.cyclingMissingData)
+              ..['PlannedTime'] =
+                  2700; // 45 minutes, distance will fall back to 10mi
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.activity.distanceMiles, equals(10.0));
+        expect(result.activity.durationMinutes, equals(45));
+        expect(result.activity.cyclingSpeedMph, closeTo(13.33, 0.01));
+      });
+
+      test(
+        'does not derive cycling speed when duration is missing from Final Surge',
+        () {
+          final workout =
+              Map<String, dynamic>.from(FinalSurgeFixtures.cyclingMissingData)
+                ..['PlannedDistance'] = 15.0
+                ..['PlannedDistanceType'] = 'mi'
+                ..['PlannedTime'] = null
+                ..['ActualTime'] = null;
+
+          final result = transformer.transform(workout, testUserId);
+
+          expect(result, isNotNull);
+          expect(result!.activity.distanceMiles, equals(15.0));
+          expect(result.activity.cyclingSpeedMph, isNull);
+        },
+      );
+
+      test(
+        'uses provider pace and keeps duration null when only distance+pace are provided',
+        () {
+          final workout =
+              Map<String, dynamic>.from(FinalSurgeFixtures.cyclingMissingData)
+                ..['PlannedDistance'] = 12.0
+                ..['PlannedDistanceType'] = 'mi'
+                ..['PlannedPace'] = '10:00'
+                ..['PlannedPaceType'] = 'min/mi'
+                ..['PlannedTime'] = null
+                ..['ActualTime'] = null;
+
+          final result = transformer.transform(workout, testUserId);
+
+          expect(result, isNotNull);
+          expect(result!.activity.distanceMiles, equals(12.0));
+          expect(result.activity.durationMinutes, isNull);
+          expect(result.activity.paceTargetMinutesPerMile, closeTo(10.0, 0.01));
+          expect(result.activity.cyclingSpeedMph, closeTo(6.0, 0.01));
+        },
+      );
+
+      test(
+        'uses numeric PlannedPace and keeps duration null when only distance+pace are provided',
+        () {
+          final workout =
+              Map<String, dynamic>.from(FinalSurgeFixtures.cyclingMissingData)
+                ..['PlannedDistance'] = 12.0
+                ..['PlannedDistanceType'] = 'mi'
+                ..['PlannedPace'] = 10.0
+                ..['PlannedPaceType'] = 'min/mi'
+                ..['PlannedTime'] = null
+                ..['ActualTime'] = null
+                ..['WorkoutDescription'] = null;
+
+          final result = transformer.transform(workout, testUserId);
+
+          expect(result, isNotNull);
+          expect(result!.activity.distanceMiles, equals(12.0));
+          expect(result.activity.durationMinutes, isNull);
+          expect(result.activity.paceTargetMinutesPerMile, closeTo(10.0, 0.01));
+          expect(result.activity.cyclingSpeedMph, closeTo(6.0, 0.01));
+        },
+      );
+
+      test(
+        'parses pace text from description and derives cycling speed when duration is missing',
+        () {
+          final workout =
+              Map<String, dynamic>.from(FinalSurgeFixtures.cyclingMissingData)
+                ..['PlannedDistance'] = 12.0
+                ..['PlannedDistanceType'] = 'mi'
+                ..['PlannedPace'] = null
+                ..['PlannedPaceType'] = null
+                ..['PlannedTime'] = null
+                ..['ActualTime'] = null
+                ..['WorkoutDescription'] = 'Endurance ride target 10 min/mi';
+
+          final result = transformer.transform(workout, testUserId);
+
+          expect(result, isNotNull);
+          expect(result!.activity.distanceMiles, equals(12.0));
+          expect(result.activity.durationMinutes, isNull);
+          expect(result.activity.paceTargetMinutesPerMile, closeTo(10.0, 0.01));
+          expect(result.activity.cyclingSpeedMph, closeTo(6.0, 0.01));
+        },
+      );
+
+      test(
+        'parses "@ 10" description pace and derives cycling speed when duration is missing',
+        () {
+          final workout =
+              Map<String, dynamic>.from(FinalSurgeFixtures.cyclingMissingData)
+                ..['PlannedDistance'] = 12.0
+                ..['PlannedDistanceType'] = 'mi'
+                ..['PlannedPace'] = null
+                ..['PlannedPaceType'] = null
+                ..['PlannedTime'] = null
+                ..['ActualTime'] = null
+                ..['WorkoutDescription'] = '@ 10';
+
+          final result = transformer.transform(workout, testUserId);
+
+          expect(result, isNotNull);
+          expect(result!.activity.distanceMiles, equals(12.0));
+          expect(result.activity.durationMinutes, isNull);
+          expect(result.activity.paceTargetMinutesPerMile, closeTo(10.0, 0.01));
+          expect(result.activity.cyclingSpeedMph, closeTo(6.0, 0.01));
+        },
+      );
+
+      test(
+        'uses GoalPace fallback key and derives cycling speed when duration is missing',
+        () {
+          final workout =
+              Map<String, dynamic>.from(FinalSurgeFixtures.cyclingMissingData)
+                ..['PlannedDistance'] = 12.0
+                ..['PlannedDistanceType'] = 'mi'
+                ..['PlannedPace'] = null
+                ..['GoalPace'] = '10'
+                ..['GoalPaceType'] = 'min/mi'
+                ..['PlannedTime'] = null
+                ..['ActualTime'] = null
+                ..['WorkoutDescription'] = null;
+
+          final result = transformer.transform(workout, testUserId);
+
+          expect(result, isNotNull);
+          expect(result!.activity.distanceMiles, equals(12.0));
+          expect(result.activity.durationMinutes, isNull);
+          expect(result.activity.paceTargetMinutesPerMile, closeTo(10.0, 0.01));
+          expect(result.activity.cyclingSpeedMph, closeTo(6.0, 0.01));
+        },
+      );
+
+      test(
+        'parses pace from non-description text field and derives cycling speed',
+        () {
+          final workout =
+              Map<String, dynamic>.from(FinalSurgeFixtures.cyclingMissingData)
+                ..['PlannedDistance'] = 12.0
+                ..['PlannedDistanceType'] = 'mi'
+                ..['PlannedPace'] = null
+                ..['PlannedPaceType'] = null
+                ..['WorkoutDescription'] = null
+                ..['CoachNotes'] = 'Goal pace: 10 min/mi'
+                ..['PlannedTime'] = null
+                ..['ActualTime'] = null;
+
+          final result = transformer.transform(workout, testUserId);
+
+          expect(result, isNotNull);
+          expect(result!.activity.distanceMiles, equals(12.0));
+          expect(result.activity.durationMinutes, isNull);
+          expect(result.activity.paceTargetMinutesPerMile, closeTo(10.0, 0.01));
+          expect(result.activity.cyclingSpeedMph, closeTo(6.0, 0.01));
+        },
+      );
+
+      test(
+        'parses nested pace value object and derives cycling speed when duration is missing',
+        () {
+          final workout =
+              Map<String, dynamic>.from(FinalSurgeFixtures.cyclingMissingData)
+                ..['PlannedDistance'] = 12.0
+                ..['PlannedDistanceType'] = 'mi'
+                ..['PlannedPace'] = null
+                ..['WorkoutDescription'] = null
+                ..['GoalPace'] = {'Value': '10:00', 'Unit': 'min/mi'}
+                ..['PlannedTime'] = null
+                ..['ActualTime'] = null;
+
+          final result = transformer.transform(workout, testUserId);
+
+          expect(result, isNotNull);
+          expect(result!.activity.distanceMiles, equals(12.0));
+          expect(result.activity.durationMinutes, isNull);
+          expect(result.activity.paceTargetMinutesPerMile, closeTo(10.0, 0.01));
+          expect(result.activity.cyclingSpeedMph, closeTo(6.0, 0.01));
+        },
+      );
+
+      test('parses deeply nested pace object under non-pace root key', () {
+        final workout =
+            Map<String, dynamic>.from(FinalSurgeFixtures.cyclingMissingData)
+              ..['PlannedDistance'] = 12.0
+              ..['PlannedDistanceType'] = 'mi'
+              ..['PlannedPace'] = null
+              ..['PlannedPaceType'] = null
+              ..['WorkoutDescription'] = null
+              ..['PlannedTime'] = null
+              ..['ActualTime'] = null
+              ..['Targets'] = {
+                'BikePace': {'Low': '10:00', 'High': '10:00', 'Unit': 'min/mi'},
+              };
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.activity.distanceMiles, equals(12.0));
+        expect(result.activity.durationMinutes, isNull);
+        expect(result.activity.paceTargetMinutesPerMile, closeTo(10.0, 0.01));
+        expect(result.activity.cyclingSpeedMph, closeTo(6.0, 0.01));
+      });
+
+      test('parses minute-per-mile key variants nested in metadata', () {
+        final workout =
+            Map<String, dynamic>.from(FinalSurgeFixtures.cyclingMissingData)
+              ..['PlannedDistance'] = 12.0
+              ..['PlannedDistanceType'] = 'mi'
+              ..['PlannedPace'] = null
+              ..['PlannedPaceType'] = null
+              ..['WorkoutDescription'] = null
+              ..['PlannedTime'] = null
+              ..['ActualTime'] = null
+              ..['Metadata'] = {
+                'GoalMinutesPerMile': 10.0,
+                'PaceUnit': 'min/mi',
+              };
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.activity.distanceMiles, equals(12.0));
+        expect(result.activity.durationMinutes, isNull);
+        expect(result.activity.paceTargetMinutesPerMile, closeTo(10.0, 0.01));
+        expect(result.activity.cyclingSpeedMph, closeTo(6.0, 0.01));
+      });
+    });
+
+    // =========================================================================
     // WORKOUT ID EXTRACTION TESTS
     // =========================================================================
     group('Workout ID extraction', () {
@@ -410,7 +666,10 @@ void main() {
         );
 
         expect(result, isNotNull);
-        expect(result!.providerWorkoutId, equals('79f28709-f623-4cb5-b99a-4c3161e6d20f'));
+        expect(
+          result!.providerWorkoutId,
+          equals('79f28709-f623-4cb5-b99a-4c3161e6d20f'),
+        );
       });
 
       test('stores provider URL', () {
@@ -442,8 +701,9 @@ void main() {
     // =========================================================================
     group('Intensity inference', () {
       test('infers easy intensity for recovery subtype', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = 'Easy Recovery';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutSubTypeName'] = 'Easy Recovery';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -452,8 +712,9 @@ void main() {
       });
 
       test('infers hard intensity for tempo subtype', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = 'Tempo';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutSubTypeName'] = 'Tempo';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -462,8 +723,9 @@ void main() {
       });
 
       test('infers hard intensity for intervals subtype', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = 'Speed Intervals';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutSubTypeName'] = 'Speed Intervals';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -472,8 +734,9 @@ void main() {
       });
 
       test('infers race intensity when WorkoutRace is true', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutRace'] = true;
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutRace'] = true;
 
         final result = transformer.transform(workout, testUserId);
 
@@ -482,24 +745,32 @@ void main() {
       });
 
       test('infers moderate intensity for long run subtype', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = 'Long Run';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutSubTypeName'] = 'Long Run';
 
         final result = transformer.transform(workout, testUserId);
 
         expect(result, isNotNull);
-        expect(result!.activity.intensityLevel, equals(IntensityLevel.moderate));
+        expect(
+          result!.activity.intensityLevel,
+          equals(IntensityLevel.moderate),
+        );
       });
 
       test('defaults to moderate intensity when no hints', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = null
-          ..['WorkoutRace'] = false;
+        final workout =
+            Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+              ..['WorkoutSubTypeName'] = null
+              ..['WorkoutRace'] = false;
 
         final result = transformer.transform(workout, testUserId);
 
         expect(result, isNotNull);
-        expect(result!.activity.intensityLevel, equals(IntensityLevel.moderate));
+        expect(
+          result!.activity.intensityLevel,
+          equals(IntensityLevel.moderate),
+        );
       });
     });
 
@@ -517,21 +788,28 @@ void main() {
         expect(result!.activity.title, equals('Marathon Tempo'));
       });
 
-      test('falls back to WorkoutTypeName when title is null and no subtype', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutTitle'] = null
-          ..['WorkoutSubTypeName'] = null;
+      test(
+        'falls back to WorkoutTypeName when title is null and no subtype',
+        () {
+          final workout =
+              Map<String, dynamic>.from(
+                  FinalSurgeFixtures.runningWorkoutComplete,
+                )
+                ..['WorkoutTitle'] = null
+                ..['WorkoutSubTypeName'] = null;
 
-        final result = transformer.transform(workout, testUserId);
+          final result = transformer.transform(workout, testUserId);
 
-        expect(result, isNotNull);
-        expect(result!.activity.title, equals('Run'));
-      });
+          expect(result, isNotNull);
+          expect(result!.activity.title, equals('Run'));
+        },
+      );
 
       test('combines type and subtype when title is empty', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutTitle'] = ''
-          ..['WorkoutSubTypeName'] = 'Tempo';
+        final workout =
+            Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+              ..['WorkoutTitle'] = ''
+              ..['WorkoutSubTypeName'] = 'Tempo';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -570,13 +848,17 @@ void main() {
         );
 
         expect(result, isNotNull);
-        expect(result!.activity.notes, equals('Easy warmup, then marathon pace'));
+        expect(
+          result!.activity.notes,
+          equals('Easy warmup, then marathon pace'),
+        );
         expect(result.activity.notes, isNot(contains('@ 8:00')));
       });
 
       test('returns null for empty description after cleaning', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutPaceRange)
-          ..['WorkoutDescription'] = '@ 9:12 - 10:01';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutPaceRange,
+        )..['WorkoutDescription'] = '@ 9:12 - 10:01';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -602,8 +884,9 @@ void main() {
       });
 
       test('handles null date with fallback to now', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutDate'] = null;
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutDate'] = null;
 
         final result = transformer.transform(workout, testUserId);
 
@@ -614,6 +897,32 @@ void main() {
         expect(result.activity.scheduledDateTime.month, equals(now.month));
         expect(result.activity.scheduledDateTime.day, equals(now.day));
       });
+
+      test('defaults midnight date-only workouts to 7:00 AM', () {
+        final workout =
+            Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+              ..['WorkoutDate'] = '2025-12-23T00:00:00'
+              ..['WorkoutTime'] = null;
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.activity.scheduledDateTime.hour, equals(7));
+        expect(result.activity.scheduledDateTime.minute, equals(0));
+      });
+
+      test('uses WorkoutTime when provided', () {
+        final workout =
+            Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+              ..['WorkoutDate'] = '2025-12-23T00:00:00'
+              ..['WorkoutTime'] = '6:30 AM';
+
+        final result = transformer.transform(workout, testUserId);
+
+        expect(result, isNotNull);
+        expect(result!.activity.scheduledDateTime.hour, equals(6));
+        expect(result.activity.scheduledDateTime.minute, equals(30));
+      });
     });
 
     // =========================================================================
@@ -621,8 +930,9 @@ void main() {
     // =========================================================================
     group('Intensity Distribution Inference', () {
       test('maps WorkoutRace=true to race pattern (10/30/60)', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutRace'] = true;
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutRace'] = true;
 
         final result = transformer.transform(workout, testUserId);
 
@@ -635,8 +945,9 @@ void main() {
       });
 
       test('maps Tempo subtype to tempo pattern (30/60/10)', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = 'Tempo';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutSubTypeName'] = 'Tempo';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -649,8 +960,9 @@ void main() {
       });
 
       test('maps Threshold subtype to tempo pattern (30/60/10)', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = 'Threshold';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutSubTypeName'] = 'Threshold';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -663,8 +975,9 @@ void main() {
       });
 
       test('maps Easy subtype to easy/recovery pattern (95/5/0)', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = 'Easy';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutSubTypeName'] = 'Easy';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -677,8 +990,9 @@ void main() {
       });
 
       test('maps Recovery subtype to easy/recovery pattern (95/5/0)', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = 'Recovery';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutSubTypeName'] = 'Recovery';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -691,8 +1005,9 @@ void main() {
       });
 
       test('maps Long Run subtype to long run pattern (80/15/5)', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = 'Long Run';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutSubTypeName'] = 'Long Run';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -705,8 +1020,9 @@ void main() {
       });
 
       test('maps Intervals subtype to intervals pattern (40/30/30)', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = 'Intervals';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutSubTypeName'] = 'Intervals';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -719,8 +1035,9 @@ void main() {
       });
 
       test('maps Speed subtype to intervals pattern (40/30/30)', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = 'Speed Work';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.runningWorkoutComplete,
+        )..['WorkoutSubTypeName'] = 'Speed Work';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -733,9 +1050,10 @@ void main() {
       });
 
       test('falls back to WorkoutTitle keywords when no subtype', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutSubTypeName'] = null
-          ..['WorkoutTitle'] = 'Easy Morning Run';
+        final workout =
+            Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+              ..['WorkoutSubTypeName'] = null
+              ..['WorkoutTitle'] = 'Easy Morning Run';
 
         final result = transformer.transform(workout, testUserId);
 
@@ -748,10 +1066,11 @@ void main() {
       });
 
       test('returns null when no intensity hints available', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutRace'] = false
-          ..['WorkoutSubTypeName'] = null
-          ..['WorkoutTitle'] = 'Run'; // Generic, no keywords
+        final workout =
+            Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+              ..['WorkoutRace'] = false
+              ..['WorkoutSubTypeName'] = null
+              ..['WorkoutTitle'] = 'Run'; // Generic, no keywords
 
         final result = transformer.transform(workout, testUserId);
 
@@ -760,9 +1079,10 @@ void main() {
       });
 
       test('WorkoutRace takes priority over subtype', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutRace'] = true
-          ..['WorkoutSubTypeName'] = 'Easy'; // Would be easy pattern
+        final workout =
+            Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+              ..['WorkoutRace'] = true
+              ..['WorkoutSubTypeName'] = 'Easy'; // Would be easy pattern
 
         final result = transformer.transform(workout, testUserId);
 
@@ -776,10 +1096,11 @@ void main() {
       });
 
       test('SubTypeName takes priority over WorkoutTitle', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
-          ..['WorkoutRace'] = false
-          ..['WorkoutSubTypeName'] = 'Tempo'
-          ..['WorkoutTitle'] = 'Easy Run'; // Would be easy pattern if used
+        final workout =
+            Map<String, dynamic>.from(FinalSurgeFixtures.runningWorkoutComplete)
+              ..['WorkoutRace'] = false
+              ..['WorkoutSubTypeName'] = 'Tempo'
+              ..['WorkoutTitle'] = 'Easy Run'; // Would be easy pattern if used
 
         final result = transformer.transform(workout, testUserId);
 
@@ -792,23 +1113,28 @@ void main() {
         );
       });
 
-      test('cycling workout with Endurance subtype maps to long run pattern', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.cyclingWorkout)
-          ..['WorkoutSubTypeName'] = 'Endurance';
+      test(
+        'cycling workout with Endurance subtype maps to long run pattern',
+        () {
+          final workout = Map<String, dynamic>.from(
+            FinalSurgeFixtures.cyclingWorkout,
+          )..['WorkoutSubTypeName'] = 'Endurance';
 
-        final result = transformer.transform(workout, testUserId);
+          final result = transformer.transform(workout, testUserId);
 
-        expect(result, isNotNull);
-        expect(result!.intensityDistribution, isNotNull);
-        expect(
-          result.intensityDistribution,
-          equals(IntensityDistributionMapper.patternLongRun),
-        );
-      });
+          expect(result, isNotNull);
+          expect(result!.intensityDistribution, isNotNull);
+          expect(
+            result.intensityDistribution,
+            equals(IntensityDistributionMapper.patternLongRun),
+          );
+        },
+      );
 
       test('swimming workout with intervals subtype maps correctly', () {
-        final workout = Map<String, dynamic>.from(FinalSurgeFixtures.swimmingWorkout)
-          ..['WorkoutSubTypeName'] = 'Intervals';
+        final workout = Map<String, dynamic>.from(
+          FinalSurgeFixtures.swimmingWorkout,
+        )..['WorkoutSubTypeName'] = 'Intervals';
 
         final result = transformer.transform(workout, testUserId);
 

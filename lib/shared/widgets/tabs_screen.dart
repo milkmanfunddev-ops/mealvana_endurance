@@ -6,6 +6,7 @@ import '../../features/activities/presentation/screens/activities_list_screen.da
 import '../../features/calendar/presentation/providers/calendar_view_provider.dart';
 import '../../features/calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../features/coach_mode/presentation/providers/coach_dashboard_controller.dart';
+import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
@@ -42,13 +43,18 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   }
 
   Future<void> _autoNavigateToCoachIfNeeded() async {
+    // Skip if already on coach tab (e.g. from ?tab=coach query param)
+    if (_currentIndex == 1) return;
+
     try {
       final dashboardAsync = await ref.read(
         coachDashboardControllerProvider.future,
       );
       if (!mounted) return;
       if (dashboardAsync.isCoach) {
-        context.go('/coach');
+        setState(() {
+          _currentIndex = 1; // Coach tab
+        });
       }
     } catch (_) {
       // Not a coach or network error — stay on activities tab
@@ -67,7 +73,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     final screens = [
       const ActivitiesListScreen(), // 0: Activities (Calendar)
       if (showCoachTab)
-        const SizedBox(), // Web placeholder — coach icon navigates to /coach portal
+        const CoachPortalScreen(), // Coach portal as a tab (web only)
       const EventsListScreen(), // 1 or 2: Events
       const EducationScreen(), // 2 or 3: Learn
       const SettingsScreen(), // 3 or 4: Settings
@@ -114,8 +120,9 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
               }
             },
             onCoachTap: () {
-              // Navigate to full-screen coach portal (web only)
-              context.go('/coach');
+              setState(() {
+                _currentIndex = 1; // Coach tab (web only)
+              });
             },
             onEventsTap: () {
               setState(() {

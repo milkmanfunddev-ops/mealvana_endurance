@@ -233,7 +233,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               onDeleteFood: (foodId, category) =>
                   _deleteFood(context, state, foodId, category),
               onUpdateQuantity: (foodId, category, newQuantity) =>
-                  _updateFoodQuantity(context, state, foodId, category, newQuantity),
+                  _updateFoodQuantity(
+                    context,
+                    state,
+                    foodId,
+                    category,
+                    newQuantity,
+                  ),
               onAddFood: (category) => _addFood(context, category),
               onInitializeByHour: (cat, duration) {
                 final controller = _getControllerNotifier();
@@ -243,14 +249,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
                 final controller = _getControllerNotifier();
                 controller.moveFoodToTimeSlot(foodId, cat, sourceSlot, newSlot);
               },
-              onPlaceFoodInSlot: (foodId, cat, slot, qty, timingCategory, isSip) {
-                final controller = _getControllerNotifier();
-                controller.placeFoodInSlot(
-                  foodId, cat, slot, qty,
-                  timingCategory: timingCategory,
-                  isSipThroughout: isSip,
-                );
-              },
+              onPlaceFoodInSlot:
+                  (foodId, cat, slot, qty, timingCategory, isSip) {
+                    final controller = _getControllerNotifier();
+                    controller.placeFoodInSlot(
+                      foodId,
+                      cat,
+                      slot,
+                      qty,
+                      timingCategory: timingCategory,
+                      isSipThroughout: isSip,
+                    );
+                  },
               onRemoveFoodFromSlot: (foodId, cat, slot) {
                 final controller = _getControllerNotifier();
                 controller.removeFoodFromSlot(foodId, cat, slot);
@@ -261,20 +271,29 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               },
               onMoveSipFoodToSlot: (foodId, cat, slot, qty, timingCategory) {
                 final controller = _getControllerNotifier();
-                controller.moveSipFoodToSlot(foodId, cat, slot, qty,
-                    timingCategory: timingCategory);
+                controller.moveSipFoodToSlot(
+                  foodId,
+                  cat,
+                  slot,
+                  qty,
+                  timingCategory: timingCategory,
+                );
               },
               onScaleSubPhase: (subPhaseIndex, foodIndex, newQuantity) {
                 final controller = _getControllerNotifier();
                 controller.updateSubPhaseQuantityWithScaling(
-                    subPhaseIndex, foodIndex, newQuantity);
+                  subPhaseIndex,
+                  foodIndex,
+                  newQuantity,
+                );
               },
               consumeSwipeHint: _consumeSwipeHint,
             ),
           if (state.nutritionPlan == null)
             NoNutritionPlanState(
               activity: state.activity,
-              onGeneratePlan: () => _navigateToGeneratePlan(context, state.activity),
+              onGeneratePlan: () =>
+                  _navigateToGeneratePlan(context, state.activity),
             ),
           const SizedBox(height: AppSpacing.md),
           // Collapsible coach feedback section
@@ -289,12 +308,22 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             isNewActivity: widget.isNewActivity,
             isCoachView: widget.isCoachView,
             onSave: () => _saveWorkout(context, state),
-            onSaveAsTemplate: (widget.isNewActivity && !widget.isCoachView && !widget.fromTemplate && state.nutritionPlan != null)
+            onSaveAsTemplate:
+                (widget.isNewActivity &&
+                    !widget.isCoachView &&
+                    !widget.fromTemplate &&
+                    state.nutritionPlan != null)
                 ? () => _showSaveTemplateDialog(context)
                 : null,
             onComplete: (rating, notes, {isBrick = false, carbAdjustment}) =>
-                _handleCompletion(context, state, rating, notes,
-                    isBrick: isBrick, carbAdjustment: carbAdjustment),
+                _handleCompletion(
+                  context,
+                  state,
+                  rating,
+                  notes,
+                  isBrick: isBrick,
+                  carbAdjustment: carbAdjustment,
+                ),
             onRatingChanged: (rating) {
               final controller = _getControllerNotifier();
               controller.updateCompletionRating(rating);
@@ -344,20 +373,33 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     );
   }
 
-
   /// Navigate to NewActivityScreen with activity details pre-filled
-  void _navigateToGeneratePlan(BuildContext context, Activity? activity) {
-    if (activity == null) return;
+  ///
+  /// Returns a Future that completes when the pushed route is popped.
+  Future<Object?> _navigateToGeneratePlan(
+      BuildContext context, Activity? activity) {
+    if (activity == null) return Future.value(null);
 
-    context.pushNamed(
+    return context.pushNamed<Object>(
       'distance-pace-gut-entry',
       extra: {
         'initialDate': activity.scheduledDateTime,
         'distance': activity.distanceMiles,
+        'initialDurationMinutes': activity.durationMinutes,
         'goalPace': activity.paceTargetMinutesPerMile,
         'activityId': activity.id,
         'activityType': activity.activityType.name,
         'timeBeforeMinutes': activity.timeBeforeMinutes,
+        // Cycling-specific parameters
+        'cyclingSpeedMph': activity.cyclingSpeedMph,
+        'cyclingTerrain': activity.cyclingTerrain,
+        'cyclingIndoorOutdoor': activity.cyclingIndoorOutdoor,
+        'cyclingElevationGainFt': activity.cyclingElevationGainFt,
+        'cyclingSessionGoal': activity.cyclingSessionGoal,
+        // Swimming-specific parameters
+        'swimmingPacePer100mSeconds': activity.swimmingPacePer100mSeconds,
+        'swimmingPoolOrOpenWater': activity.swimmingPoolOrOpenWater,
+        'swimmingWaterTempC': activity.swimmingWaterTempC,
       },
     );
   }
@@ -390,6 +432,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       extra: {
         'initialDate': activity.scheduledDateTime,
         'distance': activity.distanceMiles,
+        'initialDurationMinutes': activity.durationMinutes,
         'goalPace': activity.paceTargetMinutesPerMile,
         'activityId': activity.id,
         'activityType': activity.activityType.name,
@@ -407,7 +450,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       },
     );
   }
-
 
   // Helper to get the correct controller notifier based on view mode
   dynamic _getControllerNotifier() {
@@ -445,7 +487,6 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       }
     }
   }
-
 
   /// Handle workout completion after dialog confirmation
   Future<void> _handleCompletion(
@@ -606,30 +647,40 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     }
   }
 
-
   /// Handle regenerate plan button tap for stale nutrition plans
   ///
   /// Navigates to NewActivityScreen with activity details pre-filled so the
   /// user goes through the full plan creation flow (v2/v3 edge functions).
-  void _handleRegeneratePlan(
-    BuildContext context,
-    ActivityDetailState state,
-  ) {
+  /// Awaits the navigation so the controller is invalidated when the user
+  /// returns, ensuring the stale banner disappears after regeneration.
+  Future<void> _handleRegeneratePlan(
+      BuildContext context, ActivityDetailState state) async {
     if (state.activity == null) {
       MealvanaSnackbar.showError(context, 'Activity not found');
       return;
     }
 
-    _navigateToGeneratePlan(context, state.activity);
+    await _navigateToGeneratePlan(context, state.activity);
+
+    if (!mounted) return;
+
+    // Invalidate the controller to re-read the activity from the database,
+    // picking up the cleared needsNutritionRefresh flag
+    ref.invalidate(activityDetailControllerProvider(
+      activityId: widget.activityId,
+      isNewActivity: widget.isNewActivity,
+    ));
   }
 
   /// Show dialog to save the current activity's nutrition plan as a template
   Future<void> _showSaveTemplateDialog(BuildContext context) async {
     // Read the current activity state from the provider
-    final asyncState = ref.read(activityDetailControllerProvider(
-      activityId: widget.activityId,
-      isNewActivity: widget.isNewActivity,
-    ));
+    final asyncState = ref.read(
+      activityDetailControllerProvider(
+        activityId: widget.activityId,
+        isNewActivity: widget.isNewActivity,
+      ),
+    );
 
     final state = asyncState.value;
     final activity = state?.activity;
@@ -647,7 +698,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         ? 'Brick'
         : activity.activityType.displayName;
 
-    final defaultName = activity.title.isNotEmpty ? activity.title : 'My Template';
+    final defaultName = activity.title.isNotEmpty
+        ? activity.title
+        : 'My Template';
 
     final templateName = await SaveTemplateDialog.show(
       context,

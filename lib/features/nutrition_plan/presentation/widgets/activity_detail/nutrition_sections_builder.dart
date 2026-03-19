@@ -139,8 +139,6 @@ class _NutritionSectionsBuilderState
     // Get activity type for sport-specific section titles (e.g., "Before Swim", "During Ride")
     final activityType =
         widget.state.activity?.activityType ?? ActivityType.running;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     // Check unit preference and get body weight
     final settings = ref.watch(settingsControllerProvider).value;
     final useImperial = settings?.preferredDistanceUnit == DistanceUnit.miles;
@@ -160,9 +158,7 @@ class _NutritionSectionsBuilderState
           // ensures a direct match when adding/swapping/deleting foods.
           // The display title is generated independently via activityType.getSectionTitle().
           category = 'during_run';
-          sectionColor = isDark
-              ? AppColors.electrolyte
-              : AppColors.electrolyteDark;
+          sectionColor = Theme.of(context).colorScheme.secondary;
         } else if (section.id.contains('after')) {
           category = 'after_run';
           sectionColor = AppColors.dragonfruit;

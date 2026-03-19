@@ -215,9 +215,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final finalSurgeLogo = isDark
         ? 'assets/images/integrations/final_surge_wordmark_white.svg'
         : 'assets/images/integrations/final_surge_wordmark.svg';
-    final trainingPeaksLogo = isDark
-        ? 'assets/images/integrations/training_peaks_horizontal_dark.jpg'
-        : 'assets/images/integrations/training_peaks_horizontal_logo.png';
+    // TP horizontal logo always uses the dark-background version — the
+    // "light" PNG has white text on a transparent background which is
+    // invisible on light cards.
+    const trainingPeaksLogo =
+        'assets/images/integrations/training_peaks_horizontal_dark.jpg';
 
     return ListView(
       children: [
@@ -380,9 +382,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final finalSurgeLogo = isDark
         ? 'assets/images/integrations/final_surge_wordmark_white.svg'
         : 'assets/images/integrations/final_surge_wordmark.svg';
-    final trainingPeaksLogo = isDark
-        ? 'assets/images/integrations/training_peaks_horizontal_dark.jpg'
-        : 'assets/images/integrations/training_peaks_horizontal_logo.png';
+    // TP horizontal logo always uses the dark-background version — the
+    // "light" PNG has white text on a transparent background which is
+    // invisible on light cards.
+    const trainingPeaksLogo =
+        'assets/images/integrations/training_peaks_horizontal_dark.jpg';
 
     return ListView(
       children: [

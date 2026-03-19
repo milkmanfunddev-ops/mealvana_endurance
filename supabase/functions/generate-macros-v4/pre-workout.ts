@@ -229,20 +229,33 @@ function getEligibleTemplates(
   phase: SubPhaseType,
   diet: string,
   dislikedFoods: string[] = [],
+  allergies: string[] = [],
 ): PreWorkoutTemplate[] {
   const timeWindow = getTimeWindowForPhase(phase);
   let filtered = templates.filter((t) => t.time_window === timeWindow);
 
-  // Diet filtering
+  // Diet filtering (dietary preference like 'vegan', 'keto', etc.)
   if (diet !== 'none' && diet) {
     const excluded: string[] = [];
     if (diet === 'gluten-free' || diet === 'all-free') excluded.push('Gluten');
     if (diet === 'dairy-free' || diet === 'all-free') excluded.push('Dairy');
     if (diet === 'peanut-free' || diet === 'all-free') excluded.push('Peanut');
 
-    filtered = filtered.filter((t) =>
-      !t.allergens.some((a: string) => excluded.includes(a))
-    );
+    if (excluded.length > 0) {
+      filtered = filtered.filter((t) =>
+        !t.allergens.some((a: string) => excluded.includes(a))
+      );
+    }
+  }
+
+  // Allergen filtering — exclude templates whose allergens overlap with user's allergies
+  // Uses case-insensitive matching to handle 'Gluten' vs 'gluten' mismatch
+  if (allergies.length > 0) {
+    const allergiesLower = allergies.map((a) => a.toLowerCase());
+    filtered = filtered.filter((t) => {
+      const templateAllergens = t.allergens ?? [];
+      return !templateAllergens.some((a: string) => allergiesLower.includes(a.toLowerCase()));
+    });
   }
 
   // Exclude templates where ANY component food is disliked
@@ -607,6 +620,7 @@ export function selectPreWorkoutFoods(
   electrolyteTemplates: PreWorkoutTemplate[],
   likedFoods: string[] = [],
   dislikedFoods: string[] = [],
+  allergies: string[] = [],
 ): PreWorkoutPhaseResult[] {
   if (targets.meal_type === 'fasted') return [];
 
@@ -630,7 +644,7 @@ export function selectPreWorkoutFoods(
     const pTargets = phaseTargets.get(phase);
     const carbTarget = pTargets?.carbs_g ?? 0;
 
-    const eligible = getEligibleTemplates(foodTemplates, phase, diet, dislikedFoods);
+    const eligible = getEligibleTemplates(foodTemplates, phase, diet, dislikedFoods, allergies);
 
     // Filter to unused categories (fallback to all if none left)
     let candidates = eligible.filter((t) => !state.used_categories.has(t.base_category));

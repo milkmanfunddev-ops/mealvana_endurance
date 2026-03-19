@@ -91,6 +91,7 @@ export const POST_PROCESS_THRESHOLDS = {
 // ============================================================================
 
 export const PREFERENCE_SCORE_MAP: Record<PreferenceCategory, number> = {
+  user_food: 300,
   liked: 200,
   willing: 80,
   essential: 50,

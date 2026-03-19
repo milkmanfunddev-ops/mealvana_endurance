@@ -1793,6 +1793,37 @@ grant delete, insert, references, select, trigger, truncate, update on pre_worko
 
 grant delete, insert, references, select, trigger, truncate, update on pre_workout_templates to service_role;
 
+create table athlete_pairing_codes
+(
+    id               uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id          uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    code             varchar(6)                                         not null
+        unique,
+    created_at       timestamp with time zone default now()             not null,
+    expires_at       timestamp with time zone                           not null,
+    used_by_coach_id uuid
+        references ??? (),
+    used_at          timestamp with time zone
+);
+
+alter table athlete_pairing_codes
+    owner to postgres;
+
+create index idx_pairing_codes_code
+    on athlete_pairing_codes (code);
+
+create index idx_pairing_codes_user
+    on athlete_pairing_codes (user_id, expires_at);
+
+grant delete, insert, references, select, trigger, truncate, update on athlete_pairing_codes to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on athlete_pairing_codes to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on athlete_pairing_codes to service_role;
+
 create view v_food_sport_phase_settings
             (food_id, food_name, display_name, product_type, sport, phase, effective_max_servings, is_suitable, notes,
              legacy_max_before, legacy_max_during, legacy_max_after)

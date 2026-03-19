@@ -59,8 +59,8 @@ class StalePlanWarning extends StatelessWidget {
                   children: [
                     Text(
                       'Schedule Changed',
-                      style: AppTextStyles.subtitle.copyWith(
-                        color: AppColors.textDark,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -68,7 +68,7 @@ class StalePlanWarning extends StatelessWidget {
                     Text(
                       'Schedule has changed since this plan was generated. Regenerate to match your updated workout.',
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textDarkSecondary,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -81,7 +81,7 @@ class StalePlanWarning extends StatelessWidget {
                   onTap: onDismiss,
                   child: Icon(
                     Icons.close,
-                    color: AppColors.textDarkSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 18,
                   ),
                 ),

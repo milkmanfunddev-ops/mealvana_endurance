@@ -76,13 +76,16 @@ class ActivityCard extends ConsumerWidget {
         color: isDark ? AppColors.blackberryLight : Colors.white,
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color: (isDark ? AppColors.cream : AppColors.blackberry)
-              .withValues(alpha: 0.1),
+          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+            alpha: 0.1,
+          ),
           width: 1,
         ),
       ),
       child: InkWell(
-        onTap: () => isSelectionMode ? onSelectionToggle?.call() : _handleTap(context, ref),
+        onTap: () => isSelectionMode
+            ? onSelectionToggle?.call()
+            : _handleTap(context, ref),
         borderRadius: BorderRadius.circular(15),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -95,9 +98,7 @@ class ActivityCard extends ConsumerWidget {
               ],
               _buildActivityIcon(),
               const SizedBox(width: 12),
-              Expanded(
-                child: _buildActivityDetails(context, isDark),
-              ),
+              Expanded(child: _buildActivityDetails(context, isDark)),
               // Show chevron when NOT in selection mode
               if (!isSelectionMode)
                 Icon(
@@ -122,11 +123,7 @@ class ActivityCard extends ConsumerWidget {
       ),
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.only(right: 20),
-      child: const Icon(
-        Icons.delete,
-        color: Colors.white,
-        size: 24,
-      ),
+      child: const Icon(Icons.delete, color: Colors.white, size: 24),
     );
   }
 
@@ -162,8 +159,9 @@ class ActivityCard extends ConsumerWidget {
           color: Colors.transparent,
           shape: BoxShape.circle,
           border: Border.all(
-            color: (isDark ? AppColors.cream : AppColors.blackberry)
-                .withValues(alpha: 0.3),
+            color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+              alpha: 0.3,
+            ),
             width: 2,
           ),
         ),
@@ -209,8 +207,9 @@ class ActivityCard extends ConsumerWidget {
           style: TextStyle(
             fontFamily: 'Apercu',
             fontSize: 12,
-            color: (isDark ? AppColors.cream : AppColors.blackberry)
-                .withValues(alpha: 0.7),
+            color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+              alpha: 0.7,
+            ),
             height: 1.3,
           ),
           maxLines: 1,
@@ -248,7 +247,9 @@ class ActivityCard extends ConsumerWidget {
     if (confirmed != true) return false;
 
     try {
-      final activitiesController = ref.read(activitiesControllerProvider.notifier);
+      final activitiesController = ref.read(
+        activitiesControllerProvider.notifier,
+      );
       await activitiesController.deleteActivity(activity.id);
 
       MealvanaSnackbar.showSuccess(context, 'Deleted "$activityTitle"');
@@ -264,45 +265,49 @@ class ActivityCard extends ConsumerWidget {
     // Use activity.userId as the device_id (userId is the Supabase auth user ID)
     final isSyncedWorkout = activity.syncedFromProvider != null;
 
-    ref.read(appExternalDepsProvider).analytics.trackActivityViewed(
-      deviceId: activity.userId,
-      activityId: activity.id,
-      activityType: activity.activityType.name,
-      hasNutritionPlan: activity.nutritionPlanData != null,
-      isSyncedWorkout: isSyncedWorkout,
-      syncedFromProvider: activity.syncedFromProvider,
-      providerWorkoutId: activity.providerWorkoutId,
-    );
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .trackActivityViewed(
+          deviceId: activity.userId,
+          activityId: activity.id,
+          activityType: activity.activityType.name,
+          hasNutritionPlan: activity.nutritionPlanData != null,
+          isSyncedWorkout: isSyncedWorkout,
+          syncedFromProvider: activity.syncedFromProvider,
+          providerWorkoutId: activity.providerWorkoutId,
+        );
 
     // Check if activity has a nutrition plan
     if (activity.nutritionPlanData == null) {
       // No nutrition plan - open New Activity screen with pre-populated data
-      context.push('/distancepacegut', extra: {
-        'activityId': activity.id,
-        'initialDate': activity.scheduledDateTime,
-        'distance': activity.distanceMiles,
-        'goalPace': activity.paceTargetMinutesPerMile,
-        'activityType': activity.activityType.name,
-        // Cycling-specific parameters
-        'cyclingSpeedMph': activity.cyclingSpeedMph,
-        'cyclingTerrain': activity.cyclingTerrain,
-        'cyclingIndoorOutdoor': activity.cyclingIndoorOutdoor,
-        'cyclingElevationGainFt': activity.cyclingElevationGainFt,
-        'cyclingSessionGoal': activity.cyclingSessionGoal,
-        // Swimming-specific parameters
-        'swimmingPacePer100mSeconds': activity.swimmingPacePer100mSeconds,
-        'swimmingPoolOrOpenWater': activity.swimmingPoolOrOpenWater,
-        'swimmingWaterTempC': activity.swimmingWaterTempC,
-        // Shared parameters
-        'intensityTarget': activity.intensityTarget,
-        'timeBeforeMinutes': activity.timeBeforeMinutes,
-      });
+      context.push(
+        '/distancepacegut',
+        extra: {
+          'activityId': activity.id,
+          'initialDate': activity.scheduledDateTime,
+          'distance': activity.distanceMiles,
+          'initialDurationMinutes': activity.durationMinutes,
+          'goalPace': activity.paceTargetMinutesPerMile,
+          'activityType': activity.activityType.name,
+          // Cycling-specific parameters
+          'cyclingSpeedMph': activity.cyclingSpeedMph,
+          'cyclingTerrain': activity.cyclingTerrain,
+          'cyclingIndoorOutdoor': activity.cyclingIndoorOutdoor,
+          'cyclingElevationGainFt': activity.cyclingElevationGainFt,
+          'cyclingSessionGoal': activity.cyclingSessionGoal,
+          // Swimming-specific parameters
+          'swimmingPacePer100mSeconds': activity.swimmingPacePer100mSeconds,
+          'swimmingPoolOrOpenWater': activity.swimmingPoolOrOpenWater,
+          'swimmingWaterTempC': activity.swimmingWaterTempC,
+          // Shared parameters
+          'intensityTarget': activity.intensityTarget,
+          'timeBeforeMinutes': activity.timeBeforeMinutes,
+        },
+      );
     } else {
       // Has nutrition plan - open Activity Detail screen (current behavior)
-      context.push('/plan', extra: {
-        'mode': 'view',
-        'activityId': activity.id,
-      });
+      context.push('/plan', extra: {'mode': 'view', 'activityId': activity.id});
     }
   }
 

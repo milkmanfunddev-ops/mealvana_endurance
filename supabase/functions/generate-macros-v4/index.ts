@@ -374,6 +374,7 @@ interface MacroInputV4 {
   overrides?: NutritionOverrides;
   liked_foods?: string[];
   disliked_foods?: string[];
+  allergies?: string[];
 }
 
 interface BrickSegmentInput {
@@ -481,6 +482,7 @@ async function calculateMacrosV4(
     templates.electrolyte,
     input.liked_foods ?? [],
     input.disliked_foods ?? [],
+    input.allergies ?? [],
   );
 
   // === DURING-WORKOUT (V3 unchanged) ===

@@ -14,7 +14,7 @@ class AppTheme {
     final colorScheme = ColorScheme.light(
       primary: AppColors.orange,
       onPrimary: AppColors.textLight,
-      secondary: AppColors.electrolyte,
+      secondary: AppColors.electrolyteDark,
       onSecondary: AppColors.textLight,
       surface: AppColors.surfaceLight,
       onSurface: AppColors.textLight,

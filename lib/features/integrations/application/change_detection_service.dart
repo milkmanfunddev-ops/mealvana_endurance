@@ -277,6 +277,8 @@ class ChangeDetectionService {
         newActivity.paceTargetMinutesPerMile) {
       return true;
     }
+    if (oldActivity.durationMinutes != newActivity.durationMinutes) return true;
+    if (oldActivity.distanceMiles != newActivity.distanceMiles) return true;
     if (oldActivity.intensityLevel != newActivity.intensityLevel) return true;
     if (oldActivity.workoutSubtype != newActivity.workoutSubtype) return true;
 

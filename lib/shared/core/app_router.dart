@@ -55,7 +55,6 @@ import '../../features/education/presentation/screens/video_player_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
 import '../screens/food_detail_screen.dart';
 // Coach mode screens
-import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/coach_mode/presentation/screens/my_coaches_screen.dart';
 import '../../features/coach_mode/presentation/screens/athlete_feedback_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_registration_screen.dart';
@@ -254,6 +253,7 @@ class AppRouter {
             return NewActivityScreen(
               initialDate: extra?['initialDate'] as DateTime?,
               initialDistance: extra?['distance'] as double?,
+              initialDurationMinutes: extra?['initialDurationMinutes'] as int?,
               initialPace: extra?['goalPace'] as double?,
               activityId: extra?['activityId'] as String?,
               eventId: extra?['eventId'] as String?,
@@ -297,6 +297,7 @@ class AppRouter {
             return NewActivityScreen(
               initialDate: extra?['initialDate'] as DateTime?,
               initialDistance: extra?['distance'] as double?,
+              initialDurationMinutes: extra?['initialDurationMinutes'] as int?,
               initialPace: extra?['goalPace'] as double?,
               activityId: extra?['activityId'] as String?,
               eventId: extra?['eventId'] as String?,
@@ -338,19 +339,24 @@ class AppRouter {
             final tabParam = state.uri.queryParameters['tab'];
             int initialTab = 0;
 
+            // On web, coach tab shifts indices: 0=activities, 1=coach, 2=events, 3=learn, 4=settings
+            // On mobile: 0=activities, 1=events, 2=learn, 3=settings
+            final hasCoachTab = kIsWeb;
+
             switch (tabParam) {
+              case 'coach':
+                initialTab = hasCoachTab ? 1 : 0;
+                break;
               case 'notes':
               case 'workout-notes':
-                initialTab = 1;
+                initialTab = hasCoachTab ? 2 : 1;
                 break;
               case 'survey':
-                initialTab = 2;
-                break;
               case 'learn':
-                initialTab = 2;
+                initialTab = hasCoachTab ? 3 : 2;
                 break;
               case 'settings':
-                initialTab = 3;
+                initialTab = hasCoachTab ? 4 : 3;
                 break;
               default:
                 initialTab = 0;
@@ -684,7 +690,7 @@ class AppRouter {
         // Mobile-only: /my-coaches, /coach-directory, /athlete/feedback (athlete features)
         // ============================================================================
 
-        // Coach Portal - Unified full-screen dashboard for coaches (WEB ONLY)
+        // Coach Portal - Redirects to /main?tab=coach (coach portal is now a tab)
         GoRoute(
           path: '/coach',
           name: 'coach-dashboard',
@@ -698,9 +704,9 @@ class AppRouter {
                   .syncCurrentCoachDataFromSupabase();
             }
 
-            return isApprovedCoach ? null : '/settings';
+            return isApprovedCoach ? '/main?tab=coach' : '/settings';
           },
-          builder: (context, state) => const CoachPortalScreen(),
+          builder: (context, state) => const SizedBox(), // Never reached due to redirect
         ),
 
         // Athlete Detail - Redirect to portal (handled within portal now)

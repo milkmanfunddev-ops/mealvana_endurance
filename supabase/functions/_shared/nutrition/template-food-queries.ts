@@ -82,6 +82,8 @@ export async function getTemplateFoodsForPhase(
   dislikedFoods?: string[],
   deviceId?: string,
   allowNonDefaultDuring: boolean = false,
+  allergies?: string[],
+  dietaryPreference?: string,
 ): Promise<Food[]> {
   const likedSet = buildPreferenceSet(likedFoods);
   const willTrySet = buildPreferenceSet(willingToTryFoods);
@@ -104,7 +106,8 @@ export async function getTemplateFoodsForPhase(
       max_servings_before, max_servings_during, max_servings_after,
       min_servings_during,
       is_electrolyte, to_exclude_from_solver, is_essential, is_indivisible,
-      categories, activity_types, is_liquid, product_type, default_during
+      categories, activity_types, is_liquid, product_type, default_during,
+      allergens, excluded_diets
     `;
   const selectWithoutDefaultDuring = `
       id, name, display_name, display_name_plural, image_address, description,
@@ -112,7 +115,8 @@ export async function getTemplateFoodsForPhase(
       serving_amount, serving_size, serving_unit, serving_qualifier,
       max_servings_before, max_servings_during, max_servings_after,
       is_electrolyte, to_exclude_from_solver, is_essential, is_indivisible,
-      categories, activity_types, is_liquid, product_type
+      categories, activity_types, is_liquid, product_type,
+      allergens, excluded_diets
     `;
 
   let foodsData: Record<string, unknown>[] | null = null;
@@ -226,6 +230,10 @@ export async function getTemplateFoodsForPhase(
 
   if (allEntries.length === 0) return [];
 
+  // Prepare allergen filtering sets (case-insensitive)
+  const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
+  const dietPrefLower = dietaryPreference?.toLowerCase() ?? '';
+
   // STEP 4: Filter and transform to Food interface
   return allEntries
     .filter(({ data: f, isUserFood }) => {
@@ -244,6 +252,27 @@ export async function getTemplateFoodsForPhase(
       }
       if (isDisliked && isUserFood) {
         console.log(`[TMPL-FILTER-DISLIKED] Keeping user food despite dislike: ${f.name}`);
+      }
+
+      // Allergen filtering — exclude template foods whose allergens overlap with user's allergies
+      // Essential foods (water, salt) and user-created foods bypass allergen filtering
+      if (allergiesLower.length > 0 && !isUserFood && !isEssential) {
+        const foodAllergens = (f.allergens as string[] | null) ?? [];
+        const hasAllergen = foodAllergens.some((a: string) => allergiesLower.includes(a.toLowerCase()));
+        if (hasAllergen) {
+          console.log(`[TMPL-FILTER-ALLERGEN] Excluding food with allergen: ${f.name} (allergens: ${foodAllergens.join(',')})`);
+          return false;
+        }
+      }
+
+      // Dietary preference filtering — exclude foods whose excluded_diets contains user's dietary preference
+      if (dietPrefLower && !isUserFood && !isEssential) {
+        const excludedDiets = (f.excluded_diets as string[] | null) ?? [];
+        const isDietExcluded = excludedDiets.some((d: string) => d.toLowerCase() === dietPrefLower);
+        if (isDietExcluded) {
+          console.log(`[TMPL-FILTER-DIET] Excluding food for diet '${dietaryPreference}': ${f.name} (excluded_diets: ${excludedDiets.join(',')})`);
+          return false;
+        }
       }
 
       // Running during default policy:
@@ -267,8 +296,15 @@ export async function getTemplateFoodsForPhase(
       const isLiked = isUserFood || matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, likedSet);
       const isWilling = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, willTrySet);
 
-      let preferenceCategory: 'liked' | 'willing' | 'essential' | 'neutral' = 'neutral';
-      if (isLiked) preferenceCategory = 'liked';
+      // User foods with an explicit product_type (not 'import') get boosted priority
+      const userFoodProductType = f.product_type as string | null;
+      const isExplicitlyTypedUserFood = isUserFood
+        && userFoodProductType != null
+        && userFoodProductType !== 'import';
+
+      let preferenceCategory: 'user_food' | 'liked' | 'willing' | 'essential' | 'neutral' = 'neutral';
+      if (isExplicitlyTypedUserFood) preferenceCategory = 'user_food';
+      else if (isLiked) preferenceCategory = 'liked';
       else if (isWilling) preferenceCategory = 'willing';
 
       const preference_score = PREFERENCE_SCORE_MAP[preferenceCategory];
@@ -399,6 +435,8 @@ export async function getTransitionFoods(
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
   deviceId?: string,
+  allergies?: string[],
+  dietaryPreference?: string,
 ): Promise<Food[]> {
   const likedSet = buildPreferenceSet(likedFoods);
   const willTrySet = buildPreferenceSet(willingToTryFoods);
@@ -413,7 +451,8 @@ export async function getTransitionFoods(
       serving_amount, serving_size, serving_unit, serving_qualifier,
       max_servings_during,
       is_electrolyte, to_exclude_from_solver, is_essential, is_indivisible,
-      is_liquid, product_type
+      is_liquid, product_type,
+      allergens, excluded_diets
     `)
     .eq('is_active', true)
     .filter('categories', 'ov', '{transition}');
@@ -471,20 +510,52 @@ export async function getTransitionFoods(
 
   const allEntries = Array.from(allFoodsMap.values());
 
+  // Prepare allergen filtering sets (case-insensitive)
+  const transAllergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
+  const transDietPrefLower = dietaryPreference?.toLowerCase() ?? '';
+
   return allEntries
     .filter(({ data: f, isUserFood }) => {
       const isDisliked = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, dislikedSet);
       const isEssential = f.is_essential === true;
       if (isDisliked && !isUserFood && !isEssential) return false;
       if (f.to_exclude_from_solver === true) return false;
+
+      // Allergen filtering — essential foods and user foods bypass
+      if (transAllergiesLower.length > 0 && !isUserFood && !isEssential) {
+        const foodAllergens = (f.allergens as string[] | null) ?? [];
+        const hasAllergen = foodAllergens.some((a: string) => transAllergiesLower.includes(a.toLowerCase()));
+        if (hasAllergen) {
+          console.log(`[TRANSITION-FILTER-ALLERGEN] Excluding food with allergen: ${f.name} (allergens: ${foodAllergens.join(',')})`);
+          return false;
+        }
+      }
+
+      // Dietary preference filtering
+      if (transDietPrefLower && !isUserFood && !isEssential) {
+        const excludedDiets = (f.excluded_diets as string[] | null) ?? [];
+        const isDietExcluded = excludedDiets.some((d: string) => d.toLowerCase() === transDietPrefLower);
+        if (isDietExcluded) {
+          console.log(`[TRANSITION-FILTER-DIET] Excluding food for diet '${dietaryPreference}': ${f.name}`);
+          return false;
+        }
+      }
+
       return true;
     })
     .map(({ data: f, isUserFood }): Food => {
       const isLiked = isUserFood || matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, likedSet);
       const isWilling = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, willTrySet);
 
-      let preferenceCategory: 'liked' | 'willing' | 'essential' | 'neutral' = 'neutral';
-      if (isLiked) preferenceCategory = 'liked';
+      // User foods with an explicit product_type (not 'import') get boosted priority
+      const transUserFoodProductType = f.product_type as string | null;
+      const isExplicitlyTypedUserFood = isUserFood
+        && transUserFoodProductType != null
+        && transUserFoodProductType !== 'import';
+
+      let preferenceCategory: 'user_food' | 'liked' | 'willing' | 'essential' | 'neutral' = 'neutral';
+      if (isExplicitlyTypedUserFood) preferenceCategory = 'user_food';
+      else if (isLiked) preferenceCategory = 'liked';
       else if (isWilling) preferenceCategory = 'willing';
 
       const carbsG = isUserFood ? safe(f.carbs_per_serving as number) : safe(f.carbs_g as number);

@@ -11,12 +11,14 @@ class MacroRangeIndicator extends StatelessWidget {
     required this.min,
     required this.max,
     required this.color,
+    this.trackColor,
   });
 
   final int value;
   final int min;
   final int max;
   final Color color;
+  final Color? trackColor;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,8 @@ class MacroRangeIndicator extends StatelessWidget {
           min: min,
           max: max,
           markerColor: color,
-          trackColor: Colors.white.withValues(alpha: 0.3),
+          trackColor: trackColor ??
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.25),
         ),
         size: const Size(double.infinity, 12),
       ),

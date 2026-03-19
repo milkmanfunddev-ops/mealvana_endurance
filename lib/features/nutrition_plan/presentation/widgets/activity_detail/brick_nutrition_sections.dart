@@ -194,7 +194,10 @@ class BrickNutritionSections extends StatelessWidget {
       sportType,
       isDuring: isDuring,
     );
-    final sectionColor = _getSectionColor(section, isDark);
+    final sectionColor = _getSectionColor(
+      section,
+      Theme.of(context).colorScheme.secondary,
+    );
 
     if (kDebugMode) {
       DebugLogger.info(
@@ -541,21 +544,14 @@ class BrickNutritionSections extends StatelessWidget {
   }
 
   /// Get color for section based on phase
-  Color _getSectionColor(PlanSection section, bool isDark) {
+  Color _getSectionColor(PlanSection section, Color themeSecondary) {
     final idLower = section.id.toLowerCase();
     final titleLower = section.title.toLowerCase();
     if (idLower.startsWith('before') || titleLower.startsWith('before'))
       return AppColors.orange;
     if (idLower.startsWith('after') || titleLower.startsWith('after'))
       return AppColors.dragonfruit;
-    if (idLower.startsWith('t') || titleLower.startsWith('transition')) {
-      return isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
-    }
-    if (idLower.startsWith('during_segment') ||
-        titleLower.startsWith('during')) {
-      return isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
-    }
-    return isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
+    return themeSecondary;
   }
 
   String? _resolveSportType(

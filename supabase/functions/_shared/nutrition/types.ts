@@ -63,6 +63,7 @@ export interface FoodResult {
   is_indivisible?: boolean;
   timing_category?: TimingCategory;
   product_type?: string;
+  is_user_food?: boolean;
 }
 
 /**
@@ -135,7 +136,7 @@ export interface NutritionPlanResult {
 
 export type ActivityType = 'running' | 'cycling' | 'swimming' | 'triathlon' | 'duathlon' | 'multisport' | 'brick';
 export type Phase = 'before' | 'during' | 'after';
-export type PreferenceCategory = 'liked' | 'willing' | 'essential' | 'neutral';
+export type PreferenceCategory = 'user_food' | 'liked' | 'willing' | 'essential' | 'neutral';
 
 // ============================================================================
 // Request Types

@@ -35,13 +35,25 @@ class EventsController extends _$EventsController {
     return localData;
   }
 
-  /// Background sync: ensures data is fresh, then refreshes UI
+  /// Background sync: ensures data is fresh, then refreshes UI only when data was stale
   Future<void> _backgroundSync(String userId) async {
+    final repo = ref.read(eventsRepositoryProvider);
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    final logger = ref.read(appLoggerProvider);
+
     try {
-      await ref.read(syncCoordinatorProvider.notifier).ensureSynced('events', userId);
-      ref.invalidateSelf();
+      final wasStale = await repo.isStale();
+      await syncCoordinator.ensureSynced('events', userId, repository: repo);
+      // Only refresh UI if data was stale AND sync actually succeeded.
+      // We verify success by checking that staleness was cleared (timestamp updated).
+      // Without this guard, a failed sync leaves wasStale=true forever,
+      // causing an infinite build→sync→invalidate loop.
+      final stillStale = await repo.isStale();
+      if (wasStale && !stillStale) {
+        if (!ref.mounted) return;
+        ref.invalidateSelf();
+      }
     } catch (e) {
-      final logger = ref.read(appLoggerProvider);
       logger.warning(
         'Background sync failed',
         context: 'EVENTS_CONTROLLER',
@@ -55,7 +67,8 @@ class EventsController extends _$EventsController {
   /// If [forUserId] is provided, creates event for that user (coach creating for athlete)
   Future<String> createEvent({
     String? activityId,
-    String? forUserId, // NEW: If provided, create event for this user (coach creating for athlete)
+    String?
+    forUserId, // NEW: If provided, create event for this user (coach creating for athlete)
     required ActivityType eventType,
     String? eventSubtype,
     String? eventName,
@@ -87,7 +100,8 @@ class EventsController extends _$EventsController {
       // Use cached service reference (no ref access after this point)
       final createdEvent = await service.createEvent(
         deviceId: deviceIdValue,
-        forUserId: forUserId, // NEW: Pass through forUserId for coach-created events
+        forUserId:
+            forUserId, // NEW: Pass through forUserId for coach-created events
         activityId: activityId,
         eventType: eventType,
         eventSubtype: eventSubtype,
@@ -136,10 +150,7 @@ class EventsController extends _$EventsController {
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
 
-      await service.updateEvent(
-        deviceId: deviceIdValue,
-        event: event,
-      );
+      await service.updateEvent(deviceId: deviceIdValue, event: event);
 
       // Check if provider is still mounted before accessing ref
       if (!ref.mounted) return;
@@ -168,10 +179,7 @@ class EventsController extends _$EventsController {
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
 
-      await service.deleteEvent(
-        deviceId: deviceIdValue,
-        eventId: eventId,
-      );
+      await service.deleteEvent(deviceId: deviceIdValue, eventId: eventId);
 
       // Check if provider is still mounted before accessing ref
       if (!ref.mounted) return;
@@ -242,7 +250,9 @@ class EventsController extends _$EventsController {
       final userId = await ref.read(userIdProvider.future);
 
       // Force sync from Supabase (bypasses 24h staleness check)
-      await ref.read(syncCoordinatorProvider.notifier).forceSyncRepository(
+      await ref
+          .read(syncCoordinatorProvider.notifier)
+          .forceSyncRepository(
             'events',
             userId,
             repository: ref.read(eventsRepositoryProvider),
@@ -262,23 +272,31 @@ class EventsController extends _$EventsController {
 
 /// Provider for getting event detail with associated activity
 @riverpod
-Future<({Activity? activity, Event event})> eventDetail(Ref ref, String eventId) async {
+Future<({Activity? activity, Event event})> eventDetail(
+  Ref ref,
+  String eventId,
+) async {
   final logger = ref.read(appLoggerProvider);
   final userId = await ref.read(userIdProvider.future);
 
   final eventsService = ref.read(eventsServiceProvider);
   final activitiesService = ref.read(activitiesServiceProvider);
-  //get all events
-  final events = await eventsService.getAllEvents(userId);
   final event = await eventsService.getEventById(userId, eventId);
   if (event == null) {
-    logger.error('EventDetail: Event not found', context: 'EVENT_DETAIL', data: {'eventId': eventId});
+    logger.error(
+      'EventDetail: Event not found',
+      context: 'EVENT_DETAIL',
+      data: {'eventId': eventId},
+    );
     throw Exception('Event not found: $eventId');
   }
 
   Activity? activity;
   if (event.activityId != null) {
-    activity = await activitiesService.getActivityById(userId, event.activityId!);
+    activity = await activitiesService.getActivityById(
+      userId,
+      event.activityId!,
+    );
   }
 
   return (activity: activity, event: event);

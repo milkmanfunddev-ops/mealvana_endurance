@@ -25,18 +25,20 @@ class CarbLoadingController extends _$CarbLoadingController {
 
   /// Background sync: ensures data is fresh, then refreshes UI
   Future<void> _backgroundSync(String userId) async {
-    try {
-      final repository = ref.read(carbLoadingRepositoryProvider);
-      final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    final repository = ref.read(carbLoadingRepositoryProvider);
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    final logger = ref.read(appLoggerProvider);
 
+    try {
       await syncCoordinator.ensureSynced(
         'carb_loading_plans',
         userId,
         repository: repository,
       );
+      if (!ref.mounted) return;
       ref.invalidateSelf();
     } catch (e, stackTrace) {
-      _logger.error(
+      logger.error(
         'Background sync failed',
         context: 'CARB_LOADING_CONTROLLER',
         error: e,
@@ -182,7 +184,7 @@ Future<dynamic> carbLoadingPlan(Ref ref, String eventId) async {
 }
 
 /// Provider for getting carb loading days for a plan
-/// Returns List<CarbLoadingDay> from the database
+/// Returns `List<CarbLoadingDay>` from the database.
 @riverpod
 Future<List<dynamic>> carbLoadingDaysForPlan(Ref ref, String planId) async {
   final service = ref.read(carbLoadingServiceProvider);
@@ -190,7 +192,7 @@ Future<List<dynamic>> carbLoadingDaysForPlan(Ref ref, String planId) async {
 }
 
 /// Provider for getting carb loading days in a date range
-/// Returns List<CarbLoadingDay> from the database
+/// Returns `List<CarbLoadingDay>` from the database.
 /// IMPORTANT: Scopes query to current user to prevent cross-user data leakage
 @riverpod
 Future<List<dynamic>> carbLoadingDaysForRange(

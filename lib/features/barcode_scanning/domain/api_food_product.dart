@@ -34,6 +34,9 @@ class ApiFoodProduct {
   final double? productQuantity; // product_quantity from API (fallback)
   final String? productQuantityUnit; // product_quantity_unit from API (fallback)
 
+  // Product type detection (from OFF taxonomy + brand + name heuristics)
+  final String? suggestedProductType;
+
   // Source tracking
   final String apiSource; // "open_food_facts", "usda", "manual"
   final double confidenceScore;
@@ -61,6 +64,7 @@ class ApiFoodProduct {
     this.servingQuantityUnit,
     this.productQuantity,
     this.productQuantityUnit,
+    this.suggestedProductType,
     required this.apiSource,
     required this.confidenceScore,
   });
@@ -90,6 +94,7 @@ class ApiFoodProduct {
       servingQuantityUnit: data['serving_quantity_unit'] as String?,
       productQuantity: _parseDouble(data['product_quantity']),
       productQuantityUnit: data['product_quantity_unit'] as String?,
+      suggestedProductType: data['suggested_product_type'] as String?,
       apiSource: data['api_source'] as String? ?? 'unknown',
       confidenceScore: _parseDouble(data['confidence_score']) ?? 0.0,
     );

@@ -1701,6 +1701,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 existingActivity.paceTargetMinutesPerMile,
             notes: existingActivity.notes,
             updatedAt: DateTime.now(),
+            needsNutritionRefresh: false, // Clear stale flag - plan is now current
           );
 
           await activitiesService.updateActivity(

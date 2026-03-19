@@ -244,7 +244,7 @@ class _DuringPhaseSectionWidgetState
               unselectedTextColor:
                   Theme.of(context).colorScheme.onSurfaceVariant,
               trackColor:
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
               thumbColor: AppColors.orange,
               height: 32,
               thumbInset: 2,

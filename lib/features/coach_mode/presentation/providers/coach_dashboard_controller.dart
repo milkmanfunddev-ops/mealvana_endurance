@@ -54,7 +54,6 @@ class CoachDashboardState {
 @riverpod
 class CoachDashboardController extends _$CoachDashboardController {
   CoachService get _coachService => ref.read(coachServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
 
   @override
   FutureOr<CoachDashboardState> build() async {
@@ -100,14 +99,25 @@ class CoachDashboardController extends _$CoachDashboardController {
     }
   }
 
-  /// Background sync: fetches latest data from Supabase, then refreshes UI
+  /// Background sync: fetches latest data from Supabase, then refreshes UI.
+  /// Uses a _synced flag to ensure we only invalidate once per build cycle,
+  /// preventing infinite build→sync→invalidate loops if sync fails.
+  bool _hasSynced = false;
+
   Future<void> _backgroundSync() async {
+    if (_hasSynced) return;
+    final coachService = ref.read(coachServiceProvider);
+    final logger = ref.read(appLoggerProvider);
+
     try {
-      await _coachService.syncRelationshipsFromSupabase();
-      await _coachService.syncMyAthletesProfiles();
+      await coachService.syncRelationshipsFromSupabase();
+      await coachService.syncMyAthletesProfiles();
+      _hasSynced = true;
+      if (!ref.mounted) return;
       ref.invalidateSelf();
     } catch (e, stackTrace) {
-      _logger.error(
+      _hasSynced = true; // Don't retry on failure within same lifecycle
+      logger.error(
         'Background sync failed',
         context: 'COACH_DASHBOARD_CONTROLLER',
         error: e,

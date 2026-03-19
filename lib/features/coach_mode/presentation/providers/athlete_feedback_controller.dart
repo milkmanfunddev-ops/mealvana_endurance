@@ -13,27 +13,20 @@ part 'athlete_feedback_controller.g.dart';
 class AthleteFeedbackState {
   final List<CoachMessage> allMessages;
 
-  const AthleteFeedbackState({
-    this.allMessages = const [],
-  });
+  const AthleteFeedbackState({this.allMessages = const []});
 
   bool get isEmpty => allMessages.isEmpty;
   bool get hasMessages => allMessages.isNotEmpty;
   int get messageCount => allMessages.length;
 
-  AthleteFeedbackState copyWith({
-    List<CoachMessage>? allMessages,
-  }) {
-    return AthleteFeedbackState(
-      allMessages: allMessages ?? this.allMessages,
-    );
+  AthleteFeedbackState copyWith({List<CoachMessage>? allMessages}) {
+    return AthleteFeedbackState(allMessages: allMessages ?? this.allMessages);
   }
 }
 
 @riverpod
 class AthleteFeedbackController extends _$AthleteFeedbackController {
   CoachService get _coachService => ref.read(coachServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
 
   @override
   FutureOr<AthleteFeedbackState> build() async {
@@ -68,19 +61,21 @@ class AthleteFeedbackController extends _$AthleteFeedbackController {
     // 2. Background sync (fire-and-forget) - fixes bug where new coach messages weren't showing
     unawaited(_backgroundSync());
 
-    return AthleteFeedbackState(
-      allMessages: allMessages,
-    );
+    return AthleteFeedbackState(allMessages: allMessages);
   }
 
   /// Background sync: fetches latest relationships and coach data, then refreshes UI
   Future<void> _backgroundSync() async {
+    final coachService = ref.read(coachServiceProvider);
+    final logger = ref.read(appLoggerProvider);
+
     try {
-      await _coachService.syncRelationshipsFromSupabase();
-      await _coachService.syncMyCoachesData();
+      await coachService.syncRelationshipsFromSupabase();
+      await coachService.syncMyCoachesData();
+      if (!ref.mounted) return;
       ref.invalidateSelf();
     } catch (e, stackTrace) {
-      _logger.error(
+      logger.error(
         'Background sync failed',
         context: 'ATHLETE_FEEDBACK_CONTROLLER',
         error: e,

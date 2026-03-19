@@ -12,7 +12,6 @@ import '../widgets/new_activity/shared/sport_selector.dart';
 import '../widgets/new_activity/shared/new_activity_app_bar.dart';
 import '../widgets/new_activity/shared/new_activity_hero_section.dart';
 import '../widgets/new_activity/shared/new_activity_date_time_section.dart';
-import '../widgets/new_activity/shared/new_activity_generate_button.dart';
 import '../widgets/new_activity/running_tab_content.dart';
 import '../widgets/new_activity/cycling_tab_content.dart';
 import '../widgets/new_activity/swimming_tab_content.dart';
@@ -28,6 +27,7 @@ import '../../data/nutrition_plan_mapper.dart';
 import '../providers/macro_targets_controller.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
+import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 
 /// New Activity Screen - Kyle's Unified Design
 ///
@@ -54,6 +54,7 @@ class NewActivityScreen extends ConsumerStatefulWidget {
     super.key,
     this.initialDate,
     this.initialDistance,
+    this.initialDurationMinutes,
     this.initialPace,
     this.activityId,
     this.eventId,
@@ -81,6 +82,7 @@ class NewActivityScreen extends ConsumerStatefulWidget {
 
   final DateTime? initialDate;
   final double? initialDistance;
+  final int? initialDurationMinutes;
   final double? initialPace;
   final String? activityId;
   final String? eventId;
@@ -122,8 +124,8 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
     // Initialize controllers with event data after first frame
     // Using microtask to avoid modifying providers during build
-    Future.microtask(() {
-      _initializeFromEventData();
+    Future.microtask(() async {
+      await _initializeFromEventData();
     });
   }
 
@@ -141,7 +143,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   /// - Sport tab based on activity type
   /// - Date/time from scheduled date
   /// - Sport-specific fields (distance, pace, etc.)
-  void _initializeFromEventData() {
+  Future<void> _initializeFromEventData() async {
     final coordinator = ref.read(newActivityCoordinatorProvider.notifier);
     final coordinatorState = ref.read(newActivityCoordinatorProvider);
 
@@ -185,7 +187,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     final activityType = widget.activityType ?? 'running';
     switch (activityType) {
       case 'cycling':
-        _initializeCyclingController();
+        await _initializeCyclingController();
         break;
       case 'swimming':
         _initializeSwimmingController();
@@ -278,14 +280,63 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       controller.updatePace(widget.initialPace!);
     }
 
+    if (widget.initialDurationMinutes != null &&
+        widget.initialDurationMinutes! > 0) {
+      DebugLogger.info(
+        '⏱️ NEW ACTIVITY: Initializing running duration: ${widget.initialDurationMinutes} min',
+      );
+      controller.updateDuration(
+        Duration(minutes: widget.initialDurationMinutes!),
+      );
+    }
+
     if (widget.timeBeforeMinutes != null) {
       controller.updatePreRunMinutes(widget.timeBeforeMinutes!);
     }
   }
 
   /// Initialize cycling controller with synced activity data
-  void _initializeCyclingController() {
+  Future<void> _initializeCyclingController() async {
     final controller = ref.read(cyclingInputControllerProvider.notifier);
+    await controller.waitForPreferencesLoaded();
+
+    final hasExplicitDuration =
+        widget.initialDurationMinutes != null &&
+        widget.initialDurationMinutes! > 0;
+    final paceDerivedSpeed =
+        (widget.initialPace != null && widget.initialPace! > 0)
+        ? (60.0 / widget.initialPace!)
+        : null;
+
+    // When duration is missing, prefer provider pace over stored speed so
+    // workouts with distance+pace (but no duration) remain faithful to source.
+    final resolvedSpeed = hasExplicitDuration
+        ? (widget.cyclingSpeedMph ??
+              paceDerivedSpeed ??
+              controller.getDefaultSpeedMph())
+        : (paceDerivedSpeed ??
+              widget.cyclingSpeedMph ??
+              controller.getDefaultSpeedMph());
+
+    // When provider duration is missing, cycling inputs should behave in By Speed mode.
+    // Otherwise updating distance while in By Duration can back-calculate speed from
+    // stale default duration (e.g. 12mi + 1:40 -> 7.2 mph).
+    if (!hasExplicitDuration) {
+      controller.updateDurationPaceMode(DurationPaceMode.byPace);
+    }
+
+    DebugLogger.info(
+      '🚴 NEW ACTIVITY PREFILL: duration=${widget.initialDurationMinutes}, '
+      'pace=${widget.initialPace}, speed=${widget.cyclingSpeedMph}, '
+      'resolvedSpeed=$resolvedSpeed, mode=${hasExplicitDuration ? 'byDuration' : 'byPace'}',
+    );
+
+    if (resolvedSpeed > 0) {
+      DebugLogger.info(
+        '🚴 NEW ACTIVITY: Initializing cycling speed: $resolvedSpeed mph',
+      );
+      controller.updateSpeed(resolvedSpeed);
+    }
 
     if (widget.initialDistance != null) {
       DebugLogger.info(
@@ -294,11 +345,13 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       controller.updateDistance(widget.initialDistance!);
     }
 
-    if (widget.cyclingSpeedMph != null) {
+    if (hasExplicitDuration) {
       DebugLogger.info(
-        '🚴 NEW ACTIVITY: Initializing cycling speed: ${widget.cyclingSpeedMph} mph',
+        '⏱️ NEW ACTIVITY: Initializing cycling duration: ${widget.initialDurationMinutes} min',
       );
-      controller.updateSpeed(widget.cyclingSpeedMph!);
+      controller.updateDuration(
+        Duration(minutes: widget.initialDurationMinutes!),
+      );
     }
 
     if (widget.timeBeforeMinutes != null) {
@@ -326,6 +379,16 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       controller.updatePace(widget.swimmingPacePer100mSeconds!);
     }
 
+    if (widget.initialDurationMinutes != null &&
+        widget.initialDurationMinutes! > 0) {
+      DebugLogger.info(
+        '⏱️ NEW ACTIVITY: Initializing swimming duration: ${widget.initialDurationMinutes} min',
+      );
+      controller.updateDuration(
+        Duration(minutes: widget.initialDurationMinutes!),
+      );
+    }
+
     if (widget.timeBeforeMinutes != null) {
       controller.updatePreSwimMinutes(widget.timeBeforeMinutes!);
     }
@@ -347,7 +410,8 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     }
 
     // Check if we have event subtype distances to pre-populate
-    final hasEventDistances = widget.brickSwimDistanceMeters != null ||
+    final hasEventDistances =
+        widget.brickSwimDistanceMeters != null ||
         widget.brickBikeDistanceMiles != null ||
         widget.brickRunDistanceMiles != null;
 
@@ -469,11 +533,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
             ),
 
             // Action Buttons (fixed at bottom)
-            _buildBottomButtons(
-              context,
-              coordinator,
-              coordinatorState,
-            ),
+            _buildBottomButtons(context, coordinator, coordinatorState),
           ],
         ),
       ),
@@ -490,10 +550,12 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
     // Check if user has templates for the current sport
     final templatesAsync = ref.watch(personalTemplatesControllerProvider);
-    final hasTemplates = templatesAsync.whenOrNull(
+    final hasTemplates =
+        templatesAsync.whenOrNull(
           data: (templates) => templates.any((t) {
-            final sportType =
-                _sportTabToActivityType(coordinatorState.selectedTab);
+            final sportType = _sportTabToActivityType(
+              coordinatorState.selectedTab,
+            );
             return t.activityType == sportType;
           }),
         ) ??
@@ -508,8 +570,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         color: isDark ? AppColors.blackberry : AppColors.cream,
         boxShadow: [
           BoxShadow(
-            color:
-                (isDark ? Colors.black : Colors.grey).withValues(alpha: 0.1),
+            color: (isDark ? Colors.black : Colors.grey).withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -534,10 +595,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
                 onPressed: coordinatorState.isGenerating
                     ? null
                     : () => _handleUseTemplate(
-                          context,
-                          coordinator,
-                          coordinatorState,
-                        ),
+                        context,
+                        coordinator,
+                        coordinatorState,
+                      ),
               ),
             ),
           ],
@@ -567,14 +628,15 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     NewActivityCoordinatorState coordinatorState,
   ) async {
     try {
-      final templatesController =
-          ref.read(personalTemplatesControllerProvider.notifier);
-      final sportType =
-          _sportTabToActivityType(coordinatorState.selectedTab);
+      final templatesController = ref.read(
+        personalTemplatesControllerProvider.notifier,
+      );
+      final sportType = _sportTabToActivityType(coordinatorState.selectedTab);
 
       // Get templates for current sport
-      final templates =
-          await templatesController.getTemplatesForSport(sportType);
+      final templates = await templatesController.getTemplatesForSport(
+        sportType,
+      );
 
       if (templates.isEmpty || !mounted) return;
 
@@ -596,8 +658,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       if (!mounted) return;
 
       // Get the activity ID created by macro generation
-      final macroState =
-          ref.read(macroTargetsControllerProvider).value;
+      final macroState = ref.read(macroTargetsControllerProvider).value;
       final activityId = macroState?.activityId;
 
       if (activityId == null || activityId.isEmpty) {
@@ -606,7 +667,9 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       }
 
       // Parse the template's plan data into a NutritionPlan
-      final templatePlan = NutritionPlanMapper.fromJson(result.template.planData);
+      final templatePlan = NutritionPlanMapper.fromJson(
+        result.template.planData,
+      );
       NutritionPlan planToApply;
 
       if (result.scaleToFit && macroState?.macroTargets != null) {
@@ -639,12 +702,15 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
       // Navigate to activity detail screen (skip adjust-macros)
       final isCoachView = widget.forUserId != null;
-      context.push('/current-plan', extra: {
-        'activityId': activityId,
-        'isNewActivity': true,
-        'fromTemplate': true,
-        if (isCoachView) 'isCoachView': true,
-      });
+      context.push(
+        '/current-plan',
+        extra: {
+          'activityId': activityId,
+          'isNewActivity': true,
+          'fromTemplate': true,
+          if (isCoachView) 'isCoachView': true,
+        },
+      );
     } catch (e) {
       DebugLogger.error('Error applying template: $e');
       if (!mounted) return;

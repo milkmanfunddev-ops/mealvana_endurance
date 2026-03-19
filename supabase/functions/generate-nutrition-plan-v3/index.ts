@@ -610,6 +610,8 @@ async function generateLPPhase(
   deviceId?: string,
   durationMinutes?: number,
   gutTrainingLevel?: string,
+  allergies?: string[],
+  dietaryPreference?: string,
 ): Promise<LPPhaseResult> {
   console.log(`[PLAN-V3] Generating ${phase} phase via LP solver`);
   const isDuringPhase = phase === 'during';
@@ -625,6 +627,8 @@ async function generateLPPhase(
     dislikedFoods,
     deviceId,
     false,
+    allergies,
+    dietaryPreference,
   );
 
   if (foods.length === 0) {
@@ -701,6 +705,8 @@ async function generateLPPhase(
       dislikedFoods,
       deviceId,
       true,
+      allergies,
+      dietaryPreference,
     );
     if (expandedFoods.length > foods.length) {
       console.log(
@@ -772,6 +778,8 @@ async function generateDuringPhase(
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
   deviceId?: string,
+  allergies?: string[],
+  dietaryPreference?: string,
 ): Promise<LPPhaseResult> {
   // Swimming: no during-phase nutrition
   if (activityType === 'swimming') {
@@ -791,6 +799,8 @@ async function generateDuringPhase(
     dislikedFoods,
     deviceId,
     false,
+    allergies,
+    dietaryPreference,
   );
 
   if (foods.length === 0) {
@@ -804,6 +814,8 @@ async function generateDuringPhase(
       dislikedFoods,
       deviceId,
       true,
+      allergies,
+      dietaryPreference,
     );
   }
 
@@ -870,6 +882,8 @@ async function generateTransitionPhase(
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
   deviceId?: string,
+  allergies?: string[],
+  dietaryPreference?: string,
 ): Promise<LPPhaseResult> {
   console.log(`[PLAN-V3-BRICK] Generating transition phase ${transitionName}: carbs=${targets.carbs_g}g, sodium=${targets.sodium_mg}mg, water=${targets.water_ml}ml`);
 
@@ -885,6 +899,8 @@ async function generateTransitionPhase(
     willingToTryFoods,
     dislikedFoods,
     deviceId,
+    allergies,
+    dietaryPreference,
   );
 
   if (foods.length === 0) {
@@ -993,6 +1009,8 @@ async function handleBrickPlan(
       input.willing_to_try_foods,
       input.disliked_foods,
       input.device_id,
+      input.allergies,
+      input.dietary_preference,
     );
 
     duringSegments[String(segmentOrder)] = duringResult.foods;
@@ -1017,6 +1035,8 @@ async function handleBrickPlan(
         input.willing_to_try_foods,
         input.disliked_foods,
         input.device_id,
+        input.allergies,
+        input.dietary_preference,
       );
 
       transitions[transitionName] = transitionResult.foods;
@@ -1034,6 +1054,10 @@ async function handleBrickPlan(
         input.willing_to_try_foods,
         input.disliked_foods,
         input.device_id,
+        undefined,
+        undefined,
+        input.allergies,
+        input.dietary_preference,
       )
     : { foods: [] as FoodResult[] };
 
@@ -1115,6 +1139,8 @@ serve(async (req) => {
             input.willing_to_try_foods,
             input.disliked_foods,
             input.device_id,
+            input.allergies,
+            input.dietary_preference,
           )
         : Promise.resolve({ foods: [] } as LPPhaseResult),
 
@@ -1129,6 +1155,10 @@ serve(async (req) => {
             input.willing_to_try_foods,
             input.disliked_foods,
             input.device_id,
+            undefined,
+            undefined,
+            input.allergies,
+            input.dietary_preference,
           )
         : Promise.resolve({ foods: [] } as LPPhaseResult),
     ]);

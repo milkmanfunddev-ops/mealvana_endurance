@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item_data.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../shared/services/app_external_deps.dart';
@@ -548,13 +551,44 @@ class NutritionPlanService {
         }).toList();
       }
 
-      final response = await supabase.functions.invoke(
-        'generate-nutrition-plan-v3',
-        body: requestData,
-      );
+      // Retry transient errors (502/503/504) with exponential backoff.
+      // The Supabase SDK throws FunctionException for all non-2xx responses,
+      // so retry logic is handled in the FunctionException catch block.
+      const maxRetries = 2;
+      late final FunctionResponse response;
 
-      if (response.status >= 400) {
-        throw Exception('V2 edge function error: ${response.data?['error'] ?? 'Unknown error'}');
+      for (var attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          response = await supabase.functions
+              .invoke(
+                'generate-nutrition-plan-v3',
+                body: requestData,
+              )
+              .timeout(const Duration(seconds: 55));
+          break; // Success - exit retry loop
+        } on TimeoutException {
+          if (attempt < maxRetries) {
+            final delayMs = (1 << attempt) * 1000;
+            _logger.warning(
+              'V2 timed out, retrying in ${delayMs}ms (attempt ${attempt + 1}/$maxRetries)',
+              context: 'NUTRITION_PLAN_SERVICE',
+            );
+            await Future.delayed(Duration(milliseconds: delayMs));
+            continue;
+          }
+          rethrow;
+        } on FunctionException catch (e) {
+          if (attempt < maxRetries && _isTransientError(e)) {
+            final delayMs = (1 << attempt) * 1000;
+            _logger.warning(
+              'V2 transient error (${e.status} ${e.reasonPhrase}), retrying in ${delayMs}ms (attempt ${attempt + 1}/$maxRetries)',
+              context: 'NUTRITION_PLAN_SERVICE',
+            );
+            await Future.delayed(Duration(milliseconds: delayMs));
+            continue;
+          }
+          rethrow;
+        }
       }
 
       final data = response.data as Map<String, dynamic>;
@@ -601,6 +635,15 @@ class NutritionPlanService {
         userId: userId,
       );
     }
+  }
+
+  /// Whether a [FunctionException] represents a transient error worth retrying.
+  bool _isTransientError(FunctionException e) {
+    if ([502, 503, 504].contains(e.status)) return true;
+    final reason = (e.reasonPhrase ?? '').toLowerCase();
+    return reason.contains('bad gateway') ||
+        reason.contains('service unavailable') ||
+        reason.contains('gateway timeout');
   }
 
   /// Get all available foods from the database

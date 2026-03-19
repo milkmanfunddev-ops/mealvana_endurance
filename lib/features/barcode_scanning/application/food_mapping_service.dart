@@ -65,8 +65,10 @@ class FoodMappingService {
       caffeineMg: null,
       potassiumMg: null,
 
-      // Product type - use from existing food or default to the "import" enum code
-      productTypeId: existingByName?.productTypeId ?? 'import',
+      // Product type - use from existing food, then OFF-detected type, then 'import'
+      productTypeId: existingByName?.productTypeId
+          ?? apiProduct.suggestedProductType
+          ?? 'import',
 
       // Suitability based on database categories if we found the food
       beforeRunSuitable: await _getBeforeRunSuitability(existingByName),

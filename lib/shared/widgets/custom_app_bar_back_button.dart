@@ -39,7 +39,10 @@ class _CustomAppBarBackButtonState extends State<CustomAppBarBackButton> {
     if (widget.onPressed != null) {
       widget.onPressed!();
     } else {
-      Navigator.of(context).pop();
+      final navigator = Navigator.of(context);
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
     }
 
     // Note: We don't reset _isProcessing because the widget will be

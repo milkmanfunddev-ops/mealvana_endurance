@@ -28,8 +28,8 @@ class KyleSecondaryButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = _getColorsForVariant(variant);
-    
+    final colors = _getColorsForVariant(variant, context);
+
     return SizedBox(
       height: height ?? AppSizes.buttonHeightPrimary,
       width: isFullWidth ? double.infinity : null,
@@ -83,7 +83,10 @@ class KyleSecondaryButton extends ConsumerWidget {
     );
   }
 
-  _ButtonColors _getColorsForVariant(SecondaryButtonVariant variant) {
+  static _ButtonColors _getColorsForVariant(
+    SecondaryButtonVariant variant,
+    BuildContext context,
+  ) {
     switch (variant) {
       case SecondaryButtonVariant.orange:
         return _ButtonColors(
@@ -96,9 +99,10 @@ class KyleSecondaryButton extends ConsumerWidget {
           border: AppColors.textLight,
         );
       case SecondaryButtonVariant.light:
+        final onSurface = Theme.of(context).colorScheme.onSurface;
         return _ButtonColors(
-          foreground: AppColors.textDark,
-          border: AppColors.textDark,
+          foreground: onSurface,
+          border: onSurface,
         );
     }
   }
@@ -154,8 +158,8 @@ class KyleSecondaryIconButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = _getColorsForVariant(variant);
-    
+    final colors = KyleSecondaryButton._getColorsForVariant(variant, context);
+
     return SizedBox(
       width: size,
       height: size,
@@ -188,26 +192,6 @@ class KyleSecondaryIconButton extends ConsumerWidget {
       ),
     );
   }
-
-  _ButtonColors _getColorsForVariant(SecondaryButtonVariant variant) {
-    switch (variant) {
-      case SecondaryButtonVariant.orange:
-        return _ButtonColors(
-          foreground: AppColors.orange,
-          border: AppColors.orange,
-        );
-      case SecondaryButtonVariant.blackberry:
-        return _ButtonColors(
-          foreground: AppColors.textLight,
-          border: AppColors.textLight,
-        );
-      case SecondaryButtonVariant.light:
-        return _ButtonColors(
-          foreground: AppColors.textDark,
-          border: AppColors.textDark,
-        );
-    }
-  }
 }
 
 /// Secondary button variants
@@ -218,7 +202,7 @@ enum SecondaryButtonVariant {
   /// Blackberry outline for neutral actions
   blackberry,
 
-  /// Light outline for dark backgrounds
+  /// Theme-aware outline that adapts to current brightness
   light,
 }
 

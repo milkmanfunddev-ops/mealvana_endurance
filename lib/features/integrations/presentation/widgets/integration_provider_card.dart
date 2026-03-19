@@ -169,11 +169,14 @@ class IntegrationProviderCard extends StatelessWidget {
               fit: BoxFit.contain,
               placeholderBuilder: (_) => _buildPlaceholderIcon(context),
             )
-          : Image.asset(
-              iconPath!,
-              height: logoHeight,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => _buildPlaceholderIcon(context),
+          : ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset(
+                iconPath!,
+                height: logoHeight,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => _buildPlaceholderIcon(context),
+              ),
             ),
     );
   }
@@ -430,10 +433,8 @@ class _ConnectButton extends StatelessWidget {
     return GestureDetector(
       onTap: onConnect,
       child: Container(
-        alignment: Alignment.center,
-        constraints: const BoxConstraints(minHeight: 36, minWidth: 96),
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
+          horizontal: AppSpacing.md,
           vertical: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
@@ -445,7 +446,6 @@ class _ConnectButton extends StatelessWidget {
           style: AppTextStyles.buttonPrimary.copyWith(
             color: AppColors.textDark,
           ),
-          textAlign: TextAlign.center,
         ),
       ),
     );

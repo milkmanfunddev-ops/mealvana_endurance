@@ -29,28 +29,33 @@ class ActivitiesController extends _$ActivitiesController {
   FutureOr<List<Activity>> build() async {
     // Watch auth state to trigger rebuilds on sign in/out
     ref.watch(currentUserProvider);
+    final service = ref.read(activitiesServiceProvider);
+    final integrationSyncCoordinator = ref.read(
+      integrationSyncCoordinatorProvider.notifier,
+    );
 
     final userId = await ref.read(userIdProvider.future);
 
     // Clean up any abandoned draft activities before loading
-    await _service.cleanupDraftActivities(userId);
+    await service.cleanupDraftActivities(userId);
 
     // 1. Load local data IMMEDIATELY (no blocking sync)
-    final localData = await _service.getAllActivities(userId);
+    final localData = await service.getAllActivities(userId);
 
     // 2. Background sync (fire-and-forget) - syncs if stale, then refreshes UI
     unawaited(_backgroundSync(userId));
 
     // 3. Background integration sync (non-blocking, fire-and-forget)
     unawaited(
-      ref
-          .read(integrationSyncCoordinatorProvider.notifier)
+      integrationSyncCoordinator
           .ensureIntegrationsSynced(userId)
           .then((anySynced) {
-        if (anySynced) {
-          ref.invalidateSelf();
-        }
-      }).catchError((_) {}),
+            if (anySynced) {
+              if (!ref.mounted) return;
+              ref.invalidateSelf();
+            }
+          })
+          .catchError((_) {}),
     );
 
     return localData;
@@ -58,22 +63,28 @@ class ActivitiesController extends _$ActivitiesController {
 
   /// Background sync: ensures data is fresh, then refreshes UI only when data was stale
   Future<void> _backgroundSync(String userId) async {
+    final repo = ref.read(activitiesRepositoryProvider);
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    final logger = ref.read(appLoggerProvider);
+
     try {
-      final repo = ref.read(activitiesRepositoryProvider);
       final wasStale = await repo.isStale();
-      await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
-            'activities',
-            userId,
-            repository: repo,
-          );
-      // Only refresh UI if data was actually stale and got synced.
-      // Without this guard, invalidateSelf triggers build() which calls
-      // _backgroundSync again, creating an infinite loop.
-      if (wasStale) {
+      await syncCoordinator.ensureSynced(
+        'activities',
+        userId,
+        repository: repo,
+      );
+      // Only refresh UI if data was stale AND sync actually succeeded.
+      // We verify success by checking that staleness was cleared (timestamp updated).
+      // Without this guard, a failed sync (e.g. dirty record upload error) leaves
+      // wasStale=true forever, causing an infinite build→sync→invalidate loop.
+      final stillStale = await repo.isStale();
+      if (wasStale && !stillStale) {
+        if (!ref.mounted) return;
         ref.invalidateSelf();
       }
     } catch (e, stackTrace) {
-      _logger.error(
+      logger.error(
         'Background sync failed',
         context: 'ACTIVITIES_CONTROLLER',
         error: e,
@@ -87,7 +98,8 @@ class ActivitiesController extends _$ActivitiesController {
   Future<String> createActivity({
     required String title,
     required DateTime scheduledDateTime,
-    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
+    String?
+    forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
     ActivityType activityType = ActivityType.running,
     double? distanceMiles,
     int? durationMinutes,
@@ -119,7 +131,8 @@ class ActivitiesController extends _$ActivitiesController {
       final createdActivity = await _service.createActivity(
         deviceId: deviceIdValue,
         userId: deviceIdValue,
-        forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
+        forUserId:
+            forUserId, // NEW: Pass through forUserId for coach-created activities
         activityType: activityType,
         title: title,
         scheduledDateTime: scheduledDateTime,
@@ -194,9 +207,15 @@ class ActivitiesController extends _$ActivitiesController {
     try {
       final userId = await ref.read(userIdProvider.future);
       final startOfDay = DateTime(date.year, date.month, date.day);
-      final endOfDay = startOfDay.add(const Duration(days: 1)).subtract(const Duration(seconds: 1));
+      final endOfDay = startOfDay
+          .add(const Duration(days: 1))
+          .subtract(const Duration(seconds: 1));
 
-      return await _service.getActivitiesForDateRange(userId, startOfDay, endOfDay);
+      return await _service.getActivitiesForDateRange(
+        userId,
+        startOfDay,
+        endOfDay,
+      );
     } catch (e) {
       _logger.error('Error getting activities for date', error: e);
       rethrow;
@@ -229,7 +248,9 @@ class ActivitiesController extends _$ActivitiesController {
       final userId = await ref.read(userIdProvider.future);
 
       await Future.wait([
-        ref.read(syncCoordinatorProvider.notifier).forceSyncRepository(
+        ref
+            .read(syncCoordinatorProvider.notifier)
+            .forceSyncRepository(
               'activities',
               userId,
               repository: ref.read(activitiesRepositoryProvider),
@@ -237,10 +258,7 @@ class ActivitiesController extends _$ActivitiesController {
         ref
             .read(integrationSyncCoordinatorProvider.notifier)
             .forceSyncIntegrations(userId),
-      ]).timeout(
-        const Duration(seconds: 20),
-        onTimeout: () => [null, null],
-      );
+      ]).timeout(const Duration(seconds: 20), onTimeout: () => [null, null]);
 
       ref.invalidateSelf();
     } catch (e) {

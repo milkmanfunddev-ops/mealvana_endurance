@@ -2,7 +2,9 @@ name: Deploy to Production
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'release/*'
     paths:
       - 'supabase/migrations/**'
       - 'supabase/functions/**'

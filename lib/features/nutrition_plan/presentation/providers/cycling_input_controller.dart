@@ -59,7 +59,8 @@ class CyclingFormState {
   CyclingFormState({
     this.distance = 25.0,
     this.speedMph = 15.0,
-    this.preRideMinutes = 120, // V3: will be pre-filled from recommendation in controller build()
+    this.preRideMinutes =
+        120, // V3: will be pre-filled from recommendation in controller build()
 
     this.intensityTarget = 'zone_2',
     this.sessionGoal = 'endurance',
@@ -85,7 +86,13 @@ class CyclingFormState {
     this.isLoadingWeather = false,
     this.hasAttemptedWeatherFetch = false,
     this.locationFailureReason,
-  }) : intensity = intensity ?? IntensityDistribution(conversationalPct: 70, tempoPct: 20, allOutPct: 10);
+  }) : intensity =
+           intensity ??
+           IntensityDistribution(
+             conversationalPct: 70,
+             tempoPct: 20,
+             allOutPct: 10,
+           );
 
   CyclingFormState copyWith({
     double? distance,
@@ -136,14 +143,17 @@ class CyclingFormState {
       durationPaceMode: durationPaceMode ?? this.durationPaceMode,
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
       isFasted: isFasted ?? this.isFasted,
-      preRideMinutesManuallySet: preRideMinutesManuallySet ?? this.preRideMinutesManuallySet,
+      preRideMinutesManuallySet:
+          preRideMinutesManuallySet ?? this.preRideMinutesManuallySet,
       unitSystem: unitSystem ?? this.unitSystem,
       location: location ?? this.location,
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
       isLoadingWeather: isLoadingWeather ?? this.isLoadingWeather,
-      hasAttemptedWeatherFetch: hasAttemptedWeatherFetch ?? this.hasAttemptedWeatherFetch,
-      locationFailureReason: locationFailureReason ?? this.locationFailureReason,
+      hasAttemptedWeatherFetch:
+          hasAttemptedWeatherFetch ?? this.hasAttemptedWeatherFetch,
+      locationFailureReason:
+          locationFailureReason ?? this.locationFailureReason,
     );
   }
 }
@@ -153,24 +163,35 @@ class CyclingFormState {
 @Riverpod(keepAlive: true)
 class CyclingInputController extends _$CyclingInputController {
   WeatherService get _weatherService => ref.read(weatherServiceProvider);
+  Completer<void>? _preferencesLoadedCompleter;
+  bool _preferencesLoaded = false;
+  double _defaultSpeedMph = 15.0;
 
   @override
   CyclingFormState build() {
     final now = DateTime.now();
 
     // Fetch user profile to get distance unit and default speed
-    _loadUserPreferences();
+    unawaited(_loadUserPreferences());
 
     // Calculate initial estimated duration using default values
     // Default: 25 miles at 15 mph = 1.67 hours = 100 minutes
     final initialDurationMinutes = (25.0 / 15.0 * 60).round();
 
     // V3: Pre-fill timing from recommendation based on default intensity
-    final defaultIntensity = IntensityDistribution(conversationalPct: 70, tempoPct: 20, allOutPct: 10);
-    final recommendedMinutes = (recommendedHoursBefore(
-      ActivityType.cycling, defaultIntensity,
-      durationMinutes: initialDurationMinutes,
-    ) * 60).round();
+    final defaultIntensity = IntensityDistribution(
+      conversationalPct: 70,
+      tempoPct: 20,
+      allOutPct: 10,
+    );
+    final recommendedMinutes =
+        (recommendedHoursBefore(
+                  ActivityType.cycling,
+                  defaultIntensity,
+                  durationMinutes: initialDurationMinutes,
+                ) *
+                60)
+            .round();
 
     final initialState = CyclingFormState(
       selectedDate: now,
@@ -187,8 +208,30 @@ class CyclingInputController extends _$CyclingInputController {
     return initialState;
   }
 
+  /// Ensure async user preferences initialization is complete before applying
+  /// external prefill values (e.g., synced provider workouts).
+  Future<void> waitForPreferencesLoaded() async {
+    await _loadUserPreferences();
+  }
+
+  /// Baseline speed (user preference when available) for deterministic prefill.
+  double getDefaultSpeedMph() => _defaultSpeedMph;
+
   /// Load user preferences
   Future<void> _loadUserPreferences() async {
+    if (_preferencesLoaded) {
+      return;
+    }
+
+    final existingCompleter = _preferencesLoadedCompleter;
+    if (existingCompleter != null) {
+      await existingCompleter.future;
+      return;
+    }
+
+    final completer = Completer<void>();
+    _preferencesLoadedCompleter = completer;
+
     try {
       final userRepository = await ref.read(userRepositoryProvider.future);
       final userProfile = await userRepository.getCurrentUser();
@@ -197,6 +240,7 @@ class CyclingInputController extends _$CyclingInputController {
         // If user has a default cycling speed, use it to update speed and recalculate duration
         final defaultSpeed = userProfile.defaultCyclingSpeedMph;
         if (defaultSpeed != null && defaultSpeed > 0) {
+          _defaultSpeedMph = defaultSpeed;
           state = state.copyWith(
             distanceUnit: userProfile.preferredDistanceUnit,
             speedMph: defaultSpeed,
@@ -204,24 +248,39 @@ class CyclingInputController extends _$CyclingInputController {
           );
           // Recalculate estimated duration with user's default speed
           _estimateDuration();
-          DebugLogger.info('🚴 CYCLING CONTROLLER: Loaded user preferences - distance unit: ${userProfile.preferredDistanceUnit.name}, default speed: ${defaultSpeed}mph, unitSystem: ${userProfile.unitSystem.name}');
+          DebugLogger.info(
+            '🚴 CYCLING CONTROLLER: Loaded user preferences - distance unit: ${userProfile.preferredDistanceUnit.name}, default speed: ${defaultSpeed}mph, unitSystem: ${userProfile.unitSystem.name}',
+          );
         } else {
+          _defaultSpeedMph = 15.0;
           state = state.copyWith(
             distanceUnit: userProfile.preferredDistanceUnit,
             unitSystem: userProfile.unitSystem,
           );
-          DebugLogger.info('🚴 CYCLING CONTROLLER: Loaded user preferences - distance unit: ${userProfile.preferredDistanceUnit.name}, unitSystem: ${userProfile.unitSystem.name}');
+          DebugLogger.info(
+            '🚴 CYCLING CONTROLLER: Loaded user preferences - distance unit: ${userProfile.preferredDistanceUnit.name}, unitSystem: ${userProfile.unitSystem.name}',
+          );
         }
       }
     } catch (e) {
-      DebugLogger.error('🚴 CYCLING CONTROLLER: Failed to load user preferences', error: e);
+      DebugLogger.error(
+        '🚴 CYCLING CONTROLLER: Failed to load user preferences',
+        error: e,
+      );
+    } finally {
+      _preferencesLoaded = true;
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     }
   }
 
   /// Fetch location if this controller needs it and doesn't already have it.
   /// Called when this sport tab becomes active or the screen initializes.
   Future<void> fetchLocationIfNeeded() async {
-    if (!state.isLoadingLocation && !state.isLoadingWeather && state.location == null) {
+    if (!state.isLoadingLocation &&
+        !state.isLoadingWeather &&
+        state.location == null) {
       await fetchCurrentLocation();
       if (state.location == null && state.weatherForecast == null) {
         await fetchWeatherForecast();
@@ -245,10 +304,14 @@ class CyclingInputController extends _$CyclingInputController {
   /// Update form field values
   void updateDistance(double distance) {
     final hasDuration =
-        state.estimatedDuration != null && state.estimatedDuration!.inSeconds > 0;
+        state.estimatedDuration != null &&
+        state.estimatedDuration!.inSeconds > 0;
 
     if (state.durationPaceMode == DurationPaceMode.byDuration && hasDuration) {
-      final newSpeed = _estimateSpeed(distance: distance, duration: state.estimatedDuration);
+      final newSpeed = _estimateSpeed(
+        distance: distance,
+        duration: state.estimatedDuration,
+      );
       state = state.copyWith(
         distance: distance,
         speedMph: newSpeed ?? state.speedMph,
@@ -280,7 +343,8 @@ class CyclingInputController extends _$CyclingInputController {
   void _autoUpdateFuelingWindow() {
     if (!state.preRideMinutesManuallySet) {
       final recommended = recommendedHoursBefore(
-        ActivityType.cycling, state.intensity,
+        ActivityType.cycling,
+        state.intensity,
         durationMinutes: state.estimatedDuration?.inMinutes ?? 90,
       );
       state = state.copyWith(preRideMinutes: (recommended * 60).round());
@@ -315,7 +379,7 @@ class CyclingInputController extends _$CyclingInputController {
       state = state.copyWith(
         terrain: newTerrain,
         temperatureC: 20.0, // Room temp
-        humidityPct: 45.0,  // Comfortable room humidity
+        humidityPct: 45.0, // Comfortable room humidity
         windCondition: 'still',
         sunExposure: 'shade',
       );
@@ -357,7 +421,8 @@ class CyclingInputController extends _$CyclingInputController {
   void updateDateTime(DateTime date, TimeOfDay time) {
     final currentDate = state.selectedDate;
     final currentTime = state.selectedTime;
-    final hasChanged = currentDate.year != date.year ||
+    final hasChanged =
+        currentDate.year != date.year ||
         currentDate.month != date.month ||
         currentDate.day != date.day ||
         currentTime.hour != time.hour ||
@@ -377,7 +442,8 @@ class CyclingInputController extends _$CyclingInputController {
 
     // Auto-fetch weather when date/time changes for outdoor rides if location is set
     // or if weather was previously fetched successfully (via GPS fallback).
-    if (!isIndoor && (state.location != null || state.weatherForecast != null)) {
+    if (!isIndoor &&
+        (state.location != null || state.weatherForecast != null)) {
       unawaited(fetchWeatherForecast());
     }
   }
@@ -453,7 +519,9 @@ class CyclingInputController extends _$CyclingInputController {
       state = state.copyWith(
         location: location,
         isLoadingLocation: false,
-        locationFailureReason: location != null ? null : state.locationFailureReason,
+        locationFailureReason: location != null
+            ? null
+            : state.locationFailureReason,
       );
 
       // Auto-fetch weather after getting location
@@ -526,7 +594,9 @@ class CyclingInputController extends _$CyclingInputController {
       state = state.copyWith(locationFailureReason: null);
       await fetchCurrentLocation();
     } else {
-      state = state.copyWith(locationFailureReason: LocationFailureReason.permissionDenied);
+      state = state.copyWith(
+        locationFailureReason: LocationFailureReason.permissionDenied,
+      );
     }
   }
 
@@ -542,10 +612,7 @@ class CyclingInputController extends _$CyclingInputController {
 
   /// Clear location (allows manual entry)
   void clearLocation() {
-    state = state.copyWith(
-      location: null,
-      weatherForecast: null,
-    );
+    state = state.copyWith(location: null, weatherForecast: null);
   }
 
   /// Delegate to the main controller for macro generation
@@ -554,14 +621,22 @@ class CyclingInputController extends _$CyclingInputController {
     String? eventId,
     String? forUserId,
   }) async {
-    DebugLogger.info('🚴 CYCLING CONTROLLER: generateMacros called - activityId: $activityId');
+    DebugLogger.info(
+      '🚴 CYCLING CONTROLLER: generateMacros called - activityId: $activityId',
+    );
     final currentState = state;
-    DebugLogger.info('🚴 CYCLING CONTROLLER: Current state - distance: ${currentState.distance}mi, speed: ${currentState.speedMph}mph');
+    DebugLogger.info(
+      '🚴 CYCLING CONTROLLER: Current state - distance: ${currentState.distance}mi, speed: ${currentState.speedMph}mph',
+    );
 
     // Extract terrain type (e.g., 'flat' from 'flat_outdoor')
     final terrainType = currentState.terrain.split('_')[0];
-    final indoorOutdoorType = currentState.terrain.contains('indoor') ? 'indoor' : 'outdoor';
-    DebugLogger.info('🚴 CYCLING CONTROLLER: Extracted terrain: $terrainType, indoorOutdoor: $indoorOutdoorType');
+    final indoorOutdoorType = currentState.terrain.contains('indoor')
+        ? 'indoor'
+        : 'outdoor';
+    DebugLogger.info(
+      '🚴 CYCLING CONTROLLER: Extracted terrain: $terrainType, indoorOutdoor: $indoorOutdoorType',
+    );
 
     // Convert units if necessary (Backend expects Miles/MPH)
     double distanceMiles = currentState.distance;
@@ -572,30 +647,39 @@ class CyclingInputController extends _$CyclingInputController {
       distanceMiles = currentState.distance * 0.621371;
       // Assume speed is in kph if distance is km
       speedMph = currentState.speedMph * 0.621371;
-      DebugLogger.info('🚴 CYCLING CONTROLLER: Converted from Metric - Distance: ${currentState.distance}km -> ${distanceMiles.toStringAsFixed(2)}mi, Speed: ${currentState.speedMph}kph -> ${speedMph.toStringAsFixed(2)}mph');
+      DebugLogger.info(
+        '🚴 CYCLING CONTROLLER: Converted from Metric - Distance: ${currentState.distance}km -> ${distanceMiles.toStringAsFixed(2)}mi, Speed: ${currentState.speedMph}kph -> ${speedMph.toStringAsFixed(2)}mph',
+      );
     }
 
     // Delegate to the main controller
-    DebugLogger.info('🚴 CYCLING CONTROLLER: About to call distancePageGutEntryController.generateCyclingMacros...');
-    await ref.read(macroTargetsControllerProvider.notifier).generateCyclingMacros(
-      distanceMiles: distanceMiles,
-      speedMph: speedMph,
-      terrain: terrainType,
-      indoorOutdoor: indoorOutdoorType,
-      elevationGainFt: currentState.elevationGainFt,
-      sessionGoal: currentState.sessionGoal,
-      intensityTarget: currentState.intensityTarget,
-      timeBeforeMinutes: currentState.preRideMinutes,
-      scheduledDate: currentState.selectedDate,
-      scheduledTime: currentState.selectedTime,
-      temperatureC: currentState.temperatureC,
-      humidityPct: currentState.humidityPct,
-      isFasted: currentState.isFasted,
-      intensity: currentState.intensity,
-      activityId: activityId,
-      eventId: eventId,
-      forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
+    DebugLogger.info(
+      '🚴 CYCLING CONTROLLER: About to call distancePageGutEntryController.generateCyclingMacros...',
     );
-    DebugLogger.info('🚴 CYCLING CONTROLLER: distancePageGutEntryController.generateCyclingMacros completed!');
+    await ref
+        .read(macroTargetsControllerProvider.notifier)
+        .generateCyclingMacros(
+          distanceMiles: distanceMiles,
+          speedMph: speedMph,
+          terrain: terrainType,
+          indoorOutdoor: indoorOutdoorType,
+          elevationGainFt: currentState.elevationGainFt,
+          sessionGoal: currentState.sessionGoal,
+          intensityTarget: currentState.intensityTarget,
+          timeBeforeMinutes: currentState.preRideMinutes,
+          scheduledDate: currentState.selectedDate,
+          scheduledTime: currentState.selectedTime,
+          temperatureC: currentState.temperatureC,
+          humidityPct: currentState.humidityPct,
+          isFasted: currentState.isFasted,
+          intensity: currentState.intensity,
+          activityId: activityId,
+          eventId: eventId,
+          forUserId:
+              forUserId, // NEW: Pass through forUserId for coach-created activities
+        );
+    DebugLogger.info(
+      '🚴 CYCLING CONTROLLER: distancePageGutEntryController.generateCyclingMacros completed!',
+    );
   }
 }

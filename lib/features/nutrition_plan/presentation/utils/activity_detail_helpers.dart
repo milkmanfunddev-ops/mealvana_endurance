@@ -209,7 +209,7 @@ class ActivityDetailHelpers {
     int? low,
     int? high,
   }) {
-    const inRangeColor = AppColors.electrolyte; // vibrant teal for on-target
+    final inRangeColor = Theme.of(context).colorScheme.secondary;
 
     // Range mode: compare against band
     if (low != null && high != null && (low > 0 || high > 0)) {

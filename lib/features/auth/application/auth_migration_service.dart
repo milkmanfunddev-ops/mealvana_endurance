@@ -38,8 +38,9 @@ class AuthMigrationService {
   }) async {
     try {
       // Get the anonymous user's profile to preserve their data
-      final anonymousProfile =
-          await userRepository.getUserProfileById(fromAnonymousUserId);
+      final anonymousProfile = await userRepository.getUserProfileById(
+        fromAnonymousUserId,
+      );
       if (anonymousProfile == null) {
         sentry.addBreadcrumb(
           message: 'No anonymous profile found to migrate',
@@ -55,8 +56,7 @@ class AuthMigrationService {
       // because the auth trigger might have created an empty profile.
       bool oauthUserHasData = false;
       try {
-        oauthUserHasData =
-            await userRepository.checkUserHasData(toOAuthUserId);
+        oauthUserHasData = await userRepository.checkUserHasData(toOAuthUserId);
       } catch (e) {
         // FAIL SAFE: Assume data exists to prevent data loss on network error
         sentry.addBreadcrumb(
@@ -211,8 +211,7 @@ class AuthMigrationService {
         'id': oauthUserId,
         'device_id': anonymousProfile.deviceId,
         'auth_user_id': oauthUserId,
-        'auth_provider':
-            authProvider,
+        'auth_provider': authProvider,
         'is_anonymous': false,
         'gender': anonymousProfile.gender.name,
         'birthday': anonymousProfile.birthday.toIso8601String().split('T')[0],
@@ -273,7 +272,8 @@ class AuthMigrationService {
     try {
       await supabase
           .from('events')
-          .update({'user_id': toUserId}).eq('user_id', fromUserId);
+          .update({'user_id': toUserId})
+          .eq('user_id', fromUserId);
     } catch (e) {
       sentry.addBreadcrumb(
         message: 'Failed to migrate events (may not exist)',
@@ -296,7 +296,8 @@ class AuthMigrationService {
     try {
       await supabase
           .from('activities')
-          .update({'user_id': toUserId}).eq('user_id', fromUserId);
+          .update({'user_id': toUserId})
+          .eq('user_id', fromUserId);
     } catch (e) {
       sentry.addBreadcrumb(
         message: 'Failed to migrate activities (may not exist)',
@@ -308,10 +309,7 @@ class AuthMigrationService {
     // ============ FOOD PREFERENCES ============
     // Food preferences have UNIQUE constraint on (user_id, food_name) - delete OAuth's first
     try {
-      await supabase
-          .from('food_preferences')
-          .delete()
-          .eq('user_id', toUserId);
+      await supabase.from('food_preferences').delete().eq('user_id', toUserId);
     } catch (e) {
       sentry.addBreadcrumb(
         message: 'Failed to delete OAuth user food_preferences (may not exist)',
@@ -322,7 +320,8 @@ class AuthMigrationService {
     try {
       await supabase
           .from('food_preferences')
-          .update({'user_id': toUserId}).eq('user_id', fromUserId);
+          .update({'user_id': toUserId})
+          .eq('user_id', fromUserId);
     } catch (e) {
       sentry.addBreadcrumb(
         message: 'Failed to migrate food_preferences (may not exist)',
@@ -345,7 +344,8 @@ class AuthMigrationService {
     try {
       await supabase
           .from('user_foods')
-          .update({'user_id': toUserId}).eq('user_id', fromUserId);
+          .update({'user_id': toUserId})
+          .eq('user_id', fromUserId);
     } catch (e) {
       sentry.addBreadcrumb(
         message: 'Failed to migrate user_foods (may not exist)',
@@ -377,7 +377,8 @@ class AuthMigrationService {
     try {
       await supabase
           .from('carb_loading_plans')
-          .update({'user_id': toUserId}).eq('user_id', fromUserId);
+          .update({'user_id': toUserId})
+          .eq('user_id', fromUserId);
     } catch (e) {
       sentry.addBreadcrumb(
         message: 'Failed to migrate carb_loading_plans (may not exist)',
@@ -525,7 +526,8 @@ class AuthMigrationService {
       bool dataMigrated = false;
 
       // Determine if we need to migrate data
-      final needsMigration = previousUserId != null &&
+      final needsMigration =
+          previousUserId != null &&
           previousUserId != newUserId &&
           wasAnonymous &&
           !preservedUserId;
@@ -543,8 +545,9 @@ class AuthMigrationService {
           },
         );
 
-        final hasDataToMigrate =
-            await userRepository.checkUserHasData(previousUserId);
+        final hasDataToMigrate = await userRepository.checkUserHasData(
+          previousUserId,
+        );
         if (hasDataToMigrate) {
           await migrateAnonymousUserData(
             fromAnonymousUserId: previousUserId,
@@ -567,14 +570,9 @@ class AuthMigrationService {
           },
         );
 
-        // Update both local and remote database
-        // CRITICAL: Set authUserId to newUserId for email linking
-        // This ensures userIdProvider can find the profile by authUserId
-        await userRepository.updateAuthProvider(
-          authProvider: authProvider,
-          isAnonymous: false,
-          authUserId: newUserId,
-        );
+        // Avoid updateAuthProvider() here because it calls getCurrentUser(),
+        // which can race immediately after Supabase session switches.
+        await _handleFreshLogin(newUserId, authProvider);
       } else {
         // SCENARIO 3: Fresh Login (no migration needed)
         sentry.addBreadcrumb(
@@ -627,8 +625,9 @@ class AuthMigrationService {
 
       if (needsMigration) {
         // Check if the anonymous user actually has data worth migrating
-        final hasDataToMigrate =
-            await userRepository.checkUserHasData(previousUserId);
+        final hasDataToMigrate = await userRepository.checkUserHasData(
+          previousUserId,
+        );
 
         if (hasDataToMigrate) {
           sentry.addBreadcrumb(
@@ -716,8 +715,9 @@ class AuthMigrationService {
     );
 
     // Fetch user profile from Supabase (for existing accounts)
-    final remoteProfile =
-        await userRepository.fetchAndSaveRemoteProfile(userId);
+    final remoteProfile = await userRepository.fetchAndSaveRemoteProfile(
+      userId,
+    );
 
     if (remoteProfile != null) {
       // User exists in Supabase - update profile directly (no second lookup)
@@ -737,7 +737,8 @@ class AuthMigrationService {
       // This avoids calling updateAuthProvider() which does a getCurrentUser() lookup
       // that can fail if authUserId doesn't match the new session yet
       final updatedProfile = remoteProfile.copyWith(
-        authUserId: userId, // Ensure authUserId matches current Supabase session
+        authUserId:
+            userId, // Ensure authUserId matches current Supabase session
         authProvider: authProvider,
         isAnonymous: false,
         updatedAt: DateTime.now(),

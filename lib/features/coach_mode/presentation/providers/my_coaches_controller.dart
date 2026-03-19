@@ -46,7 +46,6 @@ class MyCoachesState {
 @riverpod
 class MyCoachesController extends _$MyCoachesController {
   CoachService get _coachService => ref.read(coachServiceProvider);
-  AppLogger get _logger => ref.read(appLoggerProvider);
 
   @override
   FutureOr<MyCoachesState> build() async {
@@ -68,20 +67,29 @@ class MyCoachesController extends _$MyCoachesController {
         pendingRequests: pendingRequests,
       );
     } catch (e) {
-      return MyCoachesState(
-        error: 'Failed to load coaches: $e',
-      );
+      return MyCoachesState(error: 'Failed to load coaches: $e');
     }
   }
 
-  /// Background sync: fetches latest data from Supabase, then refreshes UI
+  /// Background sync: fetches latest data from Supabase, then refreshes UI.
+  /// Uses a _synced flag to ensure we only invalidate once per build cycle,
+  /// preventing infinite build→sync→invalidate loops if sync fails.
+  bool _hasSynced = false;
+
   Future<void> _backgroundSync() async {
+    if (_hasSynced) return;
+    final coachService = ref.read(coachServiceProvider);
+    final logger = ref.read(appLoggerProvider);
+
     try {
-      await _coachService.syncRelationshipsFromSupabase();
-      await _coachService.syncMyCoachesData();
+      await coachService.syncRelationshipsFromSupabase();
+      await coachService.syncMyCoachesData();
+      _hasSynced = true;
+      if (!ref.mounted) return;
       ref.invalidateSelf();
     } catch (e, stackTrace) {
-      _logger.error(
+      _hasSynced = true; // Don't retry on failure within same lifecycle
+      logger.error(
         'Background sync failed',
         context: 'MY_COACHES_CONTROLLER',
         error: e,
@@ -113,17 +121,21 @@ class MyCoachesController extends _$MyCoachesController {
             .toList();
         final updatedActive = [...currentState.activeCoaches, accepted];
 
-        state = AsyncData(currentState.copyWith(
-          activeCoaches: updatedActive,
-          pendingRequests: updatedPending,
-          isLoading: false,
-        ));
+        state = AsyncData(
+          currentState.copyWith(
+            activeCoaches: updatedActive,
+            pendingRequests: updatedPending,
+            isLoading: false,
+          ),
+        );
       }
     } catch (e) {
-      state = AsyncData(currentState.copyWith(
-        isLoading: false,
-        error: 'Failed to accept request: $e',
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          isLoading: false,
+          error: 'Failed to accept request: $e',
+        ),
+      );
     }
   }
 
@@ -141,15 +153,19 @@ class MyCoachesController extends _$MyCoachesController {
           .where((r) => r.id != relationshipId)
           .toList();
 
-      state = AsyncData(currentState.copyWith(
-        pendingRequests: updatedPending,
-        isLoading: false,
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          pendingRequests: updatedPending,
+          isLoading: false,
+        ),
+      );
     } catch (e) {
-      state = AsyncData(currentState.copyWith(
-        isLoading: false,
-        error: 'Failed to decline request: $e',
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          isLoading: false,
+          error: 'Failed to decline request: $e',
+        ),
+      );
     }
   }
 
