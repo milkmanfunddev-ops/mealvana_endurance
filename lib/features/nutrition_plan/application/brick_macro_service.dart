@@ -248,12 +248,26 @@ class BrickMacroService {
     final postRunProtein = _toDouble(afterPhase['protein_g'], 'after.protein_g');
     final postRunFluids = _toDouble(afterPhase['water_ml'], 'after.water_ml');
     final postRunSodium = _toDouble(afterPhase['sodium_mg'], 'after.sodium_mg');
+    // V4 range fields for post-run
+    final postRunCarbsLow = _toDoubleOrNull(afterPhase['carbs_low_g']);
+    final postRunCarbsHigh = _toDoubleOrNull(afterPhase['carbs_high_g']);
+    final postRunProteinLow = _toDoubleOrNull(afterPhase['protein_low_g']);
+    final postRunProteinHigh = _toDoubleOrNull(afterPhase['protein_high_g']);
+    final postRunSodiumLow = _toDoubleOrNull(afterPhase['sodium_low_mg']);
+    final postRunSodiumHigh = _toDoubleOrNull(afterPhase['sodium_high_mg']);
+    final postRunFluidsLow = _toDoubleOrNull(afterPhase['water_low_ml']);
+    final postRunFluidsHigh = _toDoubleOrNull(afterPhase['water_high_ml']);
 
     // Parse during segments and transitions
     // Sum all during phases (segments + transitions) for cumulative totals
     double duringCarbsTotal = 0.0;
     double duringFluidsTotal = 0.0;
     double duringSodiumTotal = 0.0;
+    double duringSodiumLowTotal = 0.0;
+    double duringSodiumHighTotal = 0.0;
+    double duringFluidsLowTotal = 0.0;
+    double duringFluidsHighTotal = 0.0;
+    bool hasDuringRanges = false;
 
     // Sum during segments (edge function returns as List, not Map)
     final duringSegments = phasesData['during_segments'] as List<dynamic>? ?? [];
@@ -262,6 +276,14 @@ class BrickMacroService {
         duringCarbsTotal += _toDouble(segmentData['carbs_g'], 'during_segment.carbs_g');
         duringFluidsTotal += _toDouble(segmentData['water_ml'], 'during_segment.water_ml');
         duringSodiumTotal += _toDouble(segmentData['sodium_mg'], 'during_segment.sodium_mg');
+        final segSodiumLow = _toDoubleOrNull(segmentData['sodium_low_mg']);
+        final segSodiumHigh = _toDoubleOrNull(segmentData['sodium_high_mg']);
+        final segFluidsLow = _toDoubleOrNull(segmentData['water_low_ml']);
+        final segFluidsHigh = _toDoubleOrNull(segmentData['water_high_ml']);
+        if (segSodiumLow != null) { duringSodiumLowTotal += segSodiumLow; hasDuringRanges = true; }
+        if (segSodiumHigh != null) { duringSodiumHighTotal += segSodiumHigh; hasDuringRanges = true; }
+        if (segFluidsLow != null) { duringFluidsLowTotal += segFluidsLow; hasDuringRanges = true; }
+        if (segFluidsHigh != null) { duringFluidsHighTotal += segFluidsHigh; hasDuringRanges = true; }
       }
     }
 
@@ -272,6 +294,14 @@ class BrickMacroService {
         duringCarbsTotal += _toDouble(transitionData['carbs_g'], 'transition.carbs_g');
         duringFluidsTotal += _toDouble(transitionData['water_ml'], 'transition.water_ml');
         duringSodiumTotal += _toDouble(transitionData['sodium_mg'], 'transition.sodium_mg');
+        final trSodiumLow = _toDoubleOrNull(transitionData['sodium_low_mg']);
+        final trSodiumHigh = _toDoubleOrNull(transitionData['sodium_high_mg']);
+        final trFluidsLow = _toDoubleOrNull(transitionData['water_low_ml']);
+        final trFluidsHigh = _toDoubleOrNull(transitionData['water_high_ml']);
+        if (trSodiumLow != null) duringSodiumLowTotal += trSodiumLow;
+        if (trSodiumHigh != null) duringSodiumHighTotal += trSodiumHigh;
+        if (trFluidsLow != null) duringFluidsLowTotal += trFluidsLow;
+        if (trFluidsHigh != null) duringFluidsHighTotal += trFluidsHigh;
       }
     }
 
@@ -316,12 +346,26 @@ class BrickMacroService {
         sodiumTotalMg: duringSodiumTotal,
         massNormRateGPerH: 0.0, // Not applicable for brick (multi-segment)
         absClampRangeGPerH: [30, 90], // Default range
+        carbsLowG: totalDurationH > 0 ? 30 * totalDurationH : null,
+        carbsHighG: totalDurationH > 0 ? 90 * totalDurationH : null,
+        sodiumLowMg: hasDuringRanges ? duringSodiumLowTotal : null,
+        sodiumHighMg: hasDuringRanges ? duringSodiumHighTotal : null,
+        fluidsLowMl: hasDuringRanges ? duringFluidsLowTotal : null,
+        fluidsHighMl: hasDuringRanges ? duringFluidsHighTotal : null,
       ),
       postRun: PostRunMacros(
         carbsG: postRunCarbs,
         proteinG: postRunProtein,
         fluidsMl: postRunFluids,
         sodiumMg: postRunSodium,
+        carbsLowG: postRunCarbsLow,
+        carbsHighG: postRunCarbsHigh,
+        proteinLowG: postRunProteinLow,
+        proteinHighG: postRunProteinHigh,
+        sodiumLowMg: postRunSodiumLow,
+        sodiumHighMg: postRunSodiumHigh,
+        fluidsLowMl: postRunFluidsLow,
+        fluidsHighMl: postRunFluidsHigh,
       ),
       metrics: RunMetrics(
         distanceMi: distanceMi,

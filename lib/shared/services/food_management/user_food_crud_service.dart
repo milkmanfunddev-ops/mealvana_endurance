@@ -162,12 +162,18 @@ class UserFoodCrudService {
     double? fatPerServing,
     int? sodiumMg,
     double? fluidMlPerServing,
+    String? productTypeId,
     List<int>? categoryIds,
   }) async {
     try {
       // Convert category IDs to names if provided
       final categoryNames = categoryIds != null
           ? _mapCategoryIdsToNames(categoryIds)
+          : null;
+
+      // Normalize product type if provided
+      final normalizedProductType = productTypeId != null
+          ? normalizeProductType(productTypeId, logger: _logger)
           : null;
 
       // OFFLINE-FIRST: Update Drift IMMEDIATELY
@@ -186,6 +192,7 @@ class UserFoodCrudService {
         fatPerServing: fatPerServing,
         sodiumMg: sodiumMg,
         fluidMlPerServing: fluidMlPerServing,
+        productTypeId: normalizedProductType,
         categories: categoryNames,
       );
 
@@ -208,6 +215,7 @@ class UserFoodCrudService {
               fatPerServing: fatPerServing,
               sodiumMg: sodiumMg,
               fluidMlPerServing: fluidMlPerServing,
+              productTypeId: normalizedProductType,
               categoryNames: categoryNames,
             );
           } catch (e, stackTrace) {
@@ -356,6 +364,7 @@ class UserFoodCrudService {
     double? fatPerServing,
     int? sodiumMg,
     double? fluidMlPerServing,
+    String? productTypeId,
     List<String>? categoryNames,
   }) async {
     // Build update map with only provided fields
@@ -402,6 +411,9 @@ class UserFoodCrudService {
     }
     if (fluidMlPerServing != null) {
       updateData['fluid_ml_per_serving'] = fluidMlPerServing;
+    }
+    if (productTypeId != null) {
+      updateData['product_type'] = productTypeId;
     }
     if (categoryNames != null) {
       updateData['categories'] = categoryNames;

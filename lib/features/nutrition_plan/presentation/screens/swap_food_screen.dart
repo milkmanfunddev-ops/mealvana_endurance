@@ -315,95 +315,81 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   Future<void> _handleCatalogSelection(CatalogSearchResult result) async {
-    if (result.hasNutrition) {
-      // Auto-import with nutrition — seamless, no confirmation screen
+    // Always open FoodDetailScreen for review, pre-populated with catalog data
+    final preCheckedCategories = <int>[_categoryToId(widget.category)];
+    final detailResult = await Navigator.push<dynamic>(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => FoodDetailScreen(
+          foodData: FoodDetailData(
+            id: '',
+            name: result.displayName,
+            categoryIds: preCheckedCategories,
+            imageUrl: result.imageUrl,
+            carbsPerServing: result.carbsG,
+            proteinPerServing: result.proteinG,
+            fatPerServing: result.fatG,
+            sodiumMg: result.sodiumMg,
+            caloriesPerServing: result.caloriesPerServing,
+            servingSize: result.servingSize,
+            productType: result.productType,
+          ),
+          mode: FoodDetailMode.addFromSearch,
+          screenContext: _isSwapping ? FoodDetailContext.swapFood : FoodDetailContext.addFood,
+          preSelectedCategories: preCheckedCategories,
+          showCategories: true,
+          showProductType: true,
+        ),
+      ),
+    );
+
+    if (detailResult is FoodDetailResult && mounted) {
       setState(() { _isSavingScannedFood = true; });
       try {
+        final categoryStrings = detailResult.categoryIds.map((id) {
+          switch (id) {
+            case 1: return 'before_run';
+            case 2: return 'during_run';
+            case 3: return 'after_run';
+            default: return 'before_run';
+          }
+        }).toList();
+
+        final food = Food(
+          id: detailResult.foodId.isEmpty
+              ? DateTime.now().millisecondsSinceEpoch.toString()
+              : detailResult.foodId,
+          name: detailResult.name,
+          categories: categoryStrings,
+          servingSize: detailResult.servingSize,
+          servingAmount: detailResult.servingAmount,
+          servingUnit: detailResult.servingUnit,
+          carbsPerServing: detailResult.carbsPerServing,
+          proteinPerServing: detailResult.proteinPerServing,
+          fatPerServing: detailResult.fatPerServing,
+          sodiumMg: detailResult.sodiumMg,
+          caloriesPerServing: detailResult.caloriesPerServing,
+          fluidMlPerServing: detailResult.fluidMlPerServing,
+          productTypeId: detailResult.productType,
+          imageAddress: result.imageUrl,
+        );
+
+        final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+        await userFoodCrudService.saveUserFood(food, detailResult.categoryIds);
         await ref.read(swapFoodControllerProvider(_params).notifier)
-            .addCatalogResult(result);
+            .refreshFoods(selectAfterRefresh: food, expandMyFoods: true);
+
         _searchController.clear();
         if (mounted) {
           MealvanaSnackbar.showSuccess(context, '${result.title} added!');
         }
       } catch (e) {
         if (mounted) {
-          MealvanaSnackbar.showError(context, 'Failed to import: $e');
+          MealvanaSnackbar.showError(context, 'Failed to save food: $e');
         }
       } finally {
         if (mounted) {
           setState(() { _isSavingScannedFood = false; });
-        }
-      }
-    } else {
-      // No nutrition — open FoodDetailScreen for manual entry
-      final preCheckedCategories = <int>[_categoryToId(widget.category)];
-      final detailResult = await Navigator.push<dynamic>(
-        context,
-        MaterialPageRoute(
-          builder: (ctx) => FoodDetailScreen(
-            foodData: FoodDetailData(
-              id: '',
-              name: result.displayName,
-              categoryIds: preCheckedCategories,
-              imageUrl: result.imageUrl,
-            ),
-            mode: FoodDetailMode.addFromSearch,
-            screenContext: _isSwapping ? FoodDetailContext.swapFood : FoodDetailContext.addFood,
-            preSelectedCategories: preCheckedCategories,
-            showCategories: true,
-            showProductType: true,
-          ),
-        ),
-      );
-
-      if (detailResult is FoodDetailResult && mounted) {
-        setState(() { _isSavingScannedFood = true; });
-        try {
-          final categoryStrings = detailResult.categoryIds.map((id) {
-            switch (id) {
-              case 1: return 'before_run';
-              case 2: return 'during_run';
-              case 3: return 'after_run';
-              default: return 'before_run';
-            }
-          }).toList();
-
-          final food = Food(
-            id: detailResult.foodId.isEmpty
-                ? DateTime.now().millisecondsSinceEpoch.toString()
-                : detailResult.foodId,
-            name: detailResult.name,
-            categories: categoryStrings,
-            servingSize: detailResult.servingSize,
-            servingAmount: detailResult.servingAmount,
-            servingUnit: detailResult.servingUnit,
-            carbsPerServing: detailResult.carbsPerServing,
-            proteinPerServing: detailResult.proteinPerServing,
-            fatPerServing: detailResult.fatPerServing,
-            sodiumMg: detailResult.sodiumMg,
-            caloriesPerServing: detailResult.caloriesPerServing,
-            fluidMlPerServing: detailResult.fluidMlPerServing,
-            productTypeId: detailResult.productType,
-            imageAddress: result.imageUrl,
-          );
-
-          final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
-          await userFoodCrudService.saveUserFood(food, detailResult.categoryIds);
-          await ref.read(swapFoodControllerProvider(_params).notifier)
-              .refreshFoods(selectAfterRefresh: food, expandMyFoods: true);
-
-          _searchController.clear();
-          if (mounted) {
-            MealvanaSnackbar.showSuccess(context, '${result.title} added!');
-          }
-        } catch (e) {
-          if (mounted) {
-            MealvanaSnackbar.showError(context, 'Failed to save food: $e');
-          }
-        } finally {
-          if (mounted) {
-            setState(() { _isSavingScannedFood = false; });
-          }
         }
       }
     }
@@ -1060,6 +1046,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
           fatPerServing: result.fatPerServing,
           sodiumMg: result.sodiumMg,
           fluidMlPerServing: result.fluidMlPerServing,
+          productTypeId: result.productType,
           categoryIds: result.categoryIds,
         );
 

@@ -146,6 +146,7 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
     double? fatPerServing,
     int? sodiumMg,
     double? fluidMlPerServing,
+    String? productTypeId,
     List<String>? categories,
   }) async {
     // Build update companion with only provided fields
@@ -177,6 +178,9 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
       sodiumMg: sodiumMg != null ? Value(sodiumMg) : const Value.absent(),
       fluidMlPerServing: fluidMlPerServing != null
           ? Value(fluidMlPerServing)
+          : const Value.absent(),
+      productTypeId: productTypeId != null
+          ? Value(productTypeId)
           : const Value.absent(),
       categories: categories != null
           ? Value(categories.isNotEmpty ? '{${categories.join(',')}}' : null)

@@ -326,6 +326,56 @@ export function generateDuringPhaseRuleBased(
     }
   }
 
+  // ---- STEP 2.5: Carb deficit recovery ----
+  // If still significantly under carb target after primary + sports drink,
+  // try a SECOND primary carb source (different from what was picked)
+  {
+    const carbDeficit = carbTarget - carbsAssigned;
+    if (carbDeficit > carbTarget * 0.2 && categorized.primary_carb.length > 1) {
+      const alternates = categorized.primary_carb.filter(f =>
+        !primaryCarb || f.id !== primaryCarb.id
+      );
+      const secondaryCarb = pickWeighted(alternates, 'Secondary carb (deficit recovery)');
+      if (secondaryCarb) {
+        let secServings = carbDeficit / secondaryCarb.per_serving.carbs_g;
+        secServings = clampServings(secServings, secondaryCarb);
+        if (secServings > 0) {
+          const secResult = buildFoodResult(secondaryCarb, secServings);
+          resultFoods.push(secResult);
+          carbsAssigned += secResult.carbs_grams;
+          sodiumAssigned += secResult.sodium_mg;
+          fluidAssigned += secResult.fluids_ml;
+
+          console.log(
+            `[DURING-RULES] Secondary carb: ${secondaryCarb.name} x${secServings} = ${secResult.carbs_grams}g carbs (deficit recovery)`
+          );
+        }
+      }
+    }
+    // If STILL in deficit (>30%) and sports drink was skipped, try adding one now
+    if (carbTarget > 0 && carbTarget - carbsAssigned > carbTarget * 0.3) {
+      const anySportsDrink = categorized.sports_drink.length > 0
+        ? categorized.sports_drink[0]
+        : null;
+      if (anySportsDrink && !sportsDrink && anySportsDrink.per_serving.carbs_g > 0) {
+        const deficit = carbTarget - carbsAssigned;
+        let recoveryServings = deficit / anySportsDrink.per_serving.carbs_g;
+        recoveryServings = clampServings(recoveryServings, anySportsDrink);
+        if (recoveryServings > 0) {
+          const recoveryResult = buildFoodResult(anySportsDrink, recoveryServings);
+          resultFoods.push(recoveryResult);
+          carbsAssigned += recoveryResult.carbs_grams;
+          sodiumAssigned += recoveryResult.sodium_mg;
+          fluidAssigned += recoveryResult.fluids_ml;
+
+          console.log(
+            `[DURING-RULES] Sports drink (deficit recovery): ${anySportsDrink.name} x${recoveryServings} = ${recoveryResult.carbs_grams}g carbs`
+          );
+        }
+      }
+    }
+  }
+
   // ---- STEP 3: Bike solids (cycling only) ----
   if (isCycling && categorized.bike_solid.length > 0) {
     // Add bike solids for sustained energy; use remaining carb gap
@@ -438,6 +488,15 @@ export function generateDuringPhaseRuleBased(
     `sodium=${totals.sodium_mg.toFixed(0)}mg/${sodiumTarget}mg, ` +
     `fluid=${totals.water_ml.toFixed(0)}ml/${fluidTarget}ml`
   );
+
+  // Warn if significant carb deficit remains after all steps
+  const carbDeficitPct = carbTarget > 0 ? ((carbTarget - totals.carbs_g) / carbTarget * 100) : 0;
+  if (carbDeficitPct > 20) {
+    console.log(
+      `[DURING-RULES] WARNING: Carb deficit ${carbDeficitPct.toFixed(0)}% — ` +
+      `consider adding more food sources to pool`
+    );
+  }
 
   return { foods: resultFoods };
 }

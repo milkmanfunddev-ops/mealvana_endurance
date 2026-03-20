@@ -1261,6 +1261,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
           fatPerServing: result.fatPerServing,
           sodiumMg: result.sodiumMg,
           fluidMlPerServing: result.fluidMlPerServing,
+          productTypeId: result.productType,
           categoryIds: result.categoryIds,
         );
 
