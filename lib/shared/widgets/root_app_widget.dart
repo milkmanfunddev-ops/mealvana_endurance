@@ -10,7 +10,8 @@ import '../../features/app_startup/presentation/widgets/app_startup_widget.dart'
 import '../core/app_router.dart';
 import '../services/app_config.dart';
 import '../services/auth/auth_listener_service.dart';
-import 'responsive_content_wrapper.dart';
+import 'responsive_content_wrapper.dart'
+    show ResponsiveContentWrapper, coachPortalActiveNotifier;
 
 /// Root app widget that handles app initialization and navigation
 /// Following Andrea Bizzotto's patterns for app startup with deep link support
@@ -185,9 +186,13 @@ class _RouteAwareWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: goRouter.routeInformationProvider,
+      listenable: Listenable.merge([
+        goRouter.routeInformationProvider,
+        coachPortalActiveNotifier,
+      ]),
       builder: (context, _) {
-        final isCoachPortal = kIsWeb && _isCoachSession();
+        final isCoachPortal =
+            kIsWeb && (_isCoachSession() || coachPortalActiveNotifier.value);
         return ResponsiveContentWrapper(
           isFullWidth: isCoachPortal,
           child: child,

@@ -128,8 +128,12 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         unitSystem: _unitSystem,
         gutTrainingLevel: _gutTraining,
         sweatRate: _sweatRate,
-        firstName: _firstNameController.text.trim().isNotEmpty ? _firstNameController.text.trim() : null,
-        lastName: _lastNameController.text.trim().isNotEmpty ? _lastNameController.text.trim() : null,
+        firstName: _firstNameController.text.trim().isNotEmpty
+            ? _firstNameController.text.trim()
+            : null,
+        lastName: _lastNameController.text.trim().isNotEmpty
+            ? _lastNameController.text.trim()
+            : null,
       );
 
       if (mounted) {
@@ -158,9 +162,10 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   @override
   Widget build(BuildContext context) {
     final settingsAsync = ref.watch(settingsControllerProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.blackberry,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           // Content area
@@ -193,13 +198,12 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
   Widget _buildLoadingState(BuildContext context) {
     return const Center(
-      child: CircularProgressIndicator(
-        color: AppColors.orange,
-      ),
+      child: CircularProgressIndicator(color: AppColors.orange),
     );
   }
 
   Widget _buildErrorState(BuildContext context, Object error) {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -220,7 +224,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           Text(
             error.toString(),
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textDark,
+              color: theme.colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,
           ),
@@ -230,6 +234,10 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   }
 
   Widget _buildContent(BuildContext context, dynamic state) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final titleColor = isDark ? AppColors.orange : theme.colorScheme.onSurface;
+
     return GestureDetector(
       onTap: () {
         // Dismiss keyboard when tapping outside input fields
@@ -246,27 +254,25 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
               const SizedBox(height: 16),
 
               // Introduction text (matching onboarding)
-              const Text(
+              Text(
                 'Tell us about yourself',
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: 'Sansita',
                   fontSize: 26,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.orange,
                   height: 1.0,
-                ),
+                ).copyWith(color: titleColor),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'This helps us calculate accurate nutrition plans for your activities.',
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: 'Apercu',
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: AppColors.textDark,
                   letterSpacing: 0.192,
                   height: 1.0,
-                ),
+                ).copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
 
               const SizedBox(height: AppSpacing.lg),
@@ -593,12 +599,14 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
               value == Gender.male
                   ? FontAwesomeIcons.mars
                   : value == Gender.female
-                      ? FontAwesomeIcons.venus
-                      : FontAwesomeIcons.genderless,
+                  ? FontAwesomeIcons.venus
+                  : FontAwesomeIcons.genderless,
               size: 28,
               color: isSelected
                   ? (isDark ? AppColors.blackberry : AppColors.cream)
-                  : (isDark ? AppColors.cream.withValues(alpha: 0.5) : AppColors.blackberry.withValues(alpha: 0.5)),
+                  : (isDark
+                        ? AppColors.cream.withValues(alpha: 0.5)
+                        : AppColors.blackberry.withValues(alpha: 0.5)),
             ),
             const SizedBox(height: 4),
 
@@ -610,7 +618,9 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 fontWeight: FontWeight.w700,
                 color: isSelected
                     ? (isDark ? AppColors.blackberry : AppColors.cream)
-                    : (isDark ? AppColors.cream.withValues(alpha: 0.5) : AppColors.blackberry.withValues(alpha: 0.5)),
+                    : (isDark
+                          ? AppColors.cream.withValues(alpha: 0.5)
+                          : AppColors.blackberry.withValues(alpha: 0.5)),
               ),
               textAlign: TextAlign.center,
             ),
@@ -638,8 +648,12 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           onTap: () async {
             final selectedDate = await showAppDatePicker(
               context: context,
-              initialDate: _birthday ?? DateTime.now().subtract(const Duration(days: 365 * 30)),
-              firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
+              initialDate:
+                  _birthday ??
+                  DateTime.now().subtract(const Duration(days: 365 * 30)),
+              firstDate: DateTime.now().subtract(
+                const Duration(days: 365 * 100),
+              ),
               lastDate: DateTime.now().subtract(const Duration(days: 365 * 16)),
             );
             if (selectedDate != null) {
@@ -658,7 +672,9 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.2),
               ),
               borderRadius: AppRadius.inputRadius,
             ),
@@ -741,21 +757,22 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             border: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.2),
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.2),
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
-              borderSide: const BorderSide(
-                color: AppColors.orange,
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: AppColors.orange, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
@@ -868,7 +885,9 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           border: Border.all(
             color: (_runsWithWaterBottle ?? false)
                 ? AppColors.blackberry
-                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                : Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.2),
             width: (_runsWithWaterBottle ?? false) ? 2 : 1,
           ),
           borderRadius: AppRadius.cardRadius,
@@ -885,7 +904,9 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 border: Border.all(
                   color: (_runsWithWaterBottle ?? false)
                       ? AppColors.blackberry
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                      : Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(6),

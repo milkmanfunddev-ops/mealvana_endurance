@@ -1,17 +1,76 @@
-[PLAN-V3] Plan generated successfully (plan_id=c8a20729-ca02-4569-a93d-320fd5385e55)
-[DURING-RULES] Sports drink: sports_drink x2.5 = 75g carbs, 1200ml fluid
-[DURING-RULES] Primary carb: energy_gel x7.5 = 187.5g carbs
-[DURING-RULES] Hydration: water x4.5 = 2160ml
-[PLAN-V3] Plan generated successfully (plan_id=7d01e17d-94da-4309-be25-4f294117e572)
+Supabase
+Milkman
+Free
+
+Mealvana Endurance Prod
+
+main
+Production
+
+
+Connect
+Feedback
+
+Search...
+
+K
+
+
+
+
+
+lbm54
+
+Edge Functions
+Manage
+Functions
+Secrets
+Edge Functions
+generate-nutrition-plan-v3
+generate-nutrition-plan-v3
+https://wvmvsodrvbkxfydabqed.supabase.co/functions/v1/generate-nutrition-plan-v3
+
+
+18 hours ago
+Docs
+
+Download
+
+Test
+Overview
+Invocations
+Logs
+Code
+Settings
+Search events
+
+
+Last hour
+
+Severity
+
+Chart
+
+Explore via query
+Mar 20, 2026, 08:35am
+Mar 20, 2026, 09:34am
+[TMPL-FILTER-DISLIKED] Keeping user food despite dislike: Sparkle
+[TMPL-FILTER-DISLIKED] Excluding disliked food: coconut_water (id: 7b56b1d6-b77c-4feb-81d6-7f3cfc6b3dfb)
+[TMPL-FOODS-AFTER] Combined 6 template + 7 user = 13 total
+[TMPL-FILTER-DISLIKED] Excluding disliked food: sweet_potato (id: a4020770-5940-4461-8d08-8ca865750379)
+[TMPL-FOODS-AFTER] Found 0 uncategorized user foods (7 total user foods)
+[TMPL-FILTER-DISLIKED] Excluding disliked food: protein_shake (id: 8e7d500e-8796-45ed-8d34-ecb2aa0358d6)
+[DURING-RULES] Final: 2 foods, carbs=188g/193g, sodium=600mg/1909mg, fluid=2640ml/2580ml
+[DURING-RULES] Primary carb selection: picked energy_chews (1/2 candidates: energy_chews, energy_gel)
+[DURING-RULES] Pool: 2 primary_carb, 0 sports_drink, 5 bike_solid, 1 hydration, 0 electrolyte
+[DURING-RULES] Targets: carbs=193g, sodium=1909mg, fluid=2580ml, sport=running
+[DURING-RULES] Hydration: water x11 = 2640ml
+[DURING-RULES] Primary carb: energy_chews x7.5 = 187.5g carbs
+[TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_tablet (id: 044b8b29-2d6c-48ff-812f-cdb4c35f9c31)
+[TMPL-FOODS-DURING] Combined 18 template + 3 user = 21 total
+[TMPL-FOODS-DURING] Found 0 uncategorized user foods (3 total user foods)
 [TMPL-FILTER-DISLIKED] Excluding disliked food: pretzels (id: 8ac09937-f522-44aa-894e-c45482a35993)
-[DURING-RULES] Pool: 3 primary_carb, 1 sports_drink, 3 bike_solid, 1 hydration, 2 electrolyte
-[TMPL-FILTER-DISLIKED] Excluding disliked food: pickle_juice_shot (id: 657b7dd0-244d-464e-a5a8-65fbe838dd0a)
-[TMPL-FILTER-DISLIKED] Excluding disliked food: stroopwafel (id: 2b29010b-4077-4e6d-b55d-6825b6271991)
-[TMPL-FOODS-DURING] Combined 18 template + 2 user = 20 total
-[DURING-RULES] Targets: carbs=266g, sodium=2637mg, fluid=3564ml, sport=running
-[TMPL-FILTER-DISLIKED] Excluding disliked food: fig_bar (id: 811917ac-4a57-4294-81a3-09cbd414de9a)
-[TMPL-FILTER-DISLIKED] Excluding disliked food: dates (id: 88343d31-ca35-4f69-8b33-586a788a8d7f)
-[TMPL-FILTER-DISLIKED] Excluding disliked food: applesauce_pouch (id: 97642f6e-55df-4af5-8e5d-8e34bb9538d7)
-[TMPL-FOODS-DURING] Found 0 uncategorized user foods (2 total user foods)
-[PLAN-V3] after LP solved: 4 foods
-[TMPL-FOODS-AFTER] Found 0 uncategorized user foods (1 total user foods)
+
+Load older
+Showing 100 results
+generate-nutrition-plan-v3 | Logs | Edge Functions | Supabase

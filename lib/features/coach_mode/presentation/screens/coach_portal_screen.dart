@@ -12,7 +12,11 @@ import '../widgets/portal_messages_panel.dart';
 /// Left sidebar: navigation + athlete list
 /// Right panel: athlete detail, reports, or messages
 class CoachPortalScreen extends ConsumerWidget {
-  const CoachPortalScreen({super.key});
+  const CoachPortalScreen({super.key, this.onBackToApp});
+
+  /// Called when the user taps "Back to App" in the sidebar.
+  /// If null, the sidebar falls back to `context.go('/main')`.
+  final VoidCallback? onBackToApp;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -37,7 +41,7 @@ class CoachPortalScreen extends ConsumerWidget {
       body: Row(
         children: [
           // Left sidebar
-          const PortalSidebar(),
+          PortalSidebar(onBackToApp: onBackToApp),
 
           // Divider
           const VerticalDivider(

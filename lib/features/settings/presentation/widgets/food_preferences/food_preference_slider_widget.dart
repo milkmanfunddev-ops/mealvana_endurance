@@ -18,7 +18,7 @@ class FoodPreferenceSliderWidget extends StatelessWidget {
     required this.onLevelChanged,
   });
 
-  Color _getIconColor(int level, bool isAvoid) {
+  Color _getIconColor(BuildContext context, int level, bool isAvoid) {
     if (isAvoid) {
       return level == 0 ? AppColors.dragonfruit : Colors.grey;
     } else {
@@ -28,6 +28,17 @@ class FoodPreferenceSliderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final trackColor = isDark
+        ? Colors.white.withValues(alpha: 0.7)
+        : theme.colorScheme.onSurface.withValues(alpha: 0.32);
+    final activeDotColor = isDark ? Colors.white : theme.colorScheme.onSurface;
+    final inactiveDotColor = isDark
+        ? Colors.white.withValues(alpha: 0.3)
+        : theme.colorScheme.onSurface.withValues(alpha: 0.25);
+    final handleColor = isDark ? Colors.white : theme.colorScheme.primary;
+
     return Column(
       children: [
         // Slider track
@@ -39,12 +50,18 @@ class FoodPreferenceSliderWidget extends StatelessWidget {
             return GestureDetector(
               onHorizontalDragStart: (details) {
                 final localX = details.localPosition.dx - 20;
-                final newLevel = ((localX / trackWidth) * 4).round().clamp(0, 4);
+                final newLevel = ((localX / trackWidth) * 4).round().clamp(
+                  0,
+                  4,
+                );
                 onLevelChanged(newLevel);
               },
               onHorizontalDragUpdate: (details) {
                 final localX = details.localPosition.dx - 20;
-                final newLevel = ((localX / trackWidth) * 4).round().clamp(0, 4);
+                final newLevel = ((localX / trackWidth) * 4).round().clamp(
+                  0,
+                  4,
+                );
 
                 if (newLevel != sliderLevel) {
                   onLevelChanged(newLevel);
@@ -52,7 +69,10 @@ class FoodPreferenceSliderWidget extends StatelessWidget {
               },
               onTapDown: (details) {
                 final localX = details.localPosition.dx - 20;
-                final newLevel = ((localX / trackWidth) * 4).round().clamp(0, 4);
+                final newLevel = ((localX / trackWidth) * 4).round().clamp(
+                  0,
+                  4,
+                );
                 onLevelChanged(newLevel);
               },
               child: Container(
@@ -65,10 +85,7 @@ class FoodPreferenceSliderWidget extends StatelessWidget {
                       left: 20,
                       right: 20,
                       top: 19,
-                      child: Container(
-                        height: 2,
-                        color: Colors.white,
-                      ),
+                      child: Container(height: 2, color: trackColor),
                     ),
 
                     // Track dots
@@ -82,8 +99,8 @@ class FoodPreferenceSliderWidget extends StatelessWidget {
                           height: 10,
                           decoration: BoxDecoration(
                             color: index <= sliderLevel
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.3),
+                                ? activeDotColor
+                                : inactiveDotColor,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -98,11 +115,13 @@ class FoodPreferenceSliderWidget extends StatelessWidget {
                         width: 20,
                         height: 20,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: handleColor,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(
+                                alpha: isDark ? 0.3 : 0.2,
+                              ),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -129,13 +148,13 @@ class FoodPreferenceSliderWidget extends StatelessWidget {
                 Icon(
                   FontAwesomeIcons.xmark,
                   size: 15,
-                  color: _getIconColor(sliderLevel, true),
+                  color: _getIconColor(context, sliderLevel, true),
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   'Avoid',
                   style: AppTextStyles.smallLabel.copyWith(
-                    color: _getIconColor(sliderLevel, true),
+                    color: _getIconColor(context, sliderLevel, true),
                   ),
                 ),
               ],
@@ -147,14 +166,14 @@ class FoodPreferenceSliderWidget extends StatelessWidget {
                 Text(
                   'Like',
                   style: AppTextStyles.smallLabel.copyWith(
-                    color: _getIconColor(sliderLevel, false),
+                    color: _getIconColor(context, sliderLevel, false),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Icon(
                   FontAwesomeIcons.solidHeart,
                   size: 15,
-                  color: _getIconColor(sliderLevel, false),
+                  color: _getIconColor(context, sliderLevel, false),
                 ),
               ],
             ),

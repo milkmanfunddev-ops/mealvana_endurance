@@ -1,399 +1,421 @@
-(base) leemartin@Lees-MacBook-Pro ~ % cd development 
-(base) leemartin@Lees-MacBook-Pro development % cd mealvana_endurance
-(base) leemartin@Lees-MacBook-Pro mealvana_endurance % npx add-mcp https://mcp.sentry.dev/mcp
-Need to install the following packages:
-add-mcp@1.5.1
-Ok to proceed? (y) y
-
-
- █████╗ ██████╗ ██████╗       ███╗   ███╗ ██████╗██████╗ 
-██╔══██╗██╔══██╗██╔══██╗      ████╗ ████║██╔════╝██╔══██╗
-███████║██║  ██║██║  ██║█████╗██╔████╔██║██║     ██████╔╝
-██╔══██║██║  ██║██║  ██║╚════╝██║╚██╔╝██║██║     ██╔═══╝ 
-██║  ██║██████╔╝██████╔╝      ██║ ╚═╝ ██║╚██████╗██║     
-╚═╝  ╚═╝╚═════╝ ╚═════╝       ╚═╝     ╚═╝ ╚═════╝╚═╝     
-
-│
-◇  Source: https://mcp.sentry.dev/mcp (remote)
-│
-●  Server name: sentry
-│
-◇  Detected 3 agents
-│
-◇  Select agents to install to
-│  Claude Code, GitHub Copilot CLI, VS Code
-
-│
-◇  Installation Summary ─────────────────────────────╮
-│                                                    │
-│  Server: sentry                                    │
-│  Type: remote                                      │
-│  Scope: Project                                    │
-│  Agents: Claude Code, GitHub Copilot CLI, VS Code  │
-│                                                    │
-├────────────────────────────────────────────────────╯
-│
-◇  Proceed with installation?
-│  Yes
-│
-◇  Installation complete
-
-│
-◇  Installed to 3 agents ───────────────────────────────────────────────────╮
-│                                                                           │
-│  ✓ Claude Code: ~/development/mealvana_endurance/.mcp.json                │
-│  ✓ GitHub Copilot CLI: ~/development/mealvana_endurance/.vscode/mcp.json  │
-│  ✓ VS Code: ~/development/mealvana_endurance/.vscode/mcp.json             │
-│                                                                           │
-├───────────────────────────────────────────────────────────────────────────╯
-
-│
-└  Done!
-
-(base) leemartin@Lees-MacBook-Pro mealvana_endurance % claude --dangerously-skip-permissions
 
  ▐▛███▜▌   Claude Code v2.1.32
 ▝▜█████▛▘  Opus 4.6 · Claude Max
   ▘▘ ▝▝    ~/development/mealvana_endurance
 
-❯ /mcp                                                                                                                                                                                                                                
-  ⎿  Authentication successful. Connected to sentry.                                                                                                                                                                                  
-                                                                                                                                                                                                                                      
-❯ please use the sentry mcp and look at our current issues int he mealvana prod project.  summarize the issues and then look at them one by one in our code and see if they need any fixes and if they do please suggest how you      
-  would recommend we fix these things                                                                                                                                                                                                 
-                                                                                                                                                                                                                                      
-⏺ I'll start by finding your Sentry organization and project, then pull up the current issues.                                                                                                                                        
-                                                                                                                                                                                                                                      
-⏺ sentry - find_organizations (MCP)                                                                                                                                                                                                   
-  ⎿  # Organizations
-                                                                                                                                                                                                                                      
-     ## **milkman-24**                                                                                                                                                                                                                
-     … +9 lines (ctrl+o to expand)                                                                                                                                                                                                    
-                                                                                                                                                                                                                                      
-⏺ sentry - find_projects (MCP)(organizationSlug: "milkman-24", regionUrl: "https://us.sentry.io", query: "mealvana")                                                                                                                  
-  ⎿  # Projects in **milkman-24**                                                                                                                                                                                                     
-                                                                                                                                                                                                                                      
-     **Search query:** "mealvana"                                                                                                                                                                                                     
-     … +3 lines (ctrl+o to expand)                                                                                                                                                                                                    
-                                                                                                                                                                                                                                      
-⏺ Good, found the production project. Now let me search for current issues.                                                                                                                                                           
-                                                                                                                                                                                                                                      
-⏺ sentry - search_issues (MCP)(organizationSlug: "milkman-24", projectSlugOrId: "mealvana-endurance", regionUrl: "https://us.sentry.io", naturalLanguageQuery: "all unresolved issues", limit: 25)                                    
-  ⎿  # Search Results for "all unresolved issues"                                                                                                                                                                                     
-                                                                                                                                                                                                                                      
-     ⚠️ **IMPORTANT**:↓Display these issues as highlighted cards with status indicators, assignee info, and clickable Issue IDs.                                                                                                       
-     … +287 lines (ctrl+o to expand)                                                                                                                                                                                                  
-                                                                                                                                                                                                                                      
-⏺ Found 25 unresolved issues. Let me get detailed information on the most impactful ones to investigate in our codebase.                                                                                                              
-                                                                                                                                                                                                                                      
-⏺ Let me get details on the top 6 most impactful issues in parallel.                                                                                                                                                                  
-  
-⏺ sentry - get_issue_details (MCP)(organizationSlug: "milkman-24", issueId: "MEALVANA-ENDURANCE-7R", regionUrl: "https://us.sentry.io")                                                                                               
-  ⎿  # Issue MEALVANA-ENDURANCE-7R in **milkman-24**              
-                                                                                                                                                                                                                                      
-     **Description**: StateError: Bad state: Upload failed for activities: Uploaded 0/5 activities; 5 failed and remain dirty for retry.                                                                                            
-     … +157 lines (ctrl+o to expand)                                                                                                                                                                                                  
-                                                     
-⏺ sentry - get_issue_details (MCP)(organizationSlug: "milkman-24", issueId: "MEALVANA-ENDURANCE-3W", regionUrl: "https://us.sentry.io")                                                                                               
-  ⎿ # Issue MEALVANA-ENDURANCE-3W in **milkman-24**                                                                                                                                                                                   
-                                                     
-    **Description**: PostgrestException: PostgrestException(message: insert or update on table "activities" violates foreign key constraint "fk_activities_brick_id", code: 23503, details: Key (brick_id)=(dc74159b-c55d-44f4-90     
-    … +163 lines (ctrl+o to expand)                                                                                                                                                                                                   
-                                                     
-                                                                                                                                                                                                                                      
-⏺ sentry - get_issue_details (MCP)(organizationSlug: "milkman-24", issueId: "MEALVANA-ENDURANCE-7H", regionUrl: "https://us.sentry.io")                                                                                               
-  ⎿  # Issue MEALVANA-ENDURANCE-7H in **milkman-24** 
-                                                                                                                                                                                                                                      
-     **Description**: UnmountedRefException: Cannot use the Ref of eventsControllerProvider after it has been disposed. This typically happens if:                                                                                    
-     … +156 lines (ctrl+o to expand)
-                                                                                                                                                                                                                                      
-⏺ sentry - get_issue_details (MCP)(organizationSlug: "milkman-24", issueId: "MEALVANA-ENDURANCE-78", regionUrl: "https://us.sentry.io")
-  ⎿  # Issue MEALVANA-ENDURANCE-78 in **milkman-24**                                                                                                                                                                                  
-                                                     
-     **Description**: FlutterError: A RenderFlex overflowed by 59 pixels on the right.                                                                                                                                                
-     … +260 lines (ctrl+o to expand)                                                                                                                                                                                                  
-                                                     
-⏺ sentry - get_issue_details (MCP)(organizationSlug: "milkman-24", issueId: "MEALVANA-ENDURANCE-76", regionUrl: "https://us.sentry.io")                                                                                               
-  ⎿  # Issue MEALVANA-ENDURANCE-76 in **milkman-24**                                                                                                                                                                                  
-                                                     
-     **Description**: _Exception: Exception: No current user found to update auth provider                                                                                                                                            
-     … +168 lines (ctrl+o to expand)                                                                                                                                                                                                  
-                                                                                                                                                                                                                                      
-⏺ sentry - get_issue_details (MCP)(organizationSlug: "milkman-24", issueId: "MEALVANA-ENDURANCE-6B", regionUrl: "https://us.sentry.io")                                                                                               
-  ⎿  # Issue MEALVANA-ENDURANCE-6B in **milkman-24**                                                                                                                                                                                  
-                                                                                                                                                                                                                                      
-     **Description**: GoError: GoError: There is nothing to pop
-     … +186 lines (ctrl+o to expand)                                                                                                                                                                                                  
-                                                                                                                                                                                                                                      
-⏺ Good, I have detailed info on the top issues. Now let me investigate the relevant source code for each. I'll launch parallel research agents for the most impactful issues.
-                                                                                                                                                                                                                                      
-⏺ 4 code-researcher agents finished (ctrl+o to expand)                                                                                                                                                                                
-   ├─ Investigate upload failure issue · 6 tool uses · 71.6k tokens
-   │  ⎿  Done                                                                                                                                                                                                                         
-   ├─ Investigate brick_id FK constraint · 10 tool uses · 70.8k tokens                                                                                                                                                                
-   │  ⎿  Done                                                                        
-   ├─ Investigate events controller ref · 1 tool use · 25.6k tokens                                                                                                                                                                   
-   │  ⎿  Done                                                                   
-   └─ Investigate navigation and auth issues · 21 tool uses · 50.5k tokens
-      ⎿  Done                                                                               
-                                
-⏺ All research is complete. Let me compile the full analysis.  
-                                                    
-⏺ ---                                                                  
-  Sentry Issues Summary - Mealvana Endurance (Production)                                                                                                                                                                             
-                                                                                                                                                                                                                                      
-  25 unresolved issues found. I've categorized them by severity and actionability.                                                                                                                                                    
-                                                                                                                                                                                                                                      
-  ---                                                                                                                                                                                                                                 
-  HIGH PRIORITY - Need Code Fixes                                                                                                                                                                                                     
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Plan to implement                                                                                                                                                                                                                  │
+│                                                                                                                                                                                                                                    │
+│ Plan: Comprehensive Nutrition Algorithm Fixes                                                                                                                                                                                      │
+│                                                                                                                                                                                                                                    │
+│ Root Cause Analysis                                                                                                                                                                                                                │
+│                                                                                                                                                                                                                                    │
+│ The after-phase failures all trace back to one fundamental problem: the protein target is too low and the LP constraint is too tight for standard recovery foods.                                                                  │
+│                                                                                                                                                                                                                                    │
+│ Post-workout protein = 0.3 g/kg:                                                                                                                                                                                                   │
+│ ┌───────────────┬────────┬────────────────┬─────────────────┬─────────────────────┬───────────────────┐                                                                                                                            │
+│ │    Profile    │ Weight │ Protein Target │ LP Range (±10%) │ Protein Shake (25g) │ Protein Bar (20g) │                                                                                                                            │
+│ ├───────────────┼────────┼────────────────┼─────────────────┼─────────────────────┼───────────────────┤                                                                                                                            │
+│ │ Small female  │ 50kg   │ 15g            │ [13.5, 16.5]    │ FAILS (25 > 16.5)   │ FAILS (20 > 16.5) │                                                                                                                            │
+│ ├───────────────┼────────┼────────────────┼─────────────────┼─────────────────────┼───────────────────┤                                                                                                                            │
+│ │ Average male  │ 70kg   │ 21g            │ [18.9, 23.1]    │ FAILS (25 > 23.1)   │ fits              │                                                                                                                            │
+│ ├───────────────┼────────┼────────────────┼─────────────────┼─────────────────────┼───────────────────┤                                                                                                                            │
+│ │ Cold weather  │ 70kg   │ 21g            │ [18.9, 23.1]    │ FAILS (25 > 23.1)   │ fits              │                                                                                                                            │
+│ ├───────────────┼────────┼────────────────┼─────────────────┼─────────────────────┼───────────────────┤                                                                                                                            │
+│ │ Hot weather   │ 82kg   │ 25g            │ [22.5, 27.5]    │ fits                │ fits              │                                                                                                                            │
+│ ├───────────────┼────────┼────────────────┼─────────────────┼─────────────────────┼───────────────────┤                                                                                                                            │
+│ │ Heavy cyclist │ 91kg   │ 27g            │ [24.3, 29.7]    │ fits                │ fits              │                                                                                                                            │
+│ └───────────────┴────────┴────────────────┴─────────────────┴─────────────────────┴───────────────────┘                                                                                                                            │
+│ The LP solver can't select a protein shake for anyone under ~84kg. The V4 range is ±20% but the LP uses ±10% — a mismatch that makes the LP unnecessarily restrictive. Fix the target + match the constraint range and the         │
+│ existing food pool (protein shake, banana, water, electrolyte tablet) will work.                                                                                                                                                   │
+│                                                                                                                                                                                                                                    │
+│ ---                                                                                                                                                                                                                                │
+│ Fix 1: Increase Post-Workout Protein Target (CRITICAL)                                                                                                                                                                             │
+│                                                                                                                                                                                                                                    │
+│ File: supabase/functions/generate-macros-v4/index.ts (line 182-185)                                                                                                                                                                │
+│                                                                                                                                                                                                                                    │
+│ Change:                                                                                                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│ // BEFORE:                                                                                                                                                                                                                         │
+│ function calculatePostWorkoutProtein(weightKg: number, isFasted: boolean): number {                                                                                                                                                │
+│   const proteinPerKg = isFasted ? 0.35 : 0.3;                                                                                                                                                                                      │
+│   return Math.round(weightKg * proteinPerKg);                                                                                                                                                                                      │
+│ }                                                                                                                                                                                                                                  │
+│                                                                                                                                                                                                                                    │
+│ // AFTER:                                                                                                                                                                                                                          │
+│ function calculatePostWorkoutProtein(weightKg: number, isFasted: boolean): number {                                                                                                                                                │
+│   const proteinPerKg = isFasted ? 0.45 : 0.4;                                                                                                                                                                                      │
+│   return Math.max(20, Math.round(weightKg * proteinPerKg));                                                                                                                                                                        │
+│ }                                                                                                                                                                                                                                  │
+│                                                                                                                                                                                                                                    │
+│ Result:                                                                                                                                                                                                                            │
+│ ┌───────────────┬────────┬────────────┬────────────┬───────────────┬─────────────────────┐                                                                                                                                         │
+│ │    Profile    │ Weight │ Old Target │ New Target │ LP ±10% Range │ Protein Shake (25g) │                                                                                                                                         │
+│ ├───────────────┼────────┼────────────┼────────────┼───────────────┼─────────────────────┤                                                                                                                                         │
+│ │ Small female  │ 50kg   │ 15g        │ 20g        │ [18, 22]      │ still slightly over │                                                                                                                                         │
+│ ├───────────────┼────────┼────────────┼────────────┼───────────────┼─────────────────────┤                                                                                                                                         │
+│ │ Average male  │ 70kg   │ 21g        │ 28g        │ [25.2, 30.8]  │ fits                │                                                                                                                                         │
+│ ├───────────────┼────────┼────────────┼────────────┼───────────────┼─────────────────────┤                                                                                                                                         │
+│ │ Hot weather   │ 82kg   │ 25g        │ 33g        │ [29.7, 36.3]  │ fits                │                                                                                                                                         │
+│ ├───────────────┼────────┼────────────┼────────────┼───────────────┼─────────────────────┤                                                                                                                                         │
+│ │ Heavy cyclist │ 91kg   │ 27g        │ 36g        │ [32.4, 39.6]  │ fits                │                                                                                                                                         │
+│ └───────────────┴────────┴────────────┴────────────┴───────────────┴─────────────────────┘                                                                                                                                         │
+│ The 20g floor ensures even the smallest athletes can use a protein bar. Combined with Fix 2 (widening LP constraint to ±20%), a protein shake will fit for all profiles.                                                           │
+│                                                                                                                                                                                                                                    │
+│ Why 0.4 g/kg is correct:                                                                                                                                                                                                           │
+│                                                                                                                                                                                                                                    │
+│ ACSM and ISSN recommend 0.25-0.5 g/kg post-workout protein for endurance athletes. 0.3 was at the low end; 0.4 is the evidence-based midpoint and ensures standard recovery foods (protein shake, protein bar, chocolate milk) fit │
+│  the target.                                                                                                                                                                                                                       │
+│                                                                                                                                                                                                                                    │
+│ E2E test update needed:                                                                                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│ The test at line 386 checks post_run_protein_g ≈ 21 (0.3 × 70). Update to post_run_protein_g ≈ 28 (0.4 × 70).                                                                                                                      │
+│                                                                                                                                                                                                                                    │
+│ ---                                                                                                                                                                                                                                │
+│ Fix 2: Widen LP Protein Constraint to Match V4 Range (CRITICAL)                                                                                                                                                                    │
+│                                                                                                                                                                                                                                    │
+│ File: supabase/functions/_shared/nutrition/constants.ts (line 63-64)                                                                                                                                                               │
+│                                                                                                                                                                                                                                    │
+│ Change:                                                                                                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│ // BEFORE:                                                                                                                                                                                                                         │
+│ protein: {                                                                                                                                                                                                                         │
+│   before: { min: 0.9, max: 1.1 },  // ±10%                                                                                                                                                                                         │
+│   after: { min: 0.9, max: 1.1 },   // ±10%                                                                                                                                                                                         │
+│ },                                                                                                                                                                                                                                 │
+│                                                                                                                                                                                                                                    │
+│ // AFTER:                                                                                                                                                                                                                          │
+│ protein: {                                                                                                                                                                                                                         │
+│   before: { min: 0.9, max: 1.1 },  // ±10% (before is fine)                                                                                                                                                                        │
+│   after: { min: 0.8, max: 1.2 },   // ±20% — matches V4 range                                                                                                                                                                      │
+│ },                                                                                                                                                                                                                                 │
+│                                                                                                                                                                                                                                    │
+│ Why:                                                                                                                                                                                                                               │
+│                                                                                                                                                                                                                                    │
+│ V4 generates protein ranges as [target * 0.8, target * 1.2] (line 535-536 of generate-macros-v4/index.ts). The LP should match, not be tighter. With this change + Fix 1:                                                          │
+│ ┌───────────────┬────────┬────────────┬───────────────┬─────────────────────────────────────────────────┐                                                                                                                          │
+│ │    Profile    │ Weight │ New Target │ LP ±20% Range │               Protein Shake (25g)               │                                                                                                                          │
+│ ├───────────────┼────────┼────────────┼───────────────┼─────────────────────────────────────────────────┤                                                                                                                          │
+│ │ Small female  │ 50kg   │ 20g        │ [16, 24]      │ still slightly over but post-process catches it │                                                                                                                          │
+│ ├───────────────┼────────┼────────────┼───────────────┼─────────────────────────────────────────────────┤                                                                                                                          │
+│ │ Average male  │ 70kg   │ 28g        │ [22.4, 33.6]  │ fits                                            │                                                                                                                          │
+│ ├───────────────┼────────┼────────────┼───────────────┼─────────────────────────────────────────────────┤                                                                                                                          │
+│ │ Heavy cyclist │ 91kg   │ 36g        │ [28.8, 43.2]  │ fits                                            │                                                                                                                          │
+│ └───────────────┴────────┴────────────┴───────────────┴─────────────────────────────────────────────────┘                                                                                                                          │
+│ For the small female case, even ±20% on a 20g target maxes at 24g, so a 25g protein shake is 1g over. The LP will select a 20g protein bar instead, or a half-serving of protein shake (12.5g) + another protein source. This is   │
+│ acceptable — the post-processing (Fix 5) catches any remaining gap.                                                                                                                                                                │
+│                                                                                                                                                                                                                                    │
+│ ---                                                                                                                                                                                                                                │
+│ Fix 3: Widen LP Sodium Constraint (HIGH)                                                                                                                                                                                           │
+│                                                                                                                                                                                                                                    │
+│ File: supabase/functions/_shared/nutrition/lp-solver.ts (lines 88-96)                                                                                                                                                              │
+│                                                                                                                                                                                                                                    │
+│ Problem:                                                                                                                                                                                                                           │
+│                                                                                                                                                                                                                                    │
+│ Sodium LP constraint uses min: Math.min(sodiumBounds.min, 0.75) → floor of 75%. But after-phase sodium can be 300-700mg and the food pool has few high-sodium foods. The tight floor makes LP infeasible.                          │
+│                                                                                                                                                                                                                                    │
+│ Change:                                                                                                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│ // BEFORE (line 92):                                                                                                                                                                                                               │
+│ min: targets.sodium_mg * Math.min(sodiumBounds.min, 0.75),                                                                                                                                                                         │
+│                                                                                                                                                                                                                                    │
+│ // AFTER:                                                                                                                                                                                                                          │
+│ min: targets.sodium_mg * (phase === 'after' ? 0.50 : Math.min(sodiumBounds.min, 0.75)),                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│ This lets the LP accept solutions that deliver 50%+ of sodium target for after phase. The post-processing (Fix 5) will gap-fill the remaining sodium with an electrolyte.                                                          │
+│                                                                                                                                                                                                                                    │
+│ ---                                                                                                                                                                                                                                │
+│ Fix 4: Increase LP Sodium Weight (HIGH)                                                                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│ File: supabase/functions/_shared/nutrition/constants.ts (line 37)                                                                                                                                                                  │
+│                                                                                                                                                                                                                                    │
+│ Change:                                                                                                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│ // BEFORE:                                                                                                                                                                                                                         │
+│ after: { carbs: 0.9, protein: 0.7, sodium: 0.3 },                                                                                                                                                                                  │
+│                                                                                                                                                                                                                                    │
+│ // AFTER:                                                                                                                                                                                                                          │
+│ after: { carbs: 0.9, protein: 0.7, sodium: 0.6 },                                                                                                                                                                                  │
+│                                                                                                                                                                                                                                    │
+│ Also fix the sodium scoring formula in lp-solver.ts (lines 162-168). The current "sweet spot" targets 200mg regardless of actual target:                                                                                           │
+│ // BEFORE:                                                                                                                                                                                                                         │
+│ const sodiumScore = Math.max(0, effectiveWeights.sodium * (200 - Math.abs(food.per_serving.sodium_mg - 200)));                                                                                                                     │
+│                                                                                                                                                                                                                                    │
+│ // AFTER — scale to actual target:                                                                                                                                                                                                 │
+│ const avgSodiumPerFood = targets.sodium_mg / maxFoodItems;                                                                                                                                                                         │
+│ const sodiumScore = Math.max(0, effectiveWeights.sodium * (avgSodiumPerFood - Math.abs(food.per_serving.sodium_mg - avgSodiumPerFood)));                                                                                           │
+│                                                                                                                                                                                                                                    │
+│ ---                                                                                                                                                                                                                                │
+│ Fix 5: After-Phase Post-Processing for Sodium/Water Gaps (HIGH)                                                                                                                                                                    │
+│                                                                                                                                                                                                                                    │
+│ File: supabase/functions/generate-nutrition-plan-v3/index.ts                                                                                                                                                                       │
+│                                                                                                                                                                                                                                    │
+│ What it does:                                                                                                                                                                                                                      │
+│                                                                                                                                                                                                                                    │
+│ Create postProcessAfterPhase() modeled on existing postProcessDuringPhase() (lines 442-591). Runs after LP or greedy result for after phase.                                                                                       │
+│                                                                                                                                                                                                                                    │
+│ 1. Sodium gap-fill: If sodium < 85% of target:                                                                                                                                                                                     │
+│   - Check if an electrolyte already exists in result → top up servings                                                                                                                                                             │
+│   - Otherwise, add an electrolyte supplement                                                                                                                                                                                       │
+│   - Cap at 1.1x sodium target                                                                                                                                                                                                      │
+│ 2. Water gap-fill: If water < 80% of target:                                                                                                                                                                                       │
+│   - Add water servings                                                                                                                                                                                                             │
+│   - Cap at 1.1x water target                                                                                                                                                                                                       │
+│                                                                                                                                                                                                                                    │
+│ Integration point (line 773):                                                                                                                                                                                                      │
+│                                                                                                                                                                                                                                    │
+│ if (phase === 'after') {                                                                                                                                                                                                           │
+│   resultFoods = await postProcessAfterPhase(supabase, resultFoods, targets, phaseConfig.maxFoods, likedFoods, willingToTryFoods);                                                                                                  │
+│ }                                                                                                                                                                                                                                  │
+│                                                                                                                                                                                                                                    │
+│ This is the safety net — if the LP delivers a good protein/carb solution but sodium/water are low, post-processing fills the gap with an electrolyte tablet and/or water. Simple, targeted, no exotic foods needed.                │
+│                                                                                                                                                                                                                                    │
+│ ---                                                                                                                                                                                                                                │
+│ Fix 6: Greedy Fallback Improvements (HIGH)                                                                                                                                                                                         │
+│                                                                                                                                                                                                                                    │
+│ File: supabase/functions/_shared/nutrition/greedy-fallback.ts                                                                                                                                                                      │
+│                                                                                                                                                                                                                                    │
+│ Changes:                                                                                                                                                                                                                           │
+│                                                                                                                                                                                                                                    │
+│ a) Match maxFoods to LP (line 59):                                                                                                                                                                                                 │
+│ // BEFORE:                                                                                                                                                                                                                         │
+│ const maxFoods = phase === 'during' ? 5 : phase === 'after' ? 5 : 3;                                                                                                                                                               │
+│                                                                                                                                                                                                                                    │
+│ // AFTER:                                                                                                                                                                                                                          │
+│ const maxFoods = phase === 'during' ? 5 : phase === 'after' ? 6 : 3;                                                                                                                                                               │
+│                                                                                                                                                                                                                                    │
+│ b) Raise stop condition thresholds (lines 228-232):                                                                                                                                                                                │
+│ // BEFORE:                                                                                                                                                                                                                         │
+│ const proteinMet = proteinTarget <= 0 || totals.protein_g >= proteinTarget * 0.7;                                                                                                                                                  │
+│ const waterMet = waterTarget <= 0 || totals.water_ml >= waterTarget * 0.7;                                                                                                                                                         │
+│                                                                                                                                                                                                                                    │
+│ // AFTER:                                                                                                                                                                                                                          │
+│ const proteinMet = proteinTarget <= 0 || totals.protein_g >= proteinTarget * 0.85;                                                                                                                                                 │
+│ const waterMet = waterTarget <= 0 || totals.water_ml >= waterTarget * 0.80;                                                                                                                                                        │
+│                                                                                                                                                                                                                                    │
+│ c) Add sodium/water gap-fill pass after main loop (after line 234):                                                                                                                                                                │
+│ After the main greedy loop, if sodium < 75% or water < 75% of target and we haven't hit maxFoods, scan remaining foods for electrolyte/hydration items and add them. This ensures sodium and water get gap-filled even when the    │
+│ carb-focused main loop stops early.                                                                                                                                                                                                │
+│                                                                                                                                                                                                                                    │
+│ d) Allow zero-carb foods to be considered for sodium/water (line 114-132):                                                                                                                                                         │
+│ Currently neededServings is only calculated from protein/carb deficit. If both are met, the food is skipped even if it would help sodium/water. Add a sodium/water-driven serving calculation when primary macros are met.         │
+│                                                                                                                                                                                                                                    │
+│ ---                                                                                                                                                                                                                                │
+│ Fix 7: During-Phase Electrolyte Max Servings (MEDIUM)                                                                                                                                                                              │
+│                                                                                                                                                                                                                                    │
+│ Files: Supabase migration + supabase/functions/_shared/nutrition/during-rule-solver.ts                                                                                                                                             │
+│                                                                                                                                                                                                                                    │
+│ Migration:                                                                                                                                                                                                                         │
+│                                                                                                                                                                                                                                    │
+│ UPDATE template_foods                                                                                                                                                                                                              │
+│ SET max_servings_during = 6                                                                                                                                                                                                        │
+│ WHERE product_type = 'supplement' AND is_electrolyte = true;                                                                                                                                                                       │
+│                                                                                                                                                                                                                                    │
+│ Code change (during-rule-solver.ts, after line 364):                                                                                                                                                                               │
+│                                                                                                                                                                                                                                    │
+│ Add second electrolyte fallback — if first electrolyte is capped and sodium still under target, try the second-best electrolyte from the pool.                                                                                     │
+│                                                                                                                                                                                                                                    │
+│ ---                                                                                                                                                                                                                                │
+│ Fix 8: Before-Phase Vegan/Vegetarian Diet Filtering (MEDIUM)                                                                                                                                                                       │
+│                                                                                                                                                                                                                                    │
+│ File: supabase/functions/generate-macros-v4/pre-workout.ts (lines 237-249)                                                                                                                                                         │
+│                                                                                                                                                                                                                                    │
+│ Change:                                                                                                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│ if (diet !== 'none' && diet) {                                                                                                                                                                                                     │
+│   const excluded: string[] = [];                                                                                                                                                                                                   │
+│   if (diet === 'gluten-free' || diet === 'all-free') excluded.push('Gluten');                                                                                                                                                      │
+│   if (diet === 'dairy-free' || diet === 'all-free') excluded.push('Dairy');                                                                                                                                                        │
+│   if (diet === 'peanut-free' || diet === 'all-free') excluded.push('Peanut');                                                                                                                                                      │
+│   // NEW:                                                                                                                                                                                                                          │
+│   if (diet === 'vegan') excluded.push('Dairy', 'Eggs');                                                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│   if (excluded.length > 0) {                                                                                                                                                                                                       │
+│     filtered = filtered.filter((t) =>                                                                                                                                                                                              │
+│       !t.allergens.some((a: string) => excluded.includes(a))                                                                                                                                                                       │
+│     );                                                                                                                                                                                                                             │
+│   }                                                                                                                                                                                                                                │
+│                                                                                                                                                                                                                                    │
+│   // NEW: vegan also excludes templates with animal-product components                                                                                                                                                             │
+│   if (diet === 'vegan') {                                                                                                                                                                                                          │
+│     const veganExcluded = ['honey', 'eggs', 'scrambled_eggs', 'chocolate_milk', 'yogurt', 'greek_yogurt', 'whey'];                                                                                                                 │
+│     filtered = filtered.filter((t) => {                                                                                                                                                                                            │
+│       const components = t.component_food_names ?? [];                                                                                                                                                                             │
+│       return !components.some((c) => veganExcluded.includes(c.toLowerCase()));                                                                                                                                                     │
+│     });                                                                                                                                                                                                                            │
+│   }                                                                                                                                                                                                                                │
+│ }                                                                                                                                                                                                                                  │
+│                                                                                                                                                                                                                                    │
+│ New vegan-friendly pre-workout templates (early morning race-day foods):                                                                                                                                                           │
+│                                                                                                                                                                                                                                    │
+│ Add via Supabase migration to pre_workout_templates table:                                                                                                                                                                         │
+│                                                                                                                                                                                                                                    │
+│ Full Meal (1.5-3 hours):                                                                                                                                                                                                           │
+│ 1. Oatmeal (water) + Banana + Maple Syrup + Coffee — allergens: {gluten}, no dairy/eggs. Classic race morning. ~85g carbs.                                                                                                         │
+│ 2. Toast + Peanut Butter + Banana + OJ — allergens: {gluten, peanuts}, vegan. Standard race breakfast. ~95g carbs.                                                                                                                 │
+│ 3. Rice + Banana + Sports Drink — allergens: {}, fully vegan. Simple and gut-friendly. ~90g carbs.                                                                                                                                 │
+│                                                                                                                                                                                                                                    │
+│ Snack (30-90 min):                                                                                                                                                                                                                 │
+│ 4. Oatmeal (water) + Berries + Maple Syrup — allergens: {gluten}. Light and digestible. ~40g carbs.                                                                                                                                │
+│ 5. Rice Cakes + Almond Butter + Banana — allergens: {tree_nuts}. High-energy, easy to digest. ~55g carbs.                                                                                                                          │
+│                                                                                                                                                                                                                                    │
+│ Top-Up (< 30 min):                                                                                                                                                                                                                 │
+│ 6. Dates + Sports Drink — allergens: {}, fully vegan. Quick energy. ~45g carbs.                                                                                                                                                    │
+│ 7. Applesauce + Electrolyte Drink — allergens: {}, fully vegan. Easy on stomach. ~35g carbs.                                                                                                                                       │
+│ 8. Toast + Jam + Banana — allergens: {gluten}. Classic pre-race. ~55g carbs.                                                                                                                                                       │
+│                                                                                                                                                                                                                                    │
+│ ---                                                                                                                                                                                                                                │
+│ Fix 9: After-Phase Template Food Addition (LOW)                                                                                                                                                                                    │
+│                                                                                                                                                                                                                                    │
+│ File: Supabase migration for template_foods table                                                                                                                                                                                  │
+│                                                                                                                                                                                                                                    │
+│ Only ONE food is truly missing from the after-run pool:                                                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│ 1. Plant-Based Protein Shake — carbs: 5g, protein: 25g, sodium: 200mg, water: 350ml — allergens: {soy}, excluded_diets: {}                                                                                                         │
+│   - Vegan protein source — currently the only protein shake is dairy-based, so vegan users have no high-protein recovery option                                                                                                    │
+│                                                                                                                                                                                                                                    │
+│ Everything else (protein bar, banana, water, electrolyte, chocolate milk, greek yogurt) already exists. The real fix is making the LP/greedy actually select them properly (Fixes 1-6).                                            │
+│                                                                                                                                                                                                                                    │
+│ ---                                                                                                                                                                                                                                │
+│ Fix 10: Constants Tuning (LOW)                                                                                                                                                                                                     │
+│                                                                                                                                                                                                                                    │
+│ File: supabase/functions/_shared/nutrition/constants.ts                                                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│ - POST_PROCESS_THRESHOLDS.sodium_deficit_percent: 0.03 → 0.15 (line 83)                                                                                                                                                            │
+│   - Currently only triggers post-processing if sodium is <3% short — way too tight. Change to 15% to actually trigger gap-filling.                                                                                                 │
+│                                                                                                                                                                                                                                    │
+│ ---                                                                                                                                                                                                                                │
+│ Implementation Order                                                                                                                                                                                                               │
+│ ┌──────┬─────────────────────────────────────────┬──────────┬───────────────────────────────────┬───────────────────────────┐                                                                                                      │
+│ │ Step │                   Fix                   │ Priority │               Files               │           Scope           │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 1    │ Fix 1: Protein target increase          │ CRITICAL │ generate-macros-v4/index.ts       │ 3 lines changed           │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 2    │ Fix 2: Widen LP protein constraint      │ CRITICAL │ constants.ts                      │ 1 line changed            │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 3    │ Fix 3: Widen LP sodium constraint       │ HIGH     │ lp-solver.ts                      │ 1 line changed            │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 4    │ Fix 4: LP sodium weight increase        │ HIGH     │ constants.ts, lp-solver.ts        │ 5 lines changed           │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 5    │ Fix 5: After-phase post-processing      │ HIGH     │ index.ts                          │ ~60 lines new function    │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 6    │ Fix 6: Greedy fallback improvements     │ HIGH     │ greedy-fallback.ts                │ ~30 lines changed         │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 7    │ Fix 10: Constants tuning                │ LOW      │ constants.ts                      │ 1 line                    │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 8    │ Fix 7: Electrolyte max servings         │ MEDIUM   │ migration + during-rule-solver.ts │ ~15 lines + migration     │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 9    │ Fix 8: Vegan diet filtering + templates │ MEDIUM   │ pre-workout.ts + migration        │ ~20 lines + migration     │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 10   │ Fix 9: Plant-based protein shake        │ LOW      │ migration                         │ SQL only                  │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 11   │ Update generate-macros-v4 tests         │ —        │ index.test.ts                     │ Update protein assertions │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 12   │ Run local unit tests (63 tests)         │ —        │ —                                 │ Verify pass               │                                                                                                      │
+│ ├──────┼─────────────────────────────────────────┼──────────┼───────────────────────────────────┼───────────────────────────┤                                                                                                      │
+│ │ 13   │ Deploy to dev + run E2E tests           │ —        │ —                                 │ Verify improvements       │                                                                                                      │
+│ └──────┴─────────────────────────────────────────┴──────────┴───────────────────────────────────┴───────────────────────────┘                                                                                                      │
+│ ---                                                                                                                                                                                                                                │
+│ Files Modified Summary                                                                                                                                                                                                             │
+│ ┌───────────────────────────────────────────────┬──────────────┬────────────────────────────────────────────────────────────────────┐                                                                                              │
+│ │                     File                      │    Fixes     │                              Changes                               │                                                                                              │
+│ ├───────────────────────────────────────────────┼──────────────┼────────────────────────────────────────────────────────────────────┤                                                                                              │
+│ │ generate-macros-v4/index.ts                   │ Fix 1        │ Protein: 0.3→0.4 g/kg, floor 20g                                   │                                                                                              │
+│ ├───────────────────────────────────────────────┼──────────────┼────────────────────────────────────────────────────────────────────┤                                                                                              │
+│ │ _shared/nutrition/constants.ts                │ Fix 2, 4, 10 │ Protein constraint ±20%, sodium weight 0.6, post-process threshold │                                                                                              │
+│ ├───────────────────────────────────────────────┼──────────────┼────────────────────────────────────────────────────────────────────┤                                                                                              │
+│ │ _shared/nutrition/lp-solver.ts                │ Fix 3, 4     │ Sodium constraint floor, sodium scoring formula                    │                                                                                              │
+│ ├───────────────────────────────────────────────┼──────────────┼────────────────────────────────────────────────────────────────────┤                                                                                              │
+│ │ generate-nutrition-plan-v3/index.ts           │ Fix 5        │ postProcessAfterPhase() function                                   │                                                                                              │
+│ ├───────────────────────────────────────────────┼──────────────┼────────────────────────────────────────────────────────────────────┤                                                                                              │
+│ │ _shared/nutrition/greedy-fallback.ts          │ Fix 6        │ maxFoods, stop conditions, gap-fill pass                           │                                                                                              │
+│ ├───────────────────────────────────────────────┼──────────────┼────────────────────────────────────────────────────────────────────┤                                                                                              │
+│ │ _shared/nutrition/during-rule-solver.ts       │ Fix 7        │ Second electrolyte fallback                                        │                                                                                              │
+│ ├───────────────────────────────────────────────┼──────────────┼────────────────────────────────────────────────────────────────────┤                                                                                              │
+│ │ generate-macros-v4/pre-workout.ts             │ Fix 8        │ Vegan/vegetarian diet filtering                                    │                                                                                              │
+│ ├───────────────────────────────────────────────┼──────────────┼────────────────────────────────────────────────────────────────────┤                                                                                              │
+│ │ NEW migration: electrolyte_max_servings.sql   │ Fix 7        │ Electrolyte max_servings 4→6                                       │                                                                                              │
+│ ├───────────────────────────────────────────────┼──────────────┼────────────────────────────────────────────────────────────────────┤                                                                                              │
+│ │ NEW migration: vegan_preworkout_templates.sql │ Fix 8        │ 8 vegan-friendly pre-workout templates                             │                                                                                              │
+│ ├───────────────────────────────────────────────┼──────────────┼────────────────────────────────────────────────────────────────────┤                                                                                              │
+│ │ NEW migration: plant_protein_shake.sql        │ Fix 9        │ 1 new after_run template food                                      │                                                                                              │
+│ ├───────────────────────────────────────────────┼──────────────┼────────────────────────────────────────────────────────────────────┤                                                                                              │
+│ │ generate-macros-v4/index.test.ts              │ —            │ Update protein target assertions                                   │                                                                                              │
+│ └───────────────────────────────────────────────┴──────────────┴────────────────────────────────────────────────────────────────────┘                                                                                              │
+│ ---                                                                                                                                                                                                                                │
+│ Verification Plan                                                                                                                                                                                                                  │
+│                                                                                                                                                                                                                                    │
+│ Step 1: Run generate-macros-v4 tests                                                                                                                                                                                               │
+│                                                                                                                                                                                                                                    │
+│ ~/.deno/bin/deno test --allow-net --allow-env \                                                                                                                                                                                    │
+│   supabase/functions/generate-macros-v4/index.test.ts                                                                                                                                                                              │
+│ Verify protein target changes match expected values.                                                                                                                                                                               │
+│                                                                                                                                                                                                                                    │
+│ Step 2: Run local solver unit tests                                                                                                                                                                                                │
+│                                                                                                                                                                                                                                    │
+│ ~/.deno/bin/deno test --allow-net --allow-write --allow-read \                                                                                                                                                                     │
+│   supabase/functions/_shared/nutrition/lp-solver.test.ts \                                                                                                                                                                         │
+│   supabase/functions/_shared/nutrition/greedy-fallback.test.ts \                                                                                                                                                                   │
+│   supabase/functions/_shared/nutrition/during-rule-solver.test.ts \                                                                                                                                                                │
+│   supabase/functions/generate-nutrition-plan-v3/before-phase-filtering.test.ts                                                                                                                                                     │
+│ Verify LP now finds feasible solutions for after phase with higher protein targets.                                                                                                                                                │
+│                                                                                                                                                                                                                                    │
+│ Step 3: Deploy to dev and run E2E tests                                                                                                                                                                                            │
+│                                                                                                                                                                                                                                    │
+│ supabase functions deploy generate-nutrition-plan-v3 --project-ref vlmtsdzpnjnavdgytcmi --no-verify-jwt                                                                                                                            │
+│ supabase functions deploy generate-macros-v4 --project-ref vlmtsdzpnjnavdgytcmi --no-verify-jwt                                                                                                                                    │
+│                                                                                                                                                                                                                                    │
+│ ~/.deno/bin/deno test --allow-net --allow-env \                                                                                                                                                                                    │
+│   supabase/functions/generate-nutrition-plan-v3/index.test.ts                                                                                                                                                                      │
+│                                                                                                                                                                                                                                    │
+│ Key E2E tests that MUST pass:                                                                                                                                                                                                      │
+│                                                                                                                                                                                                                                    │
+│ - After protein within V4 range (all profiles including small female)                                                                                                                                                              │
+│ - After protein >= 10g floor                                                                                                                                                                                                       │
+│ - After phase includes protein-rich food                                                                                                                                                                                           │
+│ - After sodium/water within V4 ranges (hot weather, heavy cyclist)                                                                                                                                                                 │
+│ - Vegan+GF after macro compliance                                                                                                                                                                                                  │
+│ - Full audit (average male + hot weather)                                                                                                                                                                                          │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
-  1. Upload Failure StateError (MEALVANA-ENDURANCE-7R)
+⏺ I'll implement this comprehensive nutrition algorithm fix plan. Let me start by reading the key files to understand the current state, then work through the fixes systematically.
 
-  - Impact: 360 events, 2 users, ESCALATING (last 21 hours)
-  - Error: StateError: Upload failed for activities: Uploaded 0/5 activities; 5 failed
-  - Root Cause: Orphaned brick_id foreign key. Parent brick was deleted remotely but child activities still reference it. When dirty children try to upload, Supabase FK constraint fails (23503). SyncCoordinator.ensureSynced() then
-   throws a StateError instead of handling gracefully.
-  - User Impact: None visible (caught in try/catch), but generates 360+ Sentry alerts
-  - Fix:
-    a. In activities_repository.dart uploadDirtyRecords: add remote existence check for parent bricks, or catch 23503 errors and clear orphaned brick_id
-    b. In sync_coordinator.dart:201: don't throw StateError for partial upload failures — respect the "best effort" design pattern
-
-  2. Brick FK Constraint Violation (MEALVANA-ENDURANCE-3W)
-
-  - Impact: 163 events, 20 users, ongoing since Nov 2025
-  - Error: PostgrestException: FK constraint fk_activities_brick_id violated (23503)
-  - Root Cause: softDeleteFromProvider() and _queueImmediateActivityUpsertById() bypass the batch upload safeguards. When a provider-synced activity that belongs to a brick gets soft-deleted, the immediate upload path doesn't
-  check if the parent brick exists in Supabase first.
-  - Fix: In _queueImmediateActivityUpsertById, check if the activity has a brick_id and whether the parent exists remotely. If not, clear brick_id before uploading (same pattern uploadDirtyRecords already uses for orphaned
-  activities).
-
-  3. UnmountedRefException in Events Controller (MEALVANA-ENDURANCE-7H)
-
-  - Impact: 6 events, 4 users
-  - Error: Cannot use the Ref of eventsControllerProvider after it has been disposed
-  - Root Cause: events_controller.dart:_backgroundSync() calls ref.read() after await without checking ref.mounted. When user navigates away mid-sync, the provider gets disposed but the async work continues.
-  - Fix: Cache all ref-dependent values (repo, syncCoordinator, logger) before the first await, add if (!ref.mounted) return; check before ref.invalidateSelf(), and use cached logger in catch block.
-
-  4. No Current User During Google Sign-In (MEALVANA-ENDURANCE-75 + 76)
-
-  - Impact: 10 events combined, 3 users
-  - Error: Exception: No current user found to update auth provider
-  - Root Cause: Race condition during post-onboarding Google account linking. Supabase session changes instantly from anonymous to Google, but the local DB still has the old auth_user_id. When updateAuthProvider() calls
-  getCurrentUser(), it queries with the new auth ID which doesn't match the local record.
-  - Fix: In auth_migration_service.dart, replace the updateAuthProvider() call with _handleFreshLogin() which was already designed to avoid this race condition, or pass the user ID explicitly to avoid getCurrentUser().
-
-  5. GoRouter "Nothing to Pop" (MEALVANA-ENDURANCE-6B)
-
-  - Impact: 13 events, 2 users
-  - Error: GoError: There is nothing to pop
-  - Root Cause: CustomAppBarBackButton calls Navigator.of(context).pop() without checking canPop() first. Triggered from sport_preferences_hub_screen.dart:40.
-  - Fix: In custom_app_bar_back_button.dart, add Navigator.of(context).canPop() guard before popping. If there's nothing to pop, fall back to context.go('/settings').
-
-  ---
-  MEDIUM PRIORITY - UI/UX Fixes
-
-  6. Calendar DatePicker Overflow (MEALVANA-ENDURANCE-78, 7M, 7K, 7B)
-
-  - Impact: 17 events combined across 4 issues (59px, 22px, 3.4px, 168px overflow)
-  - Error: RenderFlex overflowed on the right in CalendarDatePicker2
-  - Root Cause: Dialog width (325px) is too narrow for the _DatePickerModeToggleButton internal widget on some devices.
-  - Fix: Make app_date_picker.dart dialog width responsive: (screenWidth * 0.9).clamp(325.0, 450.0)
-
-  7. Deactivated Widget Ancestor (MEALVANA-ENDURANCE-7Q, 7P, 7N)
-
-  - Impact: 3 events, 1 user each
-  - Error: Looking up a deactivated widget's ancestor is unsafe
-  - Root Cause: Widget accessing context after being unmounted (likely during navigation transitions). Common in async callbacks.
-  - Fix: Add if (!mounted) return; checks before context access in relevant widget methods.
-
-  8. MobileScanner Init (MEALVANA-ENDURANCE-79)
-
-  - Impact: 2 events, 2 users
-  - Error: MobileScannerController is still initializing
-  - Fix: Ensure start() isn't called twice, or await the first start() before allowing another.
-
-  ---
-  LOW PRIORITY - Environmental / Not Actionable
-  ┌────────────────────────────┬──────────────────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────┐
-  │           Issue            │             Description              │                                       Assessment                                       │
-  ├────────────────────────────┼──────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────┤
-  │ 42 (13 events)             │ DNS lookup failure for Supabase host │ Network connectivity issue, not a code bug                                             │
-  ├────────────────────────────┼──────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────┤
-  │ 7C, 7F (7 events)          │ syscall / Background ANR             │ System-level, not directly actionable                                                  │
-  ├────────────────────────────┼──────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────┤
-  │ 6Z, 7G, 2A, 7D (12 events) │ App Hanging 2000ms+                  │ Flutter/Dart runtime pauses, likely during heavy DB ops. Monitor but no immediate fix. │
-  ├────────────────────────────┼──────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────┤
-  │ 77, 7A (4 events)          │ Database schema corruption           │ Expected recovery scenario — app already auto-resyncs                                  │
-  ├────────────────────────────┼──────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────┤
-  │ 7E (1 event)               │ Code verifier not found in auth      │ Supabase OAuth edge case (e.g., expired session during code exchange)                  │
-  ├────────────────────────────┼──────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────┤
-  │ 7J (2 events)              │ Dirty record upload failures         │ Symptom of issues #1 and #2 above — will resolve when those are fixed                  │
-  └────────────────────────────┴──────────────────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────┘
-  ---
-  Recommended Fix Priority
-
-  1. Issues #1 + #2 (brick FK) — Fix together, they share the same root cause. This resolves 523+ events and the cascading 7J issue.
-  2. Issue #3 (unmounted ref) — Simple fix, prevents 6 errors across 4 users.
-  3. Issue #4 (auth race condition) — Important for onboarding conversion.
-  4. Issue #5 (nothing to pop) — Simple guard, prevents fatal-level errors.
-  5. Issue #6 (calendar overflow) — UI polish, affects visual quality.
-
-  Want me to implement any of these fixes?
-
-✻ Worked for 15m 17s                                      
-
-❯ I already fixed issue 1 and 2                                                                                                                                                                                                       
-                                                                                                                                                                                                                                  
-  enter plan mode for these fixes.  check if they have already been fixed else let's develop a plan together for fixing these issues                                                                                                  
+⏺ Now let me read all the key files I need to modify in parallel.                                                                                                                                                                     
+                                                                            
+⏺ Read 4 files (ctrl+o to expand)                                                                                                                                                                                                     
                                                                                                                                                                                                                                       
-⏺ Entered plan mode                                                                                                                                                                                                                   
-  Claude is now exploring and designing an implementation approach.                                                                                                                                                                 
+⏺ Now let me read the remaining files I need to modify.                                                                                                                                                                               
                                                                                                                                                                                                                                       
-⏺ Let me investigate the current state of the code for issues #3-#6 to see what's already been fixed and what still needs work.
+⏺ Read 1 file (ctrl+o to expand)                                                                                                                                                                                                      
                                                                                                                                                                                                                                       
-⏺ 2 Explore agents finished (ctrl+o to expand)                                                                                                                                                                                        
-   ├─ Check events controller fix status · 8 tool uses · 67.8k tokens                                                                                                                                                                 
-   │  ⎿  Done                                                                                                                                                                                                                         
-   └─ Check calendar and scanner fixes · 11 tool uses · 88.1k tokens
-      ⎿  Done                                                                                                                                                                                                                         
-                                                        
-⏺ Good research. Let me verify the key findings myself before writing the plan.                                                                                                                                                       
+⏺ Now let me read the remaining files I need.                                                                                                                                                                                         
                                                                                                                                                                                                                                       
-⏺ Read 3 files (ctrl+o to expand)                                                                                                                                                                                                     
+⏺ Read 2 files (ctrl+o to expand)                                                                                                                                                                                                     
                                                                                                                                                                                                                                       
-⏺ Now let me check the other controllers for the same ref.mounted issue and the auth files.                                                                                                                                           
+⏺ Now I also need to check the test file and the food-utils/template-food-queries for the getTemplateElectrolyteFoods function signature.                                                                                             
                                                                                                                                                                                                                                       
-⏺ Read 3 files (ctrl+o to expand)                                                                                                                                                                                                     
-  
-⏺ Now let me check the auth files for issue #4.                                                                                                                                                                                       
-                                                        
-⏺ Searched for 4 patterns, read 3 files (ctrl+o to expand)                                                                                                                                                                            
-  
-⏺ Now let me check the barcode scanner for issue #8.                                                                                                                                                                                  
-                                                        
-⏺ Searched for 1 pattern, read 1 file (ctrl+o to expand)                                                                                                                                                                              
-  
-⏺ I now have a complete picture. Let me write the plan.                                                                                                                                                                               
-                                                        
-⏺ Updated plan                                                                                                                                                                                                                        
-  ⎿  /plan to preview
+⏺ Read 1 file (ctrl+o to expand)                                                                                                                                                                                                      
                                                                                                                                                                                                                                       
+⏺ Now let me check what calculateTotals looks like and the getTemplateElectrolyteFoods function.                                                                                                                                    
+  ⎿  Interrupted · What should Claude do instead?                                                                                                                                                                                     
+                                                                 
+❯ actually just summarize the plan in /docs in a .md file.  we will actually do it later                                                                                                                                              
+  ⎿  You're out of extra usage · resets 2pm (America/Chicago)                                                                                                                                                                       
+                                                                                                                                                                                                                                      
+❯ /rate-limit-options                                                       
 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
- Ready to code?                                                                                                                                                                                                                       
+ What do you want to do?                                                                                                                                                                                                              
                                                                                                                                                                                                                                       
- Here is Claude's plan:                                                                                                                                                                                                               
-╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
- Fix Sentry Issues #3-#6 (Plus Related ref.mounted Issues)                    
-
- Summary
-
- 4 actionable issues from Sentry, plus a cross-cutting ref.mounted pattern found in multiple controllers.
-
- ---
- Fix 1: ref.mounted guards in _backgroundSync methods (HIGH)
-
- Issues: MEALVANA-ENDURANCE-7H (6 events, 4 users) + prevents same error in 3 other controllers
-
- All 4 controllers fire-and-forget _backgroundSync() from build(), but none cache ref-dependent values before awaits or guard ref.invalidateSelf() with ref.mounted.
-
- Files to modify:
-
- A) lib/features/events/presentation/providers/events_controller.dart (lines 39-64)
- - Cache syncCoordinatorProvider.notifier, eventsRepositoryProvider, appLoggerProvider BEFORE first await
- - Add if (!ref.mounted) return; before ref.invalidateSelf() (line 54)
- - Use cached logger in catch block instead of ref.read(appLoggerProvider) (line 57)
-
- B) lib/features/activities/presentation/providers/activities_controller.dart (lines 60-85)
- - Same pattern: cache syncCoordinatorProvider.notifier, activitiesRepositoryProvider before first await
- - Add if (!ref.mounted) return; before ref.invalidateSelf() (line 75)
- - Also fix integration sync fire-and-forget (lines 44-54): add if (!ref.mounted) return; before ref.invalidateSelf() (line 51)
-
- C) lib/features/coach_mode/presentation/providers/coach_dashboard_controller.dart (lines 108-124)
- - Add if (!ref.mounted) return; before ref.invalidateSelf() (line 114)
-
- D) lib/features/coach_mode/presentation/providers/my_coaches_controller.dart (lines 82-98)
- - Add if (!ref.mounted) return; before ref.invalidateSelf() (line 88)
-
- ---
- Fix 2: Auth race condition during account linking (HIGH)
-
- Issue: MEALVANA-ENDURANCE-75 + 76 (10 events, 3 users)
-
- completeAuthentication() SCENARIO 2 (line 558-577 in auth_migration_service.dart) calls updateAuthProvider() which calls getCurrentUser() — fails because Supabase session changed but local DB still has old auth_user_id.
-
- File to modify:
-
- lib/features/auth/application/auth_migration_service.dart (lines 558-577)
-
- Replace the updateAuthProvider() call in SCENARIO 2 with _handleFreshLogin() which safely fetches/creates the profile without calling getCurrentUser():
-
- } else if (preservedUserId) {
-   // SCENARIO 2: Account Linking (user ID preserved)
-   // Use _handleFreshLogin which avoids getCurrentUser() race condition
-   await _handleFreshLogin(newUserId, authProvider);
- }
-
- _handleFreshLogin() already:
- 1. Fetches remote profile via fetchAndSaveRemoteProfile(userId) (no getCurrentUser call)
- 2. Updates authProvider, authUserId, isAnonymous directly on the fetched profile
- 3. Saves locally via saveUserProfile()
-
- ---
- Fix 3: canPop() guard in back button (MEDIUM)
-
- Issue: MEALVANA-ENDURANCE-6B (13 events, 2 users)
-
- File to modify:
-
- lib/shared/widgets/custom_app_bar_back_button.dart (line 42)
-
- Add canPop() check:
- } else {
-   if (Navigator.of(context).canPop()) {
-     Navigator.of(context).pop();
-   }
-   // If nothing to pop, silently ignore (safer than crashing)
- }
-
- ---
- Fix 4: Responsive calendar dialog width (LOW)
-
- Issue: MEALVANA-ENDURANCE-78 + 7M + 7K + 7B (17 events combined)
-
- File to modify:
-
- lib/shared/widgets/app_date_picker.dart (line 89)
-
- Replace hardcoded width:
- // BEFORE:
- dialogSize: const Size(325, 400),
-
- // AFTER:
- dialogSize: Size(
-   MediaQuery.of(context).size.width > 400 ? 325 : MediaQuery.of(context).size.width * 0.85,
-   400,
- ),
-
- ---
- Not fixing (low priority):
-
- - MobileScanner init (MEALVANA-ENDURANCE-79, 2 events) - only a null guard missing for double start(), very edge-case
- - Deactivated widget ancestor (7Q/7P/7N, 1 event each) - framework-level, likely resolved by Fix 1's mounted guards
- - App hangs, DNS failures, schema corruption - environmental, not code bugs
-
- ---
- Verification
-
- 1. Run flutter analyze to confirm no issues
- 2. Run flutter test to confirm no regressions
- 3. Run build_runner only if generated files are affected (they shouldn't be since we're editing method bodies, not annotations)
-╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
-
- Claude has written up a plan and is ready to execute. Would you like to proceed?
-
- ❯ 1. Yes, clear context and bypass permissions
-   2. Yes, and bypass permissions
-   3. Yes, manually approve edits
-   4. Type here to tell Claude what to change
-
- ctrl-g to edit in Vim · ~/.claude/plans/nested-herding-hare.md
+ ❯ 1. Stop and wait for limit to reset                                                                                                                                                                                                
+   2. Add funds to continue with extra usage                                                                                                                                                                                          
+   3. Upgrade your plan                                                                                                                                                                                                               
+                                                                                                                                                                                                                                      
+ Enter to confirm · Esc to cancel                                                                                                                                                                                                     
+                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                      

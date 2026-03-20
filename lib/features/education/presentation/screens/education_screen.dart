@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../domain/education_content.dart';
 import '../providers/education_controller.dart';
-import '../widgets/video_card_widget.dart';
 import '../widgets/coming_soon_section_widget.dart';
 import '../screens/video_player_screen.dart';
 
@@ -73,27 +73,23 @@ class EducationScreen extends ConsumerWidget {
                   // Free Videos section
                   _SectionHeader(
                     icon: FontAwesomeIcons.circlePlay,
-                    title: 'Free Videos',
+                    title: 'ME 101',
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Free nutrition lessons for endurance athletes',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark
+                          ? AppColors.textDarkSecondary
+                          : AppColors.textLightSecondary,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   if (groups.freeVideos.isEmpty)
                     _EmptySection(message: 'No videos available yet')
                   else
-                    ...groups.freeVideos.map(
-                      (video) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: VideoCardWidget(
-                          content: video,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => VideoPlayerScreen(
-                                title: video.title,
-                                videoUrl: video.videoUrl ?? '',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                    _HorizontalVideoList(
+                      videos: groups.freeVideos,
                     ),
 
                   const SizedBox(height: AppSpacing.xxl),
@@ -195,6 +191,198 @@ class _EmptySection extends StatelessWidget {
                 ? AppColors.textDarkSecondary
                 : AppColors.textLightSecondary,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Horizontal scrolling list of video cards
+class _HorizontalVideoList extends StatelessWidget {
+  const _HorizontalVideoList({required this.videos});
+
+  final List<EducationContent> videos;
+
+  static const double _cardWidth = 240.0;
+  static const double _cardHeight = 210.0;
+
+  @override
+  Widget build(BuildContext context) {
+    // Use a negative margin approach to let the list bleed to screen edges
+    return SizedBox(
+      height: _cardHeight,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        itemCount: videos.length,
+        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (context, index) {
+          final video = videos[index];
+          return SizedBox(
+            width: _cardWidth,
+            child: _CompactVideoCard(
+              content: video,
+              lessonNumber: index + 1,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => VideoPlayerScreen(
+                    title: video.title,
+                    videoUrl: video.videoUrl ?? '',
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Compact video card for horizontal scrolling
+class _CompactVideoCard extends StatelessWidget {
+  const _CompactVideoCard({
+    required this.content,
+    required this.lessonNumber,
+    required this.onTap,
+  });
+
+  final EducationContent content;
+  final int lessonNumber;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          borderRadius: AppRadius.cardRadius,
+          boxShadow: isDark
+              ? AppShadows.darkCardShadow
+              : AppShadows.lightCardShadow,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Thumbnail area
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Gradient background
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.blackberry,
+                          AppColors.blackberryLight.withValues(alpha: 0.8),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                  ),
+
+                  // Lesson number watermark
+                  Positioned(
+                    right: -8,
+                    bottom: -12,
+                    child: Text(
+                      '1.$lessonNumber',
+                      style: AppTextStyles.h1.copyWith(
+                        fontSize: 72,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white.withValues(alpha: 0.07),
+                      ),
+                    ),
+                  ),
+
+                  // Play button
+                  Center(
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.orange.withValues(alpha: 0.9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.play_arrow_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ),
+
+                  // Duration badge
+                  if (content.durationSeconds != null)
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          content.formattedDuration,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Colors.white,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // Title area
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.sm,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    content.title,
+                    style: AppTextStyles.h5.copyWith(
+                      color: isDark ? AppColors.textDark : AppColors.textLight,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (content.description != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      content.description!,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark
+                            ? AppColors.textDarkSecondary
+                            : AppColors.textLightSecondary,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

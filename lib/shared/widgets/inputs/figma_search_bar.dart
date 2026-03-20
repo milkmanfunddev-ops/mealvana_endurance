@@ -21,6 +21,7 @@ class FigmaSearchBar extends StatefulWidget {
     this.onSearchSubmit,
     this.enableAutoSearch = false,
     this.autoSearchDebounceMs = 1000,
+    this.useDarkStyle = true,
   });
 
   /// Text controller for the search field
@@ -43,6 +44,9 @@ class FigmaSearchBar extends StatefulWidget {
 
   /// Debounce duration in milliseconds for auto-search
   final int autoSearchDebounceMs;
+
+  /// Uses onboarding dark style when true, or theme-aware light style when false.
+  final bool useDarkStyle;
 
   @override
   State<FigmaSearchBar> createState() => _FigmaSearchBarState();
@@ -88,23 +92,43 @@ class _FigmaSearchBarState extends State<FigmaSearchBar> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final backgroundColor = widget.useDarkStyle
+        ? AppColors.textDark.withValues(alpha: 0.12)
+        : theme.colorScheme.surface;
+    final borderColor = widget.useDarkStyle
+        ? Colors.transparent
+        : theme.colorScheme.onSurface.withValues(alpha: 0.14);
+    final textColor = widget.useDarkStyle
+        ? AppColors.textDark
+        : theme.colorScheme.onSurface;
+    final hintColor = widget.useDarkStyle
+        ? AppColors.textDark.withValues(alpha: 0.6)
+        : theme.colorScheme.onSurfaceVariant;
+    final prefixIconColor = widget.useDarkStyle
+        ? AppColors.electrolyte
+        : AppColors.orange;
+
     // Determine what suffix icons to show
     final showBarcode = widget.onBarcodeScan != null;
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.textDark.withValues(alpha: 0.12),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: borderColor),
       ),
       child: TextField(
         controller: widget.controller,
         onChanged: _handleTextChanged,
-        onSubmitted: widget.onSearchSubmit != null ? (_) => _handleSearchSubmit() : null,
-        style: const TextStyle(
+        onSubmitted: widget.onSearchSubmit != null
+            ? (_) => _handleSearchSubmit()
+            : null,
+        style: TextStyle(
           fontFamily: 'Apercu',
           fontSize: 16,
           fontWeight: FontWeight.w400,
-          color: AppColors.textDark,
+          color: textColor,
           letterSpacing: 0.192,
         ),
         decoration: InputDecoration(
@@ -113,14 +137,10 @@ class _FigmaSearchBarState extends State<FigmaSearchBar> {
             fontFamily: 'Apercu',
             fontSize: 16,
             fontWeight: FontWeight.w400,
-            color: AppColors.textDark.withValues(alpha: 0.6),
+            color: hintColor,
             letterSpacing: 0.192,
           ),
-          prefixIcon: const Icon(
-            Icons.search,
-            color: AppColors.electrolyte,
-            size: 24,
-          ),
+          prefixIcon: Icon(Icons.search, color: prefixIconColor, size: 24),
           suffixIcon: showBarcode
               ? IconButton(
                   icon: const Icon(

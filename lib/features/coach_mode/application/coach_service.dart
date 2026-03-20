@@ -10,6 +10,7 @@ import '../data/coach_messaging_repository.dart';
 import '../domain/coach.dart';
 import '../domain/coach_athlete_relationship.dart';
 import '../domain/coach_message.dart';
+import '../domain/pairing_code_connection_result.dart';
 
 part 'coach_service.g.dart';
 
@@ -300,6 +301,15 @@ class CoachService {
   Future<CoachAthleteRelationship?> connectViaPairingCode({
     required String code,
   }) async {
+    final result = await connectViaPairingCodeDetailed(code: code);
+    return result.relationship;
+  }
+
+  /// Connect to an athlete using their 6-character pairing code.
+  /// Returns a detailed result for precise user-facing error messaging.
+  Future<PairingCodeConnectResult> connectViaPairingCodeDetailed({
+    required String code,
+  }) async {
     try {
       final profile = await _getCurrentProfile();
       if (profile == null) {
@@ -307,7 +317,9 @@ class CoachService {
           'Cannot connect: no user profile',
           context: 'COACH_SERVICE',
         );
-        return null;
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.noUserProfile,
+        );
       }
 
       var isCoach = await _repository.isUserApprovedCoach(profile.id);
@@ -320,21 +332,27 @@ class CoachService {
           context: 'COACH_SERVICE',
           data: {'coachUserId': profile.id},
         );
-        return null;
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.notApprovedCoach,
+        );
       }
 
-      final relationship = await _repository.connectViaCode(
+      final result = await _repository.connectViaCodeDetailed(
         code: code,
         coachUserId: profile.id,
       );
-      if (relationship == null) {
+      if (!result.isSuccess) {
         _logger.warning(
           'Pairing code connection returned no relationship',
           context: 'COACH_SERVICE',
-          data: {'coachUserId': profile.id, 'code': code},
+          data: {
+            'coachUserId': profile.id,
+            'code': code,
+            'failureReason': result.failureReason?.name,
+          },
         );
       }
-      return relationship;
+      return result;
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to connect via pairing code',
@@ -342,7 +360,9 @@ class CoachService {
         error: e,
         stackTrace: stackTrace,
       );
-      return null;
+      return PairingCodeConnectResult.failure(
+        PairingCodeConnectFailureReason.unknown,
+      );
     }
   }
 

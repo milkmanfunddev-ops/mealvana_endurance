@@ -36,6 +36,13 @@ export function buildLPModel(
   const maxElectrolyteSupplements = options?.maxElectrolyteSupplements;
   const enforceWaterMin = options?.enforceWaterMin ?? false;
 
+  console.log(
+    `[LP-SOLVER] Building model for ${phase} phase | ` +
+    `targets: carbs=${targets.carbs_g}g, protein=${targets.protein_g ?? 0}g, ` +
+    `sodium=${targets.sodium_mg}mg, water=${targets.water_ml}ml | ` +
+    `food pool: ${foods.length} foods, maxFoodItems=${maxFoodItems}, maxServingsCap=${maxServingsCap}`
+  );
+
   const model: LPModel = {
     optimize: 'score',
     opType: 'max',
@@ -93,9 +100,18 @@ export function buildLPModel(
   if (targets.water_ml > 0) {
     const waterBounds = MACRO_CONSTRAINT_RANGES.water[phase];
     if (waterBounds) {
-      if (phase === 'during' && enforceWaterMin) {
+      // Enforce water minimum for during (when explicitly requested) and after phases.
+      // After-phase hydration targets are important for recovery and were previously
+      // under-delivered because only a max constraint was set.
+      // After phase uses a gentler water floor (70% of target) to keep the LP feasible
+      // when water targets are very high (marathon/ultra). A strict 85% floor forces
+      // the solver infeasible → greedy fallback → protein overshoot.
+      if ((phase === 'during' && enforceWaterMin) || phase === 'after') {
+        const waterMin = phase === 'after'
+          ? targets.water_ml * 0.7
+          : targets.water_ml * waterBounds.min;
         model.constraints.water = {
-          min: targets.water_ml * waterBounds.min,
+          min: waterMin,
           max: targets.water_ml * waterBounds.max,
         };
       } else {
@@ -111,6 +127,18 @@ export function buildLPModel(
   if (maxElectrolyteSupplements != null) {
     model.constraints.electrolyte_supplements = { max: maxElectrolyteSupplements };
   }
+
+  // Log all constraint bounds
+  const logConstraint = (name: string) => {
+    const c = model.constraints[name];
+    if (c) {
+      console.log(`[LP-SOLVER] Constraint ${name}: [${c.min ?? '-inf'}, ${c.max ?? '+inf'}]`);
+    }
+  };
+  logConstraint('carbs');
+  logConstraint('protein');
+  logConstraint('sodium');
+  logConstraint('water');
 
   // Add variables for each food
   foods.forEach((food, index) => {
@@ -149,6 +177,13 @@ export function buildLPModel(
       const jitter = (Math.random() - 0.5) * 0.3 * Math.abs(score);
       score += jitter;
     }
+
+    console.log(
+      `[LP-SOLVER] Food ${index}: ${food.name} | pref=${food.preference_score}, score=${score.toFixed(1)} | ` +
+      `per_serving: carbs=${food.per_serving.carbs_g}g, protein=${food.per_serving.protein_g}g, ` +
+      `sodium=${food.per_serving.sodium_mg}mg, water=${food.per_serving.water_ml}ml | ` +
+      `maxServings=${maxServings}`
+    );
 
     const variable: Record<string, number> = {
       score,
@@ -190,6 +225,8 @@ export function solveLPModel(
 ): PhaseSolution | null {
   try {
     const solution = solver.Solve(model) as LPSolution;
+
+    console.log(`[LP-SOLVER] Solve result: feasible=${solution?.feasible ?? false}`);
 
     if (!solution || !solution.feasible) {
       console.log('[LP-SOLVER] No feasible solution found');
@@ -248,6 +285,19 @@ export function solveLPModel(
         totals.water_ml += food.per_serving.water_ml * roundedServings;
       }
     });
+
+    // Log selected foods and totals summary
+    for (const sf of selectedFoods) {
+      console.log(
+        `[LP-SOLVER] Selected: ${sf.display_name ?? sf.food_id} x${sf.quantity} → ` +
+        `carbs=${sf.carbs_grams.toFixed(1)}g, protein=${sf.protein_grams.toFixed(1)}g, ` +
+        `sodium=${sf.sodium_mg}mg, water=${sf.fluids_ml}ml`
+      );
+    }
+    console.log(
+      `[LP-SOLVER] Totals: carbs=${totals.carbs_g.toFixed(1)}g, protein=${totals.protein_g.toFixed(1)}g, ` +
+      `fat=${totals.fat_g.toFixed(1)}g, sodium=${totals.sodium_mg.toFixed(0)}mg, water=${totals.water_ml.toFixed(0)}ml`
+    );
 
     return {
       foods: selectedFoods,

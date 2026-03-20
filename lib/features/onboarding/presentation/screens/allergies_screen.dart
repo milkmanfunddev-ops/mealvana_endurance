@@ -57,9 +57,10 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
     final screenName = _isOnboarding
         ? 'Allergies Onboarding'
         : 'Allergies Settings';
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': screenName,
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track('screen_viewed', properties: {'screen_name': screenName});
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {
@@ -149,24 +150,30 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
           widget.onContinue!();
         } else {
           // Navigate to food preferences
-          context.push('/onboarding/food-preferences-v2', extra: {
-            'allergies': _selectedAllergies.toList(),
-          });
+          context.push(
+            '/onboarding/food-preferences-v2',
+            extra: {'allergies': _selectedAllergies.toList()},
+          );
         }
       } else {
         // SETTINGS MODE: Save to database
-        final success = await controller.saveAllergies(_selectedAllergies.toList());
+        final success = await controller.saveAllergies(
+          _selectedAllergies.toList(),
+        );
 
         if (!mounted) return;
 
         if (success) {
           final analytics = ref.read(appExternalDepsProvider);
-          await analytics.analytics.track('allergies_changed', properties: {
-            'from_count': _originalAllergies.length,
-            'to_count': _selectedAllergies.length,
-            'allergies': _selectedAllergies.map((a) => a.name).toList(),
-            'source': 'settings',
-          });
+          await analytics.analytics.track(
+            'allergies_changed',
+            properties: {
+              'from_count': _originalAllergies.length,
+              'to_count': _selectedAllergies.length,
+              'allergies': _selectedAllergies.map((a) => a.name).toList(),
+              'source': 'settings',
+            },
+          );
 
           if (!mounted) return;
 
@@ -176,7 +183,10 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
           MealvanaSnackbar.showSuccess(context, 'Allergies updated');
           context.pop();
         } else {
-          MealvanaSnackbar.showError(context, 'Failed to save allergies. Please try again.');
+          MealvanaSnackbar.showError(
+            context,
+            'Failed to save allergies. Please try again.',
+          );
         }
       }
     } finally {
@@ -215,20 +225,31 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Use the same dark Figma layout for both onboarding and settings
-    return _buildDarkLayout(context);
+    final useDarkStyle = Theme.of(context).brightness == Brightness.dark;
+    return _buildAdaptiveLayout(context, useDarkStyle: useDarkStyle);
   }
 
-  // ==================== Dark Figma Layout (Onboarding & Settings) ====================
+  // ==================== Adaptive Layout (Dark + Light Theme) ====================
 
-  Widget _buildDarkLayout(BuildContext context) {
+  Widget _buildAdaptiveLayout(
+    BuildContext context, {
+    required bool useDarkStyle,
+  }) {
+    final theme = Theme.of(context);
+    final backgroundColor = useDarkStyle
+        ? AppColors.blackberry
+        : theme.scaffoldBackgroundColor;
+    final titleColor = useDarkStyle
+        ? AppColors.orange
+        : theme.colorScheme.onSurface;
+
     return Scaffold(
-      backgroundColor: AppColors.blackberry,
+      backgroundColor: backgroundColor,
       body: Column(
         children: [
           // Progress bar for onboarding, back button for settings
           Container(
-            color: AppColors.blackberry,
+            color: backgroundColor,
             padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
             child: _isOnboarding
                 ? const OnboardingProgressBar(
@@ -255,14 +276,13 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
+                        Text(
                           'Allergies',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: 'Sansita',
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.orange,
-                          ),
+                          ).copyWith(color: titleColor),
                         ),
                       ],
                     ),
@@ -289,21 +309,20 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
                             // Title
                             const SizedBox(height: 22),
 
-                            const Text(
+                            Text(
                               'Do you have any allergies?',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: 'Sansita',
                                 fontSize: 26,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.orange,
                                 height: 1.0,
-                              ),
+                              ).copyWith(color: titleColor),
                             ),
 
                             const SizedBox(height: 22),
 
                             // Allergy options
-                            _buildDarkAllergyOptions(),
+                            _buildAllergyOptions(useDarkStyle: useDarkStyle),
                           ],
                         ),
                       ),
@@ -331,8 +350,7 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
 
   // ==================== Shared Components ====================
 
-  // Dark theme allergy options (used for both onboarding and settings)
-  Widget _buildDarkAllergyOptions() {
+  Widget _buildAllergyOptions({required bool useDarkStyle}) {
     return Column(
       children: [
         // "No allergies" option at the top
@@ -342,6 +360,7 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
             label: 'No allergies',
             isSelected: _noAllergies,
             onTap: _toggleNoAllergies,
+            useDarkStyle: useDarkStyle,
           ),
         ),
 
@@ -354,6 +373,7 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
               label: allergy.displayName,
               isSelected: isSelected,
               onTap: () => _toggleAllergy(allergy),
+              useDarkStyle: useDarkStyle,
             ),
           );
         }),

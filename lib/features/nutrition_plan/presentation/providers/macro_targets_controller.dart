@@ -1567,10 +1567,22 @@ class MacroTargetsController extends _$MacroTargetsController {
     final repository = ref.read(macroRepositoryProvider);
     final macroTargets = await repository.getCachedMacroTargets();
 
-    if (macroTargets == null) return null;
+    if (macroTargets == null) {
+      DebugLogger.error('❌ [CREATE-PLAN] No cached macro targets found in SharedPreferences!');
+      return null;
+    }
 
     final currentState = state.value;
     if (currentState == null) return null;
+
+    // Log what we're reading from cache vs state for debugging same-plan issues
+    final stateMacros = currentState.macroTargets;
+    DebugLogger.info(
+      '📋 [CREATE-PLAN] Cache vs State comparison:\n'
+      '  Cache: pre_carbs=${macroTargets.preRun.carbsG}, during_carbs=${macroTargets.duringRun.carbTotalG}, post_carbs=${macroTargets.postRun.carbsG}, distance=${macroTargets.metrics.distanceMi}, duration=${macroTargets.metrics.durationH}h\n'
+      '  State: pre_carbs=${stateMacros?.preRun.carbsG}, during_carbs=${stateMacros?.duringRun.carbTotalG}, post_carbs=${stateMacros?.postRun.carbsG}, distance=${stateMacros?.metrics.distanceMi}, duration=${stateMacros?.metrics.durationH}h\n'
+      '  ActivityId: state=${currentState.activityId}',
+    );
 
     // Set creating plan state
     state = AsyncData(currentState.copyWith(isCreatingPlan: true));
@@ -1621,6 +1633,17 @@ class MacroTargetsController extends _$MacroTargetsController {
             (draftDurationMinutes != null && draftDurationMinutes > 0)
             ? draftDurationMinutes
             : macroDurationMinutes;
+
+        // Log resolved parameters for debugging same-plan issues
+        DebugLogger.info(
+          '📋 [CREATE-PLAN] Resolved params: '
+          'activityId=${currentStateValue?.activityId}, '
+          'hoursBefore=$hoursBefore (draft.timeBeforeMinutes=${draftActivity?.timeBeforeMinutes}), '
+          'weightKg=$weightKg, '
+          'draftDuration=$draftDurationMinutes, macroDuration=$macroDurationMinutes, '
+          'resolvedDuration=$resolvedDurationMinutes, '
+          'draftDistance=${draftActivity?.distanceMiles}',
+        );
 
         // Get dietary preferences and food preferences
         final dietaryPreference = userProfile?.dietaryPreference?.dbValue;

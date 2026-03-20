@@ -45,6 +45,72 @@ const CROSS_PHASE_EXEMPT_FOODS = new Set([
   'electrolyte_tablet', 'electrolyte_drink_mix',
 ]);
 
+const ALLERGEN_ALIASES: Record<string, string> = {
+  peanut: 'peanut',
+  peanuts: 'peanut',
+  tree_nut: 'tree_nuts',
+  tree_nuts: 'tree_nuts',
+  tree_nuts_allergy: 'tree_nuts',
+  dairy: 'dairy',
+  milk: 'dairy',
+  eggs: 'eggs',
+  egg: 'eggs',
+  gluten: 'gluten',
+  soy: 'soy',
+};
+
+const COMPONENT_ALLERGEN_HINTS: Record<string, string[]> = {
+  oatmeal: ['gluten'],
+  toast: ['gluten'],
+  bagel: ['gluten'],
+  cereal: ['gluten'],
+  granola: ['gluten'],
+  granola_bar: ['gluten'],
+  pancake: ['gluten', 'eggs', 'dairy'],
+  toaster_waffle: ['gluten', 'eggs', 'dairy'],
+  graham_crackers: ['gluten'],
+  fig_bar: ['gluten'],
+  stroopwafel: ['gluten', 'dairy'],
+  pretzels: ['gluten'],
+  milk: ['dairy'],
+  yogurt: ['dairy'],
+  cream_cheese: ['dairy'],
+  cheese_slice: ['dairy'],
+  butter: ['dairy'],
+  protein_shake: ['dairy'],
+  protein_powder: ['dairy'],
+  peanut_butter: ['peanut'],
+  almond_butter: ['tree_nuts'],
+  trail_mix: ['tree_nuts', 'peanut'],
+  egg: ['eggs'],
+  soy_sauce: ['soy', 'gluten'],
+  teriyaki_sauce: ['soy', 'gluten'],
+};
+
+function normalizeToken(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[+]/g, ' ')
+    .replace(/[-/]/g, ' ')
+    .replace(/\s+/g, '_');
+}
+
+function normalizeAllergen(value: string): string {
+  const normalized = normalizeToken(value);
+  return ALLERGEN_ALIASES[normalized] ?? normalized;
+}
+
+function inferAllergensFromComponents(componentFoodNames: string[] = []): Set<string> {
+  const inferred = new Set<string>();
+  for (const name of componentFoodNames) {
+    const normalized = normalizeToken(name);
+    const hinted = COMPONENT_ALLERGEN_HINTS[normalized] ?? [];
+    for (const a of hinted) inferred.add(a);
+  }
+  return inferred;
+}
+
 // ============================================================================
 // Target Calculation
 // ============================================================================
@@ -224,7 +290,7 @@ export function splitTargets(
 // Template Filtering
 // ============================================================================
 
-function getEligibleTemplates(
+export function getEligibleTemplates(
   templates: PreWorkoutTemplate[],
   phase: SubPhaseType,
   diet: string,
@@ -233,36 +299,57 @@ function getEligibleTemplates(
 ): PreWorkoutTemplate[] {
   const timeWindow = getTimeWindowForPhase(phase);
   let filtered = templates.filter((t) => t.time_window === timeWindow);
+  const dislikedSet = new Set(dislikedFoods.map(normalizeToken));
 
   // Diet filtering (dietary preference like 'vegan', 'keto', etc.)
   if (diet !== 'none' && diet) {
+    // 1. Allergen-based diet filtering (for -free diets)
     const excluded: string[] = [];
-    if (diet === 'gluten-free' || diet === 'all-free') excluded.push('Gluten');
-    if (diet === 'dairy-free' || diet === 'all-free') excluded.push('Dairy');
-    if (diet === 'peanut-free' || diet === 'all-free') excluded.push('Peanut');
+    if (diet === 'gluten-free' || diet === 'all-free') excluded.push('gluten');
+    if (diet === 'dairy-free' || diet === 'all-free') excluded.push('dairy');
+    if (diet === 'peanut-free' || diet === 'all-free') excluded.push('peanut');
 
     if (excluded.length > 0) {
       filtered = filtered.filter((t) =>
-        !t.allergens.some((a: string) => excluded.includes(a))
+        !t.allergens.some((a: string) => excluded.some(e => e === a.toLowerCase()))
       );
     }
+
+    // 2. excluded_diets filtering (for vegan, vegetarian, paleo, keto, etc.)
+    const normalizedDiet = diet.toLowerCase().replace(/-/g, '_');
+    filtered = filtered.filter((t) => {
+      const excludedDiets = (t.excluded_diets ?? []) as string[];
+      return !excludedDiets.some(d => d.toLowerCase() === normalizedDiet);
+    });
   }
 
   // Allergen filtering — exclude templates whose allergens overlap with user's allergies
   // Uses case-insensitive matching to handle 'Gluten' vs 'gluten' mismatch
   if (allergies.length > 0) {
-    const allergiesLower = allergies.map((a) => a.toLowerCase());
+    const allergySet = new Set(allergies.map(normalizeAllergen));
     filtered = filtered.filter((t) => {
-      const templateAllergens = t.allergens ?? [];
-      return !templateAllergens.some((a: string) => allergiesLower.includes(a.toLowerCase()));
+      const templateAllergens = new Set((t.allergens ?? []).map((a: string) => normalizeAllergen(a)));
+      const inferred = inferAllergensFromComponents(t.component_food_names ?? []);
+      for (const a of inferred) templateAllergens.add(a);
+      for (const allergen of templateAllergens) {
+        if (allergySet.has(allergen)) return false;
+      }
+      return true;
     });
   }
 
   // Exclude templates where ANY component food is disliked
-  if (dislikedFoods.length > 0) {
+  if (dislikedSet.size > 0) {
     filtered = filtered.filter((t) => {
-      const components = t.component_food_names ?? [];
-      return !components.some((name) => dislikedFoods.includes(name));
+      const components = (t.component_food_names ?? []).map(normalizeToken);
+      if (components.some((name) => dislikedSet.has(name))) return false;
+
+      // Fallback when components are incomplete: also check template/base labels.
+      const templateName = normalizeToken(t.name);
+      const baseCategory = normalizeToken(t.base_category ?? '');
+      if (dislikedSet.has(templateName) || dislikedSet.has(baseCategory)) return false;
+
+      return true;
     });
   }
 
@@ -324,6 +411,7 @@ function scoreFormula(
   template: PreWorkoutTemplate,
   carbTarget: number,
   state: PlanState,
+  dislikedSet: Set<string>,
   likedFoods: string[] = [],
 ): ScoredFormula {
   // Calculate ideal servings directly
@@ -342,8 +430,11 @@ function scoreFormula(
   // Banana add-on: skip if banana already used in any prior phase or in this template's components
   const bananaAlreadyUsed = state.used_foods.has('banana') ||
     (template.component_food_names ?? []).includes('banana');
-  const bananaEligible = template.plus_banana && !bananaAlreadyUsed;
-  const drinkEligible = template.plus_sports_drink && !state.sports_drink_used;
+  const bananaEligible = template.plus_banana && !bananaAlreadyUsed && !dislikedSet.has('banana');
+  const drinkEligible = template.plus_sports_drink &&
+    !state.sports_drink_used &&
+    !dislikedSet.has('sports_drink') &&
+    !dislikedSet.has('sports_drink_mix');
 
   const sodiumRemaining = state.sodium_target - (state.sodium_delivered + sodium);
   const preferDrinkFirst = sodiumRemaining > 100;
@@ -623,6 +714,7 @@ export function selectPreWorkoutFoods(
   allergies: string[] = [],
 ): PreWorkoutPhaseResult[] {
   if (targets.meal_type === 'fasted') return [];
+  const dislikedSet = new Set(dislikedFoods.map(normalizeToken));
 
   const phases = getActiveSubPhases(hoursBefore);
   const phaseTargets = splitTargets(targets, hoursBefore);
@@ -677,7 +769,7 @@ export function selectPreWorkoutFoods(
     }
 
     // Score every candidate (with liked-food boost)
-    const scored = candidates.map((t) => scoreFormula(t, carbTarget, state, likedFoods));
+    const scored = candidates.map((t) => scoreFormula(t, carbTarget, state, dislikedSet, likedFoods));
 
     // Pick best by combined score
     const pick = pickBestFormula(scored, state, carbTarget);
@@ -757,7 +849,7 @@ export function selectPreWorkoutFoods(
       if (phaseIdx < 0) continue;
 
       // Try adding a banana if not already used in any phase
-      if (!state.used_foods.has('banana') && carbDeficit > 5) {
+      if (!state.used_foods.has('banana') && !dislikedSet.has('banana') && carbDeficit > 5) {
         const phase = results[phaseIdx];
         phase.add_ons.push(makeBananaAddOn());
         phase.total_carbs_g = Math.round((phase.total_carbs_g + BANANA_CARBS) * 10) / 10;
@@ -821,13 +913,49 @@ export function selectPreWorkoutFoods(
         }
       }
     }
+
+    // Last-resort carb top-up: standalone sports drink if still under carbs_low.
+    const postAdjustTotal = results.reduce((sum, p) => sum + p.total_carbs_g, 0);
+    if (
+      postAdjustTotal < targets.carbs_low_g &&
+      !state.sports_drink_used &&
+      !dislikedSet.has('sports_drink') &&
+      !dislikedSet.has('sports_drink_mix')
+    ) {
+      const remaining = targets.carbs_low_g - postAdjustTotal;
+      const phaseOrder: SubPhaseType[] = ['top_up', 'snack', 'meal'];
+      for (const targetPhase of phaseOrder) {
+        const phaseIdx = results.findIndex((p) => p.phase === targetPhase);
+        if (phaseIdx < 0) continue;
+        const phase = results[phaseIdx];
+
+        let addServings = Math.max(0.5, snapToHalf(Math.min(2, remaining / SPORTS_DRINK_CARBS)));
+        if (targets.water_ml > 0) {
+          const fluidHeadroom = Math.max(0, targets.water_ml * 1.5 - state.fluid_delivered);
+          addServings = Math.min(addServings, snapToHalf(fluidHeadroom / SPORTS_DRINK_FLUID));
+        }
+        if (addServings < 0.5) continue;
+
+        const addOn = makeSportsDrinkAddOn(addServings);
+        phase.add_ons.push(addOn);
+        phase.total_carbs_g = Math.round((phase.total_carbs_g + addOn.carbs_g) * 10) / 10;
+        phase.total_sodium_mg = Math.round((phase.total_sodium_mg + addOn.sodium_mg) * 10) / 10;
+        phase.total_fluid_ml = Math.round((phase.total_fluid_ml + addOn.fluid_ml) * 10) / 10;
+        state.sports_drink_used = true;
+        state.sodium_delivered += addOn.sodium_mg;
+        state.fluid_delivered += addOn.fluid_ml;
+        console.log(`[ALGO-C] Added sports drink top-up to ${targetPhase} (+${addOn.carbs_g}g carbs)`);
+        break;
+      }
+    }
   }
 
   // ── Pass 2: Add standalone drink to top-up phase ──────────────────
   const topUpIdx = results.findIndex((p) => p.phase === 'top_up');
-  if (topUpIdx >= 0 && drinkTemplates.length > 0) {
+  const eligibleDrinks = getEligibleTemplates(drinkTemplates, 'top_up', diet, dislikedFoods, allergies);
+  if (topUpIdx >= 0 && eligibleDrinks.length > 0) {
     const drink = pickDrink(
-      drinkTemplates,
+      eligibleDrinks,
       state.sodium_delivered,
       state.fluid_delivered,
       state.sodium_target,
@@ -847,9 +975,10 @@ export function selectPreWorkoutFoods(
   }
 
   // ── Pass 3: Add electrolyte supplement independently ──────────────
-  if (topUpIdx >= 0 && electrolyteTemplates.length > 0) {
+  const eligibleElectrolytes = getEligibleTemplates(electrolyteTemplates, 'top_up', diet, dislikedFoods, allergies);
+  if (topUpIdx >= 0 && eligibleElectrolytes.length > 0) {
     const electrolyte = pickElectrolyte(
-      electrolyteTemplates,
+      eligibleElectrolytes,
       state.sodium_delivered,
       state.fluid_delivered,
       state.sodium_target,

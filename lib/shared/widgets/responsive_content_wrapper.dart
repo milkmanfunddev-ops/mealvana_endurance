@@ -1,5 +1,10 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show ValueNotifier, kIsWeb;
 import 'package:flutter/material.dart';
+
+/// Global notifier signalling that the coach portal tab is active on web.
+/// Set by [TabsScreen], read by [_RouteAwareWrapper] in root_app_widget.dart
+/// to bypass the responsive max-width constraint.
+final coachPortalActiveNotifier = ValueNotifier<bool>(false);
 
 /// A responsive wrapper that constrains content width on large screens (web/iPad).
 ///

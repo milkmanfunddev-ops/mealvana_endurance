@@ -22,6 +22,7 @@ export interface PreWorkoutTemplate {
   time_window: TimeWindow;
   digestion_speed: string;
   allergens: string[];
+  excluded_diets?: string[];
   serving_unit: string;
   min_servings: number;
   max_servings: number;

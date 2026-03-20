@@ -17,11 +17,7 @@ import '../../../integrations/presentation/providers/integrations_providers.dart
 /// User Profile Screen - Design System
 /// User setup screen during onboarding - RESTORED with database integration
 class UserProfileScreen extends ConsumerStatefulWidget {
-  const UserProfileScreen({
-    super.key,
-    this.onContinue,
-    this.onBack,
-  });
+  const UserProfileScreen({super.key, this.onContinue, this.onBack});
 
   /// Callback to advance to next page (optional for PageView mode)
   final VoidCallback? onContinue;
@@ -66,7 +62,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       _heightInchesController.text = cachedData['heightInches'].toString();
       _weightController.text = cachedData['weightPounds'].toString();
       _runsWithWaterBottle = cachedData['runsWithWaterBottle'] as bool;
-      _unitSystem = cachedData['unitSystem'] as UnitSystem? ?? UnitSystem.imperial;
+      _unitSystem =
+          cachedData['unitSystem'] as UnitSystem? ?? UnitSystem.imperial;
       // Optional name fields
       if (cachedData['firstName'] != null) {
         _firstNameController.text = cachedData['firstName'] as String;
@@ -82,9 +79,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       });
     }
 
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': 'User Profile Onboarding',
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {'screen_name': 'User Profile Onboarding'},
+        );
   }
 
   /// Load profile data from connected integrations (Training Peaks takes precedence)
@@ -96,15 +97,23 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     _hasLoadedIntegrationData = true;
 
     try {
-      final connectController = ref.read(connectTrainingControllerProvider.notifier);
+      final connectController = ref.read(
+        connectTrainingControllerProvider.notifier,
+      );
       final userId = connectController.currentUserId;
       if (userId == null) return;
 
       final integrationsRepo = ref.read(integrationsRepositoryProvider);
 
       // Try Training Peaks first (has profile data), fall back to Final Surge
-      var integration = await integrationsRepo.getIntegration(userId, 'training_peaks');
-      integration ??= await integrationsRepo.getIntegration(userId, 'final_surge');
+      var integration = await integrationsRepo.getIntegration(
+        userId,
+        'training_peaks',
+      );
+      integration ??= await integrationsRepo.getIntegration(
+        userId,
+        'final_surge',
+      );
 
       if (integration == null || !integration.isActive) return;
       final data = integration; // Capture for closure
@@ -120,7 +129,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
       setState(() {
         // Name
-        if (data.providerAthleteName != null && _firstNameController.text.isEmpty) {
+        if (data.providerAthleteName != null &&
+            _firstNameController.text.isEmpty) {
           final nameParts = data.providerAthleteName!.split(' ');
           if (nameParts.isNotEmpty) {
             _firstNameController.text = nameParts.first;
@@ -131,8 +141,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         }
 
         // Weight (kg → lbs)
-        if (data.providerAthleteWeightLbs != null && _weightController.text.isEmpty) {
-          _weightController.text = data.providerAthleteWeightLbs!.toStringAsFixed(1);
+        if (data.providerAthleteWeightLbs != null &&
+            _weightController.text.isEmpty) {
+          _weightController.text = data.providerAthleteWeightLbs!
+              .toStringAsFixed(1);
         }
 
         // Birthday (default to 1st of month)
@@ -167,14 +179,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final asyncState = ref.watch(onboardingControllerProvider);
+    final theme = Theme.of(context);
+    final backgroundColor = theme.scaffoldBackgroundColor;
 
     return Scaffold(
-      backgroundColor: AppColors.blackberry,
+      backgroundColor: backgroundColor,
       body: Column(
         children: [
           // Progress bar at the very top (no SafeArea padding)
           Container(
-            color: AppColors.blackberry,
+            color: backgroundColor,
             padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
             child: const OnboardingProgressBar(
               currentSegment: 1, // Profile segment
@@ -197,6 +211,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 
   Widget _buildContent(BuildContext context, AsyncValue<void> asyncState) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final titleColor = isDark ? AppColors.orange : theme.colorScheme.onSurface;
+
     return GestureDetector(
       onTap: () {
         // Dismiss keyboard when tapping outside input fields
@@ -210,87 +228,85 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Introduction text
-            const Text(
-              'Tell us about yourself',
-              style: TextStyle(
-                fontFamily: 'Sansita',
-                fontSize: 26,
-                fontWeight: FontWeight.w700,
-                color: AppColors.orange,
-                height: 1.0,
+              // Introduction text
+              Text(
+                'Tell us about yourself',
+                style: const TextStyle(
+                  fontFamily: 'Sansita',
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  height: 1.0,
+                ).copyWith(color: titleColor),
               ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'This helps us calculate accurate nutrition plans for your activities.',
-              style: TextStyle(
-                fontFamily: 'Apercu',
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: AppColors.textDark,
-                letterSpacing: 0.192,
-                height: 1.0,
+              const SizedBox(height: 12),
+              Text(
+                'This helps us calculate accurate nutrition plans for your activities.',
+                style: const TextStyle(
+                  fontFamily: 'Apercu',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.192,
+                  height: 1.0,
+                ).copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
-            ),
 
-            const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.lg),
 
-            // Personal information section
-            _buildPersonalInfoSection(context),
+              // Personal information section
+              _buildPersonalInfoSection(context),
 
-            const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.lg),
 
-            // Physical information section
-            _buildPhysicalInfoSection(context),
+              // Physical information section
+              _buildPhysicalInfoSection(context),
 
-            const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.lg),
 
-            // Unit Preferences section
-            _buildUnitPreferencesSection(context),
+              // Unit Preferences section
+              _buildUnitPreferencesSection(context),
 
-            // const SizedBox(height: AppSpacing.lg),
+              // const SizedBox(height: AppSpacing.lg),
 
-            // Running habits section
-            // _buildRunningHabitsSection(context),
+              // Running habits section
+              // _buildRunningHabitsSection(context),
+              const SizedBox(height: AppSpacing.xxxl),
 
-            const SizedBox(height: AppSpacing.xxxl),
-
-            // Error message if any
-            if (asyncState.hasError)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.dragonfruit.withOpacity(0.1),
-                    borderRadius: AppRadius.cardRadius,
-                    border: Border.all(color: AppColors.dragonfruit),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(FontAwesomeIcons.circleExclamation,
-                        color: AppColors.dragonfruit,
-                        size: AppIconSizes.controlIcon,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          asyncState.error.toString(),
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.dragonfruit,
+              // Error message if any
+              if (asyncState.hasError)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.dragonfruit.withValues(alpha: 0.1),
+                      borderRadius: AppRadius.cardRadius,
+                      border: Border.all(color: AppColors.dragonfruit),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          FontAwesomeIcons.circleExclamation,
+                          color: AppColors.dragonfruit,
+                          size: AppIconSizes.controlIcon,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            asyncState.error.toString(),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.dragonfruit,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -674,7 +690,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.2),
               ),
               borderRadius: AppRadius.inputRadius,
             ),
@@ -747,21 +765,22 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             border: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.2),
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.2),
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
-              borderSide: const BorderSide(
-                color: AppColors.orange,
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: AppColors.orange, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: AppRadius.inputRadius,
@@ -819,12 +838,14 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               value == Gender.male
                   ? FontAwesomeIcons.mars
                   : value == Gender.female
-                      ? FontAwesomeIcons.venus
-                      : FontAwesomeIcons.genderless,
+                  ? FontAwesomeIcons.venus
+                  : FontAwesomeIcons.genderless,
               size: 28,
               color: isSelected
                   ? (isDark ? AppColors.blackberry : AppColors.cream)
-                  : (isDark ? AppColors.cream.withValues(alpha: 0.5) : AppColors.blackberry.withValues(alpha: 0.5)),
+                  : (isDark
+                        ? AppColors.cream.withValues(alpha: 0.5)
+                        : AppColors.blackberry.withValues(alpha: 0.5)),
             ),
             const SizedBox(height: 4),
 
@@ -836,7 +857,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 fontWeight: FontWeight.w700,
                 color: isSelected
                     ? (isDark ? AppColors.blackberry : AppColors.cream)
-                    : (isDark ? AppColors.cream.withValues(alpha: 0.5) : AppColors.blackberry.withValues(alpha: 0.5)),
+                    : (isDark
+                          ? AppColors.cream.withValues(alpha: 0.5)
+                          : AppColors.blackberry.withValues(alpha: 0.5)),
               ),
               textAlign: TextAlign.center,
             ),
@@ -873,14 +896,17 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
     // Track form submission attempt
     final analytics = ref.read(appExternalDepsProvider).analytics;
-    await analytics.track('user_profile_submit_attempt', properties: {
-      'gender': _selectedGender.name,
-      'runs_with_water_bottle': _runsWithWaterBottle,
-      'height_feet': _heightFeetController.text,
-      'height_inches': _heightInchesController.text,
-      'weight': _weightController.text,
-      'unit_system': _unitSystem.name,
-    });
+    await analytics.track(
+      'user_profile_submit_attempt',
+      properties: {
+        'gender': _selectedGender.name,
+        'runs_with_water_bottle': _runsWithWaterBottle,
+        'height_feet': _heightFeetController.text,
+        'height_inches': _heightInchesController.text,
+        'weight': _weightController.text,
+        'unit_system': _unitSystem.name,
+      },
+    );
 
     // Cache the data instead of saving to database
     final controller = ref.read(onboardingControllerProvider.notifier);
@@ -891,22 +917,30 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       heightInches: int.parse(_heightInchesController.text),
       weightPounds: double.parse(_weightController.text),
       runsWithWaterBottle: _runsWithWaterBottle,
-      firstName: _firstNameController.text.trim().isNotEmpty ? _firstNameController.text.trim() : null,
-      lastName: _lastNameController.text.trim().isNotEmpty ? _lastNameController.text.trim() : null,
+      firstName: _firstNameController.text.trim().isNotEmpty
+          ? _firstNameController.text.trim()
+          : null,
+      lastName: _lastNameController.text.trim().isNotEmpty
+          ? _lastNameController.text.trim()
+          : null,
       unitSystem: _unitSystem,
     );
 
     if (mounted) {
       // Track successful completion
-      await analytics.track('user_profile_completed', properties: {
-        'gender': _selectedGender.name,
-      });
+      await analytics.track(
+        'user_profile_completed',
+        properties: {'gender': _selectedGender.name},
+      );
 
       // Track navigation
-      await analytics.track('navigation', properties: {
-        'destination': 'Sports Selection Onboarding',
-        'source': 'User Profile Submit',
-      });
+      await analytics.track(
+        'navigation',
+        properties: {
+          'destination': 'Sports Selection Onboarding',
+          'source': 'User Profile Submit',
+        },
+      );
 
       // Use callback if provided (PageView mode), otherwise navigate (standalone mode)
       if (widget.onContinue != null) {

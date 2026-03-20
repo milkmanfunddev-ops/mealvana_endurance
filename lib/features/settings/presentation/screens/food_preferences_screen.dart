@@ -982,6 +982,8 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                         false, // Disabled - now handled in _handleSearchChanged based on results
                     autoSearchDebounceMs: 1500,
                     hintText: 'Search foods...',
+                    useDarkStyle:
+                        Theme.of(context).brightness == Brightness.dark,
                   ),
 
                   // "Search OpenFoodFacts" button (when 1-3 local results)

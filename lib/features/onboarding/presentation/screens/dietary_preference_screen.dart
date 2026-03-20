@@ -38,10 +38,12 @@ class DietaryPreferenceScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
 
   @override
-  ConsumerState<DietaryPreferenceScreen> createState() => _DietaryPreferenceScreenState();
+  ConsumerState<DietaryPreferenceScreen> createState() =>
+      _DietaryPreferenceScreenState();
 }
 
-class _DietaryPreferenceScreenState extends ConsumerState<DietaryPreferenceScreen> {
+class _DietaryPreferenceScreenState
+    extends ConsumerState<DietaryPreferenceScreen> {
   DietaryPreference? _selectedPreference;
   DietaryPreference? _originalPreference;
   bool _isLoading = false;
@@ -56,9 +58,10 @@ class _DietaryPreferenceScreenState extends ConsumerState<DietaryPreferenceScree
     final screenName = _isOnboarding
         ? 'Dietary Preference Onboarding'
         : 'Dietary Preference Settings';
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': screenName,
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track('screen_viewed', properties: {'screen_name': screenName});
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {
@@ -116,23 +119,29 @@ class _DietaryPreferenceScreenState extends ConsumerState<DietaryPreferenceScree
           widget.onContinue!();
         } else {
           // Navigate to allergies screen
-          context.push('/onboarding/allergies', extra: {
-            'dietaryPreference': _selectedPreference,
-          });
+          context.push(
+            '/onboarding/allergies',
+            extra: {'dietaryPreference': _selectedPreference},
+          );
         }
       } else {
         // SETTINGS MODE: Save to database
-        final success = await controller.saveDietaryPreference(_selectedPreference);
+        final success = await controller.saveDietaryPreference(
+          _selectedPreference,
+        );
 
         if (!mounted) return;
 
         if (success) {
           final analytics = ref.read(appExternalDepsProvider);
-          await analytics.analytics.track('dietary_preference_changed', properties: {
-            'from': _originalPreference?.name ?? 'none',
-            'to': _selectedPreference?.name ?? 'none',
-            'source': 'settings',
-          });
+          await analytics.analytics.track(
+            'dietary_preference_changed',
+            properties: {
+              'from': _originalPreference?.name ?? 'none',
+              'to': _selectedPreference?.name ?? 'none',
+              'source': 'settings',
+            },
+          );
 
           if (!mounted) return;
 
@@ -142,7 +151,10 @@ class _DietaryPreferenceScreenState extends ConsumerState<DietaryPreferenceScree
           MealvanaSnackbar.showSuccess(context, 'Dietary preference updated');
           context.pop();
         } else {
-          MealvanaSnackbar.showError(context, 'Failed to save dietary preference. Please try again.');
+          MealvanaSnackbar.showError(
+            context,
+            'Failed to save dietary preference. Please try again.',
+          );
         }
       }
     } finally {
@@ -181,20 +193,31 @@ class _DietaryPreferenceScreenState extends ConsumerState<DietaryPreferenceScree
 
   @override
   Widget build(BuildContext context) {
-    // Use the same dark Figma layout for both onboarding and settings
-    return _buildDarkLayout(context);
+    final useDarkStyle = Theme.of(context).brightness == Brightness.dark;
+    return _buildAdaptiveLayout(context, useDarkStyle: useDarkStyle);
   }
 
-  // ==================== Dark Figma Layout (Onboarding & Settings) ====================
+  // ==================== Adaptive Layout (Dark + Light Theme) ====================
 
-  Widget _buildDarkLayout(BuildContext context) {
+  Widget _buildAdaptiveLayout(
+    BuildContext context, {
+    required bool useDarkStyle,
+  }) {
+    final theme = Theme.of(context);
+    final backgroundColor = useDarkStyle
+        ? AppColors.blackberry
+        : theme.scaffoldBackgroundColor;
+    final titleColor = useDarkStyle
+        ? AppColors.orange
+        : theme.colorScheme.onSurface;
+
     return Scaffold(
-      backgroundColor: AppColors.blackberry,
+      backgroundColor: backgroundColor,
       body: Column(
         children: [
           // Progress bar for onboarding, back button for settings
           Container(
-            color: AppColors.blackberry,
+            color: backgroundColor,
             padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
             child: _isOnboarding
                 ? const OnboardingProgressBar(
@@ -221,14 +244,13 @@ class _DietaryPreferenceScreenState extends ConsumerState<DietaryPreferenceScree
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
+                        Text(
                           'Dietary Preference',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: 'Sansita',
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.orange,
-                          ),
+                          ).copyWith(color: titleColor),
                         ),
                       ],
                     ),
@@ -245,28 +267,30 @@ class _DietaryPreferenceScreenState extends ConsumerState<DietaryPreferenceScree
                       minHeight: constraints.maxHeight,
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Title
                           const SizedBox(height: 24),
-                          const Text(
+                          Text(
                             'What is your dietary preference?',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontFamily: 'Sansita',
                               fontSize: 26,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.orange,
                               height: 1.0,
-                            ),
+                            ).copyWith(color: titleColor),
                           ),
 
                           const SizedBox(height: 28),
 
                           // Diet options
-                          _buildFigmaDietOptions(),
+                          _buildFigmaDietOptions(useDarkStyle: useDarkStyle),
                         ],
                       ),
                     ),
@@ -294,17 +318,15 @@ class _DietaryPreferenceScreenState extends ConsumerState<DietaryPreferenceScree
 
   // ==================== Shared Components ====================
 
-  Widget _buildFigmaDietOptions() {
+  Widget _buildFigmaDietOptions({required bool useDarkStyle}) {
     // Use ordered list with omnivore first, excluding 'none'
     return FigmaRadioOptionList<DietaryPreference>(
       items: DietaryPreference.orderedForOnboarding.map((diet) {
-        return FigmaRadioOptionItem(
-          value: diet,
-          label: diet.displayName,
-        );
+        return FigmaRadioOptionItem(value: diet, label: diet.displayName);
       }).toList(),
       selectedValue: _selectedPreference,
       onSelected: (value) => setState(() => _selectedPreference = value),
+      useDarkStyle: useDarkStyle,
     );
   }
 

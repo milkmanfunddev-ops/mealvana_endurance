@@ -638,6 +638,29 @@ async function generateLPPhase(
 
   console.log(`[PLAN-V3] ${phase}: ${foods.length} foods available`);
 
+  // After phase: filter out foods that are clearly not recovery foods.
+  // Foods with high carbs and near-zero protein (e.g. drink mixes, gels)
+  // are during-phase products that shouldn't dominate recovery plans.
+  if (phase === 'after' && targets.carbs_g > 0) {
+    const beforeCount = foods.length;
+    foods = foods.filter(f => {
+      // A food is inappropriate for recovery if it has massive carbs relative
+      // to the target AND virtually no protein. This catches drink mixes (80g carbs)
+      // and gels but keeps bananas (27g carbs) and other real foods.
+      const isHighCarbNoProtein =
+        f.per_serving.protein_g < 1 && f.per_serving.carbs_g > targets.carbs_g * 0.5;
+      if (isHighCarbNoProtein) {
+        console.log(
+          `[PLAN-V3] after: excluding ${f.name} (${f.per_serving.carbs_g}g carbs, ${f.per_serving.protein_g}g protein — not suitable for recovery)`
+        );
+      }
+      return !isHighCarbNoProtein;
+    });
+    if (foods.length < beforeCount) {
+      console.log(`[PLAN-V3] after: filtered ${beforeCount - foods.length} non-recovery foods, ${foods.length} remaining`);
+    }
+  }
+
   // Hydration strategy: filter food pool based on carb demand per hour
   if (isDuringPhase && durationMinutes && durationMinutes > 0) {
     const durationHours = durationMinutes / 60;
@@ -661,6 +684,10 @@ async function generateLPPhase(
 
   const sportConfig = getSportConfig(activityType);
   const phaseConfig = sportConfig.phases[phase];
+  const dynamicMaxServingsCap =
+    phase === 'after' && targets.water_ml > 2000
+      ? Math.max(phaseConfig.maxServingsCap, 8)
+      : phaseConfig.maxServingsCap;
 
   // Get optimization weights for this phase
   const weights = getOptimizationWeights(activityType, phase);
@@ -674,7 +701,7 @@ async function generateLPPhase(
     : undefined;
   const modelOptions = {
     maxFoodItems: phaseConfig.maxFoods,
-    maxServingsCap: phaseConfig.maxServingsCap,
+    maxServingsCap: dynamicMaxServingsCap,
     selectionPenalty: isDuringPhase ? 1.0 : 0.1,
     maxElectrolyteSupplements: isDuringPhase && activityType === 'running' ? 1 : undefined,
     enforceWaterMin: isDuringPhase,
@@ -1118,6 +1145,7 @@ serve(async (req) => {
     const planId = generateUUID();
 
     console.log(`[PLAN-V3] Starting plan generation (activity=${activityType}, hours_before=${input.hours_before})`);
+    console.log(`[PLAN-V3] Full input: pre_run={carbs_g: ${input.macro_targets?.pre_run?.carbs_g}, protein_g: ${input.macro_targets?.pre_run?.protein_g}, water_ml: ${input.macro_targets?.pre_run?.water_ml}, sodium_mg: ${input.macro_targets?.pre_run?.sodium_mg}}, during_run={carbs_g: ${input.macro_targets?.during_run?.carbs_g}, sodium_mg: ${input.macro_targets?.during_run?.sodium_mg}, water_ml: ${input.macro_targets?.during_run?.water_ml}}, post_run={carbs_g: ${input.macro_targets?.post_run?.carbs_g}, protein_g: ${input.macro_targets?.post_run?.protein_g}, sodium_mg: ${input.macro_targets?.post_run?.sodium_mg}, water_ml: ${input.macro_targets?.post_run?.water_ml}}, duration_minutes=${input.duration_minutes}, gut_training_level=${input.gut_training_level}, dietary_preference=${input.dietary_preference}`);
 
     // Brick workouts: route to dedicated handler
     if (activityType === 'brick') {
@@ -1184,6 +1212,11 @@ serve(async (req) => {
       },
     };
 
+    // Log detailed response for debugging same-plan issues
+    console.log(`[PLAN-V3] Plan result: before_subphases=${Object.keys(beforeResult)}, during_foods=${duringPhaseResult.foods.length}, after_foods=${afterPhaseResult.foods.length}`);
+    if (afterPhaseResult.foods.length > 0) {
+      console.log(`[PLAN-V3] After-phase foods: ${afterPhaseResult.foods.map(f => `${f.display_name ?? f.food_id}(carbs=${f.carbs_grams.toFixed(0)},protein=${f.protein_grams.toFixed(0)},qty=${f.quantity})`).join(', ')}`);
+    }
     console.log(`[PLAN-V3] Plan generated successfully (plan_id=${planId})`);
 
     return jsonResponse(response);

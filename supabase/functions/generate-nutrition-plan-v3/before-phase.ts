@@ -59,6 +59,7 @@ async function fetchPreWorkoutTemplates(
   return (data ?? []).map((row: Record<string, unknown>) => ({
     ...row,
     allergens: row.allergens ?? [],
+    excluded_diets: row.excluded_diets ?? [],
   })) as PreWorkoutTemplate[];
 }
 

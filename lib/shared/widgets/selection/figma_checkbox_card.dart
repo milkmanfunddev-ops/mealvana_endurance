@@ -16,6 +16,7 @@ class FigmaCheckboxCard extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
+    this.useDarkStyle = true,
   });
 
   /// The label text to display
@@ -26,9 +27,31 @@ class FigmaCheckboxCard extends StatelessWidget {
 
   /// Called when the card is tapped
   final VoidCallback onTap;
+  final bool useDarkStyle;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final unselectedBackground = useDarkStyle
+        ? AppColors.textDark.withValues(alpha: 0.08)
+        : theme.colorScheme.surface;
+    final selectedBackground = useDarkStyle
+        ? AppColors.electrolyte.withValues(alpha: 0.28)
+        : AppColors.electrolyte.withValues(alpha: 0.16);
+    final borderColor = isSelected
+        ? (useDarkStyle
+              ? AppColors.electrolyte.withValues(alpha: 0.2)
+              : AppColors.electrolyte.withValues(alpha: 0.5))
+        : (useDarkStyle
+              ? AppColors.textDark.withValues(alpha: 0.08)
+              : theme.colorScheme.onSurface.withValues(alpha: 0.14));
+    final textColor = useDarkStyle
+        ? AppColors.textDark
+        : theme.colorScheme.onSurface;
+    final uncheckedIndicatorColor = useDarkStyle
+        ? AppColors.textDark
+        : theme.colorScheme.onSurface;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -36,16 +59,9 @@ class FigmaCheckboxCard extends StatelessWidget {
         curve: Curves.easeInOut,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.electrolyte.withValues(alpha: 0.28)
-              : AppColors.textDark.withValues(alpha: 0.08),
+          color: isSelected ? selectedBackground : unselectedBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.electrolyte.withValues(alpha: 0.2)
-                : AppColors.textDark.withValues(alpha: 0.08),
-            width: isSelected ? 2 : 1,
-          ),
+          border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
         ),
         child: Row(
           children: [
@@ -58,17 +74,10 @@ class FigmaCheckboxCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 border: isSelected
                     ? null
-                    : Border.all(
-                        color: AppColors.textDark,
-                        width: 2,
-                      ),
+                    : Border.all(color: uncheckedIndicatorColor, width: 2),
               ),
               child: isSelected
-                  ? const Icon(
-                      Icons.check,
-                      size: 18,
-                      color: Colors.black,
-                    )
+                  ? const Icon(Icons.check, size: 18, color: Colors.black)
                   : null,
             ),
 
@@ -82,10 +91,9 @@ class FigmaCheckboxCard extends StatelessWidget {
                   fontFamily: 'Inter',
                   fontSize: 20,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textDark,
                   letterSpacing: 0.24,
                   height: 1.0,
-                ),
+                ).copyWith(color: textColor),
               ),
             ),
           ],

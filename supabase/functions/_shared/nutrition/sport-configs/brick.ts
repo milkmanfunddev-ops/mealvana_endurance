@@ -42,9 +42,9 @@ export const brickConfig: SportConfig = {
       priorities: ['carbs', 'sodium', 'hydration'],
     },
     after: {
-      maxFoods: 4,
+      maxFoods: 6,
       defaultMaxServings: 2,
-      maxServingsCap: 3,
+      maxServingsCap: 5,
       priorities: ['protein', 'carbs', 'hydration'],
     },
   },

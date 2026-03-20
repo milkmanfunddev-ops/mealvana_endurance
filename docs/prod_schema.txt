@@ -3041,6 +3041,23 @@ grant execute on function update_catalog_items_updated_at() to authenticated;
 
 grant execute on function update_catalog_items_updated_at() to service_role;
 
+create function is_approved_coach(_uid uuid) returns boolean
+    stable
+    security definer
+    SET search_path = public
+    language sql
+as
+$$
+  select exists (
+    select 1
+    from public.coaches c
+    where c.user_id = _uid
+      and c.application_status = 'approved'
+  );
+$$;
+
+alter function is_approved_coach(uuid) owner to postgres;
+
 create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
 
 alter operator %(text, text) owner to supabase_admin;

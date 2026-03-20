@@ -123,9 +123,9 @@ export const DEFAULT_PHASE_LIMITS: Record<Phase, DefaultLimits> = {
     maxServingsCap: 4,
   },
   after: {
-    maxFoods: 4,
+    maxFoods: 6,
     defaultMaxServings: 2,
-    maxServingsCap: 3,
+    maxServingsCap: 5,
   },
 };
 

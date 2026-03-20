@@ -6,12 +6,17 @@ import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
+import '../../domain/pairing_code_connection_result.dart';
 import '../providers/coach_dashboard_controller.dart';
 import '../providers/coach_portal_controller.dart';
 
 /// Left sidebar for the coach portal with nav + athlete list
 class PortalSidebar extends ConsumerWidget {
-  const PortalSidebar({super.key});
+  const PortalSidebar({super.key, this.onBackToApp});
+
+  /// Called when the user taps "Back to App".
+  /// If null, falls back to `context.go('/main')`.
+  final VoidCallback? onBackToApp;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -54,7 +59,13 @@ class PortalSidebar extends ConsumerWidget {
               ),
               icon: const Icon(Icons.arrow_back, size: 16),
               label: const Text('Back to App', style: TextStyle(fontSize: 13)),
-              onPressed: () => context.go('/main'),
+              onPressed: () {
+                if (onBackToApp != null) {
+                  onBackToApp!();
+                } else {
+                  context.go('/main');
+                }
+              },
             ),
           ),
         ],
@@ -330,21 +341,20 @@ class _AthleteCodeDialogState extends ConsumerState<_AthleteCodeDialog> {
     });
 
     try {
-      final relationship = await ref
+      final result = await ref
           .read(coachServiceProvider)
-          .connectViaPairingCode(code: code);
+          .connectViaPairingCodeDetailed(code: code);
 
       if (!mounted) return;
 
-      if (relationship != null) {
+      if (result.isSuccess) {
         MealvanaSnackbar.showSuccess(context, 'Athlete connected!');
         widget.onInviteSuccess();
         Navigator.of(context).pop();
       } else {
         setState(() {
           _isConnectingViaCode = false;
-          _codeError =
-              'Unable to connect this code. Check that it is active and your coach account is approved.';
+          _codeError = _buildPairingCodeFailureMessage(result.failureReason);
         });
       }
     } catch (_) {
@@ -353,6 +363,32 @@ class _AthleteCodeDialogState extends ConsumerState<_AthleteCodeDialog> {
         _isConnectingViaCode = false;
         _codeError = 'Connection failed. Please try again.';
       });
+    }
+  }
+
+  String _buildPairingCodeFailureMessage(
+    PairingCodeConnectFailureReason? reason,
+  ) {
+    switch (reason) {
+      case PairingCodeConnectFailureReason.noUserProfile:
+        return 'Could not determine your account. Please sign out and sign back in.';
+      case PairingCodeConnectFailureReason.notApprovedCoach:
+        return 'Your coach account is not approved yet.';
+      case PairingCodeConnectFailureReason.invalidCodeFormat:
+        return 'Code must be 6 letters or numbers.';
+      case PairingCodeConnectFailureReason.codeNotFound:
+        return 'This pairing code was not found.';
+      case PairingCodeConnectFailureReason.codeAlreadyUsed:
+        return 'This pairing code has already been used.';
+      case PairingCodeConnectFailureReason.codeExpired:
+        return 'This pairing code has expired. Ask the athlete for a new one.';
+      case PairingCodeConnectFailureReason.selfConnectionNotAllowed:
+        return 'You cannot connect to your own pairing code.';
+      case PairingCodeConnectFailureReason.relationshipAlreadyExists:
+        return 'You are already connected to this athlete.';
+      case PairingCodeConnectFailureReason.unknown:
+      case null:
+        return 'Unable to connect this code right now. Please try again.';
     }
   }
 

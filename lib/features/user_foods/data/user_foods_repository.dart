@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/food_management/product_type_mapper.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../../shared/services/sync/sync_dependency_graph.dart';
@@ -111,9 +112,9 @@ class UserFoodsRepository with SyncableRepository {
               'fat_per_serving': food.fatPerServing,
               'sodium_mg': food.sodiumMg,
               'fluid_ml_per_serving': food.fluidMlPerServing,
-              'product_type_id': food.productTypeId,
-              'categories': food.categories,
-              'activity_types': food.activityTypes,
+              'product_type': normalizeProductType(food.productTypeId),
+              'categories': _decodeJsonArray(food.categories),
+              'activity_types': _decodeJsonArray(food.activityTypes),
               'is_electrolyte': food.isElectrolyte,
               'to_exclude_from_solver': food.toExcludeFromSolver,
               'is_deleted': food.isDeleted,
@@ -348,6 +349,20 @@ class UserFoodsRepository with SyncableRepository {
     if (value is DateTime) return value;
     if (value is String) return DateTime.tryParse(value);
     return null;
+  }
+
+  /// Decode a JSON-encoded array string (from Drift) into a List for PostgREST.
+  /// Supabase columns `categories` and `activity_types` are PostgreSQL enum arrays,
+  /// so PostgREST expects a JSON array, not a JSON-encoded string.
+  static List<dynamic>? _decodeJsonArray(String? jsonString) {
+    if (jsonString == null || jsonString.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(jsonString);
+      if (decoded is List) return decoded;
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 }
 
