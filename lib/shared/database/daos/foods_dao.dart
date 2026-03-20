@@ -350,6 +350,7 @@ class FoodsDao extends DatabaseAccessor<AppDatabase> with _$FoodsDaoMixin {
       caloriesPerServing: userFood.caloriesPerServing,
       fluidMlPerServing: userFood.fluidMlPerServing,
       sodiumMg: userFood.sodiumMg,
+      productTypeId: userFood.productTypeId,
       beforeRunSuitable: true, // Default for scanned foods
       duringRunSuitable: true,
       runPortable: true,
