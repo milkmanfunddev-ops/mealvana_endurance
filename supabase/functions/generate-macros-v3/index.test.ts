@@ -1010,8 +1010,8 @@ describe('Brick Workout Support', () => {
       // 70kg × 1.2 = 84g
       assertWithinTolerance(after.carbs_g, 84, CARB_TOLERANCE_G, 'Brick post-workout carbs');
 
-      // Protein: 70kg × 0.3 = 21g
-      assertWithinTolerance(after.protein_g, 21, PROTEIN_TOLERANCE_G, 'Brick post-workout protein');
+      // Protein: 2.75h > 2.5h → 0.40 g/kg tier, 70kg × 0.40 = 28g
+      assertWithinTolerance(after.protein_g, 28, PROTEIN_TOLERANCE_G, 'Brick post-workout protein');
     });
 
     it('should apply fasted mode to brick pre and post workout', async () => {

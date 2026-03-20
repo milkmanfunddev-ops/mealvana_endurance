@@ -58,6 +58,7 @@ class OfflineMacroCalculator {
     // Post-run nutrition calculations
     final postRunMacros = _calculatePostRunMacros(
       weightKg: weightKg,
+      durationH: durationH,
       duringWaterMl: duringRunMacros['water_total_ml'],
     );
     
@@ -221,11 +222,25 @@ class OfflineMacroCalculator {
   
   static Map<String, dynamic> _calculatePostRunMacros({
     required double weightKg,
+    required double durationH,
     required double duringWaterMl,
   }) {
     // ISSN recommendations for recovery
     final carbsG = _clamp(weightKg * 1.0, 30, 140);
-    final proteinG = _clamp(weightKg * 0.3, 18, 45);
+
+    // Duration-tiered protein: shorter workouts need less, longer need more
+    // Clamped to 20–40g (evidence-based range)
+    double proteinPerKg;
+    if (durationH <= 0.75) {
+      proteinPerKg = 0.25;
+    } else if (durationH <= 1.5) {
+      proteinPerKg = 0.30;
+    } else if (durationH <= 2.5) {
+      proteinPerKg = 0.35;
+    } else {
+      proteinPerKg = 0.40;
+    }
+    final proteinG = _clamp(weightKg * proteinPerKg, 20, 40);
     
     // 150% of fluid lost (estimated from during-run needs)
     final waterMl = _clamp(duringWaterMl * 1.5, 500, 1200);

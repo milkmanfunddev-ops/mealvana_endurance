@@ -349,14 +349,22 @@ function calculatePostWorkoutCarbs(
 
 /**
  * Post-workout protein calculation
- * Slightly higher if fasted
+ * Duration-tiered: shorter workouts need less, longer need more
+ * Slightly higher if fasted (+0.05 g/kg)
+ * Clamped to 20–40g (evidence-based range)
  */
 function calculatePostWorkoutProtein(
   weightKg: number,
+  durationH: number,
   isFasted: boolean
 ): number {
-  const proteinPerKg = isFasted ? 0.35 : 0.3;
-  return Math.round(weightKg * proteinPerKg);
+  let proteinPerKg: number;
+  if (durationH <= 0.75) proteinPerKg = 0.25;
+  else if (durationH <= 1.5) proteinPerKg = 0.30;
+  else if (durationH <= 2.5) proteinPerKg = 0.35;
+  else proteinPerKg = 0.40;
+  if (isFasted) proteinPerKg += 0.05;
+  return Math.min(40, Math.max(20, Math.round(weightKg * proteinPerKg)));
 }
 
 /**
@@ -690,7 +698,7 @@ function calculateMacrosV3(input: MacroInputV3) {
 
   // Post-workout nutrition (v3)
   const postCarbs = calculatePostWorkoutCarbs(weightKg, durationH, input.is_fasted);
-  const postProtein = calculatePostWorkoutProtein(weightKg, input.is_fasted);
+  const postProtein = calculatePostWorkoutProtein(weightKg, durationH, input.is_fasted);
   const postFat = calculatePostWorkoutFat(weightKg);
 
   const postHydration = calculatePostWorkoutHydration(
@@ -1043,7 +1051,7 @@ function calculateBrickMacrosV3(input: MacroInputV3) {
 
   // ---- Post-workout (v3) ----
   const postCarbs = calculatePostWorkoutCarbs(weightKg, totalDurationH, isFasted);
-  const postProtein = calculatePostWorkoutProtein(weightKg, isFasted);
+  const postProtein = calculatePostWorkoutProtein(weightKg, totalDurationH, isFasted);
 
   // For post hydration, use aggregate sweat rate
   const actualSweatRateLph = calculateActualSweatRate(sweatRateCategory, input.temp_c ?? null, input.humidity_pct ?? null);

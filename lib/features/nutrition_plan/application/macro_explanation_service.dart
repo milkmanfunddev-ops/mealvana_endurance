@@ -380,7 +380,22 @@ class MacroExplanationService {
     ));
 
     // Protein (After: Carbs, Protein, Sodium — no Fluids)
-    final proteinPerKg = 0.30;
+    // Duration-tiered protein per kg
+    final double proteinPerKg;
+    final String durationTierNote;
+    if (durationH <= 0.75) {
+      proteinPerKg = 0.25;
+      durationTierNote = '(≤ 45 min — light recovery)';
+    } else if (durationH <= 1.5) {
+      proteinPerKg = 0.30;
+      durationTierNote = '(45 min–1.5 hr — standard recovery)';
+    } else if (durationH <= 2.5) {
+      proteinPerKg = 0.35;
+      durationTierNote = '(1.5–2.5 hr — elevated recovery)';
+    } else {
+      proteinPerKg = 0.40;
+      durationTierNote = '(> 2.5 hr — maximum recovery)';
+    }
     explanations.add(MacroExplanation(
       macroName: 'Protein',
       value: '${post.proteinG.round()}',
@@ -389,8 +404,8 @@ class MacroExplanationService {
       rangeHigh: post.proteinHighG?.round().toString(),
       actualValue: actuals != null ? '${actuals['protein'] ?? 0}' : null,
       formulaText: 'Post-workout protein kickstarts muscle repair and recovery.\n\n'
-          'Formula:  weight  x  0.30 g/kg\n'
-          '${wt}kg  x  $proteinPerKg g/kg  =  ${post.proteinG.round()}g\n\n'
+          'Formula:  weight  x  ${proteinPerKg.toStringAsFixed(2)} g/kg  $durationTierNote\n'
+          '${wt}kg  x  ${proteinPerKg.toStringAsFixed(2)} g/kg  =  ${post.proteinG.round()}g\n\n'
           'Aim for 20–40g of high-quality protein (with 2–3g leucine) '
           'like chicken, eggs, Greek yogurt, or a protein shake.',
       rangeRationale: 'Eat protein within the first hour after exercise '

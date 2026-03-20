@@ -179,9 +179,14 @@ function calculatePostWorkoutCarbs(weightKg: number, durationH: number, isFasted
   return Math.round(weightKg * durationMultiplier * fastedMultiplier);
 }
 
-function calculatePostWorkoutProtein(weightKg: number, isFasted: boolean): number {
-  const proteinPerKg = isFasted ? 0.35 : 0.3;
-  return Math.round(weightKg * proteinPerKg);
+function calculatePostWorkoutProtein(weightKg: number, durationH: number, isFasted: boolean): number {
+  let proteinPerKg: number;
+  if (durationH <= 0.75) proteinPerKg = 0.25;
+  else if (durationH <= 1.5) proteinPerKg = 0.30;
+  else if (durationH <= 2.5) proteinPerKg = 0.35;
+  else proteinPerKg = 0.40;
+  if (isFasted) proteinPerKg += 0.05;
+  return Math.min(40, Math.max(20, Math.round(weightKg * proteinPerKg)));
 }
 
 function calculatePostWorkoutFat(weightKg: number): number {
@@ -494,7 +499,7 @@ async function calculateMacrosV4(
 
   // === POST-WORKOUT (V3 unchanged) ===
   const postCarbs = calculatePostWorkoutCarbs(weightKg, durationH, input.is_fasted);
-  const postProtein = calculatePostWorkoutProtein(weightKg, input.is_fasted);
+  const postProtein = calculatePostWorkoutProtein(weightKg, durationH, input.is_fasted);
   const postFat = calculatePostWorkoutFat(weightKg);
   const postHydration = calculatePostWorkoutHydration(
     durationH, duringHydration.sweat_rate_lph, duringHydration.sodium_conc_mg_per_l,
@@ -813,7 +818,7 @@ function calculateBrickMacrosV4(
 
   // Post-workout (same as V3)
   const postCarbs = calculatePostWorkoutCarbs(weightKg, totalDurationH, isFasted);
-  const postProtein = calculatePostWorkoutProtein(weightKg, isFasted);
+  const postProtein = calculatePostWorkoutProtein(weightKg, totalDurationH, isFasted);
   const actualSweatRateLph = calculateActualSweatRate(sweatRateCategory, input.temp_c ?? null, input.humidity_pct ?? null);
   const sodiumConcMgPerL = sodiumConcentrationFromCategory(sweatSodiumCat);
   const totalDuringHydrationMl = duringSegments.reduce((sum, s) => sum + s.water_ml, 0)

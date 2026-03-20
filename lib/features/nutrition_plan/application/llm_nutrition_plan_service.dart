@@ -126,9 +126,20 @@ class LLMNutritionPlanService {
       final duringRunWater = (600 * durationHours).round(); // ~600ml/hour
       final duringRunSodium = (400 * durationHours).round(); // ~400mg/hour
 
-      // Post-run: 1.0-1.2g carbs/kg (duration-dependent), 0.3g protein/kg
+      // Post-run: 1.0-1.2g carbs/kg (duration-dependent), duration-tiered protein
       final postRunCarbs = (weightKg * (durationHours > 2 ? 1.2 : 1.0)).round();
-      final postRunProtein = (weightKg * 0.3).round();
+      // Duration-tiered protein: 0.25–0.40 g/kg, clamped to 20–40g
+      double postProteinPerKg;
+      if (durationHours <= 0.75) {
+        postProteinPerKg = 0.25;
+      } else if (durationHours <= 1.5) {
+        postProteinPerKg = 0.30;
+      } else if (durationHours <= 2.5) {
+        postProteinPerKg = 0.35;
+      } else {
+        postProteinPerKg = 0.40;
+      }
+      final postRunProtein = (weightKg * postProteinPerKg).round().clamp(20, 40);
       final postRunWater = (duringRunWater * 1.25).round(); // 125% of sweat loss
       final postRunSodium = 500; // baseline recovery sodium
 
