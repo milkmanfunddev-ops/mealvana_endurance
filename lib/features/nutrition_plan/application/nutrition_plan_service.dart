@@ -21,6 +21,7 @@ import '../data/nutrition_plan_mapper.dart';
 import '../domain/food_item.dart';
 import '../domain/macro_targets.dart';
 import '../domain/nutrition_plan.dart';
+import 'client_plan/client_plan_service.dart';
 import 'llm_nutrition_plan_service.dart';
 
 /// Application service for managing nutrition plans and food data
@@ -36,6 +37,7 @@ class NutritionPlanService {
   // Content service removed since algorithm logic moved to Edge Functions
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
   LLMNutritionPlanService get _llmService => ref.read(llmNutritionPlanServiceProvider);
+  ClientPlanService get _clientPlanService => ref.read(clientPlanServiceProvider);
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
@@ -184,6 +186,37 @@ class NutritionPlanService {
       },
     );
 
+    // NEW: Try client-side solver with real foods from Drift/Supabase
+    try {
+      final clientPlan = await _clientPlanService.generatePlan(
+        userId: user.id,
+        macroTargets: resolvedMacroTargets,
+        activityId: activityId,
+        timeBeforeRunHours: timeBeforeRunHours,
+        activityType: resolvedMacroTargets.activityType,
+      );
+
+      try {
+        await planRepository.cachePlanLocally(user.id, clientPlan);
+      } catch (e) {
+        _logger.warning('Failed to cache client solver plan locally',
+          context: 'NUTRITION_PLAN_OFFLINE',
+          error: e,
+        );
+      }
+
+      _logger.info('Client solver produced plan with real foods',
+        context: 'NUTRITION_PLAN_OFFLINE',
+      );
+      return clientPlan;
+    } catch (e) {
+      _logger.warning('Client solver failed, using generic fallback',
+        context: 'NUTRITION_PLAN_OFFLINE',
+        error: e,
+      );
+    }
+
+    // EXISTING: Ultimate fallback with generic text
     final offlinePlan = _buildOfflinePlanFromTargets(
       userId: user.id,
       macroTargets: resolvedMacroTargets,
@@ -551,6 +584,21 @@ class NutritionPlanService {
         }).toList();
       }
 
+      // Log full V3 request payload for debugging same-plan issues
+      _logger.info(
+        '📤 [V3-REQUEST] Full payload: '
+        'activity_type=${requestData['activity_type']}, '
+        'hours_before=${requestData['hours_before']}, '
+        'weight_kg=${requestData['weight_kg']}, '
+        'duration_minutes=${requestData['duration_minutes']}, '
+        'gut_training_level=${requestData['gut_training_level']}, '
+        'dietary_preference=${requestData['dietary_preference']}, '
+        'pre_run={carbs_g: ${(requestData['macro_targets'] as Map?)?['pre_run']?['carbs_g']}, protein_g: ${(requestData['macro_targets'] as Map?)?['pre_run']?['protein_g']}, water_ml: ${(requestData['macro_targets'] as Map?)?['pre_run']?['water_ml']}, sodium_mg: ${(requestData['macro_targets'] as Map?)?['pre_run']?['sodium_mg']}}, '
+        'during_run={carbs_g: ${(requestData['macro_targets'] as Map?)?['during_run']?['carbs_g']}, sodium_mg: ${(requestData['macro_targets'] as Map?)?['during_run']?['sodium_mg']}, water_ml: ${(requestData['macro_targets'] as Map?)?['during_run']?['water_ml']}}, '
+        'post_run={carbs_g: ${(requestData['macro_targets'] as Map?)?['post_run']?['carbs_g']}, protein_g: ${(requestData['macro_targets'] as Map?)?['post_run']?['protein_g']}, sodium_mg: ${(requestData['macro_targets'] as Map?)?['post_run']?['sodium_mg']}, water_ml: ${(requestData['macro_targets'] as Map?)?['post_run']?['water_ml']}}',
+        context: 'NUTRITION_PLAN_SERVICE',
+      );
+
       // Retry transient errors (502/503/504) with exponential backoff.
       // The Supabase SDK throws FunctionException for all non-2xx responses,
       // so retry logic is handled in the FunctionException catch block.
@@ -564,7 +612,7 @@ class NutritionPlanService {
                 'generate-nutrition-plan-v3',
                 body: requestData,
               )
-              .timeout(const Duration(seconds: 55));
+              .timeout(const Duration(seconds: 90));
           break; // Success - exit retry loop
         } on TimeoutException {
           if (attempt < maxRetries) {
@@ -596,6 +644,19 @@ class NutritionPlanService {
         throw Exception('V2 edge function returned success=false: ${data['error']}');
       }
 
+      // Log V3 response summary for debugging same-plan issues
+      final planData = data['plan'] as Map<String, dynamic>?;
+      final beforeFoods = planData?['before'];
+      final duringFoods = planData?['during'];
+      final afterFoods = planData?['after'];
+      _logger.info(
+        '📥 [V3-RESPONSE] plan_id=${data['plan_id']}, '
+        'before_keys=${beforeFoods is Map ? beforeFoods.keys.toList() : 'N/A'}, '
+        'during_food_count=${duringFoods is Map ? (duringFoods['foods'] as List?)?.length ?? 0 : (duringFoods is List ? duringFoods.length : 0)}, '
+        'after_food_count=${afterFoods is List ? afterFoods.length : 0}',
+        context: 'NUTRITION_PLAN_SERVICE',
+      );
+
       // Parse the v2 response into NutritionPlan
       final now = DateTime.now();
       final planId = data['plan_id'] as String? ?? const Uuid().v4();
@@ -622,16 +683,18 @@ class NutritionPlanService {
       return plan;
     } catch (e) {
       _logger.error(
-        '🎯 OVERRIDE DEBUG: V2 FAILED - falling back to v1! Error: $e',
+        '❌ [V3-FAILED] V3 edge function failed, using offline fallback. Error: $e',
         context: 'NUTRITION_PLAN_SERVICE',
         error: e,
       );
 
-      // Fallback to existing v1 flow
-      return generatePlanFromMacrosWithFallback(
-        macroTargets: macroTargets,
+      // Fallback to offline plan (no V1 edge function - V1 is decommissioned)
+      return await _generateFallbackPlan(
+        distanceMiles: macroTargets.metrics.distanceMi,
+        paceMinutesPerMile: macroTargets.metrics.paceMinPerMile ?? 8.0,
+        timeBeforeRunHours: hoursBefore,
         activityId: activityId,
-        brickMetadata: brickMetadata,
+        macroTargets: macroTargets,
         userId: userId,
       );
     }
