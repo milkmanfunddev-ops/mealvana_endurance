@@ -77,6 +77,18 @@ const Set<String> beverageProductTypes = {
   'recovery_shake',
 };
 
+/// Set of valid product type values for the dropdown
+final Set<String> validProductTypes =
+    productTypeOptions.map((o) => o.value).toSet();
+
+/// Normalize a product type value to one the dropdown can display.
+/// Unknown values (capsule, quick_carbs, etc.) fall back to 'import'.
+String normalizeProductTypeForDisplay(String? value) {
+  if (value == null || value.isEmpty) return 'import';
+  if (validProductTypes.contains(value)) return value;
+  return 'import';
+}
+
 /// Widget that displays product type selection dropdown.
 /// Helps categorize foods for better recommendations.
 class ProductTypeSelector extends StatelessWidget {

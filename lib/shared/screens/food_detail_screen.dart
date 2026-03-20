@@ -258,8 +258,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       _selectedCategories = {1: true, 2: true, 3: true};
     }
 
-    // Initialize product type
-    _selectedProductType = widget.foodData.productType ?? 'import';
+    // Initialize product type (normalize to valid dropdown values)
+    _selectedProductType = normalizeProductTypeForDisplay(widget.foodData.productType);
 
     // Initialize text controllers
     // For createNew mode, leave nutrition fields empty instead of showing "0"
