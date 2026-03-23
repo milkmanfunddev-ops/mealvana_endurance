@@ -68,7 +68,7 @@ export function greedyFallback(
     // Check if adding this food would cause excessive overshoots
     const wouldOvershootCarbs =
       carbsTarget > 0 &&
-      totals.carbs_g + food.per_serving.carbs_g > carbsTarget * 1.3;
+      totals.carbs_g + food.per_serving.carbs_g > carbsTarget * 1.2;
     const wouldOvershootSodium =
       sodiumTarget > 0 &&
       totals.sodium_mg + food.per_serving.sodium_mg > sodiumTarget * 1.3;

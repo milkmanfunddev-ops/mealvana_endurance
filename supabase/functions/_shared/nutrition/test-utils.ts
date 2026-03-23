@@ -379,6 +379,73 @@ export const DURING_SHORT: MacroTargets = {
   water_ml: 300,
 };
 
+/** Ultra runner: 50mi, 75kg, high gut, hot conditions */
+export const PROFILE_ULTRA: MacroTargets = {
+  carbs_g: 140,
+  protein_g: 40,
+  sodium_mg: 2000,
+  water_ml: 2500,
+};
+
+/** Very light female: 44kg, 10km, low gut */
+export const PROFILE_VERY_LIGHT: MacroTargets = {
+  carbs_g: 20,
+  protein_g: 10,
+  sodium_mg: 200,
+  water_ml: 300,
+};
+
+/** During targets — ultra runner, 50mi, heavy sweater, hot */
+export const DURING_ULTRA: MacroTargets = {
+  carbs_g: 120,
+  sodium_mg: 2000,
+  water_ml: 2500,
+};
+
+/** During targets — cycling 60mi */
+export const DURING_CYCLING_60: MacroTargets = {
+  carbs_g: 90,
+  sodium_mg: 1200,
+  water_ml: 1400,
+};
+
+/** During targets — cycling 100mi */
+export const DURING_CYCLING_100: MacroTargets = {
+  carbs_g: 130,
+  sodium_mg: 1800,
+  water_ml: 2000,
+};
+
+/** After targets — ultra runner */
+export const AFTER_ULTRA: MacroTargets = {
+  carbs_g: 100,
+  protein_g: 45,
+  sodium_mg: 1500,
+  water_ml: 2000,
+};
+
+/** After targets — very light female */
+export const AFTER_VERY_LIGHT: MacroTargets = {
+  carbs_g: 25,
+  protein_g: 12,
+  sodium_mg: 200,
+  water_ml: 350,
+};
+
+/** 45kg extreme lightweight profile (during) */
+export const DURING_45KG: MacroTargets = {
+  carbs_g: 30,
+  sodium_mg: 350,
+  water_ml: 450,
+};
+
+/** 110kg extreme heavyweight profile (during) */
+export const DURING_110KG: MacroTargets = {
+  carbs_g: 90,
+  sodium_mg: 1600,
+  water_ml: 1800,
+};
+
 // ============================================================================
 // Assertion Helpers
 // ============================================================================
@@ -431,4 +498,174 @@ export function formatSummary(totals: FoodNutrition, targets: MacroTargets): str
     `protein=${totals.protein_g.toFixed(0)}g/${targets.protein_g ?? 0}g(${pct(totals.protein_g, targets.protein_g ?? 0)}) ` +
     `sodium=${totals.sodium_mg.toFixed(0)}mg/${targets.sodium_mg}mg(${pct(totals.sodium_mg, targets.sodium_mg)}) ` +
     `water=${totals.water_ml.toFixed(0)}ml/${targets.water_ml}ml(${pct(totals.water_ml, targets.water_ml)})`;
+}
+
+/**
+ * STRICT assertion: HARD FAIL if any macro falls outside the specified range.
+ * Uses MACRO_CONSTRAINT_RANGES-style min/max ratios with a small rounding tolerance.
+ * Throws an AssertionError with detailed diagnostics on failure.
+ *
+ * @param label - Test context label for error messages
+ * @param totals - Actual nutrition totals from solver
+ * @param targets - Target macros
+ * @param ranges - Per-macro { min, max } ratio bounds (default: 90%-110%)
+ * @param roundingTolerance - Extra tolerance for serving rounding (default: 5%)
+ */
+export function strictAssertMacrosInRange(
+  label: string,
+  totals: FoodNutrition,
+  targets: MacroTargets,
+  ranges: {
+    carbs?: { min: number; max: number };
+    protein?: { min: number; max: number };
+    sodium?: { min: number; max: number };
+    water?: { min: number; max: number };
+  } = {},
+  roundingTolerance = 0.05,
+): void {
+  const defaultRange = { min: 0.90, max: 1.10 };
+  const failures: string[] = [];
+
+  const check = (name: string, actual: number, target: number, range: { min: number; max: number }) => {
+    if (target <= 0) return;
+    const ratio = actual / target;
+    const effectiveMin = range.min - roundingTolerance;
+    const effectiveMax = range.max + roundingTolerance;
+    if (ratio < effectiveMin || ratio > effectiveMax) {
+      failures.push(
+        `${name}: ${actual.toFixed(1)} / ${target} = ${(ratio * 100).toFixed(1)}% ` +
+        `(allowed: ${(effectiveMin * 100).toFixed(0)}%-${(effectiveMax * 100).toFixed(0)}%)`
+      );
+    }
+  };
+
+  check('carbs', totals.carbs_g, targets.carbs_g, ranges.carbs ?? defaultRange);
+  if (targets.protein_g && targets.protein_g > 0) {
+    check('protein', totals.protein_g, targets.protein_g, ranges.protein ?? defaultRange);
+  }
+  check('sodium', totals.sodium_mg, targets.sodium_mg, ranges.sodium ?? defaultRange);
+  check('water', totals.water_ml, targets.water_ml, ranges.water ?? defaultRange);
+
+  if (failures.length > 0) {
+    throw new Error(
+      `[STRICT] ${label}: ${failures.length} macro(s) out of range:\n  - ${failures.join('\n  - ')}`
+    );
+  }
+}
+
+// ============================================================================
+// Extended During-Phase Food Catalog (includes high-sodium sources)
+// ============================================================================
+
+/** Extended during-phase food catalog with additional electrolyte options.
+ *  Includes a high-sodium drink mix and a capsule with inflated max_servings
+ *  to test the capsule cap logic. */
+export function makeDuringFoodsExtended(): Food[] {
+  return [
+    ...makeDuringFoods(),
+    makeFood({
+      id: 'high-sodium-mix',
+      name: 'High-Sodium Electrolyte Mix',
+      per_serving: { carbs_g: 3, protein_g: 0, fat_g: 0, sodium_mg: 500, water_ml: 500, calories: 15 },
+      preference_score: 80,
+      is_liquid: true,
+      is_electrolyte: true,
+      product_type: 'supplement',
+      min_servings: 0.5,
+      max_servings: 4,
+    }),
+    makeFood({
+      id: 'electrolyte-capsule',
+      name: 'Electrolyte Capsule',
+      per_serving: { carbs_g: 0, protein_g: 0, fat_g: 0, sodium_mg: 200, water_ml: 0, calories: 0 },
+      preference_score: 50,
+      is_electrolyte: true,
+      is_indivisible: true,
+      product_type: 'supplement',
+      min_servings: 1,
+      max_servings: 10,  // deliberately high to test cap
+    }),
+  ];
+}
+
+// ============================================================================
+// Mock Before-Phase Food Catalog
+// ============================================================================
+
+export function makeBeforeFoods(): Food[] {
+  return [
+    makeFood({
+      id: 'oatmeal',
+      name: 'Oatmeal',
+      per_serving: { carbs_g: 27, protein_g: 5, fat_g: 3, sodium_mg: 0, water_ml: 100, calories: 150 },
+      preference_score: 200,
+      product_type: 'food',
+      min_servings: 0.5,
+      max_servings: 3,
+    }),
+    makeFood({
+      id: 'banana-before',
+      name: 'Banana',
+      per_serving: { carbs_g: 27, protein_g: 1, fat_g: 0, sodium_mg: 1, water_ml: 30, calories: 105 },
+      preference_score: 200,
+      is_indivisible: true,
+      product_type: 'food',
+      min_servings: 1,
+      max_servings: 2,
+    }),
+    makeFood({
+      id: 'toast',
+      name: 'Toast with Jam',
+      per_serving: { carbs_g: 30, protein_g: 3, fat_g: 1, sodium_mg: 150, water_ml: 10, calories: 140 },
+      preference_score: 80,
+      product_type: 'food',
+      min_servings: 0.5,
+      max_servings: 3,
+    }),
+    makeFood({
+      id: 'yogurt-before',
+      name: 'Greek Yogurt',
+      per_serving: { carbs_g: 7, protein_g: 15, fat_g: 4, sodium_mg: 60, water_ml: 100, calories: 130 },
+      preference_score: 80,
+      product_type: 'food',
+      min_servings: 0.5,
+      max_servings: 2,
+    }),
+    makeFood({
+      id: 'water-before',
+      name: 'Water',
+      per_serving: { carbs_g: 0, protein_g: 0, fat_g: 0, sodium_mg: 0, water_ml: 240, calories: 0 },
+      preference_score: 50,
+      is_liquid: true,
+      is_essential: true,
+      product_type: 'beverage',
+      min_servings: 1,
+      max_servings: 4,
+    }),
+    makeFood({
+      id: 'coffee',
+      name: 'Coffee',
+      per_serving: { carbs_g: 0, protein_g: 0, fat_g: 0, sodium_mg: 5, water_ml: 240, calories: 5 },
+      preference_score: 80,
+      is_liquid: true,
+      product_type: 'beverage',
+      min_servings: 1,
+      max_servings: 2,
+    }),
+  ];
+}
+
+/** Sum FoodResult[] totals (convenience for tests that use during-rule-solver output) */
+export function sumFoodResults(foods: Array<{ carbs_grams: number; sodium_mg: number; fluids_ml: number; protein_grams: number; fat_grams?: number; calories?: number }>): FoodNutrition {
+  return foods.reduce(
+    (acc, f) => ({
+      carbs_g: acc.carbs_g + f.carbs_grams,
+      protein_g: acc.protein_g + f.protein_grams,
+      fat_g: acc.fat_g + (f.fat_grams ?? 0),
+      sodium_mg: acc.sodium_mg + f.sodium_mg,
+      water_ml: acc.water_ml + f.fluids_ml,
+      calories: acc.calories + (f.calories ?? 0),
+    }),
+    { carbs_g: 0, protein_g: 0, fat_g: 0, sodium_mg: 0, water_ml: 0, calories: 0 },
+  );
 }

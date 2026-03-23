@@ -89,7 +89,7 @@ export function buildLPModel(
       const sodiumBounds = MACRO_CONSTRAINT_RANGES.sodium[phase];
       if (sodiumBounds) {
         model.constraints.sodium = {
-          min: targets.sodium_mg * Math.min(sodiumBounds.min, 0.75),
+          min: targets.sodium_mg * Math.min(sodiumBounds.min, 0.80),
           max: targets.sodium_mg * sodiumBounds.max,
         };
       }
@@ -298,6 +298,30 @@ export function solveLPModel(
       `[LP-SOLVER] Totals: carbs=${totals.carbs_g.toFixed(1)}g, protein=${totals.protein_g.toFixed(1)}g, ` +
       `fat=${totals.fat_g.toFixed(1)}g, sodium=${totals.sodium_mg.toFixed(0)}mg, water=${totals.water_ml.toFixed(0)}ml`
     );
+
+    // Post-rounding validation: check if rounded totals still satisfy LP constraints (5% tolerance)
+    const ROUNDING_TOLERANCE = 0.05;
+    const roundingIssues: string[] = [];
+    for (const [constraintName, bounds] of Object.entries(model.constraints)) {
+      // Skip binary/selection/total_food_items constraints
+      if (constraintName.startsWith('select_') || constraintName === 'total_food_items' || constraintName === 'electrolyte_supplements') continue;
+      const actualValue = constraintName === 'carbs' ? totals.carbs_g
+        : constraintName === 'protein' ? totals.protein_g
+        : constraintName === 'sodium' ? totals.sodium_mg
+        : constraintName === 'water' ? totals.water_ml
+        : null;
+      if (actualValue == null) continue;
+
+      if (bounds.min != null && actualValue < bounds.min * (1 - ROUNDING_TOLERANCE)) {
+        roundingIssues.push(`${constraintName} below min: ${actualValue.toFixed(1)} < ${bounds.min.toFixed(1)} (tolerance: ${(ROUNDING_TOLERANCE * 100).toFixed(0)}%)`);
+      }
+      if (bounds.max != null && actualValue > bounds.max * (1 + ROUNDING_TOLERANCE)) {
+        roundingIssues.push(`${constraintName} above max: ${actualValue.toFixed(1)} > ${bounds.max.toFixed(1)} (tolerance: ${(ROUNDING_TOLERANCE * 100).toFixed(0)}%)`);
+      }
+    }
+    if (roundingIssues.length > 0) {
+      console.warn(`[LP-SOLVER] POST-ROUNDING: ${roundingIssues.length} constraint violation(s): ${roundingIssues.join('; ')}`);
+    }
 
     return {
       foods: selectedFoods,
