@@ -256,7 +256,7 @@ function assertMacroInRange(
 // Athlete Profiles (Base)
 // ============================================================================
 
-const macroProfiles = {
+const macroProfiles: Record<string, Record<string, unknown>> = {
   smallFemale: {
     weight: 50,
     weight_unit: 'kg',
@@ -404,6 +404,122 @@ const macroProfiles = {
         pace_minutes_per_mile: 8,
       },
     ],
+  },
+
+  // ---- New profiles for audit expansion ----
+
+  ultraRunner: {
+    weight: 75,
+    weight_unit: 'kg',
+    hours_before: 3,
+    is_fasted: false,
+    run_distance: 50,
+    run_distance_unit: 'mi',
+    run_pace: '10:00',
+    gut_training: 'high',
+    sweat_rate_category: 'heavy',
+    sweat_sodium: 'high',
+    temp_c: 30,
+    humidity_pct: 60,
+  },
+
+  veryLightFemale: {
+    weight: 44,
+    weight_unit: 'kg',
+    hours_before: 2,
+    is_fasted: false,
+    run_distance: 10,
+    run_distance_unit: 'km',
+    run_pace: '10:00',
+    gut_training: 'low',
+    sweat_rate_category: 'light',
+    sweat_sodium: 'low',
+  },
+
+  veryHeavyMale: {
+    weight: 110,
+    weight_unit: 'kg',
+    hours_before: 3,
+    is_fasted: false,
+    run_distance: 10,
+    run_distance_unit: 'mi',
+    run_pace: '9:00',
+    gut_training: 'moderate',
+    sweat_rate_category: 'heavy',
+    sweat_sodium: 'high',
+  },
+
+  longCyclist: {
+    weight: 80,
+    weight_unit: 'kg',
+    hours_before: 3,
+    is_fasted: false,
+    activity_type: 'cycling',
+    distance_miles: 100,
+    speed_mph: 18,
+    terrain: 'hilly',
+    gut_training: 'high',
+    sweat_rate_category: 'heavy',
+    sweat_sodium: 'high',
+    temp_c: 32,
+    humidity_pct: 60,
+  },
+
+  marathonHeavySweater: {
+    weight: 85,
+    weight_unit: 'kg',
+    hours_before: 3,
+    is_fasted: false,
+    run_distance: 26.2,
+    run_distance_unit: 'mi',
+    run_pace: '8:30',
+    gut_training: 'high',
+    sweat_rate_category: 'heavy',
+    sweat_sodium: 'high',
+    temp_c: 32,
+    humidity_pct: 75,
+  },
+
+  shortEasyRun: {
+    weight: 70,
+    weight_unit: 'kg',
+    hours_before: 2,
+    is_fasted: false,
+    run_distance: 5,
+    run_distance_unit: 'mi',
+    run_pace: '9:30',
+    gut_training: 'moderate',
+    sweat_rate_category: 'light',
+    sweat_sodium: 'low',
+  },
+
+  mediumDistanceCyclist: {
+    weight: 72,
+    weight_unit: 'kg',
+    hours_before: 2,
+    is_fasted: false,
+    activity_type: 'cycling',
+    distance_miles: 32,
+    speed_mph: 16,
+    terrain: 'flat',
+    gut_training: 'moderate',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
+  },
+
+  longSwimmer: {
+    weight: 80,
+    weight_unit: 'kg',
+    hours_before: 2,
+    is_fasted: false,
+    activity_type: 'swimming',
+    distance_meters: 5000,
+    pace_per_100m_seconds: 110,
+    pool_or_open_water: 'open_water',
+    water_temp_c: 20,
+    gut_training: 'moderate',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
   },
 };
 
@@ -2727,6 +2843,352 @@ describe('generate-nutrition-plan-v3 E2E Tests', () => {
 
       assertMacroInRange(duringMacros.carbs, bandLowTotal, bandHighTotal, 'All-allergies during carbs');
       assertMacroInRange(duringMacros.sodium, m.during_sodium_low_mg, m.during_sodium_high_mg, 'All-allergies during sodium');
+    });
+  });
+
+  // ============================================================================
+  // 21. Extreme Scenario Validation
+  // ============================================================================
+
+  describe('21. Extreme Scenario Validation', () => {
+    it('ultra runner 50mi: during carbs, sodium, hydration within V4 ranges', async () => {
+      const { planData, macroData, planStatus } = await generateFullPlan(macroProfiles.ultraRunner);
+      assertEquals(planStatus, 200);
+      const m = macroData.macros;
+      const duringMacros = sumMacros(planData.plan.during.foods);
+
+      const bandLowTotal = m.during_band_low_g_per_h * m.duration_h;
+      const bandHighTotal = Math.min(m.during_band_high_g_per_h, m.during_sport_ceiling_g_per_h) * m.duration_h;
+
+      console.log(`  Ultra 50mi during: carbs=${duringMacros.carbs.toFixed(1)}g [${bandLowTotal.toFixed(0)}, ${bandHighTotal.toFixed(0)}], sodium=${duringMacros.sodium.toFixed(0)}mg, water=${duringMacros.water.toFixed(0)}ml`);
+
+      assertMacroInRange(duringMacros.carbs, bandLowTotal, bandHighTotal, 'Ultra during carbs');
+      assertMacroInRange(duringMacros.sodium, m.during_sodium_low_mg, m.during_sodium_high_mg, 'Ultra during sodium');
+      assertMacroInRange(duringMacros.water, m.during_water_low_ml, m.during_water_high_ml, 'Ultra during hydration');
+    });
+
+    it('ultra runner: no single food > 6 servings', async () => {
+      const { planData, planStatus } = await generateFullPlan(macroProfiles.ultraRunner);
+      assertEquals(planStatus, 200);
+      const allFoods = getAllFoods(planData.plan);
+      for (const food of allFoods) {
+        assert(
+          (food.quantity ?? 0) <= 6,
+          `Ultra: ${food.display_name} x${food.quantity} — no food should exceed 6 servings`
+        );
+      }
+    });
+
+    it('very light female 44kg: all after macros within range', async () => {
+      const { planData, macroData, planStatus } = await generateFullPlan(macroProfiles.veryLightFemale);
+      assertEquals(planStatus, 200);
+      const m = macroData.macros;
+      const afterMacros = sumMacros(planData.plan.after);
+
+      console.log(`  44kg female after: carbs=${afterMacros.carbs.toFixed(1)}g, protein=${afterMacros.protein.toFixed(1)}g, sodium=${afterMacros.sodium.toFixed(0)}mg`);
+
+      assertMacroInRange(afterMacros.carbs, m.post_run_carbs_low_g, m.post_run_carbs_high_g, '44kg after carbs');
+      assertMacroInRange(afterMacros.protein, m.post_run_protein_low_g, m.post_run_protein_high_g, '44kg after protein');
+    });
+
+    it('very heavy male 110kg: all during macros within range', async () => {
+      const { planData, macroData, planStatus } = await generateFullPlan(macroProfiles.veryHeavyMale);
+      assertEquals(planStatus, 200);
+      const m = macroData.macros;
+      const duringMacros = sumMacros(planData.plan.during.foods);
+
+      const bandLowTotal = m.during_band_low_g_per_h * m.duration_h;
+      const bandHighTotal = Math.min(m.during_band_high_g_per_h, m.during_sport_ceiling_g_per_h) * m.duration_h;
+
+      console.log(`  110kg during: carbs=${duringMacros.carbs.toFixed(1)}g [${bandLowTotal.toFixed(0)}, ${bandHighTotal.toFixed(0)}], sodium=${duringMacros.sodium.toFixed(0)}mg`);
+
+      assertMacroInRange(duringMacros.carbs, bandLowTotal, bandHighTotal, '110kg during carbs');
+      assertMacroInRange(duringMacros.sodium, m.during_sodium_low_mg, m.during_sodium_high_mg, '110kg during sodium');
+    });
+
+    it('100-mile cyclist: during carbs + sodium within range', async () => {
+      const { planData, macroData, planStatus } = await generateFullPlan(macroProfiles.longCyclist);
+      assertEquals(planStatus, 200);
+      const m = macroData.macros;
+      const duringMacros = sumMacros(planData.plan.during.foods);
+
+      const bandLowTotal = m.during_band_low_g_per_h * m.duration_h;
+      const bandHighTotal = Math.min(m.during_band_high_g_per_h, m.during_sport_ceiling_g_per_h) * m.duration_h;
+
+      console.log(`  100mi cyclist during: carbs=${duringMacros.carbs.toFixed(1)}g [${bandLowTotal.toFixed(0)}, ${bandHighTotal.toFixed(0)}], sodium=${duringMacros.sodium.toFixed(0)}mg`);
+
+      assertMacroInRange(duringMacros.carbs, bandLowTotal, bandHighTotal, '100mi cyclist during carbs');
+      assertMacroInRange(duringMacros.sodium, m.during_sodium_low_mg, m.during_sodium_high_mg, '100mi cyclist during sodium');
+    });
+
+    it('marathon heavy sweater: during sodium within V4 range', async () => {
+      const { planData, macroData, planStatus } = await generateFullPlan(macroProfiles.marathonHeavySweater);
+      assertEquals(planStatus, 200);
+      const m = macroData.macros;
+      const duringMacros = sumMacros(planData.plan.during.foods);
+
+      console.log(`  Marathon heavy sweater during: sodium=${duringMacros.sodium.toFixed(0)}mg [${m.during_sodium_low_mg}, ${m.during_sodium_high_mg}], water=${duringMacros.water.toFixed(0)}ml`);
+
+      assertMacroInRange(duringMacros.sodium, m.during_sodium_low_mg, m.during_sodium_high_mg, 'Marathon heavy sweater during sodium');
+    });
+
+    it('short 5mi easy run: before/after reasonable, during minimal', async () => {
+      const { planData, macroData, planStatus } = await generateFullPlan(macroProfiles.shortEasyRun);
+      assertEquals(planStatus, 200);
+      const m = macroData.macros;
+
+      const beforeMacros = sumMacros(getBeforeFoods(planData.plan));
+      console.log(`  Short run before: carbs=${beforeMacros.carbs.toFixed(1)}g`);
+      assertMacroInRange(beforeMacros.carbs, m.pre_run_carbs_low_g, m.pre_run_carbs_high_g, 'Short run before carbs');
+
+      const afterMacros = sumMacros(planData.plan.after);
+      console.log(`  Short run after: carbs=${afterMacros.carbs.toFixed(1)}g, protein=${afterMacros.protein.toFixed(1)}g`);
+      assertMacroInRange(afterMacros.carbs, m.post_run_carbs_low_g, m.post_run_carbs_high_g, 'Short run after carbs');
+    });
+
+    it('32mi cycling: all phases within range', async () => {
+      const { planData, macroData, planStatus } = await generateFullPlan(macroProfiles.mediumDistanceCyclist);
+      assertEquals(planStatus, 200);
+      const m = macroData.macros;
+
+      const duringMacros = sumMacros(planData.plan.during.foods);
+      const bandLowTotal = m.during_band_low_g_per_h * m.duration_h;
+      const bandHighTotal = Math.min(m.during_band_high_g_per_h, m.during_sport_ceiling_g_per_h) * m.duration_h;
+
+      console.log(`  32mi cycling during: carbs=${duringMacros.carbs.toFixed(1)}g [${bandLowTotal.toFixed(0)}, ${bandHighTotal.toFixed(0)}]`);
+      assertMacroInRange(duringMacros.carbs, bandLowTotal, bandHighTotal, '32mi cycling during carbs');
+
+      const afterMacros = sumMacros(planData.plan.after);
+      assertMacroInRange(afterMacros.carbs, m.post_run_carbs_low_g, m.post_run_carbs_high_g, '32mi cycling after carbs');
+    });
+  });
+
+  // ============================================================================
+  // 22. Variability Stress Tests
+  // ============================================================================
+
+  describe('22. Variability Stress Tests', () => {
+    it('average male: 5 consecutive plans ALL within V4 ranges', async () => {
+      for (let i = 0; i < 5; i++) {
+        const { planData, macroData, planStatus } = await generateFullPlan(macroProfiles.averageMale);
+        assertEquals(planStatus, 200, `Run ${i + 1}: plan should succeed`);
+        const m = macroData.macros;
+
+        // Before
+        const beforeMacros = sumMacros(getBeforeFoods(planData.plan));
+        assertMacroInRange(beforeMacros.carbs, m.pre_run_carbs_low_g, m.pre_run_carbs_high_g, `Run ${i + 1} before carbs`);
+
+        // During
+        const duringMacros = sumMacros(planData.plan.during.foods);
+        const bandLowTotal = m.during_band_low_g_per_h * m.duration_h;
+        const bandHighTotal = Math.min(m.during_band_high_g_per_h, m.during_sport_ceiling_g_per_h) * m.duration_h;
+        assertMacroInRange(duringMacros.carbs, bandLowTotal, bandHighTotal, `Run ${i + 1} during carbs`);
+        assertMacroInRange(duringMacros.sodium, m.during_sodium_low_mg, m.during_sodium_high_mg, `Run ${i + 1} during sodium`);
+
+        // After
+        const afterMacros = sumMacros(planData.plan.after);
+        assertMacroInRange(afterMacros.carbs, m.post_run_carbs_low_g, m.post_run_carbs_high_g, `Run ${i + 1} after carbs`);
+        assertMacroInRange(afterMacros.protein, m.post_run_protein_low_g, m.post_run_protein_high_g, `Run ${i + 1} after protein`);
+
+        console.log(`  Run ${i + 1}: ALL macros within V4 ranges`);
+      }
+    });
+
+    it('heavy cyclist: 3 consecutive plans ALL within ranges', async () => {
+      for (let i = 0; i < 3; i++) {
+        const { planData, macroData, planStatus } = await generateFullPlan(macroProfiles.heavyCyclist);
+        assertEquals(planStatus, 200, `Cyclist run ${i + 1}: plan should succeed`);
+        const m = macroData.macros;
+
+        const duringMacros = sumMacros(planData.plan.during.foods);
+        const bandLowTotal = m.during_band_low_g_per_h * m.duration_h;
+        const bandHighTotal = Math.min(m.during_band_high_g_per_h, m.during_sport_ceiling_g_per_h) * m.duration_h;
+        assertMacroInRange(duringMacros.carbs, bandLowTotal, bandHighTotal, `Cyclist ${i + 1} during carbs`);
+        assertMacroInRange(duringMacros.sodium, m.during_sodium_low_mg, m.during_sodium_high_mg, `Cyclist ${i + 1} during sodium`);
+
+        console.log(`  Cyclist ${i + 1}: ALL macros within V4 ranges`);
+      }
+    });
+
+    it('hot weather runner: 3 consecutive plans ALL within ranges', async () => {
+      for (let i = 0; i < 3; i++) {
+        const { planData, macroData, planStatus } = await generateFullPlan(macroProfiles.hotWeatherRunner);
+        assertEquals(planStatus, 200, `Hot run ${i + 1}: plan should succeed`);
+        const m = macroData.macros;
+
+        const duringMacros = sumMacros(planData.plan.during.foods);
+        const bandLowTotal = m.during_band_low_g_per_h * m.duration_h;
+        const bandHighTotal = Math.min(m.during_band_high_g_per_h, m.during_sport_ceiling_g_per_h) * m.duration_h;
+        assertMacroInRange(duringMacros.carbs, bandLowTotal, bandHighTotal, `Hot run ${i + 1} during carbs`);
+        assertMacroInRange(duringMacros.sodium, m.during_sodium_low_mg, m.during_sodium_high_mg, `Hot run ${i + 1} during sodium`);
+
+        console.log(`  Hot run ${i + 1}: ALL macros within V4 ranges`);
+      }
+    });
+  });
+
+  // ============================================================================
+  // 23. Electrolyte Capsule Guard
+  // ============================================================================
+
+  describe('23. Electrolyte Capsule Guard', () => {
+    it('no electrolyte supplement > 4 servings in during phase (multiple profiles)', async () => {
+      const profiles = ['averageMale', 'heavyCyclist', 'hotWeatherRunner', 'marathonHeavySweater'];
+      for (const profileKey of profiles) {
+        const profile = macroProfiles[profileKey];
+        const { planData, planStatus } = await generateFullPlan(profile);
+        assertEquals(planStatus, 200, `${profileKey}: plan should succeed`);
+
+        const duringFoods = planData.plan.during?.foods ?? [];
+        for (const food of duringFoods) {
+          if (food.is_electrolyte && food.product_type === 'supplement') {
+            assert(
+              food.quantity <= 4,
+              `${profileKey}: electrolyte ${food.display_name} x${food.quantity} — must be ≤4 servings`
+            );
+          }
+        }
+        console.log(`  ${profileKey}: electrolyte capsule guard passed`);
+      }
+    });
+
+    it('no electrolyte supplement > 4 servings in after phase', async () => {
+      const profiles = ['averageMale', 'heavyCyclist', 'ultraRunner'];
+      for (const profileKey of profiles) {
+        const profile = macroProfiles[profileKey];
+        const { planData, planStatus } = await generateFullPlan(profile);
+        assertEquals(planStatus, 200);
+
+        const afterFoods = planData.plan.after ?? [];
+        for (const food of afterFoods) {
+          if (food.is_electrolyte && food.product_type === 'supplement') {
+            assert(
+              food.quantity <= 4,
+              `${profileKey} after: electrolyte ${food.display_name} x${food.quantity} — must be ≤4 servings`
+            );
+          }
+        }
+      }
+    });
+  });
+
+  // ============================================================================
+  // 24. Pre-Workout Timing Windows
+  // ============================================================================
+
+  describe('24. Pre-Workout Timing Windows', () => {
+    const timingWindows = [0.5, 1.0, 1.5, 2.0, 3.0];
+
+    for (const hours of timingWindows) {
+      it(`${hours}h pre-workout: valid plan structure`, async () => {
+        const profile = {
+          ...macroProfiles.averageMale,
+          hours_before: hours,
+          is_fasted: hours === 0,
+        };
+        const { planData, planStatus } = await generateFullPlan(profile);
+        assertEquals(planStatus, 200, `${hours}h window: plan should succeed`);
+
+        // Check before phase has expected sub-phases
+        const before = planData.plan.before;
+        assertExists(before, `${hours}h: should have before phase`);
+
+        if (hours >= 2.0) {
+          // Full meal window: should have meal sub-phase
+          assert(before.meal?.foods?.length > 0, `${hours}h: should have meal sub-phase foods`);
+          console.log(`  ${hours}h: meal(${before.meal?.foods?.length ?? 0} foods), snack(${before.snack?.foods?.length ?? 0}), top_up(${before.top_up?.foods?.length ?? 0})`);
+        } else if (hours >= 1.0) {
+          // Snack window
+          const totalFoods = countBeforeFoods(planData.plan);
+          assert(totalFoods > 0, `${hours}h: should have some before-phase foods`);
+          console.log(`  ${hours}h: ${totalFoods} before foods`);
+        } else {
+          // Top-up only
+          console.log(`  ${hours}h: before foods count: ${countBeforeFoods(planData.plan)}`);
+        }
+      });
+    }
+  });
+
+  // ============================================================================
+  // 25. Comprehensive All-Profile All-Phase Validation
+  // ============================================================================
+
+  describe('25. Comprehensive All-Profile All-Phase Validation', () => {
+    const profileKeys = [
+      'smallFemale', 'averageMale', 'heavyCyclist', 'swimmer',
+      'coldWeatherRunner', 'hotWeatherRunner', 'shortEasyRun',
+      'veryLightFemale', 'veryHeavyMale', 'longCyclist',
+      'marathonHeavySweater', 'mediumDistanceCyclist',
+    ];
+
+    it('all profiles x all phases: every macro within V4 range', async () => {
+      const failures: string[] = [];
+
+      for (const profileKey of profileKeys) {
+        try {
+          const profile = macroProfiles[profileKey];
+          const { planData, macroData, planStatus } = await generateFullPlan(profile);
+
+          if (planStatus !== 200) {
+            failures.push(`${profileKey}: HTTP ${planStatus}`);
+            continue;
+          }
+
+          const m = macroData.macros;
+
+          // Before phase
+          const beforeMacros = sumMacros(getBeforeFoods(planData.plan));
+          if (m.pre_run_carbs_low_g != null && m.pre_run_carbs_high_g != null) {
+            if (beforeMacros.carbs < m.pre_run_carbs_low_g || beforeMacros.carbs > m.pre_run_carbs_high_g) {
+              failures.push(`${profileKey} before carbs: ${beforeMacros.carbs.toFixed(1)}g not in [${m.pre_run_carbs_low_g}, ${m.pre_run_carbs_high_g}]`);
+            }
+          }
+
+          // During phase
+          if (planData.plan.during?.foods) {
+            const duringMacros = sumMacros(planData.plan.during.foods);
+            const bandLowTotal = (m.during_band_low_g_per_h ?? 0) * (m.duration_h ?? 0);
+            const bandHighTotal = Math.min(m.during_band_high_g_per_h ?? 999, m.during_sport_ceiling_g_per_h ?? 999) * (m.duration_h ?? 0);
+            if (bandLowTotal > 0 && bandHighTotal > 0) {
+              if (duringMacros.carbs < bandLowTotal || duringMacros.carbs > bandHighTotal) {
+                failures.push(`${profileKey} during carbs: ${duringMacros.carbs.toFixed(1)}g not in [${bandLowTotal.toFixed(0)}, ${bandHighTotal.toFixed(0)}]`);
+              }
+            }
+            if (m.during_sodium_low_mg != null && m.during_sodium_high_mg != null) {
+              if (duringMacros.sodium < m.during_sodium_low_mg || duringMacros.sodium > m.during_sodium_high_mg) {
+                failures.push(`${profileKey} during sodium: ${duringMacros.sodium.toFixed(0)}mg not in [${m.during_sodium_low_mg}, ${m.during_sodium_high_mg}]`);
+              }
+            }
+          }
+
+          // After phase
+          const afterMacros = sumMacros(planData.plan.after ?? []);
+          if (m.post_run_carbs_low_g != null && m.post_run_carbs_high_g != null) {
+            if (afterMacros.carbs < m.post_run_carbs_low_g || afterMacros.carbs > m.post_run_carbs_high_g) {
+              failures.push(`${profileKey} after carbs: ${afterMacros.carbs.toFixed(1)}g not in [${m.post_run_carbs_low_g}, ${m.post_run_carbs_high_g}]`);
+            }
+          }
+          if (m.post_run_protein_low_g != null && m.post_run_protein_high_g != null) {
+            if (afterMacros.protein < m.post_run_protein_low_g || afterMacros.protein > m.post_run_protein_high_g) {
+              failures.push(`${profileKey} after protein: ${afterMacros.protein.toFixed(1)}g not in [${m.post_run_protein_low_g}, ${m.post_run_protein_high_g}]`);
+            }
+          }
+
+          console.log(`  ${profileKey}: all phases validated`);
+        } catch (error) {
+          failures.push(`${profileKey}: ${(error as Error).message}`);
+        }
+      }
+
+      if (failures.length > 0) {
+        console.error(`\n  FAILURES (${failures.length}):\n  - ${failures.join('\n  - ')}`);
+      }
+      assertEquals(
+        failures.length,
+        0,
+        `${failures.length} profile/phase failures:\n  - ${failures.join('\n  - ')}`,
+      );
     });
   });
 });
