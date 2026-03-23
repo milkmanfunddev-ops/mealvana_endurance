@@ -179,7 +179,8 @@ function detectProductType(
 }
 
 /**
- * Look up a catalog_items row by barcode.
+ * Look up a catalog variant by barcode using the catalog_items_v view
+ * (JOINs catalog_products + catalog_variants).
  * Returns a cleanedProduct in the same shape as the OFF response so the
  * Flutter client needs zero changes.
  */
@@ -191,7 +192,7 @@ async function lookupCatalog(barcode: string): Promise<{ product: Record<string,
     );
 
     const { data, error } = await supabase
-      .from('catalog_items')
+      .from('catalog_items_v')
       .select('*')
       .eq('barcode', barcode)
       .eq('available_for_sale', true)
@@ -229,14 +230,23 @@ async function lookupCatalog(barcode: string): Promise<{ product: Record<string,
       serving_quantity_unit: data.serving_grams ? 'g' : null,
       product_quantity: null,
       product_quantity_unit: null,
+      // Product type detection — use classified product_type_id from catalog
+      suggested_product_type: data.product_type_id || null,
       // Metadata — non-breaking additions
       api_source: 'catalog_thefeed',
       confidence_score: data.nutrition_confidence || (data.calories_per_serving ? 0.9 : 0.5),
       nutrition_data_per: data.calories_per_serving ? 'serving' : '100g',
-      // Extra catalog metadata (ignored by existing Flutter parsers)
+      // Extra catalog metadata
       catalog_id: data.id,
       product_url: data.product_url || null,
       caffeine_mg: data.caffeine_mg || null,
+      // Classification fields (new)
+      product_type_id: data.product_type_id || null,
+      product_categories: data.categories || null,
+      is_electrolyte: data.is_electrolyte || false,
+      is_liquid: data.is_liquid || false,
+      allergens: data.allergens || [],
+      excluded_diets: data.excluded_diets || [],
     };
 
     return { product: cleanedProduct, source: 'catalog_barcode' };

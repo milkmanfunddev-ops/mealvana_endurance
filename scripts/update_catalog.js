@@ -2,13 +2,13 @@
 "use strict";
 
 /**
- * Product Catalog Import Script
+ * Product Catalog Import Script (v2 — catalog_products + catalog_variants)
  *
  * Pipeline:
  *   A. Fetch products + variants (with PIM metafields) from Shopify Storefront GraphQL
  *   B. Filter to food-only products (by productType + tags)
  *   C. Enrich each variant with nutrition (metafields → Algolia → web scrape → OFF → FDA)
- *   D. Upsert into catalog_items via Supabase JS client
+ *   D. Upsert into catalog_products + catalog_variants via Supabase REST
  *   E. Log sync run to catalog_sync_runs
  *
  * Usage:
@@ -30,7 +30,7 @@ const {
   enrichNutrition,
 } = require("./lib/nutrition_enrichment.js");
 
-const SCRIPT_VERSION = "1.1.0";
+const SCRIPT_VERSION = "2.0.0";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -91,7 +91,7 @@ const NUTRITION_TAG_PREFIX = "category:nutrition";
 // Supabase client (lightweight REST wrapper — no npm dependency required)
 // ---------------------------------------------------------------------------
 
-async function supabaseRequest(path, { method = "GET", body, query } = {}) {
+async function supabaseRequest(path, { method = "GET", body, query, prefer } = {}) {
   let url = `${SUPABASE_URL}/rest/v1/${path}`;
   if (query) {
     const params = new URLSearchParams(query);
@@ -102,7 +102,7 @@ async function supabaseRequest(path, { method = "GET", body, query } = {}) {
     apikey: SUPABASE_SERVICE_ROLE_KEY,
     Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
     "Content-Type": "application/json",
-    Prefer: method === "POST" ? "return=minimal" : "",
+    Prefer: prefer || (method === "POST" ? "return=minimal" : ""),
   };
 
   const res = await fetch(url, {
@@ -266,83 +266,76 @@ function isFoodProduct(product) {
   return false;
 }
 
-function expandVariants(product) {
+// ---------------------------------------------------------------------------
+// C. Expand products into product + variant structure
+// ---------------------------------------------------------------------------
+
+function expandProduct(product) {
   const variants = product.variants?.edges?.map((e) => e.node) || [];
-  // Product-level metafields (PIM nutrition data) — attach to each variant
   const metafields = product.metafields || [];
 
-  // If no variants, create a single row from the product itself
-  if (variants.length === 0) {
-    return [
-      {
-        shopify_product_id: product.id,
+  const productData = {
+    shopify_product_id: product.id,
+    handle: product.handle,
+    title: product.title,
+    brand: product.vendor || null,
+    shopify_product_type: product.productType || null,
+    tags: product.tags || [],
+    image_url: product.featuredImage?.url || null,
+    product_url: product.onlineStoreUrl || null,
+    shopify_updated_at: product.updatedAt || null,
+    _metafields: metafields,
+  };
+
+  const variantData = variants.length > 0
+    ? variants.map((v) => ({
+        shopify_variant_id: v.id,
+        variant_title: v.title || null,
+        barcode: v.barcode || null,
+        sku: v.sku || null,
+        price_cents: v.price?.amount
+          ? Math.round(parseFloat(v.price.amount) * 100)
+          : null,
+        currency_code: v.price?.currencyCode || "USD",
+        available_for_sale: v.availableForSale ?? true,
+        image_url: v.image?.url || null,
+        shopify_updated_at: product.updatedAt || null,
+        // Attach metafields for enrichment (will be stripped before DB insert)
+        _metafields: metafields,
+        _product_title: product.title,
+        _product_handle: product.handle,
+      }))
+    : [{
         shopify_variant_id: null,
-        handle: product.handle,
-        title: product.title,
         variant_title: null,
-        brand: product.vendor || null,
-        product_type: product.productType || null,
-        tags: product.tags || [],
         barcode: null,
         sku: null,
         price_cents: null,
         currency_code: "USD",
         available_for_sale: product.availableForSale ?? true,
-        image_url: product.featuredImage?.url || null,
-        product_url: product.onlineStoreUrl || null,
+        image_url: null,
         shopify_updated_at: product.updatedAt || null,
         _metafields: metafields,
-      },
-    ];
-  }
+        _product_title: product.title,
+        _product_handle: product.handle,
+      }];
 
-  return variants.map((v) => ({
-    shopify_product_id: product.id,
-    shopify_variant_id: v.id,
-    handle: product.handle,
-    title: product.title,
-    variant_title: v.title || null,
-    brand: product.vendor || null,
-    product_type: product.productType || null,
-    tags: product.tags || [],
-    barcode: v.barcode || null,
-    sku: v.sku || null,
-    price_cents: v.price?.amount
-      ? Math.round(parseFloat(v.price.amount) * 100)
-      : null,
-    currency_code: v.price?.currencyCode || "USD",
-    available_for_sale: v.availableForSale ?? true,
-    image_url: v.image?.url || product.featuredImage?.url || null,
-    product_url: product.onlineStoreUrl || null,
-    shopify_updated_at: product.updatedAt || null,
-    _metafields: metafields,
-  }));
+  return { productData, variantData };
 }
 
 // ---------------------------------------------------------------------------
-// C. Nutrition enrichment — delegated to shared module
-//    Waterfall: metafields → Algolia → web scrape → OFF → FDA
-//    See: scripts/lib/nutrition_enrichment.js
+// D. Upsert into catalog_products + catalog_variants
 // ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// D. Upsert into catalog_items
-// ---------------------------------------------------------------------------
+async function upsertProductBatch(products, enrichedVariants, globalSeenBarcodes) {
+  // Step 1: Upsert product rows
+  // Delete existing by shopify_product_id, then insert fresh
+  const shopifyProductIds = products.map((p) => p.shopify_product_id);
 
-async function upsertBatch(rows, globalSeenBarcodes) {
-  // IMPORTANT: PostgREST cannot use partial unique indexes for ON CONFLICT
-  // (42P10 error). Use primary key 'id' for re-runs after initial import.
-  // For initial import (no existing rows), plain INSERT works fine.
-  // For idempotent re-runs, we DELETE existing rows by shopify_variant_id first.
-  const variantIds = rows
-    .map((r) => r.shopify_variant_id)
-    .filter(Boolean);
-
-  // Delete existing rows with matching variant IDs (idempotent re-run support)
-  if (variantIds.length > 0) {
+  if (shopifyProductIds.length > 0) {
     try {
       await fetch(
-        `${SUPABASE_URL}/rest/v1/catalog_items?shopify_variant_id=in.(${variantIds.map((id) => `"${id}"`).join(",")})`,
+        `${SUPABASE_URL}/rest/v1/catalog_products?shopify_product_id=in.(${shopifyProductIds.map((id) => `"${id}"`).join(",")})`,
         {
           method: "DELETE",
           headers: {
@@ -352,27 +345,90 @@ async function upsertBatch(rows, globalSeenBarcodes) {
         },
       );
     } catch (_) {
-      // Ignore delete errors — rows may not exist yet
+      // Ignore — rows may not exist yet
     }
   }
 
-  // Deduplicate barcodes across entire import run — Shopify variants can share
-  // barcodes (e.g. 12-pack and 24-pack of same product). Keep first, null out dupes.
-  for (const row of rows) {
-    if (row.barcode) {
-      if (globalSeenBarcodes.has(row.barcode)) {
-        row.barcode = null; // Clear duplicate barcode
+  // Insert product rows
+  const productRows = products.map((p) => ({
+    shopify_product_id: p.shopify_product_id,
+    handle: p.handle,
+    title: p.title,
+    brand: p.brand,
+    shopify_product_type: p.shopify_product_type,
+    tags: p.tags,
+    image_url: p.image_url,
+    product_url: p.product_url,
+    shopify_updated_at: p.shopify_updated_at,
+    // Ingredients will be set from enrichment if available
+    ingredients: p._ingredients || null,
+  }));
+
+  const insertedProducts = await supabaseRequest("catalog_products", {
+    method: "POST",
+    body: productRows,
+    prefer: "return=representation",
+  });
+
+  // Build product ID lookup
+  const productIdMap = new Map();
+  for (const row of insertedProducts) {
+    productIdMap.set(row.shopify_product_id, row.id);
+  }
+
+  // Step 2: Insert variant rows
+  const variantRows = [];
+  for (const variant of enrichedVariants) {
+    const catalogProductId = productIdMap.get(variant._shopify_product_id);
+    if (!catalogProductId) continue;
+
+    // Deduplicate barcodes
+    if (variant.barcode) {
+      if (globalSeenBarcodes.has(variant.barcode)) {
+        variant.barcode = null;
       } else {
-        globalSeenBarcodes.add(row.barcode);
+        globalSeenBarcodes.add(variant.barcode);
       }
     }
+
+    variantRows.push({
+      catalog_product_id: catalogProductId,
+      shopify_variant_id: variant.shopify_variant_id,
+      variant_title: variant.variant_title,
+      barcode: variant.barcode,
+      sku: variant.sku,
+      price_cents: variant.price_cents,
+      currency_code: variant.currency_code,
+      available_for_sale: variant.available_for_sale,
+      image_url: variant.image_url,
+      shopify_updated_at: variant.shopify_updated_at,
+      // Nutrition
+      calories_per_serving: variant.calories_per_serving ?? null,
+      carbs_g: variant.carbs_g ?? null,
+      protein_g: variant.protein_g ?? null,
+      fat_g: variant.fat_g ?? null,
+      sodium_mg: variant.sodium_mg ?? null,
+      serving_size: variant.serving_size ?? null,
+      serving_grams: variant.serving_grams ?? null,
+      caffeine_mg: variant.caffeine_mg ?? null,
+      sugar_g: variant.sugar_g ?? null,
+      fiber_g: variant.fiber_g ?? null,
+      servings_per_container: variant.servings_per_container ?? null,
+      nutrition_source: variant.nutrition_source ?? null,
+      nutrition_confidence: variant.nutrition_confidence ?? null,
+      nutrition_enriched_at: variant.nutrition_enriched_at ?? null,
+      raw_payload: variant.raw_payload ?? null,
+    });
   }
 
-  // Insert fresh rows
-  await supabaseRequest("catalog_items", {
-    method: "POST",
-    body: rows,
-  });
+  if (variantRows.length > 0) {
+    await supabaseRequest("catalog_variants", {
+      method: "POST",
+      body: variantRows,
+    });
+  }
+
+  return { productsInserted: insertedProducts.length, variantsInserted: variantRows.length };
 }
 
 // ---------------------------------------------------------------------------
@@ -421,7 +477,7 @@ async function updateSyncRun(id, updates) {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  console.log("🚀 Product Catalog Import — starting...");
+  console.log("🚀 Product Catalog Import v2 — starting...");
   console.log(`   Supabase: ${SUPABASE_URL}`);
   console.log(`   FDA API key: ${FDA_API_KEY ? "configured" : "not set"}`);
   console.log(`   Algolia: ${ALGOLIA_APP_ID ? "configured" : "not set"}`);
@@ -453,104 +509,109 @@ async function main() {
       `   Food products: ${foodProducts.length} (skipped ${skippedProducts} non-food)`,
     );
 
-    // Expand variants
-    const allVariants = foodProducts.flatMap(expandVariants);
-    console.log(`   Total variants: ${allVariants.length}`);
+    // C. Expand into product + variant structure
+    const expanded = foodProducts.map(expandProduct);
+    const totalVariants = expanded.reduce((sum, e) => sum + e.variantData.length, 0);
+    console.log(`   Total variants: ${totalVariants}`);
 
-    // C. Enrich nutrition + D. Upsert in batches
-    const BATCH_SIZE = 50;
+    // D. Enrich nutrition + upsert in batches
+    const BATCH_SIZE = 20; // Products per batch (smaller because each has multiple variants)
     const batches = [];
-    for (let i = 0; i < allVariants.length; i += BATCH_SIZE) {
-      batches.push(allVariants.slice(i, i + BATCH_SIZE));
+    for (let i = 0; i < expanded.length; i += BATCH_SIZE) {
+      batches.push(expanded.slice(i, i + BATCH_SIZE));
     }
 
     console.log(
-      `\n🔬 Enriching nutrition & upserting (${batches.length} batches of ${BATCH_SIZE})...`,
+      `\n🔬 Enriching nutrition & upserting (${batches.length} batches of ${BATCH_SIZE} products)...`,
     );
 
-    // Track barcodes across entire run to prevent cross-batch duplicates
     const globalSeenBarcodes = new Set();
 
     for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
       const batch = batches[batchIdx];
-      const rows = [];
+      const batchProducts = [];
+      const batchVariants = [];
 
-      for (const variant of batch) {
-        try {
-          // Enrich nutrition
-          const nutrition = await enrichNutrition(variant);
+      for (const { productData, variantData } of batch) {
+        let productIngredients = null;
 
-          // IMPORTANT: All rows must have the exact same keys for PostgREST
-          // batch upsert (PGRST102). Always include all nutrition columns.
-          // Strip _metafields from variant before storing in raw_payload
-          const { _metafields, ...variantForPayload } = variant;
-          const row = {
-            shopify_product_id: variant.shopify_product_id,
-            shopify_variant_id: variant.shopify_variant_id,
-            handle: variant.handle,
-            title: variant.title,
-            variant_title: variant.variant_title,
-            brand: variant.brand,
-            product_type: variant.product_type,
-            tags: variant.tags,
-            barcode: variant.barcode,
-            sku: variant.sku,
-            price_cents: variant.price_cents,
-            currency_code: variant.currency_code,
-            available_for_sale: variant.available_for_sale,
-            image_url: variant.image_url,
-            product_url: variant.product_url,
-            shopify_updated_at: variant.shopify_updated_at,
-            // Nutrition — always present (null if not enriched)
-            calories_per_serving: nutrition?.calories_per_serving ?? null,
-            carbs_g: nutrition?.carbs_g ?? null,
-            protein_g: nutrition?.protein_g ?? null,
-            fat_g: nutrition?.fat_g ?? null,
-            sodium_mg: nutrition?.sodium_mg ?? null,
-            serving_size: nutrition?.serving_size ?? null,
-            serving_grams: nutrition?.serving_grams ?? null,
-            caffeine_mg: nutrition?.caffeine_mg ?? null,
-            sugar_g: nutrition?.sugar_g ?? null,
-            fiber_g: nutrition?.fiber_g ?? null,
-            ingredients: nutrition?.ingredients ?? null,
-            servings_per_container: nutrition?.servings_per_container ?? null,
-            nutrition_source: nutrition?.nutrition_source ?? null,
-            nutrition_confidence: nutrition?.nutrition_confidence ?? null,
-            nutrition_enriched_at: nutrition ? new Date().toISOString() : null,
-            raw_payload: {
-              shopify: variantForPayload,
-              ...(nutrition
-                ? { nutrition_source_data: nutrition.nutrition_source }
-                : {}),
-            },
-          };
+        for (const variant of variantData) {
+          try {
+            // Build enrichment input (same shape as old expandVariants output)
+            const enrichmentInput = {
+              ...variant,
+              shopify_product_id: productData.shopify_product_id,
+              handle: productData.handle,
+              title: productData.title,
+              brand: productData.brand,
+              product_type: productData.shopify_product_type,
+              tags: productData.tags,
+              product_url: productData.product_url,
+            };
 
-          rows.push(row);
+            const nutrition = await enrichNutrition(enrichmentInput);
 
-          if (nutrition) {
-            stats.nutrition_enriched++;
-          } else {
-            stats.nutrition_failed++;
+            // Capture ingredients at product level (shared across variants)
+            if (nutrition?.ingredients && !productIngredients) {
+              productIngredients = nutrition.ingredients;
+            }
+
+            const { _metafields, _product_title, _product_handle, ...cleanVariant } = variant;
+
+            batchVariants.push({
+              ...cleanVariant,
+              _shopify_product_id: productData.shopify_product_id,
+              calories_per_serving: nutrition?.calories_per_serving ?? null,
+              carbs_g: nutrition?.carbs_g ?? null,
+              protein_g: nutrition?.protein_g ?? null,
+              fat_g: nutrition?.fat_g ?? null,
+              sodium_mg: nutrition?.sodium_mg ?? null,
+              serving_size: nutrition?.serving_size ?? null,
+              serving_grams: nutrition?.serving_grams ?? null,
+              caffeine_mg: nutrition?.caffeine_mg ?? null,
+              sugar_g: nutrition?.sugar_g ?? null,
+              fiber_g: nutrition?.fiber_g ?? null,
+              servings_per_container: nutrition?.servings_per_container ?? null,
+              nutrition_source: nutrition?.nutrition_source ?? null,
+              nutrition_confidence: nutrition?.nutrition_confidence ?? null,
+              nutrition_enriched_at: nutrition ? new Date().toISOString() : null,
+              raw_payload: {
+                shopify: cleanVariant,
+                ...(nutrition ? { nutrition_source_data: nutrition.nutrition_source } : {}),
+              },
+            });
+
+            if (nutrition) {
+              stats.nutrition_enriched++;
+            } else {
+              stats.nutrition_failed++;
+            }
+            stats.variants_imported++;
+          } catch (e) {
+            console.error(
+              `    ❌ Error enriching ${productData.title} / ${variant.variant_title}: ${e.message}`,
+            );
+            errors.push({
+              variant_id: variant.shopify_variant_id,
+              title: productData.title,
+              error: e.message,
+            });
+            stats.variants_skipped++;
           }
-
-          stats.variants_imported++;
-        } catch (e) {
-          console.error(
-            `    ❌ Error enriching ${variant.title} / ${variant.variant_title}: ${e.message}`,
-          );
-          errors.push({
-            variant_id: variant.shopify_variant_id,
-            title: variant.title,
-            error: e.message,
-          });
-          stats.variants_skipped++;
         }
+
+        // Set product-level ingredients from enrichment
+        productData._ingredients = productIngredients;
+        batchProducts.push(productData);
       }
 
       // Upsert batch
-      if (rows.length > 0) {
+      if (batchProducts.length > 0) {
         try {
-          await upsertBatch(rows, globalSeenBarcodes);
+          const result = await upsertProductBatch(batchProducts, batchVariants, globalSeenBarcodes);
+          console.error(
+            `   Batch ${batchIdx + 1}/${batches.length}: ${result.productsInserted} products, ${result.variantsInserted} variants`,
+          );
         } catch (e) {
           console.error(
             `    ❌ Batch upsert error (batch ${batchIdx + 1}): ${e.message}`,
@@ -558,14 +619,10 @@ async function main() {
           errors.push({
             batch: batchIdx + 1,
             error: e.message,
-            variant_count: rows.length,
+            product_count: batchProducts.length,
           });
         }
       }
-
-      console.error(
-        `   Batch ${batchIdx + 1}/${batches.length}: ${rows.length} upserted`,
-      );
     }
 
     // E. Update sync run as completed

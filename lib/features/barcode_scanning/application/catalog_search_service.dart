@@ -34,6 +34,14 @@ class CatalogSearchResult {
   final String? nutritionSource;
   final double? nutritionConfidence;
 
+  // Classification fields
+  final String? productTypeId;
+  final List<String>? categories;
+  final bool isElectrolyte;
+  final bool isLiquid;
+  final List<String>? allergens;
+  final List<String>? excludedDiets;
+
   const CatalogSearchResult({
     required this.id,
     required this.title,
@@ -55,6 +63,12 @@ class CatalogSearchResult {
     this.caffeineMg,
     this.nutritionSource,
     this.nutritionConfidence,
+    this.productTypeId,
+    this.categories,
+    this.isElectrolyte = false,
+    this.isLiquid = false,
+    this.allergens,
+    this.excludedDiets,
   });
 
   factory CatalogSearchResult.fromJson(Map<String, dynamic> json) {
@@ -79,6 +93,18 @@ class CatalogSearchResult {
       caffeineMg: json['caffeine_mg'] as int?,
       nutritionSource: json['nutrition_source'] as String?,
       nutritionConfidence: (json['nutrition_confidence'] as num?)?.toDouble(),
+      productTypeId: json['product_type_id'] as String?,
+      categories: (json['categories'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      isElectrolyte: json['is_electrolyte'] as bool? ?? false,
+      isLiquid: json['is_liquid'] as bool? ?? false,
+      allergens: (json['allergens'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      excludedDiets: (json['excluded_diets'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
   }
 

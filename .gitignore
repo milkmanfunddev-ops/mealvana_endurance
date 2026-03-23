@@ -12,6 +12,9 @@
 .swiftpm/
 migrate_working_dir/
 
+# Script data files (large exports, not for version control)
+scripts/data/
+
 # Environment variables (NEVER commit these!)
 .env
 .env.*
