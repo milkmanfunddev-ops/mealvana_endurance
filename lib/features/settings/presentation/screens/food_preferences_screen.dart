@@ -30,6 +30,9 @@ import '../widgets/food_preferences/user_food_item_widget.dart';
 import '../widgets/food_preferences/search_result_item_widget.dart';
 import '../widgets/food_preferences/additional_foods_section_widget.dart';
 import '../widgets/food_preferences/user_foods_section_widget.dart';
+import '../../../barcode_scanning/application/catalog_search_service.dart';
+import '../../../nutrition_plan/presentation/widgets/swap_food/catalog_section_widget.dart';
+import '../../../../shared/services/food_management/shared_food_search_service.dart';
 
 /// Food Preferences Screen - Kyle's Design System (Settings)
 /// Settings version with search bar, barcode scanning, and 5-point slider system
@@ -65,6 +68,11 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   bool _showSearchResults = false;
   String? _searchErrorMessage;
 
+  // Catalog search state
+  List<CatalogSearchResult> _catalogResults = [];
+  bool _isSearchingCatalog = false;
+  Timer? _catalogDebounceTimer;
+
   // Search strategy helper for managing local vs OpenFoodFacts search
   final _searchStrategy = SearchStrategy();
 
@@ -72,16 +80,25 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     setState(() {
       _searchQuery = value;
 
-      // Clear OpenFoodFacts results when search is cleared
+      // Clear results when search is cleared
       if (value.isEmpty) {
         _showSearchResults = false;
         _searchResults = [];
         _searchErrorMessage = null;
+        _catalogResults = [];
+        _isSearchingCatalog = false;
+        _catalogDebounceTimer?.cancel();
         _searchStrategy.cancelAutoSearch();
       }
     });
 
     if (value.trim().isNotEmpty) {
+      // Trigger catalog search with 300ms debounce
+      _catalogDebounceTimer?.cancel();
+      _catalogDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+        if (mounted) _performCatalogSearch(value.trim());
+      });
+
       // Count total local results across all lists
       final totalLocalResults =
           _filteredFoods.length +
@@ -122,6 +139,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
   void dispose() {
     _searchController.dispose();
     _searchStrategy.dispose();
+    _catalogDebounceTimer?.cancel();
     super.dispose();
   }
 
@@ -530,7 +548,98 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       _searchResults = [];
       _searchErrorMessage = null;
       _searchQuery = '';
+      _catalogResults = [];
+      _isSearchingCatalog = false;
+      _catalogDebounceTimer?.cancel();
     });
+  }
+
+  Future<void> _performCatalogSearch(String query) async {
+    if (query.isEmpty) return;
+
+    setState(() {
+      _isSearchingCatalog = true;
+    });
+
+    try {
+      final searchService = ref.read(sharedFoodSearchServiceProvider);
+      final results = await searchService.searchCatalog(query);
+
+      if (mounted && _searchController.text.trim() == query) {
+        setState(() {
+          _catalogResults = results;
+          _isSearchingCatalog = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSearchingCatalog = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleCatalogResultTap(CatalogSearchResult result) async {
+    final preCheckedCategories = <int>[1, 2, 3]; // All categories for food preferences
+
+    final detailResult = await Navigator.push<dynamic>(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => FoodDetailScreen(
+          foodData: FoodDetailData(
+            id: '',
+            name: result.displayName,
+            categoryIds: preCheckedCategories,
+            imageUrl: result.imageUrl,
+            carbsPerServing: result.carbsG,
+            proteinPerServing: result.proteinG,
+            fatPerServing: result.fatG,
+            sodiumMg: result.sodiumMg,
+            caloriesPerServing: result.caloriesPerServing,
+            servingSize: result.servingSize,
+            productType: result.productTypeId ?? result.productType,
+          ),
+          mode: FoodDetailMode.addFromSearch,
+          screenContext: FoodDetailContext.foodPreferences,
+          preSelectedCategories: preCheckedCategories,
+          showCategories: true,
+          showProductType: true,
+        ),
+      ),
+    );
+
+    if (detailResult is FoodDetailResult && mounted) {
+      final foodItem = FoodItem(
+        id: detailResult.foodId.isEmpty
+            ? const Uuid().v4()
+            : detailResult.foodId,
+        name: detailResult.name,
+        categories: [],
+        carbsPerServing: detailResult.carbsPerServing,
+        proteinPerServing: detailResult.proteinPerServing,
+        fatPerServing: detailResult.fatPerServing,
+        sodiumMg: detailResult.sodiumMg,
+        caloriesPerServing: detailResult.caloriesPerServing,
+        fluidMlPerServing: detailResult.fluidMlPerServing,
+        imageAddress: result.imageUrl,
+        servingSize: detailResult.servingSize,
+        servingAmount: detailResult.servingAmount,
+        servingUnit: detailResult.servingUnit,
+        productTypeId: detailResult.productType,
+      );
+
+      await _saveSearchedFood(
+        foodItem,
+        detailResult.categoryIds,
+        detailResult.fluidMlPerServing,
+        carbsPerServing: detailResult.carbsPerServing,
+        proteinPerServing: detailResult.proteinPerServing,
+        fatPerServing: detailResult.fatPerServing,
+        sodiumMg: detailResult.sodiumMg.toDouble(),
+        productType: detailResult.productType,
+      );
+    }
   }
 
   Future<void> _handleSearchResultTap(FoodSearchResult result) async {
@@ -1162,6 +1271,23 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                           );
                         }),
                       ],
+                    ],
+
+                    // Product Catalog section (shown when searching)
+                    if (_searchQuery.isNotEmpty &&
+                        (_isSearchingCatalog || _catalogResults.isNotEmpty)) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        'Product Catalog',
+                        style: AppTextStyles.sectionTitle.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      CatalogSectionWidget(
+                        catalogResults: _catalogResults,
+                        isSearchingCatalog: _isSearchingCatalog,
+                        onCatalogResultTap: _handleCatalogResultTap,
+                      ),
                     ],
                   ],
                 ),
