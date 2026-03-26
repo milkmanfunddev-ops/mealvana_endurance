@@ -36,23 +36,25 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
   int? _fuelLogNutritionRating;
   String? _fuelLogNotes;
 
+  /// Cached controller reference so we can safely call it in dispose()
+  /// without touching ref after deactivation.
+  ActivityDetailController? _cachedController;
+
   ActivityDetailController _controller() {
-    return ref.read(
+    final ctrl = ref.read(
       activityDetailControllerProvider(
         activityId: widget.activityId,
         isNewActivity: widget.isNewActivity,
       ).notifier,
     );
+    _cachedController = ctrl;
+    return ctrl;
   }
 
   @override
   void dispose() {
     if (!_didCompleteFuelLog) {
-      try {
-        _controller().exitFuelLogMode();
-      } catch (_) {
-        // Ignore cleanup errors while route is closing.
-      }
+      _cachedController?.exitFuelLogMode();
     }
     super.dispose();
   }
@@ -252,6 +254,13 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
             activityId: widget.activityId,
             sectionId: sectionId,
           ),
+          flightShuttleBuilder: (_, __, direction, fromCtx, toCtx) {
+            return ClipRect(
+              child: direction == HeroFlightDirection.push
+                  ? toCtx.widget
+                  : fromCtx.widget,
+            );
+          },
           child: Material(
             type: MaterialType.transparency,
             child: FuelLogSectionWidget(

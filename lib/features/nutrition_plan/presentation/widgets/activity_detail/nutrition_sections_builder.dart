@@ -326,6 +326,13 @@ class _NutritionSectionsBuilderState
         activityId: widget.heroTagSeed!,
         sectionId: sectionId,
       ),
+      flightShuttleBuilder: (_, __, direction, fromCtx, toCtx) {
+        return ClipRect(
+          child: direction == HeroFlightDirection.push
+              ? toCtx.widget
+              : fromCtx.widget,
+        );
+      },
       child: Material(type: MaterialType.transparency, child: child),
     );
   }
