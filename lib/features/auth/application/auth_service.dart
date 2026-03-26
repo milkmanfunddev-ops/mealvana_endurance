@@ -48,6 +48,7 @@ class AuthService {
     bool isAnonymous = true, // false when user signs up with email/OAuth
     String? firstName,
     String? lastName,
+    String? email,
   }) async {
     try {
       // Get or create Supabase auth session
@@ -118,6 +119,8 @@ class AuthService {
         // Optional name fields for coach mode athlete identification
         firstName: firstName,
         lastName: lastName,
+        // Contact information (auto-captured from auth or manual entry)
+        email: email,
       );
 
       // Save locally first (offline-first) and mark for background upload

@@ -11,6 +11,7 @@ import '../../../../shared/widgets/selection/figma_toggle_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/constants/bottle_constants.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Cycling Details Screen - Unified for both onboarding and settings
 ///
@@ -250,153 +251,155 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.blackberry,
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Column(
-          children: [
-            // Progress bar for onboarding, back button for settings
-            Container(
-              color: AppColors.blackberry,
-              padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-              child: _isOnboarding
-                  ? const OnboardingProgressBar(
-                      currentSegment: 2, // Sports + Details segment
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.only(top: 0, bottom: 20),
-                      child: Row(
-                        children: [
-                          GestureDetector(
-                            onTap: widget.onBack ?? () => context.pop(),
-                            child: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: AppColors.orange.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.arrow_back,
-                                color: AppColors.orange,
-                                size: 24,
+      body: ContentArea.narrow(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Column(
+            children: [
+              // Progress bar for onboarding, back button for settings
+              Container(
+                color: AppColors.blackberry,
+                padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+                child: _isOnboarding
+                    ? const OnboardingProgressBar(
+                        currentSegment: 2, // Sports + Details segment
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.only(top: 0, bottom: 20),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: widget.onBack ?? () => context.pop(),
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: AppColors.orange.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.arrow_back,
+                                  color: AppColors.orange,
+                                  size: 24,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Cycling Details',
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Cycling Details',
+                              style: TextStyle(
+                                fontFamily: 'Sansita',
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.orange,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+
+              // Scrollable content
+              Expanded(
+                child: SafeArea(
+                  top: false,
+                  child: Center(
+                    child: Form(
+                      key: _formKey,
+                      child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Title
+                          Text(
+                            'Cycling details',
                             style: TextStyle(
                               fontFamily: 'Sansita',
-                              fontSize: 20,
+                              fontSize: 26,
                               fontWeight: FontWeight.w700,
                               color: AppColors.orange,
+                              height: 1.0,
                             ),
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // FTP Section
+                          _FTPSection(
+                            controller: _ftpController,
+                            figmaCream: AppColors.textDark,
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // Water bottles section
+                          Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: Theme.of(context).colorScheme.copyWith(
+                                onSurface: AppColors.textDark,
+                              ),
+                            ),
+                            child: KylePlusMinusControl(
+                              label: 'What is your bike\'s bottle capacity?',
+                              value: _bikeBottles,
+                              onChanged: (value) => setState(() => _bikeBottles = value),
+                              min: 0,
+                              max: 6,
+                              unit: 'bottles',
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '1 bottle = ${kStandardBottleOz.toInt()} oz (${kStandardBottleMl.toInt()} mL)',
+                            style: TextStyle(
+                              fontFamily: 'Apercu',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.textDark.withValues(alpha: 0.6),
+                              height: 1.4,
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Aero bottle toggle
+                          FigmaToggleCard(
+                            label: 'I use Aero Bottles',
+                            value: _hasAeroBottle,
+                            onChanged: (value) => setState(() => _hasAeroBottle = value),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Bento box toggle
+                          FigmaToggleCard(
+                            label: 'I use a Bento Box for food',
+                            value: _hasBentoBox,
+                            onChanged: (value) => setState(() => _hasBentoBox = value),
                           ),
                         ],
-                      ),
-                    ),
-            ),
-
-            // Scrollable content
-            Expanded(
-              child: SafeArea(
-                top: false,
-                child: Center(
-                  child: Form(
-                    key: _formKey,
-                    child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Title
-                        Text(
-                          'Cycling details',
-                          style: TextStyle(
-                            fontFamily: 'Sansita',
-                            fontSize: 26,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.orange,
-                            height: 1.0,
-                          ),
                         ),
-
-                        const SizedBox(height: 28),
-
-                        // FTP Section
-                        _FTPSection(
-                          controller: _ftpController,
-                          figmaCream: AppColors.textDark,
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // Water bottles section
-                        Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: Theme.of(context).colorScheme.copyWith(
-                              onSurface: AppColors.textDark,
-                            ),
-                          ),
-                          child: KylePlusMinusControl(
-                            label: 'What is your bike\'s bottle capacity?',
-                            value: _bikeBottles,
-                            onChanged: (value) => setState(() => _bikeBottles = value),
-                            min: 0,
-                            max: 6,
-                            unit: 'bottles',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '1 bottle = ${kStandardBottleOz.toInt()} oz (${kStandardBottleMl.toInt()} mL)',
-                          style: TextStyle(
-                            fontFamily: 'Apercu',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.textDark.withValues(alpha: 0.6),
-                            height: 1.4,
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Aero bottle toggle
-                        FigmaToggleCard(
-                          label: 'I use Aero Bottles',
-                          value: _hasAeroBottle,
-                          onChanged: (value) => setState(() => _hasAeroBottle = value),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Bento box toggle
-                        FigmaToggleCard(
-                          label: 'I use a Bento Box for food',
-                          value: _hasBentoBox,
-                          onChanged: (value) => setState(() => _hasBentoBox = value),
-                        ),
-                      ],
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            // Navigation footer
-            FigmaOnboardingFooter(
-              onContinue: _continue,
-              onBack: _isOnboarding
-                  ? (widget.onBack ?? () => context.pop())
-                  : null,
-              canContinue: true,
-              isLoading: _isSaving,
-              buttonText: _isSettings ? 'Save' : 'Continue',
-              showBackButton: _isOnboarding,
-            ),
-          ],
+              // Navigation footer
+              FigmaOnboardingFooter(
+                onContinue: _continue,
+                onBack: _isOnboarding
+                    ? (widget.onBack ?? () => context.pop())
+                    : null,
+                canContinue: true,
+                isLoading: _isSaving,
+                buttonText: _isSettings ? 'Save' : 'Continue',
+                showBackButton: _isOnboarding,
+              ),
+            ],
+          ),
         ),
       ),
     );

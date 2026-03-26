@@ -99,7 +99,12 @@ if [ "$1" = "--e2e" ]; then
       --allow-net --allow-env
 
     run_test \
-      "2b. generate-macros-v4 E2E" \
+      "2b. generate-nutrition-plan-v3 strict macro E2E" \
+      "$E2E_DIR/strict-macro-e2e.test.ts" \
+      --allow-net --allow-env
+
+    run_test \
+      "2c. generate-macros-v4 E2E" \
       "$SCRIPT_DIR/generate-macros-v4/index.test.ts" \
       --allow-net --allow-env
   fi

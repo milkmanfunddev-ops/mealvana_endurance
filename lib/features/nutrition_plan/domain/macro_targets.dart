@@ -15,6 +15,7 @@ class MacroTargets {
     required this.isUserModified,
     this.modifiedFields = const [],
     this.brickSegments,
+    this.brickPhaseTargets,
   });
 
   final String id;
@@ -32,6 +33,10 @@ class MacroTargets {
   /// Contains sport type, order, duration, and other segment-specific data
   final List<BrickSegment>? brickSegments;
 
+  /// Exact per-segment/per-transition phase targets from generate-macros-v4.
+  /// Used to keep generate-nutrition-plan-v3 aligned to V4 ranges.
+  final BrickPhaseTargets? brickPhaseTargets;
+
   MacroTargets copyWith({
     String? id,
     ActivityType? activityType,
@@ -44,6 +49,7 @@ class MacroTargets {
     bool? isUserModified,
     List<String>? modifiedFields,
     List<BrickSegment>? brickSegments,
+    BrickPhaseTargets? brickPhaseTargets,
   }) {
     return MacroTargets(
       id: id ?? this.id,
@@ -57,6 +63,7 @@ class MacroTargets {
       isUserModified: isUserModified ?? this.isUserModified,
       modifiedFields: modifiedFields ?? this.modifiedFields,
       brickSegments: brickSegments ?? this.brickSegments,
+      brickPhaseTargets: brickPhaseTargets ?? this.brickPhaseTargets,
     );
   }
 
@@ -74,15 +81,21 @@ class MacroTargets {
       'modifiedFields': modifiedFields,
       if (brickSegments != null)
         'brickSegments': brickSegments!.map((s) => s.toJson()).toList(),
+      if (brickPhaseTargets != null)
+        'brickPhaseTargets': brickPhaseTargets!.toJson(),
     };
   }
 
   factory MacroTargets.fromJson(Map<String, dynamic> json) {
     return MacroTargets(
       id: json['id'] as String,
-      activityType: ActivityType.values.byName(json['activityType'] as String? ?? 'running'),
+      activityType: ActivityType.values.byName(
+        json['activityType'] as String? ?? 'running',
+      ),
       preRun: PreRunMacros.fromJson(json['preRun'] as Map<String, dynamic>),
-      duringRun: DuringRunMacros.fromJson(json['duringRun'] as Map<String, dynamic>),
+      duringRun: DuringRunMacros.fromJson(
+        json['duringRun'] as Map<String, dynamic>,
+      ),
       postRun: PostRunMacros.fromJson(json['postRun'] as Map<String, dynamic>),
       metrics: RunMetrics.fromJson(json['metrics'] as Map<String, dynamic>),
       calculationRule: json['calculationRule'] as String,
@@ -91,8 +104,13 @@ class MacroTargets {
       modifiedFields: List<String>.from(json['modifiedFields'] as List? ?? []),
       brickSegments: json['brickSegments'] != null
           ? (json['brickSegments'] as List<dynamic>)
-              .map((s) => BrickSegment.fromJson(s as Map<String, dynamic>))
-              .toList()
+                .map((s) => BrickSegment.fromJson(s as Map<String, dynamic>))
+                .toList()
+          : null,
+      brickPhaseTargets: json['brickPhaseTargets'] != null
+          ? BrickPhaseTargets.fromJson(
+              json['brickPhaseTargets'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -111,7 +129,8 @@ class MacroTargets {
         other.timestamp == timestamp &&
         other.isUserModified == isUserModified &&
         _listEquals(other.modifiedFields, modifiedFields) &&
-        _nullableListEquals(other.brickSegments, brickSegments);
+        _nullableListEquals(other.brickSegments, brickSegments) &&
+        other.brickPhaseTargets == brickPhaseTargets;
   }
 
   @override
@@ -128,13 +147,246 @@ class MacroTargets {
       isUserModified,
       Object.hashAll(modifiedFields),
       Object.hashAll(brickSegments ?? []),
+      brickPhaseTargets,
     );
   }
 
   @override
   String toString() {
-    return 'MacroTargets(id: $id, activityType: $activityType, preRun: $preRun, duringRun: $duringRun, postRun: $postRun, metrics: $metrics, calculationRule: $calculationRule, timestamp: $timestamp, isUserModified: $isUserModified, modifiedFields: $modifiedFields, brickSegments: ${brickSegments?.length ?? 0})';
+    return 'MacroTargets(id: $id, activityType: $activityType, preRun: $preRun, duringRun: $duringRun, postRun: $postRun, metrics: $metrics, calculationRule: $calculationRule, timestamp: $timestamp, isUserModified: $isUserModified, modifiedFields: $modifiedFields, brickSegments: ${brickSegments?.length ?? 0}, brickPhaseTargets: ${brickPhaseTargets != null})';
   }
+}
+
+/// Brick phase targets produced by generate-macros-v4.
+class BrickPhaseTargets {
+  const BrickPhaseTargets({
+    required this.duringSegments,
+    required this.transitions,
+  });
+
+  final List<BrickSegmentMacroTarget> duringSegments;
+  final List<BrickTransitionMacroTarget> transitions;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'duringSegments': duringSegments.map((s) => s.toJson()).toList(),
+      'transitions': transitions.map((t) => t.toJson()).toList(),
+    };
+  }
+
+  factory BrickPhaseTargets.fromJson(Map<String, dynamic> json) {
+    return BrickPhaseTargets(
+      duringSegments: (json['duringSegments'] as List<dynamic>? ?? const [])
+          .map(
+            (s) => BrickSegmentMacroTarget.fromJson(s as Map<String, dynamic>),
+          )
+          .toList(),
+      transitions: (json['transitions'] as List<dynamic>? ?? const [])
+          .map(
+            (t) =>
+                BrickTransitionMacroTarget.fromJson(t as Map<String, dynamic>),
+          )
+          .toList(),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is BrickPhaseTargets &&
+        _listEquals(other.duringSegments, duringSegments) &&
+        _listEquals(other.transitions, transitions);
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(Object.hashAll(duringSegments), Object.hashAll(transitions));
+}
+
+/// Per-segment during targets for brick workouts.
+class BrickSegmentMacroTarget {
+  const BrickSegmentMacroTarget({
+    required this.segmentOrder,
+    required this.sport,
+    required this.durationMinutes,
+    required this.carbsG,
+    this.carbsLowG,
+    this.carbsHighG,
+    required this.sodiumMg,
+    this.sodiumLowMg,
+    this.sodiumHighMg,
+    required this.waterMl,
+    this.waterLowMl,
+    this.waterHighMl,
+  });
+
+  final int segmentOrder;
+  final String sport;
+  final int durationMinutes;
+  final double carbsG;
+  final double? carbsLowG;
+  final double? carbsHighG;
+  final double sodiumMg;
+  final double? sodiumLowMg;
+  final double? sodiumHighMg;
+  final double waterMl;
+  final double? waterLowMl;
+  final double? waterHighMl;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'segmentOrder': segmentOrder,
+      'sport': sport,
+      'durationMinutes': durationMinutes,
+      'carbsG': carbsG,
+      if (carbsLowG != null) 'carbsLowG': carbsLowG,
+      if (carbsHighG != null) 'carbsHighG': carbsHighG,
+      'sodiumMg': sodiumMg,
+      if (sodiumLowMg != null) 'sodiumLowMg': sodiumLowMg,
+      if (sodiumHighMg != null) 'sodiumHighMg': sodiumHighMg,
+      'waterMl': waterMl,
+      if (waterLowMl != null) 'waterLowMl': waterLowMl,
+      if (waterHighMl != null) 'waterHighMl': waterHighMl,
+    };
+  }
+
+  factory BrickSegmentMacroTarget.fromJson(Map<String, dynamic> json) {
+    return BrickSegmentMacroTarget(
+      segmentOrder: (json['segmentOrder'] as num).toInt(),
+      sport: json['sport'] as String,
+      durationMinutes: (json['durationMinutes'] as num).toInt(),
+      carbsG: (json['carbsG'] as num).toDouble(),
+      carbsLowG: (json['carbsLowG'] as num?)?.toDouble(),
+      carbsHighG: (json['carbsHighG'] as num?)?.toDouble(),
+      sodiumMg: (json['sodiumMg'] as num).toDouble(),
+      sodiumLowMg: (json['sodiumLowMg'] as num?)?.toDouble(),
+      sodiumHighMg: (json['sodiumHighMg'] as num?)?.toDouble(),
+      waterMl: (json['waterMl'] as num).toDouble(),
+      waterLowMl: (json['waterLowMl'] as num?)?.toDouble(),
+      waterHighMl: (json['waterHighMl'] as num?)?.toDouble(),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is BrickSegmentMacroTarget &&
+        other.segmentOrder == segmentOrder &&
+        other.sport == sport &&
+        other.durationMinutes == durationMinutes &&
+        other.carbsG == carbsG &&
+        other.carbsLowG == carbsLowG &&
+        other.carbsHighG == carbsHighG &&
+        other.sodiumMg == sodiumMg &&
+        other.sodiumLowMg == sodiumLowMg &&
+        other.sodiumHighMg == sodiumHighMg &&
+        other.waterMl == waterMl &&
+        other.waterLowMl == waterLowMl &&
+        other.waterHighMl == waterHighMl;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    segmentOrder,
+    sport,
+    durationMinutes,
+    carbsG,
+    carbsLowG,
+    carbsHighG,
+    sodiumMg,
+    sodiumLowMg,
+    sodiumHighMg,
+    waterMl,
+    waterLowMl,
+    waterHighMl,
+  );
+}
+
+/// Per-transition targets for brick workouts.
+class BrickTransitionMacroTarget {
+  const BrickTransitionMacroTarget({
+    required this.transitionName,
+    required this.carbsG,
+    this.carbsLowG,
+    this.carbsHighG,
+    required this.sodiumMg,
+    this.sodiumLowMg,
+    this.sodiumHighMg,
+    required this.waterMl,
+    this.waterLowMl,
+    this.waterHighMl,
+  });
+
+  final String transitionName;
+  final double carbsG;
+  final double? carbsLowG;
+  final double? carbsHighG;
+  final double sodiumMg;
+  final double? sodiumLowMg;
+  final double? sodiumHighMg;
+  final double waterMl;
+  final double? waterLowMl;
+  final double? waterHighMl;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'transitionName': transitionName,
+      'carbsG': carbsG,
+      if (carbsLowG != null) 'carbsLowG': carbsLowG,
+      if (carbsHighG != null) 'carbsHighG': carbsHighG,
+      'sodiumMg': sodiumMg,
+      if (sodiumLowMg != null) 'sodiumLowMg': sodiumLowMg,
+      if (sodiumHighMg != null) 'sodiumHighMg': sodiumHighMg,
+      'waterMl': waterMl,
+      if (waterLowMl != null) 'waterLowMl': waterLowMl,
+      if (waterHighMl != null) 'waterHighMl': waterHighMl,
+    };
+  }
+
+  factory BrickTransitionMacroTarget.fromJson(Map<String, dynamic> json) {
+    return BrickTransitionMacroTarget(
+      transitionName: json['transitionName'] as String,
+      carbsG: (json['carbsG'] as num).toDouble(),
+      carbsLowG: (json['carbsLowG'] as num?)?.toDouble(),
+      carbsHighG: (json['carbsHighG'] as num?)?.toDouble(),
+      sodiumMg: (json['sodiumMg'] as num).toDouble(),
+      sodiumLowMg: (json['sodiumLowMg'] as num?)?.toDouble(),
+      sodiumHighMg: (json['sodiumHighMg'] as num?)?.toDouble(),
+      waterMl: (json['waterMl'] as num).toDouble(),
+      waterLowMl: (json['waterLowMl'] as num?)?.toDouble(),
+      waterHighMl: (json['waterHighMl'] as num?)?.toDouble(),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is BrickTransitionMacroTarget &&
+        other.transitionName == transitionName &&
+        other.carbsG == carbsG &&
+        other.carbsLowG == carbsLowG &&
+        other.carbsHighG == carbsHighG &&
+        other.sodiumMg == sodiumMg &&
+        other.sodiumLowMg == sodiumLowMg &&
+        other.sodiumHighMg == sodiumHighMg &&
+        other.waterMl == waterMl &&
+        other.waterLowMl == waterLowMl &&
+        other.waterHighMl == waterHighMl;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    transitionName,
+    carbsG,
+    carbsLowG,
+    carbsHighG,
+    sodiumMg,
+    sodiumLowMg,
+    sodiumHighMg,
+    waterMl,
+    waterLowMl,
+    waterHighMl,
+  );
 }
 
 /// Pre-run nutrition targets (1-4 hours before)
@@ -262,9 +514,19 @@ class PreRunMacros {
   @override
   int get hashCode {
     return Object.hash(
-      carbsG, proteinG, fatCapG, fluidsMl, sodiumMg,
-      carbsLowG, carbsHighG, proteinLowG, proteinHighG,
-      sodiumLowMg, sodiumHighMg, fluidsLowMl, fluidsHighMl,
+      carbsG,
+      proteinG,
+      fatCapG,
+      fluidsMl,
+      sodiumMg,
+      carbsLowG,
+      carbsHighG,
+      proteinLowG,
+      proteinHighG,
+      sodiumLowMg,
+      sodiumHighMg,
+      fluidsLowMl,
+      fluidsHighMl,
     );
   }
 
@@ -315,37 +577,25 @@ class DuringRunMacros {
   /// Create updated instance with new total carbs, recalculating rate
   DuringRunMacros withUpdatedTotalCarbs(double newTotalG, double durationH) {
     final newRate = durationH > 0 ? newTotalG / durationH : carbRateGPerH;
-    return copyWith(
-      carbTotalG: newTotalG,
-      carbRateGPerH: newRate,
-    );
+    return copyWith(carbTotalG: newTotalG, carbRateGPerH: newRate);
   }
 
   /// Create updated instance with new carb rate, recalculating total
   DuringRunMacros withUpdatedRateCarbs(double newRateGPerH, double durationH) {
     final newTotal = newRateGPerH * durationH;
-    return copyWith(
-      carbRateGPerH: newRateGPerH,
-      carbTotalG: newTotal,
-    );
+    return copyWith(carbRateGPerH: newRateGPerH, carbTotalG: newTotal);
   }
 
   /// Create updated instance with new total fluids, recalculating rate
   DuringRunMacros withUpdatedTotalFluids(double newTotalMl, double durationH) {
     final newRate = durationH > 0 ? newTotalMl / durationH : fluidRateMlPerH;
-    return copyWith(
-      fluidTotalMl: newTotalMl,
-      fluidRateMlPerH: newRate,
-    );
+    return copyWith(fluidTotalMl: newTotalMl, fluidRateMlPerH: newRate);
   }
 
   /// Create updated instance with new total sodium, recalculating rate
   DuringRunMacros withUpdatedTotalSodium(double newTotalMg, double durationH) {
     final newRate = durationH > 0 ? newTotalMg / durationH : sodiumRateMgPerH;
-    return copyWith(
-      sodiumTotalMg: newTotalMg,
-      sodiumRateMgPerH: newRate,
-    );
+    return copyWith(sodiumTotalMg: newTotalMg, sodiumRateMgPerH: newRate);
   }
 
   DuringRunMacros copyWith({
@@ -410,7 +660,9 @@ class DuringRunMacros {
       sodiumRateMgPerH: (json['sodiumRateMgPerH'] as num).toDouble(),
       sodiumTotalMg: (json['sodiumTotalMg'] as num).toDouble(),
       massNormRateGPerH: (json['massNormRateGPerH'] as num).toDouble(),
-      absClampRangeGPerH: List<double>.from(json['absClampRangeGPerH'] as List? ?? [30, 60]),
+      absClampRangeGPerH: List<double>.from(
+        json['absClampRangeGPerH'] as List? ?? [30, 60],
+      ),
       carbsLowG: (json['carbsLowG'] as num?)?.toDouble(),
       carbsHighG: (json['carbsHighG'] as num?)?.toDouble(),
       sodiumLowMg: (json['sodiumLowMg'] as num?)?.toDouble(),
@@ -584,9 +836,18 @@ class PostRunMacros {
   @override
   int get hashCode {
     return Object.hash(
-      carbsG, proteinG, fluidsMl, sodiumMg,
-      carbsLowG, carbsHighG, proteinLowG, proteinHighG,
-      sodiumLowMg, sodiumHighMg, fluidsLowMl, fluidsHighMl,
+      carbsG,
+      proteinG,
+      fluidsMl,
+      sodiumMg,
+      carbsLowG,
+      carbsHighG,
+      proteinLowG,
+      proteinHighG,
+      sodiumLowMg,
+      sodiumHighMg,
+      fluidsLowMl,
+      fluidsHighMl,
     );
   }
 
@@ -679,7 +940,9 @@ class RunMetrics {
       distanceKm: (json['distanceKm'] as num).toDouble(),
       durationH: (json['durationH'] as num).toDouble(),
       durationMin: (json['durationMin'] as num).toDouble(),
-      paceMinPerMile: json['paceMinPerMile'] != null ? (json['paceMinPerMile'] as num).toDouble() : null,
+      paceMinPerMile: json['paceMinPerMile'] != null
+          ? (json['paceMinPerMile'] as num).toDouble()
+          : null,
       speedMph: (json['speedMph'] as num).toDouble(),
       caloriesGrossKcal: (json['caloriesGrossKcal'] as num).toDouble(),
       caloriesNetKcal: (json['caloriesNetKcal'] as num).toDouble(),
@@ -724,11 +987,7 @@ class RunMetrics {
 }
 
 /// Enumeration for macro sections
-enum MacroSection {
-  preRun,
-  duringRun,
-  postRun,
-}
+enum MacroSection { preRun, duringRun, postRun }
 
 /// Enumeration for macro fields within each section
 enum MacroField {
@@ -738,7 +997,7 @@ enum MacroField {
   preRunFatCap,
   preRunFluids,
   preRunSodium,
-  
+
   // During-run fields
   duringRunCarbTotal,
   duringRunCarbRate,
@@ -746,7 +1005,7 @@ enum MacroField {
   duringRunFluidRate,
   duringRunSodiumTotal,
   duringRunSodiumRate,
-  
+
   // Post-run fields
   postRunCarbs,
   postRunProtein,

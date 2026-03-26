@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart' a
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../features/onboarding/domain/dietary_preference.dart';
 import '../../../features/onboarding/domain/allergy.dart';
+import '../../../features/daily_macros/domain/enums.dart';
 
 part 'user_dao.g.dart';
 
@@ -127,8 +128,16 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         // Optional name fields for coach mode athlete identification
         firstName: Value(profile.firstName),
         lastName: Value(profile.lastName),
+        // Contact information
+        email: Value(profile.email),
         // Nutrition target overrides (JSON string)
         nutritionTargetOverrides: Value(profile.nutritionTargetOverrides?.toJsonString()),
+        // Daily macro calculation fields
+        bodyFatPct: Value(profile.bodyFatPct),
+        lifestyle: Value(profile.lifestyle.dbValue),
+        typicalWeeklyHours: Value(profile.typicalWeeklyHours),
+        carbCycleOptIn: Value(profile.carbCycleOptIn),
+        trainingPhase: Value(profile.trainingPhase.dbValue),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -180,8 +189,16 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         // Optional name fields for coach mode athlete identification
         firstName: Value(profile.firstName),
         lastName: Value(profile.lastName),
+        // Contact information
+        email: Value(profile.email),
         // Nutrition target overrides (JSON string)
         nutritionTargetOverrides: Value(profile.nutritionTargetOverrides?.toJsonString()),
+        // Daily macro calculation fields
+        bodyFatPct: Value(profile.bodyFatPct),
+        lifestyle: Value(profile.lifestyle.dbValue),
+        typicalWeeklyHours: Value(profile.typicalWeeklyHours),
+        carbCycleOptIn: Value(profile.carbCycleOptIn),
+        trainingPhase: Value(profile.trainingPhase.dbValue),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -300,10 +317,18 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       // Optional name fields for coach mode athlete identification
       firstName: dbUser.firstName,
       lastName: dbUser.lastName,
+      // Contact information
+      email: dbUser.email,
       // Nutrition target overrides
       nutritionTargetOverrides: NutritionTargetOverrides.fromJsonString(
         dbUser.nutritionTargetOverrides,
       ),
+      // Daily macro calculation fields
+      bodyFatPct: dbUser.bodyFatPct,
+      lifestyle: Lifestyle.fromDbValue(dbUser.lifestyle),
+      typicalWeeklyHours: dbUser.typicalWeeklyHours,
+      carbCycleOptIn: dbUser.carbCycleOptIn,
+      trainingPhase: TrainingPhase.fromDbValue(dbUser.trainingPhase),
     );
   }
 }

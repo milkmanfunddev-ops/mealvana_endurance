@@ -11,12 +11,14 @@ import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/application/calendar_service.dart';
+import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../calendar/presentation/providers/calendar_controller.dart';
 import '../../../events/data/events_repository.dart';
 import '../../../events/presentation/providers/events_controller.dart'
     hide nextUpcomingEventProvider;
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
+import '../../application/garmin_oauth_service.dart';
 import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
 import '../../data/integrations_repository.dart';
@@ -47,6 +49,8 @@ class ConnectTrainingState {
     this.isTrainingPeaksConnected = false,
     this.trainingPeaksAthleteName,
     this.trainingPeaksLastSyncAt,
+    this.isGarminConnected = false,
+    this.garminAthleteName,
     this.isConnecting = false,
     this.connectingProvider,
     this.importedWorkoutsCount = 0,
@@ -67,6 +71,8 @@ class ConnectTrainingState {
   final bool isTrainingPeaksConnected;
   final String? trainingPeaksAthleteName;
   final DateTime? trainingPeaksLastSyncAt;
+  final bool isGarminConnected;
+  final String? garminAthleteName;
   final bool isConnecting;
   final String? connectingProvider;
   final int importedWorkoutsCount;
@@ -100,6 +106,9 @@ class ConnectTrainingState {
     bool? isTrainingPeaksConnected,
     String? trainingPeaksAthleteName,
     DateTime? trainingPeaksLastSyncAt,
+    bool? isGarminConnected,
+    String? garminAthleteName,
+    bool clearGarminAthleteName = false,
     bool? isConnecting,
     String? connectingProvider,
     bool clearConnectingProvider = false,
@@ -128,6 +137,10 @@ class ConnectTrainingState {
           trainingPeaksAthleteName ?? this.trainingPeaksAthleteName,
       trainingPeaksLastSyncAt:
           trainingPeaksLastSyncAt ?? this.trainingPeaksLastSyncAt,
+      isGarminConnected: isGarminConnected ?? this.isGarminConnected,
+      garminAthleteName: clearGarminAthleteName
+          ? null
+          : (garminAthleteName ?? this.garminAthleteName),
       isConnecting: isConnecting ?? this.isConnecting,
       connectingProvider: clearConnectingProvider
           ? null
@@ -163,6 +176,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       ref.read(trainingPeaksOAuthServiceProvider.future);
   Future<TrainingPeaksSyncService> get _trainingPeaksSync =>
       ref.read(trainingPeaksSyncServiceProvider.future);
+  GarminOAuthService get _garminOAuth =>
+      ref.read(garminOAuthServiceProvider);
   IntegrationsRepository get _integrationsRepo =>
       ref.read(integrationsRepositoryProvider);
   ActivitiesRepository get _activitiesRepo =>
@@ -248,6 +263,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _currentUserId!,
       'training_peaks',
     );
+    final garminIntegration = await _integrationsRepo.getIntegration(
+      _currentUserId!,
+      'garmin',
+    );
 
     return ConnectTrainingState(
       isFinalSurgeConnected: finalSurgeIntegration?.isActive ?? false,
@@ -256,6 +275,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       isTrainingPeaksConnected: trainingPeaksIntegration?.isActive ?? false,
       trainingPeaksAthleteName: trainingPeaksIntegration?.providerAthleteName,
       trainingPeaksLastSyncAt: trainingPeaksIntegration?.lastSyncAt,
+      isGarminConnected: garminIntegration?.isActive ?? false,
+      garminAthleteName: garminIntegration?.providerAthleteName,
     );
   }
 
@@ -412,6 +433,30 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       updateState: () => state.value!.copyWith(
         isFinalSurgeConnected: false,
         finalSurgeAthleteName: null,
+      ),
+    );
+  }
+
+  Future<bool> connectGarmin() async {
+    return _connectProvider(
+      providerId: 'garmin',
+      authenticate: () => _garminOAuth.authenticate(_currentUserId!),
+      updateState: (athleteName) => state.value!.copyWith(
+        isConnecting: false,
+        clearConnectingProvider: true,
+        isGarminConnected: true,
+        garminAthleteName: athleteName,
+      ),
+    );
+  }
+
+  Future<void> disconnectGarmin() async {
+    await _disconnectProvider(
+      providerId: 'garmin',
+      disconnect: () => _garminOAuth.disconnect(_currentUserId!),
+      updateState: () => state.value!.copyWith(
+        isGarminConnected: false,
+        clearGarminAthleteName: true,
       ),
     );
   }
@@ -839,6 +884,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     try {
       // Invalidate activities controller to refresh the main list
       ref.invalidate(activitiesControllerProvider);
+      // Invalidate daily macros (activities changed → stale macro cache)
+      ref.invalidate(dailyMacrosControllerProvider);
       // Invalidate calendar providers
       ref.invalidate(calendarControllerProvider);
       ref.invalidate(allEventsControllerProvider);
@@ -847,7 +894,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       ref.invalidate(eventsControllerProvider);
       ref.invalidate(allEventsProvider);
       if (kDebugMode) {
-        print('🔄 Activities, calendar, and events providers invalidated');
+        print('🔄 Activities, calendar, events, and daily macros providers invalidated');
       }
     } catch (e) {
       if (kDebugMode) {

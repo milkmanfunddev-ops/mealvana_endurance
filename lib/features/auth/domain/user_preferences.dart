@@ -2,6 +2,7 @@ import 'package:mealvana_endurance/features/onboarding/domain/dietary_preference
 import 'package:mealvana_endurance/features/onboarding/domain/allergy.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
+import 'package:mealvana_endurance/features/daily_macros/domain/enums.dart';
 
 /// Domain models for user authentication and preferences
 /// Removed Hive dependencies as part of migration to Drift database
@@ -82,8 +83,18 @@ class UserProfile {
   final String? firstName;
   final String? lastName;
 
+  // Contact information
+  final String? email;
+
   // Nutrition target overrides - user-configured default macro targets
   final NutritionTargetOverrides? nutritionTargetOverrides;
+
+  // Daily macro calculation fields
+  final double? bodyFatPct;
+  final Lifestyle lifestyle;
+  final double? typicalWeeklyHours;
+  final bool carbCycleOptIn;
+  final TrainingPhase trainingPhase;
 
   UserProfile({
     required this.id,
@@ -127,8 +138,16 @@ class UserProfile {
     // User identity
     this.firstName,
     this.lastName,
+    // Contact information
+    this.email,
     // Nutrition target overrides
     this.nutritionTargetOverrides,
+    // Daily macro calculation fields
+    this.bodyFatPct,
+    this.lifestyle = Lifestyle.mixed,
+    this.typicalWeeklyHours,
+    this.carbCycleOptIn = false,
+    this.trainingPhase = TrainingPhase.base,
   });
 
   /// Returns the best available display name for the user.
@@ -287,11 +306,19 @@ class UserProfile {
       // User identity
       firstName: json['first_name'] as String?,
       lastName: json['last_name'] as String?,
+      // Contact information
+      email: json['email'] as String?,
       // Nutrition target overrides
       nutritionTargetOverrides: json['nutrition_target_overrides'] != null
           ? NutritionTargetOverrides.fromJson(
               json['nutrition_target_overrides'] as Map<String, dynamic>)
           : null,
+      // Daily macro calculation fields
+      bodyFatPct: (json['body_fat_pct'] as num?)?.toDouble(),
+      lifestyle: Lifestyle.fromDbValue(json['lifestyle'] as String?),
+      typicalWeeklyHours: (json['typical_weekly_hours'] as num?)?.toDouble(),
+      carbCycleOptIn: json['carb_cycle_opt_in'] as bool? ?? false,
+      trainingPhase: TrainingPhase.fromDbValue(json['training_phase'] as String?),
     );
   }
 
@@ -328,8 +355,16 @@ class UserProfile {
       // User identity
       'first_name': firstName,
       'last_name': lastName,
+      // Contact information
+      'email': email,
       // Nutrition target overrides
       'nutrition_target_overrides': nutritionTargetOverrides?.toJson(),
+      // Daily macro calculation fields
+      'body_fat_pct': bodyFatPct,
+      'lifestyle': lifestyle.dbValue,
+      'typical_weekly_hours': typicalWeeklyHours,
+      'carb_cycle_opt_in': carbCycleOptIn,
+      'training_phase': trainingPhase.dbValue,
       // Note: is_coach is NOT synced to Supabase - coach status lives in coaches table
       // Note: swipe_hint_shown, gi_sensitivity, typical_bike_bottles, has_aero_bottle,
       // has_bento_box, typical_wetsuit, typical_swim_cap_type are Drift-only fields
@@ -375,8 +410,16 @@ class UserProfile {
     // User identity
     String? firstName,
     String? lastName,
+    // Contact information
+    String? email,
     // Nutrition target overrides
     NutritionTargetOverrides? nutritionTargetOverrides,
+    // Daily macro calculation fields
+    double? bodyFatPct,
+    Lifestyle? lifestyle,
+    double? typicalWeeklyHours,
+    bool? carbCycleOptIn,
+    TrainingPhase? trainingPhase,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -416,8 +459,16 @@ class UserProfile {
       // User identity
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
+      // Contact information
+      email: email ?? this.email,
       // Nutrition target overrides
       nutritionTargetOverrides: nutritionTargetOverrides ?? this.nutritionTargetOverrides,
+      // Daily macro calculation fields
+      bodyFatPct: bodyFatPct ?? this.bodyFatPct,
+      lifestyle: lifestyle ?? this.lifestyle,
+      typicalWeeklyHours: typicalWeeklyHours ?? this.typicalWeeklyHours,
+      carbCycleOptIn: carbCycleOptIn ?? this.carbCycleOptIn,
+      trainingPhase: trainingPhase ?? this.trainingPhase,
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../../../../theme/app_theme.dart';
 import '../../application/food_import_service.dart';
 import '../../domain/meal_type.dart';
@@ -123,12 +124,13 @@ class _CreateCustomCarbLoadingFoodScreenState
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: EdgeInsets.all(16.w),
-            children: [
+      body: ContentArea(
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: EdgeInsets.all(16.w),
+              children: [
               // Instructions
               Container(
                 padding: EdgeInsets.all(16.w),
@@ -365,6 +367,7 @@ class _CreateCustomCarbLoadingFoodScreenState
 
               SizedBox(height: 16.h),
             ],
+            ),
           ),
         ),
       ),

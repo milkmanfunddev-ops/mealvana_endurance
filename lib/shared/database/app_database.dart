@@ -35,6 +35,8 @@ import 'tables/templates_table.dart';
 import 'tables/tp_writeback_table.dart';
 import 'tables/personal_templates_table.dart';
 import 'tables/athlete_pairing_codes_table.dart';
+import 'tables/coach_pairing_codes_table.dart';
+import 'tables/daily_macro_targets_table.dart';
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
@@ -113,8 +115,12 @@ part 'app_database.g.dart';
     // Personal nutrition plan templates
     PersonalTemplatesTable,
 
-    // Athlete pairing codes for coach connections
+    // Pairing codes for coach connections
     AthletePairingCodesTable,
+    CoachPairingCodesTable,
+
+    // Daily macro targets cache
+    DailyMacroTargetsTable,
   ],
   daos: [
     UserDao,
@@ -222,6 +228,59 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('PRAGMA cache_size = 10000');
         }
 
+        // Runtime column additions (OTA-safe, no schema version bump needed).
+        // SQLite ALTER TABLE ADD COLUMN is safe for nullable columns.
+        // Catches "duplicate column" error for idempotency on subsequent launches.
+        await _addColumnIfNotExists('users', 'email', 'TEXT');
+        await _addColumnIfNotExists('activities', 'fuel_log_data', 'TEXT');
+
+        // Daily macro calculation fields
+        await _addColumnIfNotExists('users', 'body_fat_pct', 'REAL');
+        await _addColumnIfNotExists('users', 'lifestyle', "TEXT DEFAULT 'mixed'");
+        await _addColumnIfNotExists('users', 'typical_weekly_hours', 'REAL');
+        await _addColumnIfNotExists('users', 'carb_cycle_opt_in', 'INTEGER DEFAULT 0');
+        await _addColumnIfNotExists('users', 'training_phase', "TEXT DEFAULT 'base'");
+        await _addColumnIfNotExists('activities', 'tss', 'REAL');
+
+        // Create daily_macro_targets table if not exists
+        await customStatement('''
+          CREATE TABLE IF NOT EXISTS daily_macro_targets (
+            id TEXT NOT NULL PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            target_date INTEGER NOT NULL,
+            carb_g REAL NOT NULL,
+            prot_g REAL NOT NULL,
+            fat_g REAL NOT NULL,
+            tdee REAL NOT NULL,
+            rmr REAL NOT NULL,
+            session_kcal REAL NOT NULL DEFAULT 0,
+            neat_kcal REAL,
+            tef_kcal REAL,
+            mode TEXT NOT NULL DEFAULT 'prospective',
+            ea REAL,
+            ea_status TEXT,
+            calculation_input TEXT,
+            algorithm_version TEXT NOT NULL DEFAULT 'v4',
+            needs_upload INTEGER NOT NULL DEFAULT 0,
+            created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+            updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+            UNIQUE(user_id, target_date)
+          )
+        ''');
+
+        // Create coach_pairing_codes table if not exists
+        await customStatement('''
+          CREATE TABLE IF NOT EXISTS coach_pairing_codes (
+            id TEXT NOT NULL PRIMARY KEY,
+            coach_user_id TEXT NOT NULL,
+            code TEXT NOT NULL UNIQUE,
+            created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+            expires_at INTEGER NOT NULL,
+            used_by_athlete_id TEXT,
+            used_at INTEGER
+          )
+        ''');
+
         // Schema integrity validation - fail fast if schema is corrupted
         if (!details.wasCreated) {
           await _validateSchemaIntegrity();
@@ -231,6 +290,24 @@ class AppDatabase extends _$AppDatabase {
         await foodsDao.normalizeUserFoodTimestamps();
       },
     );
+  }
+
+  /// Add a column to a table if it doesn't already exist.
+  /// SQLite doesn't support IF NOT EXISTS for ALTER TABLE ADD COLUMN,
+  /// so we catch the "duplicate column name" error for idempotency.
+  Future<void> _addColumnIfNotExists(
+    String table,
+    String column,
+    String type,
+  ) async {
+    try {
+      await customStatement('ALTER TABLE $table ADD COLUMN $column $type');
+    } catch (e) {
+      // SQLite throws "duplicate column name" if column already exists - safe to ignore
+      if (!e.toString().contains('duplicate column name')) {
+        rethrow;
+      }
+    }
   }
 
   /// Populate default data for fresh installations

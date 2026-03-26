@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Welcome Screen - Design System
 /// First screen in onboarding flow
@@ -20,7 +21,9 @@ class WelcomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppColors.blackberry,
-      body: _buildContent(context, ref),
+      body: ContentArea.narrow(
+        child: _buildContent(context, ref),
+      ),
     );
   }
 

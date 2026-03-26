@@ -7,9 +7,11 @@ import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_config.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../application/change_detection_service.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/final_surge_transformer.dart';
+import '../../application/garmin_oauth_service.dart';
 import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
 import '../../application/training_peaks_transformer.dart';
@@ -207,6 +209,45 @@ Future<IntegrationModel?> trainingPeaksIntegration(
 Future<bool> isTrainingPeaksConnected(Ref ref, String userId) async {
   final integration = await ref.watch(
     trainingPeaksIntegrationProvider(userId).future,
+  );
+  return integration?.isActive ?? false;
+}
+
+// =============================================================================
+// GARMIN CONNECT PROVIDERS
+// =============================================================================
+
+/// Provider for Garmin Connect OAuth service
+///
+/// Garmin is push-only — no sync service or API client needed.
+/// Activities arrive automatically via server-side push.
+@Riverpod(keepAlive: true)
+GarminOAuthService garminOAuthService(Ref ref) {
+  final config = ref.watch(appConfigProvider);
+  final repository = ref.watch(integrationsRepositoryProvider);
+  final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+  return GarminOAuthService(
+    repository: repository,
+    supabaseClient: supabaseClient,
+    clientId: config.garminClientId,
+    clientSecret: config.garminClientSecret,
+    redirectUri: config.garminRedirectUri,
+    callbackUrlScheme: _baseCallbackScheme,
+  );
+}
+
+/// Provider to get Garmin Connect integration for a user
+@riverpod
+Future<IntegrationModel?> garminIntegration(Ref ref, String userId) async {
+  final repository = ref.watch(integrationsRepositoryProvider);
+  return repository.getIntegration(userId, 'garmin');
+}
+
+/// Provider to check if Garmin Connect is connected
+@riverpod
+Future<bool> isGarminConnected(Ref ref, String userId) async {
+  final integration = await ref.watch(
+    garminIntegrationProvider(userId).future,
   );
   return integration?.isActive ?? false;
 }

@@ -214,7 +214,7 @@ class SettingsController extends _$SettingsController {
       isAnonymous: displayProfile?.isAnonymous ?? true,
       authProvider: displayProfile?.authProvider ?? 'anonymous',
       authUserId: displayProfile?.authUserId,
-      email: supabaseUser?.email,
+      email: supabaseUser?.email ?? displayProfile?.email,
       // Coach mode - check coaches table for approved status
       isCoach: await _checkIsApprovedCoach(displayProfile?.id),
       // Optional name fields for coach mode athlete identification
@@ -346,6 +346,7 @@ class SettingsController extends _$SettingsController {
     SweatRateCat? sweatRate,
     String? firstName,
     String? lastName,
+    String? email,
   }) async {
     final currentState = state.value;
     if (currentState == null) return;
@@ -364,6 +365,7 @@ class SettingsController extends _$SettingsController {
         sweatRate: sweatRate ?? currentState.sweatRate,
         firstName: firstName,
         lastName: lastName,
+        email: email ?? currentState.email,
         isSaving: true,
       ),
     );
@@ -523,6 +525,7 @@ class SettingsController extends _$SettingsController {
         senderName: existingProfile.senderName,
         firstName: existingProfile.firstName,
         lastName: existingProfile.lastName,
+        email: existingProfile.email,
         nutritionTargetOverrides: overrides, // Explicitly set (can be null)
       );
 
@@ -574,6 +577,8 @@ class SettingsController extends _$SettingsController {
         // Optional name fields for coach mode athlete identification
         firstName: currentState.firstName ?? existingProfile.firstName,
         lastName: currentState.lastName ?? existingProfile.lastName,
+        // Contact information
+        email: currentState.email ?? existingProfile.email,
         // Nutrition target overrides
         nutritionTargetOverrides: currentState.nutritionTargetOverrides ?? existingProfile.nutritionTargetOverrides,
       );

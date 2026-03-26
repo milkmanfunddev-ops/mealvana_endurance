@@ -38,12 +38,16 @@ class Activity {
     // Completion data
     this.completedAt,
     this.completionRating,
+    this.nutritionRating,
     this.completionNotes,
     this.actualDistanceMiles,
     this.actualDurationMinutes,
 
     // Nutrition plan data (embedded JSON from activities.nutrition_plan_data)
     this.nutritionPlanData,
+
+    // Fuel log data (actual consumption logged on completion)
+    this.fuelLogData,
 
     // Metadata
     this.notes,
@@ -87,7 +91,7 @@ class Activity {
   final String title;
   final DateTime scheduledDateTime;
   final ActivityStatus status;
-  
+
   // Activity parameters (shared)
   final double? distanceMiles;
   final int? durationMinutes;
@@ -108,18 +112,23 @@ class Activity {
 
   // Shared intensity and timing
   final String? intensityTarget; // 'zone_1', 'zone_2', 'rpe_3', etc.
-  final IntensityDistribution? intensityDistribution; // Three-zone percentage distribution
+  final IntensityDistribution?
+  intensityDistribution; // Three-zone percentage distribution
   final int? timeBeforeMinutes; // Pre-activity timing window
-  
+
   // Completion data
   final DateTime? completedAt;
   final int? completionRating;
+  final int? nutritionRating; // 1-5 carb feedback scale (emoji mapping)
   final String? completionNotes;
   final double? actualDistanceMiles;
   final int? actualDurationMinutes;
 
   // Nutrition plan data (embedded JSON from activities.nutrition_plan_data)
   final Map<String, dynamic>? nutritionPlanData;
+
+  // Fuel log data (actual consumption logged on completion)
+  final Map<String, dynamic>? fuelLogData;
 
   // Metadata
   final String? notes;
@@ -147,10 +156,14 @@ class Activity {
   final double? paceMaxMinutesPerMile;
 
   // Integration sync change tracking (Phase 1)
-  final bool needsNutritionRefresh; // Flag when schedule changes require nutrition refresh
-  final DateTime? providerDeletedAt; // Soft-delete timestamp when provider removes workout
-  final DateTime? providerScheduledAt; // Original provider schedule for change detection
-  final DateTime? scheduleChangedAt; // When change was last detected during sync
+  final bool
+  needsNutritionRefresh; // Flag when schedule changes require nutrition refresh
+  final DateTime?
+  providerDeletedAt; // Soft-delete timestamp when provider removes workout
+  final DateTime?
+  providerScheduledAt; // Original provider schedule for change detection
+  final DateTime?
+  scheduleChangedAt; // When change was last detected during sync
 
   // Brick workout fields
   final BrickMetadata? brickMetadata; // Brick segment information (JSON)
@@ -185,10 +198,12 @@ class Activity {
       'timeBeforeMinutes': timeBeforeMinutes,
       'completedAt': completedAt?.toIso8601String(),
       'completionRating': completionRating,
+      'nutritionRating': nutritionRating,
       'completionNotes': completionNotes,
       'actualDistanceMiles': actualDistanceMiles,
       'actualDurationMinutes': actualDurationMinutes,
       'nutritionPlanData': nutritionPlanData,
+      'fuelLogData': fuelLogData,
       'notes': notes,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -237,10 +252,12 @@ class Activity {
     int? timeBeforeMinutes,
     DateTime? completedAt,
     int? completionRating,
+    int? nutritionRating,
     String? completionNotes,
     double? actualDistanceMiles,
     int? actualDurationMinutes,
     Map<String, dynamic>? nutritionPlanData,
+    Map<String, dynamic>? fuelLogData,
     String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -274,25 +291,33 @@ class Activity {
       status: status ?? this.status,
       distanceMiles: distanceMiles ?? this.distanceMiles,
       durationMinutes: durationMinutes ?? this.durationMinutes,
-      paceTargetMinutesPerMile: paceTargetMinutesPerMile ?? this.paceTargetMinutesPerMile,
+      paceTargetMinutesPerMile:
+          paceTargetMinutesPerMile ?? this.paceTargetMinutesPerMile,
       intensityLevel: intensityLevel ?? this.intensityLevel,
       cyclingSpeedMph: cyclingSpeedMph ?? this.cyclingSpeedMph,
       cyclingTerrain: cyclingTerrain ?? this.cyclingTerrain,
       cyclingIndoorOutdoor: cyclingIndoorOutdoor ?? this.cyclingIndoorOutdoor,
-      cyclingElevationGainFt: cyclingElevationGainFt ?? this.cyclingElevationGainFt,
+      cyclingElevationGainFt:
+          cyclingElevationGainFt ?? this.cyclingElevationGainFt,
       cyclingSessionGoal: cyclingSessionGoal ?? this.cyclingSessionGoal,
-      swimmingPacePer100mSeconds: swimmingPacePer100mSeconds ?? this.swimmingPacePer100mSeconds,
-      swimmingPoolOrOpenWater: swimmingPoolOrOpenWater ?? this.swimmingPoolOrOpenWater,
+      swimmingPacePer100mSeconds:
+          swimmingPacePer100mSeconds ?? this.swimmingPacePer100mSeconds,
+      swimmingPoolOrOpenWater:
+          swimmingPoolOrOpenWater ?? this.swimmingPoolOrOpenWater,
       swimmingWaterTempC: swimmingWaterTempC ?? this.swimmingWaterTempC,
       intensityTarget: intensityTarget ?? this.intensityTarget,
-      intensityDistribution: intensityDistribution ?? this.intensityDistribution,
+      intensityDistribution:
+          intensityDistribution ?? this.intensityDistribution,
       timeBeforeMinutes: timeBeforeMinutes ?? this.timeBeforeMinutes,
       completedAt: completedAt ?? this.completedAt,
       completionRating: completionRating ?? this.completionRating,
+      nutritionRating: nutritionRating ?? this.nutritionRating,
       completionNotes: completionNotes ?? this.completionNotes,
       actualDistanceMiles: actualDistanceMiles ?? this.actualDistanceMiles,
-      actualDurationMinutes: actualDurationMinutes ?? this.actualDurationMinutes,
+      actualDurationMinutes:
+          actualDurationMinutes ?? this.actualDurationMinutes,
       nutritionPlanData: nutritionPlanData ?? this.nutritionPlanData,
+      fuelLogData: fuelLogData ?? this.fuelLogData,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -308,9 +333,12 @@ class Activity {
       providerWorkoutUrl: providerWorkoutUrl ?? this.providerWorkoutUrl,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       workoutSubtype: workoutSubtype ?? this.workoutSubtype,
-      paceMinMinutesPerMile: paceMinMinutesPerMile ?? this.paceMinMinutesPerMile,
-      paceMaxMinutesPerMile: paceMaxMinutesPerMile ?? this.paceMaxMinutesPerMile,
-      needsNutritionRefresh: needsNutritionRefresh ?? this.needsNutritionRefresh,
+      paceMinMinutesPerMile:
+          paceMinMinutesPerMile ?? this.paceMinMinutesPerMile,
+      paceMaxMinutesPerMile:
+          paceMaxMinutesPerMile ?? this.paceMaxMinutesPerMile,
+      needsNutritionRefresh:
+          needsNutritionRefresh ?? this.needsNutritionRefresh,
       providerDeletedAt: providerDeletedAt ?? this.providerDeletedAt,
       providerScheduledAt: providerScheduledAt ?? this.providerScheduledAt,
       scheduleChangedAt: scheduleChangedAt ?? this.scheduleChangedAt,
@@ -346,10 +374,12 @@ class Activity {
         other.timeBeforeMinutes == timeBeforeMinutes &&
         other.completedAt == completedAt &&
         other.completionRating == completionRating &&
+        other.nutritionRating == nutritionRating &&
         other.completionNotes == completionNotes &&
         other.actualDistanceMiles == actualDistanceMiles &&
         other.actualDurationMinutes == actualDurationMinutes &&
         other.nutritionPlanData == nutritionPlanData &&
+        other.fuelLogData == fuelLogData &&
         other.notes == notes &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt &&
@@ -372,53 +402,57 @@ class Activity {
   @override
   int get hashCode {
     return Object.hash(
-      id,
-      userId,
-      activityType,
-      title,
-      scheduledDateTime,
-      status,
-      distanceMiles,
-      durationMinutes,
-      paceTargetMinutesPerMile,
-      intensityLevel,
-      cyclingSpeedMph,
-      cyclingTerrain,
-      cyclingIndoorOutdoor,
-      cyclingElevationGainFt,
-      cyclingSessionGoal,
-      swimmingPacePer100mSeconds,
-      swimmingPoolOrOpenWater,
-      swimmingWaterTempC,
-      intensityTarget,
-      intensityDistribution,
-    ) ^ Object.hash(
-      timeBeforeMinutes,
-      completedAt,
-      completionRating,
-      completionNotes,
-      actualDistanceMiles,
-      actualDurationMinutes,
-      nutritionPlanData,
-      notes,
-      createdAt,
-      updatedAt,
-      deletedAt,
-      reminderEnabled,
-      reminderDaysBefore,
-      reminderTimeOfDay,
-      reminderRecurring,
-    ) ^ Object.hash(
-      syncedFromProvider,
-      providerWorkoutId,
-      providerWorkoutUrl,
-      lastSyncedAt,
-      workoutSubtype,
-      paceMinMinutesPerMile,
-      paceMaxMinutesPerMile,
-      brickMetadata,
-      brickId,
-    );
+          id,
+          userId,
+          activityType,
+          title,
+          scheduledDateTime,
+          status,
+          distanceMiles,
+          durationMinutes,
+          paceTargetMinutesPerMile,
+          intensityLevel,
+          cyclingSpeedMph,
+          cyclingTerrain,
+          cyclingIndoorOutdoor,
+          cyclingElevationGainFt,
+          cyclingSessionGoal,
+          swimmingPacePer100mSeconds,
+          swimmingPoolOrOpenWater,
+          swimmingWaterTempC,
+          intensityTarget,
+          intensityDistribution,
+        ) ^
+        Object.hash(
+          timeBeforeMinutes,
+          completedAt,
+          completionRating,
+          nutritionRating,
+          completionNotes,
+          actualDistanceMiles,
+          actualDurationMinutes,
+          nutritionPlanData,
+          fuelLogData,
+          notes,
+          createdAt,
+          updatedAt,
+          deletedAt,
+          reminderEnabled,
+          reminderDaysBefore,
+          reminderTimeOfDay,
+          reminderRecurring,
+        ) ^
+        Object.hash(
+          syncedFromProvider,
+          providerWorkoutId,
+          providerWorkoutUrl,
+          lastSyncedAt,
+          workoutSubtype,
+          paceMinMinutesPerMile,
+          paceMaxMinutesPerMile,
+          brickMetadata,
+          brickId,
+        );
   }
 
   @override
@@ -429,22 +463,16 @@ class Activity {
 
 /// Activity status enum
 enum ActivityStatus {
-  draft,       // Activity created but not finalized (no nutrition plan yet)
-  planned,     // Activity finalized with nutrition plan
-  inProgress,  // Activity in progress
-  completed,   // Activity completed
-  skipped,     // Activity skipped/cancelled
+  draft, // Activity created but not finalized (no nutrition plan yet)
+  planned, // Activity finalized with nutrition plan
+  inProgress, // Activity in progress
+  completed, // Activity completed
+  skipped, // Activity skipped/cancelled
   archivedForBrick, // Activity archived as part of a brick workout
 }
 
-
 /// Intensity level enum
-enum IntensityLevel {
-  easy,
-  moderate,
-  hard,
-  race,
-}
+enum IntensityLevel { easy, moderate, hard, race }
 
 /// Activity extensions for utility methods
 extension ActivityExtensions on Activity {
@@ -454,7 +482,7 @@ extension ActivityExtensions on Activity {
   bool get isRunning => activityType == ActivityType.running;
   bool get isCycling => activityType == ActivityType.cycling;
   bool get isSwimming => activityType == ActivityType.swimming;
-  
+
   /// Get formatted pace if available
   String? get formattedPace {
     if (paceTargetMinutesPerMile == null) return null;
@@ -462,7 +490,7 @@ extension ActivityExtensions on Activity {
     final seconds = ((paceTargetMinutesPerMile! - minutes) * 60).round();
     return "$minutes:${seconds.toString().padLeft(2, '0')}/mi";
   }
-  
+
   /// Get formatted duration if available
   String? get formattedDuration {
     if (durationMinutes == null) return null;
@@ -473,15 +501,15 @@ extension ActivityExtensions on Activity {
     }
     return "${minutes}m";
   }
-  
+
   /// Check if activity is in the past
   bool get isInPast => scheduledDateTime.isBefore(DateTime.now());
-  
+
   /// Check if activity is today
   bool get isToday {
     final now = DateTime.now();
     return scheduledDateTime.year == now.year &&
-           scheduledDateTime.month == now.month &&
-           scheduledDateTime.day == now.day;
+        scheduledDateTime.month == now.month &&
+        scheduledDateTime.day == now.day;
   }
 }

@@ -31,13 +31,17 @@ class NutritionPlanService {
   final Ref ref;
 
   /// Get repositories and services
-  Future<NutritionPlanRepository> get _planRepository async => await ref.read(nutritionPlanRepositoryProvider.future);
+  Future<NutritionPlanRepository> get _planRepository async =>
+      await ref.read(nutritionPlanRepositoryProvider.future);
   AuthService get _authService => ref.read(authServiceProvider);
-  ActivitiesRepository get _activitiesRepository => ref.read(activitiesRepositoryProvider);
+  ActivitiesRepository get _activitiesRepository =>
+      ref.read(activitiesRepositoryProvider);
   // Content service removed since algorithm logic moved to Edge Functions
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
-  LLMNutritionPlanService get _llmService => ref.read(llmNutritionPlanServiceProvider);
-  ClientPlanService get _clientPlanService => ref.read(clientPlanServiceProvider);
+  LLMNutritionPlanService get _llmService =>
+      ref.read(llmNutritionPlanServiceProvider);
+  ClientPlanService get _clientPlanService =>
+      ref.read(clientPlanServiceProvider);
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
@@ -65,7 +69,7 @@ class NutritionPlanService {
     // Analytics tracking is handled by the controllers with activity-level context
 
     final startTime = DateTime.now();
-    
+
     try {
       // FIRST: Try LLM-based nutrition plan generation
       final llmPlan = await _llmService.generateLLMNutritionPlan(
@@ -78,13 +82,13 @@ class NutritionPlanService {
       if (llmPlan != null) {
         // LLM plan generated successfully
         final responseTime = DateTime.now().difference(startTime);
-        
+
         // Save the LLM plan to local repository
         final planRepository = await _planRepository;
         await planRepository.cachePlanLocally(user.id, llmPlan);
-        
+
         // Analytics tracking moved to controller level (activity-scoped)
-        
+
         // Track LLM success
         _sentry.addBreadcrumb(
           message: 'LLM nutrition plan used successfully',
@@ -94,7 +98,7 @@ class NutritionPlanService {
             'response_time_ms': responseTime.inMilliseconds.toString(),
           },
         );
-        
+
         return llmPlan;
       }
 
@@ -102,9 +106,7 @@ class NutritionPlanService {
       _sentry.addBreadcrumb(
         message: 'Falling back to offline nutrition plan',
         category: 'nutrition_plan',
-        data: {
-          'reason': 'llm_failed_or_unavailable',
-        },
+        data: {'reason': 'llm_failed_or_unavailable'},
       );
 
       // Use fallback logic to generate plan if LLM fails or explicitly requests fallback
@@ -115,15 +117,17 @@ class NutritionPlanService {
         sweatRate: sweatRate,
         activityId: activityId,
         debug: debug,
-        macroTargets: null, // Let fallback calculate its own targets if not provided
+        macroTargets:
+            null, // Let fallback calculate its own targets if not provided
       );
     } catch (e, stackTrace) {
-      _logger.error('Error generating nutrition plan',
+      _logger.error(
+        'Error generating nutrition plan',
         context: 'NUTRITION_PLAN',
         error: e,
-        stackTrace: stackTrace
+        stackTrace: stackTrace,
       );
-      
+
       // Last resort: try offline fallback if anything goes wrong
       try {
         _sentry.addBreadcrumb(
@@ -131,7 +135,7 @@ class NutritionPlanService {
           category: 'nutrition_plan',
           data: {'error': e.toString()},
         );
-        
+
         return await _generateFallbackPlan(
           distanceMiles: distanceMiles,
           paceMinutesPerMile: paceMinutesPerMile,
@@ -155,13 +159,16 @@ class NutritionPlanService {
     String? sweatRate,
     String? activityId,
     bool debug = false,
-    MacroTargets? macroTargets, // Optional: use adjusted macro targets if available
+    MacroTargets?
+    macroTargets, // Optional: use adjusted macro targets if available
     String? userId,
   }) async {
     // Try to get user profile: prefer explicit userId lookup (auth-session-independent),
     // fall back to auth service for backward compatibility
     var user = userId != null
-        ? await (await ref.read(userRepositoryProvider.future)).getUserProfileById(userId)
+        ? await (await ref.read(
+            userRepositoryProvider.future,
+          )).getUserProfileById(userId)
         : null;
     user ??= await _authService.getCurrentUser();
     if (user == null) {
@@ -169,7 +176,8 @@ class NutritionPlanService {
     }
 
     final planRepository = await _planRepository;
-    final resolvedMacroTargets = macroTargets ??
+    final resolvedMacroTargets =
+        macroTargets ??
         _estimateMacroTargets(
           distanceMiles: distanceMiles,
           paceMinutesPerMile: paceMinutesPerMile,
@@ -178,7 +186,8 @@ class NutritionPlanService {
           userWeightPounds: user.weightPounds,
         );
 
-    _logger.warning('LLM generation unavailable, using offline fallback plan.',
+    _logger.warning(
+      'LLM generation unavailable, using offline fallback plan.',
       context: 'NUTRITION_PLAN_OFFLINE',
       data: {
         'distance_miles': distanceMiles,
@@ -199,18 +208,21 @@ class NutritionPlanService {
       try {
         await planRepository.cachePlanLocally(user.id, clientPlan);
       } catch (e) {
-        _logger.warning('Failed to cache client solver plan locally',
+        _logger.warning(
+          'Failed to cache client solver plan locally',
           context: 'NUTRITION_PLAN_OFFLINE',
           error: e,
         );
       }
 
-      _logger.info('Client solver produced plan with real foods',
+      _logger.info(
+        'Client solver produced plan with real foods',
         context: 'NUTRITION_PLAN_OFFLINE',
       );
       return clientPlan;
     } catch (e) {
-      _logger.warning('Client solver failed, using generic fallback',
+      _logger.warning(
+        'Client solver failed, using generic fallback',
         context: 'NUTRITION_PLAN_OFFLINE',
         error: e,
       );
@@ -227,7 +239,8 @@ class NutritionPlanService {
     try {
       await planRepository.cachePlanLocally(user.id, offlinePlan);
     } catch (e, stackTrace) {
-      _logger.warning('Failed to cache offline fallback plan locally',
+      _logger.warning(
+        'Failed to cache offline fallback plan locally',
         context: 'NUTRITION_PLAN_OFFLINE',
         error: e,
         stackTrace: stackTrace,
@@ -275,7 +288,9 @@ class NutritionPlanService {
     final postFluids = 700.0;
     final postSodium = 500.0;
 
-    final estimatedCalories = (distanceMiles * weightKg * 1.0).clamp(200, 2200).toDouble();
+    final estimatedCalories = (distanceMiles * weightKg * 1.0)
+        .clamp(200, 2200)
+        .toDouble();
 
     return MacroTargets(
       id: 'offline-macros-${uuid.v4()}',
@@ -335,7 +350,9 @@ class NutritionPlanService {
     final post = macroTargets.postRun;
 
     final gelsNeeded = ((during.carbTotalG) / 25).ceil().clamp(1, 12);
-    final bottlesNeeded = ((during.fluidTotalMl) / kStandardBottleMl).ceil().clamp(1, 12);
+    final bottlesNeeded = ((during.fluidTotalMl) / kStandardBottleMl)
+        .ceil()
+        .clamp(1, 12);
 
     final preSection = PlanSection(
       id: 'before_run',
@@ -346,8 +363,10 @@ class NutritionPlanService {
         FoodItemData(
           id: 'pre-simple-carbs',
           name: 'Simple carbs + electrolytes',
-          quantity: '${pre.carbsG.round()}g carbs, ${pre.proteinG.round()}g protein',
-          description: 'Use easy carbs (bagel + banana + honey) with low fat. Sip ${pre.fluidsMl.round()} ml fluids plus electrolytes.',
+          quantity:
+              '${pre.carbsG.round()}g carbs, ${pre.proteinG.round()}g protein',
+          description:
+              'Use easy carbs (bagel + banana + honey) with low fat. Sip ${pre.fluidsMl.round()} ml fluids plus electrolytes.',
         ),
       ],
       proteinTarget: pre.proteinG,
@@ -361,19 +380,24 @@ class NutritionPlanService {
       id: 'during_run',
       title: activityType.getSectionTitle('during'),
       subtitle: 'Every 20-30 min',
-      timing: 'Spread across the activity to hit ${during.carbRateGPerH.round()}g carbs/hr',
+      timing:
+          'Spread across the activity to hit ${during.carbRateGPerH.round()}g carbs/hr',
       foodItems: [
         FoodItemData(
           id: 'during-gels',
           name: 'Gels/chews',
-          quantity: '$gelsNeeded servings (~${during.carbTotalG.round()}g carbs total)',
-          description: 'Use gels/chews; rotate flavors. Pair with sips of fluid.',
+          quantity:
+              '$gelsNeeded servings (~${during.carbTotalG.round()}g carbs total)',
+          description:
+              'Use gels/chews; rotate flavors. Pair with sips of fluid.',
         ),
         FoodItemData(
           id: 'during-fluids',
           name: 'Fluids + electrolytes',
-          quantity: '$bottlesNeeded bottles (~${during.fluidTotalMl.round()} ml) with ${during.sodiumTotalMg.round()} mg sodium total',
-          description: 'Mix sports drink or water + electrolyte tab; aim for small, frequent sips.',
+          quantity:
+              '$bottlesNeeded bottles (~${during.fluidTotalMl.round()} ml) with ${during.sodiumTotalMg.round()} mg sodium total',
+          description:
+              'Mix sports drink or water + electrolyte tab; aim for small, frequent sips.',
         ),
       ],
       carbsTarget: during.carbTotalG,
@@ -390,8 +414,10 @@ class NutritionPlanService {
         FoodItemData(
           id: 'post-shake',
           name: 'Carb + protein shake/snack',
-          quantity: '${post.carbsG.round()}g carbs, ${post.proteinG.round()}g protein',
-          description: 'Chocolate milk or protein shake with fruit. Add salty snack to reach ${post.sodiumMg.round()} mg sodium.',
+          quantity:
+              '${post.carbsG.round()}g carbs, ${post.proteinG.round()}g protein',
+          description:
+              'Chocolate milk or protein shake with fruit. Add salty snack to reach ${post.sodiumMg.round()} mg sodium.',
         ),
       ],
       proteinTarget: post.proteinG,
@@ -403,8 +429,10 @@ class NutritionPlanService {
     final totalCarbs = (pre.carbsG + during.carbTotalG + post.carbsG).round();
     final totalProtein = (pre.proteinG + post.proteinG).round();
     final totalFat = pre.fatCapG.round();
-    final totalFluids = (pre.fluidsMl + during.fluidTotalMl + post.fluidsMl).round();
-    final totalSodium = (pre.sodiumMg + during.sodiumTotalMg + post.sodiumMg).round();
+    final totalFluids = (pre.fluidsMl + during.fluidTotalMl + post.fluidsMl)
+        .round();
+    final totalSodium = (pre.sodiumMg + during.sodiumTotalMg + post.sodiumMg)
+        .round();
 
     final macroSummary = PlanMacroSummary(
       calories: (totalCarbs * 4 + totalProtein * 4 + totalFat * 9).round(),
@@ -421,8 +449,10 @@ class NutritionPlanService {
       fluidsMax: pre.fluidsHighMl != null
           ? (pre.fluidsHighMl! * 0.033814).round()
           : null,
-      carbsRange: 'Pre ${pre.carbsG.round()}g | During ${during.carbTotalG.round()}g | Post ${post.carbsG.round()}g',
-      proteinRange: 'Pre ${pre.proteinG.round()}g | Post ${post.proteinG.round()}g',
+      carbsRange:
+          'Pre ${pre.carbsG.round()}g | During ${during.carbTotalG.round()}g | Post ${post.carbsG.round()}g',
+      proteinRange:
+          'Pre ${pre.proteinG.round()}g | Post ${post.proteinG.round()}g',
       fatRange: 'Pre ${pre.fatCapG.round()}g | Post 0g',
     );
 
@@ -431,7 +461,8 @@ class NutritionPlanService {
       name: 'Offline Nutrition Plan',
       sections: [preSection, duringSection, postSection],
       macroTargets: macroSummary,
-      notes: 'Generated offline fallback based on your targets. Update when online for personalized foods.',
+      notes:
+          'Generated offline fallback based on your targets. Update when online for personalized foods.',
       activityId: activityId,
       createdAt: now,
       updatedAt: now,
@@ -463,23 +494,32 @@ class NutritionPlanService {
 
       // FALLBACK: If LLM returns null (fallback requested), use offline builder
       // passing the adjusted macro targets to respect user's edits
-      _logger.info('LLM generation failed/requested fallback, using offline generation with adjusted macros');
+      _logger.info(
+        'LLM generation failed/requested fallback, using offline generation with adjusted macros',
+      );
 
       return await _generateFallbackPlan(
         distanceMiles: macroTargets.metrics.distanceMi,
-        paceMinutesPerMile: macroTargets.metrics.paceMinPerMile ?? 8.0, // Default to 8 min/mi if null
+        paceMinutesPerMile:
+            macroTargets.metrics.paceMinPerMile ??
+            8.0, // Default to 8 min/mi if null
         timeBeforeRunHours: 2.0, // Default or extract if stored
         activityId: activityId,
         macroTargets: macroTargets, // Pass the adjusted targets!
         userId: userId,
       );
     } catch (e) {
-      _logger.error('Error generating plan from macros, attempting fallback', error: e);
+      _logger.error(
+        'Error generating plan from macros, attempting fallback',
+        error: e,
+      );
 
       // Last resort fallback
       return await _generateFallbackPlan(
         distanceMiles: macroTargets.metrics.distanceMi,
-        paceMinutesPerMile: macroTargets.metrics.paceMinPerMile ?? 8.0, // Default to 8 min/mi if null
+        paceMinutesPerMile:
+            macroTargets.metrics.paceMinPerMile ??
+            8.0, // Default to 8 min/mi if null
         timeBeforeRunHours: 2.0,
         activityId: activityId,
         macroTargets: macroTargets,
@@ -509,7 +549,10 @@ class NutritionPlanService {
     BrickMetadata? brickMetadata,
   }) async {
     try {
-      _logger.info('Generating plan via V2 template system', context: 'NUTRITION_PLAN_SERVICE');
+      _logger.info(
+        'Generating plan via V2 template system',
+        context: 'NUTRITION_PLAN_SERVICE',
+      );
       _logger.info(
         '🎯 OVERRIDE DEBUG [2/5]: Sending to V2 edge function: '
         'pre_carbs=${macroTargets.preRun.carbsG}, pre_protein=${macroTargets.preRun.proteinG}, pre_sodium=${macroTargets.preRun.sodiumMg}, pre_fluids=${macroTargets.preRun.fluidsMl}, '
@@ -533,24 +576,69 @@ class NutritionPlanService {
             'fat_g': macroTargets.preRun.fatCapG,
             'sodium_mg': macroTargets.preRun.sodiumMg,
             'water_ml': macroTargets.preRun.fluidsMl,
+            if (macroTargets.preRun.carbsLowG != null)
+              'carbs_low_g': macroTargets.preRun.carbsLowG,
+            if (macroTargets.preRun.carbsHighG != null)
+              'carbs_high_g': macroTargets.preRun.carbsHighG,
+            if (macroTargets.preRun.proteinLowG != null)
+              'protein_low_g': macroTargets.preRun.proteinLowG,
+            if (macroTargets.preRun.proteinHighG != null)
+              'protein_high_g': macroTargets.preRun.proteinHighG,
+            if (macroTargets.preRun.sodiumLowMg != null)
+              'sodium_low_mg': macroTargets.preRun.sodiumLowMg,
+            if (macroTargets.preRun.sodiumHighMg != null)
+              'sodium_high_mg': macroTargets.preRun.sodiumHighMg,
+            if (macroTargets.preRun.fluidsLowMl != null)
+              'water_low_ml': macroTargets.preRun.fluidsLowMl,
+            if (macroTargets.preRun.fluidsHighMl != null)
+              'water_high_ml': macroTargets.preRun.fluidsHighMl,
           },
           'during_run': {
             'carbs_g': macroTargets.duringRun.carbTotalG,
             'sodium_mg': macroTargets.duringRun.sodiumTotalMg,
             'water_ml': macroTargets.duringRun.fluidTotalMl,
+            if (macroTargets.duringRun.carbsLowG != null)
+              'carbs_low_g': macroTargets.duringRun.carbsLowG,
+            if (macroTargets.duringRun.carbsHighG != null)
+              'carbs_high_g': macroTargets.duringRun.carbsHighG,
+            if (macroTargets.duringRun.sodiumLowMg != null)
+              'sodium_low_mg': macroTargets.duringRun.sodiumLowMg,
+            if (macroTargets.duringRun.sodiumHighMg != null)
+              'sodium_high_mg': macroTargets.duringRun.sodiumHighMg,
+            if (macroTargets.duringRun.fluidsLowMl != null)
+              'water_low_ml': macroTargets.duringRun.fluidsLowMl,
+            if (macroTargets.duringRun.fluidsHighMl != null)
+              'water_high_ml': macroTargets.duringRun.fluidsHighMl,
           },
           'post_run': {
             'carbs_g': macroTargets.postRun.carbsG,
             'protein_g': macroTargets.postRun.proteinG,
             'sodium_mg': macroTargets.postRun.sodiumMg,
             'water_ml': macroTargets.postRun.fluidsMl,
+            if (macroTargets.postRun.carbsLowG != null)
+              'carbs_low_g': macroTargets.postRun.carbsLowG,
+            if (macroTargets.postRun.carbsHighG != null)
+              'carbs_high_g': macroTargets.postRun.carbsHighG,
+            if (macroTargets.postRun.proteinLowG != null)
+              'protein_low_g': macroTargets.postRun.proteinLowG,
+            if (macroTargets.postRun.proteinHighG != null)
+              'protein_high_g': macroTargets.postRun.proteinHighG,
+            if (macroTargets.postRun.sodiumLowMg != null)
+              'sodium_low_mg': macroTargets.postRun.sodiumLowMg,
+            if (macroTargets.postRun.sodiumHighMg != null)
+              'sodium_high_mg': macroTargets.postRun.sodiumHighMg,
+            if (macroTargets.postRun.fluidsLowMl != null)
+              'water_low_ml': macroTargets.postRun.fluidsLowMl,
+            if (macroTargets.postRun.fluidsHighMl != null)
+              'water_high_ml': macroTargets.postRun.fluidsHighMl,
           },
         },
         if (dietaryPreference != null) 'dietary_preference': dietaryPreference,
         if (allergies != null) 'allergies': allergies,
         if (likedFoods != null) 'liked_foods': likedFoods,
         if (dislikedFoods != null) 'disliked_foods': dislikedFoods,
-        if (willingToTryFoods != null) 'willing_to_try_foods': willingToTryFoods,
+        if (willingToTryFoods != null)
+          'willing_to_try_foods': willingToTryFoods,
         if (durationMinutes != null) 'duration_minutes': durationMinutes,
         if (gutTrainingLevel != null) 'gut_training_level': gutTrainingLevel,
       };
@@ -560,28 +648,127 @@ class NutritionPlanService {
           macroTargets.brickSegments != null &&
           macroTargets.brickSegments!.isNotEmpty) {
         final segments = macroTargets.brickSegments!;
-        final totalDurationMin = segments.fold<int>(
-          0,
-          (sum, s) => sum + s.durationMinutes,
-        );
-        final segmentCount = segments.length;
+        final brickPhaseTargets = macroTargets.brickPhaseTargets;
 
-        requestData['brick_segments'] = segments.map((segment) {
-          final durationRatio = totalDurationMin > 0
-              ? segment.durationMinutes / totalDurationMin
-              : 1.0 / segmentCount;
-          return {
-            'sport': segment.sport,
-            'duration_minutes': segment.durationMinutes,
-            'macro_targets': {
-              'carbs_g': macroTargets.duringRun.carbTotalG * durationRatio,
-              'sodium_mg':
-                  macroTargets.duringRun.sodiumTotalMg * durationRatio,
-              'water_ml':
-                  macroTargets.duringRun.fluidTotalMl * durationRatio,
-            },
+        if (brickPhaseTargets != null &&
+            brickPhaseTargets.duringSegments.isNotEmpty) {
+          requestData['brick_segments'] = brickPhaseTargets.duringSegments.map((
+            segmentTarget,
+          ) {
+            return {
+              'sport': segmentTarget.sport,
+              'duration_minutes': segmentTarget.durationMinutes,
+              'macro_targets': {
+                'carbs_g': segmentTarget.carbsG,
+                if (segmentTarget.carbsLowG != null)
+                  'carbs_low_g': segmentTarget.carbsLowG,
+                if (segmentTarget.carbsHighG != null)
+                  'carbs_high_g': segmentTarget.carbsHighG,
+                'sodium_mg': segmentTarget.sodiumMg,
+                if (segmentTarget.sodiumLowMg != null)
+                  'sodium_low_mg': segmentTarget.sodiumLowMg,
+                if (segmentTarget.sodiumHighMg != null)
+                  'sodium_high_mg': segmentTarget.sodiumHighMg,
+                'water_ml': segmentTarget.waterMl,
+                if (segmentTarget.waterLowMl != null)
+                  'water_low_ml': segmentTarget.waterLowMl,
+                if (segmentTarget.waterHighMl != null)
+                  'water_high_ml': segmentTarget.waterHighMl,
+              },
+            };
+          }).toList();
+
+          final phasesPayload = {
+            'during_segments': brickPhaseTargets.duringSegments.map((
+              segmentTarget,
+            ) {
+              return {
+                'segment_order': segmentTarget.segmentOrder,
+                'sport': segmentTarget.sport,
+                'duration_minutes': segmentTarget.durationMinutes,
+                'carbs_g': segmentTarget.carbsG,
+                if (segmentTarget.carbsLowG != null)
+                  'carbs_low_g': segmentTarget.carbsLowG,
+                if (segmentTarget.carbsHighG != null)
+                  'carbs_high_g': segmentTarget.carbsHighG,
+                'sodium_mg': segmentTarget.sodiumMg,
+                if (segmentTarget.sodiumLowMg != null)
+                  'sodium_low_mg': segmentTarget.sodiumLowMg,
+                if (segmentTarget.sodiumHighMg != null)
+                  'sodium_high_mg': segmentTarget.sodiumHighMg,
+                'water_ml': segmentTarget.waterMl,
+                if (segmentTarget.waterLowMl != null)
+                  'water_low_ml': segmentTarget.waterLowMl,
+                if (segmentTarget.waterHighMl != null)
+                  'water_high_ml': segmentTarget.waterHighMl,
+              };
+            }).toList(),
+            'transitions': brickPhaseTargets.transitions.map((transition) {
+              return {
+                'transition_name': transition.transitionName,
+                'carbs_g': transition.carbsG,
+                if (transition.carbsLowG != null)
+                  'carbs_low_g': transition.carbsLowG,
+                if (transition.carbsHighG != null)
+                  'carbs_high_g': transition.carbsHighG,
+                'sodium_mg': transition.sodiumMg,
+                if (transition.sodiumLowMg != null)
+                  'sodium_low_mg': transition.sodiumLowMg,
+                if (transition.sodiumHighMg != null)
+                  'sodium_high_mg': transition.sodiumHighMg,
+                'water_ml': transition.waterMl,
+                if (transition.waterLowMl != null)
+                  'water_low_ml': transition.waterLowMl,
+                if (transition.waterHighMl != null)
+                  'water_high_ml': transition.waterHighMl,
+              };
+            }).toList(),
           };
-        }).toList();
+
+          (requestData['macro_targets'] as Map<String, dynamic>)['phases'] =
+              phasesPayload;
+          requestData['brick_phases'] = phasesPayload;
+        } else {
+          final totalDurationMin = segments.fold<int>(
+            0,
+            (sum, s) => sum + s.durationMinutes,
+          );
+          final segmentCount = segments.length;
+
+          requestData['brick_segments'] = segments.map((segment) {
+            final durationRatio = totalDurationMin > 0
+                ? segment.durationMinutes / totalDurationMin
+                : 1.0 / segmentCount;
+            return {
+              'sport': segment.sport,
+              'duration_minutes': segment.durationMinutes,
+              'macro_targets': {
+                'carbs_g': macroTargets.duringRun.carbTotalG * durationRatio,
+                if (macroTargets.duringRun.carbsLowG != null)
+                  'carbs_low_g':
+                      macroTargets.duringRun.carbsLowG! * durationRatio,
+                if (macroTargets.duringRun.carbsHighG != null)
+                  'carbs_high_g':
+                      macroTargets.duringRun.carbsHighG! * durationRatio,
+                'sodium_mg':
+                    macroTargets.duringRun.sodiumTotalMg * durationRatio,
+                if (macroTargets.duringRun.sodiumLowMg != null)
+                  'sodium_low_mg':
+                      macroTargets.duringRun.sodiumLowMg! * durationRatio,
+                if (macroTargets.duringRun.sodiumHighMg != null)
+                  'sodium_high_mg':
+                      macroTargets.duringRun.sodiumHighMg! * durationRatio,
+                'water_ml': macroTargets.duringRun.fluidTotalMl * durationRatio,
+                if (macroTargets.duringRun.fluidsLowMl != null)
+                  'water_low_ml':
+                      macroTargets.duringRun.fluidsLowMl! * durationRatio,
+                if (macroTargets.duringRun.fluidsHighMl != null)
+                  'water_high_ml':
+                      macroTargets.duringRun.fluidsHighMl! * durationRatio,
+              },
+            };
+          }).toList();
+        }
       }
 
       // Log full V3 request payload for debugging same-plan issues
@@ -608,10 +795,7 @@ class NutritionPlanService {
       for (var attempt = 0; attempt <= maxRetries; attempt++) {
         try {
           response = await supabase.functions
-              .invoke(
-                'generate-nutrition-plan-v3',
-                body: requestData,
-              )
+              .invoke('generate-nutrition-plan-v3', body: requestData)
               .timeout(const Duration(seconds: 90));
           break; // Success - exit retry loop
         } on TimeoutException {
@@ -641,7 +825,9 @@ class NutritionPlanService {
 
       final data = response.data as Map<String, dynamic>;
       if (data['success'] != true) {
-        throw Exception('V2 edge function returned success=false: ${data['error']}');
+        throw Exception(
+          'V2 edge function returned success=false: ${data['error']}',
+        );
       }
 
       // Log V3 response summary for debugging same-plan issues
@@ -664,7 +850,8 @@ class NutritionPlanService {
       final plan = NutritionPlanMapper.fromSupabaseJson({
         'plan_id': planId,
         'plan_name': 'Nutrition Plan',
-        'plan_data': data, // Contains plan.before (nested), plan.during, plan.after
+        'plan_data':
+            data, // Contains plan.before (nested), plan.during, plan.after
         'created_at': now.toIso8601String(),
         'updated_at': now.toIso8601String(),
         'activity_id': activityId,
@@ -730,7 +917,7 @@ class NutritionPlanService {
     if (user == null) return [];
 
     final likedFoods = await _authService.getLikedFoods(user.id);
-    
+
     return await _foodRepository.getPreferredFoods(category, likedFoods, []);
   }
 
@@ -750,7 +937,9 @@ class NutritionPlanService {
   /// 5. Returns the updated activity with fresh nutrition plan
   ///
   /// User food preferences are preserved during regeneration (handled by LLM service).
-  Future<domain.Activity> regenerateForScheduleChange(domain.Activity activity) async {
+  Future<domain.Activity> regenerateForScheduleChange(
+    domain.Activity activity,
+  ) async {
     try {
       _logger.info(
         'Regenerating nutrition plan after schedule change',
@@ -794,16 +983,14 @@ class NutritionPlanService {
         // Use user preferences from profile
         sweatRate: user.sweatRate.value,
         gutTrainingLevel: user.gutTraining.value,
-        giSensitivity: null, // GI sensitivity not stored as string in user profile
+        giSensitivity:
+            null, // GI sensitivity not stored as string in user profile
       );
 
       _logger.info(
         'Nutrition plan regenerated successfully',
         context: 'NUTRITION_PLAN_SERVICE',
-        data: {
-          'activityId': activity.id,
-          'planId': newPlan.id,
-        },
+        data: {'activityId': activity.id, 'planId': newPlan.id},
       );
 
       // Update activity with new nutrition plan data
@@ -811,34 +998,44 @@ class NutritionPlanService {
         nutritionPlanData: {
           'id': newPlan.id,
           'name': newPlan.name,
-          'sections': newPlan.sections.map((s) => {
-            'id': s.id,
-            'title': s.title,
-            'subtitle': s.subtitle,
-            'timing': s.timing,
-            'food_items': s.foodItems.map((f) => {
-              'id': f.id,
-              'name': f.name,
-              'quantity': f.quantity,
-              'description': f.description,
-            }).toList(),
-            'carbs_target': s.carbsTarget,
-            'protein_target': s.proteinTarget,
-            'fat_target': s.fatTarget,
-            'sodium_target': s.sodiumTarget,
-            'fluids_target': s.fluidsTarget,
-          }).toList(),
-          'macro_targets': newPlan.macroTargets != null ? {
-            'calories': newPlan.macroTargets!.calories,
-            'carbs': newPlan.macroTargets!.carbs,
-            'protein': newPlan.macroTargets!.protein,
-            'fat': newPlan.macroTargets!.fat,
-            'sodium': newPlan.macroTargets!.sodium,
-            'fluids': newPlan.macroTargets!.fluids,
-            'carbs_range': newPlan.macroTargets!.carbsRange,
-            'protein_range': newPlan.macroTargets!.proteinRange,
-            'fat_range': newPlan.macroTargets!.fatRange,
-          } : null,
+          'sections': newPlan.sections
+              .map(
+                (s) => {
+                  'id': s.id,
+                  'title': s.title,
+                  'subtitle': s.subtitle,
+                  'timing': s.timing,
+                  'food_items': s.foodItems
+                      .map(
+                        (f) => {
+                          'id': f.id,
+                          'name': f.name,
+                          'quantity': f.quantity,
+                          'description': f.description,
+                        },
+                      )
+                      .toList(),
+                  'carbs_target': s.carbsTarget,
+                  'protein_target': s.proteinTarget,
+                  'fat_target': s.fatTarget,
+                  'sodium_target': s.sodiumTarget,
+                  'fluids_target': s.fluidsTarget,
+                },
+              )
+              .toList(),
+          'macro_targets': newPlan.macroTargets != null
+              ? {
+                  'calories': newPlan.macroTargets!.calories,
+                  'carbs': newPlan.macroTargets!.carbs,
+                  'protein': newPlan.macroTargets!.protein,
+                  'fat': newPlan.macroTargets!.fat,
+                  'sodium': newPlan.macroTargets!.sodium,
+                  'fluids': newPlan.macroTargets!.fluids,
+                  'carbs_range': newPlan.macroTargets!.carbsRange,
+                  'protein_range': newPlan.macroTargets!.proteinRange,
+                  'fat_range': newPlan.macroTargets!.fatRange,
+                }
+              : null,
           'notes': newPlan.notes,
           'created_at': newPlan.createdAt?.toIso8601String(),
           'updated_at': newPlan.updatedAt?.toIso8601String(),
@@ -857,10 +1054,7 @@ class NutritionPlanService {
       _logger.info(
         'Activity updated with regenerated nutrition plan',
         context: 'NUTRITION_PLAN_SERVICE',
-        data: {
-          'activityId': activity.id,
-          'needsNutritionRefresh': false,
-        },
+        data: {'activityId': activity.id, 'needsNutritionRefresh': false},
       );
 
       // Track analytics for regeneration

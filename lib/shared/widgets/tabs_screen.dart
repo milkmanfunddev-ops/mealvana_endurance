@@ -1,18 +1,19 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/activities/presentation/screens/activities_list_screen.dart';
 import '../../features/calendar/presentation/providers/calendar_view_provider.dart';
 import '../../features/calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../features/coach_mode/presentation/providers/coach_dashboard_controller.dart';
 import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
+import '../../features/daily_macros/presentation/screens/daily_macros_screen.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
-import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
+import '../utils/responsive_breakpoints.dart';
 import 'kyle_design/navigation/floating_action_buttons_bar.dart';
-import 'responsive_content_wrapper.dart' show coachPortalActiveNotifier;
 import 'sync_status_indicator.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
@@ -29,12 +30,12 @@ class TabsScreen extends ConsumerStatefulWidget {
 
 class _TabsScreenState extends ConsumerState<TabsScreen> {
   late int _currentIndex;
+  bool _isCoachPortalMode = false;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialTabIndex;
-    _syncCoachPortalNotifier();
 
     // On web, auto-navigate to coach portal if user is a coach
     if (kIsWeb) {
@@ -44,21 +45,16 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    // Reset full-width mode when leaving tabs
-    coachPortalActiveNotifier.value = false;
-    super.dispose();
-  }
-
-  /// Keep the global full-width notifier in sync with the current tab.
-  void _syncCoachPortalNotifier() {
-    coachPortalActiveNotifier.value = kIsWeb && _currentIndex == 1;
-  }
+  // Tab indices:
+  // Mobile: Calendar(0) -> Nutrition(1) -> Events(2) -> Learn(3)
+  // Web:    Calendar(0) -> Nutrition(1) -> Coach(2) -> Events(3) -> Learn(4)
+  int get _coachTabIndex => 2; // Only on web
+  int get _eventsTabIndex => kIsWeb ? 3 : 2;
+  int get _learnTabIndex => kIsWeb ? 4 : 3;
 
   Future<void> _autoNavigateToCoachIfNeeded() async {
-    // Skip if already on coach tab (e.g. from ?tab=coach query param)
-    if (_currentIndex == 1) return;
+    // Skip if already in coach portal mode
+    if (_isCoachPortalMode) return;
 
     try {
       final dashboardAsync = await ref.read(
@@ -67,8 +63,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       if (!mounted) return;
       if (dashboardAsync.isCoach) {
         setState(() {
-          _currentIndex = 1; // Coach tab
-          _syncCoachPortalNotifier();
+          _isCoachPortalMode = true;
         });
       }
     } catch (_) {
@@ -76,23 +71,45 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     }
   }
 
+  void _onTabSelected(int index) {
+    if (index == 0 && _currentIndex == 0) {
+      // Toggle calendar view when already on Activities tab
+      ref.read(calendarViewProvider.notifier).toggleView();
+      return;
+    }
+    setState(() => _currentIndex = index);
+  }
+
+  void _onPlusTap() {
+    final selectedDate = ref.read(calendarSelectedDateProvider);
+    context.pushNamed('distancepacegut', extra: {'initialDate': selectedDate});
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-
-    // Show coach tab on web only (navigates to full-screen coach portal)
     final showCoachTab = kIsWeb;
+    final useRail = context.useNavigationRail;
 
-    // Full-screen coach portal on web — bypasses IndexedStack, FAB, and
-    // responsive max-width so the split-panel layout fills the viewport.
-    if (showCoachTab && _currentIndex == 1) {
+    // Coach-first mode: render only the coach portal with no nav
+    if (_isCoachPortalMode) {
       return CoachPortalScreen(
         onBackToApp: () {
           setState(() {
+            _isCoachPortalMode = false;
             _currentIndex = 0;
-            _syncCoachPortalNotifier();
           });
+        },
+      );
+    }
+
+    // Full-screen coach portal on web — bypasses IndexedStack, FAB, and
+    // responsive max-width so the split-panel layout fills the viewport.
+    if (showCoachTab && _currentIndex == _coachTabIndex) {
+      return CoachPortalScreen(
+        onBackToApp: () {
+          setState(() => _currentIndex = 0);
         },
       );
     }
@@ -100,11 +117,11 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     // Build the list of screens dynamically
     final screens = [
       const ActivitiesListScreen(), // 0: Activities (Calendar)
+      const DailyMacrosScreen(), // 1: Nutrition Diary
       if (showCoachTab)
-        const SizedBox.shrink(), // 1: placeholder (coach portal rendered above)
-      const EventsListScreen(), // 1 or 2: Events
-      const EducationScreen(), // 2 or 3: Learn
-      const SettingsScreen(), // 3 or 4: Settings
+        const SizedBox.shrink(), // 2: placeholder (coach portal rendered above)
+      const EventsListScreen(), // 2 or 3: Events
+      const EducationScreen(), // 3 or 4: Learn
     ];
 
     // Adjust current index if it's out of bounds (safety check)
@@ -112,6 +129,37 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       _currentIndex = 0;
     }
 
+    final body = Column(
+      children: [
+        const SyncStatusIndicator(),
+        Expanded(
+          child: IndexedStack(
+            index: _currentIndex,
+            children: screens,
+          ),
+        ),
+      ],
+    );
+
+    if (useRail) {
+      return Scaffold(
+        backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+        body: Row(
+          children: [
+            _NavigationRailSection(
+              currentIndex: _currentIndex,
+              showCoachTab: showCoachTab,
+              onTabSelected: _onTabSelected,
+              onPlusTap: _onPlusTap,
+            ),
+            const VerticalDivider(width: 1, thickness: 1),
+            Expanded(child: body),
+          ],
+        ),
+      );
+    }
+
+    // Mobile layout — floating pill navigation
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       extendBodyBehindAppBar: true,
@@ -121,67 +169,112 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       ),
       body: Stack(
         children: [
-          Column(
-            children: [
-              // Background sync status indicator (shows when uploading to Supabase)
-              const SyncStatusIndicator(),
-              Expanded(
-                child: IndexedStack(
-                  index: _currentIndex,
-                  children: screens,
-                ),
-              ),
-            ],
-          ),
+          body,
           FloatingActionButtonsBar(
             activeButton: _currentIndex,
             showCoachTab: showCoachTab,
-            onCalendarTap: () {
-              // Navigate to Activities tab if not already there
-              if (_currentIndex != 0) {
-                setState(() {
-                  _currentIndex = 0;
-                  _syncCoachPortalNotifier();
-                });
-              } else {
-                // Only toggle calendar view if already on Activities tab
-                ref.read(calendarViewProvider.notifier).toggleView();
-              }
-            },
-            onCoachTap: () {
-              setState(() {
-                _currentIndex = 1; // Coach tab (web only)
-                _syncCoachPortalNotifier();
-              });
-            },
-            onEventsTap: () {
-              setState(() {
-                // If coach tab is visible, Events is at index 2, otherwise 1
-                _currentIndex = showCoachTab ? 2 : 1;
-                _syncCoachPortalNotifier();
-              });
-            },
-            onLearnTap: () {
-              setState(() {
-                // If coach tab is visible, Learn is at index 3, otherwise 2
-                _currentIndex = showCoachTab ? 3 : 2;
-                _syncCoachPortalNotifier();
-              });
-            },
-            onMenuTap: () {
-              setState(() {
-                // If coach tab is visible, Settings is at index 4, otherwise 3
-                _currentIndex = showCoachTab ? 4 : 3;
-                _syncCoachPortalNotifier();
-              });
-            },
-            onPlusTap: () {
-              final selectedDate = ref.read(calendarSelectedDateProvider);
-              context.pushNamed('distancepacegut', extra: {'initialDate': selectedDate});
-            },
+            onCalendarTap: () => _onTabSelected(0),
+            onNutritionTap: () => _onTabSelected(1),
+            onCoachTap: () => _onTabSelected(_coachTabIndex),
+            onEventsTap: () => _onTabSelected(_eventsTabIndex),
+            onLearnTap: () => _onTabSelected(_learnTabIndex),
+            onPlusTap: _onPlusTap,
           ),
         ],
       ),
+    );
+  }
+}
+
+/// NavigationRail sidebar for wide screens.
+///
+/// Shows the same destinations as [FloatingActionButtonsBar] with
+/// an orange FAB at the bottom for adding new activities.
+class _NavigationRailSection extends StatelessWidget {
+  const _NavigationRailSection({
+    required this.currentIndex,
+    required this.showCoachTab,
+    required this.onTabSelected,
+    required this.onPlusTap,
+  });
+
+  final int currentIndex;
+  final bool showCoachTab;
+  final ValueChanged<int> onTabSelected;
+  final VoidCallback onPlusTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Build destinations list — same order as tab indices.
+    final destinations = <NavigationRailDestination>[
+      const NavigationRailDestination(
+        icon: Icon(FontAwesomeIcons.calendar),
+        selectedIcon: Icon(FontAwesomeIcons.solidCalendar),
+        label: Text('Calendar'),
+      ),
+      const NavigationRailDestination(
+        icon: Icon(FontAwesomeIcons.utensils),
+        selectedIcon: Icon(FontAwesomeIcons.utensils),
+        label: Text('Nutrition'),
+      ),
+      if (showCoachTab)
+        const NavigationRailDestination(
+          icon: Icon(FontAwesomeIcons.userTie),
+          selectedIcon: Icon(FontAwesomeIcons.userTie),
+          label: Text('Coach'),
+        ),
+      const NavigationRailDestination(
+        icon: Icon(FontAwesomeIcons.calendarCheck),
+        selectedIcon: Icon(FontAwesomeIcons.solidCalendarCheck),
+        label: Text('Events'),
+      ),
+      const NavigationRailDestination(
+        icon: Icon(FontAwesomeIcons.graduationCap),
+        selectedIcon: Icon(FontAwesomeIcons.graduationCap),
+        label: Text('Learn'),
+      ),
+    ];
+
+    return NavigationRail(
+      selectedIndex: currentIndex,
+      onDestinationSelected: onTabSelected,
+      labelType: NavigationRailLabelType.all,
+      backgroundColor: isDark ? AppColors.blackberryDark : AppColors.cream,
+      selectedIconTheme: IconThemeData(
+        color: AppColors.orange,
+        size: 20,
+      ),
+      unselectedIconTheme: IconThemeData(
+        color: isDark ? AppColors.cream : AppColors.blackberry,
+        size: 20,
+      ),
+      selectedLabelTextStyle: TextStyle(
+        color: AppColors.orange,
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+      ),
+      unselectedLabelTextStyle: TextStyle(
+        color: isDark ? AppColors.cream : AppColors.blackberry,
+        fontSize: 11,
+      ),
+      indicatorColor: AppColors.orange.withValues(alpha: 0.15),
+      trailing: Expanded(
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: FloatingActionButton(
+              onPressed: onPlusTap,
+              backgroundColor: AppColors.orange,
+              child: const Icon(Icons.add, color: AppColors.cream),
+            ),
+          ),
+        ),
+      ),
+      destinations: destinations,
     );
   }
 }

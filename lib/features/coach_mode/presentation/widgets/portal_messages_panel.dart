@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/widgets/content_area.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/coach_dashboard_controller.dart';
@@ -14,19 +15,21 @@ class PortalMessagesPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardAsync = ref.watch(coachDashboardControllerProvider);
 
-    return Container(
-      color: AppColors.blackberryDark,
-      child: dashboardAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.electrolyte),
-        ),
-        error: (error, _) => Center(
-          child: Text(
-            'Failed to load messages',
-            style: const TextStyle(color: AppColors.textDarkSecondary),
+    return ContentArea(
+      child: Container(
+        color: AppColors.blackberryDark,
+        child: dashboardAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.electrolyte),
           ),
+          error: (error, _) => Center(
+            child: Text(
+              'Failed to load messages',
+              style: const TextStyle(color: AppColors.textDarkSecondary),
+            ),
+          ),
+          data: (state) => _buildMessagesList(context, ref, state),
         ),
-        data: (state) => _buildMessagesList(context, ref, state),
       ),
     );
   }

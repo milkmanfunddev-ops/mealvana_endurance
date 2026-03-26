@@ -1,0 +1,143 @@
+# Macro Calculator — Iteration 1 Spec
+
+Build a daily macronutrient calculator that takes an athlete profile + today’s workout(s) and returns carb, protein, and fat gram targets.
+
+---
+
+## Inputs
+
+### Athlete Profile
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| sex | Enum: MALE, FEMALE | Yes |  |
+| age | int (years) | Yes |  |
+| weight_kg | float | Yes |  |
+| height_cm | float | Yes |  |
+| body_fat_pct | float (0–100) | No | If provided → LBM = weight_kg × (1 − body_fat_pct/100) |
+
+### Session (zero or more per day)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| sport | Enum: RUNNING, CYCLING, SWIMMING, STRENGTH | Yes |  |
+| duration_hr | float | Yes |  |
+| pct_conversational | float (0–1) | Yes | Z1–Z2. Must sum to 1.0 with other two |
+| pct_tempo | float (0–1) | Yes | Z3–Z4 |
+| pct_allout | float (0–1) | Yes | Z5+ |
+
+Validate: `pct_conversational + pct_tempo + pct_allout == 1.0` (within float tolerance).
+
+### Output
+
+```
+{ carb_g, prot_g, fat_g, tdee, rmr, session_kcal }
+```
+
+---
+
+## Formulas
+
+### 1. calculateRMR
+
+If LBM is known (body_fat_pct was provided):
+
+```
+RMR = 500 + 22 × LBM_kg
+```
+
+Otherwise (Mifflin-St Jeor):
+
+```
+RMR = 10 × weight_kg + 6.25 × height_cm − 5 × age + (5 if MALE, −161 if FEMALE)
+```
+
+### 2. baselineMacros
+
+```
+carb_g = 4.0 × weight_kg
+prot_g = 1.8 × LBM_kg       (if LBM known)
+       = 1.4 × weight_kg     (if LBM unknown)
+if age ≥ 45: prot_g *= 1.15
+fat_g  = 1.2 × weight_kg     (baseline only; overridden by fat residual in step 8)
+```
+
+### 3. zoneDistributionToIF
+
+Convert the three-bucket intensity distribution to a single Intensity Factor using square-weighted RMS:
+
+```
+IF = sqrt(pct_conv × 0.68² + pct_tempo × 0.88² + pct_allout × 1.08²)
+```
+
+The constants 0.68, 0.88, 1.08 are the IF midpoints for each zone bucket.
+
+### 4. sessionCost → kcal
+
+```
+BASE_RATE = { RUNNING: 11, CYCLING: 9, SWIMMING: 7, STRENGTH: 5 }
+
+base = BASE_RATE[sport] × weight_kg
+
+Endurance sports (RUNNING, CYCLING, SWIMMING):
+  kcal = base × (IF / 0.75)² × duration_hr
+
+Strength:
+  kcal = base × (IF / 0.75) × duration_hr
+```
+
+### 5. carbDemand → grams
+
+Step 1 — Interpolate carb oxidation rate (g/hr at 75 kg reference) from IF using piecewise linear interpolation through these anchor points:
+
+```
+IF:   0.55 → 25 g/hr
+      0.70 → 40
+      0.80 → 55
+      0.90 → 75
+      1.00 → 95
+      1.10 → 115
+```
+
+Below 0.55: use 25. Above 1.10: use 115.
+
+Step 2 — Apply duration and weight scaling:
+
+```
+raw = rate_g_per_hr × duration_hr × (weight_kg / 75)
+```
+
+Step 3 — Apply multiplier for long or intense sessions:
+
+```
+if duration_hr > 1.5 OR IF > 0.85:
+  return raw × 1.15
+else:
+  return raw
+```
+
+### 6. dailyMacros_v1 (assembly)
+
+```
+1. Compute RMR from athlete profile
+2. Compute baseline carb and prot from athlete profile
+3. For each session:
+   a. IF = zoneDistributionToIF(session percentages)
+   b. session_kcal += sessionCost(sport, duration, IF, weight)
+   c. session_carb += carbDemand(IF, duration, weight)
+   d. Protein bump (override, not additive across sessions):
+      - STRENGTH → bump = max(bump, 0.3 × weight_kg)
+      - duration > 1.0 hr → bump = max(bump, 0.2 × weight_kg)
+4. carb += session_carb; prot += bump
+5. Clamp: carb = clamp(carb, 3.0 × weight, 12.0 × weight)
+6. Clamp: prot = clamp(prot, 1.2 × weight, 2.5 × weight)
+7. TDEE = RMR × 1.25 + session_kcal
+8. fat = max((TDEE − carb×4 − prot×4) / 9, 0.8 × weight)
+9. Return { carb_g, prot_g, fat_g, tdee, rmr, session_kcal } (all rounded)
+```
+
+---
+
+## Test Cases
+
+Test cases are provided in a separate file (`iteration1_tests.md`) and should be run after implementation is complete.

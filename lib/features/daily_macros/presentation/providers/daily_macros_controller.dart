@@ -1,0 +1,147 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../../../auth/data/user_repository.dart';
+import '../../../auth/domain/user_preferences.dart';
+import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../../activities/presentation/providers/activities_controller.dart';
+import '../../application/daily_macro_service.dart';
+import '../../data/daily_macro_targets_repository.dart';
+import '../../domain/daily_macro_targets.dart';
+
+part 'daily_macros_controller.g.dart';
+
+class DailyMacrosState {
+  final DateTime selectedDate;
+  final DailyMacroTargets? dailyMacros;
+  final List<DailyMacroTargets?> weeklyMacros;
+
+  const DailyMacrosState({
+    required this.selectedDate,
+    this.dailyMacros,
+    this.weeklyMacros = const [],
+  });
+}
+
+@riverpod
+class DailyMacrosController extends _$DailyMacrosController {
+  /// Track the last activities data identity to detect real activity changes
+  /// vs. date-only rebuilds.
+  Object? _lastActivitiesData;
+
+  @override
+  FutureOr<DailyMacrosState> build() async {
+    final selectedDate = ref.watch(calendarSelectedDateProvider);
+
+    // Watch activities — when activities change, this controller rebuilds
+    final activitiesAsync = ref.watch(activitiesControllerProvider);
+
+    final userRepository = await ref.read(userRepositoryProvider.future);
+    final profile = await userRepository.getCurrentUser();
+
+    if (profile == null) {
+      return DailyMacrosState(selectedDate: selectedDate);
+    }
+
+    final service = ref.read(dailyMacroServiceProvider);
+    final repository = ref.read(dailyMacroTargetsRepositoryProvider);
+
+    // Detect if activities actually changed (not just a date switch rebuild).
+    final currentActivitiesData = activitiesAsync.whenData((d) => d);
+    if (_lastActivitiesData != null &&
+        !identical(currentActivitiesData.value, _lastActivitiesData)) {
+      // Activities changed — clear ALL cached macros for this user.
+      await repository.invalidateAllForUser(profile.id);
+    }
+    _lastActivitiesData = currentActivitiesData.value;
+
+    // Calculate today's macros first (uses cache if available, else calls edge fn)
+    final macros = await service.calculateForDate(
+      profile.id,
+      selectedDate,
+      profile,
+    );
+
+    // Read week cache (local lookups only — no network calls)
+    final weekMacros = await service.getWeekOverview(
+      profile.id,
+      selectedDate,
+      profile,
+    );
+
+    // Calculate uncached week days in parallel in the background
+    _calculateWeekInBackground(service, profile.id, selectedDate, profile, weekMacros);
+
+    return DailyMacrosState(
+      selectedDate: selectedDate,
+      dailyMacros: macros,
+      weeklyMacros: weekMacros,
+    );
+  }
+
+  /// Calculate missing week days via a single edge function call in the background.
+  /// On completion, invalidates self so build() re-reads all days from cache.
+  void _calculateWeekInBackground(
+    DailyMacroService service,
+    String userId,
+    DateTime selectedDate,
+    UserProfile profile,
+    List<DailyMacroTargets?> weekMacros,
+  ) {
+    // Check if there are any uncached days (besides selected date)
+    final hasUncached = weekMacros.asMap().entries.any((e) {
+      if (e.value != null) return false;
+      final startOfWeek = selectedDate.subtract(
+        Duration(days: selectedDate.weekday % 7),
+      );
+      final day = startOfWeek.add(Duration(days: e.key));
+      return day.year != selectedDate.year ||
+          day.month != selectedDate.month ||
+          day.day != selectedDate.day;
+    });
+
+    if (!hasUncached) return;
+
+    final link = ref.keepAlive();
+
+    Future(() async {
+      // Single edge function call for all uncached days
+      await service.calculateWeek(userId, selectedDate, profile);
+
+      // Refresh UI with newly cached data
+      try {
+        ref.invalidateSelf();
+      } catch (e) {
+        if (kDebugMode) {
+          print('DailyMacrosController: background invalidation skipped: $e');
+        }
+      }
+      link.close();
+    });
+  }
+
+  /// Force recalculation by invalidating cache
+  Future<void> refresh() async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final userRepository = await ref.read(userRepositoryProvider.future);
+    final profile = await userRepository.getCurrentUser();
+    if (profile == null) return;
+
+    final repository = ref.read(
+      dailyMacroTargetsRepositoryProvider,
+    );
+
+    // Invalidate cache for current date
+    await repository.invalidateForDate(
+      profile.id,
+      currentState.selectedDate,
+    );
+
+    // Trigger rebuild
+    ref.invalidateSelf();
+  }
+}

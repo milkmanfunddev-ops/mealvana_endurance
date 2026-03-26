@@ -8,6 +8,7 @@ import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/widgets/integration_provider_card.dart';
 import '../../../../shared/services/preferences_service.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Connected Apps Screen - Used for both settings and onboarding flows
 ///
@@ -47,6 +48,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   final Set<String> _notifiedProviders = {};
 
   static const List<_ComingSoonProviderConfig> _comingSoonProviders = [
+    _ComingSoonProviderConfig(name: 'Garmin Connect', key: 'garmin'),
     _ComingSoonProviderConfig(name: 'TriDot', key: 'tridot'),
     _ComingSoonProviderConfig(name: 'Runna', key: 'runna'),
     _ComingSoonProviderConfig(name: 'VDOT', key: 'vdot'),
@@ -101,15 +103,17 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: AppSpacing.screenPadding,
-          child: state.when(
-            data: (data) => _buildContent(context, ref, data),
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: AppColors.dragonfruit),
+      body: ContentArea(
+        child: SafeArea(
+          child: Padding(
+            padding: AppSpacing.screenPadding,
+            child: state.when(
+              data: (data) => _buildContent(context, ref, data),
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.dragonfruit),
+              ),
+              error: (error, _) => _buildError(context, ref, error.toString()),
             ),
-            error: (error, _) => _buildError(context, ref, error.toString()),
           ),
         ),
       ),
@@ -585,6 +589,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
+  Future<void> _connectGarmin(BuildContext context, WidgetRef ref) async {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    final success = await controller.connectGarmin();
+
+    if (success && context.mounted) {
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Garmin Connect connected! Activities will sync automatically.',
+      );
+    }
+  }
+
   // ============================================================
   // Onboarding Mode Connection Methods (with auto-import)
   // ============================================================
@@ -687,6 +703,21 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
+  Future<void> _connectGarminOnboarding(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    final success = await controller.connectGarmin();
+
+    if (success && context.mounted) {
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Garmin Connect connected! Activities will sync automatically when you use your Garmin device.',
+      );
+    }
+  }
+
   // ============================================================
   // Shared Disconnect Methods
   // ============================================================
@@ -712,6 +743,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
     if (context.mounted) {
       MealvanaSnackbar.showInfo(context, 'TrainingPeaks disconnected');
+    }
+  }
+
+  Future<void> _disconnectGarmin(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    await controller.disconnectGarmin();
+
+    if (context.mounted) {
+      MealvanaSnackbar.showInfo(context, 'Garmin Connect disconnected');
     }
   }
 

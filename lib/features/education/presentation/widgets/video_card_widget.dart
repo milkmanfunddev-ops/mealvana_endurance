@@ -41,8 +41,7 @@ class VideoCardWidget extends StatelessWidget {
                       Image.network(
                         content.thumbnailUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            _GradientPlaceholder(),
+                        errorBuilder: (_, __, ___) => _GradientPlaceholder(),
                       )
                     else
                       _GradientPlaceholder(),
@@ -99,7 +98,7 @@ class VideoCardWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    content.title,
+                    content.displayTitle,
                     style: AppTextStyles.h5.copyWith(
                       color: isDark ? AppColors.textDark : AppColors.textLight,
                     ),
@@ -140,11 +139,7 @@ class _GradientPlaceholder extends StatelessWidget {
         ),
       ),
       child: const Center(
-        child: Icon(
-          Icons.videocam,
-          color: Colors.white54,
-          size: 48,
-        ),
+        child: Icon(Icons.videocam, color: Colors.white54, size: 48),
       ),
     );
   }

@@ -54,15 +54,36 @@ final class FoodRepositoryProvider
 
 String _$foodRepositoryHash() => r'c7cbda34f5dc4619b4973fb8777b6ca1d9424c4f';
 
-/// Controller for swap food functionality - takes swap parameters
+/// Controller for swap food functionality - takes swap parameters.
+///
+/// Search logic (local filtering, catalog search, Open Food Facts) is now handled
+/// by the shared [FoodSearchController]. This controller manages:
+/// - Food loading & recommendations
+/// - Food selection
+/// - Swap/add operations
+/// - Refreshing food data after imports
 
 @ProviderFor(SwapFoodController)
 const swapFoodControllerProvider = SwapFoodControllerFamily._();
 
-/// Controller for swap food functionality - takes swap parameters
+/// Controller for swap food functionality - takes swap parameters.
+///
+/// Search logic (local filtering, catalog search, Open Food Facts) is now handled
+/// by the shared [FoodSearchController]. This controller manages:
+/// - Food loading & recommendations
+/// - Food selection
+/// - Swap/add operations
+/// - Refreshing food data after imports
 final class SwapFoodControllerProvider
     extends $AsyncNotifierProvider<SwapFoodController, SwapFoodState> {
-  /// Controller for swap food functionality - takes swap parameters
+  /// Controller for swap food functionality - takes swap parameters.
+  ///
+  /// Search logic (local filtering, catalog search, Open Food Facts) is now handled
+  /// by the shared [FoodSearchController]. This controller manages:
+  /// - Food loading & recommendations
+  /// - Food selection
+  /// - Swap/add operations
+  /// - Refreshing food data after imports
   const SwapFoodControllerProvider._({
     required SwapFoodControllerFamily super.from,
     required SwapFoodParams super.argument,
@@ -100,9 +121,16 @@ final class SwapFoodControllerProvider
 }
 
 String _$swapFoodControllerHash() =>
-    r'9be481b7f75cd29e80ad14570336317290c684f6';
+    r'11ce9c09002b51d9da2c457ab39be7dab9749399';
 
-/// Controller for swap food functionality - takes swap parameters
+/// Controller for swap food functionality - takes swap parameters.
+///
+/// Search logic (local filtering, catalog search, Open Food Facts) is now handled
+/// by the shared [FoodSearchController]. This controller manages:
+/// - Food loading & recommendations
+/// - Food selection
+/// - Swap/add operations
+/// - Refreshing food data after imports
 
 final class SwapFoodControllerFamily extends $Family
     with
@@ -122,7 +150,14 @@ final class SwapFoodControllerFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Controller for swap food functionality - takes swap parameters
+  /// Controller for swap food functionality - takes swap parameters.
+  ///
+  /// Search logic (local filtering, catalog search, Open Food Facts) is now handled
+  /// by the shared [FoodSearchController]. This controller manages:
+  /// - Food loading & recommendations
+  /// - Food selection
+  /// - Swap/add operations
+  /// - Refreshing food data after imports
 
   SwapFoodControllerProvider call(SwapFoodParams params) =>
       SwapFoodControllerProvider._(argument: params, from: this);
@@ -131,7 +166,14 @@ final class SwapFoodControllerFamily extends $Family
   String toString() => r'swapFoodControllerProvider';
 }
 
-/// Controller for swap food functionality - takes swap parameters
+/// Controller for swap food functionality - takes swap parameters.
+///
+/// Search logic (local filtering, catalog search, Open Food Facts) is now handled
+/// by the shared [FoodSearchController]. This controller manages:
+/// - Food loading & recommendations
+/// - Food selection
+/// - Swap/add operations
+/// - Refreshing food data after imports
 
 abstract class _$SwapFoodController extends $AsyncNotifier<SwapFoodState> {
   late final _$args = ref.$arg as SwapFoodParams;

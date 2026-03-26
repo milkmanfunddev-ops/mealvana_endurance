@@ -109,6 +109,7 @@ dependencies:
   connectivity_plus: ^7.0.0
   flutter_svg: ^2.2.3
   calendar_date_picker2: ^2.0.1
+  fl_chart: ^1.2.0
 
 dev_dependencies:
   sentry_dart_plugin: ^3.1.1

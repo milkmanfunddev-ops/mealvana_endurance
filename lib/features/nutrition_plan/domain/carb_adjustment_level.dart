@@ -47,4 +47,24 @@ enum CarbAdjustmentLevel {
 
   /// Multiplier applied to the current carb rate (e.g., 0.9 = -10%).
   final double adjustmentFactor;
+
+  /// Persisted 1-5 rating value (maps directly to `nutrition_rating`).
+  int get ratingValue => switch (this) {
+    CarbAdjustmentLevel.muchLess => 1,
+    CarbAdjustmentLevel.less => 2,
+    CarbAdjustmentLevel.justRight => 3,
+    CarbAdjustmentLevel.more => 4,
+    CarbAdjustmentLevel.muchMore => 5,
+  };
+
+  static CarbAdjustmentLevel? fromRatingValue(int? rating) {
+    return switch (rating) {
+      1 => CarbAdjustmentLevel.muchLess,
+      2 => CarbAdjustmentLevel.less,
+      3 => CarbAdjustmentLevel.justRight,
+      4 => CarbAdjustmentLevel.more,
+      5 => CarbAdjustmentLevel.muchMore,
+      _ => null,
+    };
+  }
 }

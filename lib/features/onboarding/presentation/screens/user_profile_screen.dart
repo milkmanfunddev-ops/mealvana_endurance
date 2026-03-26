@@ -13,6 +13,7 @@ import '../../../auth/domain/user_preferences.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// User Profile Screen - Design System
 /// User setup screen during onboarding - RESTORED with database integration
@@ -45,6 +46,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
 
+  // Email field
+  final _emailController = TextEditingController();
+
   // Track whether we've attempted to load integration data
   bool _hasLoadedIntegrationData = false;
 
@@ -71,11 +75,22 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       if (cachedData['lastName'] != null) {
         _lastNameController.text = cachedData['lastName'] as String;
       }
+      // Email field
+      if (cachedData['email'] != null) {
+        _emailController.text = cachedData['email'] as String;
+      }
     } else {
       // No cached data - try to load from connected integrations
       // Use post-frame callback since we can't do async in initState
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadIntegrationProfileData();
+        // Auto-populate email from Supabase auth if available
+        if (_emailController.text.isEmpty) {
+          final authEmail = ref.read(appExternalDepsProvider).supabaseClient.auth.currentUser?.email;
+          if (authEmail != null && authEmail.isNotEmpty) {
+            _emailController.text = authEmail;
+          }
+        }
       });
     }
 
@@ -173,6 +188,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     _weightController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -184,28 +200,30 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Column(
-        children: [
-          // Progress bar at the very top (no SafeArea padding)
-          Container(
-            color: backgroundColor,
-            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-            child: const OnboardingProgressBar(
-              currentSegment: 1, // Profile segment
+      body: ContentArea.narrow(
+        child: Column(
+          children: [
+            // Progress bar at the very top (no SafeArea padding)
+            Container(
+              color: backgroundColor,
+              padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+              child: const OnboardingProgressBar(
+                currentSegment: 1, // Profile segment
+              ),
             ),
-          ),
 
-          // Content
-          Expanded(
-            child: SafeArea(
-              top: false,
-              child: _buildContent(context, asyncState),
+            // Content
+            Expanded(
+              child: SafeArea(
+                top: false,
+                child: _buildContent(context, asyncState),
+              ),
             ),
-          ),
 
-          // Footer navigation
-          _buildFooter(asyncState),
-        ],
+            // Footer navigation
+            _buildFooter(asyncState),
+          ],
+        ),
       ),
     );
   }
@@ -361,6 +379,18 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 ),
               ),
             ],
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Email field
+          _buildTextField(
+            context: context,
+            controller: _emailController,
+            label: 'Email',
+            hint: 'Email address',
+            icon: FontAwesomeIcons.envelope,
+            keyboardType: TextInputType.emailAddress,
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -922,6 +952,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           : null,
       lastName: _lastNameController.text.trim().isNotEmpty
           ? _lastNameController.text.trim()
+          : null,
+      email: _emailController.text.trim().isNotEmpty
+          ? _emailController.text.trim()
           : null,
       unitSystem: _unitSystem,
     );

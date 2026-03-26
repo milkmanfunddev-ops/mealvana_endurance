@@ -17,6 +17,7 @@ import '../../../../shared/domain/activity_type.dart';
 import '../../../../features/auth/domain/user_preferences.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import '../utils/unit_formatter.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Adjust Macros Screen - Refactored with extracted widgets
 /// Simplified from 1,005 lines using extracted components
@@ -46,16 +47,18 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context, ref, asyncState.value),
-      body: Stack(
-        children: [
-          asyncState.when(
-            data: (state) => _buildContent(context, ref, state),
-            loading: () => _buildLoadingState(context),
-            error: (error, stackTrace) => _buildErrorState(context, ref, error),
-          ),
-          if (asyncState.value?.isCreatingPlan == true)
-            const GeneratingPlanOverlay(),
-        ],
+      body: ContentArea(
+        child: Stack(
+          children: [
+            asyncState.when(
+              data: (state) => _buildContent(context, ref, state),
+              loading: () => _buildLoadingState(context),
+              error: (error, stackTrace) => _buildErrorState(context, ref, error),
+            ),
+            if (asyncState.value?.isCreatingPlan == true)
+              const GeneratingPlanOverlay(),
+          ],
+        ),
       ),
     );
   }

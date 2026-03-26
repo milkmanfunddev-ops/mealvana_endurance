@@ -7,6 +7,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Sports Selection Screen - Step 2 of Onboarding
 ///
@@ -118,93 +119,95 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.blackberry,
-      body: Column(
-        children: [
-          // Progress bar at the very top (no SafeArea padding)
-          Container(
-            color: AppColors.blackberry,
-            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-            child: const OnboardingProgressBar(
-              currentSegment: 2, // Sports + Details segment
+      body: ContentArea.narrow(
+        child: Column(
+          children: [
+            // Progress bar at the very top (no SafeArea padding)
+            Container(
+              color: AppColors.blackberry,
+              padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+              child: const OnboardingProgressBar(
+                currentSegment: 2, // Sports + Details segment
+              ),
             ),
-          ),
 
-          // Content
-          Expanded(
-            child: SafeArea(
-              top: false,
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Title
-                      const Text(
-                        'Which sports do you train for?',
-                        style: TextStyle(
-                          fontFamily: 'Sansita',
-                          fontSize: 26,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.orange,
-                          height: 1.0,
+            // Content
+            Expanded(
+              child: SafeArea(
+                top: false,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Title
+                        const Text(
+                          'Which sports do you train for?',
+                          style: TextStyle(
+                            fontFamily: 'Sansita',
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.orange,
+                            height: 1.0,
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                      // Subtitle
-                      const Text(
-                        'We\'ll customize your nutrition plans for each sport.',
-                        style: TextStyle(
-                          fontFamily: 'Apercu',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textDark,
-                          letterSpacing: 0.192,
-                          height: 1.0,
+                        // Subtitle
+                        const Text(
+                          'We\'ll customize your nutrition plans for each sport.',
+                          style: TextStyle(
+                            fontFamily: 'Apercu',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.textDark,
+                            letterSpacing: 0.192,
+                            height: 1.0,
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                      // Sport selection cards
-                      FigmaCheckboxCard(
-                        label: 'Running',
-                        isSelected: _selectedSports.contains('running'),
-                        onTap: () => _toggleSport('running'),
-                      ),
+                        // Sport selection cards
+                        FigmaCheckboxCard(
+                          label: 'Running',
+                          isSelected: _selectedSports.contains('running'),
+                          onTap: () => _toggleSport('running'),
+                        ),
 
-                      const SizedBox(height: 12),
+                        const SizedBox(height: 12),
 
-                      FigmaCheckboxCard(
-                        label: 'Cycling',
-                        isSelected: _selectedSports.contains('cycling'),
-                        onTap: () => _toggleSport('cycling'),
-                      ),
+                        FigmaCheckboxCard(
+                          label: 'Cycling',
+                          isSelected: _selectedSports.contains('cycling'),
+                          onTap: () => _toggleSport('cycling'),
+                        ),
 
-                      const SizedBox(height: 12),
+                        const SizedBox(height: 12),
 
-                      FigmaCheckboxCard(
-                        label: 'Swimming',
-                        isSelected: _selectedSports.contains('swimming'),
-                        onTap: () => _toggleSport('swimming'),
-                      ),
-                    ],
+                        FigmaCheckboxCard(
+                          label: 'Swimming',
+                          isSelected: _selectedSports.contains('swimming'),
+                          onTap: () => _toggleSport('swimming'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // Footer navigation
-          FigmaOnboardingFooter(
-            onContinue: _continue,
-            onBack: widget.onBack ?? () => context.pop(),
-            canContinue: _selectedSports.isNotEmpty,
-          ),
-        ],
+            // Footer navigation
+            FigmaOnboardingFooter(
+              onContinue: _continue,
+              onBack: widget.onBack ?? () => context.pop(),
+              canContinue: _selectedSports.isNotEmpty,
+            ),
+          ],
+        ),
       ),
     );
   }

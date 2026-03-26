@@ -318,7 +318,11 @@ class AthleteDetailController extends _$AthleteDetailController {
   /// Refresh athlete data from server
   Future<void> refresh() async {
     final currentState = state.value;
-    if (currentState == null) return;
+    if (currentState == null) {
+      // No state yet — trigger full rebuild via invalidation
+      ref.invalidateSelf();
+      return;
+    }
 
     state = const AsyncLoading();
 

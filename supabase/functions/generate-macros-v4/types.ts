@@ -47,16 +47,29 @@ export interface PlanState {
   used_foods: Set<string>;          // All component food names used across phases
   sports_drink_used: boolean;       // Limits sports drink ADD-ON to one across all phases
   used_categories: Set<string>;
+  carbs_delivered: number;
+  protein_delivered: number;
   sodium_delivered: number;
   fluid_delivered: number;
+  carbs_target: number;
+  carbs_low: number;
+  carbs_high: number;
+  protein_target: number;
+  protein_low: number;
+  protein_high: number;
   sodium_target: number;
+  sodium_low: number;
+  sodium_high: number;
   fluid_target: number;
+  fluid_low: number;
+  fluid_high: number;
 }
 
 export interface ScoredFormula {
   template: PreWorkoutTemplate;
   servings: number;
   carbs: number;
+  protein: number;
   addOns: AddOn[];
   gap: number;
   sodium: number;

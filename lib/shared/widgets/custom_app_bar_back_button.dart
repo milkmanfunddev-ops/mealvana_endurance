@@ -27,7 +27,7 @@ class CustomAppBarBackButton extends StatefulWidget {
 class _CustomAppBarBackButtonState extends State<CustomAppBarBackButton> {
   bool _isProcessing = false;
 
-  void _handleTap() {
+  void _handleTap() async {
     if (!widget.enabled) return;
 
     // Prevent double-tap by checking if already processing
@@ -45,10 +45,16 @@ class _CustomAppBarBackButtonState extends State<CustomAppBarBackButton> {
       }
     }
 
-    // Note: We don't reset _isProcessing because the widget will be
-    // disposed after navigation. If navigation doesn't dispose the widget,
-    // the button will remain disabled which is safer than allowing
-    // repeated taps.
+    // Reset _isProcessing after a short delay to allow for state updates
+    // without permanently locking the button if the widget isn't disposed.
+    if (mounted) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
   }
 
   @override

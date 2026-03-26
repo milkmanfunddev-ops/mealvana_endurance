@@ -14,11 +14,15 @@
  * - Still queries user_foods for user-created foods
  */
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { safe } from '../utils.ts';
-import type { Food, Phase, ActivityType } from './types.ts';
-import { PREFERENCE_SCORE_MAP, DEFAULT_MAX_SERVINGS, getCategoryForPhase } from './constants.ts';
-import { matchesPreference, buildPreferenceSet } from './food-utils.ts';
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { safe } from "../utils.ts";
+import type { ActivityType, Food, Phase } from "./types.ts";
+import {
+  DEFAULT_MAX_SERVINGS,
+  getCategoryForPhase,
+  PREFERENCE_SCORE_MAP,
+} from "./constants.ts";
+import { buildPreferenceSet, matchesPreference } from "./food-utils.ts";
 
 /**
  * Resolve composite activity types to their constituent sports for
@@ -27,16 +31,18 @@ import { matchesPreference, buildPreferenceSet } from './food-utils.ts';
  */
 function resolveActivityTypesFilter(activityType: ActivityType): string {
   const COMPOSITE_SPORTS: Record<string, string[]> = {
-    brick: ['running', 'cycling', 'swimming'],
-    triathlon: ['running', 'cycling', 'swimming'],
-    duathlon: ['running', 'cycling'],
-    multisport: ['running', 'cycling', 'swimming'],
+    brick: ["running", "cycling", "swimming"],
+    triathlon: ["running", "cycling", "swimming"],
+    duathlon: ["running", "cycling"],
+    multisport: ["running", "cycling", "swimming"],
   };
 
   const sports = COMPOSITE_SPORTS[activityType];
   if (sports) {
     // Build OR filter that matches any constituent sport
-    const overlapClauses = sports.map(s => `activity_types.ov.{${s}}`).join(',');
+    const overlapClauses = sports.map((s) => `activity_types.ov.{${s}}`).join(
+      ",",
+    );
     return `activity_types.is.null,${overlapClauses}`;
   }
 
@@ -48,7 +54,7 @@ function resolveActivityTypesFilter(activityType: ActivityType): string {
  * Uses the categories array column with overlaps operator
  */
 function buildCategoryFilter(categories: string[]): string {
-  return `{${categories.join(',')}}`;
+  return `{${categories.join(",")}}`;
 }
 
 /**
@@ -57,11 +63,11 @@ function buildCategoryFilter(categories: string[]): string {
  */
 function getMaxServings(food: Record<string, unknown>, phase: Phase): number {
   switch (phase) {
-    case 'before':
+    case "before":
       return (food.max_servings_before as number) ?? DEFAULT_MAX_SERVINGS;
-    case 'during':
+    case "during":
       return (food.max_servings_during as number) ?? DEFAULT_MAX_SERVINGS;
-    case 'after':
+    case "after":
       return (food.max_servings_after as number) ?? DEFAULT_MAX_SERVINGS;
   }
 }
@@ -76,7 +82,7 @@ function getMaxServings(food: Record<string, unknown>, phase: Phase): number {
 export async function getTemplateFoodsForPhase(
   supabase: SupabaseClient,
   phase: Phase,
-  activityType: ActivityType = 'running',
+  activityType: ActivityType = "running",
   likedFoods?: string[],
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
@@ -95,7 +101,11 @@ export async function getTemplateFoodsForPhase(
 
   // Resolve composite types (brick/triathlon/etc.) to constituent sports
   const activityFilter = resolveActivityTypesFilter(activityType);
-  console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Filtering template_foods for categories: ${categories.join(', ')}, activity_type: ${activityType}, filter: ${activityFilter}`);
+  console.log(
+    `[TMPL-FOODS-${phase.toUpperCase()}] Filtering template_foods for categories: ${
+      categories.join(", ")
+    }, activity_type: ${activityType}, filter: ${activityFilter}`,
+  );
 
   // STEP 1: Get foods from template_foods table
   let templateFoods: Record<string, unknown>[] = [];
@@ -123,32 +133,37 @@ export async function getTemplateFoodsForPhase(
   let foodsError: { message?: string } | null = null;
   {
     const { data, error } = await supabase
-      .from('template_foods')
+      .from("template_foods")
       .select(selectWithDefaultDuring)
-      .eq('is_active', true)
-      .filter('categories', 'ov', categoryFilter)
+      .eq("is_active", true)
+      .filter("categories", "ov", categoryFilter)
       .or(activityFilter);
     foodsData = data as Record<string, unknown>[] | null;
     foodsError = error;
   }
 
   // Backward compatibility if DB has not yet added default_during.
-  if (foodsError && foodsError.message?.includes('default_during')) {
+  if (foodsError && foodsError.message?.includes("default_during")) {
     const fallback = await supabase
-      .from('template_foods')
+      .from("template_foods")
       .select(selectWithoutDefaultDuring)
-      .eq('is_active', true)
-      .filter('categories', 'ov', categoryFilter)
+      .eq("is_active", true)
+      .filter("categories", "ov", categoryFilter)
       .or(activityFilter);
     foodsData = fallback.data as Record<string, unknown>[] | null;
     foodsError = fallback.error;
   }
 
   if (foodsError) {
-    console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Error fetching template foods:`, foodsError);
+    console.log(
+      `[TMPL-FOODS-${phase.toUpperCase()}] Error fetching template foods:`,
+      foodsError,
+    );
   } else if (foodsData) {
     templateFoods = foodsData as Record<string, unknown>[];
-    console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Found ${templateFoods.length} template foods for ${activityType}`);
+    console.log(
+      `[TMPL-FOODS-${phase.toUpperCase()}] Found ${templateFoods.length} template foods for ${activityType}`,
+    );
   }
 
   // STEP 2: Get user foods for this phase (same as food-queries.ts)
@@ -156,17 +171,19 @@ export async function getTemplateFoodsForPhase(
   if (deviceId) {
     // Look up user_id from device_id
     const { data: userData } = await supabase
-      .from('users')
-      .select('id')
-      .eq('device_id', deviceId)
+      .from("users")
+      .select("id")
+      .eq("device_id", deviceId)
       .single();
 
     const userId = userData?.id;
     if (userId) {
-      console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Querying user foods for device_id: ${deviceId} (user_id: ${userId})`);
+      console.log(
+        `[TMPL-FOODS-${phase.toUpperCase()}] Querying user foods for device_id: ${deviceId} (user_id: ${userId})`,
+      );
 
       const { data: categoryUserFoods, error: userFoodsError } = await supabase
-        .from('user_foods')
+        .from("user_foods")
         .select(`
           id, name, display_name, display_name_plural, image_address, description,
           calories_per_serving, carbs_per_serving, protein_per_serving,
@@ -175,20 +192,23 @@ export async function getTemplateFoodsForPhase(
           is_electrolyte, to_exclude_from_solver, is_deleted,
           categories, activity_types
         `)
-        .eq('user_id', userId)
-        .eq('is_deleted', false)
-        .filter('categories', 'ov', categoryFilter)
+        .eq("user_id", userId)
+        .eq("is_deleted", false)
+        .filter("categories", "ov", categoryFilter)
         .or(activityFilter);
 
       if (userFoodsError) {
-        console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Error fetching user foods:`, userFoodsError);
+        console.log(
+          `[TMPL-FOODS-${phase.toUpperCase()}] Error fetching user foods:`,
+          userFoodsError,
+        );
       } else if (categoryUserFoods) {
         userFoods = userFoods.concat(categoryUserFoods);
       }
 
       // Get uncategorized user foods (empty categories = all phases)
       const { data: uncategorizedUserFoods, error: uncatError } = await supabase
-        .from('user_foods')
+        .from("user_foods")
         .select(`
           id, name, display_name, display_name_plural, image_address, description,
           calories_per_serving, carbs_per_serving, protein_per_serving,
@@ -197,24 +217,33 @@ export async function getTemplateFoodsForPhase(
           is_electrolyte, to_exclude_from_solver, is_deleted,
           categories, activity_types
         `)
-        .eq('user_id', userId)
-        .eq('is_deleted', false)
+        .eq("user_id", userId)
+        .eq("is_deleted", false)
         .or(`categories.eq.{},categories.is.null`)
         .or(activityFilter);
 
       if (uncatError) {
-        console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Error fetching uncategorized user foods:`, uncatError);
+        console.log(
+          `[TMPL-FOODS-${phase.toUpperCase()}] Error fetching uncategorized user foods:`,
+          uncatError,
+        );
       } else if (uncategorizedUserFoods) {
         const categorizedIds = new Set(userFoods.map((f) => f.id));
-        const filtered = (uncategorizedUserFoods as Record<string, unknown>[]).filter((f) => !categorizedIds.has(f.id));
+        const filtered = (uncategorizedUserFoods as Record<string, unknown>[])
+          .filter((f) => !categorizedIds.has(f.id));
         userFoods = userFoods.concat(filtered);
-        console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Found ${filtered.length} uncategorized user foods (${userFoods.length} total user foods)`);
+        console.log(
+          `[TMPL-FOODS-${phase.toUpperCase()}] Found ${filtered.length} uncategorized user foods (${userFoods.length} total user foods)`,
+        );
       }
     }
   }
 
   // STEP 3: Combine template_foods and user_foods
-  const allFoodsMap = new Map<string, { data: Record<string, unknown>; isUserFood: boolean }>();
+  const allFoodsMap = new Map<
+    string,
+    { data: Record<string, unknown>; isUserFood: boolean }
+  >();
 
   for (const food of templateFoods) {
     allFoodsMap.set(food.id as string, { data: food, isUserFood: false });
@@ -226,41 +255,65 @@ export async function getTemplateFoodsForPhase(
   }
 
   const allEntries = Array.from(allFoodsMap.values());
-  console.log(`[TMPL-FOODS-${phase.toUpperCase()}] Combined ${templateFoods.length} template + ${userFoods.length} user = ${allEntries.length} total`);
+  console.log(
+    `[TMPL-FOODS-${phase.toUpperCase()}] Combined ${templateFoods.length} template + ${userFoods.length} user = ${allEntries.length} total`,
+  );
 
   if (allEntries.length === 0) return [];
 
   // Prepare allergen filtering sets (case-insensitive)
   const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
-  const dietPrefLower = dietaryPreference?.toLowerCase() ?? '';
+  const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   // STEP 4: Filter and transform to Food interface
   return allEntries
     .filter(({ data: f, isUserFood }) => {
-      const isDisliked = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, dislikedSet);
+      const isDisliked = matchesPreference(
+        f as { id?: string; name?: string; display_name?: string | null },
+        dislikedSet,
+      );
       const isExcludedFromSolver = f.to_exclude_from_solver === true;
-      const isLiked = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, likedSet);
-      const isWilling = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, willTrySet);
+      const isLiked = matchesPreference(
+        f as { id?: string; name?: string; display_name?: string | null },
+        likedSet,
+      );
+      const isWilling = matchesPreference(
+        f as { id?: string; name?: string; display_name?: string | null },
+        willTrySet,
+      );
       const isPreferredDuring = isLiked || isWilling;
       const isDefaultDuring = f.default_during === true;
       const isEssential = f.is_essential === true;
+      const userFoodProductType = f.product_type as string | null;
+      const isImportedUserFood = isUserFood &&
+        (userFoodProductType == null || userFoodProductType === "import");
 
       // Never filter out user foods or essential foods (e.g. water) as disliked
       if (isDisliked && !isUserFood && !isEssential) {
-        console.log(`[TMPL-FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`);
+        console.log(
+          `[TMPL-FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`,
+        );
         return false;
       }
       if (isDisliked && isUserFood) {
-        console.log(`[TMPL-FILTER-DISLIKED] Keeping user food despite dislike: ${f.name}`);
+        console.log(
+          `[TMPL-FILTER-DISLIKED] Keeping user food despite dislike: ${f.name}`,
+        );
       }
 
       // Allergen filtering — exclude template foods whose allergens overlap with user's allergies
       // Essential foods (water, salt) and user-created foods bypass allergen filtering
       if (allergiesLower.length > 0 && !isUserFood && !isEssential) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
-        const hasAllergen = foodAllergens.some((a: string) => allergiesLower.includes(a.toLowerCase()));
+        const hasAllergen = foodAllergens.some((a: string) =>
+          allergiesLower.includes(a.toLowerCase())
+        );
         if (hasAllergen) {
-          console.log(`[TMPL-FILTER-ALLERGEN] Excluding food with allergen: ${f.name} (allergens: ${foodAllergens.join(',')})`);
+          console.log(
+            `[TMPL-FILTER-ALLERGEN] Excluding food with allergen: ${f.name} (allergens: ${
+              foodAllergens.join(",")
+            })`,
+          );
           return false;
         }
       }
@@ -268,9 +321,15 @@ export async function getTemplateFoodsForPhase(
       // Dietary preference filtering — exclude foods whose excluded_diets contains user's dietary preference
       if (dietPrefLower && !isUserFood && !isEssential) {
         const excludedDiets = (f.excluded_diets as string[] | null) ?? [];
-        const isDietExcluded = excludedDiets.some((d: string) => d.toLowerCase() === dietPrefLower);
+        const isDietExcluded = excludedDiets.some((d: string) =>
+          d.toLowerCase() === dietPrefLower
+        );
         if (isDietExcluded) {
-          console.log(`[TMPL-FILTER-DIET] Excluding food for diet '${dietaryPreference}': ${f.name} (excluded_diets: ${excludedDiets.join(',')})`);
+          console.log(
+            `[TMPL-FILTER-DIET] Excluding food for diet '${dietaryPreference}': ${f.name} (excluded_diets: ${
+              excludedDiets.join(",")
+            })`,
+          );
           return false;
         }
       }
@@ -280,46 +339,91 @@ export async function getTemplateFoodsForPhase(
       // - include user-preferred foods (liked/willing_to_try)
       // - include user foods and essentials
       // - optionally include all during foods in fallback mode
-      if (phase === 'during' &&
-          activityType === 'running' &&
-          !allowNonDefaultDuring &&
-          !isUserFood &&
-          !isEssential &&
-          !isPreferredDuring &&
-          !isDefaultDuring) {
+      if (
+        phase === "during" &&
+        activityType === "running" &&
+        !allowNonDefaultDuring &&
+        !isUserFood &&
+        !isEssential &&
+        !isPreferredDuring &&
+        !isDefaultDuring
+      ) {
+        return false;
+      }
+
+      // Keep imported user foods as fallback options in running/during default mode.
+      // They are included in expanded mode and when explicitly preferred by user.
+      if (
+        phase === "during" &&
+        activityType === "running" &&
+        !allowNonDefaultDuring &&
+        isImportedUserFood &&
+        !isPreferredDuring
+      ) {
         return false;
       }
 
       return !isExcludedFromSolver;
     })
     .map(({ data: f, isUserFood }): Food => {
-      const isLiked = isUserFood || matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, likedSet);
-      const isWilling = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, willTrySet);
+      const isLiked = matchesPreference(
+        f as { id?: string; name?: string; display_name?: string | null },
+        likedSet,
+      );
+      const isWilling = matchesPreference(
+        f as { id?: string; name?: string; display_name?: string | null },
+        willTrySet,
+      );
 
-      // User foods with an explicit product_type (not 'import') get boosted priority
+      // User foods with explicit typing are preferred, but imported/generic entries
+      // should not outrank contract-safe template foods by default.
       const userFoodProductType = f.product_type as string | null;
-      const isExplicitlyTypedUserFood = isUserFood
-        && userFoodProductType != null
-        && userFoodProductType !== 'import';
+      const isImportedUserFood = isUserFood &&
+        (userFoodProductType == null || userFoodProductType === "import");
+      const isExplicitlyTypedUserFood = isUserFood &&
+        userFoodProductType != null &&
+        userFoodProductType !== "import";
 
-      let preferenceCategory: 'user_food' | 'liked' | 'willing' | 'essential' | 'neutral' = 'neutral';
-      if (isExplicitlyTypedUserFood) preferenceCategory = 'user_food';
-      else if (isLiked) preferenceCategory = 'liked';
-      else if (isWilling) preferenceCategory = 'willing';
+      let preferenceCategory:
+        | "user_food"
+        | "liked"
+        | "willing"
+        | "essential"
+        | "neutral" = "neutral";
+      if (isExplicitlyTypedUserFood) preferenceCategory = "liked";
+      else if (isLiked) preferenceCategory = "liked";
+      else if (isWilling) preferenceCategory = "willing";
+      else if (isImportedUserFood) preferenceCategory = "neutral";
 
       const preference_score = PREFERENCE_SCORE_MAP[preferenceCategory];
       const maxServings = getMaxServings(f, phase);
+      const importedUserMaxByPhase = phase === "during" ? 2 : 1;
+      const effectiveMaxServings = isImportedUserFood
+        ? Math.min(maxServings, importedUserMaxByPhase)
+        : maxServings;
 
       // Map column names: template_foods uses carbs_g, user_foods uses carbs_per_serving
-      const carbsG = isUserFood ? safe(f.carbs_per_serving as number) : safe(f.carbs_g as number);
-      const proteinG = isUserFood ? safe(f.protein_per_serving as number) : safe(f.protein_g as number);
-      const fatG = isUserFood ? safe(f.fat_per_serving as number) : safe(f.fat_g as number);
+      const carbsG = isUserFood
+        ? safe(f.carbs_per_serving as number)
+        : safe(f.carbs_g as number);
+      const proteinG = isUserFood
+        ? safe(f.protein_per_serving as number)
+        : safe(f.protein_g as number);
+      const fatG = isUserFood
+        ? safe(f.fat_per_serving as number)
+        : safe(f.fat_g as number);
       const sodiumMg = safe(f.sodium_mg as number);
-      const waterMl = isUserFood ? safe(f.fluid_ml_per_serving as number) : safe(f.fluid_ml as number);
-      const calories = isUserFood ? safe(f.calories_per_serving as number) : safe(f.calories as number);
+      const waterMl = isUserFood
+        ? safe(f.fluid_ml_per_serving as number)
+        : safe(f.fluid_ml as number);
+      const calories = isUserFood
+        ? safe(f.calories_per_serving as number)
+        : safe(f.calories as number);
 
       // min_servings_during defaults to 1.0 for template foods, 0.5 for user foods
-      const minServings = isUserFood ? 0.5 : ((f.min_servings_during as number) ?? 1.0);
+      const minServings = isUserFood
+        ? 0.5
+        : ((f.min_servings_during as number) ?? 1.0);
 
       return {
         id: f.id as string,
@@ -341,14 +445,18 @@ export async function getTemplateFoodsForPhase(
         },
         serving_amount: (f.serving_amount as number) ?? null,
         min_servings: minServings,
-        max_servings: maxServings,
+        max_servings: effectiveMaxServings,
         preference_score,
         is_electrolyte: (f.is_electrolyte as boolean) || false,
         is_liquid: isUserFood ? false : ((f.is_liquid as boolean) || false),
         is_essential: (f.is_essential as boolean) || false,
         is_user_food: isUserFood,
-        is_indivisible: isUserFood ? false : ((f.is_indivisible as boolean) || false),
-        product_type: isUserFood ? ((f.product_type as string) ?? undefined) : ((f.product_type as string) ?? undefined),
+        is_indivisible: isUserFood
+          ? false
+          : ((f.is_indivisible as boolean) || false),
+        product_type: isUserFood
+          ? ((f.product_type as string) ?? undefined)
+          : ((f.product_type as string) ?? undefined),
       };
     });
 }
@@ -365,7 +473,7 @@ export async function getTemplateElectrolyteFoods(
   const willTrySet = buildPreferenceSet(willingToTryFoods);
 
   const { data: electrolytes, error } = await supabase
-    .from('template_foods')
+    .from("template_foods")
     .select(`
       id, name, display_name, display_name_plural, description, image_address,
       sodium_mg, fluid_ml,
@@ -373,22 +481,30 @@ export async function getTemplateElectrolyteFoods(
       serving_size, serving_unit, serving_qualifier,
       is_electrolyte, to_exclude_from_solver, is_essential
     `)
-    .eq('is_active', true)
-    .eq('is_electrolyte', true);
+    .eq("is_active", true)
+    .eq("is_electrolyte", true);
 
   if (error) {
-    console.log('[TMPL-ELECTROLYTES] Error fetching electrolytes:', error);
+    console.log("[TMPL-ELECTROLYTES] Error fetching electrolytes:", error);
     return [];
   }
 
-  console.log(`[TMPL-ELECTROLYTES] Found ${electrolytes?.length || 0} electrolyte items`);
+  console.log(
+    `[TMPL-ELECTROLYTES] Found ${electrolytes?.length || 0} electrolyte items`,
+  );
 
   return (electrolytes || [])
     .filter((e: Record<string, unknown>) => {
       if (e.is_essential === true) return true;
 
-      const isLiked = matchesPreference(e as { id?: string; name?: string; display_name?: string | null }, likedSet);
-      const isWilling = matchesPreference(e as { id?: string; name?: string; display_name?: string | null }, willTrySet);
+      const isLiked = matchesPreference(
+        e as { id?: string; name?: string; display_name?: string | null },
+        likedSet,
+      );
+      const isWilling = matchesPreference(
+        e as { id?: string; name?: string; display_name?: string | null },
+        willTrySet,
+      );
 
       return isLiked || isWilling;
     })
@@ -444,7 +560,7 @@ export async function getTransitionFoods(
 
   // Fetch template_foods with 'transition' category
   const { data: templateData, error: templateError } = await supabase
-    .from('template_foods')
+    .from("template_foods")
     .select(`
       id, name, display_name, display_name_plural, image_address, description,
       calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
@@ -454,30 +570,35 @@ export async function getTransitionFoods(
       is_liquid, product_type,
       allergens, excluded_diets
     `)
-    .eq('is_active', true)
-    .filter('categories', 'ov', '{transition}');
+    .eq("is_active", true)
+    .filter("categories", "ov", "{transition}");
 
   if (templateError) {
-    console.log('[TRANSITION-FOODS] Error fetching transition foods:', templateError);
+    console.log(
+      "[TRANSITION-FOODS] Error fetching transition foods:",
+      templateError,
+    );
     return [];
   }
 
   const templateFoods = (templateData ?? []) as Record<string, unknown>[];
-  console.log(`[TRANSITION-FOODS] Found ${templateFoods.length} transition template foods`);
+  console.log(
+    `[TRANSITION-FOODS] Found ${templateFoods.length} transition template foods`,
+  );
 
   // Also fetch user_foods with transition category if deviceId provided
   let userFoods: Record<string, unknown>[] = [];
   if (deviceId) {
     const { data: userData } = await supabase
-      .from('users')
-      .select('id')
-      .eq('device_id', deviceId)
+      .from("users")
+      .select("id")
+      .eq("device_id", deviceId)
       .single();
 
     const userId = userData?.id;
     if (userId) {
       const { data: userFoodData, error: userFoodError } = await supabase
-        .from('user_foods')
+        .from("user_foods")
         .select(`
           id, name, display_name, display_name_plural, image_address, description,
           calories_per_serving, carbs_per_serving, protein_per_serving,
@@ -486,19 +607,24 @@ export async function getTransitionFoods(
           is_electrolyte, to_exclude_from_solver, is_deleted,
           categories
         `)
-        .eq('user_id', userId)
-        .eq('is_deleted', false)
-        .filter('categories', 'ov', '{transition}');
+        .eq("user_id", userId)
+        .eq("is_deleted", false)
+        .filter("categories", "ov", "{transition}");
 
       if (!userFoodError && userFoodData) {
         userFoods = userFoodData as Record<string, unknown>[];
-        console.log(`[TRANSITION-FOODS] Found ${userFoods.length} transition user foods`);
+        console.log(
+          `[TRANSITION-FOODS] Found ${userFoods.length} transition user foods`,
+        );
       }
     }
   }
 
   // Combine and deduplicate
-  const allFoodsMap = new Map<string, { data: Record<string, unknown>; isUserFood: boolean }>();
+  const allFoodsMap = new Map<
+    string,
+    { data: Record<string, unknown>; isUserFood: boolean }
+  >();
   for (const food of templateFoods) {
     allFoodsMap.set(food.id as string, { data: food, isUserFood: false });
   }
@@ -512,11 +638,14 @@ export async function getTransitionFoods(
 
   // Prepare allergen filtering sets (case-insensitive)
   const transAllergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
-  const transDietPrefLower = dietaryPreference?.toLowerCase() ?? '';
+  const transDietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   return allEntries
     .filter(({ data: f, isUserFood }) => {
-      const isDisliked = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, dislikedSet);
+      const isDisliked = matchesPreference(
+        f as { id?: string; name?: string; display_name?: string | null },
+        dislikedSet,
+      );
       const isEssential = f.is_essential === true;
       if (isDisliked && !isUserFood && !isEssential) return false;
       if (f.to_exclude_from_solver === true) return false;
@@ -524,9 +653,15 @@ export async function getTransitionFoods(
       // Allergen filtering — essential foods and user foods bypass
       if (transAllergiesLower.length > 0 && !isUserFood && !isEssential) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
-        const hasAllergen = foodAllergens.some((a: string) => transAllergiesLower.includes(a.toLowerCase()));
+        const hasAllergen = foodAllergens.some((a: string) =>
+          transAllergiesLower.includes(a.toLowerCase())
+        );
         if (hasAllergen) {
-          console.log(`[TRANSITION-FILTER-ALLERGEN] Excluding food with allergen: ${f.name} (allergens: ${foodAllergens.join(',')})`);
+          console.log(
+            `[TRANSITION-FILTER-ALLERGEN] Excluding food with allergen: ${f.name} (allergens: ${
+              foodAllergens.join(",")
+            })`,
+          );
           return false;
         }
       }
@@ -534,9 +669,13 @@ export async function getTransitionFoods(
       // Dietary preference filtering
       if (transDietPrefLower && !isUserFood && !isEssential) {
         const excludedDiets = (f.excluded_diets as string[] | null) ?? [];
-        const isDietExcluded = excludedDiets.some((d: string) => d.toLowerCase() === transDietPrefLower);
+        const isDietExcluded = excludedDiets.some((d: string) =>
+          d.toLowerCase() === transDietPrefLower
+        );
         if (isDietExcluded) {
-          console.log(`[TRANSITION-FILTER-DIET] Excluding food for diet '${dietaryPreference}': ${f.name}`);
+          console.log(
+            `[TRANSITION-FILTER-DIET] Excluding food for diet '${dietaryPreference}': ${f.name}`,
+          );
           return false;
         }
       }
@@ -544,26 +683,52 @@ export async function getTransitionFoods(
       return true;
     })
     .map(({ data: f, isUserFood }): Food => {
-      const isLiked = isUserFood || matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, likedSet);
-      const isWilling = matchesPreference(f as { id?: string; name?: string; display_name?: string | null }, willTrySet);
+      const isLiked = matchesPreference(
+        f as { id?: string; name?: string; display_name?: string | null },
+        likedSet,
+      );
+      const isWilling = matchesPreference(
+        f as { id?: string; name?: string; display_name?: string | null },
+        willTrySet,
+      );
 
-      // User foods with an explicit product_type (not 'import') get boosted priority
+      // User foods with explicit typing are preferred, but imported/generic entries
+      // should not outrank contract-safe template foods by default.
       const transUserFoodProductType = f.product_type as string | null;
-      const isExplicitlyTypedUserFood = isUserFood
-        && transUserFoodProductType != null
-        && transUserFoodProductType !== 'import';
+      const isImportedUserFood = isUserFood &&
+        (transUserFoodProductType == null ||
+          transUserFoodProductType === "import");
+      const isExplicitlyTypedUserFood = isUserFood &&
+        transUserFoodProductType != null &&
+        transUserFoodProductType !== "import";
 
-      let preferenceCategory: 'user_food' | 'liked' | 'willing' | 'essential' | 'neutral' = 'neutral';
-      if (isExplicitlyTypedUserFood) preferenceCategory = 'user_food';
-      else if (isLiked) preferenceCategory = 'liked';
-      else if (isWilling) preferenceCategory = 'willing';
+      let preferenceCategory:
+        | "user_food"
+        | "liked"
+        | "willing"
+        | "essential"
+        | "neutral" = "neutral";
+      if (isExplicitlyTypedUserFood) preferenceCategory = "liked";
+      else if (isLiked) preferenceCategory = "liked";
+      else if (isWilling) preferenceCategory = "willing";
+      else if (isImportedUserFood) preferenceCategory = "neutral";
 
-      const carbsG = isUserFood ? safe(f.carbs_per_serving as number) : safe(f.carbs_g as number);
-      const proteinG = isUserFood ? safe(f.protein_per_serving as number) : safe(f.protein_g as number);
-      const fatG = isUserFood ? safe(f.fat_per_serving as number) : safe(f.fat_g as number);
+      const carbsG = isUserFood
+        ? safe(f.carbs_per_serving as number)
+        : safe(f.carbs_g as number);
+      const proteinG = isUserFood
+        ? safe(f.protein_per_serving as number)
+        : safe(f.protein_g as number);
+      const fatG = isUserFood
+        ? safe(f.fat_per_serving as number)
+        : safe(f.fat_g as number);
       const sodiumMg = safe(f.sodium_mg as number);
-      const waterMl = isUserFood ? safe(f.fluid_ml_per_serving as number) : safe(f.fluid_ml as number);
-      const calories = isUserFood ? safe(f.calories_per_serving as number) : safe(f.calories as number);
+      const waterMl = isUserFood
+        ? safe(f.fluid_ml_per_serving as number)
+        : safe(f.fluid_ml as number);
+      const calories = isUserFood
+        ? safe(f.calories_per_serving as number)
+        : safe(f.calories as number);
 
       return {
         id: f.id as string,
@@ -591,7 +756,9 @@ export async function getTransitionFoods(
         is_liquid: isUserFood ? false : ((f.is_liquid as boolean) || false),
         is_essential: (f.is_essential as boolean) || false,
         is_user_food: isUserFood,
-        is_indivisible: isUserFood ? false : ((f.is_indivisible as boolean) || false),
+        is_indivisible: isUserFood
+          ? false
+          : ((f.is_indivisible as boolean) || false),
         product_type: (f.product_type as string) ?? undefined,
       };
     });
@@ -604,18 +771,18 @@ export async function getTemplateEssentialFoods(
   supabase: SupabaseClient,
 ): Promise<Food[]> {
   const { data: essentialFoods, error } = await supabase
-    .from('template_foods')
+    .from("template_foods")
     .select(`
       id, name, display_name, display_name_plural, image_address, description,
       calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
       serving_amount, serving_size, serving_unit, serving_qualifier,
       is_electrolyte, is_essential
     `)
-    .eq('is_active', true)
-    .eq('is_essential', true);
+    .eq("is_active", true)
+    .eq("is_essential", true);
 
   if (error) {
-    console.log('[TMPL-ESSENTIAL] Error fetching essential foods:', error);
+    console.log("[TMPL-ESSENTIAL] Error fetching essential foods:", error);
     return [];
   }
 

@@ -15,6 +15,7 @@ import 'dismissible_food_item.dart';
 import 'during_phase_section_widget.dart';
 import 'macro_summary_row.dart';
 import 'phase_explanation_sheet.dart';
+import '../../utils/fuel_log_hero_tags.dart';
 
 /// BrickNutritionSections widget - renders multi-phase nutrition sections for brick workouts
 ///
@@ -41,6 +42,8 @@ class BrickNutritionSections extends StatelessWidget {
     this.showSwipeHint = false,
     this.useImperial = false,
     this.bodyWeightKg = 70.0,
+    this.enableSectionHeroes = false,
+    this.heroTagSeed,
   });
 
   final Activity brick;
@@ -90,6 +93,8 @@ class BrickNutritionSections extends StatelessWidget {
   final bool showSwipeHint;
   final bool useImperial;
   final double bodyWeightKg;
+  final bool enableSectionHeroes;
+  final String? heroTagSeed;
 
   @override
   Widget build(BuildContext context) {
@@ -116,16 +121,33 @@ class BrickNutritionSections extends StatelessWidget {
       children: sortedSections.map((section) {
         final isDuring = _isDuringSection(section);
         final currentDuringIndex = isDuring ? duringIndex++ : null;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-          child: _buildSection(
-            context,
-            section,
-            duringIndex: currentDuringIndex,
-            fallbackSegmentOrder: fallbackSegmentOrder,
+        return _wrapWithSectionHero(
+          section.id,
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            child: _buildSection(
+              context,
+              section,
+              duringIndex: currentDuringIndex,
+              fallbackSegmentOrder: fallbackSegmentOrder,
+            ),
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _wrapWithSectionHero(String sectionId, Widget child) {
+    if (!enableSectionHeroes || heroTagSeed == null) {
+      return child;
+    }
+
+    return Hero(
+      tag: fuelLogSectionHeroTag(
+        activityId: heroTagSeed!,
+        sectionId: sectionId,
+      ),
+      child: Material(type: MaterialType.transparency, child: child),
     );
   }
 
@@ -701,7 +723,8 @@ class BrickNutritionSections extends StatelessWidget {
     final mt = macroTargets;
     if (mt == null) return null;
     if (category.startsWith('before')) return mt.preRun.sodiumHighMg?.round();
-    if (category.startsWith('during')) return mt.duringRun.sodiumHighMg?.round();
+    if (category.startsWith('during'))
+      return mt.duringRun.sodiumHighMg?.round();
     if (category.startsWith('after')) return mt.postRun.sodiumHighMg?.round();
     return null;
   }
@@ -719,7 +742,8 @@ class BrickNutritionSections extends StatelessWidget {
     final mt = macroTargets;
     if (mt == null) return null;
     if (category.startsWith('before')) return mt.preRun.fluidsHighMl?.round();
-    if (category.startsWith('during')) return mt.duringRun.fluidsHighMl?.round();
+    if (category.startsWith('during'))
+      return mt.duringRun.fluidsHighMl?.round();
     if (category.startsWith('after')) return mt.postRun.fluidsHighMl?.round();
     return null;
   }

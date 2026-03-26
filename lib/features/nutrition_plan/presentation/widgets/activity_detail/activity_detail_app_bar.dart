@@ -19,6 +19,10 @@ class ActivityDetailAppBar extends ConsumerWidget
     required this.onSaveTemplate,
     required this.onEdit,
     required this.onDelete,
+    required this.onEditFuelLog,
+    this.isFuelLogMode = false,
+    this.onDoneFuelLog,
+    this.onBackFromFuelLog,
   });
 
   final String activityId;
@@ -27,6 +31,12 @@ class ActivityDetailAppBar extends ConsumerWidget
   final VoidCallback onSaveTemplate;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onEditFuelLog;
+
+  // Fuel log mode
+  final bool isFuelLogMode;
+  final VoidCallback? onDoneFuelLog;
+  final VoidCallback? onBackFromFuelLog;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -42,85 +52,178 @@ class ActivityDetailAppBar extends ConsumerWidget
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          CustomAppBarBackButton(
-            onPressed: () => context.pop(),
-            margin: EdgeInsets.zero,
-            iconColor: Theme.of(context).colorScheme.onSurface,
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.1),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Consumer(
-              builder: (context, ref, _) {
-                final asyncState = isCoachView
-                    ? ref.watch(
-                        coachActivityDetailControllerProvider(activityId),
-                      )
-                    : ref.watch(
-                        activityDetailControllerProvider(
-                          activityId: activityId,
-                          isNewActivity: isNewActivity,
-                        ),
-                      );
-                final eventName = asyncState.whenOrNull(
-                  data: (data) {
-                    if (data is ActivityDetailState) return data.eventName;
-                    return null;
-                  },
-                );
-                final title =
-                    eventName ??
-                    (isNewActivity ? 'New Activity' : 'Activity Details');
-                return Text(
-                  title,
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
+          isFuelLogMode
+              ? Container(
+                  margin: EdgeInsets.zero,
+                  child: Material(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.1),
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.close,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        size: 20,
+                      ),
+                      onPressed: onBackFromFuelLog ?? () => context.pop(),
+                      splashRadius: 20,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                );
-              },
+                )
+              : CustomAppBarBackButton(
+                  onPressed: () => context.pop(),
+                  margin: EdgeInsets.zero,
+                  iconColor: Theme.of(context).colorScheme.onSurface,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.1),
+                ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: _buildTitle(context, ref)),
+        ],
+      ),
+      actions: isFuelLogMode
+          ? _buildFuelLogActions(context)
+          : _buildNormalActions(context, ref),
+    );
+  }
+
+  Widget _buildTitle(BuildContext context, WidgetRef ref) {
+    if (isFuelLogMode) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Log Workout Fuel',
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            'Adjust what you consumed',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
-      ),
-      actions: [
-        // Save as Template button (only for existing activities with a nutrition plan)
-        if (!isNewActivity && !isCoachView)
-          IconButton(
-            icon: Icon(
-              FontAwesomeIcons.bookmark,
-              size: AppIconSizes.md,
-              color: AppColors.electrolyte,
-            ),
-            onPressed: onSaveTemplate,
-            tooltip: 'Save as Template',
+      );
+    }
+
+    return Consumer(
+      builder: (context, ref, _) {
+        final asyncState = isCoachView
+            ? ref.watch(coachActivityDetailControllerProvider(activityId))
+            : ref.watch(
+                activityDetailControllerProvider(
+                  activityId: activityId,
+                  isNewActivity: isNewActivity,
+                ),
+              );
+        final eventName = asyncState.whenOrNull(
+          data: (data) {
+            if (data is ActivityDetailState) return data.eventName;
+            return null;
+          },
+        );
+        final title =
+            eventName ?? (isNewActivity ? 'New Activity' : 'Activity Details');
+        return Text(
+          title,
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
-        // Edit button for existing activities (not new ones, not coach view)
-        if (!isNewActivity && !isCoachView)
-          IconButton(
-            icon: Icon(
-              FontAwesomeIcons.penToSquare,
-              size: AppIconSizes.md,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            onPressed: onEdit,
-            tooltip: 'Edit Activity',
-          ),
-        // Only show delete button for existing activities (not new ones, not coach view)
-        if (!isNewActivity && !isCoachView)
-          IconButton(
-            icon: Icon(
-              FontAwesomeIcons.trash,
-              size: AppIconSizes.md,
-              color: AppColors.dragonfruit,
-            ),
-            onPressed: onDelete,
-            tooltip: 'Delete Activity',
-          ),
-        const SizedBox(width: AppSpacing.sm),
-      ],
+          overflow: TextOverflow.ellipsis,
+        );
+      },
     );
+  }
+
+  List<Widget> _buildFuelLogActions(BuildContext context) {
+    return [
+      TextButton(
+        onPressed: onDoneFuelLog,
+        child: Text(
+          'Done',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.orange,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      const SizedBox(width: AppSpacing.xs),
+    ];
+  }
+
+  List<Widget> _buildNormalActions(BuildContext context, WidgetRef ref) {
+    final asyncState = isCoachView
+        ? ref.watch(coachActivityDetailControllerProvider(activityId))
+        : ref.watch(
+            activityDetailControllerProvider(
+              activityId: activityId,
+              isNewActivity: isNewActivity,
+            ),
+          );
+
+    final state = asyncState.whenOrNull(
+      data: (data) => data is ActivityDetailState ? data : null,
+    );
+
+    final isCompleted = state?.isCompleted ?? false;
+
+    return [
+      // Save as Template button (only for existing activities with a nutrition plan)
+      if (!isNewActivity && !isCoachView && !isCompleted)
+        IconButton(
+          icon: Icon(
+            FontAwesomeIcons.bookmark,
+            size: AppIconSizes.md,
+            color: AppColors.electrolyte,
+          ),
+          onPressed: onSaveTemplate,
+          tooltip: 'Save as Template',
+        ),
+      // Edit button for existing activities (not new ones, not coach view)
+      if (!isNewActivity && !isCoachView && !isCompleted)
+        IconButton(
+          icon: Icon(
+            FontAwesomeIcons.penToSquare,
+            size: AppIconSizes.md,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          onPressed: onEdit,
+          tooltip: 'Edit Activity',
+        ),
+      // Edit Fuel Log button for completed activities
+      if (isCompleted && !isCoachView)
+        IconButton(
+          icon: Icon(
+            FontAwesomeIcons.penToSquare,
+            size: AppIconSizes.md,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          onPressed: onEditFuelLog,
+          tooltip: 'Edit Fuel Log',
+        ),
+      // Only show delete button for existing activities (not new ones, not coach view)
+      if (!isNewActivity && !isCoachView)
+        IconButton(
+          icon: Icon(
+            FontAwesomeIcons.trash,
+            size: AppIconSizes.md,
+            color: AppColors.dragonfruit,
+          ),
+          onPressed: onDelete,
+          tooltip: 'Delete Activity',
+        ),
+      const SizedBox(width: AppSpacing.sm),
+    ];
   }
 }

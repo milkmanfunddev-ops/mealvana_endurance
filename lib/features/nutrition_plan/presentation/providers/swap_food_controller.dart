@@ -10,14 +10,11 @@ import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
 import '../../../../shared/services/food_management/food_recommendation_service.dart';
-import '../../../../shared/services/food_management/shared_food_search_service.dart';
-import '../../../../shared/utils/search_strategy.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../../features/coach_mode/presentation/providers/coach_activity_detail_controller.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../../features/user_foods/data/user_foods_repository.dart';
-import '../../../../features/barcode_scanning/application/catalog_search_service.dart';
 
 part 'swap_food_controller.g.dart';
 
@@ -46,20 +43,16 @@ class SwapFoodParams {
   final bool isCoachView;
 }
 
-/// State for the swap food screen
+/// State for the swap food screen.
+///
+/// Search state (query, catalog results, OFF results) is now managed by the
+/// shared [FoodSearchController]. This state only contains swap-specific data.
 class SwapFoodState {
   const SwapFoodState({
     required this.recommendations,
-    required this.searchResults,
     this.allFoodsForSearch,
     this.selectedFood,
-    this.searchQuery = '',
-    this.isSearching = false,
     this.preferences = const {},
-    this.openFoodFactsResults = const [],
-    this.isSearchingOpenFoodFacts = false,
-    this.catalogResults = const [],
-    this.isSearchingCatalog = false,
     this.userFoodIds = const {},
     this.userFoods = const [],
     this.allUserFoods = const [],
@@ -68,35 +61,20 @@ class SwapFoodState {
 
   final List<Food>
   recommendations; // Smart recommendations (user + generic foods)
-  final List<Food> searchResults; // Current search results or recommendations
-  final List<Food>? allFoodsForSearch; // All foods for searching
+  final List<Food>? allFoodsForSearch; // All foods for searching (template + user)
   final Food? selectedFood;
-  final String searchQuery;
-  final bool isSearching;
   final Map<String, FoodPreference> preferences; // User food preferences
-  final List<dynamic>
-  openFoodFactsResults; // Open Food Facts search results (FoodSearchResult)
-  final bool isSearchingOpenFoodFacts;
-  final List<CatalogSearchResult> catalogResults; // Product catalog results
-  final bool isSearchingCatalog; // Whether catalog search is in progress
   final Set<String> userFoodIds; // Set of food IDs that are user-created foods
-  final List<Food> userFoods; // Category-filtered user foods (default) or search-filtered (during search)
-  final List<Food> allUserFoods; // All user foods unfiltered (for search)
+  final List<Food> userFoods; // User foods for display
+  final List<Food> allUserFoods; // All user foods unfiltered
   final bool isMyFoodsExpanded; // Collapse/expand state for My Foods section
 
   SwapFoodState copyWith({
     List<Food>? recommendations,
-    List<Food>? searchResults,
     List<Food>? allFoodsForSearch,
     Food? selectedFood,
     bool clearSelectedFood = false,
-    String? searchQuery,
-    bool? isSearching,
     Map<String, FoodPreference>? preferences,
-    List<dynamic>? openFoodFactsResults,
-    bool? isSearchingOpenFoodFacts,
-    List<CatalogSearchResult>? catalogResults,
-    bool? isSearchingCatalog,
     Set<String>? userFoodIds,
     List<Food>? userFoods,
     List<Food>? allUserFoods,
@@ -104,19 +82,11 @@ class SwapFoodState {
   }) {
     return SwapFoodState(
       recommendations: recommendations ?? this.recommendations,
-      searchResults: searchResults ?? this.searchResults,
       allFoodsForSearch: allFoodsForSearch ?? this.allFoodsForSearch,
       selectedFood: clearSelectedFood
           ? null
           : (selectedFood ?? this.selectedFood),
-      searchQuery: searchQuery ?? this.searchQuery,
-      isSearching: isSearching ?? this.isSearching,
       preferences: preferences ?? this.preferences,
-      openFoodFactsResults: openFoodFactsResults ?? this.openFoodFactsResults,
-      isSearchingOpenFoodFacts:
-          isSearchingOpenFoodFacts ?? this.isSearchingOpenFoodFacts,
-      catalogResults: catalogResults ?? this.catalogResults,
-      isSearchingCatalog: isSearchingCatalog ?? this.isSearchingCatalog,
       userFoodIds: userFoodIds ?? this.userFoodIds,
       userFoods: userFoods ?? this.userFoods,
       allUserFoods: allUserFoods ?? this.allUserFoods,
@@ -133,18 +103,19 @@ FoodRepository foodRepository(Ref ref) {
   return FoodRepository(deps.supabaseClient, database, logger: deps.logger);
 }
 
-/// Controller for swap food functionality - takes swap parameters
+/// Controller for swap food functionality - takes swap parameters.
+///
+/// Search logic (local filtering, catalog search, Open Food Facts) is now handled
+/// by the shared [FoodSearchController]. This controller manages:
+/// - Food loading & recommendations
+/// - Food selection
+/// - Swap/add operations
+/// - Refreshing food data after imports
 @riverpod
 class SwapFoodController extends _$SwapFoodController {
   /// Cached logger instance - avoids accessing ref after disposal
   /// Note: Using `late` (not `late final`) because build() can be called multiple times
   late AppLogger _logger;
-
-  /// Search strategy helper for managing local vs OpenFoodFacts search
-  final _searchStrategy = SearchStrategy();
-
-  /// Debounce timer for automatic catalog search
-  Timer? _catalogDebounceTimer;
 
   /// Helper to check if provider is still mounted before state updates
   bool get _isMounted {
@@ -190,35 +161,44 @@ class SwapFoodController extends _$SwapFoodController {
         );
       }
 
-      // Load user preferences
-      final preferences = await authService.getFoodPreferences(userId) ?? {};
+      // Resolve product type ID for swap scenarios (needs to happen before recommendations)
+      final String? productTypeId = params.originalFoodId != null
+          ? await _getProductTypeId(params.originalFoodId!)
+          : null;
 
-      // Use recommendation service to get smart recommendations (generic foods only)
-      // User foods are shown separately in the "My Foods" section
-      final recommendationService = ref.read(foodRecommendationServiceProvider);
+      // Run independent operations in parallel:
+      // 1. Load user preferences (network)
+      // 2. Load user foods (local DB)
+      // 3. Load template foods for search + recommendations (local DB)
+      final results = await Future.wait([
+        authService.getFoodPreferences(userId),
+        ref.read(userFoodCrudServiceProvider).getUserFoods(userId),
+        _loadTemplateFoodsAsFood(userId),
+      ]);
 
-      final recommendations = await recommendationService.getRecommendations(
-        productTypeId: params.originalFoodId != null
-            ? await _getProductTypeId(params.originalFoodId!)
-            : null,
-        category: params
-            .category, // Always pass category for both add and swap scenarios
-        preferences: preferences,
-        maxResults: 10,
-        // Don't pass userId - user foods are shown in "My Foods" section instead
-      );
+      final preferences = results[0] as Map<String, FoodPreference>? ?? {};
+      final userFoods = results[1] as List<Food>;
+      final templateFoods = results[2] as List<Food>;
 
-      // Load user foods separately for the "My Foods" section
-      final userFoodService = ref.read(userFoodCrudServiceProvider);
-      final userFoods = await userFoodService.getUserFoods(userId);
       final userFoodIds = userFoods.map((f) => f.id).toSet();
 
-      // Load all foods for search (generic + user foods)
-      final allFoods = await _loadAllFoodsForSearch(userId);
+      // Build recommendations from pre-loaded template foods (no network call)
+      final recommendationService = ref.read(foodRecommendationServiceProvider);
+      final recommendations = recommendationService.sortByPreferences(
+        _filterForRecommendations(
+          templateFoods,
+          productTypeId: productTypeId,
+          category: params.category,
+        ),
+        preferences,
+        maxResults: 10,
+      );
+
+      // Combine template + user foods for search (no duplicate getUserFoods call)
+      final allFoods = [...templateFoods, ...userFoods];
 
       return SwapFoodState(
         recommendations: recommendations,
-        searchResults: recommendations, // Initially show recommendations
         allFoodsForSearch: allFoods,
         preferences: preferences,
         userFoodIds: userFoodIds,
@@ -235,10 +215,58 @@ class SwapFoodController extends _$SwapFoodController {
       // Return empty state on error
       return const SwapFoodState(
         recommendations: [],
-        searchResults: [],
         allFoodsForSearch: [],
       );
     }
+  }
+
+  /// Load template foods from local Drift cache as Food domain objects.
+  /// Falls back to remote sync if local cache is empty.
+  Future<List<Food>> _loadTemplateFoodsAsFood(String userId) async {
+    final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
+    var entries = await templateFoodsRepo.getAllTemplateFoods();
+    if (entries.isEmpty) {
+      final syncResult = await templateFoodsRepo.syncFromRemote(userId);
+      if (syncResult.success) {
+        entries = await templateFoodsRepo.getAllTemplateFoods();
+      }
+    }
+    return entries.map(_convertTemplateFoodToFood).toList();
+  }
+
+  /// Filter foods for recommendations based on product type and/or category
+  List<Food> _filterForRecommendations(
+    List<Food> foods, {
+    String? productTypeId,
+    String? category,
+  }) {
+    // Normalize category
+    String? normalizedCategory;
+    if (category != null) {
+      normalizedCategory = category.split(':').first.toLowerCase();
+      if (normalizedCategory == 'before') normalizedCategory = 'before_run';
+      if (normalizedCategory == 'during') normalizedCategory = 'during_run';
+      if (normalizedCategory == 'after') normalizedCategory = 'after_run';
+    }
+
+    if (productTypeId != null) {
+      var matches = foods.where((f) => f.productTypeId == productTypeId).toList();
+      if (normalizedCategory != null) {
+        final filtered = _filterByCat(matches, normalizedCategory);
+        if (filtered.isNotEmpty) return filtered;
+        // Fallback to all foods filtered by category
+        return _filterByCat(foods, normalizedCategory);
+      }
+      return matches;
+    } else if (normalizedCategory != null) {
+      return _filterByCat(foods, normalizedCategory);
+    }
+    return foods;
+  }
+
+  List<Food> _filterByCat(List<Food> foods, String category) {
+    if (category == 'after_run') return foods; // After run accepts all
+    return foods.where((f) => f.categories.contains(category)).toList();
   }
 
   /// Get product type ID for a food
@@ -276,38 +304,6 @@ class SwapFoodController extends _$SwapFoodController {
         error: e,
       );
       return null;
-    }
-  }
-
-  /// Load all foods for search (template foods + user foods)
-  Future<List<Food>> _loadAllFoodsForSearch(String userId) async {
-    try {
-      // Load template foods from local Drift database
-      final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
-      var templateFoodEntries = await templateFoodsRepo.getAllTemplateFoods();
-      if (templateFoodEntries.isEmpty) {
-        final syncResult = await templateFoodsRepo.syncFromRemote(userId);
-        if (syncResult.success) {
-          templateFoodEntries = await templateFoodsRepo.getAllTemplateFoods();
-        }
-      }
-      final templateFoods = templateFoodEntries
-          .map(_convertTemplateFoodToFood)
-          .toList();
-
-      // Load user foods
-      final userFoodService = ref.read(userFoodCrudServiceProvider);
-      final userFoods = await userFoodService.getUserFoods(userId);
-
-      // Combine all foods
-      return [...templateFoods, ...userFoods];
-    } catch (e) {
-      _logger.error(
-        'Error loading all foods for search',
-        context: 'SwapFoodController',
-        error: e,
-      );
-      return [];
     }
   }
 
@@ -357,130 +353,13 @@ class SwapFoodController extends _$SwapFoodController {
     );
   }
 
-  /// Update search query and filter foods
-  void updateSearch(String query) {
-    final currentState = state.value;
-    if (currentState == null) return;
-
-    if (query.isEmpty) {
-      // No search - show recommendations, reset user foods to category-filtered
-      _searchStrategy.cancelAutoSearch();
-      _catalogDebounceTimer?.cancel();
-      state = AsyncValue.data(
-        currentState.copyWith(
-          searchQuery: '',
-          searchResults: currentState.recommendations,
-          isSearching: false,
-          openFoodFactsResults: [], // Clear OpenFoodFacts results
-          catalogResults: [], // Clear catalog results
-          isSearchingCatalog: false,
-          userFoods: currentState.allUserFoods, // Show all user foods regardless of category
-          isMyFoodsExpanded: false,
-          // Keep selected food when clearing search
-        ),
-      );
-    } else {
-      // Search in all foods - case-insensitive partial matching
-      // Clear selected food when starting a new search
-      final searchPool =
-          currentState.allFoodsForSearch ?? currentState.recommendations;
-      final normalizedQuery = _normalizeSearchText(query);
-      final queryTokens = normalizedQuery
-          .split(' ')
-          .where((token) => token.isNotEmpty)
-          .toList();
-      final filtered = searchPool.where((food) {
-        final searchText = _normalizeSearchText(
-          [
-            food.name,
-            food.displayName,
-            food.displayNamePlural,
-            food.description,
-            food.productTypeId,
-          ].whereType<String>().join(' '),
-        );
-        return _matchesSearchTokens(searchText, queryTokens);
-      }).toList();
-
-      // Filter user foods by search query (no category filter during search)
-      final filteredUserFoods = currentState.allUserFoods.where((food) {
-        final searchText = _normalizeSearchText(
-          [food.name, food.displayName, food.displayNamePlural, food.description, food.productTypeId]
-              .whereType<String>().join(' '),
-        );
-        return _matchesSearchTokens(searchText, queryTokens);
-      }).toList();
-
-      // Remove user food IDs from general search results to avoid duplicates
-      final filteredUserFoodIds = filteredUserFoods.map((f) => f.id).toSet();
-      final deduplicatedFiltered = filtered
-          .where((f) => !filteredUserFoodIds.contains(f.id))
-          .toList();
-
-      // Apply preference-based sorting to search results
-      final recommendationService = ref.read(foodRecommendationServiceProvider);
-      final sortedResults = recommendationService.sortByPreferences(
-        deduplicatedFiltered,
-        currentState.preferences,
-        maxResults: 20, // Allow more results for search
-      );
-
-      state = AsyncValue.data(
-        currentState.copyWith(
-          searchQuery: query,
-          searchResults: sortedResults,
-          isSearching: true,
-          clearSelectedFood:
-              true, // Clear selected food when starting new search
-          userFoods: filteredUserFoods,
-          isMyFoodsExpanded: filteredUserFoods.isNotEmpty,
-        ),
-      );
-
-      // Auto-search product catalog after debounce (300ms)
-      _catalogDebounceTimer?.cancel();
-      if (query.trim().length >= 2) {
-        _catalogDebounceTimer = Timer(const Duration(milliseconds: 300), () {
-          searchCatalog(query.trim());
-        });
-      }
-    }
-  }
-
-  String _normalizeSearchText(String value) {
-    return value
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-  }
-
-  bool _matchesSearchTokens(String haystack, List<String> queryTokens) {
-    if (queryTokens.isEmpty) return true;
-    for (final token in queryTokens) {
-      final singular = token.endsWith('s') && token.length > 3
-          ? token.substring(0, token.length - 1)
-          : token;
-      if (!haystack.contains(token) && !haystack.contains(singular)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /// Select a food and clear search
+  /// Select a food
   void selectFood(Food food) {
     final currentState = state.value;
     if (currentState == null) return;
 
-    // When selecting a food, clear the search query and show recommendations
     state = AsyncValue.data(
-      currentState.copyWith(
-        selectedFood: food,
-        searchQuery: '',
-        searchResults: currentState.recommendations,
-        isSearching: false,
-      ),
+      currentState.copyWith(selectedFood: food),
     );
   }
 
@@ -546,26 +425,11 @@ class SwapFoodController extends _$SwapFoodController {
       },
     );
 
-    _logger.info(
-      'About to call swapFoodItem on controller',
-      context: 'SwapFoodController',
-      data: {'controllerHashCode': activityDetailController.hashCode},
-    );
-
     await activityDetailController.swapFoodItem(
       oldFoodId,
       newFood,
       category,
       customAmount: customAmount,
-    );
-
-    _logger.info(
-      'swapFoodItem returned',
-      context: 'SwapFoodController',
-      data: {
-        'hasUnsavedChanges':
-            activityDetailController.state.value?.hasUnsavedChanges,
-      },
     );
   }
 
@@ -621,259 +485,10 @@ class SwapFoodController extends _$SwapFoodController {
       },
     );
 
-    _logger.info(
-      'About to call addFoodItem on controller',
-      context: 'SwapFoodController',
-      data: {'controllerHashCode': activityDetailController.hashCode},
-    );
-
     await activityDetailController.addFoodItem(
       food,
       category,
       customAmount: customAmount,
-    );
-
-    _logger.info(
-      'addFoodItem returned',
-      context: 'SwapFoodController',
-      data: {
-        'hasUnsavedChanges':
-            activityDetailController.state.value?.hasUnsavedChanges,
-      },
-    );
-  }
-
-  /// Search product catalog and update state (called automatically via debounce)
-  Future<void> searchCatalog(String query) async {
-    final currentState = state.value;
-    if (currentState == null || query.isEmpty) return;
-
-    // Cache service before async gap
-    final searchService = ref.read(sharedFoodSearchServiceProvider);
-
-    try {
-      // Set searching state
-      if (_isMounted) {
-        final freshState = state.value;
-        if (freshState != null) {
-          state = AsyncValue.data(
-            freshState.copyWith(isSearchingCatalog: true),
-          );
-        }
-      }
-
-      // Search catalog (async operation)
-      final results = await searchService.searchCatalog(query);
-
-      if (!_isMounted) return;
-
-      // Get fresh state after async gap
-      final freshState = state.value;
-      if (freshState == null) return;
-
-      // Only update if the query is still current
-      if (freshState.searchQuery.trim() == query.trim()) {
-        state = AsyncValue.data(
-          freshState.copyWith(
-            catalogResults: results,
-            isSearchingCatalog: false,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!_isMounted) return;
-
-      _logger.warning(
-        'Catalog search failed',
-        context: 'SwapFoodController',
-        data: {'query': query, 'error': e.toString()},
-      );
-
-      final freshState = state.value;
-      if (freshState == null) return;
-
-      state = AsyncValue.data(
-        freshState.copyWith(isSearchingCatalog: false),
-      );
-    }
-  }
-
-  /// Add a catalog result to user foods and select it (auto-import)
-  Future<void> addCatalogResult(CatalogSearchResult result) async {
-    final currentState = state.value;
-    if (currentState == null) return;
-
-    // Cache services before async gap
-    final authService = ref.read(authServiceProvider);
-    final searchService = ref.read(sharedFoodSearchServiceProvider);
-
-    try {
-      final currentUser = await authService.getCurrentUser();
-      final userId = currentUser?.id ?? 'unknown';
-
-      // Auto-import to user_foods
-      final food = await searchService.addCatalogResultToUserFoods(
-        result,
-        userId,
-      );
-
-      if (!_isMounted) return;
-
-      if (food != null) {
-        final freshState = state.value;
-        if (freshState == null) return;
-
-        // Auto-select the food and clear search state
-        state = AsyncValue.data(
-          freshState.copyWith(
-            selectedFood: food,
-            searchQuery: '',
-            searchResults: freshState.recommendations,
-            isSearching: false,
-            catalogResults: [],
-            isSearchingCatalog: false,
-            openFoodFactsResults: [],
-          ),
-        );
-      } else {
-        _logger.warning('Failed to add catalog result to user foods');
-      }
-    } catch (e) {
-      if (!_isMounted) return;
-
-      _logger.error(
-        'Error adding catalog result',
-        context: 'SwapFoodController',
-        data: {'catalogId': result.id},
-        error: e,
-      );
-    }
-  }
-
-  /// Search Open Food Facts and update state
-  Future<void> searchOpenFoodFacts(String query) async {
-    final currentState = state.value;
-    if (currentState == null || query.isEmpty) return;
-
-    // Cache services before async gap to avoid ref access after disposal
-    final searchService = ref.read(sharedFoodSearchServiceProvider);
-
-    try {
-      // Set searching state
-      state = AsyncValue.data(
-        currentState.copyWith(isSearchingOpenFoodFacts: true),
-      );
-
-      // Search Open Food Facts (async operation)
-      final results = await searchService.searchProducts(query);
-
-      // Check if still mounted before updating state
-      if (!_isMounted) {
-        _logger.warning(
-          'SwapFoodController disposed during Open Food Facts search',
-          context: 'SwapFoodController',
-          data: {'query': query},
-        );
-        return;
-      }
-
-      // Get fresh state after async gap
-      final freshState = state.value;
-      if (freshState == null) return;
-
-      // Update state with results
-      state = AsyncValue.data(
-        freshState.copyWith(
-          openFoodFactsResults: results,
-          isSearchingOpenFoodFacts: false,
-        ),
-      );
-    } catch (e) {
-      // Check if still mounted before logging/updating state
-      if (!_isMounted) return;
-
-      _logger.error(
-        'Open Food Facts search failed',
-        context: 'SwapFoodController',
-        data: {'query': query},
-        error: e,
-      );
-
-      // Get fresh state after async gap
-      final freshState = state.value;
-      if (freshState == null) return;
-
-      // Clear searching state and keep current results
-      state = AsyncValue.data(
-        freshState.copyWith(isSearchingOpenFoodFacts: false),
-      );
-    }
-  }
-
-  /// Add Open Food Facts result to user foods and select it
-  Future<void> addOpenFoodFactsResult(dynamic result) async {
-    final currentState = state.value;
-    if (currentState == null) return;
-
-    // Cache services before async gap to avoid ref access after disposal
-    final authService = ref.read(authServiceProvider);
-    final searchService = ref.read(sharedFoodSearchServiceProvider);
-
-    try {
-      // Get current user's device ID
-      final currentUser = await authService.getCurrentUser();
-      final userId = currentUser?.id ?? 'unknown';
-
-      // Add to user foods using shared service
-      final food = await searchService.addSearchResultToUserFoods(
-        result,
-        userId,
-      );
-
-      // Check if still mounted before updating state
-      if (!_isMounted) return;
-
-      if (food != null) {
-        // Get fresh state after async gap
-        final freshState = state.value;
-        if (freshState == null) return;
-
-        // Auto-select the food and clear search state
-        state = AsyncValue.data(
-          freshState.copyWith(
-            selectedFood: food,
-            searchQuery: '', // Clear search query
-            searchResults: freshState.recommendations, // Show recommendations
-            isSearching: false,
-            openFoodFactsResults: [], // Clear Open Food Facts results
-          ),
-        );
-      } else {
-        _logger.warning('Failed to add Open Food Facts result');
-      }
-    } catch (e) {
-      // Check if still mounted before logging
-      if (!_isMounted) return;
-
-      _logger.error(
-        'Error adding Open Food Facts result',
-        context: 'SwapFoodController',
-        data: {'productId': result.id},
-        error: e,
-      );
-    }
-  }
-
-  /// Clear Open Food Facts search results
-  void clearOpenFoodFactsResults() {
-    final currentState = state.value;
-    if (currentState == null) return;
-
-    state = AsyncValue.data(
-      currentState.copyWith(
-        openFoodFactsResults: [],
-        isSearchingOpenFoodFacts: false,
-      ),
     );
   }
 
@@ -884,21 +499,6 @@ class SwapFoodController extends _$SwapFoodController {
   /// If [expandMyFoods] is true, the My Foods section will be expanded after rebuild.
   /// This prevents race conditions where the food is selected before the state is rebuilt.
   Future<void> refreshFoods({Food? selectAfterRefresh, bool expandMyFoods = false}) async {
-    final currentState = state.value;
-    if (currentState == null) return;
-
-    // Re-fetch foods to include newly added user foods
-    // This triggers a rebuild that will refresh recommendations
-    state = AsyncValue.data(
-      currentState.copyWith(
-        openFoodFactsResults: [],
-        isSearchingOpenFoodFacts: false,
-        catalogResults: [],
-        isSearchingCatalog: false,
-        searchQuery: '',
-      ),
-    );
-
     // Invalidate and rebuild to refresh food data
     ref.invalidateSelf();
 

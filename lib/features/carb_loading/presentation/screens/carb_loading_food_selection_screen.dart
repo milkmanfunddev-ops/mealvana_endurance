@@ -7,6 +7,7 @@ import '../../../../shared/widgets/food_icon.dart';
 import '../../../../shared/widgets/buttons/search_openfoodfacts_button.dart';
 import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../providers/carb_loading_food_selection_controller.dart';
 import '../../domain/meal_type.dart';
 import '../../domain/carb_loading_food.dart';
@@ -196,13 +197,14 @@ class _CarbLoadingFoodSelectionScreenState
         loading: () => null,
         error: (_, __) => null,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          child: controllerState.when(
+      body: ContentArea(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            child: controllerState.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Center(
               child: Column(
@@ -307,7 +309,8 @@ class _CarbLoadingFoodSelectionScreenState
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildSelectedFoodCard(CarbLoadingFoodSelectionState state) {

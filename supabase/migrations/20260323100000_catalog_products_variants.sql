@@ -115,7 +115,7 @@ CREATE INDEX idx_catalog_variants_variant_title_trgm ON catalog_variants USING G
 -- ============================================================================
 -- 4. Backward-compatible view (matches old catalog_items shape)
 -- ============================================================================
-CREATE OR REPLACE VIEW public.catalog_items_v AS
+CREATE OR REPLACE VIEW public.catalog_items AS
 SELECT
   v.id,
   p.shopify_product_id,

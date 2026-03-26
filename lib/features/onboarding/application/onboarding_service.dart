@@ -31,6 +31,7 @@ class OnboardingService {
     bool isAnonymous = true, // false when user signs up with email/OAuth
     String? firstName,
     String? lastName,
+    String? email,
     UnitSystem unitSystem = UnitSystem.imperial,
   }) async {
 
@@ -45,6 +46,7 @@ class OnboardingService {
       isAnonymous: isAnonymous,
       firstName: firstName,
       lastName: lastName,
+      email: email,
       unitSystem: unitSystem,
     );
 

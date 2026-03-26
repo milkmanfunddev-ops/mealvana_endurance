@@ -23,6 +23,11 @@ import '../widgets/stale_plan_warning.dart';
 import '../widgets/low_fuel_risk_badge.dart';
 import '../../../personal_templates/presentation/widgets/save_template_dialog.dart';
 import '../../../personal_templates/presentation/providers/personal_templates_controller.dart';
+import '../widgets/fuel_log/fuel_log_section_widget.dart';
+import '../widgets/fuel_log/fuel_log_feedback_section.dart';
+import '../widgets/fuel_log/fuel_log_success_overlay.dart';
+import '../utils/activity_detail_helpers.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Activity Detail Screen - Refactored with extracted widgets
 /// Shows activity details with nutrition sections and food items
@@ -47,14 +52,61 @@ class ActivityDetailScreen extends ConsumerStatefulWidget {
       _ActivityDetailScreenState();
 }
 
-class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
+class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
+    with TickerProviderStateMixin {
   bool _hasShownSwipeHint = false;
   bool _swipeHintChecked = false;
+
+  // Fuel log animation
+  late final AnimationController _fuelLogAnimation;
+  late final Animation<double> _heroFadeOut;
+  late final Animation<double> _extrasFadeOut;
+  late final Animation<double> _sectionsCrossfade;
+  late final Animation<double> _feedbackFadeIn;
+
+  // Fuel log feedback state (held locally for Done button)
+  int _fuelLogRating = 0;
+  int? _fuelLogNutritionRating;
+  String? _fuelLogNotes;
 
   @override
   void initState() {
     super.initState();
     _checkSwipeHintShown();
+
+    _fuelLogAnimation = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    _heroFadeOut = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _fuelLogAnimation,
+        curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
+      ),
+    );
+    _extrasFadeOut = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _fuelLogAnimation,
+        curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
+      ),
+    );
+    _sectionsCrossfade = CurvedAnimation(
+      parent: _fuelLogAnimation,
+      curve: const Interval(0.2, 0.8, curve: Curves.easeInOut),
+    );
+    _feedbackFadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _fuelLogAnimation,
+        curve: const Interval(0.5, 1.0, curve: Curves.easeIn),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _fuelLogAnimation.dispose();
+    super.dispose();
   }
 
   void _checkSwipeHintShown() {
@@ -103,6 +155,16 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
             ),
           );
 
+    // Read fuel log mode from state for AppBar
+    final isFuelLogMode =
+        activityDetailAsync.whenOrNull(
+          data: (data) {
+            if (data is ActivityDetailState) return data.isFuelLogMode;
+            return false;
+          },
+        ) ??
+        false;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: ActivityDetailAppBar(
@@ -112,29 +174,36 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         onSaveTemplate: () => _showSaveTemplateDialog(context),
         onEdit: () => _navigateToEditActivity(context),
         onDelete: () => _showDeleteConfirmationDialog(context),
+        onEditFuelLog: () => _enterFuelLogMode(),
+        isFuelLogMode: isFuelLogMode,
+        onDoneFuelLog: () => _completeFuelLog(context),
+        onBackFromFuelLog: () => _exitFuelLogMode(),
       ),
-      body: activityDetailAsync.when(
-        data: (data) {
-          final ActivityDetailState state;
-          if (data is ActivityDetailState) {
-            state = data;
-          } else {
-            final dynamic d = data;
-            state = ActivityDetailState(
-              activity: d.activity,
-              nutritionPlan: d.nutritionPlan,
-              completion: d.completion,
-              scheduledDateTime: d.scheduledDateTime,
-              isSaving: d.isSaving ?? false,
-              isCompleting: d.isCompleting ?? false,
-              hasUnsavedChanges: d.hasUnsavedChanges ?? false,
-              error: d.error,
-            );
-          }
-          return _buildContent(context, state);
-        },
-        loading: () => _buildLoadingState(context),
-        error: (error, stack) => _buildErrorState(context, error),
+      body: ContentArea(
+        child: activityDetailAsync.when(
+          data: (data) {
+            final ActivityDetailState state;
+            if (data is ActivityDetailState) {
+              state = data;
+            } else {
+              final dynamic d = data;
+              state = ActivityDetailState(
+                activity: d.activity,
+                nutritionPlan: d.nutritionPlan,
+                completion: d.completion,
+                scheduledDateTime: d.scheduledDateTime,
+                isNewActivity: widget.isNewActivity,
+                isSaving: d.isSaving ?? false,
+                isCompleting: d.isCompleting ?? false,
+                hasUnsavedChanges: d.hasUnsavedChanges ?? false,
+                error: d.error,
+              );
+            }
+            return _buildContent(context, state);
+          },
+          loading: () => _buildLoadingState(context),
+          error: (error, stack) => _buildErrorState(context, error),
+        ),
       ),
     );
   }
@@ -201,141 +270,452 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
       return _buildErrorState(context, 'No activity data available');
     }
 
-    return SingleChildScrollView(
-      padding: AppSpacing.screenPaddingHorizontal,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: AppSpacing.xxl),
-          _buildHeroSection(context, state),
+    return AnimatedBuilder(
+      animation: _fuelLogAnimation,
+      builder: (context, _) => SingleChildScrollView(
+        padding: AppSpacing.screenPaddingHorizontal,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: AppSpacing.xxl),
 
-          const SizedBox(height: AppSpacing.lg),
-
-          // Stale plan warning (shown when needsNutritionRefresh is true)
-          if (activity.needsNutritionRefresh == true) ...[
-            StalePlanWarning(
-              onRegeneratePlan: () => _handleRegeneratePlan(context, state),
-              isRegenerating: state
-                  .isSaving, // Use existing saving state to prevent double operations
+            // Hero section — fades out when entering fuel log
+            FadeTransition(
+              opacity: _heroFadeOut,
+              child: _heroFadeOut.value > 0.01
+                  ? _buildHeroSection(context, state)
+                  : const SizedBox.shrink(),
             ),
-            const SizedBox(height: AppSpacing.lg),
-          ],
 
-          // Low fuel risk badge (shown when carbs are 33%+ below target)
-          if (state.nutritionPlan != null)
-            LowFuelRiskBadge(nutritionPlan: state.nutritionPlan!),
+            // Top spacing when hero is hidden
+            if (_heroFadeOut.value <= 0.01)
+              const SizedBox(height: AppSpacing.sm),
 
-          if (state.nutritionPlan != null)
-            NutritionSectionsBuilder(
-              state: state,
-              onSwapFood: (foodId, foodName, category) =>
-                  _swapFood(context, state, foodId, foodName, category),
-              onDeleteFood: (foodId, category) =>
-                  _deleteFood(context, state, foodId, category),
-              onUpdateQuantity: (foodId, category, newQuantity) =>
-                  _updateFoodQuantity(
-                    context,
-                    state,
-                    foodId,
-                    category,
-                    newQuantity,
-                  ),
-              onAddFood: (category) => _addFood(context, category),
-              onInitializeByHour: (cat, duration) {
-                final controller = _getControllerNotifier();
-                controller.initializeByHourData(cat, duration);
-              },
-              onMoveFoodToTimeSlot: (foodId, cat, sourceSlot, newSlot) {
-                final controller = _getControllerNotifier();
-                controller.moveFoodToTimeSlot(foodId, cat, sourceSlot, newSlot);
-              },
-              onPlaceFoodInSlot:
-                  (foodId, cat, slot, qty, timingCategory, isSip) {
-                    final controller = _getControllerNotifier();
-                    controller.placeFoodInSlot(
-                      foodId,
-                      cat,
-                      slot,
-                      qty,
-                      timingCategory: timingCategory,
-                      isSipThroughout: isSip,
-                    );
-                  },
-              onRemoveFoodFromSlot: (foodId, cat, slot) {
-                final controller = _getControllerNotifier();
-                controller.removeFoodFromSlot(foodId, cat, slot);
-              },
-              onAdjustSlotQuantity: (foodId, cat, slot, delta) {
-                final controller = _getControllerNotifier();
-                controller.adjustSlotQuantity(foodId, cat, slot, delta);
-              },
-              onMoveSipFoodToSlot: (foodId, cat, slot, qty, timingCategory) {
-                final controller = _getControllerNotifier();
-                controller.moveSipFoodToSlot(
-                  foodId,
-                  cat,
-                  slot,
-                  qty,
-                  timingCategory: timingCategory,
-                );
-              },
-              onScaleSubPhase: (subPhaseIndex, foodIndex, newQuantity) {
-                final controller = _getControllerNotifier();
-                controller.updateSubPhaseQuantityWithScaling(
-                  subPhaseIndex,
-                  foodIndex,
-                  newQuantity,
-                );
-              },
-              consumeSwipeHint: _consumeSwipeHint,
-            ),
-          if (state.nutritionPlan == null)
-            NoNutritionPlanState(
-              activity: state.activity,
-              onGeneratePlan: () =>
-                  _navigateToGeneratePlan(context, state.activity),
-            ),
-          const SizedBox(height: AppSpacing.md),
-          // Collapsible coach feedback section
-          ActivityCoachFeedbackWidget(
-            activityId: widget.activityId,
-            isCoachView: widget.isCoachView,
-            activityUserId: activity.userId,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          ActivityDetailActionButtons(
-            state: state,
-            isNewActivity: widget.isNewActivity,
-            isCoachView: widget.isCoachView,
-            onSave: () => _saveWorkout(context, state),
-            onSaveAsTemplate:
-                (widget.isNewActivity &&
-                    !widget.isCoachView &&
-                    !widget.fromTemplate &&
-                    state.nutritionPlan != null)
-                ? () => _showSaveTemplateDialog(context)
-                : null,
-            onComplete: (rating, notes, {isBrick = false, carbAdjustment}) =>
-                _handleCompletion(
-                  context,
-                  state,
-                  rating,
-                  notes,
-                  isBrick: isBrick,
-                  carbAdjustment: carbAdjustment,
+            // Stale plan warning (hidden during fuel log)
+            if (activity.needsNutritionRefresh == true &&
+                _extrasFadeOut.value > 0.01)
+              FadeTransition(
+                opacity: _extrasFadeOut,
+                child: Column(
+                  children: [
+                    StalePlanWarning(
+                      onRegeneratePlan: () =>
+                          _handleRegeneratePlan(context, state),
+                      isRegenerating: state.isSaving,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
                 ),
-            onRatingChanged: (rating) {
-              final controller = _getControllerNotifier();
-              controller.updateCompletionRating(rating);
-            },
-            onNotesChanged: (notes) {
-              final controller = _getControllerNotifier();
-              controller.updateWorkoutNotes(notes);
-            },
+              ),
+
+            // Low fuel risk badge (hidden during fuel log)
+            if (state.nutritionPlan != null && _extrasFadeOut.value > 0.01)
+              FadeTransition(
+                opacity: _extrasFadeOut,
+                child: LowFuelRiskBadge(nutritionPlan: state.nutritionPlan!),
+              ),
+
+            // Planned/Actual toggle for completed activities with fuel log
+            if (state.isCompleted && state.hasFuelLog && !state.isFuelLogMode)
+              _buildFuelLogViewToggle(context, state),
+
+            // Nutrition sections — crossfade between normal and fuel log
+            if (state.nutritionPlan != null)
+              _buildNutritionOrFuelLogSections(context, state),
+
+            if (state.nutritionPlan == null)
+              NoNutritionPlanState(
+                activity: state.activity,
+                onGeneratePlan: () =>
+                    _navigateToGeneratePlan(context, state.activity),
+              ),
+
+            // Fuel log feedback (fades in during fuel log mode)
+            if (_feedbackFadeIn.value > 0.01)
+              FadeTransition(
+                opacity: _feedbackFadeIn,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.md),
+                  child: FuelLogFeedbackSection(
+                    initialRating: _fuelLogRating,
+                    initialNutritionRating: _fuelLogNutritionRating,
+                    initialNotes: _fuelLogNotes,
+                    duringCarbRateGPerH:
+                        ActivityDetailHelpers.computeDuringCarbRateGPerH(
+                          activity: state.activity,
+                          nutritionPlan: state.nutritionPlan,
+                        ),
+                    onRatingChanged: (rating) {
+                      _fuelLogRating = rating;
+                      final controller =
+                          _getControllerNotifier() as ActivityDetailController;
+                      controller.updateFuelLogFeedback(
+                        overallSatisfaction: rating,
+                      );
+                    },
+                    onNutritionRatingChanged: (rating) {
+                      _fuelLogNutritionRating = rating;
+                      final controller =
+                          _getControllerNotifier() as ActivityDetailController;
+                      controller.updateFuelLogFeedback(nutritionRating: rating);
+                    },
+                    onNotesChanged: (notes) {
+                      _fuelLogNotes = notes;
+                      final controller =
+                          _getControllerNotifier() as ActivityDetailController;
+                      controller.updateFuelLogFeedback(notes: notes);
+                    },
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: AppSpacing.md),
+            // Collapsible coach feedback section (hidden during fuel log)
+            if (_extrasFadeOut.value > 0.01) ...[
+              FadeTransition(
+                opacity: _extrasFadeOut,
+                child: ActivityCoachFeedbackWidget(
+                  activityId: widget.activityId,
+                  isCoachView: widget.isCoachView,
+                  activityUserId: activity.userId,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              FadeTransition(
+                opacity: _extrasFadeOut,
+                child: ActivityDetailActionButtons(
+                  state: state,
+                  isNewActivity: widget.isNewActivity,
+                  isCoachView: widget.isCoachView,
+                  onSave: () => _saveWorkout(context, state),
+                  onSaveAsTemplate:
+                      (widget.isNewActivity &&
+                          !widget.isCoachView &&
+                          !widget.fromTemplate &&
+                          state.nutritionPlan != null)
+                      ? () => _showSaveTemplateDialog(context)
+                      : null,
+                  onComplete:
+                      (rating, notes, {isBrick = false, carbAdjustment}) =>
+                          _handleCompletion(
+                            context,
+                            state,
+                            rating,
+                            notes,
+                            isBrick: isBrick,
+                            carbAdjustment: carbAdjustment,
+                          ),
+                  onRatingChanged: (rating) {
+                    final controller = _getControllerNotifier();
+                    controller.updateCompletionRating(rating);
+                  },
+                  onNotesChanged: (notes) {
+                    final controller = _getControllerNotifier();
+                    controller.updateWorkoutNotes(notes);
+                  },
+                  onEnterFuelLog: () => _openFuelLogScreen(context),
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.xxxl),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // FUEL LOG METHODS
+  // ===========================================================================
+
+  Widget _buildNutritionOrFuelLogSections(
+    BuildContext context,
+    ActivityDetailState state,
+  ) {
+    final crossfadeValue = _sectionsCrossfade.value;
+
+    // Show fuel log sections in actual view mode for completed activities
+    if (state.isCompleted &&
+        state.hasFuelLog &&
+        state.fuelLogViewMode == FuelLogViewMode.actual &&
+        !state.isFuelLogMode) {
+      return _buildFuelLogSections(context, state);
+    }
+
+    // During animation: crossfade and zoom between normal and fuel log
+    if (crossfadeValue > 0.01 && crossfadeValue < 0.99) {
+      return Stack(
+        children: [
+          Opacity(
+            opacity: 1.0 - crossfadeValue,
+            child: Transform.scale(
+              scale: 1.0 + (crossfadeValue * 0.05), // Zoom out slightly
+              child: _buildNormalNutritionSections(context, state),
+            ),
           ),
-          const SizedBox(height: AppSpacing.xxxl),
+          Opacity(
+            opacity: crossfadeValue,
+            child: Transform.scale(
+              scale: 0.95 + (crossfadeValue * 0.05), // Zoom in from 0.95 to 1.0
+              child: _buildFuelLogSections(context, state),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Fuel log mode active
+    if (state.isFuelLogMode) {
+      return _buildFuelLogSections(context, state);
+    }
+
+    // Normal mode
+    return _buildNormalNutritionSections(context, state);
+  }
+
+  Widget _buildNormalNutritionSections(
+    BuildContext context,
+    ActivityDetailState state,
+  ) {
+    return NutritionSectionsBuilder(
+      state: state,
+      onSwapFood: (foodId, foodName, category) =>
+          _swapFood(context, state, foodId, foodName, category),
+      onDeleteFood: (foodId, category) =>
+          _deleteFood(context, state, foodId, category),
+      onUpdateQuantity: (foodId, category, newQuantity) =>
+          _updateFoodQuantity(context, state, foodId, category, newQuantity),
+      onAddFood: (category) => _addFood(context, category),
+      onInitializeByHour: (cat, duration) {
+        final controller = _getControllerNotifier();
+        controller.initializeByHourData(cat, duration);
+      },
+      onMoveFoodToTimeSlot: (foodId, cat, sourceSlot, newSlot) {
+        final controller = _getControllerNotifier();
+        controller.moveFoodToTimeSlot(foodId, cat, sourceSlot, newSlot);
+      },
+      onPlaceFoodInSlot: (foodId, cat, slot, qty, timingCategory, isSip) {
+        final controller = _getControllerNotifier();
+        controller.placeFoodInSlot(
+          foodId,
+          cat,
+          slot,
+          qty,
+          timingCategory: timingCategory,
+          isSipThroughout: isSip,
+        );
+      },
+      onRemoveFoodFromSlot: (foodId, cat, slot) {
+        final controller = _getControllerNotifier();
+        controller.removeFoodFromSlot(foodId, cat, slot);
+      },
+      onAdjustSlotQuantity: (foodId, cat, slot, delta) {
+        final controller = _getControllerNotifier();
+        controller.adjustSlotQuantity(foodId, cat, slot, delta);
+      },
+      onMoveSipFoodToSlot: (foodId, cat, slot, qty, timingCategory) {
+        final controller = _getControllerNotifier();
+        controller.moveSipFoodToSlot(
+          foodId,
+          cat,
+          slot,
+          qty,
+          timingCategory: timingCategory,
+        );
+      },
+      onScaleSubPhase: (subPhaseIndex, foodIndex, newQuantity) {
+        final controller = _getControllerNotifier();
+        controller.updateSubPhaseQuantityWithScaling(
+          subPhaseIndex,
+          foodIndex,
+          newQuantity,
+        );
+      },
+      consumeSwipeHint: _consumeSwipeHint,
+      enableSectionHeroes: true,
+      heroTagSeed: widget.activityId,
+    );
+  }
+
+  Widget _buildFuelLogSections(
+    BuildContext context,
+    ActivityDetailState state,
+  ) {
+    final fuelLog = state.fuelLogData;
+    if (fuelLog == null) return const SizedBox.shrink();
+
+    final plan = state.nutritionPlan;
+    if (plan == null) return const SizedBox.shrink();
+
+    final activityType = state.activity?.activityType ?? ActivityType.running;
+
+    final sectionWidgets = <Widget>[];
+
+    for (final section in plan.sections) {
+      final sectionId = section.id;
+      final sectionItems = fuelLog.itemsForSection(sectionId);
+      if (sectionItems.isEmpty && !state.isFuelLogMode) continue;
+
+      final sectionColor = _sectionColor(context, sectionId);
+      final sectionTitle = activityType.isBrick
+          ? section.title
+          : activityType.getSectionTitle(sectionId);
+
+      // Group by sub-phase if applicable
+      Map<String, List>? subPhaseGroups;
+      if (section.hasSubPhases) {
+        subPhaseGroups = {};
+        for (final sp in section.subPhases!) {
+          final spItems = fuelLog.itemsForSubPhase(sectionId, sp.subPhaseType);
+          if (spItems.isNotEmpty) {
+            subPhaseGroups[sp.subPhaseType] = spItems;
+          }
+        }
+      }
+
+      sectionWidgets.add(
+        FuelLogSectionWidget(
+          sectionId: sectionId,
+          title: sectionTitle,
+          items: sectionItems,
+          sectionColor: sectionColor,
+          subPhaseGroups: subPhaseGroups?.map((k, v) => MapEntry(k, v.cast())),
+          isViewOnly: !state.isFuelLogMode,
+          onIncrement: (foodId, secId) {
+            final controller =
+                _getControllerNotifier() as ActivityDetailController;
+            controller.updateFuelLogItemQuantity(foodId, secId, 0.5);
+          },
+          onDecrement: (foodId, secId) {
+            final controller =
+                _getControllerNotifier() as ActivityDetailController;
+            controller.updateFuelLogItemQuantity(foodId, secId, -0.5);
+          },
+          onAddFood: () => _addFood(context, sectionId),
+        ),
+      );
+    }
+
+    return Column(children: sectionWidgets);
+  }
+
+  Widget _buildFuelLogViewToggle(
+    BuildContext context,
+    ActivityDetailState state,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ToggleChip(
+              label: 'Planned',
+              isSelected: state.fuelLogViewMode == FuelLogViewMode.planned,
+              onTap: () {
+                final controller =
+                    _getControllerNotifier() as ActivityDetailController;
+                if (state.fuelLogViewMode != FuelLogViewMode.planned) {
+                  controller.toggleFuelLogViewMode();
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: _ToggleChip(
+              label: 'Actual',
+              isSelected: state.fuelLogViewMode == FuelLogViewMode.actual,
+              onTap: () {
+                final controller =
+                    _getControllerNotifier() as ActivityDetailController;
+                if (state.fuelLogViewMode != FuelLogViewMode.actual) {
+                  controller.toggleFuelLogViewMode();
+                }
+              },
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Color _sectionColor(BuildContext context, String sectionId) {
+    if (sectionId.contains('during')) {
+      return Theme.of(context).colorScheme.secondary;
+    }
+    if (sectionId.contains('after')) {
+      return AppColors.dragonfruit;
+    }
+    return AppColors.orange;
+  }
+
+  void _enterFuelLogMode() {
+    final controller = _getControllerNotifier() as ActivityDetailController;
+    controller.enterFuelLogMode();
+    _fuelLogRating = 0;
+    _fuelLogNutritionRating = null;
+    _fuelLogNotes = null;
+    _fuelLogAnimation.forward();
+  }
+
+  Future<void> _openFuelLogScreen(BuildContext context) {
+    return context.pushNamed(
+      'fuel-log',
+      extra: {
+        'activityId': widget.activityId,
+        'isNewActivity': widget.isNewActivity,
+      },
+    );
+  }
+
+  void _exitFuelLogMode() {
+    _fuelLogAnimation.reverse().then((_) {
+      if (mounted) {
+        final controller = _getControllerNotifier() as ActivityDetailController;
+        controller.exitFuelLogMode();
+      }
+    });
+  }
+
+  Future<void> _completeFuelLog(BuildContext context) async {
+    if (_fuelLogRating <= 0) {
+      MealvanaSnackbar.showWarning(
+        context,
+        'Please add a rating before completing',
+      );
+      return;
+    }
+
+    final controller = _getControllerNotifier() as ActivityDetailController;
+
+    // Apply carb feedback if provided
+    final carbAdjustment = CarbAdjustmentLevel.fromRatingValue(
+      _fuelLogNutritionRating,
+    );
+    if (carbAdjustment != null) {
+      await controller.applyCarbFeedbackAdjustment(
+        carbAdjustment,
+        isEdit: false,
+      );
+    }
+
+    await controller.saveFuelLogAndComplete(
+      overallSatisfaction: _fuelLogRating,
+      textNotes: _fuelLogNotes,
+      nutritionRating: _fuelLogNutritionRating,
+    );
+
+    if (!mounted) return;
+
+    // Reset animation state
+    _fuelLogAnimation.reset();
+
+    // Show success overlay
+    await FuelLogSuccessOverlay.show(
+      context,
+      onDismiss: () {
+        if (mounted) Navigator.of(context).pop();
+      },
     );
   }
 
@@ -369,6 +749,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
               ? null
               : () => _showTimePicker(context, state),
         ),
+        const SizedBox(height: AppSpacing.sm),
       ],
     );
   }
@@ -377,7 +758,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   ///
   /// Returns a Future that completes when the pushed route is popped.
   Future<Object?> _navigateToGeneratePlan(
-      BuildContext context, Activity? activity) {
+    BuildContext context,
+    Activity? activity,
+  ) {
     if (activity == null) return Future.value(null);
 
     return context.pushNamed<Object>(
@@ -388,6 +771,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         'initialDurationMinutes': activity.durationMinutes,
         'goalPace': activity.paceTargetMinutesPerMile,
         'activityId': activity.id,
+        if (widget.isCoachView) 'forUserId': activity.userId,
         'activityType': activity.activityType.name,
         'timeBeforeMinutes': activity.timeBeforeMinutes,
         // Cycling-specific parameters
@@ -435,6 +819,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         'initialDurationMinutes': activity.durationMinutes,
         'goalPace': activity.paceTargetMinutesPerMile,
         'activityId': activity.id,
+        if (widget.isCoachView) 'forUserId': activity.userId,
         'activityType': activity.activityType.name,
         'timeBeforeMinutes': activity.timeBeforeMinutes,
         // Cycling-specific
@@ -472,18 +857,24 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
     await controller.saveActivity();
 
-    controller.trackEvent('workout_saved', {
-      'activity_id': state.activity?.id,
-      'has_nutrition_plan': state.nutritionPlan != null,
-      'is_new_activity': state.isNewActivity,
-      'is_coach_view': widget.isCoachView,
-    });
+    if (!widget.isCoachView) {
+      controller.trackEvent('workout_saved', {
+        'activity_id': state.activity?.id,
+        'has_nutrition_plan': state.nutritionPlan != null,
+        'is_new_activity': state.isNewActivity,
+        'is_coach_view': widget.isCoachView,
+      });
+    }
 
     if (context.mounted) {
       MealvanaSnackbar.showSuccess(context, 'Changes saved successfully!');
 
-      if (state.isNewActivity) {
-        context.go('/main');
+      if (widget.isNewActivity) {
+        if (widget.isCoachView) {
+          context.go('/main?tab=coach');
+        } else {
+          context.go('/main');
+        }
       }
     }
   }
@@ -504,7 +895,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     // ref.invalidateSelf() which disposes the provider and makes
     // subsequent ref usage throw UnmountedRefException.
     if (carbAdjustment != null && !isBrick) {
-      await controller.applyCarbFeedbackAdjustment(carbAdjustment);
+      await controller.applyCarbFeedbackAdjustment(
+        carbAdjustment,
+        isEdit: false,
+      );
     }
 
     controller.trackEvent('workout_completed', {
@@ -519,6 +913,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
     await controller.completeActivity(
       overallSatisfaction: rating,
       textNotes: notes,
+      nutritionRating: carbAdjustment?.ratingValue,
     );
 
     if (mounted) {
@@ -654,7 +1049,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
   /// Awaits the navigation so the controller is invalidated when the user
   /// returns, ensuring the stale banner disappears after regeneration.
   Future<void> _handleRegeneratePlan(
-      BuildContext context, ActivityDetailState state) async {
+    BuildContext context,
+    ActivityDetailState state,
+  ) async {
     if (state.activity == null) {
       MealvanaSnackbar.showError(context, 'Activity not found');
       return;
@@ -666,10 +1063,12 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
 
     // Invalidate the controller to re-read the activity from the database,
     // picking up the cleared needsNutritionRefresh flag
-    ref.invalidate(activityDetailControllerProvider(
-      activityId: widget.activityId,
-      isNewActivity: widget.isNewActivity,
-    ));
+    ref.invalidate(
+      activityDetailControllerProvider(
+        activityId: widget.activityId,
+        isNewActivity: widget.isNewActivity,
+      ),
+    );
   }
 
   /// Show dialog to save the current activity's nutrition plan as a template
@@ -796,5 +1195,46 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen> {
         );
       }
     }
+  }
+}
+
+/// A simple toggle chip used in the Planned/Actual segmented control.
+class _ToggleChip extends StatelessWidget {
+  const _ToggleChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.orange
+              : theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(AppSpacing.sm),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isSelected
+                ? Colors.white
+                : theme.colorScheme.onSurfaceVariant,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
   }
 }

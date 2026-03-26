@@ -26,8 +26,8 @@ import '../../domain/nutrition_plan.dart';
 import '../../data/nutrition_plan_mapper.dart';
 import '../providers/macro_targets_controller.dart';
 import '../../../activities/application/activities_service.dart';
-import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// New Activity Screen - Kyle's Unified Design
 ///
@@ -484,57 +484,59 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: NewActivityAppBar(isDark: isDark),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          children: [
-            // Main scrollable content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 20),
+      body: ContentArea(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.opaque,
+          child: Column(
+            children: [
+              // Main scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 20),
 
-                    // Sport Selector Buttons (center these)
-                    const Center(child: SportSelector()),
+                      // Sport Selector Buttons (center these)
+                      const Center(child: SportSelector()),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Hero Image Section (center this)
-                    // For brick workouts, shows composite image of all three sports
-                    NewActivityHeroSection(
-                      heroImagePath: coordinator.getHeroImagePath(),
-                      isBrick: coordinatorState.selectedTab == SportTab.brick,
-                    ),
+                      // Hero Image Section (center this)
+                      // For brick workouts, shows composite image of all three sports
+                      NewActivityHeroSection(
+                        heroImagePath: coordinator.getHeroImagePath(),
+                        isBrick: coordinatorState.selectedTab == SportTab.brick,
+                      ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Date and Time Section (center this)
-                    NewActivityDateTimeSection(
-                      selectedDate: coordinatorState.selectedDate,
-                      selectedTime: coordinatorState.selectedTime,
-                      onEditTapped: () =>
-                          _showDateTimePicker(coordinatorState, coordinator),
-                      isDark: isDark,
-                    ),
+                      // Date and Time Section (center this)
+                      NewActivityDateTimeSection(
+                        selectedDate: coordinatorState.selectedDate,
+                        selectedTime: coordinatorState.selectedTime,
+                        onEditTapped: () =>
+                            _showDateTimePicker(coordinatorState, coordinator),
+                        isDark: isDark,
+                      ),
 
-                    const SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
-                    // Sport-specific form fields (full width)
-                    _buildFormFields(coordinatorState),
+                      // Sport-specific form fields (full width)
+                      _buildFormFields(coordinatorState),
 
-                    const SizedBox(height: 16),
-                  ],
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // Action Buttons (fixed at bottom)
-            _buildBottomButtons(context, coordinator, coordinatorState),
-          ],
+              // Action Buttons (fixed at bottom)
+              _buildBottomButtons(context, coordinator, coordinatorState),
+            ],
+          ),
         ),
       ),
     );
@@ -683,9 +685,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
       // Load the activity, update with template plan data, and save
       final userId = await ref.read(userIdProvider.future);
+      final ownerUserId = widget.forUserId ?? userId;
       final activitiesService = ref.read(activitiesServiceProvider);
       final activity = await activitiesService.getActivityById(
-        userId,
+        ownerUserId,
         activityId,
       );
 
@@ -693,9 +696,11 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         final updatedActivity = activity.copyWith(
           nutritionPlanData: planToApply.toJson(),
         );
-        await ref
-            .read(activitiesControllerProvider.notifier)
-            .updateActivity(updatedActivity);
+        await activitiesService.updateActivity(
+          deviceId: userId,
+          currentUserId: userId,
+          activity: updatedActivity,
+        );
       }
 
       if (!mounted) return;

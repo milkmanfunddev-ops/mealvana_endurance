@@ -154,6 +154,36 @@ function clampServings(servings: number, food: Food): number {
   return clamped;
 }
 
+/** Apply macro high-bound caps to a food's servings, then clamp to valid increment/min/max. */
+function capServingsByUpperBounds(
+  food: Food,
+  servings: number,
+  carbsAssigned: number,
+  sodiumAssigned: number,
+  fluidAssigned: number,
+  carbUpper: number,
+  sodiumUpper: number,
+  fluidUpper: number,
+): number {
+  let capped = servings;
+
+  if (food.per_serving.carbs_g > 0 && Number.isFinite(carbUpper)) {
+    const maxByCarbs = (carbUpper - carbsAssigned) / food.per_serving.carbs_g;
+    if (Number.isFinite(maxByCarbs)) capped = Math.min(capped, maxByCarbs);
+  }
+  if (food.per_serving.sodium_mg > 0 && Number.isFinite(sodiumUpper)) {
+    const maxBySodium = (sodiumUpper - sodiumAssigned) / food.per_serving.sodium_mg;
+    if (Number.isFinite(maxBySodium)) capped = Math.min(capped, maxBySodium);
+  }
+  if (food.per_serving.water_ml > 0 && Number.isFinite(fluidUpper)) {
+    const maxByFluid = (fluidUpper - fluidAssigned) / food.per_serving.water_ml;
+    if (Number.isFinite(maxByFluid)) capped = Math.min(capped, maxByFluid);
+  }
+
+  if (capped <= 0) return 0;
+  return clampServings(capped, food);
+}
+
 /** Enumerate feasible serving candidates for a food.
  *  Indivisible foods use whole servings; divisible foods use 0.5 increments. */
 function getServingCandidates(food: Food): number[] {
@@ -223,9 +253,10 @@ export function generateDuringPhaseRuleBased(
   const carbTarget = targets.carbs_g;
   const sodiumTarget = targets.sodium_mg;
   const fluidTarget = targets.water_ml;
-  const carbUpper = carbTarget > 0 ? carbTarget * 1.15 : Number.POSITIVE_INFINITY;
-  const sodiumUpper = sodiumTarget > 0 ? sodiumTarget * 1.1 : Number.POSITIVE_INFINITY;
-  const fluidUpper = fluidTarget > 0 ? fluidTarget * 1.1 : Number.POSITIVE_INFINITY;
+  const carbUpper = targets.carbs_high_g ?? (carbTarget > 0 ? carbTarget * 1.15 : Number.POSITIVE_INFINITY);
+  const sodiumLower = targets.sodium_low_mg ?? (sodiumTarget > 0 ? sodiumTarget * 0.9 : 0);
+  const sodiumUpper = targets.sodium_high_mg ?? (sodiumTarget > 0 ? sodiumTarget * 1.1 : Number.POSITIVE_INFINITY);
+  const fluidUpper = targets.water_high_ml ?? (fluidTarget > 0 ? fluidTarget * 1.1 : Number.POSITIVE_INFINITY);
   const isRunning = activityType === 'running';
   const isCycling = activityType === 'cycling';
 
@@ -270,17 +301,30 @@ export function generateDuringPhaseRuleBased(
 
     const primaryCarbTarget = carbTarget * primaryShare;
     let primaryServings = primaryCarbTarget / primaryCarb.per_serving.carbs_g;
-    primaryServings = clampServings(primaryServings, primaryCarb);
+    primaryServings = capServingsByUpperBounds(
+      primaryCarb,
+      primaryServings,
+      carbsAssigned,
+      sodiumAssigned,
+      fluidAssigned,
+      carbUpper,
+      sodiumUpper,
+      fluidUpper,
+    );
 
     const primaryResult = buildFoodResult(primaryCarb, primaryServings);
-    resultFoods.push(primaryResult);
-    carbsAssigned += primaryResult.carbs_grams;
-    sodiumAssigned += primaryResult.sodium_mg;
-    fluidAssigned += primaryResult.fluids_ml;
+    if (primaryServings > 0) {
+      resultFoods.push(primaryResult);
+      carbsAssigned += primaryResult.carbs_grams;
+      sodiumAssigned += primaryResult.sodium_mg;
+      fluidAssigned += primaryResult.fluids_ml;
+    }
 
-    console.log(
-      `[DURING-RULES] Primary carb: ${primaryCarb.name} x${primaryServings} = ${primaryResult.carbs_grams}g carbs`
-    );
+    if (primaryServings > 0) {
+      console.log(
+        `[DURING-RULES] Primary carb: ${primaryCarb.name} x${primaryServings} = ${primaryResult.carbs_grams}g carbs`
+      );
+    }
   }
 
   // ---- STEP 2: Sports drink (remaining carb share + fluid) ----
@@ -290,27 +334,16 @@ export function generateDuringPhaseRuleBased(
 
     if (remainingCarbs > 0 && sportsDrink.per_serving.carbs_g > 0) {
       let sdServings = remainingCarbs / sportsDrink.per_serving.carbs_g;
-      sdServings = clampServings(sdServings, sportsDrink);
-
-      // Guard rails: don't let sports drink alone push us well above phase ceilings.
-      if (sportsDrink.per_serving.water_ml > 0) {
-        const maxByFluid = (fluidUpper - fluidAssigned) / sportsDrink.per_serving.water_ml;
-        if (Number.isFinite(maxByFluid) && maxByFluid > 0) {
-          sdServings = Math.min(sdServings, clampServings(maxByFluid, sportsDrink));
-        }
-      }
-      if (sportsDrink.per_serving.sodium_mg > 0) {
-        const maxBySodium = (sodiumUpper - sodiumAssigned) / sportsDrink.per_serving.sodium_mg;
-        if (Number.isFinite(maxBySodium) && maxBySodium > 0) {
-          sdServings = Math.min(sdServings, clampServings(maxBySodium, sportsDrink));
-        }
-      }
-      if (sportsDrink.per_serving.carbs_g > 0) {
-        const maxByCarbs = (carbUpper - carbsAssigned) / sportsDrink.per_serving.carbs_g;
-        if (Number.isFinite(maxByCarbs) && maxByCarbs > 0) {
-          sdServings = Math.min(sdServings, clampServings(maxByCarbs, sportsDrink));
-        }
-      }
+      sdServings = capServingsByUpperBounds(
+        sportsDrink,
+        sdServings,
+        carbsAssigned,
+        sodiumAssigned,
+        fluidAssigned,
+        carbUpper,
+        sodiumUpper,
+        fluidUpper,
+      );
 
       if (sdServings > 0) {
         const sdResult = buildFoodResult(sportsDrink, sdServings);
@@ -338,7 +371,16 @@ export function generateDuringPhaseRuleBased(
       const secondaryCarb = pickWeighted(alternates, 'Secondary carb (deficit recovery)');
       if (secondaryCarb) {
         let secServings = carbDeficit / secondaryCarb.per_serving.carbs_g;
-        secServings = clampServings(secServings, secondaryCarb);
+        secServings = capServingsByUpperBounds(
+          secondaryCarb,
+          secServings,
+          carbsAssigned,
+          sodiumAssigned,
+          fluidAssigned,
+          carbUpper,
+          sodiumUpper,
+          fluidUpper,
+        );
         if (secServings > 0) {
           const secResult = buildFoodResult(secondaryCarb, secServings);
           resultFoods.push(secResult);
@@ -360,7 +402,16 @@ export function generateDuringPhaseRuleBased(
       if (anySportsDrink && !sportsDrink && anySportsDrink.per_serving.carbs_g > 0) {
         const deficit = carbTarget - carbsAssigned;
         let recoveryServings = deficit / anySportsDrink.per_serving.carbs_g;
-        recoveryServings = clampServings(recoveryServings, anySportsDrink);
+        recoveryServings = capServingsByUpperBounds(
+          anySportsDrink,
+          recoveryServings,
+          carbsAssigned,
+          sodiumAssigned,
+          fluidAssigned,
+          carbUpper,
+          sodiumUpper,
+          fluidUpper,
+        );
         if (recoveryServings > 0) {
           const recoveryResult = buildFoodResult(anySportsDrink, recoveryServings);
           resultFoods.push(recoveryResult);
@@ -384,17 +435,28 @@ export function generateDuringPhaseRuleBased(
       const bikeSolid = pickWeighted(categorized.bike_solid, 'Bike solid selection');
       if (bikeSolid && bikeSolid.per_serving.carbs_g > 0) {
         let bsServings = remainingCarbs / bikeSolid.per_serving.carbs_g;
-        bsServings = clampServings(bsServings, bikeSolid);
-
-        const bsResult = buildFoodResult(bikeSolid, bsServings);
-        resultFoods.push(bsResult);
-        carbsAssigned += bsResult.carbs_grams;
-        sodiumAssigned += bsResult.sodium_mg;
-        fluidAssigned += bsResult.fluids_ml;
-
-        console.log(
-          `[DURING-RULES] Bike solid: ${bikeSolid.name} x${bsServings} = ${bsResult.carbs_grams}g carbs`
+        bsServings = capServingsByUpperBounds(
+          bikeSolid,
+          bsServings,
+          carbsAssigned,
+          sodiumAssigned,
+          fluidAssigned,
+          carbUpper,
+          sodiumUpper,
+          fluidUpper,
         );
+
+        if (bsServings > 0) {
+          const bsResult = buildFoodResult(bikeSolid, bsServings);
+          resultFoods.push(bsResult);
+          carbsAssigned += bsResult.carbs_grams;
+          sodiumAssigned += bsResult.sodium_mg;
+          fluidAssigned += bsResult.fluids_ml;
+
+          console.log(
+            `[DURING-RULES] Bike solid: ${bikeSolid.name} x${bsServings} = ${bsResult.carbs_grams}g carbs`
+          );
+        }
       }
     }
   }
@@ -404,11 +466,16 @@ export function generateDuringPhaseRuleBased(
   if (remainingFluid > 0) {
     const waterFood = pickWeighted(categorized.hydration, 'Hydration selection');
     if (waterFood && waterFood.per_serving.water_ml > 0) {
-      let waterServings = Math.min(
+      let waterServings = capServingsByUpperBounds(
+        waterFood,
         remainingFluid / waterFood.per_serving.water_ml,
-        Math.max(0, (fluidUpper - fluidAssigned) / waterFood.per_serving.water_ml),
+        carbsAssigned,
+        sodiumAssigned,
+        fluidAssigned,
+        carbUpper,
+        sodiumUpper,
+        fluidUpper,
       );
-      waterServings = clampServings(waterServings, waterFood);
 
       if (waterServings > 0) {
         const waterResult = buildFoodResult(waterFood, waterServings);
@@ -428,7 +495,7 @@ export function generateDuringPhaseRuleBased(
   // then if sodium gap remains > 10%, try adding a second source.
   const remainingSodium = Math.max(0, sodiumTarget - sodiumAssigned);
   if (remainingSodium > 0) {
-    const MAX_SUPPLEMENT_SERVINGS = 4;
+    const MAX_SUPPLEMENT_SERVINGS = Math.min(10, Math.max(4, Math.ceil(sodiumTarget / 400)));
 
     const pickBestElectrolyte = (
       pool: Food[],
@@ -436,14 +503,17 @@ export function generateDuringPhaseRuleBased(
       currentFluid: number,
       currentCarbs: number,
     ): { food: Food; servings: number; score: number; sodium: number; fluid: number; carbs: number } | null => {
-      const sodiumMin = sodiumTarget > 0 ? sodiumTarget * 0.9 : 0;
+      const sodiumMin = sodiumLower;
       const baselineSodiumScore = sodiumTarget > 0
         ? (Math.max(0, sodiumMin - currentSodium) + Math.max(0, currentSodium - sodiumUpper)) / sodiumTarget
         : 0;
       const baselineFluidPenalty = fluidTarget > 0 && currentFluid > fluidUpper
         ? ((currentFluid - fluidUpper) / fluidTarget) * 3
         : 0;
-      const baselineScore = baselineSodiumScore + baselineFluidPenalty;
+      const baselineCarbPenalty = carbTarget > 0 && currentCarbs > carbUpper
+        ? ((currentCarbs - carbUpper) / carbTarget) * 2
+        : 0;
+      const baselineScore = baselineSodiumScore + baselineFluidPenalty + baselineCarbPenalty;
 
       let best: { food: Food; servings: number; score: number; sodium: number; fluid: number; carbs: number } | null = null;
 
@@ -460,6 +530,9 @@ export function generateDuringPhaseRuleBased(
           const sodium = currentSodium + (electrolyte.per_serving.sodium_mg * servings);
           const fluid = currentFluid + (electrolyte.per_serving.water_ml * servings);
           const carbs = currentCarbs + (electrolyte.per_serving.carbs_g * servings);
+          if (sodium > sodiumUpper + 1e-6) continue;
+          if (fluid > fluidUpper + 1e-6) continue;
+          if (carbs > carbUpper + 1e-6) continue;
 
           const sodiumPenalty = sodiumTarget > 0
             ? (Math.max(0, sodiumMin - sodium) + Math.max(0, sodium - sodiumUpper) * 2) / sodiumTarget
@@ -483,7 +556,9 @@ export function generateDuringPhaseRuleBased(
         }
       }
 
-      return best && best.score < baselineScore ? best : null;
+      if (!best) return null;
+      if (best.sodium >= sodiumMin) return best;
+      return best.score < baselineScore ? best : null;
     };
 
     // First pass: pick the best electrolyte from the full pool
@@ -507,8 +582,7 @@ export function generateDuringPhaseRuleBased(
       );
 
       // Second pass: if sodium gap still > 10%, try adding a different electrolyte source
-      const sodiumGapPct = sodiumTarget > 0 ? (sodiumTarget - sodiumAssigned) / sodiumTarget : 0;
-      if (sodiumGapPct > 0.10) {
+      if (sodiumAssigned < sodiumLower) {
         const secondPool = categorized.electrolyte.filter(e => e.id !== firstPick.food.id);
         const secondPick = pickBestElectrolyte(
           secondPool,

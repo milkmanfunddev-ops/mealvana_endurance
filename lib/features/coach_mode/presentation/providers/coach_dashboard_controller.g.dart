@@ -35,7 +35,7 @@ final class CoachDashboardControllerProvider
 }
 
 String _$coachDashboardControllerHash() =>
-    r'8308bc03e4853b08878d7ca9d816ef4086d68cdc';
+    r'f4bb8b2fb93983cb99687a8319470cb847f5c66b';
 
 abstract class _$CoachDashboardController
     extends $AsyncNotifier<CoachDashboardState> {

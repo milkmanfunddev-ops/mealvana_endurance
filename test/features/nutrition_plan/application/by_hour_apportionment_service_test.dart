@@ -120,15 +120,24 @@ void main() {
 
   group('ByHourSyncService.parseQuantity', () {
     test('parses integer quantity', () {
-      expect(ByHourSyncService.parseQuantity(_solid('s1', quantity: '3 servings')), 3.0);
+      expect(
+        ByHourSyncService.parseQuantity(_solid('s1', quantity: '3 servings')),
+        3.0,
+      );
     });
 
     test('parses decimal quantity', () {
-      expect(ByHourSyncService.parseQuantity(_solid('s1', quantity: '1.5 gels')), 1.5);
+      expect(
+        ByHourSyncService.parseQuantity(_solid('s1', quantity: '1.5 gels')),
+        1.5,
+      );
     });
 
     test('defaults to 1.0 for non-numeric', () {
-      expect(ByHourSyncService.parseQuantity(_solid('s1', quantity: 'some food')), 1.0);
+      expect(
+        ByHourSyncService.parseQuantity(_solid('s1', quantity: 'some food')),
+        1.0,
+      );
     });
   });
 
@@ -394,12 +403,14 @@ void main() {
 
       expect(updated.assignments.length, 2);
       // Hour 0 unchanged
-      final hour0 = updated.assignments
-          .firstWhere((a) => a.timeSlot.hourIndex == 0);
+      final hour0 = updated.assignments.firstWhere(
+        (a) => a.timeSlot.hourIndex == 0,
+      );
       expect(hour0.adjustedQuantity, 1.0);
       // Hour 1 reduced
-      final hour1 = updated.assignments
-          .firstWhere((a) => a.timeSlot.hourIndex == 1);
+      final hour1 = updated.assignments.firstWhere(
+        (a) => a.timeSlot.hourIndex == 1,
+      );
       expect(hour1.adjustedQuantity, 0.5);
     });
 
@@ -499,20 +510,14 @@ void main() {
 
       expect(updated.assignments.length, 3);
       // s1 replaced with s3 everywhere
-      expect(
-        updated.assignments.where((a) => a.foodItemId == 's3').length,
-        2,
-      );
+      expect(updated.assignments.where((a) => a.foodItemId == 's3').length, 2);
       // s2 untouched
-      expect(
-        updated.assignments.where((a) => a.foodItemId == 's2').length,
-        1,
-      );
+      expect(updated.assignments.where((a) => a.foodItemId == 's2').length, 1);
       // Slots preserved
-      final s3Assignments = updated.assignments
-          .where((a) => a.foodItemId == 's3')
-          .toList()
-        ..sort((a, b) => a.timeSlot.hourIndex.compareTo(b.timeSlot.hourIndex));
+      final s3Assignments =
+          updated.assignments.where((a) => a.foodItemId == 's3').toList()..sort(
+            (a, b) => a.timeSlot.hourIndex.compareTo(b.timeSlot.hourIndex),
+          );
       expect(s3Assignments[0].timeSlot.slotIndex, 1);
       expect(s3Assignments[0].adjustedQuantity, 1.0);
       expect(s3Assignments[1].timeSlot.slotIndex, 2);
@@ -570,6 +575,169 @@ void main() {
       expect(updated.assignments.length, 1);
       expect(updated.assignments.first.isSipThroughout, true);
     });
+  });
+
+  // ========================================================================
+  // ByHourSyncService.moveSipFoodToSlot / moveSlotFoodToSip
+  // ========================================================================
+
+  group('ByHourSyncService.moveSipFoodToSlot', () {
+    test('moves quantity from global sip to hour slot', () {
+      final byHour = ByHourData(
+        durationMinutes: 120,
+        assignments: const [
+          TimeSlotAssignment(
+            foodItemId: 'd1',
+            timeSlot: TimeSlot(hourIndex: -1, slotIndex: 0),
+            adjustedQuantity: 13.5,
+            timingCategory: TimingCategory.sipThroughout,
+            isSipThroughout: true,
+          ),
+          TimeSlotAssignment(
+            foodItemId: 'd1',
+            timeSlot: TimeSlot(hourIndex: 0, slotIndex: 0),
+            adjustedQuantity: 0.5,
+            timingCategory: TimingCategory.sipThroughout,
+          ),
+        ],
+      );
+
+      final updated = ByHourSyncService.moveSipFoodToSlot(
+        existing: byHour,
+        foodId: 'd1',
+        targetSlot: const TimeSlot(hourIndex: 0, slotIndex: 0),
+        quantity: 0.5,
+        timingCategory: TimingCategory.sipThroughout,
+      );
+
+      final sip = updated.assignments.firstWhere(
+        (a) => a.foodItemId == 'd1' && a.timeSlot.hourIndex == -1,
+      );
+      final hour = updated.assignments.firstWhere(
+        (a) =>
+            a.foodItemId == 'd1' &&
+            a.timeSlot.hourIndex == 0 &&
+            a.timeSlot.slotIndex == 0,
+      );
+
+      expect(sip.adjustedQuantity, 13.0);
+      expect(hour.adjustedQuantity, 1.0);
+    });
+
+    test('clamps moved quantity to available sip amount', () {
+      final byHour = ByHourData(
+        durationMinutes: 120,
+        assignments: const [
+          TimeSlotAssignment(
+            foodItemId: 'd1',
+            timeSlot: TimeSlot(hourIndex: -1, slotIndex: 0),
+            adjustedQuantity: 0.5,
+            timingCategory: TimingCategory.sipThroughout,
+            isSipThroughout: true,
+          ),
+        ],
+      );
+
+      final updated = ByHourSyncService.moveSipFoodToSlot(
+        existing: byHour,
+        foodId: 'd1',
+        targetSlot: const TimeSlot(hourIndex: 0, slotIndex: 0),
+        quantity: 1.0,
+        timingCategory: TimingCategory.sipThroughout,
+      );
+
+      expect(
+        updated.assignments.where((a) => a.timeSlot.hourIndex == -1),
+        isEmpty,
+      );
+      final hour = updated.assignments.firstWhere(
+        (a) =>
+            a.foodItemId == 'd1' &&
+            a.timeSlot.hourIndex == 0 &&
+            a.timeSlot.slotIndex == 0,
+      );
+      expect(hour.adjustedQuantity, 0.5);
+    });
+  });
+
+  group('ByHourSyncService.moveSlotFoodToSip', () {
+    test('moves quantity from hour slot back to global sip', () {
+      final byHour = ByHourData(
+        durationMinutes: 120,
+        assignments: const [
+          TimeSlotAssignment(
+            foodItemId: 'd1',
+            timeSlot: TimeSlot(hourIndex: -1, slotIndex: 0),
+            adjustedQuantity: 13.0,
+            timingCategory: TimingCategory.sipThroughout,
+            isSipThroughout: true,
+          ),
+          TimeSlotAssignment(
+            foodItemId: 'd1',
+            timeSlot: TimeSlot(hourIndex: 0, slotIndex: 0),
+            adjustedQuantity: 1.0,
+            timingCategory: TimingCategory.sipThroughout,
+          ),
+        ],
+      );
+
+      final updated = ByHourSyncService.moveSlotFoodToSip(
+        existing: byHour,
+        foodId: 'd1',
+        sourceSlot: const TimeSlot(hourIndex: 0, slotIndex: 0),
+        quantity: 0.5,
+        timingCategory: TimingCategory.sipThroughout,
+      );
+
+      final sip = updated.assignments.firstWhere(
+        (a) => a.foodItemId == 'd1' && a.timeSlot.hourIndex == -1,
+      );
+      final hour = updated.assignments.firstWhere(
+        (a) =>
+            a.foodItemId == 'd1' &&
+            a.timeSlot.hourIndex == 0 &&
+            a.timeSlot.slotIndex == 0,
+      );
+
+      expect(sip.adjustedQuantity, 13.5);
+      expect(hour.adjustedQuantity, 0.5);
+    });
+
+    test(
+      'creates sip assignment when missing and removes empty source slot',
+      () {
+        final byHour = ByHourData(
+          durationMinutes: 120,
+          assignments: const [
+            TimeSlotAssignment(
+              foodItemId: 'd1',
+              timeSlot: TimeSlot(hourIndex: 0, slotIndex: 0),
+              adjustedQuantity: 0.5,
+              timingCategory: TimingCategory.sipThroughout,
+            ),
+          ],
+        );
+
+        final updated = ByHourSyncService.moveSlotFoodToSip(
+          existing: byHour,
+          foodId: 'd1',
+          sourceSlot: const TimeSlot(hourIndex: 0, slotIndex: 0),
+          quantity: 1.0,
+          timingCategory: TimingCategory.sipThroughout,
+        );
+
+        expect(
+          updated.assignments.where((a) => a.timeSlot.hourIndex == 0),
+          isEmpty,
+        );
+        final sip = updated.assignments.firstWhere(
+          (a) => a.foodItemId == 'd1' && a.timeSlot.hourIndex == -1,
+        );
+        expect(sip.adjustedQuantity, 0.5);
+        expect(sip.isSipThroughout, true);
+        expect(sip.timingCategory, TimingCategory.sipThroughout);
+      },
+    );
   });
 
   // ========================================================================

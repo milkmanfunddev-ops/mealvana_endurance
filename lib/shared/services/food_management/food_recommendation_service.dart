@@ -30,21 +30,34 @@ class FoodRecommendationService {
   final AppLogger _logger;
 
   /// Get smart recommendations for food selection
-  /// Combines user foods and generic foods based on context
+  /// Combines user foods and generic foods based on context.
+  ///
+  /// If [preloadedGenericFoods] is provided, skips the network call to
+  /// get-foods edge function and uses the supplied list instead.
+  /// This is the preferred path — callers should load template foods from
+  /// local Drift cache and pass them here.
   Future<List<Food>> getRecommendations({
     String? productTypeId,     // For swap scenarios (match same product type)
     String? category,           // For add scenarios (match timing category)
     Map<String, FoodPreference> preferences = const {},
     int maxResults = 10,
     String? userId,
+    List<Food>? preloadedGenericFoods,
   }) async {
-    try {      // Load both user foods and generic foods
+    try {
+      // Load user foods if userId provided
       final userFoods = userId != null
           ? await _userFoodService.getUserFoods(userId)
           : <Food>[];
 
-      final genericFoodItems = await _foodRepository.getAllFoods();
-      final genericFoods = genericFoodItems.map((item) => _convertFoodItemToFood(item)).toList();
+      // Use pre-loaded generic foods if available, otherwise fall back to edge function
+      final List<Food> genericFoods;
+      if (preloadedGenericFoods != null) {
+        genericFoods = preloadedGenericFoods;
+      } else {
+        final genericFoodItems = await _foodRepository.getAllFoods();
+        genericFoods = genericFoodItems.map((item) => _convertFoodItemToFood(item)).toList();
+      }
 
       // Combine all foods
       final allFoods = [...userFoods, ...genericFoods];

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/widgets/content_area.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../providers/coach_reports_controller.dart';
 
@@ -51,32 +52,34 @@ class PortalReportsPanel extends ConsumerWidget {
 
   Widget _buildContent(
       BuildContext context, WidgetRef ref, CoachReportsState state) {
-    return Column(
-      children: [
-        // Header with date range toggle
-        _buildHeader(ref, state),
-        const Divider(height: 1, color: AppColors.blackberryLight),
+    return ContentArea.wide(
+      child: Column(
+        children: [
+          // Header with date range toggle
+          _buildHeader(ref, state),
+          const Divider(height: 1, color: AppColors.blackberryLight),
 
-        // Athlete summaries
-        if (state.summaries.isEmpty)
-          const Expanded(
-            child: Center(
-              child: Text(
-                'No athletes connected yet.',
-                style: TextStyle(color: AppColors.textDarkSecondary),
+          // Athlete summaries
+          if (state.summaries.isEmpty)
+            const Expanded(
+              child: Center(
+                child: Text(
+                  'No athletes connected yet.',
+                  style: TextStyle(color: AppColors.textDarkSecondary),
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: state.summaries.length,
+                itemBuilder: (context, index) =>
+                    _buildAthleteCard(state.summaries[index]),
               ),
             ),
-          )
-        else
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: state.summaries.length,
-              itemBuilder: (context, index) =>
-                  _buildAthleteCard(state.summaries[index]),
-            ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 

@@ -9,36 +9,33 @@
  * V2 output: BeforePhaseResult { meal?, snack?, top_up? } with SubPhaseResult { foods: FoodResult[] }
  */
 
-import { createServiceClient } from '../_shared/supabase-client.ts';
+import { createServiceClient } from "../_shared/supabase-client.ts";
 
 import {
-  type PreWorkoutTemplate,
-  type PreWorkoutPhaseResult,
-  type TemplateSelection,
   type AddOn,
+  type PreWorkoutPhaseResult,
+  type PreWorkoutTargets,
+  type PreWorkoutTemplate,
   type SubPhaseType,
-} from '../generate-macros-v4/types.ts';
+  type TemplateSelection,
+} from "../generate-macros-v4/types.ts";
 
 import {
-  calculatePreWorkoutTargets,
   selectPreWorkoutFoods,
-  getActiveSubPhases,
   splitTargets,
-} from '../generate-macros-v4/pre-workout.ts';
+} from "../generate-macros-v4/pre-workout.ts";
 
-import {
-  type FoodResult,
-} from '../_shared/nutrition/types.ts';
+import { type FoodResult } from "../_shared/nutrition/types.ts";
 
 import {
   type BeforePhaseResult,
   type SubPhaseResult,
   type SubPhaseTargets,
-} from '../_shared/nutrition/templates/types.ts';
+} from "../_shared/nutrition/templates/types.ts";
 
 import {
   getSubPhaseTimingLabel,
-} from '../_shared/nutrition/templates/pre-workout-targets.ts';
+} from "../_shared/nutrition/templates/pre-workout-targets.ts";
 
 // ============================================================================
 // Database Queries
@@ -49,12 +46,16 @@ async function fetchPreWorkoutTemplates(
   templateType: string,
 ): Promise<PreWorkoutTemplate[]> {
   const { data, error } = await supabase
-    .from('pre_workout_templates')
-    .select('*')
-    .eq('is_active', true)
-    .eq('template_type', templateType);
+    .from("pre_workout_templates")
+    .select("*")
+    .eq("is_active", true)
+    .eq("template_type", templateType);
 
-  if (error) throw new Error(`Failed to fetch pre_workout_templates (${templateType}): ${error.message}`);
+  if (error) {
+    throw new Error(
+      `Failed to fetch pre_workout_templates (${templateType}): ${error.message}`,
+    );
+  }
 
   return (data ?? []).map((row: Record<string, unknown>) => ({
     ...row,
@@ -93,10 +94,12 @@ async function fetchTemplateFoodsByName(
   if (names.length === 0) return new Map();
 
   const { data, error } = await supabase
-    .from('template_foods')
-    .select('name, display_name, display_name_plural, serving_size, serving_unit, serving_amount, serving_qualifier, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml, is_liquid, is_electrolyte, product_type')
-    .in('name', names)
-    .eq('is_active', true);
+    .from("template_foods")
+    .select(
+      "name, display_name, display_name_plural, serving_size, serving_unit, serving_amount, serving_qualifier, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml, is_liquid, is_electrolyte, product_type",
+    )
+    .in("name", names)
+    .eq("is_active", true);
 
   if (error) {
     console.warn(`[PLAN-V3] Failed to fetch template_foods: ${error.message}`);
@@ -137,24 +140,45 @@ interface UserFoodForSubstitution {
  * product_types it can substitute for.
  */
 const USER_TO_TEMPLATE_TYPE_MAP: Record<string, string[]> = {
-  gel: ['energy_gel', 'gel'],
-  chew: ['energy_chews', 'chew'],
-  bar: ['granola_bar', 'bar', 'energy_bar', 'cereal_bar'],
-  waffle: ['granola_bar', 'waffle', 'bar'], // similar solid snack
-  sports_drink: ['sports_drink', 'sports_drink_mix', 'coconut_water'],
-  drink_mix: ['sports_drink_mix', 'electrolyte_drink_mix', 'sports_drink'],
-  electrolyte_only: ['electrolyte_tablet', 'electrolyte_drink_mix'],
-  real_food: ['toast', 'bagel', 'oatmeal', 'cereal', 'rice_cake', 'yogurt',
-              'banana', 'real_food', 'real_food_carbs'],
-  real_food_carbs: ['toast', 'bagel', 'oatmeal', 'cereal', 'rice_cake', 'real_food_carbs'],
-  solid_carb_snacks: ['granola_bar', 'bar', 'rice_cake'],
-  recovery_shake: ['smoothie', 'recovery_shake', 'yogurt'],
+  gel: ["energy_gel", "gel"],
+  chew: ["energy_chews", "chew"],
+  bar: ["granola_bar", "bar", "energy_bar", "cereal_bar"],
+  waffle: ["granola_bar", "waffle", "bar"], // similar solid snack
+  sports_drink: ["sports_drink", "sports_drink_mix", "coconut_water"],
+  drink_mix: ["sports_drink_mix", "electrolyte_drink_mix", "sports_drink"],
+  electrolyte_only: ["electrolyte_tablet", "electrolyte_drink_mix"],
+  real_food: [
+    "toast",
+    "bagel",
+    "oatmeal",
+    "cereal",
+    "rice_cake",
+    "yogurt",
+    "banana",
+    "real_food",
+    "real_food_carbs",
+  ],
+  real_food_carbs: [
+    "toast",
+    "bagel",
+    "oatmeal",
+    "cereal",
+    "rice_cake",
+    "real_food_carbs",
+  ],
+  solid_carb_snacks: ["granola_bar", "bar", "rice_cake"],
+  recovery_shake: ["smoothie", "recovery_shake", "yogurt"],
 };
 
 /** Infer is_liquid from product_type */
 function isLiquidProductType(productType: string): boolean {
-  return ['sports_drink', 'drink_mix', 'recovery_shake',
-          'electrolytes_fluids', 'hydration_with_carbs'].includes(productType);
+  return [
+    "sports_drink",
+    "drink_mix",
+    "recovery_shake",
+    "electrolytes_fluids",
+    "hydration_with_carbs",
+  ].includes(productType);
 }
 
 /** Fetch user foods suitable for before phase substitution. */
@@ -164,14 +188,16 @@ async function fetchUserFoodsForBefore(
 ): Promise<UserFoodForSubstitution[]> {
   // Look up user_id from device_id
   const { data: userData } = await supabase
-    .from('users')
-    .select('id')
-    .eq('device_id', deviceId)
+    .from("users")
+    .select("id")
+    .eq("device_id", deviceId)
     .single();
 
   const userId = userData?.id;
   if (!userId) {
-    console.log('[PLAN-V3-SUBST] No user found for device_id, skipping substitution');
+    console.log(
+      "[PLAN-V3-SUBST] No user found for device_id, skipping substitution",
+    );
     return [];
   }
 
@@ -181,7 +207,7 @@ async function fetchUserFoodsForBefore(
   // - not excluded from solver
   // - suitable for before phase (categories contains 'before_run' OR empty/null)
   const { data: userFoods, error } = await supabase
-    .from('user_foods')
+    .from("user_foods")
     .select(`
       id, name, display_name, display_name_plural,
       carbs_per_serving, protein_per_serving, fat_per_serving,
@@ -189,14 +215,16 @@ async function fetchUserFoodsForBefore(
       serving_size, serving_unit, serving_amount,
       product_type, is_electrolyte, categories
     `)
-    .eq('user_id', userId)
-    .eq('is_deleted', false)
-    .eq('to_exclude_from_solver', false)
-    .not('product_type', 'is', null)
-    .neq('product_type', 'import');
+    .eq("user_id", userId)
+    .eq("is_deleted", false)
+    .eq("to_exclude_from_solver", false)
+    .not("product_type", "is", null)
+    .neq("product_type", "import");
 
   if (error) {
-    console.warn(`[PLAN-V3-SUBST] Failed to fetch user foods: ${error.message}`);
+    console.warn(
+      `[PLAN-V3-SUBST] Failed to fetch user foods: ${error.message}`,
+    );
     return [];
   }
 
@@ -205,12 +233,16 @@ async function fetchUserFoodsForBefore(
     const categories = f.categories as string[] | null;
     // Empty/null categories = all phases
     if (!categories || categories.length === 0) return true;
-    return categories.includes('before_run');
+    return categories.includes("before_run");
   });
 
-  console.log(`[PLAN-V3-SUBST] Found ${beforeFoods.length} user foods for before-phase substitution`);
+  console.log(
+    `[PLAN-V3-SUBST] Found ${beforeFoods.length} user foods for before-phase substitution`,
+  );
 
-  return beforeFoods.map((f: Record<string, unknown>): UserFoodForSubstitution => ({
+  return beforeFoods.map((
+    f: Record<string, unknown>,
+  ): UserFoodForSubstitution => ({
     id: f.id as string,
     name: f.name as string,
     display_name: (f.display_name as string) ?? null,
@@ -257,17 +289,20 @@ function findSubstitutions(
         if (!tf) continue;
 
         // Never substitute water or other essential liquids
-        if (compName === 'water' || compName === 'plain_water') continue;
+        if (compName === "water" || compName === "plain_water") continue;
 
         const compProductType = tf.product_type ?? compName; // fallback to name as type hint
 
         // Find matching user foods
-        const candidates = userFoods.filter(uf => {
+        const candidates = userFoods.filter((uf) => {
           if (usedUserFoods.has(uf.id)) return false;
 
           // Check product type compatibility
           const allowedTypes = USER_TO_TEMPLATE_TYPE_MAP[uf.product_type] ?? [];
-          if (!allowedTypes.includes(compProductType) && uf.product_type !== compProductType) {
+          if (
+            !allowedTypes.includes(compProductType) &&
+            uf.product_type !== compProductType
+          ) {
             return false;
           }
 
@@ -292,7 +327,9 @@ function findSubstitutions(
 
         substitutions.set(compName, best);
         usedUserFoods.add(best.id);
-        console.log(`[PLAN-V3-SUBST] Substituting '${compName}' (${compProductType}) → user food '${best.name}' (${best.product_type})`);
+        console.log(
+          `[PLAN-V3-SUBST] Substituting '${compName}' (${compProductType}) → user food '${best.name}' (${best.product_type})`,
+        );
       }
     }
   }
@@ -334,7 +371,9 @@ function selectionToFoodResults(
     for (const compName of componentNames) {
       const tf = templateFoodsMap.get(compName);
       if (!tf) {
-        console.warn(`[PLAN-V3] Component '${compName}' not found in template_foods, skipping`);
+        console.warn(
+          `[PLAN-V3] Component '${compName}' not found in template_foods, skipping`,
+        );
         continue;
       }
 
@@ -347,11 +386,15 @@ function selectionToFoodResults(
       const userSub = substitutions?.get(compName);
       if (userSub) {
         // Use user food's nutrition data instead of template component
-        const carbs = Math.round(userSub.carbs_per_serving * compServings * 10) / 10;
-        const protein = Math.round(userSub.protein_per_serving * compServings * 10) / 10;
-        const fat = Math.round(userSub.fat_per_serving * compServings * 10) / 10;
+        const carbs =
+          Math.round(userSub.carbs_per_serving * compServings * 10) / 10;
+        const protein =
+          Math.round(userSub.protein_per_serving * compServings * 10) / 10;
+        const fat = Math.round(userSub.fat_per_serving * compServings * 10) /
+          10;
         const sodium = Math.round(userSub.sodium_mg * compServings * 10) / 10;
-        const fluid = Math.round(userSub.fluid_ml_per_serving * compServings * 10) / 10;
+        const fluid =
+          Math.round(userSub.fluid_ml_per_serving * compServings * 10) / 10;
         const calories = Math.round((carbs * 4) + (protein * 4) + (fat * 9));
 
         results.push({
@@ -404,7 +447,66 @@ function selectionToFoodResults(
       });
     }
 
-    if (results.length > 0) return results;
+    if (results.length > 0) {
+      // Keep exploded component rows, but normalize macro sums so they match
+      // the template selection contract exactly (prevents component drift).
+      const rawTotals = results.reduce((acc, row) => ({
+        carbs: acc.carbs + row.carbs_grams,
+        protein: acc.protein + row.protein_grams,
+        fat: acc.fat + row.fat_grams,
+        sodium: acc.sodium + row.sodium_mg,
+        fluid: acc.fluid + row.fluids_ml,
+      }), { carbs: 0, protein: 0, fat: 0, sodium: 0, fluid: 0 });
+
+      const carbScale = rawTotals.carbs > 0 ? selection.carbs_g / rawTotals.carbs : 1;
+      const proteinScale = rawTotals.protein > 0 ? selection.protein_g / rawTotals.protein : 1;
+      const fatScale = rawTotals.fat > 0 ? selection.fat_g / rawTotals.fat : 1;
+      const sodiumScale = rawTotals.sodium > 0 ? selection.sodium_mg / rawTotals.sodium : 1;
+      const fluidScale = rawTotals.fluid > 0 ? selection.fluid_ml / rawTotals.fluid : 1;
+
+      for (const row of results) {
+        row.carbs_grams = Math.round(row.carbs_grams * carbScale * 10) / 10;
+        row.protein_grams = Math.round(row.protein_grams * proteinScale * 10) / 10;
+        row.fat_grams = Math.round(row.fat_grams * fatScale * 10) / 10;
+        row.sodium_mg = Math.round(row.sodium_mg * sodiumScale * 10) / 10;
+        row.fluids_ml = Math.round(row.fluids_ml * fluidScale * 10) / 10;
+        row.calories = Math.round(
+          (row.carbs_grams * 4) + (row.protein_grams * 4) + (row.fat_grams * 9),
+        );
+      }
+
+      const normalizedTotals = results.reduce((acc, row) => ({
+        carbs: acc.carbs + row.carbs_grams,
+        protein: acc.protein + row.protein_grams,
+        fat: acc.fat + row.fat_grams,
+        sodium: acc.sodium + row.sodium_mg,
+        fluid: acc.fluid + row.fluids_ml,
+      }), { carbs: 0, protein: 0, fat: 0, sodium: 0, fluid: 0 });
+
+      const first = results[0];
+      if (first) {
+        first.carbs_grams = Math.round(
+          (first.carbs_grams + (selection.carbs_g - normalizedTotals.carbs)) * 10,
+        ) / 10;
+        first.protein_grams = Math.round(
+          (first.protein_grams + (selection.protein_g - normalizedTotals.protein)) * 10,
+        ) / 10;
+        first.fat_grams = Math.round(
+          (first.fat_grams + (selection.fat_g - normalizedTotals.fat)) * 10,
+        ) / 10;
+        first.sodium_mg = Math.round(
+          (first.sodium_mg + (selection.sodium_mg - normalizedTotals.sodium)) * 10,
+        ) / 10;
+        first.fluids_ml = Math.round(
+          (first.fluids_ml + (selection.fluid_ml - normalizedTotals.fluid)) * 10,
+        ) / 10;
+        first.calories = Math.round(
+          (first.carbs_grams * 4) + (first.protein_grams * 4) + (first.fat_grams * 9),
+        );
+      }
+
+      return results;
+    }
     // Fall through to legacy path if all components failed lookup
   }
 
@@ -417,7 +519,10 @@ function selectionToFoodResults(
     fat_grams: selection.fat_g,
     sodium_mg: selection.sodium_mg,
     fluids_ml: selection.fluid_ml,
-    calories: Math.round((selection.carbs_g * 4) + (selection.protein_g * 4) + (selection.fat_g * 9)),
+    calories: Math.round(
+      (selection.carbs_g * 4) + (selection.protein_g * 4) +
+        (selection.fat_g * 9),
+    ),
     display_name: selection.name,
     serving_size: selection.serving_unit,
     timing,
@@ -427,7 +532,7 @@ function selectionToFoodResults(
 }
 
 function addOnToFoodResult(addOn: AddOn, timing: string): FoodResult {
-  const isBanana = addOn.type === 'banana';
+  const isBanana = addOn.type === "banana";
   const servings = addOn.servings ?? 1;
   return {
     food_id: `addon_${addOn.type}`,
@@ -438,9 +543,9 @@ function addOnToFoodResult(addOn: AddOn, timing: string): FoodResult {
     sodium_mg: addOn.sodium_mg,
     fluids_ml: addOn.fluid_ml,
     calories: Math.round(addOn.carbs_g * 4),
-    display_name: isBanana ? 'Banana' : 'Sports Drink',
-    display_name_plural: isBanana ? 'Bananas' : 'cups Sports Drink',
-    serving_size: isBanana ? '1 medium' : '1 cup (8 oz)',
+    display_name: isBanana ? "Banana" : "Sports Drink",
+    display_name_plural: isBanana ? "Bananas" : "cups Sports Drink",
+    serving_size: isBanana ? "1 medium" : "1 cup (8 oz)",
     timing,
     is_drink: !isBanana,
   };
@@ -458,12 +563,30 @@ function phaseResultToSubPhaseResult(
 
   // Primary food (exploded into components, with user food substitutions)
   if (phaseResult.primary) {
-    foods.push(...selectionToFoodResults(phaseResult.primary, timing, false, false, templateFoodsMap, substitutions));
+    foods.push(
+      ...selectionToFoodResults(
+        phaseResult.primary,
+        timing,
+        false,
+        false,
+        templateFoodsMap,
+        substitutions,
+      ),
+    );
   }
 
   // Stacked food (exploded into components, with user food substitutions)
   if (phaseResult.stack) {
-    foods.push(...selectionToFoodResults(phaseResult.stack, timing, false, false, templateFoodsMap, substitutions));
+    foods.push(
+      ...selectionToFoodResults(
+        phaseResult.stack,
+        timing,
+        false,
+        false,
+        templateFoodsMap,
+        substitutions,
+      ),
+    );
   }
 
   // Add-ons (banana, sports drink) — not composites, keep as-is
@@ -473,12 +596,30 @@ function phaseResultToSubPhaseResult(
 
   // Standalone drink (exploded — usually single-component, with substitutions)
   if (phaseResult.drink) {
-    foods.push(...selectionToFoodResults(phaseResult.drink, timing, true, false, templateFoodsMap, substitutions));
+    foods.push(
+      ...selectionToFoodResults(
+        phaseResult.drink,
+        timing,
+        true,
+        false,
+        templateFoodsMap,
+        substitutions,
+      ),
+    );
   }
 
   // Electrolyte supplement (exploded — usually single-component, with substitutions)
   if (phaseResult.electrolyte) {
-    foods.push(...selectionToFoodResults(phaseResult.electrolyte, timing, false, true, templateFoodsMap, substitutions));
+    foods.push(
+      ...selectionToFoodResults(
+        phaseResult.electrolyte,
+        timing,
+        false,
+        true,
+        templateFoodsMap,
+        substitutions,
+      ),
+    );
   }
 
   return {
@@ -498,10 +639,18 @@ interface BeforePhaseInput {
   macro_targets: {
     pre_run: {
       carbs_g: number;
+      carbs_low_g?: number;
+      carbs_high_g?: number;
       protein_g?: number;
+      protein_low_g?: number;
+      protein_high_g?: number;
       fat_g?: number;
       sodium_mg: number;
+      sodium_low_mg?: number;
+      sodium_high_mg?: number;
       water_ml: number;
+      water_low_ml?: number;
+      water_high_ml?: number;
     };
   };
   dietary_preference?: string;
@@ -512,42 +661,137 @@ interface BeforePhaseInput {
   device_id?: string;
 }
 
+function inferMealType(hoursBefore: number, isFasted: boolean): string {
+  if (isFasted) return "fasted";
+  if (hoursBefore >= 2.5) return "full_meal";
+  if (hoursBefore >= 1.0) return "snack";
+  return "top_up";
+}
+
+function fallbackRange(
+  target: number,
+  low?: number,
+  high?: number,
+  lowPct = 0.9,
+  highPct = 1.1,
+): { low: number; high: number } {
+  // Guard against inconsistent upstream payloads where target is zero
+  // but stale low/high are still populated.
+  if (target <= 0) {
+    return { low: 0, high: 0 };
+  }
+  if (low != null && high != null) {
+    return { low: Math.max(0, low), high: Math.max(0, high) };
+  }
+  return {
+    low: Math.round(target * lowPct),
+    high: Math.round(target * highPct),
+  };
+}
+
+/**
+ * Use the incoming V4 targets/ranges as the canonical pre-workout contract.
+ * We only compute fallback ranges when low/high are missing.
+ */
+function buildTargetsFromInput(input: BeforePhaseInput): PreWorkoutTargets {
+  const pre = input.macro_targets.pre_run;
+  const isFasted = (pre.carbs_g ?? 0) <= 0 && (pre.water_ml ?? 0) <= 0;
+  const carbs = Math.round(pre.carbs_g ?? 0);
+  const protein = Math.round(pre.protein_g ?? 0);
+  const sodium = Math.round(pre.sodium_mg ?? 0);
+  const water = Math.round(pre.water_ml ?? 0);
+  const fat = Math.round(pre.fat_g ?? 0);
+
+  const carbRange = fallbackRange(
+    carbs,
+    pre.carbs_low_g,
+    pre.carbs_high_g,
+    0.875,
+    1.125,
+  );
+  const proteinRange = fallbackRange(
+    protein,
+    pre.protein_low_g,
+    pre.protein_high_g,
+    input.hours_before < 1 ? 0 : 0.85,
+    input.hours_before < 1 ? 0 : 1.15,
+  );
+  const sodiumRange = fallbackRange(
+    sodium,
+    pre.sodium_low_mg,
+    pre.sodium_high_mg,
+    0.85,
+    1.15,
+  );
+  const waterRange = fallbackRange(
+    water,
+    pre.water_low_ml,
+    pre.water_high_ml,
+    0.85,
+    1.15,
+  );
+
+  return {
+    carbs_g: carbs,
+    carbs_low_g: carbRange.low,
+    carbs_high_g: carbRange.high,
+    protein_g: protein,
+    protein_low_g: proteinRange.low,
+    protein_high_g: proteinRange.high,
+    fat_g: fat,
+    sodium_mg: sodium,
+    sodium_low_mg: sodiumRange.low,
+    sodium_high_mg: sodiumRange.high,
+    water_ml: water,
+    water_low_ml: waterRange.low,
+    water_high_ml: waterRange.high,
+    meal_type: inferMealType(input.hours_before, isFasted),
+  };
+}
+
 export async function generateBeforePhaseV3(
   supabase: ReturnType<typeof createServiceClient>,
   input: BeforePhaseInput,
 ): Promise<BeforePhaseResult> {
-  console.log(`[PLAN-V3] Generating before phase with Algorithm C (hours_before=${input.hours_before})`);
+  console.log(
+    `[PLAN-V3] Generating before phase with Algorithm C (hours_before=${input.hours_before})`,
+  );
 
   // 0. Handle fasted state
   const preTargets = input.macro_targets.pre_run;
-  if ((preTargets.carbs_g ?? 0) <= 0 && (preTargets.water_ml ?? 0) <= 0) {
-    console.log('[PLAN-V3] Fasted state detected, skipping before phase');
+  const noPreFuelTargets =
+    (preTargets.carbs_g ?? 0) <= 0 &&
+    (preTargets.protein_g ?? 0) <= 0 &&
+    (preTargets.sodium_mg ?? 0) <= 0 &&
+    (preTargets.water_ml ?? 0) <= 0;
+  if (noPreFuelTargets) {
+    console.log("[PLAN-V3] Fasted state detected, skipping before phase");
     return {};
   }
 
   // 1. Fetch pre_workout_templates (3 types in parallel)
-  const [foodTemplates, drinkTemplates, electrolyteTemplates] = await Promise.all([
-    fetchPreWorkoutTemplates(supabase, 'food'),
-    fetchPreWorkoutTemplates(supabase, 'drink'),
-    fetchPreWorkoutTemplates(supabase, 'electrolyte'),
-  ]);
+  const [foodTemplates, drinkTemplates, electrolyteTemplates] = await Promise
+    .all([
+      fetchPreWorkoutTemplates(supabase, "food"),
+      fetchPreWorkoutTemplates(supabase, "drink"),
+      fetchPreWorkoutTemplates(supabase, "electrolyte"),
+    ]);
 
-  console.log(`[PLAN-V3] Fetched templates: ${foodTemplates.length} food, ${drinkTemplates.length} drink, ${electrolyteTemplates.length} electrolyte`);
-
-  // 2. Calculate targets using Algorithm C
-  const isFasted = (preTargets.carbs_g ?? 0) <= 0 && (preTargets.water_ml ?? 0) <= 0;
-  const targets = calculatePreWorkoutTargets(
-    input.weight_kg,
-    input.hours_before,
-    isFasted,
-    'medium',   // V3 doesn't carry sweat data — safe default
-    'moderate',  // V3 doesn't carry env data — safe default
+  console.log(
+    `[PLAN-V3] Fetched templates: ${foodTemplates.length} food, ${drinkTemplates.length} drink, ${electrolyteTemplates.length} electrolyte`,
   );
 
-  console.log(`[PLAN-V3] Algorithm C targets: carbs=${targets.carbs_g}g, protein=${targets.protein_g}g, sodium=${targets.sodium_mg}mg, water=${targets.water_ml}ml, type=${targets.meal_type}`);
+  // 2. Build targets directly from incoming V4 macro contract.
+  const targets = buildTargetsFromInput(input);
+  console.log(
+    `[PLAN-V3] Pre targets (from input): carbs=${targets.carbs_g}g [${targets.carbs_low_g}-${targets.carbs_high_g}], ` +
+      `protein=${targets.protein_g}g [${targets.protein_low_g}-${targets.protein_high_g}], ` +
+      `sodium=${targets.sodium_mg}mg [${targets.sodium_low_mg}-${targets.sodium_high_mg}], ` +
+      `water=${targets.water_ml}ml [${targets.water_low_ml}-${targets.water_high_ml}], type=${targets.meal_type}`,
+  );
 
   // 3. Run Algorithm C food selection
-  const diet = input.dietary_preference ?? 'none';
+  const diet = input.dietary_preference ?? "none";
   const phaseResults = selectPreWorkoutFoods(
     targets,
     input.hours_before,
@@ -561,7 +805,7 @@ export async function generateBeforePhaseV3(
   );
 
   if (phaseResults.length === 0) {
-    console.log('[PLAN-V3] Algorithm C returned no phases (fasted)');
+    console.log("[PLAN-V3] Algorithm C returned no phases (fasted)");
     return {};
   }
 
@@ -571,7 +815,9 @@ export async function generateBeforePhaseV3(
   for (const pr of phaseResults) {
     for (const sel of [pr.primary, pr.stack, pr.drink, pr.electrolyte]) {
       if (sel?.component_food_names) {
-        for (const name of sel.component_food_names) allComponentNames.add(name);
+        for (const name of sel.component_food_names) {
+          allComponentNames.add(name);
+        }
       }
     }
   }
@@ -581,15 +827,23 @@ export async function generateBeforePhaseV3(
     supabase,
     Array.from(allComponentNames),
   );
-  console.log(`[PLAN-V3] Fetched ${templateFoodsMap.size} template_foods for ${allComponentNames.size} component names`);
+  console.log(
+    `[PLAN-V3] Fetched ${templateFoodsMap.size} template_foods for ${allComponentNames.size} component names`,
+  );
 
   // 5.5. Fetch user foods and find substitutions for before-phase components
   let substitutions = new Map<string, UserFoodForSubstitution>();
   if (input.device_id) {
     const userFoods = await fetchUserFoodsForBefore(supabase, input.device_id);
     if (userFoods.length > 0) {
-      substitutions = findSubstitutions(phaseResults, templateFoodsMap, userFoods);
-      console.log(`[PLAN-V3] Found ${substitutions.size} user food substitutions for before phase`);
+      substitutions = findSubstitutions(
+        phaseResults,
+        templateFoodsMap,
+        userFoods,
+      );
+      console.log(
+        `[PLAN-V3] Found ${substitutions.size} user food substitutions for before phase`,
+      );
     }
   }
 
@@ -601,7 +855,11 @@ export async function generateBeforePhaseV3(
 
   for (const phaseResult of phaseResults) {
     const phaseTargets = phaseTargetsMap.get(phaseResult.phase) ?? {
-      carbs_g: 0, protein_g: 0, fat_g: 0, sodium_mg: 0, water_ml: 0,
+      carbs_g: 0,
+      protein_g: 0,
+      fat_g: 0,
+      sodium_mg: 0,
+      water_ml: 0,
     };
 
     const subPhaseResult = phaseResultToSubPhaseResult(
@@ -612,11 +870,15 @@ export async function generateBeforePhaseV3(
       substitutions,
     );
 
-    console.log(`[PLAN-V3] ${phaseResult.phase}: ${subPhaseResult.foods.length} foods (exploded), carbs=${phaseResult.total_carbs_g}g`);
+    console.log(
+      `[PLAN-V3] ${phaseResult.phase}: ${subPhaseResult.foods.length} foods (exploded), carbs=${phaseResult.total_carbs_g}g`,
+    );
 
-    if (phaseResult.phase === 'meal') beforeResult.meal = subPhaseResult;
-    else if (phaseResult.phase === 'snack') beforeResult.snack = subPhaseResult;
-    else if (phaseResult.phase === 'top_up') beforeResult.top_up = subPhaseResult;
+    if (phaseResult.phase === "meal") beforeResult.meal = subPhaseResult;
+    else if (phaseResult.phase === "snack") beforeResult.snack = subPhaseResult;
+    else if (phaseResult.phase === "top_up") {
+      beforeResult.top_up = subPhaseResult;
+    }
   }
 
   return beforeResult;

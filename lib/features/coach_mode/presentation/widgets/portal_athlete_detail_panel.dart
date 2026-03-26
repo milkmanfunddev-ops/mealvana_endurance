@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/widgets/content_area.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../calendar/domain/calendar_day_indicators.dart';
@@ -16,6 +17,7 @@ import '../providers/athlete_detail_controller.dart';
 import '../screens/coach_chat_screen.dart';
 import 'portal_athlete_profile_form.dart';
 import 'create_carb_loading_dialog.dart';
+import '../../../events/presentation/screens/event_detail_screen.dart';
 import 'portal_nutrition_targets_form.dart';
 
 /// Right panel showing athlete details within the coach portal
@@ -128,17 +130,19 @@ class _PortalAthleteDetailPanelState
             ),
           ),
 
-          // Tab views
+          // Tab views — constrained so forms don't stretch on wide screens
           Expanded(
-            child: TabBarView(
-              children: [
-                _buildProfileTab(state),
-                _buildNutritionTargetsTab(state),
-                _buildEventsTab(state),
-                _buildCarbLoadingTab(state),
-                _buildActivitiesTab(state),
-                _buildChatTab(state),
-              ],
+            child: ContentArea.wide(
+              child: TabBarView(
+                children: [
+                  _buildProfileTab(state),
+                  _buildNutritionTargetsTab(state),
+                  _buildEventsTab(state),
+                  _buildCarbLoadingTab(state),
+                  _buildActivitiesTab(state),
+                  _buildChatTab(state),
+                ],
+              ),
             ),
           ),
         ],
@@ -271,46 +275,60 @@ class _PortalAthleteDetailPanelState
             itemCount: state.events.length,
             itemBuilder: (context, index) {
               final event = state.events[index];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.blackberry,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.blackberryLight),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.event,
-                      color: AppColors.electrolyte,
-                      size: 20,
+              return GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => EventDetailScreen(eventId: event.id),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            event.eventName ?? 'Unnamed Event',
-                            style: const TextStyle(
-                              color: AppColors.cream,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            event.eventDate != null
-                                ? _formatDate(event.eventDate!)
-                                : 'No Date',
-                            style: const TextStyle(
-                              color: AppColors.textDarkSecondary,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.blackberry,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.blackberryLight),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.event,
+                        color: AppColors.electrolyte,
+                        size: 20,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              event.eventName ?? 'Unnamed Event',
+                              style: const TextStyle(
+                                color: AppColors.cream,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              event.eventDate != null
+                                  ? _formatDate(event.eventDate!)
+                                  : 'No Date',
+                              style: const TextStyle(
+                                color: AppColors.textDarkSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: AppColors.textDarkSecondary,
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -339,11 +357,14 @@ class _PortalAthleteDetailPanelState
     );
     if (!mounted) return;
 
+    // Always refresh after returning — the event may have been created
+    // even if the result doesn't explicitly indicate success
+    ref
+        .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
+        .refresh();
+
     if (result is Map && result['success'] == true) {
       MealvanaSnackbar.showSuccess(context, 'Event created');
-      ref
-          .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
-          .refresh();
     }
   }
 

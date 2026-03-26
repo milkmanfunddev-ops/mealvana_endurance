@@ -11,6 +11,7 @@ import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Swimming Details Screen - Unified for both onboarding and settings
 ///
@@ -254,141 +255,143 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.blackberry,
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Column(
-          children: [
-            // Progress bar for onboarding, back button for settings
-            Container(
-              color: AppColors.blackberry,
-              padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-              child: _isOnboarding
-                  ? const OnboardingProgressBar(
-                      currentSegment: 2, // Sports + Details segment
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.only(top: 0, bottom: 20),
-                      child: Row(
-                        children: [
-                          GestureDetector(
-                            onTap: widget.onBack ?? () => context.pop(),
-                            child: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: AppColors.orange.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.arrow_back,
-                                color: AppColors.orange,
-                                size: 24,
+      body: ContentArea.narrow(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Column(
+            children: [
+              // Progress bar for onboarding, back button for settings
+              Container(
+                color: AppColors.blackberry,
+                padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+                child: _isOnboarding
+                    ? const OnboardingProgressBar(
+                        currentSegment: 2, // Sports + Details segment
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.only(top: 0, bottom: 20),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: widget.onBack ?? () => context.pop(),
+                              child: Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: AppColors.orange.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.arrow_back,
+                                  color: AppColors.orange,
+                                  size: 24,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Swimming Details',
+                              style: TextStyle(
+                                fontFamily: 'Sansita',
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.orange,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+
+              // Scrollable content - vertically centered
+              Expanded(
+                child: Center(
+                  child: Form(
+                    key: _formKey,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Title
                           const Text(
-                            'Swimming Details',
+                            'Swimming details',
                             style: TextStyle(
                               fontFamily: 'Sansita',
-                              fontSize: 20,
+                              fontSize: 26,
                               fontWeight: FontWeight.w700,
                               color: AppColors.orange,
+                              height: 1.0,
                             ),
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // CSS Section
+                          _CSSSection(
+                            minutesController: _cssMinutesController,
+                            secondsController: _cssSecondsController,
+                            figmaCream: AppColors.textDark,
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // Wetsuit toggle
+                          FigmaToggleCard(
+                            label: 'I typically wear a wetsuit',
+                            value: _typicalWetsuit,
+                            onChanged: (value) => setState(() => _typicalWetsuit = value),
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // Swim cap type
+                          const Text(
+                            'Swim Cap Type',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textDark,
+                              height: 1.2,
+                              letterSpacing: 0.24,
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Swim cap options
+                          FigmaRadioOptionList<String>(
+                            items: const [
+                              FigmaRadioOptionItem(value: 'none', label: 'None'),
+                              FigmaRadioOptionItem(value: 'latex', label: 'Latex'),
+                              FigmaRadioOptionItem(value: 'silicone', label: 'Silicone'),
+                              FigmaRadioOptionItem(value: 'neoprene', label: 'Neoprene'),
+                            ],
+                            selectedValue: _swimCapType,
+                            onSelected: (value) => setState(() => _swimCapType = value),
                           ),
                         ],
                       ),
                     ),
-            ),
-
-            // Scrollable content - vertically centered
-            Expanded(
-              child: Center(
-                child: Form(
-                  key: _formKey,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Title
-                        const Text(
-                          'Swimming details',
-                          style: TextStyle(
-                            fontFamily: 'Sansita',
-                            fontSize: 26,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.orange,
-                            height: 1.0,
-                          ),
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // CSS Section
-                        _CSSSection(
-                          minutesController: _cssMinutesController,
-                          secondsController: _cssSecondsController,
-                          figmaCream: AppColors.textDark,
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // Wetsuit toggle
-                        FigmaToggleCard(
-                          label: 'I typically wear a wetsuit',
-                          value: _typicalWetsuit,
-                          onChanged: (value) => setState(() => _typicalWetsuit = value),
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // Swim cap type
-                        const Text(
-                          'Swim Cap Type',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textDark,
-                            height: 1.2,
-                            letterSpacing: 0.24,
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Swim cap options
-                        FigmaRadioOptionList<String>(
-                          items: const [
-                            FigmaRadioOptionItem(value: 'none', label: 'None'),
-                            FigmaRadioOptionItem(value: 'latex', label: 'Latex'),
-                            FigmaRadioOptionItem(value: 'silicone', label: 'Silicone'),
-                            FigmaRadioOptionItem(value: 'neoprene', label: 'Neoprene'),
-                          ],
-                          selectedValue: _swimCapType,
-                          onSelected: (value) => setState(() => _swimCapType = value),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
               ),
-            ),
 
-            // Footer navigation
-            FigmaOnboardingFooter(
-              onContinue: _continue,
-              onBack: _isOnboarding
-                  ? (widget.onBack ?? () => context.pop())
-                  : null,
-              canContinue: true,
-              isLoading: _isSaving,
-              buttonText: _isSettings ? 'Save' : 'Continue',
-              showBackButton: _isOnboarding,
-            ),
-          ],
+              // Footer navigation
+              FigmaOnboardingFooter(
+                onContinue: _continue,
+                onBack: _isOnboarding
+                    ? (widget.onBack ?? () => context.pop())
+                    : null,
+                canContinue: true,
+                isLoading: _isSaving,
+                buttonText: _isSettings ? 'Save' : 'Continue',
+                showBackButton: _isOnboarding,
+              ),
+            ],
+          ),
         ),
       ),
     );

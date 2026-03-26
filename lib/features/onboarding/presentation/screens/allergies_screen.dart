@@ -11,6 +11,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Allergies Screen - Unified for both onboarding and settings
 ///
@@ -245,105 +246,107 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      body: Column(
-        children: [
-          // Progress bar for onboarding, back button for settings
-          Container(
-            color: backgroundColor,
-            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-            child: _isOnboarding
-                ? const OnboardingProgressBar(
-                    currentSegment: 3, // Diet + Allergies segment
-                  )
-                : Padding(
-                    padding: const EdgeInsets.only(top: 0, bottom: 20),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: widget.onBack ?? () => context.pop(),
-                          child: Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: AppColors.orange.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back,
-                              color: AppColors.orange,
-                              size: 24,
+      body: ContentArea.narrow(
+        child: Column(
+          children: [
+            // Progress bar for onboarding, back button for settings
+            Container(
+              color: backgroundColor,
+              padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+              child: _isOnboarding
+                  ? const OnboardingProgressBar(
+                      currentSegment: 3, // Diet + Allergies segment
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 0, bottom: 20),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: widget.onBack ?? () => context.pop(),
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: AppColors.orange.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back,
+                                color: AppColors.orange,
+                                size: 24,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Allergies',
-                          style: const TextStyle(
-                            fontFamily: 'Sansita',
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ).copyWith(color: titleColor),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
-
-          // Scrollable content - vertically centered
-          Expanded(
-            child: SafeArea(
-              top: false,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Title
-                            const SizedBox(height: 22),
-
-                            Text(
-                              'Do you have any allergies?',
-                              style: const TextStyle(
-                                fontFamily: 'Sansita',
-                                fontSize: 26,
-                                fontWeight: FontWeight.w700,
-                                height: 1.0,
-                              ).copyWith(color: titleColor),
-                            ),
-
-                            const SizedBox(height: 22),
-
-                            // Allergy options
-                            _buildAllergyOptions(useDarkStyle: useDarkStyle),
-                          ],
-                        ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Allergies',
+                            style: const TextStyle(
+                              fontFamily: 'Sansita',
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ).copyWith(color: titleColor),
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                },
+            ),
+
+            // Scrollable content - vertically centered
+            Expanded(
+              child: SafeArea(
+                top: false,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Title
+                              const SizedBox(height: 22),
+
+                              Text(
+                                'Do you have any allergies?',
+                                style: const TextStyle(
+                                  fontFamily: 'Sansita',
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ).copyWith(color: titleColor),
+                              ),
+
+                              const SizedBox(height: 22),
+
+                              // Allergy options
+                              _buildAllergyOptions(useDarkStyle: useDarkStyle),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
 
-          // Navigation footer
-          FigmaOnboardingFooter(
-            onContinue: _continue,
-            onBack: _isOnboarding
-                ? (widget.onBack ?? () => context.pop())
-                : null,
-            isLoading: _isSaving,
-            buttonText: _isSettings ? 'Save' : 'Continue',
-            showBackButton: _isOnboarding,
-          ),
-        ],
+            // Navigation footer
+            FigmaOnboardingFooter(
+              onContinue: _continue,
+              onBack: _isOnboarding
+                  ? (widget.onBack ?? () => context.pop())
+                  : null,
+              isLoading: _isSaving,
+              buttonText: _isSettings ? 'Save' : 'Continue',
+              showBackButton: _isOnboarding,
+            ),
+          ],
+        ),
       ),
     );
   }

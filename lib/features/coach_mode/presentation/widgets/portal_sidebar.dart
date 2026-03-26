@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,7 +9,6 @@ import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
-import '../../domain/pairing_code_connection_result.dart';
 import '../providers/coach_dashboard_controller.dart';
 import '../providers/coach_portal_controller.dart';
 
@@ -299,7 +301,7 @@ class PortalSidebar extends ConsumerWidget {
   ) async {
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => _AthleteCodeDialog(
+      builder: (dialogContext) => _CoachCodeGeneratorDialog(
         onInviteSuccess: () {
           ref.read(coachDashboardControllerProvider.notifier).refresh();
         },
@@ -308,87 +310,106 @@ class PortalSidebar extends ConsumerWidget {
   }
 }
 
-class _AthleteCodeDialog extends ConsumerStatefulWidget {
+/// Dialog for coaches to generate a pairing code that athletes can enter.
+class _CoachCodeGeneratorDialog extends ConsumerStatefulWidget {
   final VoidCallback onInviteSuccess;
 
-  const _AthleteCodeDialog({required this.onInviteSuccess});
+  const _CoachCodeGeneratorDialog({required this.onInviteSuccess});
 
   @override
-  ConsumerState<_AthleteCodeDialog> createState() => _AthleteCodeDialogState();
+  ConsumerState<_CoachCodeGeneratorDialog> createState() =>
+      _CoachCodeGeneratorDialogState();
 }
 
-class _AthleteCodeDialogState extends ConsumerState<_AthleteCodeDialog> {
-  final TextEditingController _codeController = TextEditingController();
-  bool _isConnectingViaCode = false;
-  String? _codeError;
+class _CoachCodeGeneratorDialogState
+    extends ConsumerState<_CoachCodeGeneratorDialog> {
+  bool _isLoading = true;
+  bool _isGenerating = false;
+  String? _activeCode;
+  DateTime? _codeExpiresAt;
+  String? _error;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingCode();
+  }
 
   @override
   void dispose() {
-    _codeController.dispose();
+    _countdownTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _connectViaCode() async {
-    final code = _codeController.text.trim().toUpperCase();
-    if (code.length != 6) {
-      setState(() => _codeError = 'Code must be 6 characters');
-      return;
-    }
-
-    setState(() {
-      _isConnectingViaCode = true;
-      _codeError = null;
-    });
-
+  Future<void> _loadExistingCode() async {
     try {
-      final result = await ref
-          .read(coachServiceProvider)
-          .connectViaPairingCodeDetailed(code: code);
-
-      if (!mounted) return;
-
-      if (result.isSuccess) {
-        MealvanaSnackbar.showSuccess(context, 'Athlete connected!');
-        widget.onInviteSuccess();
-        Navigator.of(context).pop();
-      } else {
-        setState(() {
-          _isConnectingViaCode = false;
-          _codeError = _buildPairingCodeFailureMessage(result.failureReason);
-        });
-      }
-    } catch (_) {
+      final existing =
+          await ref.read(coachServiceProvider).getActiveCoachPairingCode();
       if (!mounted) return;
       setState(() {
-        _isConnectingViaCode = false;
-        _codeError = 'Connection failed. Please try again.';
+        _isLoading = false;
+        if (existing != null) {
+          _activeCode = existing.code;
+          _codeExpiresAt = existing.expiresAt;
+          _startCountdown();
+        }
       });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
     }
   }
 
-  String _buildPairingCodeFailureMessage(
-    PairingCodeConnectFailureReason? reason,
-  ) {
-    switch (reason) {
-      case PairingCodeConnectFailureReason.noUserProfile:
-        return 'Could not determine your account. Please sign out and sign back in.';
-      case PairingCodeConnectFailureReason.notApprovedCoach:
-        return 'Your coach account is not approved yet.';
-      case PairingCodeConnectFailureReason.invalidCodeFormat:
-        return 'Code must be 6 letters or numbers.';
-      case PairingCodeConnectFailureReason.codeNotFound:
-        return 'This pairing code was not found.';
-      case PairingCodeConnectFailureReason.codeAlreadyUsed:
-        return 'This pairing code has already been used.';
-      case PairingCodeConnectFailureReason.codeExpired:
-        return 'This pairing code has expired. Ask the athlete for a new one.';
-      case PairingCodeConnectFailureReason.selfConnectionNotAllowed:
-        return 'You cannot connect to your own pairing code.';
-      case PairingCodeConnectFailureReason.relationshipAlreadyExists:
-        return 'You are already connected to this athlete.';
-      case PairingCodeConnectFailureReason.unknown:
-      case null:
-        return 'Unable to connect this code right now. Please try again.';
+  void _startCountdown() {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (!mounted) return;
+      if (_codeExpiresAt != null &&
+          _codeExpiresAt!.isBefore(DateTime.now().toUtc())) {
+        setState(() {
+          _activeCode = null;
+          _codeExpiresAt = null;
+        });
+        _countdownTimer?.cancel();
+      } else {
+        setState(() {}); // Refresh remaining time display
+      }
+    });
+  }
+
+  String _formatRemainingTime() {
+    if (_codeExpiresAt == null) return '';
+    final remaining = _codeExpiresAt!.difference(DateTime.now().toUtc());
+    if (remaining.isNegative) return 'Expired';
+    final hours = remaining.inHours;
+    final minutes = remaining.inMinutes % 60;
+    if (hours > 0) return 'Expires in ${hours}h ${minutes}m';
+    return 'Expires in ${minutes}m';
+  }
+
+  Future<void> _generateCode() async {
+    setState(() {
+      _isGenerating = true;
+      _error = null;
+    });
+
+    try {
+      final code =
+          await ref.read(coachServiceProvider).generateCoachPairingCode();
+      if (!mounted) return;
+      setState(() {
+        _isGenerating = false;
+        _activeCode = code;
+        _codeExpiresAt = DateTime.now().toUtc().add(const Duration(hours: 24));
+      });
+      _startCountdown();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isGenerating = false;
+        _error = 'Failed to generate code. Please try again.';
+      });
     }
   }
 
@@ -397,7 +418,7 @@ class _AthleteCodeDialogState extends ConsumerState<_AthleteCodeDialog> {
     return AlertDialog(
       backgroundColor: AppColors.blackberry,
       titlePadding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
-      contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       title: Row(
         children: [
           const Expanded(
@@ -418,110 +439,142 @@ class _AthleteCodeDialogState extends ConsumerState<_AthleteCodeDialog> {
       ),
       content: SizedBox(
         width: 460,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Pairing Code Entry ──
-            const Text(
-              'Enter athlete pairing code',
-              style: TextStyle(
-                color: AppColors.textDarkSecondary,
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _codeController,
-                    autofocus: true,
-                    textCapitalization: TextCapitalization.characters,
-                    maxLength: 6,
-                    style: const TextStyle(
-                      color: AppColors.cream,
-                      fontSize: 18,
-                      letterSpacing: 4,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'ABC123',
-                      counterText: '',
-                      hintStyle: TextStyle(
-                        color: AppColors.textDarkSecondary.withValues(
-                          alpha: 0.5,
-                        ),
-                        letterSpacing: 4,
-                      ),
-                      filled: true,
-                      fillColor: AppColors.blackberryDark,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: AppColors.blackberryLight,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: AppColors.blackberryLight,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: AppColors.electrolyte,
-                        ),
-                      ),
-                    ),
-                    onSubmitted: (_) => _connectViaCode(),
+        child: _isLoading
+            ? const SizedBox(
+                height: 100,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.electrolyte,
                   ),
                 ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _isConnectingViaCode ? null : _connectViaCode,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.electrolyte,
-                      foregroundColor: AppColors.blackberry,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_activeCode != null) ...[
+                    const Text(
+                      'Share this code with your athlete',
+                      style: TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 13,
                       ),
                     ),
-                    child: _isConnectingViaCode
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Connect'),
-                  ),
-                ),
-              ],
-            ),
-            if (_codeError != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  _codeError!,
-                  style: const TextStyle(
-                    color: AppColors.dragonfruit,
-                    fontSize: 11,
-                  ),
-                ),
+                    const SizedBox(height: 16),
+                    // Code display with copy
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: _activeCode!));
+                        MealvanaSnackbar.showSuccess(context, 'Code copied!');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.electrolyte.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.electrolyte),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _activeCode!,
+                              style: const TextStyle(
+                                color: AppColors.cream,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 28,
+                                letterSpacing: 6,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Icon(
+                              Icons.copy,
+                              color: AppColors.electrolyte,
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _formatRemainingTime(),
+                      style: const TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Your athlete enters this code in\nSettings > Coach Connection',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _isGenerating ? null : _generateCode,
+                      child: Text(
+                        _isGenerating ? 'Generating...' : 'Generate New Code',
+                      ),
+                    ),
+                  ] else ...[
+                    const Text(
+                      'Generate a pairing code and share it with your athlete. '
+                      'They will enter this code in Settings > Coach Connection.',
+                      style: TextStyle(
+                        color: AppColors.textDarkSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isGenerating ? null : _generateCode,
+                        icon: _isGenerating
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.vpn_key_outlined),
+                        label: Text(
+                          _isGenerating
+                              ? 'Generating...'
+                              : 'Generate Pairing Code',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.electrolyte,
+                          foregroundColor: AppColors.blackberry,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: AppColors.dragonfruit,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            const SizedBox(height: 12),
-            const Text(
-              'Ask your athlete to generate this code from Settings > Coach Connection.',
-              style: TextStyle(
-                color: AppColors.textDarkSecondary,
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

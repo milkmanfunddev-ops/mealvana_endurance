@@ -107,6 +107,9 @@ class UserProfilesTable extends Table {
   /// User's last name (optional, used for coach mode athlete identification)
   TextColumn get lastName => text().nullable().named('last_name')();
 
+  /// User's email address (optional, captured from auth or entered manually)
+  TextColumn get email => text().nullable().named('email')();
+
   // NEW: Dietary preference and allergies for onboarding revamp
   /// User's dietary preference (single-select, nullable - user can skip in onboarding)
   /// Values: omnivore, vegetarian, pescatarian, vegan, mediterranean, paleo, keto, low_carb
@@ -126,6 +129,22 @@ class UserProfilesTable extends Table {
   /// User-configured nutrition target overrides stored as JSON.
   /// Null means "use algorithm defaults" for all fields.
   TextColumn get nutritionTargetOverrides => text().nullable().named('nutrition_target_overrides')();
+
+  // Daily macro calculation fields
+  /// Body fat percentage (optional, for Cunningham RMR formula)
+  RealColumn get bodyFatPct => real().nullable().named('body_fat_pct')();
+
+  /// Lifestyle activity level: desk, mixed, active, very_active
+  TextColumn get lifestyle => text().withDefault(const Constant('mixed')).named('lifestyle')();
+
+  /// Typical weekly training hours (for volume tier calculation)
+  RealColumn get typicalWeeklyHours => real().nullable().named('typical_weekly_hours')();
+
+  /// Whether user opts in to carb cycling on easy days
+  BoolColumn get carbCycleOptIn => boolean().withDefault(const Constant(false)).named('carb_cycle_opt_in')();
+
+  /// Training phase: base, build, peak, taper, race_week, off_season
+  TextColumn get trainingPhase => text().withDefault(const Constant('base')).named('training_phase')();
 
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
@@ -154,6 +173,8 @@ class UserProfilesTable extends Table {
     "CHECK (auth_provider IN ('anonymous', 'email', 'google', 'apple'))",
     "CHECK (dietary_preference IN ('omnivore', 'vegetarian', 'pescatarian', 'vegan', 'mediterranean', 'paleo', 'keto', 'low_carb') OR dietary_preference IS NULL)",
     "CHECK (unit_system IN ('imperial', 'metric'))",
+    "CHECK (lifestyle IN ('desk', 'mixed', 'active', 'very_active'))",
+    "CHECK (training_phase IN ('base', 'build', 'peak', 'taper', 'race_week', 'off_season'))",
   ];
 }
 

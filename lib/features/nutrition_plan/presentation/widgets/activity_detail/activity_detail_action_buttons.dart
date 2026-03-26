@@ -5,6 +5,7 @@ import 'activity_completed_badge.dart';
 import 'post_workout_feedback_dialog.dart';
 import 'brick_completion_dialog.dart';
 import '../../../domain/carb_adjustment_level.dart';
+import '../../utils/activity_detail_helpers.dart';
 
 /// Action buttons section for ActivityDetailScreen (Save, Complete, or Completed state)
 class ActivityDetailActionButtons extends StatelessWidget {
@@ -18,6 +19,7 @@ class ActivityDetailActionButtons extends StatelessWidget {
     required this.onRatingChanged,
     required this.onNotesChanged,
     this.onSaveAsTemplate,
+    this.onEnterFuelLog,
   });
 
   final ActivityDetailState state;
@@ -25,9 +27,19 @@ class ActivityDetailActionButtons extends StatelessWidget {
   final bool isCoachView;
   final VoidCallback onSave;
   final VoidCallback? onSaveAsTemplate;
-  final void Function(int rating, String? notes, {bool isBrick, CarbAdjustmentLevel? carbAdjustment}) onComplete;
+  final void Function(
+    int rating,
+    String? notes, {
+    bool isBrick,
+    CarbAdjustmentLevel? carbAdjustment,
+  })
+  onComplete;
   final void Function(int rating) onRatingChanged;
   final void Function(String? notes) onNotesChanged;
+
+  /// When set, pressing Complete on an activity with a nutrition plan
+  /// enters fuel log mode instead of showing the dialog.
+  final VoidCallback? onEnterFuelLog;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +47,9 @@ class ActivityDetailActionButtons extends StatelessWidget {
       return ActivityCompletedCard(
         completion: state.completion,
         rating: state.activity?.completionRating,
+        carbAdjustment: CarbAdjustmentLevel.fromRatingValue(
+          state.activity?.nutritionRating,
+        ),
         notes: state.activity?.completionNotes,
         onRatingChanged: onRatingChanged,
         onNotesChanged: onNotesChanged,
@@ -81,7 +96,9 @@ class ActivityDetailActionButtons extends StatelessWidget {
         Expanded(
           child: KylePrimaryButton(
             text: state.isCompleting ? 'Completing...' : 'Complete',
-            onPressed: state.isCompleting ? null : () => _handleComplete(context),
+            onPressed: state.isCompleting
+                ? null
+                : () => _handleComplete(context),
           ),
         ),
       ],
@@ -91,6 +108,12 @@ class ActivityDetailActionButtons extends StatelessWidget {
   void _handleComplete(BuildContext context) {
     final activity = state.activity;
     final isBrick = activity != null && activity.isBrick;
+
+    // If activity has a nutrition plan, use fuel log mode for all workouts
+    if (onEnterFuelLog != null && state.nutritionPlan != null) {
+      onEnterFuelLog!();
+      return;
+    }
 
     showDialog(
       context: context,
@@ -106,27 +129,23 @@ class ActivityDetailActionButtons extends StatelessWidget {
           );
         }
 
-        // Compute during-activity carb rate for feedback section
-        double? duringCarbRateGPerH;
-        if (state.nutritionPlan != null) {
-          final duringSection = state.nutritionPlan!.sections
-              .where((s) => s.id.contains('during'))
-              .firstOrNull;
-          final durationMinutes = activity?.durationMinutes?.toDouble();
-          if (duringSection?.carbsTarget != null &&
-              durationMinutes != null &&
-              durationMinutes >= 90) {
-            duringCarbRateGPerH =
-                duringSection!.carbsTarget! / (durationMinutes / 60.0);
-          }
-        }
+        final duringCarbRateGPerH =
+            ActivityDetailHelpers.computeDuringCarbRateGPerH(
+              activity: state.activity,
+              nutritionPlan: state.nutritionPlan,
+            );
 
         // Use post-workout feedback dialog for single-sport workouts
         return PostWorkoutFeedbackDialog(
           duringCarbRateGPerH: duringCarbRateGPerH,
           onComplete: (rating, notes, carbAdjustment) async {
             Navigator.of(dialogContext).pop();
-            onComplete(rating, notes, isBrick: false, carbAdjustment: carbAdjustment);
+            onComplete(
+              rating,
+              notes,
+              isBrick: false,
+              carbAdjustment: carbAdjustment,
+            );
           },
         );
       },

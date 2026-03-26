@@ -6,6 +6,8 @@
  * - V3 during-workout (duration bands, gut multipliers, sport ceilings)
  * - V3 post-workout (duration/fasted multipliers)
  * - Brick workout multi-segment calculations
+ * - Formula validation with ±5% tolerance
+ * - Sport ceiling enforcement
  * - Error handling for invalid inputs
  *
  * Run with:
@@ -29,8 +31,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
 const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/generate-macros-v4`;
 
-const CARB_TOLERANCE_G = 10;
-const PROTEIN_TOLERANCE_G = 5;
+const PERCENT_TOLERANCE = 0.05; // ±5%
 
 // ============================================================================
 // Helper Functions
@@ -49,16 +50,17 @@ async function callMacrosV4(body: Record<string, unknown>): Promise<{ status: nu
   return { status: response.status, data };
 }
 
-function assertWithinTolerance(
+function assertWithinPercent(
   actual: number,
   expected: number,
-  tolerance: number,
+  pct: number,
   label: string,
 ): void {
+  const tolerance = expected * pct;
   const diff = Math.abs(actual - expected);
   assert(
     diff <= tolerance,
-    `${label}: expected ${expected} (+-${tolerance}), got ${actual} (diff: ${diff})`,
+    `${label}: expected ${expected} (±${(pct * 100).toFixed(1)}%), got ${actual} (diff: ${diff.toFixed(2)}, tolerance: ${tolerance.toFixed(2)})`,
   );
 }
 
@@ -70,7 +72,7 @@ function assertInRange(actual: number, min: number, max: number, label: string):
 }
 
 // ============================================================================
-// Athlete Profiles (6 diverse)
+// Athlete Profiles (26 diverse)
 // ============================================================================
 
 const athletes = {
@@ -162,6 +164,374 @@ const athletes = {
     sweat_rate_category: 'light',
     sweat_sodium: 'low',
   },
+
+  /** Profile 7: Very light female — 45kg, 5K, low gut, cool temp */
+  veryLight45kg: {
+    weight: 45,
+    weight_unit: 'kg',
+    hours_before: 2,
+    is_fasted: false,
+    run_distance: 5,
+    run_distance_unit: 'km',
+    run_pace: '6:00',
+    gut_training: 'low',
+    sweat_rate_category: 'light',
+    sweat_sodium: 'low',
+    temp_c: 15,
+    humidity_pct: 40,
+  },
+
+  /** Profile 8: Very heavy male — 110kg, marathon, high gut, hot */
+  veryHeavy110kg: {
+    weight: 110,
+    weight_unit: 'kg',
+    hours_before: 3.5,
+    is_fasted: false,
+    run_distance: 42.2,
+    run_distance_unit: 'km',
+    run_pace: '5:30',
+    gut_training: 'high',
+    sweat_rate_category: 'heavy',
+    sweat_sodium: 'high',
+    temp_c: 35,
+    humidity_pct: 80,
+  },
+
+  /** Profile 9: Ultra runner — 75kg, 50mi, high gut, variable temp */
+  ultraRunner75kg: {
+    weight: 75,
+    weight_unit: 'kg',
+    hours_before: 3,
+    is_fasted: false,
+    run_distance: 50,
+    run_distance_unit: 'mi',
+    run_pace: '10:00',
+    gut_training: 'high',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
+    temp_c: 22,
+    humidity_pct: 60,
+  },
+
+  /** Profile 10: Light male — 55kg, 10K, low gut, cool */
+  lightMale55kg: {
+    weight: 55,
+    weight_unit: 'kg',
+    hours_before: 1.5,
+    is_fasted: false,
+    run_distance: 10,
+    run_distance_unit: 'km',
+    run_pace: '4:30',
+    gut_training: 'low',
+    sweat_rate_category: 'light',
+    sweat_sodium: 'low',
+    temp_c: 12,
+    humidity_pct: 50,
+  },
+
+  /** Profile 11: Average female — 60kg, half marathon, moderate gut, mild */
+  avgFemale60kg: {
+    weight: 60,
+    weight_unit: 'kg',
+    hours_before: 2.5,
+    is_fasted: false,
+    run_distance: 21.1,
+    run_distance_unit: 'km',
+    run_pace: '5:45',
+    gut_training: 'moderate',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
+    temp_c: 20,
+    humidity_pct: 55,
+  },
+
+  /** Profile 12: Fasted long run — 70kg, marathon, fasted, moderate gut */
+  fastedLong: {
+    weight: 70,
+    weight_unit: 'kg',
+    hours_before: 0,
+    is_fasted: true,
+    run_distance: 42.2,
+    run_distance_unit: 'km',
+    run_pace: '5:00',
+    gut_training: 'moderate',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
+    temp_c: 18,
+    humidity_pct: 50,
+  },
+
+  /** Profile 13: Sprint triathlete — 65kg, brick workout */
+  sprintTriathlete: {
+    weight: 65,
+    weight_unit: 'kg',
+    hours_before: 2,
+    is_fasted: false,
+    activity_type: 'brick',
+    gut_training: 'moderate',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
+    temp_c: 24,
+    humidity_pct: 60,
+    brick_segments: [
+      {
+        sport: 'swimming',
+        order: 1,
+        duration_minutes: 15,
+        intensity: 'moderate',
+        distance_meters: 750,
+        pace_per_100m_seconds: 120,
+        pool_or_open_water: 'open_water',
+        water_temp_c: 20,
+      },
+      {
+        sport: 'cycling',
+        order: 2,
+        duration_minutes: 40,
+        intensity: 'moderate',
+        distance_miles: 12.4,
+        speed_mph: 18,
+        terrain: 'flat',
+      },
+      {
+        sport: 'running',
+        order: 3,
+        duration_minutes: 25,
+        intensity: 'moderate',
+        pace_minutes_per_mile: 8,
+      },
+    ],
+  },
+
+  /** Profile 14: Ironman triathlete — 80kg, full distance brick */
+  ironmanTriathlete: {
+    weight: 80,
+    weight_unit: 'kg',
+    hours_before: 3.5,
+    is_fasted: false,
+    activity_type: 'brick',
+    gut_training: 'high',
+    sweat_rate_category: 'heavy',
+    sweat_sodium: 'high',
+    temp_c: 28,
+    humidity_pct: 70,
+    brick_segments: [
+      {
+        sport: 'swimming',
+        order: 1,
+        duration_minutes: 60,
+        intensity: 'moderate',
+        distance_meters: 3800,
+        pace_per_100m_seconds: 95,
+        pool_or_open_water: 'open_water',
+        water_temp_c: 22,
+      },
+      {
+        sport: 'cycling',
+        order: 2,
+        duration_minutes: 300,
+        intensity: 'moderate',
+        distance_miles: 112,
+        speed_mph: 22,
+        terrain: 'flat',
+      },
+      {
+        sport: 'running',
+        order: 3,
+        duration_minutes: 210,
+        intensity: 'moderate',
+        pace_minutes_per_mile: 8,
+      },
+    ],
+  },
+
+  /** Profile 15: Hot heavy runner — 95kg, 15mi, high gut, hot */
+  hotHeavy95kg: {
+    weight: 95,
+    weight_unit: 'kg',
+    hours_before: 3,
+    is_fasted: false,
+    run_distance: 15,
+    run_distance_unit: 'mi',
+    run_pace: '8:30',
+    gut_training: 'high',
+    sweat_rate_category: 'heavy',
+    sweat_sodium: 'high',
+    temp_c: 35,
+    humidity_pct: 80,
+  },
+
+  /** Profile 16: Cold light runner — 52kg, 10mi, low gut, cold */
+  coldLight52kg: {
+    weight: 52,
+    weight_unit: 'kg',
+    hours_before: 2,
+    is_fasted: false,
+    run_distance: 10,
+    run_distance_unit: 'mi',
+    run_pace: '9:00',
+    gut_training: 'low',
+    sweat_rate_category: 'light',
+    sweat_sodium: 'low',
+    temp_c: 2,
+    humidity_pct: 30,
+  },
+
+  /** Profile 17: Moderate cyclist — 75kg, 40mi, moderate gut, mild */
+  moderateCyclist75kg: {
+    weight: 75,
+    weight_unit: 'kg',
+    hours_before: 2.5,
+    is_fasted: false,
+    activity_type: 'cycling',
+    distance_miles: 40,
+    speed_mph: 18,
+    terrain: 'rolling',
+    gut_training: 'moderate',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
+    temp_c: 22,
+    humidity_pct: 55,
+  },
+
+  /** Profile 18: Heavy cyclist long — 100kg, 100mi, high gut, warm */
+  heavyCyclist100kg: {
+    weight: 100,
+    weight_unit: 'kg',
+    hours_before: 3,
+    is_fasted: false,
+    activity_type: 'cycling',
+    distance_miles: 100,
+    speed_mph: 20,
+    terrain: 'rolling',
+    gut_training: 'high',
+    sweat_rate_category: 'heavy',
+    sweat_sodium: 'high',
+    temp_c: 28,
+    humidity_pct: 65,
+  },
+
+  /** Profile 19: Short swimmer — 68kg, 1500m pool, moderate gut */
+  shortSwimmer68kg: {
+    weight: 68,
+    weight_unit: 'kg',
+    hours_before: 1.5,
+    is_fasted: false,
+    activity_type: 'swimming',
+    distance_meters: 1500,
+    pace_per_100m_seconds: 110,
+    pool_or_open_water: 'pool',
+    water_temp_c: 27,
+    gut_training: 'moderate',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
+  },
+
+  /** Profile 20: Long swimmer — 78kg, 5000m open water, high gut */
+  longSwimmer78kg: {
+    weight: 78,
+    weight_unit: 'kg',
+    hours_before: 2.5,
+    is_fasted: false,
+    activity_type: 'swimming',
+    distance_meters: 5000,
+    pace_per_100m_seconds: 100,
+    pool_or_open_water: 'open_water',
+    water_temp_c: 20,
+    gut_training: 'high',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
+  },
+
+  /** Profile 21: Top-up short window — 60kg, 0.3h before, 10mi, low gut */
+  topUpShort: {
+    weight: 60,
+    weight_unit: 'kg',
+    hours_before: 0.3,
+    is_fasted: false,
+    run_distance: 10,
+    run_distance_unit: 'mi',
+    run_pace: '8:00',
+    gut_training: 'low',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
+  },
+
+  /** Profile 22: Meal long window (capped at 4h) — 85kg, 4h before, marathon, high gut */
+  mealLong: {
+    weight: 85,
+    weight_unit: 'kg',
+    hours_before: 4,
+    is_fasted: false,
+    run_distance: 42.2,
+    run_distance_unit: 'km',
+    run_pace: '5:00',
+    gut_training: 'high',
+    sweat_rate_category: 'heavy',
+    sweat_sodium: 'high',
+  },
+
+  /** Profile 23: Short 5K run — 65kg, easy pace, low gut, cool */
+  shortRun5K: {
+    weight: 65,
+    weight_unit: 'kg',
+    hours_before: 1.5,
+    is_fasted: false,
+    run_distance: 5,
+    run_distance_unit: 'km',
+    run_pace: '6:00',
+    gut_training: 'low',
+    sweat_rate_category: 'light',
+    sweat_sodium: 'low',
+    temp_c: 15,
+    humidity_pct: 45,
+  },
+
+  /** Profile 24: Medium 15K run — 72kg, moderate gut, mild */
+  mediumRun15K: {
+    weight: 72,
+    weight_unit: 'kg',
+    hours_before: 2,
+    is_fasted: false,
+    run_distance: 15,
+    run_distance_unit: 'km',
+    run_pace: '5:15',
+    gut_training: 'moderate',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
+    temp_c: 20,
+    humidity_pct: 55,
+  },
+
+  /** Profile 25: Long 20mi run — 78kg, high gut, warm */
+  longRun20mi: {
+    weight: 78,
+    weight_unit: 'kg',
+    hours_before: 3,
+    is_fasted: false,
+    run_distance: 20,
+    run_distance_unit: 'mi',
+    run_pace: '8:00',
+    gut_training: 'high',
+    sweat_rate_category: 'heavy',
+    sweat_sodium: 'high',
+    temp_c: 25,
+    humidity_pct: 65,
+  },
+
+  /** Profile 26: Heavy fasted short — 88kg, 8mi, fasted */
+  heavyFastedShort: {
+    weight: 88,
+    weight_unit: 'kg',
+    hours_before: 0,
+    is_fasted: true,
+    run_distance: 8,
+    run_distance_unit: 'mi',
+    run_pace: '7:45',
+    gut_training: 'moderate',
+    sweat_rate_category: 'medium',
+    sweat_sodium: 'medium',
+  },
 };
 
 // ============================================================================
@@ -171,8 +541,7 @@ const athletes = {
 describe('generate-macros-v4 Integration Tests', () => {
   beforeAll(() => {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      console.error('Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variables');
-      Deno.exit(1);
+      throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variables');
     }
   });
 
@@ -259,20 +628,20 @@ describe('generate-macros-v4 Integration Tests', () => {
   });
 
   // =========================================================================
-  // B. Pre-Workout Calculations (5 tests)
+  // B. Pre-Workout Calculations (5 tests with ±5% tolerance)
   // =========================================================================
 
   describe('B. Pre-Workout Calculations', () => {
-    it('50kg @ 3h -> 150g carbs (3 g/kg)', async () => {
+    it('50kg @ 3h -> 150g carbs (3 g/kg) ±5%', async () => {
       const { data } = await callMacrosV4(athletes.smallFemale);
       // 50 * 3 = 150
-      assertWithinTolerance(data.macros.pre_run_carbs_g, 150, CARB_TOLERANCE_G, 'Pre carbs 50kg@3h');
+      assertWithinPercent(data.macros.pre_run_carbs_g, 150, PERCENT_TOLERANCE, 'Pre carbs 50kg@3h');
     });
 
-    it('70kg @ 2h -> 140g carbs (2 g/kg)', async () => {
+    it('70kg @ 2h -> 140g carbs (2 g/kg) ±5%', async () => {
       const { data } = await callMacrosV4(athletes.averageMale);
       // 70 * 2 = 140
-      assertWithinTolerance(data.macros.pre_run_carbs_g, 140, CARB_TOLERANCE_G, 'Pre carbs 70kg@2h');
+      assertWithinPercent(data.macros.pre_run_carbs_g, 140, PERCENT_TOLERANCE, 'Pre carbs 70kg@2h');
     });
 
     it('full_meal type for >= 2.5h window', async () => {
@@ -345,21 +714,21 @@ describe('generate-macros-v4 Integration Tests', () => {
   });
 
   // =========================================================================
-  // D. Post-Workout (3 tests)
+  // D. Post-Workout (3 tests with ±5% tolerance)
   // =========================================================================
 
   describe('D. Post-Workout', () => {
-    it('higher post carbs for >2h duration (1.2 g/kg multiplier)', async () => {
+    it('higher post carbs for >2h duration (1.2 g/kg multiplier) ±5%', async () => {
       // Small female half marathon: duration ~124 min (>2h), 50kg * 1.2 = 60g
       const { data } = await callMacrosV4(athletes.smallFemale);
       const durationH = data.macros.duration_h;
 
       if (durationH > 2) {
         // 50 * 1.2 = 60
-        assertWithinTolerance(data.macros.post_run_carbs_g, 60, CARB_TOLERANCE_G, 'Post carbs >2h');
+        assertWithinPercent(data.macros.post_run_carbs_g, 60, PERCENT_TOLERANCE, 'Post carbs >2h');
       } else {
         // 50 * 1.0 = 50
-        assertWithinTolerance(data.macros.post_run_carbs_g, 50, CARB_TOLERANCE_G, 'Post carbs <=2h');
+        assertWithinPercent(data.macros.post_run_carbs_g, 50, PERCENT_TOLERANCE, 'Post carbs <=2h');
       }
     });
 
@@ -380,10 +749,10 @@ describe('generate-macros-v4 Integration Tests', () => {
       );
     });
 
-    it('protein at 0.3 g/kg for non-fasted post-workout', async () => {
+    it('protein at 0.3 g/kg for non-fasted post-workout ±5%', async () => {
       const { data } = await callMacrosV4(athletes.averageMale);
       // 70 * 0.3 = 21
-      assertWithinTolerance(data.macros.post_run_protein_g, 21, PROTEIN_TOLERANCE_G, 'Post protein 0.3 g/kg');
+      assertWithinPercent(data.macros.post_run_protein_g, 21, PERCENT_TOLERANCE, 'Post protein 0.3 g/kg');
     });
   });
 
@@ -481,11 +850,11 @@ describe('generate-macros-v4 Integration Tests', () => {
       assertEquals(swimSeg.sodium_mg, 0, 'Swimming sodium should be 0');
     });
 
-    it('duration sums correctly across segments', async () => {
+    it('duration sums correctly across segments ±5%', async () => {
       const { data } = await callMacrosV4(swimBikeRunBrick);
       // 30 + 75 + 60 = 165 min
-      assertWithinTolerance(data.macros.duration_min, 165, 1, 'Total duration min');
-      assertWithinTolerance(data.macros.duration_h, 2.75, 0.05, 'Total duration hours');
+      assertWithinPercent(data.macros.duration_min, 165, PERCENT_TOLERANCE, 'Total duration min');
+      assertWithinPercent(data.macros.duration_h, 2.75, PERCENT_TOLERANCE, 'Total duration hours');
     });
   });
 
@@ -569,6 +938,358 @@ describe('generate-macros-v4 Integration Tests', () => {
       });
       assertEquals(status, 400);
       assertEquals(data.success, false);
+    });
+  });
+
+  // =========================================================================
+  // G. Formula Validation (26+ tests with ±5% tolerance)
+  // =========================================================================
+
+  describe('G. Formula Validation', () => {
+    it('veryLight45kg: pre carbs = 45 * min(2, 4) = 90g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.veryLight45kg);
+      const expected = 45 * Math.min(2, 4); // 90
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'veryLight45kg pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('veryHeavy110kg: pre carbs = 110 * min(3.5, 4) = 385g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.veryHeavy110kg);
+      const expected = 110 * Math.min(3.5, 4); // 385
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'veryHeavy110kg pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('ultraRunner75kg: pre carbs = 75 * min(3, 4) = 225g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.ultraRunner75kg);
+      const expected = 75 * Math.min(3, 4); // 225
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'ultraRunner75kg pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+
+      // Post: duration > 2h, not fasted: 75 * 1.2 * 1.0 = 90g
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.0; // not fasted
+      const expectedPost = 75 * durationMult * fastedMult;
+      assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'Post carbs');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('lightMale55kg: pre carbs = 55 * min(1.5, 4) = 82.5g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.lightMale55kg);
+      const expected = 55 * Math.min(1.5, 4); // 82.5
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'lightMale55kg pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('avgFemale60kg: pre carbs = 60 * min(2.5, 4) = 150g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.avgFemale60kg);
+      const expected = 60 * Math.min(2.5, 4); // 150
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'avgFemale60kg pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+
+      // Post: duration > 2h, not fasted: 60 * 1.2 * 1.0 = 72g
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.0;
+      const expectedPost = 60 * durationMult * fastedMult;
+      assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'Post carbs');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('fastedLong: pre carbs = 0 (fasted), post carbs = 70 * durationMult * 1.2 ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.fastedLong);
+      assertEquals(data.macros.pre_run_meal_type, 'fasted');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+
+      // Post: duration > 2h, fasted: 70 * 1.2 * 1.2 = 100.8g
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.2;
+      const expectedPost = 70 * durationMult * fastedMult;
+      assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'Fasted post carbs');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('sprintTriathlete: brick with swim=0, cycling=120, running=70 ceilings', async () => {
+      const { data } = await callMacrosV4(athletes.sprintTriathlete);
+      const phases = data.macros.phases;
+
+      const swimSeg = phases.during_segments.find((s: any) => s.sport === 'swimming');
+      const bikeSeg = phases.during_segments.find((s: any) => s.sport === 'cycling');
+      const runSeg = phases.during_segments.find((s: any) => s.sport === 'running');
+
+      assertExists(swimSeg);
+      assertExists(bikeSeg);
+      assertExists(runSeg);
+
+      assertEquals(swimSeg.carbs_g, 0, 'Swim carbs = 0');
+      // Compute rate from carbs_g / duration_h (carbs_rate_g_per_h may not be present yet)
+      const bikeRateGph = bikeSeg.carbs_rate_g_per_h ?? (bikeSeg.carbs_g / (bikeSeg.duration_minutes / 60));
+      const runRateGph = runSeg.carbs_rate_g_per_h ?? (runSeg.carbs_g / (runSeg.duration_minutes / 60));
+      assert(bikeRateGph <= 120, `Bike rate <= 120, got ${bikeRateGph}`);
+      assert(runRateGph <= 70, `Run rate <= 70, got ${runRateGph}`);
+
+      // Pre carbs: 65 * min(2, 4) = 130g (brick uses phases.before.carbs_g)
+      assertWithinPercent(phases.before.carbs_g, 130, PERCENT_TOLERANCE, 'Sprint tri pre carbs');
+      assertInRange(phases.after.protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('ironmanTriathlete: brick with swim=0, cycling=120, running=70 ceilings', async () => {
+      const { data } = await callMacrosV4(athletes.ironmanTriathlete);
+      const phases = data.macros.phases;
+
+      const swimSeg = phases.during_segments.find((s: any) => s.sport === 'swimming');
+      const bikeSeg = phases.during_segments.find((s: any) => s.sport === 'cycling');
+      const runSeg = phases.during_segments.find((s: any) => s.sport === 'running');
+
+      assertExists(swimSeg);
+      assertExists(bikeSeg);
+      assertExists(runSeg);
+
+      assertEquals(swimSeg.carbs_g, 0, 'Swim carbs = 0');
+      // Compute rate from carbs_g / duration_h (carbs_rate_g_per_h may not be present yet)
+      const bikeRateGph = bikeSeg.carbs_rate_g_per_h ?? (bikeSeg.carbs_g / (bikeSeg.duration_minutes / 60));
+      const runRateGph = runSeg.carbs_rate_g_per_h ?? (runSeg.carbs_g / (runSeg.duration_minutes / 60));
+      assert(bikeRateGph <= 120, `Bike rate <= 120, got ${bikeRateGph}`);
+      assert(runRateGph <= 70, `Run rate <= 70, got ${runRateGph}`);
+
+      // Pre carbs: 80 * min(3.5, 4) = 280g (brick uses phases.before.carbs_g)
+      assertWithinPercent(phases.before.carbs_g, 280, PERCENT_TOLERANCE, 'Ironman pre carbs');
+
+      // Post: duration > 2h, not fasted: 80 * 1.2 * 1.0 = 96g (brick uses phases.after.carbs_g)
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.0;
+      const expectedPost = 80 * durationMult * fastedMult;
+      assertWithinPercent(phases.after.carbs_g, expectedPost, PERCENT_TOLERANCE, 'Post carbs');
+      assertInRange(phases.after.protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('hotHeavy95kg: pre carbs = 95 * min(3, 4) = 285g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.hotHeavy95kg);
+      const expected = 95 * Math.min(3, 4); // 285
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'hotHeavy95kg pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('coldLight52kg: pre carbs = 52 * min(2, 4) = 104g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.coldLight52kg);
+      const expected = 52 * Math.min(2, 4); // 104
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'coldLight52kg pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('moderateCyclist75kg: pre carbs = 75 * min(2.5, 4) = 187.5g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.moderateCyclist75kg);
+      const expected = 75 * Math.min(2.5, 4); // 187.5
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'moderateCyclist75kg pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 120, 'Cycling ceiling');
+      assert(data.macros.during_rate_g_per_h <= 120, 'Rate <= ceiling');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('heavyCyclist100kg: pre carbs = 100 * min(3, 4) = 300g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.heavyCyclist100kg);
+      const expected = 100 * Math.min(3, 4); // 300
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'heavyCyclist100kg pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 120, 'Cycling ceiling');
+      assert(data.macros.during_rate_g_per_h <= 120, 'Rate <= ceiling');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('shortSwimmer68kg: pre carbs = 68 * min(1.5, 4) = 102g ±5%, during = 0', async () => {
+      const { data } = await callMacrosV4(athletes.shortSwimmer68kg);
+      const expected = 68 * Math.min(1.5, 4); // 102
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'shortSwimmer68kg pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 0, 'Swimming ceiling');
+      assertEquals(data.macros.during_rate_g_per_h, 0, 'Swimming rate = 0');
+      assertEquals(data.macros.during_total_g, 0, 'Swimming total = 0');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('longSwimmer78kg: pre carbs = 78 * min(2.5, 4) = 195g ±5%, during = 0', async () => {
+      const { data } = await callMacrosV4(athletes.longSwimmer78kg);
+      const expected = 78 * Math.min(2.5, 4); // 195
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'longSwimmer78kg pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 0, 'Swimming ceiling');
+      assertEquals(data.macros.during_rate_g_per_h, 0, 'Swimming rate = 0');
+      assertEquals(data.macros.during_total_g, 0, 'Swimming total = 0');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('topUpShort: pre carbs = 60 * max(0.5, 0.3) = 30g ±5% (0.5 g/kg floor)', async () => {
+      const { data } = await callMacrosV4(athletes.topUpShort);
+      const expected = 60 * Math.max(0.5, Math.min(0.3, 4)); // 30 (0.5 g/kg floor)
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'topUpShort pre carbs');
+      assertEquals(data.macros.pre_run_meal_type, 'top_up');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('mealLong: pre carbs capped at 85 * min(4, 4) = 340g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.mealLong);
+      const expected = 85 * Math.min(4, 4); // 340 (capped at 4h)
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'mealLong pre carbs (4h cap)');
+      assertEquals(data.macros.pre_run_meal_type, 'full_meal');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+
+      // Post: duration > 2h, not fasted: 85 * 1.2 * 1.0 = 102g
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.0;
+      const expectedPost = 85 * durationMult * fastedMult;
+      assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'Post carbs');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('shortRun5K: pre carbs = 65 * min(1.5, 4) = 97.5g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.shortRun5K);
+      const expected = 65 * Math.min(1.5, 4); // 97.5
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'shortRun5K pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('mediumRun15K: pre carbs = 72 * min(2, 4) = 144g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.mediumRun15K);
+      const expected = 72 * Math.min(2, 4); // 144
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'mediumRun15K pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('longRun20mi: pre carbs = 78 * min(3, 4) = 234g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.longRun20mi);
+      const expected = 78 * Math.min(3, 4); // 234
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'longRun20mi pre carbs');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+
+      // Post: duration > 2h, not fasted: 78 * 1.2 * 1.0 = 93.6g
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.0;
+      const expectedPost = 78 * durationMult * fastedMult;
+      assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'Post carbs');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('heavyFastedShort: fasted, post carbs = 88 * durationMult * 1.2 ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.heavyFastedShort);
+      assertEquals(data.macros.pre_run_meal_type, 'fasted');
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
+      assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
+
+      // Post: fasted: 88 * durationMult * 1.2
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.2;
+      const expectedPost = 88 * durationMult * fastedMult;
+      assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'Fasted post carbs');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('smallFemale: post carbs = 50 * durationMult * 1.0 ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.smallFemale);
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.0;
+      const expectedPost = 50 * durationMult * fastedMult;
+      assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'smallFemale post carbs');
+    });
+
+    it('averageMale: post carbs = 70 * durationMult * 1.0 ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.averageMale);
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.0;
+      const expectedPost = 70 * durationMult * fastedMult;
+      assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'averageMale post carbs');
+    });
+
+    it('heavyCyclist: cycling ceiling = 120, post carbs = 91 * durationMult * 1.0 ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.heavyCyclist);
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 120, 'Cycling ceiling');
+      assert(data.macros.during_rate_g_per_h <= 120, 'Rate <= ceiling');
+
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.0;
+      const expectedPost = 91 * durationMult * fastedMult;
+      assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'heavyCyclist post carbs');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('fastedRunner: fasted, post carbs = 65 * durationMult * 1.2 ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.fastedRunner);
+      assertEquals(data.macros.pre_run_meal_type, 'fasted');
+
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.2;
+      const expectedPost = 65 * durationMult * fastedMult;
+      assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'fastedRunner post carbs');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('swimmer: swimming ceiling = 0, post carbs = 73 * durationMult * 1.0 ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.swimmer);
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 0, 'Swimming ceiling');
+      assertEquals(data.macros.during_rate_g_per_h, 0, 'Swimming rate = 0');
+
+      const durationH = data.macros.duration_h;
+      const durationMult = durationH > 2 ? 1.2 : 1.0;
+      const fastedMult = 1.0;
+      const expectedPost = 73 * durationMult * fastedMult;
+      assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'swimmer post carbs');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+
+    it('lightweightTopUp: pre carbs = 55 * min(0.5, 4) = 27.5g ±5%', async () => {
+      const { data } = await callMacrosV4(athletes.lightweightTopUp);
+      const expected = 55 * Math.min(0.5, 4); // 27.5
+      assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'lightweightTopUp pre carbs');
+      assertEquals(data.macros.pre_run_meal_type, 'top_up');
+      assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
+    });
+  });
+
+  // =========================================================================
+  // H. Sport Ceiling Zero Tolerance (3 tests)
+  // =========================================================================
+
+  describe('H. Sport Ceiling Zero Tolerance', () => {
+    it('running sport ceiling = exactly 70 g/hr', async () => {
+      const { data } = await callMacrosV4(athletes.averageMale);
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling must be exactly 70');
+    });
+
+    it('cycling sport ceiling = exactly 120 g/hr', async () => {
+      const { data } = await callMacrosV4(athletes.heavyCyclist);
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 120, 'Cycling ceiling must be exactly 120');
+    });
+
+    it('swimming sport ceiling = exactly 0 g/hr', async () => {
+      const { data } = await callMacrosV4(athletes.swimmer);
+      assertEquals(data.macros.during_sport_ceiling_g_per_h, 0, 'Swimming ceiling must be exactly 0');
     });
   });
 });

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../providers/settings_controller.dart';
 import '../widgets/during_sport_override_section.dart';
 
@@ -309,11 +310,12 @@ class _NutritionTargetsScreenState
           ),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          children: [
+      body: ContentArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            children: [
             // Info banner
             BaseCard(
               child: Row(
@@ -487,6 +489,7 @@ class _NutritionTargetsScreenState
             const SizedBox(height: AppSpacing.xl),
           ],
         ),
+      ),
       ),
     );
   }

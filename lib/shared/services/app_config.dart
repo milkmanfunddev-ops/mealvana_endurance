@@ -21,6 +21,9 @@ class AppConfig {
     required this.finalSurgeClientId,
     required this.finalSurgeClientSecret,
     required this.finalSurgeBaseUrl,
+    required this.garminClientId,
+    required this.garminClientSecret,
+    required this.garminRedirectUri,
     required this.devModeEnabled,
     required this.appEnvironment,
     this.enableDebugLogging = false,
@@ -56,6 +59,11 @@ class AppConfig {
   final String finalSurgeClientId;
   final String finalSurgeClientSecret;
   final String finalSurgeBaseUrl;
+
+  // Garmin Connect integration
+  final String garminClientId;
+  final String garminClientSecret;
+  final String garminRedirectUri;
 
   // Environment configuration
   final bool devModeEnabled;
@@ -162,6 +170,11 @@ class AppConfig {
         fallback: 'https://log.finalsurge.com',
       ),
 
+      // Garmin Connect integration
+      garminClientId: dotenv.get('GARMIN_CLIENT_ID', fallback: ''),
+      garminClientSecret: dotenv.get('GARMIN_CLIENT_SECRET', fallback: ''),
+      garminRedirectUri: dotenv.get('GARMIN_REDIRECT_URI', fallback: ''),
+
       // Debug settings
       enableDebugLogging: kDebugMode,
       enableSentryProfiling: !kDebugMode, // Disabled in debug due to iOS crash
@@ -187,6 +200,9 @@ class AppConfig {
     String? finalSurgeClientId,
     String? finalSurgeClientSecret,
     String? finalSurgeBaseUrl,
+    String? garminClientId,
+    String? garminClientSecret,
+    String? garminRedirectUri,
     bool devModeEnabled = true,
     String appEnvironment = 'dev',
     bool enableDebugLogging = true,
@@ -209,6 +225,9 @@ class AppConfig {
       finalSurgeClientId: finalSurgeClientId ?? 'test-fs-client-id',
       finalSurgeClientSecret: finalSurgeClientSecret ?? 'test-fs-secret',
       finalSurgeBaseUrl: finalSurgeBaseUrl ?? 'https://log.finalsurge.com',
+      garminClientId: garminClientId ?? 'test-garmin-client-id',
+      garminClientSecret: garminClientSecret ?? 'test-garmin-secret',
+      garminRedirectUri: garminRedirectUri ?? 'com.milkman.mealvanaendurance://callback',
       devModeEnabled: devModeEnabled,
       appEnvironment: appEnvironment,
       enableDebugLogging: enableDebugLogging,
@@ -330,6 +349,20 @@ class AppConfig {
       finalSurgeBaseUrl: const String.fromEnvironment(
         'FINAL_SURGE_BASE_URL',
         defaultValue: 'https://log.finalsurge.com',
+      ),
+
+      // Garmin Connect configuration - read from dart-define for web builds
+      garminClientId: const String.fromEnvironment(
+        'GARMIN_CLIENT_ID',
+        defaultValue: '',
+      ),
+      garminClientSecret: const String.fromEnvironment(
+        'GARMIN_CLIENT_SECRET',
+        defaultValue: '',
+      ),
+      garminRedirectUri: const String.fromEnvironment(
+        'GARMIN_REDIRECT_URI',
+        defaultValue: '',
       ),
 
       // Debug settings

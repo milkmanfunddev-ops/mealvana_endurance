@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../providers/settings_controller.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
@@ -45,10 +46,12 @@ class SportSettingsScreen extends ConsumerWidget {
         ),
         centerTitle: true,
       ),
-      body: settingsState.when(
-        data: (state) => _buildContent(context, ref, state),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _buildErrorState(context, error.toString()),
+      body: ContentArea(
+        child: settingsState.when(
+          data: (state) => _buildContent(context, ref, state),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => _buildErrorState(context, error.toString()),
+        ),
       ),
     );
   }

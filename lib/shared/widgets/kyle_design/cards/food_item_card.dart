@@ -48,7 +48,7 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
                 children: [
                   // Food icon
                   KyleFoodIcon(
-                    foodType: _mapFoodType(widget.food.name),
+                    foodType: mapFoodType(productTypeId: widget.food.productTypeId, name: widget.food.name),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   
@@ -315,36 +315,6 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
     }
   }
 
-  KyleFoodType _mapFoodType(String foodName) {
-    // Simple mapping based on food name
-    final name = foodName.toLowerCase();
-    
-    if (name.contains('banana') || name.contains('fruit')) {
-      return KyleFoodType.fruit;
-    } else if (name.contains('bread') || name.contains('sandwich')) {
-      return KyleFoodType.sandwich;
-    } else if (name.contains('pasta')) {
-      return KyleFoodType.pasta;
-    } else if (name.contains('rice')) {
-      return KyleFoodType.rice;
-    } else if (name.contains('gel') || name.contains('gummy')) {
-      return KyleFoodType.gel;
-    } else if (name.contains('bar') || name.contains('energy')) {
-      return KyleFoodType.energyBar;
-    } else if (name.contains('drink') || name.contains('water') || name.contains('fluid')) {
-      return KyleFoodType.drink;
-    } else if (name.contains('protein') || name.contains('meat') || name.contains('chicken')) {
-      return KyleFoodType.protein;
-    } else if (name.contains('vegetable') || name.contains('carrot') || name.contains('salad')) {
-      return KyleFoodType.vegetable;
-    } else if (name.contains('snack') || name.contains('cookie') || name.contains('cracker')) {
-      return KyleFoodType.snack;
-    } else if (name.contains('supplement') || name.contains('pill') || name.contains('vitamin')) {
-      return KyleFoodType.supplement;
-    } else {
-      return KyleFoodType.other;
-    }
-  }
 }
 
 
@@ -358,6 +328,7 @@ class DisplayFoodItem {
   final double fatG;
   final double calories;
   final String servingSize;
+  final String? productTypeId;
 
   DisplayFoodItem({
     required this.id,
@@ -367,5 +338,6 @@ class DisplayFoodItem {
     required this.fatG,
     required this.calories,
     required this.servingSize,
+    this.productTypeId,
   });
 }

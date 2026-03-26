@@ -1,0 +1,29 @@
+--- lib/features/nutrition_plan/presentation/widgets/fuel_log/fuel_log_success_overlay.dart
++++ lib/features/nutrition_plan/presentation/widgets/fuel_log/fuel_log_success_overlay.dart
+@@ -65,14 +65,14 @@
+     );
+ 
+     _confettiController = AnimationController(
+-      duration: const Duration(milliseconds: 2000),
++      duration: const Duration(milliseconds: 4000),
+       vsync: this,
+     );
+ 
+     _checkController.forward();
+     _confettiController.forward();
+ 
+-    // Auto-dismiss after 3 seconds
+-    Future.delayed(const Duration(seconds: 3), () {
++    // Auto-dismiss after 4 seconds
++    Future.delayed(const Duration(seconds: 4), () {
+       if (mounted) {
+         widget.onDismiss();
+@@ -218,7 +218,7 @@
+       final x = p.startX * size.width + p.driftX * progress * size.width * 0.3;
+       final y = p.startY * size.height * -0.2 +
+-          progress * size.height * (0.8 + p.speed * 0.4);
+-      final opacity = (1.0 - progress).clamp(0.0, 1.0) * p.opacity;
++          progress * size.height * (1.2 + p.speed * 0.5);
++      final opacity = (1.0 - progress * 1.5).clamp(0.0, 1.0) * p.opacity;
+ 
+       if (opacity <= 0) continue;

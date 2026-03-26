@@ -5,7 +5,7 @@
  * trigram indexes. Returns available variants with inline nutrition data
  * and product classification fields.
  *
- * Queries the backward-compatible catalog_items_v view which JOINs
+ * Queries the backward-compatible catalog_items view which JOINs
  * catalog_products and catalog_variants.
  *
  * Request:  { query: string, limit?: number, product_type?: string, product_type_id?: string }
@@ -47,9 +47,20 @@ serve(async (req) => {
     // Build search using ilike with wildcards (leverages pg_trgm GIN indexes)
     const pattern = `%${trimmedQuery}%`;
 
+    // Select only needed columns (excludes raw_payload, tags, ingredients, etc.)
+    const columns = `
+      id, title, variant_title, brand, product_type, barcode,
+      image_url, product_url, price_cents, currency_code, available_for_sale,
+      calories_per_serving, carbs_g, protein_g, fat_g, sodium_mg,
+      serving_size, serving_grams, caffeine_mg,
+      nutrition_source, nutrition_confidence,
+      product_type_id, categories, is_electrolyte, is_liquid,
+      allergens, excluded_diets
+    `;
+
     let queryBuilder = supabase
-      .from('catalog_items_v')
-      .select('*', { count: 'exact' })
+      .from('catalog_items')
+      .select(columns)
       .eq('available_for_sale', true)
       .or(`title.ilike.${pattern},brand.ilike.${pattern},variant_title.ilike.${pattern}`)
       .limit(maxLimit)
@@ -65,7 +76,7 @@ serve(async (req) => {
       queryBuilder = queryBuilder.eq('product_type_id', product_type_id);
     }
 
-    const { data, error, count } = await queryBuilder;
+    const { data, error } = await queryBuilder;
 
     if (error) {
       console.error('Catalog search error:', error);
@@ -108,7 +119,7 @@ serve(async (req) => {
     return jsonResponse({
       success: true,
       results,
-      total: count ?? results.length,
+      total: results.length,
       query: trimmedQuery,
     });
   } catch (e) {

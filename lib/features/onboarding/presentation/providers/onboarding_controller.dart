@@ -410,6 +410,7 @@ class OnboardingController extends _$OnboardingController {
     required bool runsWithWaterBottle,
     String? firstName,
     String? lastName,
+    String? email,
     UnitSystem unitSystem = UnitSystem.imperial,
   }) {
     _cachedUserProfileData = {
@@ -421,6 +422,7 @@ class OnboardingController extends _$OnboardingController {
       'runsWithWaterBottle': runsWithWaterBottle,
       'firstName': firstName,
       'lastName': lastName,
+      'email': email,
       'unitSystem': unitSystem,
     };
     DebugLogger.debug('📝 Cached user profile data');
@@ -500,6 +502,10 @@ class OnboardingController extends _$OnboardingController {
       // 1. Create user profile
       if (_cachedUserProfileData != null) {
         final data = _cachedUserProfileData!;
+        // Auto-populate email from Supabase auth if not manually provided
+        final cachedEmail = data['email'] as String?;
+        final authEmail = ref.read(appExternalDepsProvider).supabaseClient.auth.currentUser?.email;
+        final email = cachedEmail ?? authEmail;
         _currentUser = await _onboardingService.createUserProfile(
           gender: data['gender'] as Gender,
           birthday: data['birthday'] as DateTime,
@@ -511,6 +517,7 @@ class OnboardingController extends _$OnboardingController {
           isAnonymous: isAnonymous,
           firstName: data['firstName'] as String?,
           lastName: data['lastName'] as String?,
+          email: email,
           unitSystem: data['unitSystem'] as UnitSystem? ?? UnitSystem.imperial,
         );
         DebugLogger.info('✅ User profile created: ${_currentUser!.id}');

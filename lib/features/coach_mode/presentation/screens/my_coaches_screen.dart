@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/widgets/content_area.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../providers/my_coaches_controller.dart';
 
@@ -25,10 +26,12 @@ class MyCoachesScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: coachesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => _buildErrorView(context, error.toString(), ref),
-        data: (state) => _buildContent(context, state, ref),
+      body: ContentArea(
+        child: coachesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => _buildErrorView(context, error.toString(), ref),
+          data: (state) => _buildContent(context, state, ref),
+        ),
       ),
     );
   }

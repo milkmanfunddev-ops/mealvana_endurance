@@ -1,0 +1,40 @@
+--- lib/features/nutrition_plan/presentation/widgets/activity_detail/activity_detail_app_bar.dart
++++ lib/features/nutrition_plan/presentation/widgets/activity_detail/activity_detail_app_bar.dart
+@@ -47,15 +47,28 @@
+       automaticallyImplyLeading: false,
+       title: Row(
+         children: [
+-          CustomAppBarBackButton(
+-            onPressed: isFuelLogMode
+-                ? (onBackFromFuelLog ?? () => context.pop())
+-                : () => context.pop(),
+-            margin: EdgeInsets.zero,
+-            iconColor: Theme.of(context).colorScheme.onSurface,
+-            backgroundColor: Theme.of(
+-              context,
+-            ).colorScheme.onSurface.withValues(alpha: 0.1),
++          isFuelLogMode 
++            ? Container(
++                margin: EdgeInsets.zero,
++                child: Material(
++                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
++                  shape: const CircleBorder(),
++                  child: IconButton(
++                    icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onSurface, size: 20),
++                    onPressed: onBackFromFuelLog ?? () => context.pop(),
++                    splashRadius: 20,
++                    padding: EdgeInsets.zero,
++                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
++                  ),
++                ),
++              )
++            : CustomAppBarBackButton(
++                onPressed: () => context.pop(),
++                margin: EdgeInsets.zero,
++                iconColor: Theme.of(context).colorScheme.onSurface,
++                backgroundColor: Theme.of(
++                  context,
++                ).colorScheme.onSurface.withValues(alpha: 0.1),
+           ),
+           const SizedBox(width: AppSpacing.sm),
+           Expanded(

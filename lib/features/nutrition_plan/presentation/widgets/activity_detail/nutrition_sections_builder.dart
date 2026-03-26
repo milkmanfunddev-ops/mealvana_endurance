@@ -17,6 +17,7 @@ import 'brick_nutrition_sections.dart';
 import 'before_phase_widget.dart';
 import 'during_phase_section_widget.dart';
 import 'phase_explanation_sheet.dart';
+import '../../utils/fuel_log_hero_tags.dart';
 
 /// Callback signatures for food operations
 typedef FoodOperationCallback = void Function(String foodId, String category);
@@ -79,6 +80,8 @@ class NutritionSectionsBuilder extends ConsumerStatefulWidget {
     required this.onMoveSipFoodToSlot,
     required this.onScaleSubPhase,
     required this.consumeSwipeHint,
+    this.enableSectionHeroes = false,
+    this.heroTagSeed,
   });
 
   final ActivityDetailState state;
@@ -94,6 +97,8 @@ class NutritionSectionsBuilder extends ConsumerStatefulWidget {
   final MoveSipFoodToSlotCallback onMoveSipFoodToSlot;
   final ScaleSubPhaseCallback onScaleSubPhase;
   final bool Function() consumeSwipeHint;
+  final bool enableSectionHeroes;
+  final String? heroTagSeed;
 
   @override
   ConsumerState<NutritionSectionsBuilder> createState() =>
@@ -117,8 +122,7 @@ class _NutritionSectionsBuilderState
       return BrickNutritionSections(
         brick: activity,
         planData: plan,
-        useImperial:
-            brickSettings?.preferredDistanceUnit == DistanceUnit.miles,
+        useImperial: brickSettings?.preferredDistanceUnit == DistanceUnit.miles,
         bodyWeightKg: _getBodyWeightKg(brickSettings?.weightPounds),
         onAddFood: widget.onAddFood,
         onSwapFood: widget.onSwapFood,
@@ -133,6 +137,8 @@ class _NutritionSectionsBuilderState
         onScaleSubPhase: widget.onScaleSubPhase,
         macroTargets: widget.state.macroTargets,
         showSwipeHint: widget.consumeSwipeHint(),
+        enableSectionHeroes: widget.enableSectionHeroes,
+        heroTagSeed: widget.heroTagSeed,
       );
     }
 
@@ -172,30 +178,40 @@ class _NutritionSectionsBuilderState
 
         // Use BeforePhaseWidget for before sections with sub-phases (V2 template plans)
         if (category == 'before_run' && section.hasSubPhases) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-            child: BeforePhaseWidget(
-              section: section,
-              sectionColor: sectionColor,
-              sectionTitle: sectionTitle.toUpperCase(),
-              useImperial: useImperial,
-              onSwapFood: widget.onSwapFood,
-              onDeleteFood: widget.onDeleteFood,
-              onUpdateQuantity: widget.onUpdateQuantity,
-              onScaleSubPhase: widget.onScaleSubPhase,
-              onAddFood: widget.onAddFood,
-              showSwipeHint: widget.consumeSwipeHint(),
-              macroTargets: widget.state.macroTargets,
-              bodyWeightKg: bodyWeightKg,
-              sportLabel: activityType.displayName,
-              carbsLow: widget.state.macroTargets?.preRun.carbsLowG?.round(),
-              carbsHigh: widget.state.macroTargets?.preRun.carbsHighG?.round(),
-              proteinLow: widget.state.macroTargets?.preRun.proteinLowG?.round(),
-              proteinHigh: widget.state.macroTargets?.preRun.proteinHighG?.round(),
-              sodiumLow: widget.state.macroTargets?.preRun.sodiumLowMg?.round(),
-              sodiumHigh: widget.state.macroTargets?.preRun.sodiumHighMg?.round(),
-              fluidsLow: widget.state.macroTargets?.preRun.fluidsLowMl?.round(),
-              fluidsHigh: widget.state.macroTargets?.preRun.fluidsHighMl?.round(),
+          return _wrapWithSectionHero(
+            section.id,
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              child: BeforePhaseWidget(
+                section: section,
+                sectionColor: sectionColor,
+                sectionTitle: sectionTitle.toUpperCase(),
+                useImperial: useImperial,
+                onSwapFood: widget.onSwapFood,
+                onDeleteFood: widget.onDeleteFood,
+                onUpdateQuantity: widget.onUpdateQuantity,
+                onScaleSubPhase: widget.onScaleSubPhase,
+                onAddFood: widget.onAddFood,
+                showSwipeHint: widget.consumeSwipeHint(),
+                macroTargets: widget.state.macroTargets,
+                bodyWeightKg: bodyWeightKg,
+                sportLabel: activityType.displayName,
+                carbsLow: widget.state.macroTargets?.preRun.carbsLowG?.round(),
+                carbsHigh: widget.state.macroTargets?.preRun.carbsHighG
+                    ?.round(),
+                proteinLow: widget.state.macroTargets?.preRun.proteinLowG
+                    ?.round(),
+                proteinHigh: widget.state.macroTargets?.preRun.proteinHighG
+                    ?.round(),
+                sodiumLow: widget.state.macroTargets?.preRun.sodiumLowMg
+                    ?.round(),
+                sodiumHigh: widget.state.macroTargets?.preRun.sodiumHighMg
+                    ?.round(),
+                fluidsLow: widget.state.macroTargets?.preRun.fluidsLowMl
+                    ?.round(),
+                fluidsHigh: widget.state.macroTargets?.preRun.fluidsHighMl
+                    ?.round(),
+              ),
             ),
           );
         }
@@ -203,39 +219,48 @@ class _NutritionSectionsBuilderState
         // Use DuringPhaseSectionWidget for during sections (supports By Hour toggle)
         if (category.startsWith('during_')) {
           final durationMinutes = widget.state.activity?.durationMinutes ?? 120;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-            child: DuringPhaseSectionWidget(
-              section: section,
-              sectionColor: sectionColor,
-              sectionTitle: sectionTitle.toUpperCase(),
-              category: category,
-              durationMinutes: durationMinutes,
-              useImperial: useImperial,
-              activityType: activityType,
-              subtitle: section.subtitle,
-              sportIcon: _getSportIcon(activityType),
-              sportIconColor: sectionColor,
-              onSwapFood: widget.onSwapFood,
-              onDeleteFood: widget.onDeleteFood,
-              onUpdateQuantity: widget.onUpdateQuantity,
-              onAddFood: widget.onAddFood,
-              onInitializeByHour: widget.onInitializeByHour,
-              onMoveFoodToTimeSlot: widget.onMoveFoodToTimeSlot,
-              onPlaceFoodInSlot: widget.onPlaceFoodInSlot,
-              onRemoveFoodFromSlot: widget.onRemoveFoodFromSlot,
-              onAdjustSlotQuantity: widget.onAdjustSlotQuantity,
-              onMoveSipFoodToSlot: widget.onMoveSipFoodToSlot,
-              showSwipeHint: widget.consumeSwipeHint(),
-              macroTargets: widget.state.macroTargets,
-              bodyWeightKg: bodyWeightKg,
-              sportLabel: activityType.displayName,
-              carbsLow: widget.state.macroTargets?.duringRun.carbsLowG?.round(),
-              carbsHigh: widget.state.macroTargets?.duringRun.carbsHighG?.round(),
-              sodiumLow: widget.state.macroTargets?.duringRun.sodiumLowMg?.round(),
-              sodiumHigh: widget.state.macroTargets?.duringRun.sodiumHighMg?.round(),
-              fluidsLow: widget.state.macroTargets?.duringRun.fluidsLowMl?.round(),
-              fluidsHigh: widget.state.macroTargets?.duringRun.fluidsHighMl?.round(),
+          return _wrapWithSectionHero(
+            section.id,
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              child: DuringPhaseSectionWidget(
+                section: section,
+                sectionColor: sectionColor,
+                sectionTitle: sectionTitle.toUpperCase(),
+                category: category,
+                durationMinutes: durationMinutes,
+                useImperial: useImperial,
+                activityType: activityType,
+                subtitle: section.subtitle,
+                sportIcon: _getSportIcon(activityType),
+                sportIconColor: sectionColor,
+                onSwapFood: widget.onSwapFood,
+                onDeleteFood: widget.onDeleteFood,
+                onUpdateQuantity: widget.onUpdateQuantity,
+                onAddFood: widget.onAddFood,
+                onInitializeByHour: widget.onInitializeByHour,
+                onMoveFoodToTimeSlot: widget.onMoveFoodToTimeSlot,
+                onPlaceFoodInSlot: widget.onPlaceFoodInSlot,
+                onRemoveFoodFromSlot: widget.onRemoveFoodFromSlot,
+                onAdjustSlotQuantity: widget.onAdjustSlotQuantity,
+                onMoveSipFoodToSlot: widget.onMoveSipFoodToSlot,
+                showSwipeHint: widget.consumeSwipeHint(),
+                macroTargets: widget.state.macroTargets,
+                bodyWeightKg: bodyWeightKg,
+                sportLabel: activityType.displayName,
+                carbsLow: widget.state.macroTargets?.duringRun.carbsLowG
+                    ?.round(),
+                carbsHigh: widget.state.macroTargets?.duringRun.carbsHighG
+                    ?.round(),
+                sodiumLow: widget.state.macroTargets?.duringRun.sodiumLowMg
+                    ?.round(),
+                sodiumHigh: widget.state.macroTargets?.duringRun.sodiumHighMg
+                    ?.round(),
+                fluidsLow: widget.state.macroTargets?.duringRun.fluidsLowMl
+                    ?.round(),
+                fluidsHigh: widget.state.macroTargets?.duringRun.fluidsHighMl
+                    ?.round(),
+              ),
             ),
           );
         }
@@ -265,26 +290,43 @@ class _NutritionSectionsBuilderState
           fluidsHigh = mt.preRun.fluidsHighMl?.round();
         }
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-          child: _buildNutritionSection(
-            context: context,
-            title: sectionTitle.toUpperCase(),
-            section: section,
-            category: category,
-            sectionColor: sectionColor,
-            carbsLow: carbsLow,
-            carbsHigh: carbsHigh,
-            proteinLow: proteinLow,
-            proteinHigh: proteinHigh,
-            sodiumLow: sodiumLow,
-            sodiumHigh: sodiumHigh,
-            fluidsLow: fluidsLow,
-            fluidsHigh: fluidsHigh,
-            useImperial: useImperial,
+        return _wrapWithSectionHero(
+          section.id,
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            child: _buildNutritionSection(
+              context: context,
+              title: sectionTitle.toUpperCase(),
+              section: section,
+              category: category,
+              sectionColor: sectionColor,
+              carbsLow: carbsLow,
+              carbsHigh: carbsHigh,
+              proteinLow: proteinLow,
+              proteinHigh: proteinHigh,
+              sodiumLow: sodiumLow,
+              sodiumHigh: sodiumHigh,
+              fluidsLow: fluidsLow,
+              fluidsHigh: fluidsHigh,
+              useImperial: useImperial,
+            ),
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _wrapWithSectionHero(String sectionId, Widget child) {
+    if (!widget.enableSectionHeroes || widget.heroTagSeed == null) {
+      return child;
+    }
+
+    return Hero(
+      tag: fuelLogSectionHeroTag(
+        activityId: widget.heroTagSeed!,
+        sectionId: sectionId,
+      ),
+      child: Material(type: MaterialType.transparency, child: child),
     );
   }
 
@@ -322,7 +364,14 @@ class _NutritionSectionsBuilderState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle(context, title, category, sectionColor, useImperial, section),
+          _buildSectionTitle(
+            context,
+            title,
+            category,
+            sectionColor,
+            useImperial,
+            section,
+          ),
           const SizedBox(height: AppSpacing.md),
           MacroSummaryRow(
             foods: section.foodItems,

@@ -2223,6 +2223,233 @@ class CoachRepository with SyncableRepository {
     }
   }
 
+  // ─── Coach Pairing Codes (Reversed Flow) ──────────────────────────
+
+  /// Generate a 6-character pairing code for a coach.
+  /// Invalidates any existing active code for this coach first.
+  /// Returns the generated code string.
+  Future<String> generateCoachPairingCode(String coachUserId) async {
+    try {
+      final now = DateTime.now().toUtc();
+      final expiresAt = now.add(const Duration(hours: 24));
+      final code = _generateRandomCode(6);
+      final id = const Uuid().v4();
+
+      // Expire any existing unused codes for this coach
+      await _supabase
+          .from('coach_pairing_codes')
+          .update({'expires_at': now.toIso8601String()})
+          .eq('coach_user_id', coachUserId)
+          .isFilter('used_at', null);
+
+      // Insert new code
+      await _supabase.from('coach_pairing_codes').insert({
+        'id': id,
+        'coach_user_id': coachUserId,
+        'code': code,
+        'created_at': now.toIso8601String(),
+        'expires_at': expiresAt.toIso8601String(),
+      });
+
+      // Also save locally
+      await _database
+          .into(_database.coachPairingCodesTable)
+          .insertOnConflictUpdate(
+            CoachPairingCodesTableCompanion.insert(
+              id: id,
+              coachUserId: coachUserId,
+              code: code,
+              expiresAt: expiresAt,
+              createdAt: Value(now),
+            ),
+          );
+
+      _logger.info(
+        'Generated coach pairing code',
+        context: 'COACH_REPOSITORY',
+        data: {
+          'coachUserId': coachUserId,
+          'code': code,
+          'expiresAt': expiresAt.toIso8601String(),
+        },
+      );
+
+      return code;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to generate coach pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Get the active (unexpired, unused) coach pairing code, if any.
+  Future<({String code, DateTime expiresAt})?> getActiveCoachPairingCode(
+    String coachUserId,
+  ) async {
+    try {
+      final now = DateTime.now().toUtc();
+      final response = await _supabase
+          .from('coach_pairing_codes')
+          .select('code, expires_at')
+          .eq('coach_user_id', coachUserId)
+          .isFilter('used_at', null)
+          .gte('expires_at', now.toIso8601String())
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      return (
+        code: response['code'] as String,
+        expiresAt: DateTime.parse(response['expires_at'] as String),
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get active coach pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Athlete connects to a coach using the coach's pairing code.
+  /// Validates the code, marks it as used, and creates an active relationship.
+  Future<PairingCodeConnectResult> connectViaCoachCode({
+    required String code,
+    required String athleteUserId,
+  }) async {
+    try {
+      final normalizedCode = code.trim().toUpperCase();
+
+      if (!_isPairingCodeFormatValid(normalizedCode)) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.invalidCodeFormat,
+        );
+      }
+
+      // Look up the code
+      final now = DateTime.now().toUtc();
+      final response = await _supabase
+          .from('coach_pairing_codes')
+          .select('coach_user_id, expires_at, used_at')
+          .eq('code', normalizedCode)
+          .maybeSingle();
+
+      if (response == null) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.codeNotFound,
+        );
+      }
+
+      if (response['used_at'] != null) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.codeAlreadyUsed,
+        );
+      }
+
+      final expiresAt = DateTime.parse(response['expires_at'] as String);
+      if (expiresAt.isBefore(now)) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.codeExpired,
+        );
+      }
+
+      final coachUserId = response['coach_user_id'] as String;
+
+      // Prevent self-connection
+      if (coachUserId == athleteUserId) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.selfConnectionNotAllowed,
+        );
+      }
+
+      // Check for existing relationship
+      final existingRelationship = await _supabase
+          .from('coach_athlete_relationships')
+          .select('id')
+          .eq('coach_user_id', coachUserId)
+          .eq('athlete_user_id', athleteUserId)
+          .maybeSingle();
+      if (existingRelationship != null) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.relationshipAlreadyExists,
+        );
+      }
+
+      // Mark code as used
+      final updatedRows = await _supabase
+          .from('coach_pairing_codes')
+          .update({
+            'used_by_athlete_id': athleteUserId,
+            'used_at': now.toIso8601String(),
+          })
+          .eq('code', normalizedCode)
+          .isFilter('used_at', null)
+          .gte('expires_at', now.toIso8601String())
+          .select('id');
+
+      if ((updatedRows as List).isEmpty) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.codeExpired,
+        );
+      }
+
+      // Create active relationship (coach-initiated = immediately active)
+      final relationship = await createRelationship(
+        coachUserId: coachUserId,
+        athleteUserId: athleteUserId,
+        requestedBy: 'coach',
+      );
+
+      _logger.info(
+        'Athlete connected via coach pairing code',
+        context: 'COACH_REPOSITORY',
+        data: {
+          'code': normalizedCode,
+          'coachUserId': coachUserId,
+          'athleteUserId': athleteUserId,
+        },
+      );
+
+      return PairingCodeConnectResult.success(relationship);
+    } on PostgrestException catch (e, stackTrace) {
+      final message = e.message.toLowerCase();
+      final isDuplicate = e.code == '23505' || message.contains('duplicate');
+      if (isDuplicate) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.relationshipAlreadyExists,
+        );
+      }
+
+      _logger.error(
+        'Postgrest error while connecting via coach pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return PairingCodeConnectResult.failure(
+        PairingCodeConnectFailureReason.unknown,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to connect via coach pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return PairingCodeConnectResult.failure(
+        PairingCodeConnectFailureReason.unknown,
+      );
+    }
+  }
+
   /// Generate a random code of the given length
   String _generateRandomCode(int length) {
     final random = Random.secure();

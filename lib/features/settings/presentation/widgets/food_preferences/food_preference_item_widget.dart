@@ -14,14 +14,12 @@ class FoodPreferenceItemWidget extends ConsumerWidget {
   final FoodItem food;
   final int sliderLevel;
   final ValueChanged<int> onLevelChanged;
-  final KyleFoodType Function(String) mapFoodType;
 
   const FoodPreferenceItemWidget({
     super.key,
     required this.food,
     required this.sliderLevel,
     required this.onLevelChanged,
-    required this.mapFoodType,
   });
 
   @override
@@ -41,7 +39,7 @@ class FoodPreferenceItemWidget extends ConsumerWidget {
             children: [
               // Food icon
               KyleFoodIcon(
-                foodType: mapFoodType(food.name),
+                foodType: mapFoodType(productTypeId: food.productTypeId, name: food.name),
               ),
 
               const SizedBox(width: AppSpacing.md),

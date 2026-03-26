@@ -16,6 +16,7 @@ import '../../../weather/presentation/widgets/weather_indicator_badge.dart';
 import '../../../weather/presentation/screens/weather_detail_screen.dart';
 import '../../../weather/domain/weather_forecast.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Cycling Input Screen - Cycling-specific nutrition plan input
 /// Users enter cycling details and generate their nutrition plan
@@ -146,12 +147,13 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
       ),
-      body: Stack(
-        children: [
-          // Main content
-          SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: Form(
+      body: ContentArea(
+        child: Stack(
+          children: [
+            // Main content
+            SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -302,10 +304,11 @@ class _CyclingInputScreenState extends ConsumerState<CyclingInputScreen> {
             ),
           ),
 
-          // Loading overlay
-          if (state.isGeneratingMacros)
-            const LoadingOverlay(),
-        ],
+            // Loading overlay
+            if (state.isGeneratingMacros)
+              const LoadingOverlay(),
+          ],
+        ),
       ),
     );
   }

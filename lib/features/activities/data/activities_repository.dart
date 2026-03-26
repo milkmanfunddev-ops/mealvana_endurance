@@ -1007,6 +1007,7 @@ class ActivitiesRepository with SyncableRepository {
       // preserve local completion and nutrition data
       completedAt: existing.completedAt,
       completionRating: existing.completionRating,
+      nutritionRating: existing.nutritionRating,
       completionNotes: existing.completionNotes,
       actualDistanceMiles: existing.actualDistanceMiles,
       actualDurationMinutes: existing.actualDurationMinutes,

@@ -91,9 +91,17 @@ export function deriveTimingCategory(food: Food): TimingCategory {
 
 export interface MacroTargets {
   carbs_g: number;
+  carbs_low_g?: number;
+  carbs_high_g?: number;
   protein_g?: number;
+  protein_low_g?: number;
+  protein_high_g?: number;
   sodium_mg: number;
+  sodium_low_mg?: number;
+  sodium_high_mg?: number;
   water_ml: number;
+  water_low_ml?: number;
+  water_high_ml?: number;
 }
 
 export interface PhaseTargets {

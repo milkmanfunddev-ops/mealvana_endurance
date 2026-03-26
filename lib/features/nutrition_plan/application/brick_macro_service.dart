@@ -53,7 +53,9 @@ class BrickMacroService {
     required bool isFasted,
     required int preActivityMinutes,
   }) async {
-    DebugLogger.info('🧱 BRICK MACRO SERVICE: generateBrickMacros called - ${segments.length} segments');
+    DebugLogger.info(
+      '🧱 BRICK MACRO SERVICE: generateBrickMacros called - ${segments.length} segments',
+    );
 
     // Validate segments
     if (segments.isEmpty) {
@@ -69,7 +71,9 @@ class BrickMacroService {
         preActivityMinutes: preActivityMinutes,
       );
 
-      DebugLogger.info('🧱 BRICK MACRO SERVICE: Calling generate-macros edge function...');
+      DebugLogger.info(
+        '🧱 BRICK MACRO SERVICE: Calling generate-macros edge function...',
+      );
 
       // Call edge function with timeout
       final response = await supabaseClient.functions.invoke(
@@ -82,8 +86,11 @@ class BrickMacroService {
       // Handle HTTP errors
       if (response.status >= 400) {
         final data = response.data as Map<String, dynamic>?;
-        final errorMessage = data?['message'] ?? 'Failed to generate brick macro targets';
-        DebugLogger.error('❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage');
+        final errorMessage =
+            data?['message'] ?? 'Failed to generate brick macro targets';
+        DebugLogger.error(
+          '❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage',
+        );
         throw BrickMacroGenerationException.edgeFunctionError(
           errorMessage,
           statusCode: response.status,
@@ -94,7 +101,8 @@ class BrickMacroService {
 
       // Handle application-level errors
       if (data['success'] != true) {
-        final errorMessage = data['message'] ?? 'Failed to generate brick macro targets';
+        final errorMessage =
+            data['message'] ?? 'Failed to generate brick macro targets';
         DebugLogger.error('❌ EDGE FUNCTION: Success=false: $errorMessage');
         throw BrickMacroGenerationException.edgeFunctionError(errorMessage);
       }
@@ -120,7 +128,9 @@ class BrickMacroService {
         isFirstPlan: true,
       );
 
-      DebugLogger.info('✅ BRICK MACRO SERVICE: Successfully generated brick macro targets');
+      DebugLogger.info(
+        '✅ BRICK MACRO SERVICE: Successfully generated brick macro targets',
+      );
 
       return macroTargets;
     } on BrickMacroGenerationException {
@@ -132,7 +142,9 @@ class BrickMacroService {
       throw BrickMacroGenerationException.networkError(e);
     } catch (e, stackTrace) {
       // Network or parsing errors
-      DebugLogger.error('❌ BRICK MACRO SERVICE: Unexpected error: $e\n$stackTrace');
+      DebugLogger.error(
+        '❌ BRICK MACRO SERVICE: Unexpected error: $e\n$stackTrace',
+      );
 
       if (e.toString().contains('network') ||
           e.toString().contains('connection') ||
@@ -165,16 +177,23 @@ class BrickMacroService {
         'order': segment.order,
         'duration_minutes': segment.durationMinutes,
         'intensity': segment.intensity,
-        if (segment.distanceMeters != null) 'distance_meters': segment.distanceMeters,
-        if (segment.pacePer100mSeconds != null) 'pace_per_100m_seconds': segment.pacePer100mSeconds,
-        if (segment.poolOrOpenWater != null) 'pool_or_open_water': segment.poolOrOpenWater,
+        if (segment.distanceMeters != null)
+          'distance_meters': segment.distanceMeters,
+        if (segment.pacePer100mSeconds != null)
+          'pace_per_100m_seconds': segment.pacePer100mSeconds,
+        if (segment.poolOrOpenWater != null)
+          'pool_or_open_water': segment.poolOrOpenWater,
         if (segment.waterTempC != null) 'water_temp_c': segment.waterTempC,
-        if (segment.distanceMiles != null) 'distance_miles': segment.distanceMiles,
+        if (segment.distanceMiles != null)
+          'distance_miles': segment.distanceMiles,
         if (segment.speedMph != null) 'speed_mph': segment.speedMph,
         if (segment.terrain != null) 'terrain': segment.terrain,
-        if (segment.indoorOutdoor != null) 'indoor_outdoor': segment.indoorOutdoor,
-        if (segment.elevationGainFt != null) 'elevation_gain_ft': segment.elevationGainFt,
-        if (segment.paceMinutesPerMile != null) 'pace_minutes_per_mile': segment.paceMinutesPerMile,
+        if (segment.indoorOutdoor != null)
+          'indoor_outdoor': segment.indoorOutdoor,
+        if (segment.elevationGainFt != null)
+          'elevation_gain_ft': segment.elevationGainFt,
+        if (segment.paceMinutesPerMile != null)
+          'pace_minutes_per_mile': segment.paceMinutesPerMile,
       };
     }).toList();
 
@@ -217,7 +236,10 @@ class BrickMacroService {
   /// - postRun = after phase
   ///
   /// [segments] - Original brick segments to store for nutrition plan generation
-  MacroTargets _parseBrickMacroTargets(Map<String, dynamic> data, List<BrickSegment> segments) {
+  MacroTargets _parseBrickMacroTargets(
+    Map<String, dynamic> data,
+    List<BrickSegment> segments,
+  ) {
     final macrosData = data['macros'] as Map<String, dynamic>;
     final phasesData = macrosData['phases'] as Map<String, dynamic>?;
 
@@ -228,10 +250,16 @@ class BrickMacroService {
     // Parse before phase
     final beforePhase = phasesData['before'] as Map<String, dynamic>? ?? {};
     final preRunCarbs = _toDouble(beforePhase['carbs_g'], 'before.carbs_g');
-    final preRunProtein = _toDouble(beforePhase['protein_g'], 'before.protein_g');
+    final preRunProtein = _toDouble(
+      beforePhase['protein_g'],
+      'before.protein_g',
+    );
     final preRunFat = _toDouble(beforePhase['fat_g'], 'before.fat_g');
     final preRunFluids = _toDouble(beforePhase['water_ml'], 'before.water_ml');
-    final preRunSodium = _toDouble(beforePhase['sodium_mg'], 'before.sodium_mg');
+    final preRunSodium = _toDouble(
+      beforePhase['sodium_mg'],
+      'before.sodium_mg',
+    );
     // V4 range fields
     final preRunCarbsLow = _toDoubleOrNull(beforePhase['carbs_low_g']);
     final preRunCarbsHigh = _toDoubleOrNull(beforePhase['carbs_high_g']);
@@ -245,7 +273,10 @@ class BrickMacroService {
     // Parse after phase
     final afterPhase = phasesData['after'] as Map<String, dynamic>? ?? {};
     final postRunCarbs = _toDouble(afterPhase['carbs_g'], 'after.carbs_g');
-    final postRunProtein = _toDouble(afterPhase['protein_g'], 'after.protein_g');
+    final postRunProtein = _toDouble(
+      afterPhase['protein_g'],
+      'after.protein_g',
+    );
     final postRunFluids = _toDouble(afterPhase['water_ml'], 'after.water_ml');
     final postRunSodium = _toDouble(afterPhase['sodium_mg'], 'after.sodium_mg');
     // V4 range fields for post-run
@@ -270,30 +301,90 @@ class BrickMacroService {
     bool hasDuringRanges = false;
 
     // Sum during segments (edge function returns as List, not Map)
-    final duringSegments = phasesData['during_segments'] as List<dynamic>? ?? [];
+    final duringSegments =
+        phasesData['during_segments'] as List<dynamic>? ?? [];
+    final parsedDuringSegments = <BrickSegmentMacroTarget>[];
     for (final segmentData in duringSegments) {
       if (segmentData is Map<String, dynamic>) {
-        duringCarbsTotal += _toDouble(segmentData['carbs_g'], 'during_segment.carbs_g');
-        duringFluidsTotal += _toDouble(segmentData['water_ml'], 'during_segment.water_ml');
-        duringSodiumTotal += _toDouble(segmentData['sodium_mg'], 'during_segment.sodium_mg');
+        duringCarbsTotal += _toDouble(
+          segmentData['carbs_g'],
+          'during_segment.carbs_g',
+        );
+        duringFluidsTotal += _toDouble(
+          segmentData['water_ml'],
+          'during_segment.water_ml',
+        );
+        duringSodiumTotal += _toDouble(
+          segmentData['sodium_mg'],
+          'during_segment.sodium_mg',
+        );
         final segSodiumLow = _toDoubleOrNull(segmentData['sodium_low_mg']);
         final segSodiumHigh = _toDoubleOrNull(segmentData['sodium_high_mg']);
         final segFluidsLow = _toDoubleOrNull(segmentData['water_low_ml']);
         final segFluidsHigh = _toDoubleOrNull(segmentData['water_high_ml']);
-        if (segSodiumLow != null) { duringSodiumLowTotal += segSodiumLow; hasDuringRanges = true; }
-        if (segSodiumHigh != null) { duringSodiumHighTotal += segSodiumHigh; hasDuringRanges = true; }
-        if (segFluidsLow != null) { duringFluidsLowTotal += segFluidsLow; hasDuringRanges = true; }
-        if (segFluidsHigh != null) { duringFluidsHighTotal += segFluidsHigh; hasDuringRanges = true; }
+        if (segSodiumLow != null) {
+          duringSodiumLowTotal += segSodiumLow;
+          hasDuringRanges = true;
+        }
+        if (segSodiumHigh != null) {
+          duringSodiumHighTotal += segSodiumHigh;
+          hasDuringRanges = true;
+        }
+        if (segFluidsLow != null) {
+          duringFluidsLowTotal += segFluidsLow;
+          hasDuringRanges = true;
+        }
+        if (segFluidsHigh != null) {
+          duringFluidsHighTotal += segFluidsHigh;
+          hasDuringRanges = true;
+        }
+
+        parsedDuringSegments.add(
+          BrickSegmentMacroTarget(
+            segmentOrder:
+                (segmentData['segment_order'] as num?)?.toInt() ??
+                (segmentData['order'] as num?)?.toInt() ??
+                parsedDuringSegments.length + 1,
+            sport: segmentData['sport'] as String? ?? 'unknown',
+            durationMinutes:
+                (segmentData['duration_minutes'] as num?)?.toInt() ?? 0,
+            carbsG: _toDouble(segmentData['carbs_g'], 'during_segment.carbs_g'),
+            carbsLowG: _toDoubleOrNull(segmentData['carbs_low_g']),
+            carbsHighG: _toDoubleOrNull(segmentData['carbs_high_g']),
+            sodiumMg: _toDouble(
+              segmentData['sodium_mg'],
+              'during_segment.sodium_mg',
+            ),
+            sodiumLowMg: segSodiumLow,
+            sodiumHighMg: segSodiumHigh,
+            waterMl: _toDouble(
+              segmentData['water_ml'],
+              'during_segment.water_ml',
+            ),
+            waterLowMl: segFluidsLow,
+            waterHighMl: segFluidsHigh,
+          ),
+        );
       }
     }
 
     // Sum transitions (edge function returns as List, not Map)
     final transitions = phasesData['transitions'] as List<dynamic>? ?? [];
+    final parsedTransitions = <BrickTransitionMacroTarget>[];
     for (final transitionData in transitions) {
       if (transitionData is Map<String, dynamic>) {
-        duringCarbsTotal += _toDouble(transitionData['carbs_g'], 'transition.carbs_g');
-        duringFluidsTotal += _toDouble(transitionData['water_ml'], 'transition.water_ml');
-        duringSodiumTotal += _toDouble(transitionData['sodium_mg'], 'transition.sodium_mg');
+        duringCarbsTotal += _toDouble(
+          transitionData['carbs_g'],
+          'transition.carbs_g',
+        );
+        duringFluidsTotal += _toDouble(
+          transitionData['water_ml'],
+          'transition.water_ml',
+        );
+        duringSodiumTotal += _toDouble(
+          transitionData['sodium_mg'],
+          'transition.sodium_mg',
+        );
         final trSodiumLow = _toDoubleOrNull(transitionData['sodium_low_mg']);
         final trSodiumHigh = _toDoubleOrNull(transitionData['sodium_high_mg']);
         final trFluidsLow = _toDoubleOrNull(transitionData['water_low_ml']);
@@ -302,22 +393,58 @@ class BrickMacroService {
         if (trSodiumHigh != null) duringSodiumHighTotal += trSodiumHigh;
         if (trFluidsLow != null) duringFluidsLowTotal += trFluidsLow;
         if (trFluidsHigh != null) duringFluidsHighTotal += trFluidsHigh;
+
+        parsedTransitions.add(
+          BrickTransitionMacroTarget(
+            transitionName:
+                transitionData['transition_name'] as String? ??
+                transitionData['transition_id'] as String? ??
+                'T${parsedTransitions.length + 1}',
+            carbsG: _toDouble(transitionData['carbs_g'], 'transition.carbs_g'),
+            carbsLowG: _toDoubleOrNull(transitionData['carbs_low_g']),
+            carbsHighG: _toDoubleOrNull(transitionData['carbs_high_g']),
+            sodiumMg: _toDouble(
+              transitionData['sodium_mg'],
+              'transition.sodium_mg',
+            ),
+            sodiumLowMg: trSodiumLow,
+            sodiumHighMg: trSodiumHigh,
+            waterMl: _toDouble(
+              transitionData['water_ml'],
+              'transition.water_ml',
+            ),
+            waterLowMl: trFluidsLow,
+            waterHighMl: trFluidsHigh,
+          ),
+        );
       }
     }
 
     // Calculate rate per hour from totals and duration
     final totalDurationH = _toDouble(macrosData['duration_h'], 'duration_h');
-    final duringCarbRate = totalDurationH > 0 ? duringCarbsTotal / totalDurationH : 0.0;
-    final duringFluidsRate = totalDurationH > 0 ? duringFluidsTotal / totalDurationH : 0.0;
-    final duringSodiumRate = totalDurationH > 0 ? duringSodiumTotal / totalDurationH : 0.0;
+    final duringCarbRate = totalDurationH > 0
+        ? duringCarbsTotal / totalDurationH
+        : 0.0;
+    final duringFluidsRate = totalDurationH > 0
+        ? duringFluidsTotal / totalDurationH
+        : 0.0;
+    final duringSodiumRate = totalDurationH > 0
+        ? duringSodiumTotal / totalDurationH
+        : 0.0;
 
     // Parse metrics
     final distanceMi = _toDouble(macrosData['distance_mi'], 'distance_mi');
     final distanceKm = _toDouble(macrosData['distance_km'], 'distance_km');
     final durationH = _toDouble(macrosData['duration_h'], 'duration_h');
     final durationMin = _toDouble(macrosData['duration_min'], 'duration_min');
-    final caloriesNet = _toDouble(macrosData['calories_net_kcal'], 'calories_net_kcal');
-    final caloriesGross = _toDouble(macrosData['calories_gross_kcal'], 'calories_gross_kcal');
+    final caloriesNet = _toDouble(
+      macrosData['calories_net_kcal'],
+      'calories_net_kcal',
+    );
+    final caloriesGross = _toDouble(
+      macrosData['calories_gross_kcal'],
+      'calories_gross_kcal',
+    );
 
     return MacroTargets(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -373,7 +500,9 @@ class BrickMacroService {
         durationH: durationH,
         durationMin: durationMin,
         paceMinPerMile: null, // Not applicable for brick
-        speedMph: distanceMi > 0 && durationH > 0 ? distanceMi / durationH : 0.0,
+        speedMph: distanceMi > 0 && durationH > 0
+            ? distanceMi / durationH
+            : 0.0,
         caloriesNetKcal: caloriesNet,
         caloriesGrossKcal: caloriesGross,
         met: 0.0, // Not applicable for brick (multi-segment)
@@ -382,6 +511,10 @@ class BrickMacroService {
       timestamp: DateTime.now(),
       isUserModified: false,
       brickSegments: segments, // Store segments for nutrition plan generation
+      brickPhaseTargets: BrickPhaseTargets(
+        duringSegments: parsedDuringSegments,
+        transitions: parsedTransitions,
+      ),
     );
   }
 

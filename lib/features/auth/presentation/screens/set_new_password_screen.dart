@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../application/email_auth_service.dart';
@@ -61,8 +62,9 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
-      body: SafeArea(
-        child: SingleChildScrollView(
+      body: ContentArea.narrow(
+        child: SafeArea(
+          child: SingleChildScrollView(
           padding: AppSpacing.screenPaddingHorizontal,
           child: Form(
             key: _formKey,
@@ -220,6 +222,7 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

@@ -73,7 +73,7 @@ class EducationScreen extends ConsumerWidget {
                   // Free Videos section
                   _SectionHeader(
                     icon: FontAwesomeIcons.circlePlay,
-                    title: 'ME 101',
+                    title: 'Mealvana 101',
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
@@ -88,9 +88,7 @@ class EducationScreen extends ConsumerWidget {
                   if (groups.freeVideos.isEmpty)
                     _EmptySection(message: 'No videos available yet')
                   else
-                    _HorizontalVideoList(
-                      videos: groups.freeVideos,
-                    ),
+                    _HorizontalVideoList(videos: groups.freeVideos),
 
                   const SizedBox(height: AppSpacing.xxl),
 
@@ -138,10 +136,7 @@ class EducationScreen extends ConsumerWidget {
 
 /// Section header with icon and title
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.icon,
-    required this.title,
-  });
+  const _SectionHeader({required this.icon, required this.title});
 
   final IconData icon;
   final String title;
@@ -153,11 +148,7 @@ class _SectionHeader extends StatelessWidget {
 
     return Row(
       children: [
-        FaIcon(
-          icon,
-          size: 18,
-          color: AppColors.orange,
-        ),
+        FaIcon(icon, size: 18, color: AppColors.orange),
         const SizedBox(width: AppSpacing.xs),
         Text(
           title,
@@ -226,7 +217,7 @@ class _HorizontalVideoList extends StatelessWidget {
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => VideoPlayerScreen(
-                    title: video.title,
+                    title: video.displayTitle,
                     videoUrl: video.videoUrl ?? '',
                   ),
                 ),
@@ -357,7 +348,7 @@ class _CompactVideoCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    content.title,
+                    content.displayTitle,
                     style: AppTextStyles.h5.copyWith(
                       color: isDark ? AppColors.textDark : AppColors.textLight,
                       fontSize: 14,

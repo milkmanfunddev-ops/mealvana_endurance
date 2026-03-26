@@ -159,10 +159,10 @@ class EventDetailScreen extends ConsumerWidget {
 
                 const SizedBox(height: AppSpacing.xxl),
               ],
-            ),
-          );
-        },
-        loading: () => const Center(
+              ),
+            );
+          },
+          loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.electrolyte),
         ),
         error: (error, stack) => SingleChildScrollView(

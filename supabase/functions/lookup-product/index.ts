@@ -179,7 +179,7 @@ function detectProductType(
 }
 
 /**
- * Look up a catalog variant by barcode using the catalog_items_v view
+ * Look up a catalog variant by barcode using the catalog_items view
  * (JOINs catalog_products + catalog_variants).
  * Returns a cleanedProduct in the same shape as the OFF response so the
  * Flutter client needs zero changes.
@@ -191,9 +191,20 @@ async function lookupCatalog(barcode: string): Promise<{ product: Record<string,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
+    // Select only needed columns (excludes raw_payload, tags, ingredients, etc.)
+    const columns = `
+      id, title, variant_title, brand, product_type, barcode,
+      image_url, product_url, price_cents, currency_code, available_for_sale,
+      calories_per_serving, carbs_g, protein_g, fat_g, sodium_mg,
+      serving_size, serving_grams, caffeine_mg,
+      nutrition_source, nutrition_confidence,
+      product_type_id, categories, is_electrolyte, is_liquid,
+      allergens, excluded_diets
+    `;
+
     const { data, error } = await supabase
-      .from('catalog_items_v')
-      .select('*')
+      .from('catalog_items')
+      .select(columns)
       .eq('barcode', barcode)
       .eq('available_for_sale', true)
       .limit(1)

@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wiredash/wiredash.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Help & Feedback Screen - Kyle's Design System
 /// Support and feedback collection screen with Wiredash integration
@@ -17,7 +18,9 @@ class HelpFeedbackScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
-      body: _buildContent(context, ref),
+      body: ContentArea(
+        child: _buildContent(context, ref),
+      ),
     );
   }
 
@@ -477,6 +480,16 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
     debugPrint('[Ratings] Opening Wiredash Promoter Score survey...');
 
+    // Prefill user properties for Wiredash survey
+    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+    final currentUser = supabaseClient.auth.currentUser;
+    if (currentUser != null) {
+      Wiredash.of(context).setUserProperties(
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      );
+    }
+
     // Always show the NPS survey when user explicitly requests it
     Wiredash.of(context).showPromoterSurvey(
       inheritMaterialTheme: true,
@@ -502,6 +515,16 @@ class HelpFeedbackScreen extends ConsumerWidget {
     if (!context.mounted) return;
 
     debugPrint('[BugReport] Opening Wiredash feedback widget...');
+
+    // Prefill user properties for Wiredash feedback
+    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+    final currentUser = supabaseClient.auth.currentUser;
+    if (currentUser != null) {
+      Wiredash.of(context).setUserProperties(
+        userEmail: currentUser.email,
+        userId: currentUser.id,
+      );
+    }
 
     // Open Wiredash with bug report flow
     // Labels are configured in RootAppWidget

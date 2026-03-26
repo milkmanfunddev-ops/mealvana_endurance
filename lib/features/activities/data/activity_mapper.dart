@@ -50,10 +50,12 @@ class ActivityMapper {
       timeBeforeMinutes: row.timeBeforeMinutes,
       completedAt: row.completedAt,
       completionRating: row.completionRating,
+      nutritionRating: null, // local drift table has no nutrition_rating column
       completionNotes: row.completionNotes,
       actualDistanceMiles: row.actualDistanceMiles,
       actualDurationMinutes: row.actualDurationMinutes,
       nutritionPlanDataRaw: row.nutritionPlanData,
+      fuelLogDataRaw: row.fuelLogData,
       notes: row.notes,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -111,10 +113,12 @@ class ActivityMapper {
       timeBeforeMinutes: (json['time_before_minutes'] as num?)?.toInt(),
       completedAt: parseDateTime(json['completed_at']),
       completionRating: (json['completion_rating'] as num?)?.toInt(),
+      nutritionRating: (json['nutrition_rating'] as num?)?.toInt(),
       completionNotes: json['completion_notes'] as String?,
       actualDistanceMiles: (json['actual_distance_miles'] as num?)?.toDouble(),
       actualDurationMinutes: (json['actual_duration_minutes'] as num?)?.toInt(),
       nutritionPlanDataRaw: json['nutrition_plan_data'],
+      fuelLogDataRaw: json['fuel_log_data'],
       notes: json['notes'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
@@ -171,10 +175,12 @@ class ActivityMapper {
     required int? timeBeforeMinutes,
     required DateTime? completedAt,
     required int? completionRating,
+    required int? nutritionRating,
     required String? completionNotes,
     required double? actualDistanceMiles,
     required int? actualDurationMinutes,
     required dynamic nutritionPlanDataRaw,
+    required dynamic fuelLogDataRaw,
     required String? notes,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -231,6 +237,14 @@ class ActivityMapper {
       }
     }
 
+    final parsedNutritionPlanData = parseNutritionPlanDataValue(
+      nutritionPlanDataRaw,
+    );
+    final parsedFuelLogData = parseNutritionPlanDataValue(fuelLogDataRaw);
+    final resolvedNutritionRating =
+        nutritionRating ??
+        _extractNutritionRatingFromPlanData(parsedNutritionPlanData);
+
     return domain.Activity(
       id: id,
       userId: userId,
@@ -260,10 +274,12 @@ class ActivityMapper {
       timeBeforeMinutes: timeBeforeMinutes,
       completedAt: completedAt,
       completionRating: completionRating,
+      nutritionRating: resolvedNutritionRating,
       completionNotes: completionNotes,
       actualDistanceMiles: actualDistanceMiles,
       actualDurationMinutes: actualDurationMinutes,
-      nutritionPlanData: parseNutritionPlanDataValue(nutritionPlanDataRaw),
+      nutritionPlanData: parsedNutritionPlanData,
+      fuelLogData: parsedFuelLogData,
       notes: notes,
       createdAt: createdAt,
       updatedAt: updatedAt,
@@ -302,6 +318,11 @@ class ActivityMapper {
     domain.Activity activity, {
     bool forInsert = false,
   }) {
+    final localPlanData = _mergeNutritionFeedbackMetadata(
+      activity.nutritionPlanData,
+      nutritionRating: activity.nutritionRating,
+    );
+
     return ActivitiesTableCompanion(
       id: forInsert ? const Value.absent() : Value(activity.id),
       userId: Value(activity.userId),
@@ -335,9 +356,10 @@ class ActivityMapper {
       completionRating: Value(activity.completionRating),
       completionNotes: Value(activity.completionNotes),
       nutritionPlanData: Value(
-        activity.nutritionPlanData != null
-            ? jsonEncode(activity.nutritionPlanData)
-            : null,
+        localPlanData != null ? jsonEncode(localPlanData) : null,
+      ),
+      fuelLogData: Value(
+        activity.fuelLogData != null ? jsonEncode(activity.fuelLogData) : null,
       ),
       reminderEnabled: Value(activity.reminderEnabled),
       reminderDaysBefore: Value(activity.reminderDaysBefore),
@@ -379,6 +401,11 @@ class ActivityMapper {
     domain.Activity activity, {
     bool includeCreatedAt = false,
   }) {
+    final payloadPlanData = _mergeNutritionFeedbackMetadata(
+      activity.nutritionPlanData,
+      nutritionRating: activity.nutritionRating,
+    );
+
     return {
       'id': activity.id,
       'user_id': activity.userId,
@@ -408,8 +435,10 @@ class ActivityMapper {
       'actual_distance_miles': activity.actualDistanceMiles,
       'actual_duration_minutes': activity.actualDurationMinutes,
       'completion_rating': activity.completionRating,
+      'nutrition_rating': activity.nutritionRating,
       'completion_notes': activity.completionNotes,
-      'nutrition_plan_data': activity.nutritionPlanData,
+      'nutrition_plan_data': payloadPlanData,
+      'fuel_log_data': activity.fuelLogData,
       'synced_from_provider': activity.syncedFromProvider,
       'provider_workout_id': activity.providerWorkoutId,
       'provider_workout_url': activity.providerWorkoutUrl,
@@ -429,6 +458,15 @@ class ActivityMapper {
 
   /// Build Supabase JSON payload from a Drift [Activity] row (for dirty record uploads).
   Map<String, dynamic> buildUploadPayloadFromRow(Activity record) {
+    final decodedNutritionPlanData = decodeJsonObject(
+      record.nutritionPlanData,
+      fieldName: 'nutrition_plan_data',
+      activityId: record.id,
+    );
+    final nutritionRating = _extractNutritionRatingFromPlanData(
+      decodedNutritionPlanData,
+    );
+
     return {
       'id': record.id,
       'user_id': record.userId,
@@ -458,10 +496,12 @@ class ActivityMapper {
       'actual_distance_miles': record.actualDistanceMiles,
       'actual_duration_minutes': record.actualDurationMinutes,
       'completion_rating': record.completionRating,
+      'nutrition_rating': nutritionRating,
       'completion_notes': record.completionNotes,
-      'nutrition_plan_data': decodeJsonObject(
-        record.nutritionPlanData,
-        fieldName: 'nutrition_plan_data',
+      'nutrition_plan_data': decodedNutritionPlanData,
+      'fuel_log_data': decodeJsonObject(
+        record.fuelLogData,
+        fieldName: 'fuel_log_data',
         activityId: record.id,
       ),
       'synced_from_provider': record.syncedFromProvider,
@@ -621,6 +661,45 @@ class ActivityMapper {
     }
 
     return null;
+  }
+
+  static const String _feedbackMetaKey = '_feedback_meta';
+  static const String _nutritionRatingKey = 'nutrition_rating';
+
+  /// Stores lightweight completion feedback metadata alongside nutrition plan
+  /// JSON so local drift rows can round-trip carb feedback without a new column.
+  Map<String, dynamic>? _mergeNutritionFeedbackMetadata(
+    Map<String, dynamic>? planData, {
+    required int? nutritionRating,
+  }) {
+    if (planData == null && nutritionRating == null) return null;
+
+    final merged = <String, dynamic>{...(planData ?? const {})};
+    final existingMeta = merged[_feedbackMetaKey] is Map
+        ? Map<String, dynamic>.from(merged[_feedbackMetaKey] as Map)
+        : <String, dynamic>{};
+
+    if (nutritionRating != null) {
+      existingMeta[_nutritionRatingKey] = nutritionRating;
+    } else {
+      existingMeta.remove(_nutritionRatingKey);
+    }
+
+    if (existingMeta.isEmpty) {
+      merged.remove(_feedbackMetaKey);
+    } else {
+      merged[_feedbackMetaKey] = existingMeta;
+    }
+
+    return merged.isEmpty ? null : merged;
+  }
+
+  int? _extractNutritionRatingFromPlanData(Map<String, dynamic>? planData) {
+    if (planData == null) return null;
+    final meta = planData[_feedbackMetaKey];
+    if (meta is! Map) return null;
+    final raw = meta[_nutritionRatingKey];
+    return (raw is num) ? raw.toInt() : null;
   }
 
   /// Decode a JSON string to a Map, handling double-encoding.

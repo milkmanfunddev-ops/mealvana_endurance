@@ -930,3 +930,229 @@ final class IsTrainingPeaksConnectedFamily extends $Family
   @override
   String toString() => r'isTrainingPeaksConnectedProvider';
 }
+
+/// Provider for Garmin Connect OAuth service
+///
+/// Garmin is push-only — no sync service or API client needed.
+/// Activities arrive automatically via server-side push.
+
+@ProviderFor(garminOAuthService)
+const garminOAuthServiceProvider = GarminOAuthServiceProvider._();
+
+/// Provider for Garmin Connect OAuth service
+///
+/// Garmin is push-only — no sync service or API client needed.
+/// Activities arrive automatically via server-side push.
+
+final class GarminOAuthServiceProvider
+    extends
+        $FunctionalProvider<
+          GarminOAuthService,
+          GarminOAuthService,
+          GarminOAuthService
+        >
+    with $Provider<GarminOAuthService> {
+  /// Provider for Garmin Connect OAuth service
+  ///
+  /// Garmin is push-only — no sync service or API client needed.
+  /// Activities arrive automatically via server-side push.
+  const GarminOAuthServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'garminOAuthServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$garminOAuthServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<GarminOAuthService> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  GarminOAuthService create(Ref ref) {
+    return garminOAuthService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(GarminOAuthService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<GarminOAuthService>(value),
+    );
+  }
+}
+
+String _$garminOAuthServiceHash() =>
+    r'13a899004fc28cb477a0c64c5ad81ae033f42cca';
+
+/// Provider to get Garmin Connect integration for a user
+
+@ProviderFor(garminIntegration)
+const garminIntegrationProvider = GarminIntegrationFamily._();
+
+/// Provider to get Garmin Connect integration for a user
+
+final class GarminIntegrationProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<IntegrationModel?>,
+          IntegrationModel?,
+          FutureOr<IntegrationModel?>
+        >
+    with
+        $FutureModifier<IntegrationModel?>,
+        $FutureProvider<IntegrationModel?> {
+  /// Provider to get Garmin Connect integration for a user
+  const GarminIntegrationProvider._({
+    required GarminIntegrationFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'garminIntegrationProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$garminIntegrationHash();
+
+  @override
+  String toString() {
+    return r'garminIntegrationProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<IntegrationModel?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<IntegrationModel?> create(Ref ref) {
+    final argument = this.argument as String;
+    return garminIntegration(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is GarminIntegrationProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$garminIntegrationHash() => r'25d48d7f5ce70b70531e14813d0017575abd05a9';
+
+/// Provider to get Garmin Connect integration for a user
+
+final class GarminIntegrationFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<IntegrationModel?>, String> {
+  const GarminIntegrationFamily._()
+    : super(
+        retry: null,
+        name: r'garminIntegrationProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provider to get Garmin Connect integration for a user
+
+  GarminIntegrationProvider call(String userId) =>
+      GarminIntegrationProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'garminIntegrationProvider';
+}
+
+/// Provider to check if Garmin Connect is connected
+
+@ProviderFor(isGarminConnected)
+const isGarminConnectedProvider = IsGarminConnectedFamily._();
+
+/// Provider to check if Garmin Connect is connected
+
+final class IsGarminConnectedProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
+  /// Provider to check if Garmin Connect is connected
+  const IsGarminConnectedProvider._({
+    required IsGarminConnectedFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'isGarminConnectedProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$isGarminConnectedHash();
+
+  @override
+  String toString() {
+    return r'isGarminConnectedProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool> create(Ref ref) {
+    final argument = this.argument as String;
+    return isGarminConnected(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is IsGarminConnectedProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$isGarminConnectedHash() => r'3de352bda711ec27cf893833d1f5831f09612c3b';
+
+/// Provider to check if Garmin Connect is connected
+
+final class IsGarminConnectedFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<bool>, String> {
+  const IsGarminConnectedFamily._()
+    : super(
+        retry: null,
+        name: r'isGarminConnectedProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provider to check if Garmin Connect is connected
+
+  IsGarminConnectedProvider call(String userId) =>
+      IsGarminConnectedProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'isGarminConnectedProvider';
+}

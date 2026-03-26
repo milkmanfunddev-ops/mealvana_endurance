@@ -19,11 +19,7 @@ class CategoryMatcher {
   /// CategoryMatcher.matches('during_swim', 'during_swim', 'During Swim') // true
   /// CategoryMatcher.matches('transition', 'T1', 'T1') // true
   /// ```
-  static bool matches(
-    String category,
-    String sectionId,
-    String sectionTitle,
-  ) {
+  static bool matches(String category, String sectionId, String sectionTitle) {
     final categoryLower = category.toLowerCase();
     final sectionIdLower = sectionId.toLowerCase();
     final titleLower = sectionTitle.toLowerCase();
@@ -47,24 +43,44 @@ class CategoryMatcher {
         return false;
       }
 
-      // Match sport from title (positive match only - fall through on miss
-      // to handle single-sport plans where section ID/title may be generic)
+      final hasSwimToken =
+          sectionIdLower.contains('swim') || titleLower.contains('swim');
+      final hasBikeToken =
+          sectionIdLower.contains('bike') ||
+          sectionIdLower.contains('cycle') ||
+          sectionIdLower.contains('ride') ||
+          titleLower.contains('bike') ||
+          titleLower.contains('cycle') ||
+          titleLower.contains('ride');
+      final hasRunToken =
+          sectionIdLower.contains('run') || titleLower.contains('run');
+
+      // IMPORTANT: Do not fall back to generic "during" matching for swim/bike.
+      // Brick plans can have multiple during sections; broad fallback causes
+      // edits in one leg to apply to all legs.
       if (sportSuffix == 'swim' || sportSuffix == 'swimming') {
-        if (titleLower.contains('swim')) return true;
+        return hasSwimToken;
       }
       if (sportSuffix == 'cycling' ||
           sportSuffix == 'bike' ||
           sportSuffix == 'ride') {
-        if (titleLower.contains('bike') ||
-            titleLower.contains('cycle') ||
-            titleLower.contains('ride')) return true;
+        return hasBikeToken;
       }
       if (sportSuffix == 'run' || sportSuffix == 'running') {
-        if (titleLower.contains('run') ||
-            (!titleLower.contains('swim') &&
-                !titleLower.contains('bike') &&
-                !titleLower.contains('cycle'))) return true;
+        if (hasRunToken) return true;
+        // Single-sport compatibility: allow truly generic legacy "during"
+        // section identifiers/titles that don't explicitly declare swim/bike.
+        if (!hasSwimToken && !hasBikeToken) {
+          return sectionIdLower == 'during' ||
+              sectionIdLower == 'during_run' ||
+              titleLower == 'during' ||
+              titleLower == 'during run';
+        }
+        return false;
       }
+
+      // Unknown during_* suffixes should only match generic during sections.
+      return !hasSwimToken && !hasBikeToken && !hasRunToken;
     }
 
     // Extract phase prefix (e.g., 'before' from 'before_run')
@@ -78,7 +94,8 @@ class CategoryMatcher {
     if (phasePrefix == 'after') {
       return sectionIdLower.contains('after') || titleLower.startsWith('after');
     }
-    if (phasePrefix == 'during') {
+    // Generic "during" category (no sport suffix) matches any during section.
+    if (phasePrefix == 'during' && categoryLower == 'during') {
       return sectionIdLower.contains('during') ||
           titleLower.startsWith('during');
     }

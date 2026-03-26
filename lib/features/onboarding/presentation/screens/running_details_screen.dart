@@ -10,6 +10,7 @@ import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Running Details Screen - Unified for both onboarding and settings
 ///
@@ -193,116 +194,118 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.blackberry,
-      body: Column(
-        children: [
-          // Progress bar for onboarding, back button for settings
-          Container(
-            color: AppColors.blackberry,
-            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-            child: _isOnboarding
-                ? const OnboardingProgressBar(
-                    currentSegment: 2, // Still in Sports + Details segment
-                  )
-                : Padding(
-                    padding: const EdgeInsets.only(top: 0, bottom: 20),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: widget.onBack ?? () => context.pop(),
-                          child: Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: AppColors.orange.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back,
-                              color: AppColors.orange,
-                              size: 24,
+      body: ContentArea.narrow(
+        child: Column(
+          children: [
+            // Progress bar for onboarding, back button for settings
+            Container(
+              color: AppColors.blackberry,
+              padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+              child: _isOnboarding
+                  ? const OnboardingProgressBar(
+                      currentSegment: 2, // Still in Sports + Details segment
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 0, bottom: 20),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: widget.onBack ?? () => context.pop(),
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: AppColors.orange.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back,
+                                color: AppColors.orange,
+                                size: 24,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Running Details',
+                            style: TextStyle(
+                              fontFamily: 'Sansita',
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+
+            // Content
+            Expanded(
+              child: SafeArea(
+                top: false,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Title
                         const Text(
-                          'Running Details',
+                          'Running details',
                           style: TextStyle(
                             fontFamily: 'Sansita',
-                            fontSize: 20,
+                            fontSize: 26,
                             fontWeight: FontWeight.w700,
                             color: AppColors.orange,
+                            height: 1.0,
                           ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Subtitle
+                        const Text(
+                          'Help us estimate your hydration needs.',
+                          style: TextStyle(
+                            fontFamily: 'Apercu',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.textDark,
+                            letterSpacing: 0.192,
+                            height: 1.0,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Water bottle toggle
+                        FigmaToggleCard(
+                          label: 'I run with a water bottle',
+                          value: _runsWithWaterBottle,
+                          onChanged: (value) => setState(() => _runsWithWaterBottle = value),
                         ),
                       ],
                     ),
                   ),
-          ),
-
-          // Content
-          Expanded(
-            child: SafeArea(
-              top: false,
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Title
-                      const Text(
-                        'Running details',
-                        style: TextStyle(
-                          fontFamily: 'Sansita',
-                          fontSize: 26,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.orange,
-                          height: 1.0,
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Subtitle
-                      const Text(
-                        'Help us estimate your hydration needs.',
-                        style: TextStyle(
-                          fontFamily: 'Apercu',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textDark,
-                          letterSpacing: 0.192,
-                          height: 1.0,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Water bottle toggle
-                      FigmaToggleCard(
-                        label: 'I run with a water bottle',
-                        value: _runsWithWaterBottle,
-                        onChanged: (value) => setState(() => _runsWithWaterBottle = value),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ),
-          ),
 
-          // Footer navigation
-          FigmaOnboardingFooter(
-            onContinue: _continue,
-            onBack: _isOnboarding
-                ? (widget.onBack ?? () => context.pop())
-                : null,
-            canContinue: true,
-            isLoading: _isSaving,
-            buttonText: _isSettings ? 'Save' : 'Continue',
-            showBackButton: _isOnboarding,
-          ),
-        ],
+            // Footer navigation
+            FigmaOnboardingFooter(
+              onContinue: _continue,
+              onBack: _isOnboarding
+                  ? (widget.onBack ?? () => context.pop())
+                  : null,
+              canContinue: true,
+              isLoading: _isSaving,
+              buttonText: _isSettings ? 'Save' : 'Continue',
+              showBackButton: _isOnboarding,
+            ),
+          ],
+        ),
       ),
     );
   }
