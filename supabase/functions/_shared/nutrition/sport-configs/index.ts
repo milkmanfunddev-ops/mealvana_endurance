@@ -62,7 +62,7 @@ export const triathlonConfig: SportConfig = {
   optimizationWeights: {
     before: { carbs: 1.0, protein: 0.5, sodium: 0.3 },
     during: { carbs: 1.0, sodium: 0.8 },
-    after: { carbs: 0.8, protein: 0.8, sodium: 0.4 },
+    after: { carbs: 0.8, protein: 1.0, sodium: 0.4 },
   },
 };
 

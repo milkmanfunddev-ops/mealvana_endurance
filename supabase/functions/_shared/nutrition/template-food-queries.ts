@@ -318,6 +318,27 @@ export async function getTemplateFoodsForPhase(
         }
       }
 
+      // Allergen-based diet filtering (for -free diets like gluten-free, dairy-free, peanut-free)
+      if (dietPrefLower && !isUserFood && !isEssential) {
+        const dietExcludedAllergens: string[] = [];
+        if (dietPrefLower === 'gluten-free' || dietPrefLower === 'all-free') dietExcludedAllergens.push('gluten');
+        if (dietPrefLower === 'dairy-free' || dietPrefLower === 'all-free') dietExcludedAllergens.push('dairy');
+        if (dietPrefLower === 'peanut-free' || dietPrefLower === 'all-free') dietExcludedAllergens.push('peanut');
+
+        if (dietExcludedAllergens.length > 0) {
+          const foodAllergens = (f.allergens as string[] | null) ?? [];
+          const hasDietAllergen = foodAllergens.some((a: string) =>
+            dietExcludedAllergens.includes(a.toLowerCase())
+          );
+          if (hasDietAllergen) {
+            console.log(
+              `[TMPL-FILTER-DIET-ALLERGEN] Excluding food with allergen for diet '${dietaryPreference}': ${f.name} (allergens: ${foodAllergens.join(",")})`,
+            );
+            return false;
+          }
+        }
+      }
+
       // Dietary preference filtering — exclude foods whose excluded_diets contains user's dietary preference
       if (dietPrefLower && !isUserFood && !isEssential) {
         const excludedDiets = (f.excluded_diets as string[] | null) ?? [];

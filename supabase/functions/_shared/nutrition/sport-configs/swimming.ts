@@ -43,6 +43,6 @@ export const swimmingConfig: SportConfig = {
   optimizationWeights: {
     before: { carbs: 0.8, protein: 0.3, sodium: 0.2 },
     during: { carbs: 0.5, sodium: 0.3 }, // Limited intake at aid stations
-    after: { carbs: 0.7, protein: 0.9, sodium: 0.4 },
+    after: { carbs: 0.7, protein: 1.0, sodium: 0.4 },
   },
 };

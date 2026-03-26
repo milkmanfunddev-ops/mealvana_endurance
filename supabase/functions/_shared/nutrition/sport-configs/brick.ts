@@ -60,6 +60,6 @@ export const brickConfig: SportConfig = {
       carbs: 1.0,
       sodium: 0.8, // Sodium critical across longer multi-sport efforts
     },
-    after: { carbs: 0.85, protein: 0.85, sodium: 0.4 },
+    after: { carbs: 0.85, protein: 1.0, sodium: 0.4 },
   },
 };
