@@ -1292,15 +1292,18 @@ class MacroTargetsController extends _$MacroTargetsController {
           analytics: _analytics,
         );
 
-        // Load sport-specific overrides with 90-min gate
+        final brickSports = _extractBrickSports(segments);
+
+        // Load sport-specific overrides with 90-min gate.
+        // For bricks, this checks run/bike/swim overrides (not a brick-specific one).
         final overrides = await _loadOverridesForEdgeFunction(
           ActivityType.brick,
           totalDurationMinutes.toDouble(),
+          brickSports: brickSports,
         );
 
-        // Call the service
-        // Note: BrickMacroService does not yet accept overrides directly.
-        // Overrides are applied by the per-segment edge function calls.
+        // Call the service (passes brick-aware sport overrides so segment
+        // targets can be overridden by swim/bike/run values).
         var macroTargets = await brickMacroService.generateBrickMacros(
           activityId: finalActivityId,
           deviceId: deviceId,
@@ -1308,6 +1311,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           segmentOrder: segmentOrder,
           isFasted: isFasted,
           preActivityMinutes: preActivityMinutes,
+          overrides: overrides,
         );
 
         // Mark as user-modified if overrides were applied
@@ -1870,6 +1874,7 @@ class MacroTargetsController extends _$MacroTargetsController {
   Future<NutritionTargetOverrides?> _loadOverridesForEdgeFunction(
     ActivityType sport,
     double durationMin,
+    {Set<ActivityType>? brickSports}
   ) async {
     final user = await _authService.getCurrentUser();
     final overrides = user?.nutritionTargetOverrides;
@@ -1885,6 +1890,43 @@ class MacroTargetsController extends _$MacroTargetsController {
       return prePostOnly.hasAnyOverride ? prePostOnly : null;
     }
 
+    if (sport == ActivityType.brick) {
+      final sports = brickSports == null || brickSports.isEmpty
+          ? const {
+              ActivityType.running,
+              ActivityType.cycling,
+              ActivityType.swimming,
+            }
+          : brickSports;
+
+      final duringRun = sports.contains(ActivityType.running)
+          ? (overrides.duringRun ?? overrides.during)
+          : null;
+      final duringCycling = sports.contains(ActivityType.cycling)
+          ? (overrides.duringCycling ?? overrides.during)
+          : null;
+      final duringSwimming = sports.contains(ActivityType.swimming)
+          ? (overrides.duringSwimming ?? overrides.during)
+          : null;
+
+      // Legacy flat payload fallback: pick one during override when needed.
+      final legacyDuring = duringCycling ??
+          duringRun ??
+          duringSwimming ??
+          overrides.duringBrick ??
+          overrides.during;
+
+      final brickOverrides = NutritionTargetOverrides(
+        pre: overrides.pre,
+        during: legacyDuring,
+        post: overrides.post,
+        duringRun: duringRun,
+        duringCycling: duringCycling,
+        duringSwimming: duringSwimming,
+      );
+      return brickOverrides.hasAnyOverride ? brickOverrides : null;
+    }
+
     // Build overrides with the correct sport's during values in the `during`
     // field, since the edge function reads from the flat `during_*` keys.
     final sportDuring = overrides.getDuring(sport);
@@ -1893,6 +1935,24 @@ class MacroTargetsController extends _$MacroTargetsController {
       during: sportDuring,
       post: overrides.post,
     );
+  }
+
+  Set<ActivityType> _extractBrickSports(List<BrickSegment> segments) {
+    final sports = <ActivityType>{};
+    for (final segment in segments) {
+      switch (segment.sport.toLowerCase()) {
+        case 'running':
+          sports.add(ActivityType.running);
+          break;
+        case 'cycling':
+          sports.add(ActivityType.cycling);
+          break;
+        case 'swimming':
+          sports.add(ActivityType.swimming);
+          break;
+      }
+    }
+    return sports;
   }
 
   /// Helper method to get current value of a field

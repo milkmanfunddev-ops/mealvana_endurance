@@ -190,7 +190,7 @@ class EventsRepository with SyncableRepository {
         return _toSupabaseJson(_mapToEventDomain(record), record.userId);
       }).toList();
 
-      await _supabase.from('events').upsert(eventsToUpload);
+      await _supabase.from('events').upsert(eventsToUpload, onConflict: 'id');
 
       // Clear dirty flags
       await _database.batch((batch) {
@@ -660,12 +660,15 @@ class EventsRepository with SyncableRepository {
     // Validate event_subtype against DB enum — invalid values (e.g. raw TP
     // event types like "RoadCycling") would cause a PostgreSQL 22P02 error.
     final subtype = event.eventSubtype;
-    final validSubtype = subtype != null &&
+    final validSubtype =
+        subtype != null &&
             EventSubtype.findByName(event.eventType.dbValue, subtype) != null
         ? subtype
         : null;
 
     return {
+      // Production events.id has no server default; always send the local UUID.
+      'id': event.id,
       'user_id': userUuid,
       'activity_id': event.activityId,
       'event_type': event.eventType.dbValue,

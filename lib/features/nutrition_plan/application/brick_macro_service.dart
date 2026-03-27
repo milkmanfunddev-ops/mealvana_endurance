@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/macro_targets.dart';
+import '../domain/nutrition_target_overrides.dart';
 import '../data/macro_repository.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
@@ -52,6 +53,7 @@ class BrickMacroService {
     required List<String> segmentOrder,
     required bool isFasted,
     required int preActivityMinutes,
+    NutritionTargetOverrides? overrides,
   }) async {
     DebugLogger.info(
       '🧱 BRICK MACRO SERVICE: generateBrickMacros called - ${segments.length} segments',
@@ -108,7 +110,11 @@ class BrickMacroService {
       }
 
       // Parse brick-specific response (pass segments to store in MacroTargets)
-      final macroTargets = _parseBrickMacroTargets(data, segments);
+      var macroTargets = _parseBrickMacroTargets(data, segments);
+      macroTargets = _applyDuringOverridesForBrick(
+        macroTargets: macroTargets,
+        overrides: overrides,
+      );
 
       // Cache the macro targets
       await macroRepository.saveMacroTargets(macroTargets);
@@ -160,6 +166,183 @@ class BrickMacroService {
   // Private Helper Methods
   // ========================================
 
+  MacroTargets _applyDuringOverridesForBrick({
+    required MacroTargets macroTargets,
+    NutritionTargetOverrides? overrides,
+  }) {
+    final phaseTargets = macroTargets.brickPhaseTargets;
+    if (overrides == null || phaseTargets == null) return macroTargets;
+
+    var hasSegmentOverride = false;
+    final updatedSegments = phaseTargets.duringSegments
+        .map((segment) {
+          final sportOverride = _duringOverrideForSport(
+            overrides,
+            segment.sport,
+          );
+          if (sportOverride == null || !sportOverride.hasAnyOverride) {
+            return segment;
+          }
+
+          hasSegmentOverride = true;
+          final durationH = segment.durationMinutes / 60.0;
+
+          final carbs = sportOverride.carbRateGPerH != null
+              ? (sportOverride.carbRateGPerH! * durationH).roundToDouble()
+              : segment.carbsG;
+          final sodium = sportOverride.sodiumRateMgPerH != null
+              ? (sportOverride.sodiumRateMgPerH! * durationH).roundToDouble()
+              : segment.sodiumMg;
+          final water = sportOverride.fluidRateMlPerH != null
+              ? (sportOverride.fluidRateMlPerH! * durationH).roundToDouble()
+              : segment.waterMl;
+
+          return BrickSegmentMacroTarget(
+            segmentOrder: segment.segmentOrder,
+            sport: segment.sport,
+            durationMinutes: segment.durationMinutes,
+            carbsG: carbs,
+            carbsLowG: sportOverride.carbRateGPerH != null
+                ? (carbs * 0.8).roundToDouble()
+                : segment.carbsLowG,
+            carbsHighG: sportOverride.carbRateGPerH != null
+                ? (carbs * 1.2).roundToDouble()
+                : segment.carbsHighG,
+            sodiumMg: sodium,
+            sodiumLowMg: sportOverride.sodiumRateMgPerH != null
+                ? (sodium * 0.8).roundToDouble()
+                : segment.sodiumLowMg,
+            sodiumHighMg: sportOverride.sodiumRateMgPerH != null
+                ? (sodium * 1.2).roundToDouble()
+                : segment.sodiumHighMg,
+            waterMl: water,
+            waterLowMl: sportOverride.fluidRateMlPerH != null
+                ? (water * 0.85).roundToDouble()
+                : segment.waterLowMl,
+            waterHighMl: sportOverride.fluidRateMlPerH != null
+                ? (water * 1.15).roundToDouble()
+                : segment.waterHighMl,
+          );
+        })
+        .toList(growable: false);
+
+    if (!hasSegmentOverride) {
+      return macroTargets;
+    }
+
+    final transitions = phaseTargets.transitions;
+    final totalDurationH = macroTargets.metrics.durationH > 0
+        ? macroTargets.metrics.durationH
+        : updatedSegments.fold<double>(
+            0,
+            (sum, segment) => sum + (segment.durationMinutes / 60.0),
+          );
+
+    final totalCarbs =
+        updatedSegments.fold<double>(
+          0,
+          (sum, segment) => sum + segment.carbsG,
+        ) +
+        transitions.fold<double>(
+          0,
+          (sum, transition) => sum + transition.carbsG,
+        );
+    final totalSodium =
+        updatedSegments.fold<double>(
+          0,
+          (sum, segment) => sum + segment.sodiumMg,
+        ) +
+        transitions.fold<double>(
+          0,
+          (sum, transition) => sum + transition.sodiumMg,
+        );
+    final totalWater =
+        updatedSegments.fold<double>(
+          0,
+          (sum, segment) => sum + segment.waterMl,
+        ) +
+        transitions.fold<double>(
+          0,
+          (sum, transition) => sum + transition.waterMl,
+        );
+
+    final totalCarbsLow = _sumNullable([
+      ...updatedSegments.map((segment) => segment.carbsLowG),
+      ...transitions.map((transition) => transition.carbsLowG),
+    ]);
+    final totalCarbsHigh = _sumNullable([
+      ...updatedSegments.map((segment) => segment.carbsHighG),
+      ...transitions.map((transition) => transition.carbsHighG),
+    ]);
+    final totalSodiumLow = _sumNullable([
+      ...updatedSegments.map((segment) => segment.sodiumLowMg),
+      ...transitions.map((transition) => transition.sodiumLowMg),
+    ]);
+    final totalSodiumHigh = _sumNullable([
+      ...updatedSegments.map((segment) => segment.sodiumHighMg),
+      ...transitions.map((transition) => transition.sodiumHighMg),
+    ]);
+    final totalWaterLow = _sumNullable([
+      ...updatedSegments.map((segment) => segment.waterLowMl),
+      ...transitions.map((transition) => transition.waterLowMl),
+    ]);
+    final totalWaterHigh = _sumNullable([
+      ...updatedSegments.map((segment) => segment.waterHighMl),
+      ...transitions.map((transition) => transition.waterHighMl),
+    ]);
+
+    final updatedDuring = macroTargets.duringRun.copyWith(
+      carbTotalG: totalCarbs,
+      carbRateGPerH: totalDurationH > 0
+          ? totalCarbs / totalDurationH
+          : macroTargets.duringRun.carbRateGPerH,
+      fluidTotalMl: totalWater,
+      fluidRateMlPerH: totalDurationH > 0
+          ? totalWater / totalDurationH
+          : macroTargets.duringRun.fluidRateMlPerH,
+      sodiumTotalMg: totalSodium,
+      sodiumRateMgPerH: totalDurationH > 0
+          ? totalSodium / totalDurationH
+          : macroTargets.duringRun.sodiumRateMgPerH,
+      carbsLowG: totalCarbsLow,
+      carbsHighG: totalCarbsHigh,
+      sodiumLowMg: totalSodiumLow,
+      sodiumHighMg: totalSodiumHigh,
+      fluidsLowMl: totalWaterLow,
+      fluidsHighMl: totalWaterHigh,
+    );
+
+    return macroTargets.copyWith(
+      duringRun: updatedDuring,
+      brickPhaseTargets: BrickPhaseTargets(
+        duringSegments: updatedSegments,
+        transitions: transitions,
+      ),
+    );
+  }
+
+  DuringActivityOverrides? _duringOverrideForSport(
+    NutritionTargetOverrides overrides,
+    String sport,
+  ) {
+    switch (sport.toLowerCase()) {
+      case 'running':
+        return overrides.duringRun ?? overrides.during;
+      case 'cycling':
+        return overrides.duringCycling ?? overrides.during;
+      case 'swimming':
+        return overrides.duringSwimming ?? overrides.during;
+      default:
+        return overrides.during;
+    }
+  }
+
+  double? _sumNullable(List<double?> values) {
+    final present = values.whereType<double>().toList(growable: false);
+    if (present.isEmpty) return null;
+    return present.fold<double>(0, (sum, value) => sum + value);
+  }
+
   /// Build request payload for brick edge function
   Future<Map<String, dynamic>> _buildBrickRequestData({
     required List<BrickSegment> segments,
@@ -169,6 +352,9 @@ class BrickMacroService {
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
+    final preferencePayload = await _buildPreWorkoutPreferencePayload(
+      userProfile,
+    );
 
     // Convert BrickSegment objects to JSON payload format
     final segmentsJson = segments.map((segment) {
@@ -219,7 +405,40 @@ class BrickMacroService {
         'zone_mid': 0.2,
         'zone_high': 0.1,
       },
+      ...preferencePayload,
     };
+  }
+
+  Future<Map<String, dynamic>> _buildPreWorkoutPreferencePayload(
+    UserProfile? userProfile,
+  ) async {
+    if (userProfile == null) return {};
+
+    final payload = <String, dynamic>{};
+    final diet = userProfile.dietaryPreference?.dbValue;
+    if (diet != null && diet.isNotEmpty && diet != 'none') {
+      payload['diet'] = diet;
+    }
+
+    final allergies = userProfile.allergies
+        .map((a) => a.dbValue)
+        .where((a) => a.isNotEmpty && a != 'none')
+        .toList();
+    if (allergies.isNotEmpty) {
+      payload['allergies'] = allergies;
+    }
+
+    final likedFoods = await authService.getLikedFoods(userProfile.id);
+    if (likedFoods.isNotEmpty) {
+      payload['liked_foods'] = likedFoods;
+    }
+
+    final dislikedFoods = await authService.getDislikedFoods(userProfile.id);
+    if (dislikedFoods.isNotEmpty) {
+      payload['disliked_foods'] = dislikedFoods;
+    }
+
+    return payload;
   }
 
   /// Parse brick macro targets from edge function response
@@ -464,6 +683,7 @@ class BrickMacroService {
         fluidsLowMl: preRunFluidsLow,
         fluidsHighMl: preRunFluidsHigh,
       ),
+      preRunSelections: _toMapListOrNull(macrosData['pre_run_selections']),
       duringRun: DuringRunMacros(
         carbRateGPerH: duringCarbRate,
         carbTotalG: duringCarbsTotal,
@@ -548,6 +768,19 @@ class BrickMacroService {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Safely convert to list of string-keyed maps.
+  List<Map<String, dynamic>>? _toMapListOrNull(dynamic value) {
+    if (value is! List) return null;
+
+    final results = <Map<String, dynamic>>[];
+    for (final item in value) {
+      if (item is Map) {
+        results.add(Map<String, dynamic>.from(item));
+      }
+    }
+    return results;
   }
 
   /// Safely convert to double

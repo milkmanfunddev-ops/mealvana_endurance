@@ -3,6 +3,7 @@
  */
 
 import type { ActivityType, FoodResult, MacroTargets } from "../_shared/nutrition/index.ts";
+import type { PreWorkoutPhaseResult } from "../generate-macros-v4/types.ts";
 
 // ============================================================================
 // Plan Input
@@ -13,6 +14,7 @@ export interface PlanInputV2 {
   activity_type: string;
   hours_before: number;
   weight_kg: number;
+  pre_run_selections?: PreWorkoutPhaseResult[];
   macro_targets: {
     pre_run: MacroTargets & { protein_g?: number; fat_g?: number };
     during_run: MacroTargets;

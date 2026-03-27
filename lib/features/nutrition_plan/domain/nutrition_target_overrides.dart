@@ -5,10 +5,13 @@ import '../../../shared/domain/activity_type.dart';
 /// User-configured default nutrition target overrides.
 /// Null fields mean "use algorithm defaults."
 ///
-/// During-activity overrides are sport-specific: each sport (run, bike, swim,
-/// brick) has its own [DuringActivityOverrides]. The legacy [during] field is
-/// kept for backward compatibility and used as a fallback when sport-specific
-/// values are absent.
+/// During-activity overrides are sport-specific: run, bike, and swim use
+/// dedicated [DuringActivityOverrides]. The legacy [during] field is kept for
+/// backward compatibility and used as a fallback when sport-specific values
+/// are absent.
+///
+/// Note: [duringBrick] is retained only for backward-compatible reads of older
+/// saved data and should not be written by new UI flows.
 class NutritionTargetOverrides {
   const NutritionTargetOverrides({
     this.pre,
@@ -51,7 +54,14 @@ class NutritionTargetOverrides {
       case ActivityType.swimming:
         return duringSwimming ?? during;
       case ActivityType.brick:
-        return duringBrick ?? during;
+        // Brick sessions should derive from segment sports (bike/run/swim).
+        // For legacy single-value callers, prefer bike/run/swim before
+        // falling back to historical brick/unified values.
+        return duringCycling ??
+            duringRun ??
+            duringSwimming ??
+            duringBrick ??
+            during;
       default:
         return duringRun ?? during;
     }
@@ -188,9 +198,15 @@ class NutritionTargetOverrides {
       if (effectiveDuring?.carbRateGPerH != null)
         'during_carb_rate_g_per_h': effectiveDuring!.carbRateGPerH,
       if (effectiveDuring?.sodiumRateMgPerH != null)
+        // Legacy key kept for backward compatibility.
         'during_sodium_mg': effectiveDuring!.sodiumRateMgPerH,
+      if (effectiveDuring?.sodiumRateMgPerH != null)
+        'during_sodium_rate_mg_per_h': effectiveDuring!.sodiumRateMgPerH,
       if (effectiveDuring?.fluidRateMlPerH != null)
+        // Legacy key kept for backward compatibility.
         'during_water_ml': effectiveDuring!.fluidRateMlPerH,
+      if (effectiveDuring?.fluidRateMlPerH != null)
+        'during_water_rate_ml_per_h': effectiveDuring!.fluidRateMlPerH,
       if (post?.carbsG != null) 'post_carbs_g': post!.carbsG,
       if (post?.proteinG != null) 'post_protein_g': post!.proteinG,
       if (post?.sodiumMg != null) 'post_sodium_mg': post!.sodiumMg,

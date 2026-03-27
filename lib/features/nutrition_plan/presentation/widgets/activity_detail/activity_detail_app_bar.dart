@@ -212,8 +212,8 @@ class ActivityDetailAppBar extends ConsumerWidget
           onPressed: onEditFuelLog,
           tooltip: 'Edit Fuel Log',
         ),
-      // Only show delete button for existing activities (not new ones, not coach view)
-      if (!isNewActivity && !isCoachView)
+      // Show delete button for existing activities (including coach view)
+      if (!isNewActivity)
         IconButton(
           icon: Icon(
             FontAwesomeIcons.trash,

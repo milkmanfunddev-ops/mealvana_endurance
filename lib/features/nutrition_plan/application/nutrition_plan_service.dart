@@ -641,6 +641,9 @@ class NutritionPlanService {
           'willing_to_try_foods': willingToTryFoods,
         if (durationMinutes != null) 'duration_minutes': durationMinutes,
         if (gutTrainingLevel != null) 'gut_training_level': gutTrainingLevel,
+        if (macroTargets.preRunSelections != null &&
+            macroTargets.preRunSelections!.isNotEmpty)
+          'pre_run_selections': macroTargets.preRunSelections,
       };
 
       // Add brick_segments for brick workouts

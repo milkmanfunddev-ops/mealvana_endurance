@@ -13,7 +13,7 @@
  */
 
 import { createServiceClient } from "../_shared/supabase-client.ts";
-import type { PreWorkoutTargets } from "../generate-macros-v4/types.ts";
+import type { PreWorkoutPhaseResult, PreWorkoutTargets } from "../generate-macros-v4/types.ts";
 import { selectPreWorkoutFoods, splitTargets } from "../generate-macros-v4/pre-workout.ts";
 import type { BeforePhaseResult } from "../_shared/nutrition/templates/types.ts";
 
@@ -28,6 +28,7 @@ import { phaseResultToSubPhaseResult } from "./before-phase-explosion.ts";
 interface BeforePhaseInput {
   hours_before: number;
   weight_kg: number;
+  pre_run_selections?: PreWorkoutPhaseResult[];
   macro_targets: {
     pre_run: {
       carbs_g: number;
@@ -145,19 +146,7 @@ export async function generateBeforePhaseV3(
     return {};
   }
 
-  // 1. Fetch pre_workout_templates (3 types in parallel)
-  const [foodTemplates, drinkTemplates, electrolyteTemplates] = await Promise
-    .all([
-      fetchPreWorkoutTemplates(supabase, "food"),
-      fetchPreWorkoutTemplates(supabase, "drink"),
-      fetchPreWorkoutTemplates(supabase, "electrolyte"),
-    ]);
-
-  console.log(
-    `[PLAN-V3] Fetched templates: ${foodTemplates.length} food, ${drinkTemplates.length} drink, ${electrolyteTemplates.length} electrolyte`,
-  );
-
-  // 2. Build targets directly from incoming V4 macro contract.
+  // 1. Build targets directly from incoming V4 macro contract.
   const targets = buildTargetsFromInput(input);
   console.log(
     `[PLAN-V3] Pre targets (from input): carbs=${targets.carbs_g}g [${targets.carbs_low_g}-${targets.carbs_high_g}], ` +
@@ -166,19 +155,39 @@ export async function generateBeforePhaseV3(
       `water=${targets.water_ml}ml [${targets.water_low_ml}-${targets.water_high_ml}], type=${targets.meal_type}`,
   );
 
-  // 3. Run Algorithm C food selection
-  const diet = input.dietary_preference ?? "none";
-  const phaseResults = selectPreWorkoutFoods(
-    targets,
-    input.hours_before,
-    diet,
-    foodTemplates,
-    drinkTemplates,
-    electrolyteTemplates,
-    input.liked_foods ?? [],
-    input.disliked_foods ?? [],
-    input.allergies,
-  );
+  let phaseResults: PreWorkoutPhaseResult[];
+  if (input.pre_run_selections && input.pre_run_selections.length > 0) {
+    console.log(
+      `[PLAN-V3] Using provided pre_run_selections (${input.pre_run_selections.length} phases)`,
+    );
+    phaseResults = input.pre_run_selections;
+  } else {
+    // 2. Fetch pre_workout_templates (3 types in parallel)
+    const [foodTemplates, drinkTemplates, electrolyteTemplates] = await Promise
+      .all([
+        fetchPreWorkoutTemplates(supabase, "food"),
+        fetchPreWorkoutTemplates(supabase, "drink"),
+        fetchPreWorkoutTemplates(supabase, "electrolyte"),
+      ]);
+
+    console.log(
+      `[PLAN-V3] Fetched templates: ${foodTemplates.length} food, ${drinkTemplates.length} drink, ${electrolyteTemplates.length} electrolyte`,
+    );
+
+    // 3. Run Algorithm C food selection (fallback path)
+    const diet = input.dietary_preference ?? "none";
+    phaseResults = selectPreWorkoutFoods(
+      targets,
+      input.hours_before,
+      diet,
+      foodTemplates,
+      drinkTemplates,
+      electrolyteTemplates,
+      input.liked_foods ?? [],
+      input.disliked_foods ?? [],
+      input.allergies,
+    );
+  }
 
   if (phaseResults.length === 0) {
     console.log("[PLAN-V3] Algorithm C returned no phases (fasted)");

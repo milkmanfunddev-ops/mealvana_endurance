@@ -4,6 +4,8 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan
 import 'package:mealvana_endurance/features/nutrition_plan/data/nutrition_plan_mapper.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../shared/providers/user_id_provider.dart';
+import '../../../activities/application/activities_service.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/activity_completion.dart';
@@ -79,7 +81,8 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     }
 
     ActivityCompletion? completion;
-    if (activity.status == ActivityStatus.completed && activity.completedAt != null) {
+    if (activity.status == ActivityStatus.completed &&
+        activity.completedAt != null) {
       final completionId = activity.id.hashCode;
       final activityIdInt = activity.id.hashCode;
 
@@ -128,18 +131,46 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     });
   }
 
+  /// Delete the current activity as a coach.
+  /// Returns true on success, false on failure.
+  Future<bool> deleteActivity() async {
+    final currentState = state.value;
+    final activity = currentState?.activity;
+    if (activity == null) return false;
+
+    try {
+      final coachUserId = await ref.read(userIdProvider.future);
+      await ref
+          .read(activitiesServiceProvider)
+          .deleteActivity(
+            deviceId: coachUserId,
+            activityId: activity.id,
+            currentUserId: coachUserId,
+            activityOwnerId: activity.userId,
+          );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Check if a category matches a section by ID or title using flexible prefix matching
   ///
   /// Supports all activity types: running, cycling, swimming, brick
   /// Categories: 'before_run', 'during_run', 'during_swim', 'during_cycling', 'transition', 'after_run'
-  bool _categoryMatchesSection(String category, String sectionId, String sectionTitle) {
+  bool _categoryMatchesSection(
+    String category,
+    String sectionId,
+    String sectionTitle,
+  ) {
     final categoryLower = category.toLowerCase();
     final sectionIdLower = sectionId.toLowerCase();
     final titleLower = sectionTitle.toLowerCase();
 
     // Handle transition category (brick-specific)
     if (categoryLower == 'transition') {
-      return sectionIdLower.startsWith('t') && sectionIdLower.length <= 2; // T1, T2
+      return sectionIdLower.startsWith('t') &&
+          sectionIdLower.length <= 2; // T1, T2
     }
 
     // Handle sport-specific during categories (brick workouts)
@@ -147,7 +178,8 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
       final sportSuffix = categoryLower.replaceFirst('during_', '');
 
       // Must be a during section
-      if (!sectionIdLower.contains('during') && !titleLower.startsWith('during')) {
+      if (!sectionIdLower.contains('during') &&
+          !titleLower.startsWith('during')) {
         return false;
       }
 
@@ -155,14 +187,20 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
       if (sportSuffix == 'swim' || sportSuffix == 'swimming') {
         return titleLower.contains('swim');
       }
-      if (sportSuffix == 'cycling' || sportSuffix == 'bike' || sportSuffix == 'ride') {
-        return titleLower.contains('bike') || titleLower.contains('cycle') || titleLower.contains('ride');
+      if (sportSuffix == 'cycling' ||
+          sportSuffix == 'bike' ||
+          sportSuffix == 'ride') {
+        return titleLower.contains('bike') ||
+            titleLower.contains('cycle') ||
+            titleLower.contains('ride');
       }
       if (sportSuffix == 'run' || sportSuffix == 'running') {
         // For 'during_run', match any during section that contains 'run' OR
         // any during section that doesn't contain swim/bike/cycle (backward compat)
         return titleLower.contains('run') ||
-               (!titleLower.contains('swim') && !titleLower.contains('bike') && !titleLower.contains('cycle'));
+            (!titleLower.contains('swim') &&
+                !titleLower.contains('bike') &&
+                !titleLower.contains('cycle'));
       }
     }
 
@@ -171,13 +209,15 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
     // Flexible prefix matching for before/after
     if (phasePrefix == 'before') {
-      return sectionIdLower.contains('before') || titleLower.startsWith('before');
+      return sectionIdLower.contains('before') ||
+          titleLower.startsWith('before');
     }
     if (phasePrefix == 'after') {
       return sectionIdLower.contains('after') || titleLower.startsWith('after');
     }
     if (phasePrefix == 'during') {
-      return sectionIdLower.contains('during') || titleLower.startsWith('during');
+      return sectionIdLower.contains('during') ||
+          titleLower.startsWith('during');
     }
 
     return false;
@@ -207,7 +247,8 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
   Future<void> _updateSectionFoods({
     required String category,
-    required List<FoodItemData> Function(List<FoodItemData> currentItems) transform,
+    required List<FoodItemData> Function(List<FoodItemData> currentItems)
+    transform,
     required String operationName,
   }) async {
     final currentState = state.value;
@@ -231,26 +272,33 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
         updatedAt: DateTime.now(),
       );
 
-      state = AsyncData(currentState.copyWith(
-        nutritionPlan: updatedPlan,
-        hasUnsavedChanges: false,
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          nutritionPlan: updatedPlan,
+          hasUnsavedChanges: false,
+        ),
+      );
 
       final activity = currentState.activity;
       if (activity != null) {
-         final repository = ref.read(activitiesRepositoryProvider);
-         final updatedActivity = activity.copyWith(
-           nutritionPlanData: updatedPlan.toJson(),
-           updatedAt: DateTime.now(),
-         );
-         await repository.updateRemoteActivity(updatedActivity);
+        final repository = ref.read(activitiesRepositoryProvider);
+        final updatedActivity = activity.copyWith(
+          nutritionPlanData: updatedPlan.toJson(),
+          updatedAt: DateTime.now(),
+        );
+        await repository.updateRemoteActivity(updatedActivity);
       }
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
-  Future<void> swapFoodItem(String oldFoodId, dynamic newFood, String category, {double? customAmount}) async {
+  Future<void> swapFoodItem(
+    String oldFoodId,
+    dynamic newFood,
+    String category, {
+    double? customAmount,
+  }) async {
     await _updateSectionFoods(
       category: category,
       operationName: 'swapFoodItem',
@@ -263,11 +311,18 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     );
   }
 
-  Future<void> addFoodItem(dynamic food, String category, {double? customAmount}) async {
+  Future<void> addFoodItem(
+    dynamic food,
+    String category, {
+    double? customAmount,
+  }) async {
     await _updateSectionFoods(
       category: category,
       operationName: 'addFoodItem',
-      transform: (items) => [...items, _createFoodItemData(food, customAmount: customAmount)],
+      transform: (items) => [
+        ...items,
+        _createFoodItemData(food, customAmount: customAmount),
+      ],
     );
   }
 
@@ -279,7 +334,11 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     );
   }
 
-  Future<void> updateFoodQuantity(String foodId, String category, double newQuantity) async {
+  Future<void> updateFoodQuantity(
+    String foodId,
+    String category,
+    double newQuantity,
+  ) async {
     await _updateSectionFoods(
       category: category,
       operationName: 'updateFoodQuantity',
@@ -287,7 +346,9 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
         if (item.id == foodId) {
           final currentNutrition = item.nutritionalInfo;
           if (currentNutrition != null) {
-            final currentQuantityMatch = RegExp(r'^([\d.]+)').firstMatch(item.quantity);
+            final currentQuantityMatch = RegExp(
+              r'^([\d.]+)',
+            ).firstMatch(item.quantity);
             final currentQuantity = currentQuantityMatch != null
                 ? double.tryParse(currentQuantityMatch.group(1)!) ?? 1.0
                 : 1.0;
@@ -349,15 +410,18 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
       final repository = ref.read(activitiesRepositoryProvider);
 
       final completedActivity = activity.copyWith(
-          status: ActivityStatus.completed,
-          completedAt: DateTime.now(),
-          completionRating: overallSatisfaction,
-          completionNotes: textNotes,
+        status: ActivityStatus.completed,
+        completedAt: DateTime.now(),
+        completionRating: overallSatisfaction,
+        completionNotes: textNotes,
       );
 
       await repository.updateRemoteActivity(completedActivity);
 
-      return currentState.copyWith(isCompleting: false, activity: completedActivity);
+      return currentState.copyWith(
+        isCompleting: false,
+        activity: completedActivity,
+      );
     });
   }
 

@@ -11,8 +11,6 @@ import '../../domain/time_slot_assignment.dart';
 import '../../application/proportional_scaling_service.dart';
 import '../../application/by_hour_sync_service.dart';
 import '../../../auth/application/auth_service.dart';
-import '../../../auth/data/user_repository.dart';
-import '../../../auth/domain/user_preferences.dart';
 import '../../../activities/domain/activity_reminder.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -702,28 +700,32 @@ class ActivityDetailController extends _$ActivityDetailController {
         return;
       }
 
-      // Determine the activity type for sport-specific override
-      final activityType = activity?.activityType ?? ActivityType.running;
+      // Determine which sport overrides should be updated.
+      final targetSports = _resolveFeedbackTargetSports(activity);
 
-      // Apply adjustment factor and clamp to sport-aware guardrails
-      final sportMax = _maxDuringCarbRateForSport(activityType);
-      final newRate = (baseRate * level.adjustmentFactor).clamp(
-        NutritionTargetGuardrails.duringMinCarbRateGPerH,
-        sportMax,
-      );
-
-      // Build updated overrides — write to sport-specific field only
+      // Build updated overrides — write to sport-specific fields only.
       final currentOverrides =
           user.nutritionTargetOverrides ?? const NutritionTargetOverrides();
-      final existingSportDuring = currentOverrides.getDuring(activityType);
-      final updatedOverrides = currentOverrides.setDuring(
-        activityType,
-        DuringActivityOverrides(
-          carbRateGPerH: newRate,
-          sodiumRateMgPerH: existingSportDuring?.sodiumRateMgPerH,
-          fluidRateMlPerH: existingSportDuring?.fluidRateMlPerH,
-        ),
-      );
+      var updatedOverrides = currentOverrides;
+      final updatedRates = <String, double>{};
+
+      for (final sport in targetSports) {
+        final sportMax = _maxDuringCarbRateForSport(sport);
+        final newRate = (baseRate * level.adjustmentFactor).clamp(
+          NutritionTargetGuardrails.duringMinCarbRateGPerH,
+          sportMax,
+        );
+        final existingSportDuring = currentOverrides.getDuring(sport);
+        updatedOverrides = updatedOverrides.setDuring(
+          sport,
+          DuringActivityOverrides(
+            carbRateGPerH: newRate,
+            sodiumRateMgPerH: existingSportDuring?.sodiumRateMgPerH,
+            fluidRateMlPerH: existingSportDuring?.fluidRateMlPerH,
+          ),
+        );
+        updatedRates[sport.name] = newRate;
+      }
 
       // Save via settings controller
       final settingsController = ref.read(settingsControllerProvider.notifier);
@@ -735,9 +737,10 @@ class ActivityDetailController extends _$ActivityDetailController {
         data: {
           'level': level.name,
           'baseRate': baseRate,
-          'newRate': newRate,
+          'newRates': updatedRates,
           'factor': level.adjustmentFactor,
-          'activityType': activityType.name,
+          'activityType': activity?.activityType.name ?? ActivityType.running.name,
+          'targetSports': targetSports.map((sport) => sport.name).toList(),
         },
       );
 
@@ -747,8 +750,9 @@ class ActivityDetailController extends _$ActivityDetailController {
         'level': level.name,
         'adjustment_factor': level.adjustmentFactor,
         'base_rate': baseRate,
-        'new_rate': newRate,
-        'activity_type': activityType.name,
+        'new_rates': updatedRates,
+        'activity_type': activity?.activityType.name ?? ActivityType.running.name,
+        'target_sports': targetSports.map((sport) => sport.name).join(','),
       });
       _trackAnalytics(
         isEdit ? 'carb_feedback_edited' : 'carb_feedback_submitted',
@@ -757,8 +761,9 @@ class ActivityDetailController extends _$ActivityDetailController {
           'level': level.name,
           'adjustment_factor': level.adjustmentFactor,
           'base_rate': baseRate,
-          'new_rate': newRate,
-          'activity_type': activityType.name,
+          'new_rates': updatedRates,
+          'activity_type': activity?.activityType.name ?? ActivityType.running.name,
+          'target_sports': targetSports.map((sport) => sport.name).join(','),
         },
       );
     } catch (e, stackTrace) {
@@ -778,11 +783,39 @@ class ActivityDetailController extends _$ActivityDetailController {
         return NutritionTargetGuardrails.duringMaxCarbRateCycling;
       case ActivityType.swimming:
         return NutritionTargetGuardrails.duringMaxCarbRateSwimming;
-      case ActivityType.brick:
-        return NutritionTargetGuardrails.duringMaxCarbRateBrick;
       default:
         return NutritionTargetGuardrails.duringMaxCarbRateGPerH;
     }
+  }
+
+  List<ActivityType> _resolveFeedbackTargetSports(Activity? activity) {
+    final activityType = activity?.activityType;
+    if (activityType != ActivityType.brick) {
+      return [activityType ?? ActivityType.running];
+    }
+
+    final sports = <ActivityType>{};
+    for (final segment in activity?.brickMetadata?.segments ?? const []) {
+      switch (segment.sport.toLowerCase()) {
+        case 'running':
+          sports.add(ActivityType.running);
+          break;
+        case 'cycling':
+          sports.add(ActivityType.cycling);
+          break;
+        case 'swimming':
+          sports.add(ActivityType.swimming);
+          break;
+      }
+    }
+
+    if (sports.isEmpty) {
+      sports.addAll(
+        const [ActivityType.running, ActivityType.cycling, ActivityType.swimming],
+      );
+    }
+
+    return sports.toList(growable: false);
   }
 
   /// Update workout notes for a completed activity

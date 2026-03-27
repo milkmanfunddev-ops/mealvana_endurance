@@ -1186,7 +1186,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     if (mounted) {
       if (success) {
         MealvanaSnackbar.showSuccess(context, 'Activity deleted successfully');
-        context.go('/main');
+        if (widget.isCoachView) {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          } else {
+            context.go('/coach-portal');
+          }
+        } else {
+          context.go('/main');
+        }
       } else {
         MealvanaSnackbar.showError(
           context,

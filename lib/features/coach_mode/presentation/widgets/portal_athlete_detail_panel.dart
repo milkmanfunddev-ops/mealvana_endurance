@@ -13,8 +13,10 @@ import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../../../carb_loading/presentation/screens/carb_loading_day_detail_page.dart';
+import '../../../activities/application/activities_service.dart';
 import '../providers/athlete_detail_controller.dart';
 import '../providers/coach_portal_controller.dart';
 import '../screens/coach_chat_screen.dart';
@@ -629,11 +631,17 @@ class _PortalAthleteDetailPanelState
 
   Widget _buildActivityItem(Activity activity) {
     return GestureDetector(
-      onTap: () {
-        context.push(
+      onTap: () async {
+        await context.push(
           '/plan',
           extra: {'activityId': activity.id, 'isCoachView': true},
         );
+        if (!mounted) return;
+        ref
+            .read(
+              athleteDetailControllerProvider(widget.relationshipId).notifier,
+            )
+            .refresh();
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
@@ -672,15 +680,73 @@ class _PortalAthleteDetailPanelState
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textDarkSecondary,
-              size: 20,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.dragonfruit,
+                    size: 20,
+                  ),
+                  tooltip: 'Delete activity',
+                  onPressed: () => _confirmDeleteActivity(activity),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textDarkSecondary,
+                  size: 20,
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDeleteActivity(Activity activity) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Activity'),
+        content: Text('Are you sure you want to delete "${activity.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.dragonfruit),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final coachUserId = await ref.read(userIdProvider.future);
+      await ref
+          .read(activitiesServiceProvider)
+          .deleteActivity(
+            deviceId: coachUserId,
+            activityId: activity.id,
+            currentUserId: coachUserId,
+            activityOwnerId: activity.userId,
+          );
+
+      if (!mounted) return;
+      MealvanaSnackbar.showSuccess(context, 'Activity deleted successfully');
+      await ref
+          .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
+          .refresh();
+    } catch (e) {
+      if (!mounted) return;
+      MealvanaSnackbar.showError(context, 'Failed to delete activity: $e');
+    }
   }
 
   Widget _buildChatTab(AthleteDetailState state) {

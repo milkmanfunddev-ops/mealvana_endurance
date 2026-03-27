@@ -30,7 +30,7 @@ import {
   type MacroInputV4,
 } from "./single-sport.ts";
 import { calculateBrickMacrosV4 } from "./brick-workout.ts";
-import { calculatePreWorkoutTargets } from "./pre-workout.ts";
+import { calculatePreWorkoutTargets, selectPreWorkoutFoods } from "./pre-workout.ts";
 import { classifyEnvironment } from "../_shared/nutrition/sweat-hydration.ts";
 
 // ============================================================================
@@ -127,17 +127,34 @@ serve(async (req: Request) => {
         input.sweat_sodium,
         envLabel,
       );
+      const diet = input.diet || "none";
+      const preSelections = selectPreWorkoutFoods(
+        preTargets,
+        input.hours_before,
+        diet,
+        templates.food,
+        templates.drink,
+        templates.electrolyte,
+        input.liked_foods ?? [],
+        input.disliked_foods ?? [],
+        input.allergies ?? [],
+      );
 
       const brickMacros = calculateBrickMacrosV4(input, preTargets);
+      const brickMacrosWithSelections = {
+        ...brickMacros,
+        pre_run_selections: preSelections,
+      };
 
       console.log("✅ V4 brick macros calculated successfully:", {
-        activity_type: brickMacros.activity_type,
-        duration_h: brickMacros.duration_h,
-        segments: brickMacros.phases.during_segments.length,
-        transitions: brickMacros.phases.transitions.length,
+        activity_type: brickMacrosWithSelections.activity_type,
+        duration_h: brickMacrosWithSelections.duration_h,
+        pre_run_selections: brickMacrosWithSelections.pre_run_selections.length,
+        segments: brickMacrosWithSelections.phases.during_segments.length,
+        transitions: brickMacrosWithSelections.phases.transitions.length,
       });
 
-      return jsonResponse({ success: true, macros: brickMacros });
+      return jsonResponse({ success: true, macros: brickMacrosWithSelections });
     }
 
     const macros = await calculateMacrosV4(input, templates);

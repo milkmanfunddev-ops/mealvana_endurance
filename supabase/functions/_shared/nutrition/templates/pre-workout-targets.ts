@@ -82,15 +82,18 @@ export function splitPreWorkoutTargets(
   }
 
   // For each macro, redistribute budget across active phases
-  const macros: (keyof typeof BUDGET_SPLITS)[] = ['carbs', 'protein', 'fat', 'sodium', 'water'];
-  const macroKeys: Record<string, keyof SubPhaseTargets> = {
+  const macros = ['carbs', 'protein', 'fat', 'sodium', 'water'] as const;
+  type MacroName = typeof macros[number];
+
+  const macroKeys: Record<MacroName, keyof SubPhaseTargets> = {
     carbs: 'carbs_g',
     protein: 'protein_g',
     fat: 'fat_g',
     sodium: 'sodium_mg',
     water: 'water_ml',
   };
-  const totalKeys: Record<string, keyof typeof totalTargets> = {
+
+  const totalKeys: Record<MacroName, keyof typeof totalTargets> = {
     carbs: 'carbs_g',
     protein: 'protein_g',
     fat: 'fat_g',
@@ -112,7 +115,7 @@ export function splitPreWorkoutTargets(
     for (const phase of activePhases) {
       const proportion = splits[phase] / activeSum;
       const target = result.get(phase)!;
-      (target as Record<string, number>)[macroKeys[macro]] = Math.round(totalValue * proportion * 10) / 10;
+      target[macroKeys[macro]] = Math.round(totalValue * proportion * 10) / 10;
     }
   }
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../../shared/domain/activity_type.dart';
 import '../../activities/domain/brick_metadata.dart';
 
@@ -14,6 +16,7 @@ class MacroTargets {
     required this.timestamp,
     required this.isUserModified,
     this.modifiedFields = const [],
+    this.preRunSelections,
     this.brickSegments,
     this.brickPhaseTargets,
   });
@@ -28,6 +31,7 @@ class MacroTargets {
   final DateTime timestamp;
   final bool isUserModified;
   final List<String> modifiedFields;
+  final List<Map<String, dynamic>>? preRunSelections;
 
   /// Brick segment data (only populated for brick workouts)
   /// Contains sport type, order, duration, and other segment-specific data
@@ -48,6 +52,7 @@ class MacroTargets {
     DateTime? timestamp,
     bool? isUserModified,
     List<String>? modifiedFields,
+    List<Map<String, dynamic>>? preRunSelections,
     List<BrickSegment>? brickSegments,
     BrickPhaseTargets? brickPhaseTargets,
   }) {
@@ -62,6 +67,7 @@ class MacroTargets {
       timestamp: timestamp ?? this.timestamp,
       isUserModified: isUserModified ?? this.isUserModified,
       modifiedFields: modifiedFields ?? this.modifiedFields,
+      preRunSelections: preRunSelections ?? this.preRunSelections,
       brickSegments: brickSegments ?? this.brickSegments,
       brickPhaseTargets: brickPhaseTargets ?? this.brickPhaseTargets,
     );
@@ -79,6 +85,7 @@ class MacroTargets {
       'timestamp': timestamp.toIso8601String(),
       'isUserModified': isUserModified,
       'modifiedFields': modifiedFields,
+      if (preRunSelections != null) 'preRunSelections': preRunSelections,
       if (brickSegments != null)
         'brickSegments': brickSegments!.map((s) => s.toJson()).toList(),
       if (brickPhaseTargets != null)
@@ -102,6 +109,9 @@ class MacroTargets {
       timestamp: DateTime.parse(json['timestamp'] as String),
       isUserModified: json['isUserModified'] as bool,
       modifiedFields: List<String>.from(json['modifiedFields'] as List? ?? []),
+      preRunSelections: (json['preRunSelections'] as List<dynamic>?)
+          ?.map((s) => Map<String, dynamic>.from(s as Map))
+          .toList(),
       brickSegments: json['brickSegments'] != null
           ? (json['brickSegments'] as List<dynamic>)
                 .map((s) => BrickSegment.fromJson(s as Map<String, dynamic>))
@@ -129,6 +139,7 @@ class MacroTargets {
         other.timestamp == timestamp &&
         other.isUserModified == isUserModified &&
         _listEquals(other.modifiedFields, modifiedFields) &&
+        _nullableListOfMapEquals(other.preRunSelections, preRunSelections) &&
         _nullableListEquals(other.brickSegments, brickSegments) &&
         other.brickPhaseTargets == brickPhaseTargets;
   }
@@ -146,6 +157,7 @@ class MacroTargets {
       timestamp,
       isUserModified,
       Object.hashAll(modifiedFields),
+      Object.hashAll((preRunSelections ?? const []).map(jsonEncode)),
       Object.hashAll(brickSegments ?? []),
       brickPhaseTargets,
     );
@@ -153,7 +165,7 @@ class MacroTargets {
 
   @override
   String toString() {
-    return 'MacroTargets(id: $id, activityType: $activityType, preRun: $preRun, duringRun: $duringRun, postRun: $postRun, metrics: $metrics, calculationRule: $calculationRule, timestamp: $timestamp, isUserModified: $isUserModified, modifiedFields: $modifiedFields, brickSegments: ${brickSegments?.length ?? 0}, brickPhaseTargets: ${brickPhaseTargets != null})';
+    return 'MacroTargets(id: $id, activityType: $activityType, preRun: $preRun, duringRun: $duringRun, postRun: $postRun, metrics: $metrics, calculationRule: $calculationRule, timestamp: $timestamp, isUserModified: $isUserModified, modifiedFields: $modifiedFields, preRunSelections: ${preRunSelections?.length ?? 0}, brickSegments: ${brickSegments?.length ?? 0}, brickPhaseTargets: ${brickPhaseTargets != null})';
   }
 }
 
@@ -1088,4 +1100,41 @@ bool _nullableListEquals<T>(List<T>? a, List<T>? b) {
   if (a == null && b == null) return true;
   if (a == null || b == null) return false;
   return _listEquals(a, b);
+}
+
+bool _nullableListOfMapEquals(
+  List<Map<String, dynamic>>? a,
+  List<Map<String, dynamic>>? b,
+) {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  if (a.length != b.length) return false;
+
+  for (int i = 0; i < a.length; i++) {
+    if (!_deepEquals(a[i], b[i])) return false;
+  }
+  return true;
+}
+
+bool _deepEquals(dynamic a, dynamic b) {
+  if (identical(a, b)) return true;
+
+  if (a is Map && b is Map) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (!b.containsKey(entry.key)) return false;
+      if (!_deepEquals(entry.value, b[entry.key])) return false;
+    }
+    return true;
+  }
+
+  if (a is List && b is List) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (!_deepEquals(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  return a == b;
 }

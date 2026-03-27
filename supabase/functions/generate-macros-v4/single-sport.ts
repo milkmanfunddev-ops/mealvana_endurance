@@ -358,8 +358,12 @@ export interface NutritionOverrides {
   pre_sodium_mg?: number;
   pre_water_ml?: number;
   during_carb_rate_g_per_h?: number;
+  // Legacy keys (`during_sodium_mg`, `during_water_ml`) are interpreted as
+  // per-hour rates for backward compatibility with existing clients.
   during_sodium_mg?: number;
   during_water_ml?: number;
+  during_sodium_rate_mg_per_h?: number;
+  during_water_rate_ml_per_h?: number;
   post_carbs_g?: number;
   post_protein_g?: number;
   post_sodium_mg?: number;
@@ -610,26 +614,27 @@ export async function calculateMacrosV4(
   );
 
   // During-workout overrides
-  const duringSodiumCalc = isSwimmingSession
+  const duringSodiumRateOverride = ov?.during_sodium_rate_mg_per_h ??
+    ov?.during_sodium_mg;
+  const finalDuringSodiumRate = isSwimmingSession
     ? 0
-    : duringHydration.sodium_total_mg;
-  const [durSodium, durSodiumLow, durSodiumHigh] = applyOverride(
-    duringSodiumCalc,
-    Math.round(duringSodiumCalc * 0.8),
-    Math.round(duringSodiumCalc * 1.2),
-    ov?.during_sodium_mg,
-  );
-  const duringWaterCalc = isSwimmingSession
+    : (duringSodiumRateOverride !== undefined && duringSodiumRateOverride > 0
+      ? duringSodiumRateOverride
+      : duringHydration.sodium_rate_mgph);
+  const durSodium = Math.round(finalDuringSodiumRate * durationH);
+  const durSodiumLow = Math.round(durSodium * 0.8);
+  const durSodiumHigh = Math.round(durSodium * 1.2);
+
+  const duringWaterRateOverride = ov?.during_water_rate_ml_per_h ??
+    ov?.during_water_ml;
+  const finalDuringWaterRate = isSwimmingSession
     ? 0
-    : duringHydration.hydration_total_ml;
-  const [durWater, durWaterLow, durWaterHigh] = applyOverride(
-    duringWaterCalc,
-    Math.round(duringWaterCalc * 0.85),
-    Math.round(duringWaterCalc * 1.15),
-    ov?.during_water_ml,
-    0.85,
-    1.15,
-  );
+    : (duringWaterRateOverride !== undefined && duringWaterRateOverride > 0
+      ? duringWaterRateOverride
+      : duringHydration.hydration_rate_mlph);
+  const durWater = Math.round(finalDuringWaterRate * durationH);
+  const durWaterLow = Math.round(durWater * 0.85);
+  const durWaterHigh = Math.round(durWater * 1.15);
   const duringCarbRateOverride = ov?.during_carb_rate_g_per_h;
   const finalDuringCarbRate =
     duringCarbRateOverride !== undefined && duringCarbRateOverride > 0
@@ -707,15 +712,11 @@ export async function calculateMacrosV4(
     during_band_high_g_per_h: duringCarbs.band_high,
     during_gut_multiplier: duringCarbs.gut_multiplier,
     during_sport_ceiling_g_per_h: duringCarbs.sport_ceiling,
-    during_sodium_rate_mg_per_h: isSwimmingSession
-      ? 0
-      : duringHydration.sodium_rate_mgph,
+    during_sodium_rate_mg_per_h: finalDuringSodiumRate,
     during_sodium_total_mg: durSodium,
     during_sodium_low_mg: durSodiumLow,
     during_sodium_high_mg: durSodiumHigh,
-    during_water_rate_ml_per_h: isSwimmingSession
-      ? 0
-      : duringHydration.hydration_rate_mlph,
+    during_water_rate_ml_per_h: finalDuringWaterRate,
     during_water_total_ml: durWater,
     during_water_low_ml: durWaterLow,
     during_water_high_ml: durWaterHigh,
