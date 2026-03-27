@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -603,7 +604,15 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
             },
             child: Form(
               key: _formKey,
-              child: SingleChildScrollView(
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(context).copyWith(
+                  dragDevices: {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse,
+                    PointerDeviceKind.trackpad,
+                  },
+                ),
+                child: SingleChildScrollView(
                 padding: AppSpacing.screenPaddingHorizontal,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1256,6 +1265,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                 const SizedBox(height: AppSpacing.xl),
               ],
                 ),
+              ),
               ),
             ),
           ),

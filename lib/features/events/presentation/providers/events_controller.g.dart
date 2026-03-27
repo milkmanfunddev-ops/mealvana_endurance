@@ -63,12 +63,16 @@ abstract class _$EventsController extends $AsyncNotifier<List<Event>> {
   }
 }
 
-/// Provider for getting event detail with associated activity
+/// Provider for getting event detail with associated activity.
+/// Accepts an optional [forUserId] to query on behalf of another user
+/// (e.g. when a coach views an athlete's event).
 
 @ProviderFor(eventDetail)
 const eventDetailProvider = EventDetailFamily._();
 
-/// Provider for getting event detail with associated activity
+/// Provider for getting event detail with associated activity.
+/// Accepts an optional [forUserId] to query on behalf of another user
+/// (e.g. when a coach views an athlete's event).
 
 final class EventDetailProvider
     extends
@@ -80,10 +84,12 @@ final class EventDetailProvider
     with
         $FutureModifier<({Activity? activity, Event event})>,
         $FutureProvider<({Activity? activity, Event event})> {
-  /// Provider for getting event detail with associated activity
+  /// Provider for getting event detail with associated activity.
+  /// Accepts an optional [forUserId] to query on behalf of another user
+  /// (e.g. when a coach views an athlete's event).
   const EventDetailProvider._({
     required EventDetailFamily super.from,
-    required String super.argument,
+    required (String, {String? forUserId}) super.argument,
   }) : super(
          retry: null,
          name: r'eventDetailProvider',
@@ -99,7 +105,7 @@ final class EventDetailProvider
   String toString() {
     return r'eventDetailProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -110,8 +116,8 @@ final class EventDetailProvider
 
   @override
   FutureOr<({Activity? activity, Event event})> create(Ref ref) {
-    final argument = this.argument as String;
-    return eventDetail(ref, argument);
+    final argument = this.argument as (String, {String? forUserId});
+    return eventDetail(ref, argument.$1, forUserId: argument.forUserId);
   }
 
   @override
@@ -125,15 +131,17 @@ final class EventDetailProvider
   }
 }
 
-String _$eventDetailHash() => r'a4adc665c1e5a5abebc8101bca8db4a9084bbf0c';
+String _$eventDetailHash() => r'941de5ff7b4e7aa4af43212258be7fc7be50b84c';
 
-/// Provider for getting event detail with associated activity
+/// Provider for getting event detail with associated activity.
+/// Accepts an optional [forUserId] to query on behalf of another user
+/// (e.g. when a coach views an athlete's event).
 
 final class EventDetailFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<({Activity? activity, Event event})>,
-          String
+          (String, {String? forUserId})
         > {
   const EventDetailFamily._()
     : super(
@@ -144,10 +152,15 @@ final class EventDetailFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Provider for getting event detail with associated activity
+  /// Provider for getting event detail with associated activity.
+  /// Accepts an optional [forUserId] to query on behalf of another user
+  /// (e.g. when a coach views an athlete's event).
 
-  EventDetailProvider call(String eventId) =>
-      EventDetailProvider._(argument: eventId, from: this);
+  EventDetailProvider call(String eventId, {String? forUserId}) =>
+      EventDetailProvider._(
+        argument: (eventId, forUserId: forUserId),
+        from: this,
+      );
 
   @override
   String toString() => r'eventDetailProvider';

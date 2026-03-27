@@ -87,7 +87,7 @@ class DailyMacroTargetsRepository {
     try {
       await _supabase.from('daily_macro_targets').upsert(
         targets.toJson(),
-        onConflict: 'id',
+        onConflict: 'user_id,target_date',
       );
     } catch (e) {
       // Don't rethrow - remote save failures shouldn't block the UI

@@ -563,14 +563,29 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     if (context.mounted && activityId != null) {
       final macroState = ref.read(macroTargetsControllerProvider).value;
       final isCoachView = macroState?.forUserId != null;
-      context.push(
-        '/current-plan',
-        extra: {
-          'activityId': activityId,
-          'isNewActivity': true,
-          if (isCoachView) 'isCoachView': true,
-        },
-      );
+
+      if (isCoachView) {
+        // In coach portal: pop the creation stack, then push the activity
+        // detail screen so the coach can review and save the workout
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        if (context.mounted) {
+          context.push(
+            '/plan',
+            extra: {
+              'activityId': activityId,
+              'isCoachView': true,
+            },
+          );
+        }
+      } else {
+        context.push(
+          '/current-plan',
+          extra: {
+            'activityId': activityId,
+            'isNewActivity': true,
+          },
+        );
+      }
     } else if (activityId == null) {
       DebugLogger.error(
         '🚫 ADJUST_MACROS: Cannot navigate - activityId is null!',

@@ -80,6 +80,21 @@ run_test \
   "$SHARED_DIR/algorithm-audit.test.ts" \
   --allow-write
 
+run_test \
+  "1c. LP Solver (unit tests)" \
+  "$SHARED_DIR/lp-solver.test.ts" \
+  --allow-write
+
+run_test \
+  "1d. Before-Phase Filtering (unit tests)" \
+  "$SCRIPT_DIR/generate-nutrition-plan-v3/before-phase-filtering.test.ts" \
+  --allow-write
+
+run_test \
+  "1e. Pre-Workout Algorithm C (unit tests)" \
+  "$SCRIPT_DIR/generate-macros-v4/pre-workout.test.ts" \
+  --allow-write
+
 # ─── Section 2: E2E Tests (optional) ───────────────────────────────────────
 
 if [ "$1" = "--e2e" ]; then

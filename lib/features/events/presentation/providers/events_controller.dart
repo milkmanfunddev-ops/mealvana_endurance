@@ -270,14 +270,17 @@ class EventsController extends _$EventsController {
   }
 }
 
-/// Provider for getting event detail with associated activity
+/// Provider for getting event detail with associated activity.
+/// Accepts an optional [forUserId] to query on behalf of another user
+/// (e.g. when a coach views an athlete's event).
 @riverpod
 Future<({Activity? activity, Event event})> eventDetail(
   Ref ref,
-  String eventId,
-) async {
+  String eventId, {
+  String? forUserId,
+}) async {
   final logger = ref.read(appLoggerProvider);
-  final userId = await ref.read(userIdProvider.future);
+  final String userId = forUserId ?? await ref.read(userIdProvider.future);
 
   final eventsService = ref.read(eventsServiceProvider);
   final activitiesService = ref.read(activitiesServiceProvider);
@@ -286,7 +289,7 @@ Future<({Activity? activity, Event event})> eventDetail(
     logger.error(
       'EventDetail: Event not found',
       context: 'EVENT_DETAIL',
-      data: {'eventId': eventId},
+      data: {'eventId': eventId, 'userId': userId},
     );
     throw Exception('Event not found: $eventId');
   }

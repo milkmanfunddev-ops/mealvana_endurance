@@ -869,12 +869,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     if (context.mounted) {
       MealvanaSnackbar.showSuccess(context, 'Changes saved successfully!');
 
-      if (widget.isNewActivity) {
-        if (widget.isCoachView) {
-          context.go('/main?tab=coach');
-        } else {
-          context.go('/main');
-        }
+      if (widget.isCoachView) {
+        // Coach view: always navigate back to coach portal after save
+        Navigator.of(context).pop();
+      } else if (widget.isNewActivity) {
+        context.go('/main');
       }
     }
   }

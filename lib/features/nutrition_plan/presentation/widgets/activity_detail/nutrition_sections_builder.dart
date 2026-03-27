@@ -17,7 +17,6 @@ import 'brick_nutrition_sections.dart';
 import 'before_phase_widget.dart';
 import 'during_phase_section_widget.dart';
 import 'phase_explanation_sheet.dart';
-import '../../utils/fuel_log_hero_tags.dart';
 
 /// Callback signatures for food operations
 typedef FoodOperationCallback = void Function(String foodId, String category);
@@ -317,24 +316,10 @@ class _NutritionSectionsBuilderState
   }
 
   Widget _wrapWithSectionHero(String sectionId, Widget child) {
-    if (!widget.enableSectionHeroes || widget.heroTagSeed == null) {
-      return child;
-    }
-
-    return Hero(
-      tag: fuelLogSectionHeroTag(
-        activityId: widget.heroTagSeed!,
-        sectionId: sectionId,
-      ),
-      flightShuttleBuilder: (_, __, direction, fromCtx, toCtx) {
-        return ClipRect(
-          child: direction == HeroFlightDirection.push
-              ? toCtx.widget
-              : fromCtx.widget,
-        );
-      },
-      child: Material(type: MaterialType.transparency, child: child),
-    );
+    // Hero animations removed — they caused RenderFlex overflow during flight
+    // (section widgets are too tall for overlay constraints) which cascaded
+    // into deactivated-widget and Riverpod state-modification errors.
+    return child;
   }
 
   Widget _buildNutritionSection({

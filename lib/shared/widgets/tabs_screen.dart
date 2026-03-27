@@ -6,8 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../features/activities/presentation/screens/activities_list_screen.dart';
 import '../../features/calendar/presentation/providers/calendar_view_provider.dart';
 import '../../features/calendar/presentation/providers/calendar_selected_date_provider.dart';
-import '../../features/coach_mode/presentation/providers/coach_dashboard_controller.dart';
-import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/daily_macros/presentation/screens/daily_macros_screen.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
@@ -30,46 +28,18 @@ class TabsScreen extends ConsumerStatefulWidget {
 
 class _TabsScreenState extends ConsumerState<TabsScreen> {
   late int _currentIndex;
-  bool _isCoachPortalMode = false;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialTabIndex;
-
-    // On web, auto-navigate to coach portal if user is a coach
-    if (kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _autoNavigateToCoachIfNeeded();
-      });
-    }
   }
 
-  // Tab indices:
-  // Mobile: Calendar(0) -> Nutrition(1) -> Events(2) -> Learn(3)
-  // Web:    Calendar(0) -> Nutrition(1) -> Coach(2) -> Events(3) -> Learn(4)
+  // Tab indices (same on mobile and web now — coach portal is a separate route):
+  // Calendar(0) -> Nutrition(1) -> Coach(2, web only) -> Events(2 or 3) -> Learn(3 or 4)
   int get _coachTabIndex => 2; // Only on web
   int get _eventsTabIndex => kIsWeb ? 3 : 2;
   int get _learnTabIndex => kIsWeb ? 4 : 3;
-
-  Future<void> _autoNavigateToCoachIfNeeded() async {
-    // Skip if already in coach portal mode
-    if (_isCoachPortalMode) return;
-
-    try {
-      final dashboardAsync = await ref.read(
-        coachDashboardControllerProvider.future,
-      );
-      if (!mounted) return;
-      if (dashboardAsync.isCoach) {
-        setState(() {
-          _isCoachPortalMode = true;
-        });
-      }
-    } catch (_) {
-      // Not a coach or network error — stay on activities tab
-    }
-  }
 
   void _onTabSelected(int index) {
     if (index == 0 && _currentIndex == 0) {
@@ -92,26 +62,15 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     final showCoachTab = kIsWeb;
     final useRail = context.useNavigationRail;
 
-    // Coach-first mode: render only the coach portal with no nav
-    if (_isCoachPortalMode) {
-      return CoachPortalScreen(
-        onBackToApp: () {
-          setState(() {
-            _isCoachPortalMode = false;
-            _currentIndex = 0;
-          });
-        },
-      );
-    }
-
-    // Full-screen coach portal on web — bypasses IndexedStack, FAB, and
-    // responsive max-width so the split-panel layout fills the viewport.
+    // Navigate to coach portal route when coach tab is selected on web
     if (showCoachTab && _currentIndex == _coachTabIndex) {
-      return CoachPortalScreen(
-        onBackToApp: () {
+      // Reset to calendar tab and navigate to the coach portal route
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
           setState(() => _currentIndex = 0);
-        },
-      );
+          context.go('/coach-portal');
+        }
+      });
     }
 
     // Build the list of screens dynamically
@@ -153,7 +112,25 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
               onPlusTap: _onPlusTap,
             ),
             const VerticalDivider(width: 1, thickness: 1),
-            Expanded(child: body),
+            Expanded(
+              child: Stack(
+                children: [
+                  body,
+                  Positioned(
+                    top: MediaQuery.of(context).padding.top + 12,
+                    right: 16,
+                    child: GestureDetector(
+                      onTap: () => context.push('/settings'),
+                      child: FaIcon(
+                        FontAwesomeIcons.gear,
+                        size: 18,
+                        color: isDark ? AppColors.cream : AppColors.blackberry,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       );
@@ -170,6 +147,19 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       body: Stack(
         children: [
           body,
+          // Settings gear — top-right on every tab
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            right: 16,
+            child: GestureDetector(
+              onTap: () => context.push('/settings'),
+              child: FaIcon(
+                FontAwesomeIcons.gear,
+                size: 18,
+                color: isDark ? AppColors.cream : AppColors.blackberry,
+              ),
+            ),
+          ),
           FloatingActionButtonsBar(
             activeButton: _currentIndex,
             showCoachTab: showCoachTab,

@@ -705,16 +705,44 @@ class ActivitiesRepository with SyncableRepository {
     required String activityId,
   }) async {
     try {
+      final now = DateTime.now();
+
       // OFFLINE-FIRST: Mark as deleted in Drift IMMEDIATELY with dirty flag
       await (_database.update(
         _database.activitiesTable,
       )..where((tbl) => tbl.id.equals(activityId))).write(
         ActivitiesTableCompanion(
-          deletedAt: Value(DateTime.now()),
+          deletedAt: Value(now),
           needsUpload: const Value(true),
-          localUpdatedAt: Value(DateTime.now()),
+          localUpdatedAt: Value(now),
         ),
       );
+
+      // Unlink any events that pointed to this activity so event detail
+      // can correctly show "Create Nutrition Plan" after deletion.
+      final unlinkedEventsCount =
+          await (_database.update(
+            _database.eventsTable,
+          )..where((tbl) => tbl.activityId.equals(activityId))).write(
+            EventsTableCompanion(
+              activityId: const Value(null),
+              hasNutritionPlan: const Value(false),
+              needsUpload: const Value(true),
+              localUpdatedAt: Value(now),
+              updatedAt: Value(now),
+            ),
+          );
+
+      if (unlinkedEventsCount > 0) {
+        _logger.info(
+          'Unlinked events from deleted activity',
+          context: 'ACTIVITIES_REPOSITORY',
+          data: {
+            'activityId': activityId,
+            'unlinkedEventsCount': unlinkedEventsCount,
+          },
+        );
+      }
 
       // Attempt background upload (non-blocking)
       unawaited(() async {

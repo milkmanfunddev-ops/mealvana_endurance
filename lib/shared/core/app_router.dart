@@ -62,6 +62,7 @@ import '../../features/coach_mode/presentation/screens/athlete_feedback_screen.d
 import '../../features/coach_mode/presentation/screens/coach_registration_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_directory_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
+import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/coach_mode/application/coach_service.dart';
 
 /// Notifier that triggers GoRouter redirect re-evaluation on auth state changes.
@@ -350,9 +351,6 @@ class AppRouter {
               case 'nutrition':
                 initialTab = 1;
                 break;
-              case 'coach':
-                initialTab = hasCoachTab ? 2 : 0;
-                break;
               case 'notes':
               case 'workout-notes':
               case 'events':
@@ -367,6 +365,17 @@ class AppRouter {
             }
 
             return TabsScreen(initialTabIndex: initialTab);
+          },
+        ),
+
+        // Coach Portal — dedicated route for coach users (web only)
+        GoRoute(
+          path: '/coach-portal',
+          name: 'coach-portal',
+          builder: (context, state) {
+            return CoachPortalScreen(
+              onBackToApp: () => GoRouter.of(context).go('/main'),
+            );
           },
         ),
 

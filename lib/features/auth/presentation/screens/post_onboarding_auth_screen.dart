@@ -15,6 +15,7 @@ import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../application/auth_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../domain/auth_exceptions.dart';
+import '../../../coach_mode/application/coach_service.dart';
 
 /// Post-Onboarding Authentication Screen
 /// Shown after food preferences to encourage account creation
@@ -322,8 +323,25 @@ class _PostOnboardingAuthScreenState
   }
 
   /// Navigate directly to main app (for login mode - no onboarding data to save)
+  /// On web, coaches are redirected to the coach portal instead.
   Future<void> _navigateToMain() async {
     if (!mounted) return;
+
+    // On web, check if user is a coach and redirect to coach portal
+    if (kIsWeb) {
+      try {
+        final isCoach =
+            await ref.read(coachServiceProvider).isCurrentUserCoach();
+        if (!mounted) return;
+        if (isCoach) {
+          context.go('/coach-portal');
+          return;
+        }
+      } catch (_) {
+        // Fall through to normal /main navigation
+      }
+    }
+
     context.go('/main');
   }
 
@@ -489,19 +507,21 @@ class _PostOnboardingAuthScreenState
                     const SizedBox(height: AppSpacing.xxxl),
                   ],
 
-                  // Apple Sign-In button
-                  _buildOAuthButton(
-                    context: context,
-                    label: contentService.getValue(
-                      'auth.post_onboarding.apple_button',
-                      defaultValue: 'Continue with Apple',
+                  // Apple Sign-In button (iOS/Android only)
+                  if (!kIsWeb)
+                    _buildOAuthButton(
+                      context: context,
+                      label: contentService.getValue(
+                        'auth.post_onboarding.apple_button',
+                        defaultValue: 'Continue with Apple',
+                      ),
+                      icon: FontAwesomeIcons.apple,
+                      onPressed:
+                          asyncState.isLoading ? null : _handleAppleSignIn,
+                      isLoading: asyncState.isLoading,
                     ),
-                    icon: FontAwesomeIcons.apple,
-                    onPressed: asyncState.isLoading ? null : _handleAppleSignIn,
-                    isLoading: asyncState.isLoading,
-                  ),
 
-                  const SizedBox(height: AppSpacing.md),
+                  if (!kIsWeb) const SizedBox(height: AppSpacing.md),
 
                   // Google Sign-In button
                   _buildOAuthButton(

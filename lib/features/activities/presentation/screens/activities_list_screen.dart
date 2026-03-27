@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../shared/widgets/content_area.dart';
@@ -86,28 +85,11 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
           // Top padding to account for status bar
           SizedBox(height: MediaQuery.of(context).padding.top + 12),
           // Calendar view toggle + settings gear
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                const Spacer(),
-                CalendarViewToggle(
-                  selectedMode: calendarMode,
-                  onModeChanged: (mode) {
-                    ref.read(calendarViewProvider.notifier).setView(mode);
-                  },
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => context.push('/settings'),
-                  child: FaIcon(
-                    FontAwesomeIcons.gear,
-                    size: 18,
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
-                  ),
-                ),
-              ],
-            ),
+          CalendarViewToggle(
+            selectedMode: calendarMode,
+            onModeChanged: (mode) {
+              ref.read(calendarViewProvider.notifier).setView(mode);
+            },
           ),
           const SizedBox(height: 8),
           // Calendar (week or month view)

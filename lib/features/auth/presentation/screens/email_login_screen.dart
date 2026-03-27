@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../content/application/content_service.dart';
+import '../../../coach_mode/application/coach_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../application/email_auth_service.dart';
 
@@ -62,6 +64,21 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
       if (context.canPop()) {
         context.pop(true);
       } else {
+        // On web, check if user is a coach and redirect to coach portal
+        if (kIsWeb) {
+          try {
+            final isCoach =
+                await ref.read(coachServiceProvider).isCurrentUserCoach();
+            if (!mounted) return;
+            if (isCoach) {
+              context.go('/coach-portal');
+              return;
+            }
+          } catch (_) {
+            // Fall through to /main
+          }
+        }
+        if (!mounted) return;
         context.go('/main');
       }
     } else if (!success && mounted) {

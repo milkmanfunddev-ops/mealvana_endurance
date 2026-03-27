@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
@@ -29,7 +30,15 @@ class SportCategorySelector extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        SingleChildScrollView(
+        ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(
+            dragDevices: {
+              PointerDeviceKind.touch,
+              PointerDeviceKind.mouse,
+              PointerDeviceKind.trackpad,
+            },
+          ),
+          child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: ActivityType.values.map((category) {
@@ -43,6 +52,7 @@ class SportCategorySelector extends StatelessWidget {
               );
             }).toList(),
           ),
+        ),
         ),
       ],
     );

@@ -17,10 +17,11 @@ class CoachPortalController extends _$CoachPortalController {
     return const CoachPortalState();
   }
 
-  void selectAthlete(String relationshipId) {
+  void selectAthlete(String relationshipId, {int initialTabIndex = 0}) {
     state = state.copyWith(
       selectedRelationshipId: relationshipId,
       activeSection: PortalSection.athletes,
+      initialTabIndex: initialTabIndex,
     );
   }
 
@@ -33,20 +34,24 @@ class CoachPortalController extends _$CoachPortalController {
 class CoachPortalState {
   final String? selectedRelationshipId;
   final PortalSection activeSection;
+  final int initialTabIndex;
 
   const CoachPortalState({
     this.selectedRelationshipId,
     this.activeSection = PortalSection.athletes,
+    this.initialTabIndex = 0,
   });
 
   CoachPortalState copyWith({
     String? selectedRelationshipId,
     PortalSection? activeSection,
+    int? initialTabIndex,
   }) {
     return CoachPortalState(
       selectedRelationshipId:
           selectedRelationshipId ?? this.selectedRelationshipId,
       activeSection: activeSection ?? this.activeSection,
+      initialTabIndex: initialTabIndex ?? 0,
     );
   }
 }

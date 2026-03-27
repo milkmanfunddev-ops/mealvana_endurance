@@ -4,16 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/food_icon.dart';
-import '../../../../shared/widgets/buttons/search_openfoodfacts_button.dart';
 import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/controllers/food_search_controller.dart';
+import '../../../../shared/widgets/food_search/unified_food_search_results.dart';
 import '../providers/carb_loading_food_selection_controller.dart';
+import '../../application/carb_loading_food_service.dart';
 import '../../domain/meal_type.dart';
 import '../../domain/carb_loading_food.dart';
 import '../../domain/carb_loading_user_food.dart';
 import '../../../nutrition_plan/domain/food.dart';
+import '../../../barcode_scanning/application/catalog_search_service.dart';
+import '../../../nutrition_plan/presentation/widgets/swap_food/catalog_section_widget.dart';
 import '../../../../shared/database/app_database.dart' as db;
+import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
@@ -36,8 +41,13 @@ class CarbLoadingFoodSelectionScreen extends ConsumerStatefulWidget {
 
 class _CarbLoadingFoodSelectionScreenState
     extends ConsumerState<CarbLoadingFoodSelectionScreen> {
+  static const _searchControllerKey = 'carb_loading_food_selection';
+
   final TextEditingController _searchController = TextEditingController();
+  final Map<String, dynamic> _searchSourceById = {};
+
   double _selectedQuantity = 1.0;
+  bool _isMyFoodsExpanded = true;
 
   late final CarbLoadingFoodSelectionParams _params;
 
@@ -76,23 +86,24 @@ class _CarbLoadingFoodSelectionScreenState
   }
 
   void _onSearchChanged(String query) {
-    ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
-      .updateSearch(query);
+    ref
+        .read(foodSearchControllerProvider(_searchControllerKey).notifier)
+        .updateSearch(query);
   }
 
   Future<void> _onSearchButtonPressed(String query) async {
     if (query.trim().isNotEmpty) {
-      await ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
-        .searchOpenFoodFacts(query.trim());
+      await ref
+          .read(foodSearchControllerProvider(_searchControllerKey).notifier)
+          .searchOpenFoodFacts(query.trim());
     }
   }
 
   void _onClearSearch() {
     _searchController.clear();
-    ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
-      .updateSearch('');
-    ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
-      .clearOpenFoodFactsResults();
+    ref
+        .read(foodSearchControllerProvider(_searchControllerKey).notifier)
+        .clearSearch();
   }
 
   Future<void> _onBarcodeScan() async {
@@ -113,12 +124,12 @@ class _CarbLoadingFoodSelectionScreenState
   }
 
   void _selectFood(dynamic food) {
-    ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
-      .selectFood(food);
+    ref
+        .read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
+        .selectFood(food);
 
     // Clear search
-    _searchController.clear();
-    _onSearchChanged('');
+    _onClearSearch();
 
     // Reset quantity
     setState(() {
@@ -126,9 +137,143 @@ class _CarbLoadingFoodSelectionScreenState
     });
   }
 
+  void _seedSearchController(CarbLoadingFoodSelectionState state) {
+    final userFoods = <Food>[];
+    final templateFoods = <Food>[];
+    _searchSourceById.clear();
+
+    for (final food in state.carbLoadingUserFoods) {
+      if (food.isDeleted) continue;
+      final mapped = _mapCarbLoadingUserFoodToSearchFood(food);
+      userFoods.add(mapped);
+      _searchSourceById[mapped.id] = food;
+    }
+
+    for (final food in state.carbLoadingFoods) {
+      final mapped = _mapCarbLoadingTemplateFoodToSearchFood(food);
+      templateFoods.add(mapped);
+      _searchSourceById[mapped.id] = food;
+    }
+
+    ref
+        .read(foodSearchControllerProvider(_searchControllerKey).notifier)
+        .updateFoodPool(
+          allFoods: [...templateFoods, ...userFoods],
+          userFoods: userFoods,
+        );
+  }
+
+  Food _mapCarbLoadingTemplateFoodToSearchFood(CarbLoadingFood food) {
+    return Food(
+      id: 'carb_template_${food.id}',
+      name: food.name,
+      displayName: food.displayName,
+      displayNamePlural: food.displayNamePlural,
+      imageAddress: food.imageAddress,
+      carbsPerServing: food.carbsPerServing,
+      categories: const [],
+    );
+  }
+
+  Food _mapCarbLoadingUserFoodToSearchFood(CarbLoadingUserFood food) {
+    return Food(
+      id: 'carb_user_${food.id}',
+      name: food.name,
+      displayName: food.displayName,
+      displayNamePlural: food.displayNamePlural,
+      imageAddress: food.imageAddress,
+      carbsPerServing: food.carbsPerServing,
+      categories: const [],
+    );
+  }
+
+  Widget _buildDefaultView(CarbLoadingFoodSelectionState state) {
+    final userFoods = state.carbLoadingUserFoods
+        .where((food) => !food.isDeleted)
+        .toList();
+    final templateFoods = state.carbLoadingFoods;
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      children: [
+        if (userFoods.isNotEmpty) ...[
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isMyFoodsExpanded = !_isMyFoodsExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Icon(
+                    FontAwesomeIcons.solidHeart,
+                    size: AppIconSizes.sm,
+                    color: AppColors.dragonfruit,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'My Carb Foods',
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.dragonfruit.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${userFoods.length}',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: AppColors.dragonfruit,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _isMyFoodsExpanded
+                        ? FontAwesomeIcons.chevronUp
+                        : FontAwesomeIcons.chevronDown,
+                    size: AppIconSizes.sm,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isMyFoodsExpanded)
+            ...userFoods.map((food) => _buildFoodCard(food)),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        if (templateFoods.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Text(
+              'Template Foods',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+          ...templateFoods.map((food) => _buildFoodCard(food)),
+        ],
+      ],
+    );
+  }
+
   Future<void> _handleAddFood() async {
-    await ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
-      .addFoodToMeal();
+    await ref
+        .read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
+        .addFoodToMeal();
 
     if (mounted) {
       context.pop();
@@ -138,10 +283,7 @@ class _CarbLoadingFoodSelectionScreenState
   Future<void> _navigateToCustomFoodEntry() async {
     final result = await context.pushNamed<dynamic>(
       'create-custom-carb-loading-food',
-      extra: {
-        'dayId': widget.dayId,
-        'mealType': widget.mealType,
-      },
+      extra: {'dayId': widget.dayId, 'mealType': widget.mealType},
     );
 
     if (result != null && mounted) {
@@ -158,7 +300,12 @@ class _CarbLoadingFoodSelectionScreenState
 
   @override
   Widget build(BuildContext context) {
-    final controllerState = ref.watch(carbLoadingFoodSelectionControllerProvider(_params));
+    final controllerState = ref.watch(
+      carbLoadingFoodSelectionControllerProvider(_params),
+    );
+    final searchState = ref.watch(
+      foodSearchControllerProvider(_searchControllerKey),
+    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -166,9 +313,7 @@ class _CarbLoadingFoodSelectionScreenState
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: CustomAppBarBackButton(
-          onPressed: () => context.pop(),
-        ),
+        leading: CustomAppBarBackButton(onPressed: () => context.pop()),
         title: Text(
           'Add Food to $_mealTypeName',
           style: AppTextStyles.sectionTitle.copyWith(
@@ -185,7 +330,11 @@ class _CarbLoadingFoodSelectionScreenState
           return FloatingActionButton.extended(
             onPressed: _navigateToCustomFoodEntry,
             backgroundColor: AppColors.orange,
-            icon: const Icon(FontAwesomeIcons.plus, color: AppColors.textLight, size: AppIconSizes.controlIcon),
+            icon: const Icon(
+              FontAwesomeIcons.plus,
+              color: AppColors.textLight,
+              size: AppIconSizes.controlIcon,
+            ),
             label: Text(
               'Create Custom Food',
               style: AppTextStyles.buttonPrimary.copyWith(
@@ -205,112 +354,115 @@ class _CarbLoadingFoodSelectionScreenState
               vertical: AppSpacing.sm,
             ),
             child: controllerState.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Error loading foods: $error'),
-                  ElevatedButton(
-                    onPressed: () => ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params)),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
-            data: (state) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Search bar with barcode scanner
-                Column(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    FigmaSearchBar(
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
-                      onBarcodeScan: _onBarcodeScan,
-                      onSearchSubmit: _onSearchButtonPressed,
-                      enableAutoSearch: false, // Disabled - now handled in controller based on results
-                      hintText: 'Search foods...',
+                    Text('Error loading foods: $error'),
+                    ElevatedButton(
+                      onPressed: () => ref.invalidate(
+                        carbLoadingFoodSelectionControllerProvider(_params),
+                      ),
+                      child: const Text('Retry'),
                     ),
-
-                    // "Search OpenFoodFacts" button (when 1-3 local results)
-                    if (state.searchQuery.isNotEmpty &&
-                        state.searchResults.isNotEmpty &&
-                        state.searchResults.length < 4 &&
-                        state.openFoodFactsResults.isEmpty &&
-                        !state.isSearchingOpenFoodFacts)
-                      SearchOpenFoodFactsButton(
-                        onPressed: () => _onSearchButtonPressed(state.searchQuery),
-                      ),
-
-                    // Clear search button (when showing OpenFoodFacts results)
-                    if (state.openFoodFactsResults.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.sm),
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: _onClearSearch,
-                          icon: const Icon(
-                            FontAwesomeIcons.xmark,
-                            size: AppIconSizes.sm,
-                            color: AppColors.orange,
-                          ),
-                          label: const Text(
-                            'Clear Search',
-                            style: TextStyle(
-                              fontFamily: 'Apercu',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.orange,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
+              ),
+              data: (state) {
+                _seedSearchController(state);
+                final hasSelectedFood =
+                    state.selectedFood != null &&
+                    searchState.searchQuery.isEmpty &&
+                    searchState.openFoodFactsResults.isEmpty;
 
-                const SizedBox(height: AppSpacing.md),
-
-                // Selected food details
-                if (state.selectedFood != null && state.searchQuery.isEmpty) ...[
-                  _buildSelectedFoodCard(state),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-
-                // Show searching indicator when searching Open Food Facts
-                if (state.isSearchingOpenFoodFacts) ...[
-                  Expanded(
-                    child: _buildSearchingIndicator(),
-                  ),
-                ] else if (state.openFoodFactsResults.isNotEmpty) ...[
-                  // Open Food Facts search results
-                  Expanded(
-                    child: _buildOpenFoodFactsResults(state),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                ] else
-                  // Local search results
-                  Expanded(
-                    child: _buildLocalSearchResults(state),
-                  ),
-
-                // Add button - only show when food is selected
-                if (state.selectedFood != null && state.searchQuery.isEmpty) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  KylePrimaryButton(
-                    text: 'Add to $_mealTypeName',
-                    onPressed: _handleAddFood,
-                    isFullWidth: true,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                ],
-              ],
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      children: [
+                        FigmaSearchBar(
+                          controller: _searchController,
+                          onChanged: _onSearchChanged,
+                          onBarcodeScan: _onBarcodeScan,
+                          onSearchSubmit: _onSearchButtonPressed,
+                          triggerSearchOnKeyboardSubmit: false,
+                          enableAutoSearch: false,
+                          hintText: 'Search foods...',
+                        ),
+                        if (searchState.openFoodFactsResults.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: _onClearSearch,
+                              icon: const Icon(
+                                FontAwesomeIcons.xmark,
+                                size: AppIconSizes.sm,
+                                color: AppColors.orange,
+                              ),
+                              label: const Text(
+                                'Clear Search',
+                                style: TextStyle(
+                                  fontFamily: 'Apercu',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.orange,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    if (hasSelectedFood) ...[
+                      _buildSelectedFoodCard(state),
+                      const SizedBox(height: AppSpacing.md),
+                      KylePrimaryButton(
+                        text: 'Add to $_mealTypeName',
+                        onPressed: _handleAddFood,
+                        isFullWidth: true,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ] else
+                      Expanded(
+                        child: UnifiedFoodSearchResults(
+                          controllerKey: _searchControllerKey,
+                          userFoodItemBuilder: (food) {
+                            final source = _searchSourceById[food.id];
+                            if (source == null) return const SizedBox.shrink();
+                            return _buildFoodCard(source);
+                          },
+                          templateFoodItemBuilder: (food) {
+                            final source = _searchSourceById[food.id];
+                            if (source == null) return const SizedBox.shrink();
+                            return _buildFoodCard(source);
+                          },
+                          catalogItemBuilder: (result) => CatalogCard(
+                            result: result,
+                            onTap: () => _handleCatalogSelection(result),
+                          ),
+                          onSearchOpenFoodFacts: () =>
+                              _onSearchButtonPressed(searchState.searchQuery),
+                          onOpenFoodFactsResultTap:
+                              _handleOpenFoodFactsSelection,
+                          emptyQueryContent: _buildDefaultView(state),
+                          isMyFoodsExpanded: _isMyFoodsExpanded,
+                          onMyFoodsSectionToggle: () {
+                            setState(() {
+                              _isMyFoodsExpanded = !_isMyFoodsExpanded;
+                            });
+                          },
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 
   Widget _buildSelectedFoodCard(CarbLoadingFoodSelectionState state) {
@@ -349,10 +501,7 @@ class _CarbLoadingFoodSelectionScreenState
             // Food header
             Row(
               children: [
-                FoodIcon(
-                  imageUrl: imageUrl,
-                  size: AppIconSizes.foodIcon,
-                ),
+                FoodIcon(imageUrl: imageUrl, size: AppIconSizes.foodIcon),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
@@ -374,8 +523,13 @@ class _CarbLoadingFoodSelectionScreenState
                 setState(() {
                   _selectedQuantity = value;
                 });
-                ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
-                  .updateQuantity(value);
+                ref
+                    .read(
+                      carbLoadingFoodSelectionControllerProvider(
+                        _params,
+                      ).notifier,
+                    )
+                    .updateQuantity(value);
               },
               min: 0.5,
               max: 10.0,
@@ -387,7 +541,10 @@ class _CarbLoadingFoodSelectionScreenState
             const SizedBox(height: AppSpacing.md),
 
             // Nutrition facts
-            _buildNutrientRow('Carbohydrates', '${totalCarbs.toStringAsFixed(0)} g'),
+            _buildNutrientRow(
+              'Carbohydrates',
+              '${totalCarbs.toStringAsFixed(0)} g',
+            ),
           ],
         ),
       ),
@@ -416,98 +573,6 @@ class _CarbLoadingFoodSelectionScreenState
     );
   }
 
-  Widget _buildOpenFoodFactsResults(CarbLoadingFoodSelectionState state) {
-    return ListView.separated(
-      itemCount: state.openFoodFactsResults.length,
-      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (context, index) {
-        final result = state.openFoodFactsResults[index];
-        return _buildSearchResultItem(result);
-      },
-    );
-  }
-
-  Widget _buildSearchResultItem(dynamic result) {
-    return BaseCard(
-      child: InkWell(
-        onTap: () => _handleOpenFoodFactsSelection(result),
-        borderRadius: AppRadius.cardRadius,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              // Product image with Electrolyte background
-              Container(
-                width: AppIconSizes.foodIcon,
-                height: AppIconSizes.foodIcon,
-                decoration: BoxDecoration(
-                  color: AppColors.electrolyte.withValues(alpha: 0.2),
-                  borderRadius: AppRadius.smRadius,
-                ),
-                child: result.imageUrl?.isNotEmpty == true
-                    ? ClipRRect(
-                        borderRadius: AppRadius.smRadius,
-                        child: Image.network(
-                          result.imageUrl!,
-                          width: AppIconSizes.foodIcon,
-                          height: AppIconSizes.foodIcon,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            FontAwesomeIcons.utensils,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            size: AppIconSizes.controlIcon,
-                          ),
-                        ),
-                      )
-                    : Icon(
-                        FontAwesomeIcons.utensils,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        size: AppIconSizes.controlIcon,
-                      ),
-              ),
-
-              const SizedBox(width: AppSpacing.md),
-
-              // Product details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      result.name.isNotEmpty ? result.name : 'Unknown Product',
-                      style: AppTextStyles.foodTitle.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (result.brand?.isNotEmpty == true) ...[
-                      const SizedBox(height: AppSpacing.xxs),
-                      Text(
-                        result.brand!,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-
-              Icon(
-                FontAwesomeIcons.chevronRight,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                size: AppIconSizes.chevron,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _handleOpenFoodFactsSelection(dynamic result) async {
     // Create a carb loading user food from OFF result
     try {
@@ -518,8 +583,7 @@ class _CarbLoadingFoodSelectionScreenState
       // Select the imported food
       if (mounted) {
         _selectFood(importedFood);
-        ref.read(carbLoadingFoodSelectionControllerProvider(_params).notifier)
-          .clearOpenFoodFactsResults();
+        ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
       }
     } catch (e) {
       if (mounted) {
@@ -528,61 +592,70 @@ class _CarbLoadingFoodSelectionScreenState
     }
   }
 
-  Widget _buildLocalSearchResults(CarbLoadingFoodSelectionState state) {
-    if (state.searchResults.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              FontAwesomeIcons.magnifyingGlass,
-              size: 48,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              state.searchQuery.isEmpty
-                  ? 'No foods available'
-                  : 'No foods found for "${state.searchQuery}"',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
+  Future<void> _handleCatalogSelection(CatalogSearchResult result) async {
+    try {
+      final deviceId = await ref.read(userIdProvider.future);
+      final foodService = ref.read(carbLoadingFoodServiceProvider);
+      final allUserFoods = await foodService.getAllUserFoods(deviceId);
 
-    return ListView.builder(
-      itemCount: state.searchResults.length,
-      itemBuilder: (context, index) {
-        final food = state.searchResults[index];
-        return _buildFoodCard(food);
-      },
-    );
+      CarbLoadingUserFood? existingMatch;
+      for (final food in allUserFoods) {
+        if (food.isDeleted) continue;
+
+        final barcodeMatches =
+            result.barcode != null &&
+            result.barcode!.isNotEmpty &&
+            food.barcode == result.barcode;
+        final nameMatches =
+            food.displayName.toLowerCase() == result.displayName.toLowerCase();
+
+        if (barcodeMatches || nameMatches) {
+          existingMatch = food;
+          break;
+        }
+      }
+
+      CarbLoadingUserFood selectedFood;
+      if (existingMatch != null) {
+        if (!existingMatch.mealTypes.contains(widget.mealType)) {
+          selectedFood = await foodService.updateUserFood(
+            id: existingMatch.id,
+            mealTypes: [...existingMatch.mealTypes, widget.mealType],
+          );
+        } else {
+          selectedFood = existingMatch;
+        }
+      } else {
+        selectedFood = await foodService.createUserFood(
+          deviceId: deviceId,
+          userId: deviceId,
+          name: _toInternalFoodName(result.displayName),
+          displayName: result.displayName,
+          displayNamePlural: '${result.displayName}s',
+          carbsPerServing: result.carbsG ?? 0.0,
+          imageAddress: result.imageUrl,
+          mealTypes: [widget.mealType],
+        );
+      }
+
+      if (!mounted) return;
+
+      ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
+      _selectFood(selectedFood);
+      MealvanaSnackbar.showSuccess(context, '${result.displayName} added');
+    } catch (e) {
+      if (mounted) {
+        MealvanaSnackbar.showError(context, 'Failed to import food: $e');
+      }
+    }
   }
 
-  Widget _buildSearchingIndicator() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Searching food database...',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
+  String _toInternalFoodName(String displayName) {
+    final normalized = displayName
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+    return normalized.isEmpty ? 'custom_food' : normalized;
   }
 
   Widget _buildFoodCard(dynamic food) {
@@ -629,10 +702,7 @@ class _CarbLoadingFoodSelectionScreenState
             child: Row(
               children: [
                 // Food icon
-                FoodIcon(
-                  imageUrl: imageUrl,
-                  size: AppIconSizes.foodIcon,
-                ),
+                FoodIcon(imageUrl: imageUrl, size: AppIconSizes.foodIcon),
 
                 const SizedBox(width: AppSpacing.md),
 
@@ -670,7 +740,9 @@ class _CarbLoadingFoodSelectionScreenState
                           child: Text(
                             badge,
                             style: AppTextStyles.smallLabel.copyWith(
-                              color: isCustom ? AppColors.orange : AppColors.electrolyte,
+                              color: isCustom
+                                  ? AppColors.orange
+                                  : AppColors.electrolyte,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -711,8 +783,6 @@ class _CarbLoadingFoodSelectionScreenState
 
     String foodId = '';
     String foodName = '';
-    String? displayName;
-    String? displayNamePlural;
     double? servingAmount;
     String? servingUnit;
     double? carbsPerServing;
@@ -726,8 +796,6 @@ class _CarbLoadingFoodSelectionScreenState
     if (food is CarbLoadingUserFood) {
       foodId = food.id;
       foodName = food.name;
-      displayName = food.displayName;
-      displayNamePlural = food.displayNamePlural;
       servingAmount = null;
       servingUnit = null;
       carbsPerServing = food.carbsPerServing;
@@ -739,8 +807,6 @@ class _CarbLoadingFoodSelectionScreenState
     } else if (food is db.UserFood) {
       foodId = food.id;
       foodName = food.name;
-      displayName = food.displayName;
-      displayNamePlural = food.displayNamePlural;
       servingAmount = food.servingAmount;
       servingUnit = food.servingUnit;
       carbsPerServing = food.carbsPerServing;
@@ -794,7 +860,10 @@ class _CarbLoadingFoodSelectionScreenState
       } catch (e) {
         debugPrint('Error deleting user food: $e');
         if (mounted) {
-          MealvanaSnackbar.showError(context, 'Failed to delete food. Please try again.');
+          MealvanaSnackbar.showError(
+            context,
+            'Failed to delete food. Please try again.',
+          );
         }
       }
     }
@@ -825,7 +894,10 @@ class _CarbLoadingFoodSelectionScreenState
       } catch (e) {
         debugPrint('Error updating user food: $e');
         if (mounted) {
-          MealvanaSnackbar.showError(context, 'Failed to update food. Please try again.');
+          MealvanaSnackbar.showError(
+            context,
+            'Failed to update food. Please try again.',
+          );
         }
       }
     }

@@ -39,7 +39,8 @@ supabase functions list --project-ref wvmvsodrvbkxfydabqed
 - `create-user`
 - `delete-user`
 - `generate-macros-v4`
-- `generate-nutrition-plan`
+- `generate-nutrition-plan` (V1 — legacy LLM pathway only, via `llm_nutrition_plan_service.dart`)
+- `generate-nutrition-plan-v3` (V3 — main production flow, via `nutrition_plan_service.dart`)
 - `get-foods`
 - `get-weather-forecast`
 - `lookup-product`
@@ -53,7 +54,6 @@ supabase functions list --project-ref wvmvsodrvbkxfydabqed
 - `generate-macros`
 - `generate-macros-v3`
 - `generate-nutrition-plan-v2`
-- `generate-nutrition-plan-v3`
 - `save-user-food`
 - `sync-all-data`
 - `sync-final-surge`

@@ -12,6 +12,7 @@ import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../carb_loading/data/carb_loading_repository.dart';
+import '../../calendar/domain/event_subtype.dart';
 import '../domain/event.dart' as domain;
 
 part 'events_repository.g.dart';
@@ -656,11 +657,19 @@ class EventsRepository with SyncableRepository {
 
   /// Helper to map domain Event to Supabase JSON (snake_case columns)
   Map<String, dynamic> _toSupabaseJson(domain.Event event, String userUuid) {
+    // Validate event_subtype against DB enum — invalid values (e.g. raw TP
+    // event types like "RoadCycling") would cause a PostgreSQL 22P02 error.
+    final subtype = event.eventSubtype;
+    final validSubtype = subtype != null &&
+            EventSubtype.findByName(event.eventType.dbValue, subtype) != null
+        ? subtype
+        : null;
+
     return {
       'user_id': userUuid,
       'activity_id': event.activityId,
       'event_type': event.eventType.dbValue,
-      'event_subtype': event.eventSubtype,
+      'event_subtype': validSubtype,
       'event_name': event.eventName,
       'location': event.location,
       'registration_url': event.registrationUrl,

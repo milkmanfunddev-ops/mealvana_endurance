@@ -760,7 +760,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         final savedEvent = await _calendarService.createEvent(
           userId: _currentUserId!,
           eventType: event.activityType,
-          eventSubtype: event.eventType, // Store TP event type as subtype
+          // TP eventType (e.g. "RoadCycling") is a sport category, NOT a race
+          // distance — don't store it as event_subtype (DB enum expects values
+          // like "metric_century", "marathon", etc.).
+          eventSubtype: null,
           eventName: event.eventName,
           startTime: event.eventDate.toIso8601String(),
           goalTimeMinutes: event.goalTimeHours != null

@@ -569,7 +569,7 @@ class NutritionPlanService {
         'activity_type': macroTargets.activityType.name,
         'hours_before': hoursBefore,
         'weight_kg': weightKg,
-        'macro_targets': {
+        'macro_targets': <String, dynamic>{
           'pre_run': {
             'carbs_g': macroTargets.preRun.carbsG,
             'protein_g': macroTargets.preRun.proteinG,
