@@ -89,8 +89,6 @@ class NutritionTargetsHelpBottomSheet extends StatelessWidget {
                       _buildDuringCard(context, profile),
                       const SizedBox(height: AppSpacing.sm),
                       _buildScopeCard(context),
-                      const SizedBox(height: AppSpacing.sm),
-                      _buildSourceCard(context),
                       const SizedBox(height: AppSpacing.md),
                     ],
                   ),
@@ -192,19 +190,6 @@ class NutritionTargetsHelpBottomSheet extends StatelessWidget {
             'Brick workouts use the sport-specific run/bike/swim during overrides.',
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSourceCard(BuildContext context) {
-    return BaseCard(
-      child: Text(
-        'Source: generate-macros-v4 (`supabase/functions/generate-macros-v4/single-sport.ts`) '
-        'plus the app-side >=90 minute during-override gate '
-        '(`lib/features/nutrition_plan/presentation/providers/macro_targets_controller.dart`).',
-        style: AppTextStyles.bodySmall.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75),
-        ),
       ),
     );
   }

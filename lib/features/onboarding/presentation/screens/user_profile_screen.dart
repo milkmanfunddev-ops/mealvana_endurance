@@ -86,7 +86,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         _loadIntegrationProfileData();
         // Auto-populate email from Supabase auth if available
         if (_emailController.text.isEmpty) {
-          final authEmail = ref.read(appExternalDepsProvider).supabaseClient.auth.currentUser?.email;
+          final authEmail = ref
+              .read(appExternalDepsProvider)
+              .supabaseClient
+              .auth
+              .currentUser
+              ?.email
+              ?.trim();
           if (authEmail != null && authEmail.isNotEmpty) {
             _emailController.text = authEmail;
           }

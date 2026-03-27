@@ -102,6 +102,76 @@ export interface MacroTargets {
   water_ml: number;
   water_low_ml?: number;
   water_high_ml?: number;
+  /** Per-macro override flags from user settings. When a macro is overridden
+   *  and the target falls outside the algorithm's band, solvers should expand
+   *  the band to include the target so food selection can actually reach it. */
+  overrides?: {
+    carbs?: boolean;
+    protein?: boolean;
+    sodium?: boolean;
+    water?: boolean;
+  };
+}
+
+/**
+ * Adjust band bounds for overridden macros so they include the target.
+ *
+ * When a user override pushes a target outside the algorithm-derived band
+ * (e.g. carbs_g=360 but carbs_high_g=324), solvers would cap food selection
+ * at the band limit. This function expands the band to include the target,
+ * allowing the solver to actually reach it.
+ *
+ * When the override is within the band, no adjustment is made — the band
+ * constrains normally.
+ */
+export function adjustTargetsForOverrides(targets: MacroTargets): MacroTargets {
+  if (!targets.overrides) return targets;
+
+  const adjusted = { ...targets };
+
+  if (targets.overrides.carbs) {
+    if (adjusted.carbs_high_g != null && adjusted.carbs_g > adjusted.carbs_high_g) {
+      console.log(
+        `[OVERRIDE] Expanding carbs_high_g from ${adjusted.carbs_high_g} to ${adjusted.carbs_g} (user override)`
+      );
+      adjusted.carbs_high_g = adjusted.carbs_g;
+    }
+    if (adjusted.carbs_low_g != null && adjusted.carbs_g < adjusted.carbs_low_g) {
+      console.log(
+        `[OVERRIDE] Lowering carbs_low_g from ${adjusted.carbs_low_g} to ${adjusted.carbs_g} (user override)`
+      );
+      adjusted.carbs_low_g = adjusted.carbs_g;
+    }
+  }
+
+  if (targets.overrides.protein && adjusted.protein_g != null) {
+    if (adjusted.protein_high_g != null && adjusted.protein_g > adjusted.protein_high_g) {
+      adjusted.protein_high_g = adjusted.protein_g;
+    }
+    if (adjusted.protein_low_g != null && adjusted.protein_g < adjusted.protein_low_g) {
+      adjusted.protein_low_g = adjusted.protein_g;
+    }
+  }
+
+  if (targets.overrides.sodium) {
+    if (adjusted.sodium_high_mg != null && adjusted.sodium_mg > adjusted.sodium_high_mg) {
+      adjusted.sodium_high_mg = adjusted.sodium_mg;
+    }
+    if (adjusted.sodium_low_mg != null && adjusted.sodium_mg < adjusted.sodium_low_mg) {
+      adjusted.sodium_low_mg = adjusted.sodium_mg;
+    }
+  }
+
+  if (targets.overrides.water) {
+    if (adjusted.water_high_ml != null && adjusted.water_ml > adjusted.water_high_ml) {
+      adjusted.water_high_ml = adjusted.water_ml;
+    }
+    if (adjusted.water_low_ml != null && adjusted.water_ml < adjusted.water_low_ml) {
+      adjusted.water_low_ml = adjusted.water_ml;
+    }
+  }
+
+  return adjusted;
 }
 
 export interface PhaseTargets {

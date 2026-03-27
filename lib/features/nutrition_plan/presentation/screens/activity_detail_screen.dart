@@ -197,6 +197,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
                 isCompleting: d.isCompleting ?? false,
                 hasUnsavedChanges: d.hasUnsavedChanges ?? false,
                 error: d.error,
+                fuelLogViewMode: d.fuelLogViewMode ?? FuelLogViewMode.planned,
+                fuelLogData: d.fuelLogData,
               );
             }
             return _buildContent(context, state);
@@ -612,8 +614,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
               label: 'Planned',
               isSelected: state.fuelLogViewMode == FuelLogViewMode.planned,
               onTap: () {
-                final controller =
-                    _getControllerNotifier() as ActivityDetailController;
+                final controller = _getControllerNotifier();
                 if (state.fuelLogViewMode != FuelLogViewMode.planned) {
                   controller.toggleFuelLogViewMode();
                 }
@@ -626,8 +627,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
               label: 'Actual',
               isSelected: state.fuelLogViewMode == FuelLogViewMode.actual,
               onTap: () {
-                final controller =
-                    _getControllerNotifier() as ActivityDetailController;
+                final controller = _getControllerNotifier();
                 if (state.fuelLogViewMode != FuelLogViewMode.actual) {
                   controller.toggleFuelLogViewMode();
                 }

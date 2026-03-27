@@ -208,8 +208,10 @@ export function calculateBrickMacrosV4(
         food_categories: ["during_swimming"],
       });
     } else {
+      // Use total brick duration for carb band lookup so each segment's
+      // rate reflects the full event length, not just the individual leg.
       const carbResult = calculateDuringWorkoutCarbRate(
-        durationMin,
+        totalDurationMin,
         sport,
         gutTraining,
         intensityDist,

@@ -250,6 +250,71 @@ class NutritionPlanService {
     return offlinePlan;
   }
 
+  /// Build phase target map for the V3 plan generator.
+  ///
+  /// Always sends band ranges (low/high) when available. Additionally includes
+  /// an `overrides` map flagging which macros have targets outside their band,
+  /// so the edge function can expand the band to include the target.
+  static Map<String, dynamic> _buildPhaseTargets({
+    required double carbsG,
+    double? proteinG,
+    double? fatG,
+    required double sodiumMg,
+    required double waterMl,
+    double? carbsLowG,
+    double? carbsHighG,
+    double? proteinLowG,
+    double? proteinHighG,
+    double? sodiumLowMg,
+    double? sodiumHighMg,
+    double? waterLowMl,
+    double? waterHighMl,
+  }) {
+    final map = <String, dynamic>{
+      'carbs_g': carbsG,
+      'sodium_mg': sodiumMg,
+      'water_ml': waterMl,
+      if (proteinG != null) 'protein_g': proteinG,
+      if (fatG != null) 'fat_g': fatG,
+      if (carbsLowG != null) 'carbs_low_g': carbsLowG,
+      if (carbsHighG != null) 'carbs_high_g': carbsHighG,
+      if (proteinLowG != null) 'protein_low_g': proteinLowG,
+      if (proteinHighG != null) 'protein_high_g': proteinHighG,
+      if (sodiumLowMg != null) 'sodium_low_mg': sodiumLowMg,
+      if (sodiumHighMg != null) 'sodium_high_mg': sodiumHighMg,
+      if (waterLowMl != null) 'water_low_ml': waterLowMl,
+      if (waterHighMl != null) 'water_high_ml': waterHighMl,
+    };
+
+    // Signal which macros have been overridden outside their bands so the
+    // edge function can expand band bounds to include the target.
+    final overrides = <String, bool>{};
+    if (_isOutsideBand(carbsG, carbsLowG, carbsHighG)) {
+      overrides['carbs'] = true;
+    }
+    if (proteinG != null &&
+        _isOutsideBand(proteinG, proteinLowG, proteinHighG)) {
+      overrides['protein'] = true;
+    }
+    if (_isOutsideBand(sodiumMg, sodiumLowMg, sodiumHighMg)) {
+      overrides['sodium'] = true;
+    }
+    if (_isOutsideBand(waterMl, waterLowMl, waterHighMl)) {
+      overrides['water'] = true;
+    }
+    if (overrides.isNotEmpty) {
+      map['overrides'] = overrides;
+    }
+
+    return map;
+  }
+
+  /// Returns true if [target] falls outside [low, high].
+  static bool _isOutsideBand(double target, double? low, double? high) {
+    if (low == null || high == null) return false;
+    return target < low || target > high;
+  }
+
   MacroTargets _estimateMacroTargets({
     required double distanceMiles,
     required double paceMinutesPerMile,
@@ -570,68 +635,46 @@ class NutritionPlanService {
         'hours_before': hoursBefore,
         'weight_kg': weightKg,
         'macro_targets': <String, dynamic>{
-          'pre_run': {
-            'carbs_g': macroTargets.preRun.carbsG,
-            'protein_g': macroTargets.preRun.proteinG,
-            'fat_g': macroTargets.preRun.fatCapG,
-            'sodium_mg': macroTargets.preRun.sodiumMg,
-            'water_ml': macroTargets.preRun.fluidsMl,
-            if (macroTargets.preRun.carbsLowG != null)
-              'carbs_low_g': macroTargets.preRun.carbsLowG,
-            if (macroTargets.preRun.carbsHighG != null)
-              'carbs_high_g': macroTargets.preRun.carbsHighG,
-            if (macroTargets.preRun.proteinLowG != null)
-              'protein_low_g': macroTargets.preRun.proteinLowG,
-            if (macroTargets.preRun.proteinHighG != null)
-              'protein_high_g': macroTargets.preRun.proteinHighG,
-            if (macroTargets.preRun.sodiumLowMg != null)
-              'sodium_low_mg': macroTargets.preRun.sodiumLowMg,
-            if (macroTargets.preRun.sodiumHighMg != null)
-              'sodium_high_mg': macroTargets.preRun.sodiumHighMg,
-            if (macroTargets.preRun.fluidsLowMl != null)
-              'water_low_ml': macroTargets.preRun.fluidsLowMl,
-            if (macroTargets.preRun.fluidsHighMl != null)
-              'water_high_ml': macroTargets.preRun.fluidsHighMl,
-          },
-          'during_run': {
-            'carbs_g': macroTargets.duringRun.carbTotalG,
-            'sodium_mg': macroTargets.duringRun.sodiumTotalMg,
-            'water_ml': macroTargets.duringRun.fluidTotalMl,
-            if (macroTargets.duringRun.carbsLowG != null)
-              'carbs_low_g': macroTargets.duringRun.carbsLowG,
-            if (macroTargets.duringRun.carbsHighG != null)
-              'carbs_high_g': macroTargets.duringRun.carbsHighG,
-            if (macroTargets.duringRun.sodiumLowMg != null)
-              'sodium_low_mg': macroTargets.duringRun.sodiumLowMg,
-            if (macroTargets.duringRun.sodiumHighMg != null)
-              'sodium_high_mg': macroTargets.duringRun.sodiumHighMg,
-            if (macroTargets.duringRun.fluidsLowMl != null)
-              'water_low_ml': macroTargets.duringRun.fluidsLowMl,
-            if (macroTargets.duringRun.fluidsHighMl != null)
-              'water_high_ml': macroTargets.duringRun.fluidsHighMl,
-          },
-          'post_run': {
-            'carbs_g': macroTargets.postRun.carbsG,
-            'protein_g': macroTargets.postRun.proteinG,
-            'sodium_mg': macroTargets.postRun.sodiumMg,
-            'water_ml': macroTargets.postRun.fluidsMl,
-            if (macroTargets.postRun.carbsLowG != null)
-              'carbs_low_g': macroTargets.postRun.carbsLowG,
-            if (macroTargets.postRun.carbsHighG != null)
-              'carbs_high_g': macroTargets.postRun.carbsHighG,
-            if (macroTargets.postRun.proteinLowG != null)
-              'protein_low_g': macroTargets.postRun.proteinLowG,
-            if (macroTargets.postRun.proteinHighG != null)
-              'protein_high_g': macroTargets.postRun.proteinHighG,
-            if (macroTargets.postRun.sodiumLowMg != null)
-              'sodium_low_mg': macroTargets.postRun.sodiumLowMg,
-            if (macroTargets.postRun.sodiumHighMg != null)
-              'sodium_high_mg': macroTargets.postRun.sodiumHighMg,
-            if (macroTargets.postRun.fluidsLowMl != null)
-              'water_low_ml': macroTargets.postRun.fluidsLowMl,
-            if (macroTargets.postRun.fluidsHighMl != null)
-              'water_high_ml': macroTargets.postRun.fluidsHighMl,
-          },
+          'pre_run': _buildPhaseTargets(
+            carbsG: macroTargets.preRun.carbsG,
+            proteinG: macroTargets.preRun.proteinG,
+            fatG: macroTargets.preRun.fatCapG,
+            sodiumMg: macroTargets.preRun.sodiumMg,
+            waterMl: macroTargets.preRun.fluidsMl,
+            carbsLowG: macroTargets.preRun.carbsLowG,
+            carbsHighG: macroTargets.preRun.carbsHighG,
+            proteinLowG: macroTargets.preRun.proteinLowG,
+            proteinHighG: macroTargets.preRun.proteinHighG,
+            sodiumLowMg: macroTargets.preRun.sodiumLowMg,
+            sodiumHighMg: macroTargets.preRun.sodiumHighMg,
+            waterLowMl: macroTargets.preRun.fluidsLowMl,
+            waterHighMl: macroTargets.preRun.fluidsHighMl,
+          ),
+          'during_run': _buildPhaseTargets(
+            carbsG: macroTargets.duringRun.carbTotalG,
+            sodiumMg: macroTargets.duringRun.sodiumTotalMg,
+            waterMl: macroTargets.duringRun.fluidTotalMl,
+            carbsLowG: macroTargets.duringRun.carbsLowG,
+            carbsHighG: macroTargets.duringRun.carbsHighG,
+            sodiumLowMg: macroTargets.duringRun.sodiumLowMg,
+            sodiumHighMg: macroTargets.duringRun.sodiumHighMg,
+            waterLowMl: macroTargets.duringRun.fluidsLowMl,
+            waterHighMl: macroTargets.duringRun.fluidsHighMl,
+          ),
+          'post_run': _buildPhaseTargets(
+            carbsG: macroTargets.postRun.carbsG,
+            proteinG: macroTargets.postRun.proteinG,
+            sodiumMg: macroTargets.postRun.sodiumMg,
+            waterMl: macroTargets.postRun.fluidsMl,
+            carbsLowG: macroTargets.postRun.carbsLowG,
+            carbsHighG: macroTargets.postRun.carbsHighG,
+            proteinLowG: macroTargets.postRun.proteinLowG,
+            proteinHighG: macroTargets.postRun.proteinHighG,
+            sodiumLowMg: macroTargets.postRun.sodiumLowMg,
+            sodiumHighMg: macroTargets.postRun.sodiumHighMg,
+            waterLowMl: macroTargets.postRun.fluidsLowMl,
+            waterHighMl: macroTargets.postRun.fluidsHighMl,
+          ),
         },
         if (dietaryPreference != null) 'dietary_preference': dietaryPreference,
         if (allergies != null) 'allergies': allergies,

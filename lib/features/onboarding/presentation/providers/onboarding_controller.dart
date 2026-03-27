@@ -25,7 +25,8 @@ const _onboardingTempUserIdKey = 'onboarding_temp_user_id';
 /// Controller for managing onboarding flow state
 @riverpod
 class OnboardingController extends _$OnboardingController {
-  OnboardingService get _onboardingService => ref.read(onboardingServiceProvider);
+  OnboardingService get _onboardingService =>
+      ref.read(onboardingServiceProvider);
   ContentService get _contentService => ref.read(contentServiceProvider);
   AuthService get _authService => ref.read(authServiceProvider);
   UserProfile? _currentUser;
@@ -55,7 +56,8 @@ class OnboardingController extends _$OnboardingController {
     required int heightInches,
     required double weightPounds,
     required bool runsWithWaterBottle,
-    String authProvider = 'anonymous', // 'anonymous', 'email', 'google', 'apple'
+    String authProvider =
+        'anonymous', // 'anonymous', 'email', 'google', 'apple'
     bool isAnonymous = true, // false when user signs up with email/OAuth
     UnitSystem unitSystem = UnitSystem.imperial,
   }) async {
@@ -92,17 +94,24 @@ class OnboardingController extends _$OnboardingController {
     // Get current user from auth service (works for both session users and restored users)
     final currentUser = _currentUser ?? await _authService.getCurrentUser();
 
-    DebugLogger.debug('👤 Sport preferences - Current user: ${currentUser?.id ?? "null"}');
+    DebugLogger.debug(
+      '👤 Sport preferences - Current user: ${currentUser?.id ?? "null"}',
+    );
 
     if (currentUser == null) {
-      final errorMsg = _contentService.getValue(ContentKeys.errorGeneric,
-          defaultValue: 'No user profile found. Please complete user profile first.');
+      final errorMsg = _contentService.getValue(
+        ContentKeys.errorGeneric,
+        defaultValue:
+            'No user profile found. Please complete user profile first.',
+      );
       DebugLogger.error('❌ Sport preferences - No current user found');
       state = AsyncError(errorMsg, StackTrace.current);
       return false;
     }
 
-    DebugLogger.info('🚀 Sport preferences - Starting save process for user: ${currentUser.id}');
+    DebugLogger.info(
+      '🚀 Sport preferences - Starting save process for user: ${currentUser.id}',
+    );
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -125,9 +134,13 @@ class OnboardingController extends _$OnboardingController {
 
     if (state.hasError) {
       DebugLogger.error('❌ Sport preferences - Error occurred: ${state.error}');
-      DebugLogger.debug('📍 Sport preferences - Stack trace: ${state.stackTrace}');
+      DebugLogger.debug(
+        '📍 Sport preferences - Stack trace: ${state.stackTrace}',
+      );
     } else {
-      DebugLogger.info('🎉 Sport preferences - Save operation completed without errors');
+      DebugLogger.info(
+        '🎉 Sport preferences - Save operation completed without errors',
+      );
     }
 
     return !state.hasError;
@@ -140,12 +153,17 @@ class OnboardingController extends _$OnboardingController {
     // Get current user from auth service (works for both session users and restored users)
     final currentUser = _currentUser ?? await _authService.getCurrentUser();
 
-    DebugLogger.debug('👤 Dietary preference - Current user: ${currentUser?.id ?? "null"}');
+    DebugLogger.debug(
+      '👤 Dietary preference - Current user: ${currentUser?.id ?? "null"}',
+    );
     DebugLogger.debug('🥗 Dietary preference: ${preference?.name ?? "none"}');
 
     if (currentUser == null) {
-      final errorMsg = _contentService.getValue(ContentKeys.errorGeneric,
-          defaultValue: 'No user profile found. Please complete user profile first.');
+      final errorMsg = _contentService.getValue(
+        ContentKeys.errorGeneric,
+        defaultValue:
+            'No user profile found. Please complete user profile first.',
+      );
       DebugLogger.error('❌ Dietary preference - No current user found');
       state = AsyncError(errorMsg, StackTrace.current);
       return false;
@@ -155,28 +173,41 @@ class OnboardingController extends _$OnboardingController {
     final oldPreference = currentUser.dietaryPreference;
     final preferenceChanged = oldPreference != preference;
 
-    DebugLogger.info('🚀 Dietary preference - Starting save process for user: ${currentUser.id}');
-    DebugLogger.debug('📋 Dietary preference - Old: ${oldPreference?.displayName ?? "none"}, New: ${preference?.displayName ?? "none"}');
+    DebugLogger.info(
+      '🚀 Dietary preference - Starting save process for user: ${currentUser.id}',
+    );
+    DebugLogger.debug(
+      '📋 Dietary preference - Old: ${oldPreference?.displayName ?? "none"}, New: ${preference?.displayName ?? "none"}',
+    );
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
       DebugLogger.debug('📞 Dietary preference - Calling onboarding service');
-      await _onboardingService.saveDietaryPreference(currentUser.id, preference);
+      await _onboardingService.saveDietaryPreference(
+        currentUser.id,
+        preference,
+      );
       DebugLogger.info('✅ Dietary preference - Save completed successfully');
       // Update our session user reference
       _currentUser = currentUser;
 
       // If dietary preference changed, remove old preference-based food avoids
-      if (preferenceChanged && oldPreference != null && oldPreference != DietaryPreference.none) {
+      if (preferenceChanged &&
+          oldPreference != null &&
+          oldPreference != DietaryPreference.none) {
         final removedCount = await _authService.removeFoodPreferencesBySource(
           currentUser.id,
           'dietary:${oldPreference.dbValue}',
         );
-        DebugLogger.info('🗑️ Removed $removedCount food avoids for old diet: ${oldPreference.displayName}');
+        DebugLogger.info(
+          '🗑️ Removed $removedCount food avoids for old diet: ${oldPreference.displayName}',
+        );
       }
 
       // Add food preferences for new dietary preference only
-      if (preferenceChanged && preference != null && preference != DietaryPreference.none) {
+      if (preferenceChanged &&
+          preference != null &&
+          preference != DietaryPreference.none) {
         await _updateFoodPreferencesForAllergies(
           currentUser.id,
           [], // Don't update allergies in dietary save
@@ -186,10 +217,16 @@ class OnboardingController extends _$OnboardingController {
     });
 
     if (state.hasError) {
-      DebugLogger.error('❌ Dietary preference - Error occurred: ${state.error}');
-      DebugLogger.debug('📍 Dietary preference - Stack trace: ${state.stackTrace}');
+      DebugLogger.error(
+        '❌ Dietary preference - Error occurred: ${state.error}',
+      );
+      DebugLogger.debug(
+        '📍 Dietary preference - Stack trace: ${state.stackTrace}',
+      );
     } else {
-      DebugLogger.info('🎉 Dietary preference - Save operation completed without errors');
+      DebugLogger.info(
+        '🎉 Dietary preference - Save operation completed without errors',
+      );
     }
 
     return !state.hasError;
@@ -202,12 +239,17 @@ class OnboardingController extends _$OnboardingController {
     // Get current user from auth service (works for both session users and restored users)
     final currentUser = _currentUser ?? await _authService.getCurrentUser();
 
-    DebugLogger.debug('👤 Allergies - Current user: ${currentUser?.id ?? "null"}');
+    DebugLogger.debug(
+      '👤 Allergies - Current user: ${currentUser?.id ?? "null"}',
+    );
     DebugLogger.debug('⚠️ Allergies count: ${allergies.length}');
 
     if (currentUser == null) {
-      final errorMsg = _contentService.getValue(ContentKeys.errorGeneric,
-          defaultValue: 'No user profile found. Please complete user profile first.');
+      final errorMsg = _contentService.getValue(
+        ContentKeys.errorGeneric,
+        defaultValue:
+            'No user profile found. Please complete user profile first.',
+      );
       DebugLogger.error('❌ Allergies - No current user found');
       state = AsyncError(errorMsg, StackTrace.current);
       return false;
@@ -216,12 +258,22 @@ class OnboardingController extends _$OnboardingController {
     // Get old allergies to determine which ones were removed
     final oldAllergies = currentUser.allergies;
     final newAllergies = allergies.toSet();
-    final removedAllergies = oldAllergies.where((a) => !newAllergies.contains(a)).toList();
-    final addedAllergies = newAllergies.where((a) => !oldAllergies.contains(a)).toList();
+    final removedAllergies = oldAllergies
+        .where((a) => !newAllergies.contains(a))
+        .toList();
+    final addedAllergies = newAllergies
+        .where((a) => !oldAllergies.contains(a))
+        .toList();
 
-    DebugLogger.info('🚀 Allergies - Starting save process for user: ${currentUser.id}');
-    DebugLogger.debug('📋 Allergies - Removed: ${removedAllergies.map((a) => a.displayName).join(', ')}');
-    DebugLogger.debug('📋 Allergies - Added: ${addedAllergies.map((a) => a.displayName).join(', ')}');
+    DebugLogger.info(
+      '🚀 Allergies - Starting save process for user: ${currentUser.id}',
+    );
+    DebugLogger.debug(
+      '📋 Allergies - Removed: ${removedAllergies.map((a) => a.displayName).join(', ')}',
+    );
+    DebugLogger.debug(
+      '📋 Allergies - Added: ${addedAllergies.map((a) => a.displayName).join(', ')}',
+    );
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -237,7 +289,9 @@ class OnboardingController extends _$OnboardingController {
           currentUser.id,
           'allergy:${removedAllergy.dbValue}',
         );
-        DebugLogger.info('🗑️ Removed $removedCount food avoids for allergy: ${removedAllergy.displayName}');
+        DebugLogger.info(
+          '🗑️ Removed $removedCount food avoids for allergy: ${removedAllergy.displayName}',
+        );
       }
 
       // Add food preferences for new allergies only
@@ -254,7 +308,9 @@ class OnboardingController extends _$OnboardingController {
       DebugLogger.error('❌ Allergies - Error occurred: ${state.error}');
       DebugLogger.debug('📍 Allergies - Stack trace: ${state.stackTrace}');
     } else {
-      DebugLogger.info('🎉 Allergies - Save operation completed without errors');
+      DebugLogger.info(
+        '🎉 Allergies - Save operation completed without errors',
+      );
     }
 
     return !state.hasError;
@@ -292,12 +348,15 @@ class OnboardingController extends _$OnboardingController {
             source: 'allergy:${allergy.dbValue}',
           );
 
-          DebugLogger.info('🍎 Set ${allergyFoods.length} foods to avoid for allergy: ${allergy.displayName}');
+          DebugLogger.info(
+            '🍎 Set ${allergyFoods.length} foods to avoid for allergy: ${allergy.displayName}',
+          );
         }
       }
 
       // Process dietary preference if set
-      if (dietaryPreference != null && dietaryPreference != DietaryPreference.none) {
+      if (dietaryPreference != null &&
+          dietaryPreference != DietaryPreference.none) {
         final dietaryFoods = await foodRepository.getFoodsToAvoid(
           dietaryPreference: dietaryPreference,
         );
@@ -318,13 +377,19 @@ class OnboardingController extends _$OnboardingController {
             source: 'dietary:${dietaryPreference.dbValue}',
           );
 
-          DebugLogger.info('🥗 Set ${dietaryFoods.length} foods to avoid for diet: ${dietaryPreference.displayName}');
+          DebugLogger.info(
+            '🥗 Set ${dietaryFoods.length} foods to avoid for diet: ${dietaryPreference.displayName}',
+          );
         }
       }
 
-      DebugLogger.info('✅ Food preferences updated for allergen/dietary restrictions');
+      DebugLogger.info(
+        '✅ Food preferences updated for allergen/dietary restrictions',
+      );
     } catch (e, stackTrace) {
-      DebugLogger.error('❌ Failed to update food preferences for allergies: $e');
+      DebugLogger.error(
+        '❌ Failed to update food preferences for allergies: $e',
+      );
       DebugLogger.debug('📍 Stack trace: $stackTrace');
       // Don't rethrow - allergy save was successful, this is a best-effort update
     }
@@ -338,18 +403,25 @@ class OnboardingController extends _$OnboardingController {
     // Get current user from auth service (works for both session users and restored users)
     final currentUser = _currentUser ?? await _authService.getCurrentUser();
 
-    DebugLogger.debug('👤 Food preferences - Current user: ${currentUser?.id ?? "null"}');
+    DebugLogger.debug(
+      '👤 Food preferences - Current user: ${currentUser?.id ?? "null"}',
+    );
     DebugLogger.debug('🍎 Food preferences - Count: ${preferences.length}');
 
     if (currentUser == null) {
-      final errorMsg = _contentService.getValue(ContentKeys.errorGeneric,
-          defaultValue: 'No user profile found. Please complete user profile first.');
+      final errorMsg = _contentService.getValue(
+        ContentKeys.errorGeneric,
+        defaultValue:
+            'No user profile found. Please complete user profile first.',
+      );
       DebugLogger.error('❌ Food preferences - No current user found');
       state = AsyncError(errorMsg, StackTrace.current);
       return false;
     }
 
-    DebugLogger.info('🚀 Food preferences - Starting save process for user: ${currentUser.id}');
+    DebugLogger.info(
+      '🚀 Food preferences - Starting save process for user: ${currentUser.id}',
+    );
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -375,9 +447,13 @@ class OnboardingController extends _$OnboardingController {
 
     if (state.hasError) {
       DebugLogger.error('❌ Food preferences - Error occurred: ${state.error}');
-      DebugLogger.debug('📍 Food preferences - Stack trace: ${state.stackTrace}');
+      DebugLogger.debug(
+        '📍 Food preferences - Stack trace: ${state.stackTrace}',
+      );
     } else {
-      DebugLogger.info('🎉 Food preferences - Save operation completed without errors');
+      DebugLogger.info(
+        '🎉 Food preferences - Save operation completed without errors',
+      );
     }
 
     return !state.hasError;
@@ -455,7 +531,9 @@ class OnboardingController extends _$OnboardingController {
   /// Cache dietary preference (don't save to DB yet)
   void cacheDietaryPreference(DietaryPreference? preference) {
     _cachedDietaryPreference = preference;
-    DebugLogger.debug('📝 Cached dietary preference: ${preference?.name ?? "none"}');
+    DebugLogger.debug(
+      '📝 Cached dietary preference: ${preference?.name ?? "none"}',
+    );
   }
 
   /// Cache allergies (don't save to DB yet)
@@ -467,7 +545,9 @@ class OnboardingController extends _$OnboardingController {
   /// Cache selected sports
   void cacheSelectedSports(Set<String> sports) {
     _cachedSelectedSports = sports;
-    DebugLogger.debug('📝 Cached ${sports.length} sports: ${sports.join(", ")}');
+    DebugLogger.debug(
+      '📝 Cached ${sports.length} sports: ${sports.join(", ")}',
+    );
     // Trigger rebuild to update dynamic pages
     state = const AsyncData(null);
   }
@@ -495,7 +575,9 @@ class OnboardingController extends _$OnboardingController {
     String authProvider = 'anonymous',
     bool isAnonymous = true,
   }) async {
-    DebugLogger.info('📦 Starting batch save of all onboarding data (authProvider: $authProvider, isAnonymous: $isAnonymous)');
+    DebugLogger.info(
+      '📦 Starting batch save of all onboarding data (authProvider: $authProvider, isAnonymous: $isAnonymous)',
+    );
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
@@ -503,9 +585,17 @@ class OnboardingController extends _$OnboardingController {
       if (_cachedUserProfileData != null) {
         final data = _cachedUserProfileData!;
         // Auto-populate email from Supabase auth if not manually provided
-        final cachedEmail = data['email'] as String?;
-        final authEmail = ref.read(appExternalDepsProvider).supabaseClient.auth.currentUser?.email;
-        final email = cachedEmail ?? authEmail;
+        final cachedEmail = (data['email'] as String?)?.trim();
+        final authEmail = ref
+            .read(appExternalDepsProvider)
+            .supabaseClient
+            .auth
+            .currentUser
+            ?.email
+            ?.trim();
+        final email = (cachedEmail != null && cachedEmail.isNotEmpty)
+            ? cachedEmail
+            : ((authEmail != null && authEmail.isNotEmpty) ? authEmail : null);
         _currentUser = await _onboardingService.createUserProfile(
           gender: data['gender'] as Gender,
           birthday: data['birthday'] as DateTime,
@@ -556,7 +646,10 @@ class OnboardingController extends _$OnboardingController {
 
       // 3. Save dietary preference
       if (_cachedDietaryPreference != null) {
-        await _onboardingService.saveDietaryPreference(userId, _cachedDietaryPreference);
+        await _onboardingService.saveDietaryPreference(
+          userId,
+          _cachedDietaryPreference,
+        );
         DebugLogger.info('✅ Dietary preference saved');
       }
 
@@ -586,7 +679,8 @@ class OnboardingController extends _$OnboardingController {
         }
 
         // Auto-set conflicting foods to "dislike" based on dietary preference and allergies
-        if (_cachedDietaryPreference != null || (_cachedAllergies?.isNotEmpty ?? false)) {
+        if (_cachedDietaryPreference != null ||
+            (_cachedAllergies?.isNotEmpty ?? false)) {
           final foodsToAvoid = await foodRepository.getFoodsToAvoid(
             dietaryPreference: _cachedDietaryPreference,
             allergies: _cachedAllergies ?? [],
@@ -598,11 +692,17 @@ class OnboardingController extends _$OnboardingController {
           }
 
           if (foodsToAvoid.isNotEmpty) {
-            DebugLogger.info('✅ Auto-set ${foodsToAvoid.length} foods to dislike based on diet/allergies');
+            DebugLogger.info(
+              '✅ Auto-set ${foodsToAvoid.length} foods to dislike based on diet/allergies',
+            );
           }
         }
 
-        await _onboardingService.saveFoodPreferences(userId, preferences, sliderLevels: sliderLevels);
+        await _onboardingService.saveFoodPreferences(
+          userId,
+          preferences,
+          sliderLevels: sliderLevels,
+        );
         DebugLogger.info('✅ Food preferences saved');
       }
 
@@ -616,7 +716,9 @@ class OnboardingController extends _$OnboardingController {
       // Set flag to skip sync on first navigation to main
       // New users have all data locally - nothing to download from Supabase
       ref.read(syncCoordinatorProvider.notifier).setSkipSyncForNewUser();
-      DebugLogger.info('🚫 Set skip sync flag - sync will be skipped for new user');
+      DebugLogger.info(
+        '🚫 Set skip sync flag - sync will be skipped for new user',
+      );
 
       DebugLogger.info('🎉 All onboarding data saved successfully');
     });
@@ -648,11 +750,13 @@ class OnboardingController extends _$OnboardingController {
       ref.read(foodSelectionsCacheProvider.notifier).clear();
     });
   }
-  
+
   /// Get content-driven error message
   String getErrorMessage(String? error) {
-    return _contentService.getValue(ContentKeys.errorGeneric,
-        defaultValue: error ?? 'Something went wrong. Please try again.');
+    return _contentService.getValue(
+      ContentKeys.errorGeneric,
+      defaultValue: error ?? 'Something went wrong. Please try again.',
+    );
   }
 
   /// Migrate all data created during onboarding to the new user profile
@@ -684,12 +788,16 @@ class OnboardingController extends _$OnboardingController {
       }
 
       if (tempUserId == newUserId) {
-        DebugLogger.info('ℹ️ Temp user ID matches new user ID - no migration needed');
+        DebugLogger.info(
+          'ℹ️ Temp user ID matches new user ID - no migration needed',
+        );
         await prefs.remove(_onboardingTempUserIdKey);
         return;
       }
 
-      DebugLogger.info('🔄 Migrating ALL onboarding data from temp user $tempUserId to new user $newUserId');
+      DebugLogger.info(
+        '🔄 Migrating ALL onboarding data from temp user $tempUserId to new user $newUserId',
+      );
 
       // Use the consolidated migration method that handles ALL user-scoped tables
       await database.diagnosticDao.migrateUserData(tempUserId, newUserId);
@@ -697,7 +805,9 @@ class OnboardingController extends _$OnboardingController {
       // Clear the temp user ID from preferences
       await prefs.remove(_onboardingTempUserIdKey);
 
-      DebugLogger.info('✅ Migration complete - all user data migrated and temp user ID cleared');
+      DebugLogger.info(
+        '✅ Migration complete - all user data migrated and temp user ID cleared',
+      );
     } catch (e) {
       // Don't fail onboarding if migration fails - log and continue
       DebugLogger.error('⚠️ Failed to migrate onboarding data: $e');
@@ -714,9 +824,9 @@ class OnboardingController extends _$OnboardingController {
       final database = ref.read(appDatabaseProvider);
 
       // Get the user profile entry from the database using direct query
-      final userProfiles = await (database.select(database.userProfilesTable)
-            ..where((t) => t.id.equals(userId)))
-          .get();
+      final userProfiles = await (database.select(
+        database.userProfilesTable,
+      )..where((t) => t.id.equals(userId))).get();
 
       if (userProfiles.isEmpty) {
         DebugLogger.warning('⚠️ No user profile found to upload');
@@ -731,7 +841,9 @@ class OnboardingController extends _$OnboardingController {
       // Don't fail onboarding if upload fails - sync will handle it later
       // But log it as this may cause FK violations
       DebugLogger.error('⚠️ Failed to upload user profile to Supabase: $e');
-      DebugLogger.warning('⚠️ This may cause FK violations when syncing activities');
+      DebugLogger.warning(
+        '⚠️ This may cause FK violations when syncing activities',
+      );
     }
   }
 }

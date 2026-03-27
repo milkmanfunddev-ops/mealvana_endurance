@@ -37,7 +37,7 @@ import {
 } from "../_shared/responses.ts";
 import { createServiceClient } from "../_shared/supabase-client.ts";
 import { generateUUID } from "../_shared/utils.ts";
-import { type ActivityType, type FoodResult } from "../_shared/nutrition/index.ts";
+import { adjustTargetsForOverrides, type ActivityType, type FoodResult } from "../_shared/nutrition/index.ts";
 
 import type { PlanInputV2, LPPhaseResult } from "./types.ts";
 import { generateBeforePhaseV3 } from "./before-phase.ts";
@@ -82,6 +82,17 @@ serve(async (req) => {
     // Brick workouts: route to dedicated handler
     if (activityType === "brick") {
       return await handleBrickPlan(supabase, input, planId);
+    }
+
+    // Adjust band bounds for user-overridden macros so solvers can reach the target
+    if (input.macro_targets.pre_run) {
+      input.macro_targets.pre_run = adjustTargetsForOverrides(input.macro_targets.pre_run);
+    }
+    if (input.macro_targets.during_run) {
+      input.macro_targets.during_run = adjustTargetsForOverrides(input.macro_targets.during_run);
+    }
+    if (input.macro_targets.post_run) {
+      input.macro_targets.post_run = adjustTargetsForOverrides(input.macro_targets.post_run);
     }
 
     // Generate all phases

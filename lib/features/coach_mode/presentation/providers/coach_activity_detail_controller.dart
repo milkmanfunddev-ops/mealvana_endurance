@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item_data.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/fuel_log_data.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/data/nutrition_plan_mapper.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/activity_detail_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../shared/providers/user_id_provider.dart';
@@ -22,6 +24,8 @@ class CoachActivityDetailState {
     this.isCompleting = false,
     this.hasUnsavedChanges = false,
     this.error,
+    this.fuelLogViewMode = FuelLogViewMode.planned,
+    this.fuelLogData,
   });
 
   final Activity? activity;
@@ -32,9 +36,12 @@ class CoachActivityDetailState {
   final bool isCompleting;
   final bool hasUnsavedChanges;
   final String? error;
+  final FuelLogViewMode fuelLogViewMode;
+  final FuelLogData? fuelLogData;
 
   bool get hasActivity => activity != null;
   bool get isCompleted => completion != null;
+  bool get hasFuelLog => activity?.fuelLogData != null;
 
   CoachActivityDetailState copyWith({
     Activity? activity,
@@ -45,6 +52,8 @@ class CoachActivityDetailState {
     bool? isCompleting,
     bool? hasUnsavedChanges,
     String? error,
+    FuelLogViewMode? fuelLogViewMode,
+    FuelLogData? fuelLogData,
   }) {
     return CoachActivityDetailState(
       activity: activity ?? this.activity,
@@ -55,6 +64,8 @@ class CoachActivityDetailState {
       isCompleting: isCompleting ?? this.isCompleting,
       hasUnsavedChanges: hasUnsavedChanges ?? this.hasUnsavedChanges,
       error: error ?? this.error,
+      fuelLogViewMode: fuelLogViewMode ?? this.fuelLogViewMode,
+      fuelLogData: fuelLogData ?? this.fuelLogData,
     );
   }
 }
@@ -440,6 +451,42 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
       return currentState.copyWith(activity: updatedActivity);
     });
+  }
+
+  /// Toggle between planned and actual view modes for completed activities.
+  void toggleFuelLogViewMode() {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final newMode = currentState.fuelLogViewMode == FuelLogViewMode.planned
+        ? FuelLogViewMode.actual
+        : FuelLogViewMode.planned;
+
+    // When switching to actual, load existing fuel log if not already loaded
+    if (newMode == FuelLogViewMode.actual && currentState.fuelLogData == null) {
+      loadExistingFuelLog();
+    }
+
+    final latestState = state.value;
+    if (latestState != null) {
+      state = AsyncData(latestState.copyWith(fuelLogViewMode: newMode));
+    }
+  }
+
+  /// Parse activity.fuelLogData into state for viewing.
+  void loadExistingFuelLog() {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final rawData = currentState.activity?.fuelLogData;
+    if (rawData == null) return;
+
+    try {
+      final fuelLog = FuelLogData.fromJson(rawData);
+      state = AsyncData(currentState.copyWith(fuelLogData: fuelLog));
+    } catch (_) {
+      // Silently fail - fuel log data may be malformed
+    }
   }
 
   /// Update workout notes for a completed activity (coach view)
