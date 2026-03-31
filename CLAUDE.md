@@ -66,3 +66,4 @@ mealvana_endurance/
 - Web mode details: `/docs/web_mode/README.md`
 - Shorebird code push: `/docs/technical/shorebird-code-push.md`
 - Sentry integration: `/docs/technical/sentry-integration.md`
+- Responsiveness architecture: `/docs/technical/responsiveness.md`
