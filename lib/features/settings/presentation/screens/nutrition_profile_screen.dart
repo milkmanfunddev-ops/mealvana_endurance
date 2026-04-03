@@ -9,6 +9,7 @@ import '../../../../shared/widgets/content_area.dart';
 import '../../../daily_macros/domain/enums.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/data/user_repository.dart';
+import '../../../integrations/presentation/providers/integrations_providers.dart';
 
 class NutritionProfileScreen extends ConsumerStatefulWidget {
   const NutritionProfileScreen({super.key});
@@ -58,6 +59,28 @@ class _NutritionProfileScreenState
       _carbCycleOptIn = profile.carbCycleOptIn;
       _trainingPhase = profile.trainingPhase;
     });
+
+    // If body fat is empty, try to populate from Garmin integration
+    if (profile.bodyFatPct == null) {
+      try {
+        final integrationsRepo = ref.read(integrationsRepositoryProvider);
+        final garminIntegration = await integrationsRepo.getIntegration(
+          profile.id,
+          'garmin',
+        );
+        if (garminIntegration?.isActive == true &&
+            garminIntegration?.providerAthleteBodyFatPct != null &&
+            mounted) {
+          setState(() {
+            _bodyFatController.text =
+                garminIntegration!.providerAthleteBodyFatPct!
+                    .toStringAsFixed(1);
+          });
+        }
+      } catch (_) {
+        // Non-fatal — body fat from Garmin is best-effort
+      }
+    }
   }
 
   Future<void> _save() async {

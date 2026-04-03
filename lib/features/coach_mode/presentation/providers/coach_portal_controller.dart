@@ -25,6 +25,12 @@ class CoachPortalController extends _$CoachPortalController {
     );
   }
 
+  /// Select an athlete without changing the active section.
+  /// Used when clicking an athlete while on Reports or Messages tabs.
+  void selectAthleteOnly(String relationshipId) {
+    state = state.copyWith(selectedRelationshipId: relationshipId);
+  }
+
   void setSection(PortalSection section) {
     state = state.copyWith(activeSection: section);
   }

@@ -250,6 +250,14 @@ class BrickNutritionSections extends StatelessWidget {
         onMoveFoodToTimeSlot != null) {
       final segmentDuration = _getSegmentDuration(duringIndex);
       if (segmentDuration >= 60) {
+        // Look up brick segment for this during section
+        BrickSegmentMacroTarget? brickSeg;
+        if (duringIndex != null && macroTargets?.brickPhaseTargets != null) {
+          final segments = macroTargets!.brickPhaseTargets!.duringSegments;
+          if (duringIndex < segments.length) {
+            brickSeg = segments[duringIndex];
+          }
+        }
         return DuringPhaseSectionWidget(
           section: section,
           sectionColor: sectionColor,
@@ -281,6 +289,8 @@ class BrickNutritionSections extends StatelessWidget {
           sodiumHigh: _getSodiumHigh(section, category),
           fluidsLow: _getFluidsLow(section, category),
           fluidsHigh: _getFluidsHigh(section, category),
+          brickSegment: brickSeg,
+          isBrick: true, // Always true — we're in BrickNutritionSections
         );
       }
     }
@@ -306,6 +316,7 @@ class BrickNutritionSections extends StatelessWidget {
             section.id,
             section,
             isDark: isDark,
+            duringIndex: duringIndex,
           ),
           if (section.subtitle != null) ...[
             const SizedBox(height: AppSpacing.xs),
@@ -378,6 +389,7 @@ class BrickNutritionSections extends StatelessWidget {
     String sectionId,
     PlanSection section, {
     required bool isDark,
+    int? duringIndex,
   }) {
     return Row(
       children: [
@@ -416,6 +428,16 @@ class BrickNutritionSections extends StatelessWidget {
               onPressed: () {
                 final phase = _sectionIdToPhase(sectionId);
                 final sportLabel = _sportDisplayName(sportType) ?? 'Brick';
+                // Find the brick segment for this during section
+                BrickSegmentMacroTarget? brickSegment;
+                if (duringIndex != null &&
+                    macroTargets!.brickPhaseTargets != null) {
+                  final segments =
+                      macroTargets!.brickPhaseTargets!.duringSegments;
+                  if (duringIndex < segments.length) {
+                    brickSegment = segments[duringIndex];
+                  }
+                }
                 PhaseExplanationSheet.show(
                   context,
                   phase: phase,
@@ -424,6 +446,10 @@ class BrickNutritionSections extends StatelessWidget {
                   sportLabel: sportLabel,
                   useImperial: useImperial,
                   foods: section.foodItems,
+                  brickSegment: brickSegment,
+                  // Always true for during/transition — we're in BrickNutritionSections
+                  isBrick: phase != ExplanationPhase.before &&
+                      phase != ExplanationPhase.after,
                 );
               },
             ),

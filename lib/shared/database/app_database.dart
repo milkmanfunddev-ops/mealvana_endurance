@@ -242,6 +242,10 @@ class AppDatabase extends _$AppDatabase {
         await _addColumnIfNotExists('users', 'training_phase', "TEXT DEFAULT 'base'");
         await _addColumnIfNotExists('activities', 'tss', 'REAL');
 
+        // Garmin body composition pull
+        await _addColumnIfNotExists(
+            'integrations', 'provider_athlete_body_fat_pct', 'REAL');
+
         // Create daily_macro_targets table if not exists
         await customStatement('''
           CREATE TABLE IF NOT EXISTS daily_macro_targets (

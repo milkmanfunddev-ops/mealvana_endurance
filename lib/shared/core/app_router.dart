@@ -258,6 +258,9 @@ class AppRouter {
               initialDistance: extra?['distance'] as double?,
               initialDurationMinutes: extra?['initialDurationMinutes'] as int?,
               initialPace: extra?['goalPace'] as double?,
+              initialTitle:
+                  extra?['initialTitle'] as String? ??
+                  extra?['eventName'] as String?,
               activityId: extra?['activityId'] as String?,
               eventId: extra?['eventId'] as String?,
               forUserId:
@@ -302,6 +305,9 @@ class AppRouter {
               initialDistance: extra?['distance'] as double?,
               initialDurationMinutes: extra?['initialDurationMinutes'] as int?,
               initialPace: extra?['goalPace'] as double?,
+              initialTitle:
+                  extra?['initialTitle'] as String? ??
+                  extra?['eventName'] as String?,
               activityId: extra?['activityId'] as String?,
               eventId: extra?['eventId'] as String?,
               forUserId:

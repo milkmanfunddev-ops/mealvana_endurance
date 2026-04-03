@@ -1405,6 +1405,50 @@ describe('generate-nutrition-plan-v3 E2E Tests', () => {
         assertMacroInRange(totalCarbs, bandLowTotal, bandHighTotal, 'During carbs band check');
       }
     });
+
+    it('respects low carb override target even when default band is higher (30 g/h regression)', async () => {
+      const macroInput = {
+        weight: 70,
+        weight_unit: 'kg',
+        activity_type: 'running',
+        run_distance: 19.5,
+        run_distance_unit: 'mi',
+        run_pace: 9.23,
+        run_pace_unit: 'min/mi',
+        hours_before: 2,
+        is_fasted: false,
+        gut_training: 'moderate',
+        sweat_rate_category: 'medium',
+        sweat_sodium: 'medium',
+        overrides: {
+          during_carb_rate_g_per_h: 30,
+        },
+      };
+
+      const { planData, macroData } = await generateFullPlan(macroInput);
+      const m = macroData.macros;
+      const duringFoods = planData.plan.during.foods;
+      const totalCarbs = sumMacros(duringFoods).carbs;
+
+      // Upstream macro override should be applied.
+      assertEquals(m.during_rate_g_per_h, 30);
+      assertEquals(m.during_total_g, 90);
+
+      const staleBandLowTotal = m.during_band_low_g_per_h * m.duration_h;
+      console.log(
+        `  Override regression: delivered=${totalCarbs.toFixed(1)}g, target=${m.during_total_g}g, staleBandLow=${staleBandLowTotal.toFixed(1)}g`,
+      );
+
+      // Must prioritize explicit target, not stale duration-based band.
+      assert(
+        totalCarbs <= m.during_total_g * 1.5,
+        `Expected during carbs near override target (${m.during_total_g}g), got ${totalCarbs.toFixed(1)}g`,
+      );
+      assert(
+        totalCarbs < staleBandLowTotal * 0.9,
+        `Expected carbs well below stale band low (${staleBandLowTotal.toFixed(1)}g), got ${totalCarbs.toFixed(1)}g`,
+      );
+    });
   });
 
   // =========================================================================

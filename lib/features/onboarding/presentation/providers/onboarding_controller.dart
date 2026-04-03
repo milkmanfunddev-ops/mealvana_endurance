@@ -10,6 +10,7 @@ import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
+import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../application/onboarding_service.dart';
 import '../../domain/dietary_preference.dart';
 import '../../domain/allergy.dart';
@@ -627,6 +628,10 @@ class OnboardingController extends _$OnboardingController {
       // Prevents FK violations when activities are uploaded later
       await _uploadUserProfileToSupabase(userId);
 
+      // 1.7. If Garmin was connected during onboarding, upsert the
+      // garmin_user_mappings row now that the user profile exists in Supabase.
+      await _syncGarminMappingIfNeeded(userId);
+
       // 2. Save sport preferences
       if (_cachedSportPreferences != null) {
         final prefs = _cachedSportPreferences!;
@@ -811,6 +816,22 @@ class OnboardingController extends _$OnboardingController {
     } catch (e) {
       // Don't fail onboarding if migration fails - log and continue
       DebugLogger.error('⚠️ Failed to migrate onboarding data: $e');
+    }
+  }
+
+  /// Upsert garmin_user_mappings in Supabase if Garmin was connected during onboarding.
+  ///
+  /// During onboarding the remote mapping upsert is skipped (temp user ID
+  /// doesn't satisfy RLS / FK constraints). Now that the real user profile
+  /// exists in Supabase, we can create the mapping so the push handler
+  /// can route incoming Garmin data.
+  Future<void> _syncGarminMappingIfNeeded(String userId) async {
+    try {
+      final garminOAuth = ref.read(garminOAuthServiceProvider);
+      await garminOAuth.upsertUserMapping(userId);
+    } catch (e) {
+      // Don't fail onboarding — push data will just queue on Garmin's side
+      DebugLogger.error('⚠️ Failed to sync Garmin user mapping: $e');
     }
   }
 

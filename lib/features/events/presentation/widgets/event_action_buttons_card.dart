@@ -81,6 +81,7 @@ class EventActionButtonsCard extends ConsumerWidget {
                   'eventId':
                       event.id, // Pass event ID to link back after creation
                   'activityType': activityType,
+                  'initialTitle': event.eventName,
                   'eventName':
                       event.eventName, // Pass event name for activity title
                 };

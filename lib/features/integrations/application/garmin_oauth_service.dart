@@ -39,9 +39,9 @@ class GarminOAuthService {
   final String _redirectUri;
   final String _callbackUrlScheme;
 
-  static const _authorizeUrl = 'https://connect.garmin.com/oauthConfirm';
+  static const _authorizeUrl = 'https://connect.garmin.com/oauth2Confirm';
   static const _tokenUrl =
-      'https://connectapi.garmin.com/oauth-service/oauth/token';
+      'https://diauth.garmin.com/di-oauth2-service/oauth/token';
   static const _userIdUrl =
       'https://apis.garmin.com/wellness-api/rest/user/id';
 
@@ -49,10 +49,18 @@ class GarminOAuthService {
   ///
   /// Opens a browser window for user to log in to Garmin Connect,
   /// exchanges the authorization code for tokens, fetches the
-  /// Garmin user ID, and creates the garmin_user_mappings row.
+  /// Garmin user ID, and saves the integration locally.
+  ///
+  /// If [skipRemoteMapping] is true, the `garmin_user_mappings` upsert
+  /// to Supabase is skipped (e.g. during onboarding when the user profile
+  /// doesn't exist in Supabase yet). Call [upsertUserMapping] after the
+  /// profile is created.
   ///
   /// Returns the created Integration record.
-  Future<IntegrationModel> authenticate(String userId) async {
+  Future<IntegrationModel> authenticate(
+    String userId, {
+    bool skipRemoteMapping = false,
+  }) async {
     // 1. Generate PKCE code_verifier and code_challenge
     final codeVerifier = _generateCodeVerifier();
     final codeChallenge = _generateCodeChallenge(codeVerifier);
@@ -132,6 +140,15 @@ class GarminOAuthService {
       print('✅ Garmin user ID fetched: $garminUserId');
     }
 
+    // 7b. Fetch latest body composition (best-effort, non-blocking)
+    final bodyComp =
+        await _fetchLatestBodyComposition(tokenResponse.accessToken);
+
+    if (kDebugMode) {
+      print('📊 Garmin body comp: weight=${bodyComp?.weightKg}kg, '
+          'bodyFat=${bodyComp?.bodyFatPct}%');
+    }
+
     // 8. Create and store integration
     final now = DateTime.now();
     final integration = IntegrationModel(
@@ -142,6 +159,8 @@ class GarminOAuthService {
       tokenExpiresAt: tokenResponse.expiresAt,
       providerAthleteId: garminUserId,
       providerAthleteName: 'Garmin Connect',
+      providerAthleteWeightKg: bodyComp?.weightKg,
+      providerAthleteBodyFatPct: bodyComp?.bodyFatPct,
       isActive: true,
       lastSyncStatus: 'pending',
       createdAt: now,
@@ -154,17 +173,23 @@ class GarminOAuthService {
       print('✅ Garmin integration saved to database');
     }
 
-    // 9. CRITICAL: Upsert garmin_user_mappings so push handler can map
-    //    incoming Garmin data to our user
-    await _upsertGarminUserMapping(
-      userId: userId,
-      garminUserId: garminUserId,
-      accessToken: tokenResponse.accessToken,
-      refreshToken: tokenResponse.refreshToken,
-    );
+    // 9. Upsert garmin_user_mappings so push handler can map
+    //    incoming Garmin data to our user.
+    //    Skipped during onboarding — called later via upsertUserMapping()
+    //    after the user profile exists in Supabase.
+    if (!skipRemoteMapping) {
+      await _upsertGarminUserMapping(
+        userId: userId,
+        garminUserId: garminUserId,
+        accessToken: tokenResponse.accessToken,
+        refreshToken: tokenResponse.refreshToken,
+      );
 
-    if (kDebugMode) {
-      print('✅ Garmin user mapping saved to Supabase');
+      if (kDebugMode) {
+        print('✅ Garmin user mapping saved to Supabase');
+      }
+    } else if (kDebugMode) {
+      print('⏭️ Skipping Garmin user mapping upsert (onboarding mode)');
     }
 
     return savedIntegration;
@@ -194,6 +219,31 @@ class GarminOAuthService {
 
     if (kDebugMode) {
       print('✅ Garmin Connect integration disconnected');
+    }
+  }
+
+  /// Upsert the garmin_user_mappings row in Supabase for an existing integration.
+  ///
+  /// Called after onboarding completes and the user profile exists in Supabase.
+  /// Reads the integration from the local DB to get the Garmin credentials.
+  Future<void> upsertUserMapping(String userId) async {
+    final integration = await _repository.getIntegration(userId, 'garmin');
+    if (integration == null || !integration.isActive) {
+      if (kDebugMode) {
+        print('ℹ️ No active Garmin integration to sync mapping for');
+      }
+      return;
+    }
+
+    await _upsertGarminUserMapping(
+      userId: userId,
+      garminUserId: integration.providerAthleteId,
+      accessToken: integration.accessToken,
+      refreshToken: integration.refreshToken,
+    );
+
+    if (kDebugMode) {
+      print('✅ Garmin user mapping upserted to Supabase (post-onboarding)');
     }
   }
 
@@ -281,6 +331,91 @@ class GarminOAuthService {
     return userId;
   }
 
+  static const _bodyCompUrl =
+      'https://apis.garmin.com/wellness-api/rest/bodyComposition';
+
+  /// Fetch the most recent body composition data using the access token.
+  ///
+  /// Queries the last 30 days of body comp data and returns the most recent
+  /// entry. Returns null if no data is available (user may not have a Garmin
+  /// scale or may not have entered weight manually in Garmin Connect).
+  Future<_GarminBodyCompData?> _fetchLatestBodyComposition(
+    String accessToken,
+  ) async {
+    try {
+      final now = DateTime.now();
+      final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+
+      final url = Uri.parse(_bodyCompUrl).replace(
+        queryParameters: {
+          'uploadStartTimeInSeconds':
+              (thirtyDaysAgo.millisecondsSinceEpoch ~/ 1000).toString(),
+          'uploadEndTimeInSeconds':
+              (now.millisecondsSinceEpoch ~/ 1000).toString(),
+        },
+      );
+
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $accessToken'},
+      );
+
+      if (response.statusCode != 200) {
+        if (kDebugMode) {
+          print('⚠️ Garmin body comp fetch returned ${response.statusCode}');
+        }
+        return null;
+      }
+
+      final List<dynamic> items = jsonDecode(response.body) as List<dynamic>;
+      if (items.isEmpty) return null;
+
+      // Take the most recent entry (last in the list)
+      final latest = items.last as Map<String, dynamic>;
+
+      final weightGrams = latest['weightInGrams'] as int?;
+      final percentFat = (latest['percentFat'] as num?)?.toDouble();
+
+      if (kDebugMode) {
+        print('📊 Garmin body comp raw: weightGrams=$weightGrams, '
+            'percentFat=$percentFat');
+      }
+
+      return _GarminBodyCompData(
+        weightKg: weightGrams != null ? weightGrams / 1000.0 : null,
+        bodyFatPct: percentFat,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Failed to fetch Garmin body comp: $e');
+      }
+      return null; // Non-fatal — body comp is optional
+    }
+  }
+
+  /// Re-fetch body composition data from Garmin and update the integration.
+  ///
+  /// Called from settings when user wants to refresh their profile data.
+  /// Returns the updated integration, or null if not connected.
+  Future<IntegrationModel?> refreshBodyComposition(String userId) async {
+    final integration = await _repository.getIntegration(userId, 'garmin');
+    if (integration == null || !integration.isActive) return null;
+
+    final bodyComp =
+        await _fetchLatestBodyComposition(integration.accessToken);
+    if (bodyComp == null) return integration; // No new data
+
+    final updated = integration.copyWith(
+      providerAthleteWeightKg:
+          bodyComp.weightKg ?? integration.providerAthleteWeightKg,
+      providerAthleteBodyFatPct:
+          bodyComp.bodyFatPct ?? integration.providerAthleteBodyFatPct,
+      updatedAt: DateTime.now(),
+    );
+
+    return _repository.upsertIntegration(updated);
+  }
+
   /// Upsert the garmin_user_mappings row in Supabase
   ///
   /// This is critical for the push handler to map incoming Garmin data
@@ -327,6 +462,13 @@ class GarminOAuthService {
     final values = List<int>.generate(32, (i) => random.nextInt(256));
     return values.map((v) => v.toRadixString(16).padLeft(2, '0')).join();
   }
+}
+
+/// Internal body composition data from Garmin API
+class _GarminBodyCompData {
+  const _GarminBodyCompData({this.weightKg, this.bodyFatPct});
+  final double? weightKg;
+  final double? bodyFatPct;
 }
 
 /// Internal token response class

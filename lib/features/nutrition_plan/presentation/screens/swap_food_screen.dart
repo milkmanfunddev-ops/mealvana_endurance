@@ -760,6 +760,8 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                   triggerSearchOnKeyboardSubmit: false,
                   enableAutoSearch: false,
                   hintText: 'Search for food...',
+                  useDarkStyle:
+                      Theme.of(context).brightness == Brightness.dark,
                 ),
 
                 // Clear search button (when showing OpenFoodFacts results)

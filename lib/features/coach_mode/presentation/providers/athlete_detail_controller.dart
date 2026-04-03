@@ -135,7 +135,8 @@ class AthleteDetailController extends _$AthleteDetailController {
                 ..where(
                   (t) =>
                       t.userId.equals(relationship.athleteUserId) &
-                      t.deletedAt.isNull(),
+                      t.deletedAt.isNull() &
+                      t.providerDeletedAt.isNull(),
                 )
                 ..orderBy([(t) => OrderingTerm.desc(t.scheduledDateTime)]))
               .get();

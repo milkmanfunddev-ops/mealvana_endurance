@@ -15,6 +15,7 @@ import '../../../activities/domain/activity_reminder.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../application/nutrition_plan_service.dart';
+import '../../application/resolved_during_target_resolver.dart';
 import '../../data/macro_repository.dart';
 import '../../data/nutrition_plan_repository.dart';
 import '../../data/nutrition_plan_mapper.dart';
@@ -155,29 +156,38 @@ class ActivityDetailController extends _$ActivityDetailController {
     }
 
     // Resolve macro targets for this specific activity.
-    // Priority: embedded on activity -> scoped cache match -> deterministic derivation.
-    MacroTargets? macroTargets = _extractDetailedMacroTargetsFromPlanData(
+    // Priority: activity-scoped cache -> embedded snapshot -> deterministic derivation.
+    MacroTargets? macroTargets;
+    try {
+      final macroRepo = ref.read(macroRepositoryProvider);
+      macroTargets = await macroRepo.getCachedMacroTargetsForActivity(
+        activityId,
+      );
+    } catch (e) {
+      _logger.warning('Failed to load activity-scoped macro targets: $e');
+    }
+
+    macroTargets ??= _extractDetailedMacroTargetsFromPlanData(
       activity.nutritionPlanData,
     );
-    if (macroTargets == null) {
-      try {
-        final macroRepo = ref.read(macroRepositoryProvider);
-        final cachedMacroTargets = await macroRepo.getCachedMacroTargets();
-        if (_cachedMacroTargetsMatchActivity(
-          cachedMacroTargets,
-          activity: activity,
-          nutritionPlan: nutritionPlan,
-        )) {
-          macroTargets = cachedMacroTargets;
-        }
-      } catch (e) {
-        _logger.warning('Failed to load cached macro targets: $e');
-      }
-    }
     macroTargets ??= _deriveMacroTargetsFromActivityPlan(
       activity: activity,
       nutritionPlan: nutritionPlan,
     );
+    if (macroTargets != null) {
+      try {
+        final macroRepo = ref.read(macroRepositoryProvider);
+        await macroRepo.saveMacroTargetsForActivity(activityId, macroTargets);
+      } catch (e) {
+        _logger.warning('Failed to persist activity-scoped macro targets: $e');
+      }
+    }
+    final staleDuringTarget = await _hasStaleDuringTarget(
+      activity: activity,
+      macroTargets: macroTargets,
+    );
+    const staleDuringTargetMessage =
+        'Nutrition settings changed. Regenerate plan to apply new targets.';
 
     return ActivityDetailState(
       activity: activity,
@@ -187,7 +197,45 @@ class ActivityDetailController extends _$ActivityDetailController {
       scheduledDateTime: activity.scheduledDateTime,
       isNewActivity: isNewActivity,
       eventName: eventName,
+      hasStaleDuringTarget: staleDuringTarget,
+      staleDuringTargetMessage: staleDuringTarget
+          ? staleDuringTargetMessage
+          : null,
     );
+  }
+
+  Future<bool> _hasStaleDuringTarget({
+    required Activity activity,
+    required MacroTargets? macroTargets,
+  }) async {
+    if (macroTargets == null) return false;
+    if (macroTargets.metrics.durationMin < 90) return false;
+
+    final user = await _authService.getCurrentUser();
+    final overrides = user?.nutritionTargetOverrides;
+    if (overrides == null || !overrides.hasAnyOverride) return false;
+
+    if (activity.activityType == ActivityType.brick) {
+      final segments = macroTargets.brickPhaseTargets?.duringSegments;
+      if (segments == null || segments.isEmpty) return false;
+
+      for (final segment in segments) {
+        final resolved = ResolvedDuringTargetResolver.resolveForBrickSegment(
+          macroTargets: macroTargets,
+          segment: segment,
+          settingsOverrides: overrides,
+        );
+        if (resolved.isStaleVsSettings) return true;
+      }
+      return false;
+    }
+
+    final resolved = ResolvedDuringTargetResolver.resolveForSingleSport(
+      macroTargets: macroTargets,
+      sport: activity.activityType,
+      settingsOverrides: overrides,
+    );
+    return resolved.isStaleVsSettings;
   }
 
   /// Save activity and any nutrition plan changes
@@ -327,52 +375,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     return null;
   }
 
-  bool _cachedMacroTargetsMatchActivity(
-    MacroTargets? cached, {
-    required Activity activity,
-    required NutritionPlan? nutritionPlan,
-  }) {
-    if (cached == null) return false;
-    if (cached.activityType != activity.activityType) return false;
-    if (nutritionPlan == null) return false;
-
-    final duringTarget = _aggregateDuringTargets(nutritionPlan);
-    if (duringTarget <= 0) return false;
-
-    final cachedDuring = cached.duringRun.carbTotalG;
-    if (cachedDuring <= 0) return false;
-
-    final delta = (cachedDuring - duringTarget).abs();
-    final relativeDiff = delta / duringTarget;
-    if (relativeDiff > 0.2) return false;
-
-    final beforeSection = nutritionPlan.sections.firstWhere(
-      _isBeforeSection,
-      orElse: () => const PlanSection(id: '', title: '', foodItems: []),
-    );
-    if (beforeSection.id.isNotEmpty) {
-      final beforeTarget = _getSectionMacroTarget(beforeSection, 'carbs');
-      if (beforeTarget > 0 &&
-          _relativeDifference(cached.preRun.carbsG, beforeTarget) > 0.2) {
-        return false;
-      }
-    }
-
-    final afterSection = nutritionPlan.sections.firstWhere(
-      _isAfterSection,
-      orElse: () => const PlanSection(id: '', title: '', foodItems: []),
-    );
-    if (afterSection.id.isNotEmpty) {
-      final afterTarget = _getSectionMacroTarget(afterSection, 'carbs');
-      if (afterTarget > 0 &&
-          _relativeDifference(cached.postRun.carbsG, afterTarget) > 0.2) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
   MacroTargets? _deriveMacroTargetsFromActivityPlan({
     required Activity activity,
     required NutritionPlan? nutritionPlan,
@@ -504,10 +506,6 @@ class ActivityDetailController extends _$ActivityDetailController {
     return id.startsWith('after') || title.startsWith('after');
   }
 
-  double _aggregateDuringTargets(NutritionPlan nutritionPlan) {
-    return _aggregateDuringTargetsByMacro(nutritionPlan)['carbs'] ?? 0.0;
-  }
-
   Map<String, double> _aggregateDuringTargetsByMacro(
     NutritionPlan nutritionPlan,
   ) {
@@ -593,11 +591,6 @@ class ActivityDetailController extends _$ActivityDetailController {
       }
     }
     return total;
-  }
-
-  double _relativeDifference(double a, double b) {
-    if (b == 0) return a == 0 ? 0 : 1;
-    return (a - b).abs() / b;
   }
 
   List<double> _durationBandForMinutes(
@@ -739,7 +732,8 @@ class ActivityDetailController extends _$ActivityDetailController {
           'baseRate': baseRate,
           'newRates': updatedRates,
           'factor': level.adjustmentFactor,
-          'activityType': activity?.activityType.name ?? ActivityType.running.name,
+          'activityType':
+              activity?.activityType.name ?? ActivityType.running.name,
           'targetSports': targetSports.map((sport) => sport.name).toList(),
         },
       );
@@ -751,7 +745,8 @@ class ActivityDetailController extends _$ActivityDetailController {
         'adjustment_factor': level.adjustmentFactor,
         'base_rate': baseRate,
         'new_rates': updatedRates,
-        'activity_type': activity?.activityType.name ?? ActivityType.running.name,
+        'activity_type':
+            activity?.activityType.name ?? ActivityType.running.name,
         'target_sports': targetSports.map((sport) => sport.name).join(','),
       });
       _trackAnalytics(
@@ -762,7 +757,8 @@ class ActivityDetailController extends _$ActivityDetailController {
           'adjustment_factor': level.adjustmentFactor,
           'base_rate': baseRate,
           'new_rates': updatedRates,
-          'activity_type': activity?.activityType.name ?? ActivityType.running.name,
+          'activity_type':
+              activity?.activityType.name ?? ActivityType.running.name,
           'target_sports': targetSports.map((sport) => sport.name).join(','),
         },
       );
@@ -810,9 +806,11 @@ class ActivityDetailController extends _$ActivityDetailController {
     }
 
     if (sports.isEmpty) {
-      sports.addAll(
-        const [ActivityType.running, ActivityType.cycling, ActivityType.swimming],
-      );
+      sports.addAll(const [
+        ActivityType.running,
+        ActivityType.cycling,
+        ActivityType.swimming,
+      ]);
     }
 
     return sports.toList(growable: false);
@@ -2178,7 +2176,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     final updatedItems = fuelLog.items.map((item) {
       if (item.foodId == foodId && item.sectionId == sectionId) {
         final step = item.isIndivisible ? 1.0 : 0.5;
-        final newQty = (item.actualQuantity + delta);
+        // Use step-aligned delta so indivisible items move by whole units
+        final alignedDelta = delta < 0 ? -step : step;
+        final newQty = item.actualQuantity + alignedDelta;
         // Snap to step and floor at 0
         final snapped = (newQty / step).round() * step;
         return item.copyWith(actualQuantity: snapped < 0 ? 0.0 : snapped);

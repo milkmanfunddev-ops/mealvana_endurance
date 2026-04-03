@@ -88,6 +88,8 @@ export function calculateDuringWorkoutCarbRate(
   rate_gph: number;
   band_low: number;
   band_high: number;
+  raw_band_low: number;
+  raw_band_high: number;
   gut_multiplier: number;
   sport_ceiling: number;
 } {
@@ -103,6 +105,8 @@ export function calculateDuringWorkoutCarbRate(
     rate_gph: Math.round(finalRate * 10) / 10,
     band_low: Math.round(scaledLow),
     band_high: Math.round(scaledHigh),
+    raw_band_low: baseLow,
+    raw_band_high: baseHigh,
     gut_multiplier: gutMult,
     sport_ceiling: sportCeiling,
   };
@@ -358,6 +362,10 @@ export interface NutritionOverrides {
   pre_sodium_mg?: number;
   pre_water_ml?: number;
   during_carb_rate_g_per_h?: number;
+  // Optional sport-specific carb rate overrides for brick segments.
+  cycling_carb_rate_g_per_h?: number;
+  running_carb_rate_g_per_h?: number;
+  swimming_carb_rate_g_per_h?: number;
   // Legacy keys (`during_sodium_mg`, `during_water_ml`) are interpreted as
   // per-hour rates for backward compatibility with existing clients.
   during_sodium_mg?: number;
@@ -400,6 +408,7 @@ export interface MacroInputV4 {
     order: number;
     duration_minutes: number;
     intensity: string;
+    override_carb_rate_g_per_h?: number;
     distance_meters?: number;
     pace_per_100m_seconds?: number;
     pool_or_open_water?: string;
@@ -710,6 +719,8 @@ export async function calculateMacrosV4(
     during_total_g: Math.round(finalDuringCarbRate * durationH),
     during_band_low_g_per_h: duringCarbs.band_low,
     during_band_high_g_per_h: duringCarbs.band_high,
+    during_raw_band_low_g_per_h: duringCarbs.raw_band_low,
+    during_raw_band_high_g_per_h: duringCarbs.raw_band_high,
     during_gut_multiplier: duringCarbs.gut_multiplier,
     during_sport_ceiling_g_per_h: duringCarbs.sport_ceiling,
     during_sodium_rate_mg_per_h: finalDuringSodiumRate,

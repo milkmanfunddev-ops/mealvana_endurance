@@ -79,11 +79,6 @@ serve(async (req) => {
       `[PLAN-V3] Full input: pre_run={carbs_g: ${input.macro_targets?.pre_run?.carbs_g}, protein_g: ${input.macro_targets?.pre_run?.protein_g}, water_ml: ${input.macro_targets?.pre_run?.water_ml}, sodium_mg: ${input.macro_targets?.pre_run?.sodium_mg}}, during_run={carbs_g: ${input.macro_targets?.during_run?.carbs_g}, sodium_mg: ${input.macro_targets?.during_run?.sodium_mg}, water_ml: ${input.macro_targets?.during_run?.water_ml}}, post_run={carbs_g: ${input.macro_targets?.post_run?.carbs_g}, protein_g: ${input.macro_targets?.post_run?.protein_g}, sodium_mg: ${input.macro_targets?.post_run?.sodium_mg}, water_ml: ${input.macro_targets?.post_run?.water_ml}}, duration_minutes=${input.duration_minutes}, gut_training_level=${input.gut_training_level}, dietary_preference=${input.dietary_preference}`,
     );
 
-    // Brick workouts: route to dedicated handler
-    if (activityType === "brick") {
-      return await handleBrickPlan(supabase, input, planId);
-    }
-
     // Adjust band bounds for user-overridden macros so solvers can reach the target
     if (input.macro_targets.pre_run) {
       input.macro_targets.pre_run = adjustTargetsForOverrides(input.macro_targets.pre_run);
@@ -93,6 +88,11 @@ serve(async (req) => {
     }
     if (input.macro_targets.post_run) {
       input.macro_targets.post_run = adjustTargetsForOverrides(input.macro_targets.post_run);
+    }
+
+    // Brick workouts: route to dedicated handler
+    if (activityType === "brick") {
+      return await handleBrickPlan(supabase, input, planId);
     }
 
     // Generate all phases

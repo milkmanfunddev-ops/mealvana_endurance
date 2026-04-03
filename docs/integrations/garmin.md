@@ -38,11 +38,11 @@ Garmin Connect uses a **push-only** model. Unlike TrainingPeaks and Final Surge 
 ## OAuth 2.0 PKCE Flow
 
 1. Generate PKCE `code_verifier` (64 random bytes, base64url-encoded) and `code_challenge` (SHA-256 of verifier, base64url-encoded)
-2. Open `https://connect.garmin.com/oauthConfirm` with params: `client_id`, `response_type=code`, `redirect_uri`, `scope`, `code_challenge`, `code_challenge_method=S256`, `state`
+2. Open `https://connect.garmin.com/oauth2Confirm` with params: `client_id`, `response_type=code`, `redirect_uri`, `scope`, `code_challenge`, `code_challenge_method=S256`, `state`
 3. User authenticates on Garmin's site
 4. Garmin redirects to our `garmin-oauth-callback` edge function, which 302-redirects to `com.milkman.mealvanaendurance://callback?code=...&state=...`
 5. `flutter_web_auth_2` captures the redirect
-6. Exchange code for tokens at `https://connectapi.garmin.com/oauth-service/oauth/token`
+6. Exchange code for tokens at `https://diauth.garmin.com/di-oauth2-service/oauth/token`
 7. Fetch Garmin user ID from `https://apis.garmin.com/wellness-api/rest/user/id`
 8. Save `IntegrationModel` via `IntegrationsRepository.upsertIntegration()`
 9. **Critical**: Upsert `garmin_user_mappings` row in Supabase — this is what lets the push handler map incoming data to our user

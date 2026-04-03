@@ -7,7 +7,7 @@ import { adjustTargetsForOverrides, type MacroTargets } from './types.ts';
 
 describe('adjustTargetsForOverrides', () => {
   const baseTargets: MacroTargets = {
-    carbs_g: 360,
+    carbs_g: 270,
     carbs_low_g: 216,
     carbs_high_g: 324,
     sodium_mg: 1800,
@@ -22,11 +22,13 @@ describe('adjustTargetsForOverrides', () => {
     const result = adjustTargetsForOverrides(baseTargets);
     assertEquals(result.carbs_high_g, 324);
     assertEquals(result.carbs_low_g, 216);
+    assertEquals(result.overrides, undefined);
   });
 
   it('should expand carbs_high_g to include target when overridden above band', () => {
     const targets: MacroTargets = {
       ...baseTargets,
+      carbs_g: 360,
       overrides: { carbs: true },
     };
     const result = adjustTargetsForOverrides(targets);
@@ -59,10 +61,37 @@ describe('adjustTargetsForOverrides', () => {
   it('should not adjust carbs when override flag is not set', () => {
     const targets: MacroTargets = {
       ...baseTargets,
+      carbs_g: 270, // within band
       overrides: { sodium: true }, // only sodium overridden, not carbs
     };
     const result = adjustTargetsForOverrides(targets);
-    assertEquals(result.carbs_high_g, 324); // unchanged despite being outside band
+    assertEquals(result.carbs_high_g, 324); // unchanged
+  });
+
+  it('should infer carbs override when target is below provided band', () => {
+    const targets: MacroTargets = {
+      ...baseTargets,
+      carbs_g: 90,
+      carbs_low_g: 180,
+      carbs_high_g: 270,
+    };
+    const result = adjustTargetsForOverrides(targets);
+    assertEquals(result.overrides?.carbs, true);
+    assertEquals(result.carbs_low_g, 90);
+    assertEquals(result.carbs_high_g, 270);
+  });
+
+  it('should infer carbs override when target is above provided band', () => {
+    const targets: MacroTargets = {
+      ...baseTargets,
+      carbs_g: 360,
+      carbs_low_g: 216,
+      carbs_high_g: 324,
+    };
+    const result = adjustTargetsForOverrides(targets);
+    assertEquals(result.overrides?.carbs, true);
+    assertEquals(result.carbs_low_g, 216);
+    assertEquals(result.carbs_high_g, 360);
   });
 
   it('should handle sodium overrides', () => {

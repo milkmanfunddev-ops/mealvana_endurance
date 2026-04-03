@@ -8,6 +8,7 @@ import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../../shared/services/preferences_service.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../calendar/application/calendar_service.dart';
@@ -34,8 +35,10 @@ const _tempUserIdKey = 'onboarding_temp_user_id';
 class _TPCombinedResultWrapper {
   _TPCombinedResultWrapper(this.fullResult);
   _TPCombinedResultWrapper.error(TrainingPeaksSyncResult workoutResult)
-      : fullResult = TrainingPeaksFullSyncResult(
-            workoutResult: workoutResult, eventResult: null);
+    : fullResult = TrainingPeaksFullSyncResult(
+        workoutResult: workoutResult,
+        eventResult: null,
+      );
 
   final TrainingPeaksFullSyncResult fullResult;
 }
@@ -176,8 +179,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       ref.read(trainingPeaksOAuthServiceProvider.future);
   Future<TrainingPeaksSyncService> get _trainingPeaksSync =>
       ref.read(trainingPeaksSyncServiceProvider.future);
-  GarminOAuthService get _garminOAuth =>
-      ref.read(garminOAuthServiceProvider);
+  GarminOAuthService get _garminOAuth => ref.read(garminOAuthServiceProvider);
   IntegrationsRepository get _integrationsRepo =>
       ref.read(integrationsRepositoryProvider);
   ActivitiesRepository get _activitiesRepo =>
@@ -440,7 +442,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   Future<bool> connectGarmin() async {
     return _connectProvider(
       providerId: 'garmin',
-      authenticate: () => _garminOAuth.authenticate(_currentUserId!),
+      authenticate: () => _garminOAuth.authenticate(
+        _currentUserId!,
+        skipRemoteMapping: _isUsingTempUserId,
+      ),
       updateState: (athleteName) => state.value!.copyWith(
         isConnecting: false,
         clearConnectingProvider: true,
@@ -811,7 +816,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<bool> connectTrainingPeaks() async {
-    return _connectProvider(
+    final connected = await _connectProvider(
       providerId: 'training_peaks',
       authenticate: () async {
         final oauthService = await _trainingPeaksOAuth;
@@ -824,6 +829,16 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         trainingPeaksAthleteName: athleteName,
       ),
     );
+
+    // Clear stale local block state when TP OAuth succeeds.
+    // We will re-apply the block later only if TP confirms non-premium.
+    if (connected) {
+      final prefs = ref.read(preferencesServiceProvider);
+      await prefs.setTpWritebackPremiumBlocked(false);
+      ref.invalidate(preferencesServiceProvider);
+    }
+
+    return connected;
   }
 
   Future<void> disconnectTrainingPeaks() async {
@@ -852,30 +867,33 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     // Use a wrapper class to handle the combined result from TrainingPeaks
     final _TPCombinedResultWrapper combinedResult =
         await _importWorkouts<_TPCombinedResultWrapper>(
-      providerId: 'training_peaks',
-      syncWorkouts: () async {
-        final result = await syncService.syncAll(_currentUserId!);
-        return _TPCombinedResultWrapper(result);
-      },
-      checkSuccess: (wrapper) => wrapper.fullResult.workoutResult.success,
-      checkNeedsReauth: (wrapper) =>
-          wrapper.fullResult.workoutResult.tokenExpired,
-      checkIsNetworkError: null,
-      getError: (wrapper) => wrapper.fullResult.workoutResult.error,
-      getSummary: (wrapper) => wrapper.fullResult.workoutResult.summary,
-      getErrorType: (wrapper) => 'sync_error',
-      getActivities: (wrapper) => wrapper.fullResult.workoutResult.activities,
-      getNewWorkouts: (wrapper) => wrapper.fullResult.workoutResult.newWorkouts,
-      getUpdated: (wrapper) => wrapper.fullResult.workoutResult.updated,
-      getSkipped: (wrapper) => wrapper.fullResult.workoutResult.unchanged,
-      getRaceCandidates: null,
-      getEventData: (wrapper) =>
-          wrapper.fullResult.eventResult?.hasEvent ?? false
+          providerId: 'training_peaks',
+          syncWorkouts: () async {
+            final result = await syncService.syncAll(_currentUserId!);
+            return _TPCombinedResultWrapper(result);
+          },
+          checkSuccess: (wrapper) => wrapper.fullResult.workoutResult.success,
+          checkNeedsReauth: (wrapper) =>
+              wrapper.fullResult.workoutResult.tokenExpired,
+          checkIsNetworkError: null,
+          getError: (wrapper) => wrapper.fullResult.workoutResult.error,
+          getSummary: (wrapper) => wrapper.fullResult.workoutResult.summary,
+          getErrorType: (wrapper) => 'sync_error',
+          getActivities: (wrapper) =>
+              wrapper.fullResult.workoutResult.activities,
+          getNewWorkouts: (wrapper) =>
+              wrapper.fullResult.workoutResult.newWorkouts,
+          getUpdated: (wrapper) => wrapper.fullResult.workoutResult.updated,
+          getSkipped: (wrapper) => wrapper.fullResult.workoutResult.unchanged,
+          getRaceCandidates: null,
+          getEventData: (wrapper) =>
+              wrapper.fullResult.eventResult?.hasEvent ?? false
               ? wrapper.fullResult.eventResult!.events
               : [],
-      createError: (error) =>
-          _TPCombinedResultWrapper.error(TrainingPeaksSyncResult.error(error)),
-    );
+          createError: (error) => _TPCombinedResultWrapper.error(
+            TrainingPeaksSyncResult.error(error),
+          ),
+        );
 
     return combinedResult.fullResult.workoutResult;
   }
@@ -897,7 +915,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       ref.invalidate(eventsControllerProvider);
       ref.invalidate(allEventsProvider);
       if (kDebugMode) {
-        print('🔄 Activities, calendar, events, and daily macros providers invalidated');
+        print(
+          '🔄 Activities, calendar, events, and daily macros providers invalidated',
+        );
       }
     } catch (e) {
       if (kDebugMode) {

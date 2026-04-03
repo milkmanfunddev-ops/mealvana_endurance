@@ -21,6 +21,7 @@ import {
   type ActivityType,
   type TimingCategory,
   deriveTimingCategory,
+  shouldPrioritizeMacroTarget,
 } from './types.ts';
 import { calculateTotals } from './food-utils.ts';
 import { PREFERENCE_SCORE_MAP, MACRO_CONSTRAINT_RANGES } from './constants.ts';
@@ -253,7 +254,13 @@ export function generateDuringPhaseRuleBased(
   const carbTarget = targets.carbs_g;
   const sodiumTarget = targets.sodium_mg;
   const fluidTarget = targets.water_ml;
-  const carbUpper = targets.carbs_high_g ?? (carbTarget > 0 ? carbTarget * 1.15 : Number.POSITIVE_INFINITY);
+  const prioritizeCarbTarget = shouldPrioritizeMacroTarget(targets, 'carbs');
+  const defaultCarbUpper = carbTarget > 0
+    ? carbTarget * (MACRO_CONSTRAINT_RANGES.carbs.during?.max ?? 1.1)
+    : Number.POSITIVE_INFINITY;
+  const carbUpper = prioritizeCarbTarget
+    ? defaultCarbUpper
+    : (targets.carbs_high_g ?? defaultCarbUpper);
   const sodiumLower = targets.sodium_low_mg ?? (sodiumTarget > 0 ? sodiumTarget * 0.9 : 0);
   const sodiumUpper = targets.sodium_high_mg ?? (sodiumTarget > 0 ? sodiumTarget * 1.1 : Number.POSITIVE_INFINITY);
   const fluidUpper = targets.water_high_ml ?? (fluidTarget > 0 ? fluidTarget * 1.1 : Number.POSITIVE_INFINITY);
@@ -263,6 +270,11 @@ export function generateDuringPhaseRuleBased(
   console.log(
     `[DURING-RULES] Targets: carbs=${carbTarget}g, sodium=${sodiumTarget}mg, fluid=${fluidTarget}ml, sport=${activityType}`
   );
+  if (prioritizeCarbTarget) {
+    console.log(
+      `[DURING-RULES] Prioritizing carb target (${carbTarget}g) with cap=${carbUpper.toFixed(1)}g`,
+    );
+  }
 
   const categorized = categorizeFoods(foods);
   console.log(

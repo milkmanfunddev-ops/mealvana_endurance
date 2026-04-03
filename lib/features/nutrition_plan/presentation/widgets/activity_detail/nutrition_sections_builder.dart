@@ -7,6 +7,7 @@ import '../../../../../shared/utils/food_display_utils.dart' as food_utils;
 import '../../providers/activity_detail_state.dart';
 import '../../../../settings/presentation/providers/settings_controller.dart';
 import '../../../application/macro_explanation_service.dart';
+import '../../../application/resolved_during_target_resolver.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/run_parameters.dart';
@@ -148,15 +149,19 @@ class _NutritionSectionsBuilderState
     final settings = ref.watch(settingsControllerProvider).value;
     final useImperial = settings?.preferredDistanceUnit == DistanceUnit.miles;
     final bodyWeightKg = _getBodyWeightKg(settings?.weightPounds);
-
-    // Read nutrition target overrides to flag overridden macros in the UI
-    final overrides = settings?.nutritionTargetOverrides;
-    final preOv = overrides?.pre;
-    final duringOv = overrides?.getDuring(activityType);
-    final postOv = overrides?.post;
-    // During overrides only apply to activities >= 90 min
-    final durationMin = widget.state.activity?.durationMinutes ?? 0;
-    final duringActive = durationMin >= 90;
+    final resolvedDuringTarget = widget.state.macroTargets != null
+        ? ResolvedDuringTargetResolver.resolveForSingleSport(
+            macroTargets: widget.state.macroTargets!,
+            sport: activityType,
+            settingsOverrides: settings?.nutritionTargetOverrides,
+          )
+        : null;
+    final duringOverrideApplied =
+        resolvedDuringTarget?.isOverrideApplied ?? false;
+    final duringOverrideLabel =
+        duringOverrideApplied && resolvedDuringTarget != null
+        ? '${resolvedDuringTarget.rateGPerH.round()}g/hr'
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,14 +224,14 @@ class _NutritionSectionsBuilderState
                     ?.round(),
                 fluidsHigh: widget.state.macroTargets?.preRun.fluidsHighMl
                     ?.round(),
-                carbsOverridden: preOv?.carbsG != null,
-                proteinOverridden: preOv?.proteinG != null,
-                sodiumOverridden: preOv?.sodiumMg != null,
-                fluidsOverridden: preOv?.fluidMl != null,
-                carbsOverrideLabel: preOv?.carbsG != null ? '${preOv!.carbsG!.round()}g' : null,
-                proteinOverrideLabel: preOv?.proteinG != null ? '${preOv!.proteinG!.round()}g' : null,
-                sodiumOverrideLabel: preOv?.sodiumMg != null ? '${preOv!.sodiumMg!.round()}mg' : null,
-                fluidsOverrideLabel: preOv?.fluidMl != null ? '${preOv!.fluidMl!.round()}mL' : null,
+                carbsOverridden: false,
+                proteinOverridden: false,
+                sodiumOverridden: false,
+                fluidsOverridden: false,
+                carbsOverrideLabel: null,
+                proteinOverrideLabel: null,
+                sodiumOverrideLabel: null,
+                fluidsOverrideLabel: null,
               ),
             ),
           );
@@ -276,18 +281,12 @@ class _NutritionSectionsBuilderState
                     ?.round(),
                 fluidsHigh: widget.state.macroTargets?.duringRun.fluidsHighMl
                     ?.round(),
-                carbsOverridden: duringActive && duringOv?.carbRateGPerH != null,
-                sodiumOverridden: duringActive && duringOv?.sodiumRateMgPerH != null,
-                fluidsOverridden: duringActive && duringOv?.fluidRateMlPerH != null,
-                carbsOverrideLabel: duringActive && duringOv?.carbRateGPerH != null
-                    ? '${duringOv!.carbRateGPerH!.round()}g/hr'
-                    : null,
-                sodiumOverrideLabel: duringActive && duringOv?.sodiumRateMgPerH != null
-                    ? '${duringOv!.sodiumRateMgPerH!.round()}mg/hr'
-                    : null,
-                fluidsOverrideLabel: duringActive && duringOv?.fluidRateMlPerH != null
-                    ? '${duringOv!.fluidRateMlPerH!.round()}mL/hr'
-                    : null,
+                carbsOverridden: duringOverrideApplied,
+                sodiumOverridden: false,
+                fluidsOverridden: false,
+                carbsOverrideLabel: duringOverrideLabel,
+                sodiumOverrideLabel: null,
+                fluidsOverrideLabel: null,
               ),
             ),
           );
@@ -318,29 +317,6 @@ class _NutritionSectionsBuilderState
           fluidsHigh = mt.preRun.fluidsHighMl?.round();
         }
 
-        // Determine override flags and labels for this phase
-        bool carbsOv = false, proteinOv = false, sodiumOv = false, fluidsOv = false;
-        String? carbsOvLabel, proteinOvLabel, sodiumOvLabel, fluidsOvLabel;
-        if (category.toLowerCase().contains('after')) {
-          carbsOv = postOv?.carbsG != null;
-          proteinOv = postOv?.proteinG != null;
-          sodiumOv = postOv?.sodiumMg != null;
-          fluidsOv = postOv?.fluidMl != null;
-          if (carbsOv) carbsOvLabel = '${postOv!.carbsG!.round()}g';
-          if (proteinOv) proteinOvLabel = '${postOv!.proteinG!.round()}g';
-          if (sodiumOv) sodiumOvLabel = '${postOv!.sodiumMg!.round()}mg';
-          if (fluidsOv) fluidsOvLabel = '${postOv!.fluidMl!.round()}mL';
-        } else if (category.toLowerCase().contains('before')) {
-          carbsOv = preOv?.carbsG != null;
-          proteinOv = preOv?.proteinG != null;
-          sodiumOv = preOv?.sodiumMg != null;
-          fluidsOv = preOv?.fluidMl != null;
-          if (carbsOv) carbsOvLabel = '${preOv!.carbsG!.round()}g';
-          if (proteinOv) proteinOvLabel = '${preOv!.proteinG!.round()}g';
-          if (sodiumOv) sodiumOvLabel = '${preOv!.sodiumMg!.round()}mg';
-          if (fluidsOv) fluidsOvLabel = '${preOv!.fluidMl!.round()}mL';
-        }
-
         return _wrapWithSectionHero(
           section.id,
           Padding(
@@ -360,14 +336,14 @@ class _NutritionSectionsBuilderState
               fluidsLow: fluidsLow,
               fluidsHigh: fluidsHigh,
               useImperial: useImperial,
-              carbsOverridden: carbsOv,
-              proteinOverridden: proteinOv,
-              sodiumOverridden: sodiumOv,
-              fluidsOverridden: fluidsOv,
-              carbsOverrideLabel: carbsOvLabel,
-              proteinOverrideLabel: proteinOvLabel,
-              sodiumOverrideLabel: sodiumOvLabel,
-              fluidsOverrideLabel: fluidsOvLabel,
+              carbsOverridden: false,
+              proteinOverridden: false,
+              sodiumOverridden: false,
+              fluidsOverridden: false,
+              carbsOverrideLabel: null,
+              proteinOverrideLabel: null,
+              sodiumOverrideLabel: null,
+              fluidsOverrideLabel: null,
             ),
           ),
         );

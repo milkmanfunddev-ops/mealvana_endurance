@@ -32,8 +32,17 @@ abstract class MacroRepository {
   /// Save macro targets to local storage
   Future<void> saveMacroTargets(MacroTargets targets);
 
+  /// Save macro targets scoped to a specific activity ID.
+  Future<void> saveMacroTargetsForActivity(
+    String activityId,
+    MacroTargets targets,
+  );
+
   /// Get cached macro targets
   Future<MacroTargets?> getCachedMacroTargets();
+
+  /// Get cached macro targets scoped to a specific activity ID.
+  Future<MacroTargets?> getCachedMacroTargetsForActivity(String activityId);
 
   /// Update specific macro values
   Future<MacroTargets> updateMacroTargets(
@@ -48,18 +57,25 @@ abstract class MacroRepository {
 
   /// Get original macro targets for reset functionality
   Future<MacroTargets?> getOriginalMacroTargets();
+
+  /// Get original macro targets scoped to a specific activity ID.
+  Future<MacroTargets?> getOriginalMacroTargetsForActivity(String activityId);
 }
 
 /// Implementation of macro repository
 class MacroRepositoryImpl implements MacroRepository {
-  const MacroRepositoryImpl({
-    required SharedPreferences sharedPreferences,
-  }) : _prefs = sharedPreferences;
+  const MacroRepositoryImpl({required SharedPreferences sharedPreferences})
+    : _prefs = sharedPreferences;
 
   final SharedPreferences _prefs;
 
   static const _cachedKey = 'macro_targets.cached';
   static const _originalKey = 'macro_targets.original';
+  static const _cachedByActivityKeyPrefix = 'macro_targets.cached.activity.';
+  static const _originalByActivityKeyPrefix =
+      'macro_targets.original.activity.';
+  static const _activityMigrationFlagPrefix =
+      'macro_targets.migrated.activity.';
 
   @override
   Future<MacroTargets> generateMacroTargets({
@@ -141,11 +157,14 @@ class MacroRepositoryImpl implements MacroRepository {
       duringRun: DuringRunMacros(
         carbRateGPerH: (macros['during_rate_g_per_h'] as num).toDouble(),
         carbTotalG: (macros['during_total_g'] as num).toDouble(),
-        fluidRateMlPerH: (macros['during_water_rate_ml_per_h'] as num).toDouble(),
+        fluidRateMlPerH: (macros['during_water_rate_ml_per_h'] as num)
+            .toDouble(),
         fluidTotalMl: (macros['during_water_total_ml'] as num).toDouble(),
-        sodiumRateMgPerH: (macros['during_sodium_rate_mg_per_h'] as num).toDouble(),
+        sodiumRateMgPerH: (macros['during_sodium_rate_mg_per_h'] as num)
+            .toDouble(),
         sodiumTotalMg: (macros['during_sodium_total_mg'] as num).toDouble(),
-        massNormRateGPerH: (macros['during_mass_norm_rate_g_per_h'] as num).toDouble(),
+        massNormRateGPerH: (macros['during_mass_norm_rate_g_per_h'] as num)
+            .toDouble(),
         absClampRangeGPerH: [
           (macros['during_abs_clamp_range_g_per_h'][0] as num).toDouble(),
           (macros['during_abs_clamp_range_g_per_h'][1] as num).toDouble(),
@@ -168,7 +187,8 @@ class MacroRepositoryImpl implements MacroRepository {
         caloriesNetKcal: (macros['calories_net_kcal'] as num).toDouble(),
         met: (macros['MET'] as num).toDouble(),
       ),
-      calculationRule: macros['pre_run_carbs_rule'] as String? ?? 'Generated offline',
+      calculationRule:
+          macros['pre_run_carbs_rule'] as String? ?? 'Generated offline',
       timestamp: DateTime.now(),
       isUserModified: false,
       modifiedFields: [],
@@ -186,8 +206,79 @@ class MacroRepositoryImpl implements MacroRepository {
   }
 
   @override
+  Future<void> saveMacroTargetsForActivity(
+    String activityId,
+    MacroTargets targets,
+  ) async {
+    final normalizedActivityId = activityId.trim();
+    if (normalizedActivityId.isEmpty) {
+      await saveMacroTargets(targets);
+      return;
+    }
+
+    final encoded = jsonEncode(targets.toJson());
+    await _prefs.setString(
+      _cachedKeyForActivity(normalizedActivityId),
+      encoded,
+    );
+    await _prefs.setBool(_migrationFlagForActivity(normalizedActivityId), true);
+
+    if (!targets.isUserModified) {
+      await _prefs.setString(
+        _originalKeyForActivity(normalizedActivityId),
+        encoded,
+      );
+    }
+  }
+
+  @override
   Future<MacroTargets?> getCachedMacroTargets() async {
     return _readTargets(_cachedKey);
+  }
+
+  @override
+  Future<MacroTargets?> getCachedMacroTargetsForActivity(
+    String activityId,
+  ) async {
+    final normalizedActivityId = activityId.trim();
+    if (normalizedActivityId.isEmpty) {
+      return getCachedMacroTargets();
+    }
+
+    final scoped = await _readTargets(
+      _cachedKeyForActivity(normalizedActivityId),
+    );
+    if (scoped != null) {
+      return scoped;
+    }
+
+    // One-time migration: if a keyed entry does not exist yet, copy legacy
+    // global cache into this activity's keyed slot and stop relying on global.
+    final migrationFlag = _migrationFlagForActivity(normalizedActivityId);
+    final hasMigrated = _prefs.getBool(migrationFlag) ?? false;
+    if (hasMigrated) {
+      return null;
+    }
+
+    final legacyCached = await getCachedMacroTargets();
+    if (legacyCached == null) {
+      await _prefs.setBool(migrationFlag, true);
+      return null;
+    }
+
+    await saveMacroTargetsForActivity(normalizedActivityId, legacyCached);
+
+    final legacyOriginal = await getOriginalMacroTargets();
+    if (legacyOriginal != null) {
+      final encodedOriginal = jsonEncode(legacyOriginal.toJson());
+      await _prefs.setString(
+        _originalKeyForActivity(normalizedActivityId),
+        encodedOriginal,
+      );
+    }
+
+    await _prefs.setBool(migrationFlag, true);
+    return legacyCached;
   }
 
   @override
@@ -227,7 +318,11 @@ class MacroRepositoryImpl implements MacroRepository {
     return finalTargets;
   }
 
-  MacroTargets _updatePreRunMacro(MacroTargets targets, MacroField field, double newValue) {
+  MacroTargets _updatePreRunMacro(
+    MacroTargets targets,
+    MacroField field,
+    double newValue,
+  ) {
     switch (field) {
       case MacroField.preRunCarbs:
         return targets.copyWith(
@@ -255,7 +350,11 @@ class MacroRepositoryImpl implements MacroRepository {
     }
   }
 
-  MacroTargets _updateDuringRunMacro(MacroTargets targets, MacroField field, double newValue) {
+  MacroTargets _updateDuringRunMacro(
+    MacroTargets targets,
+    MacroField field,
+    double newValue,
+  ) {
     switch (field) {
       case MacroField.duringRunCarbTotal:
         return targets.copyWith(
@@ -284,7 +383,11 @@ class MacroRepositoryImpl implements MacroRepository {
     }
   }
 
-  MacroTargets _updatePostRunMacro(MacroTargets targets, MacroField field, double newValue) {
+  MacroTargets _updatePostRunMacro(
+    MacroTargets targets,
+    MacroField field,
+    double newValue,
+  ) {
     switch (field) {
       case MacroField.postRunCarbs:
         return targets.copyWith(
@@ -319,6 +422,17 @@ class MacroRepositoryImpl implements MacroRepository {
     return _readTargets(_originalKey);
   }
 
+  @override
+  Future<MacroTargets?> getOriginalMacroTargetsForActivity(
+    String activityId,
+  ) async {
+    final normalizedActivityId = activityId.trim();
+    if (normalizedActivityId.isEmpty) {
+      return getOriginalMacroTargets();
+    }
+    return _readTargets(_originalKeyForActivity(normalizedActivityId));
+  }
+
   Future<MacroTargets?> _readTargets(String key) async {
     final raw = _prefs.getString(key);
     if (raw == null) {
@@ -334,6 +448,15 @@ class MacroRepositoryImpl implements MacroRepository {
       return null;
     }
   }
+
+  String _cachedKeyForActivity(String activityId) =>
+      '$_cachedByActivityKeyPrefix$activityId';
+
+  String _originalKeyForActivity(String activityId) =>
+      '$_originalByActivityKeyPrefix$activityId';
+
+  String _migrationFlagForActivity(String activityId) =>
+      '$_activityMigrationFlagPrefix$activityId';
 }
 
 @riverpod

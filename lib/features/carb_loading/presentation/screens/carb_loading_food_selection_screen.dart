@@ -389,6 +389,8 @@ class _CarbLoadingFoodSelectionScreenState
                           triggerSearchOnKeyboardSubmit: false,
                           enableAutoSearch: false,
                           hintText: 'Search foods...',
+                          useDarkStyle:
+                              Theme.of(context).brightness == Brightness.dark,
                         ),
                         if (searchState.openFoodFactsResults.isNotEmpty) ...[
                           const SizedBox(height: AppSpacing.sm),

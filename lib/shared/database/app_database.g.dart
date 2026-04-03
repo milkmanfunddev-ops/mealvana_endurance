@@ -19716,6 +19716,17 @@ class $IntegrationsTableTable extends IntegrationsTable
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _providerAthleteBodyFatPctMeta =
+      const VerificationMeta('providerAthleteBodyFatPct');
+  @override
+  late final GeneratedColumn<double> providerAthleteBodyFatPct =
+      GeneratedColumn<double>(
+        'provider_athlete_body_fat_pct',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _athleteZonesJsonMeta = const VerificationMeta(
     'athleteZonesJson',
   );
@@ -19811,6 +19822,7 @@ class $IntegrationsTableTable extends IntegrationsTable
     providerAthleteWeightKg,
     providerAthleteBirthMonth,
     providerAthleteGender,
+    providerAthleteBodyFatPct,
     athleteZonesJson,
     isActive,
     lastSyncAt,
@@ -19935,6 +19947,15 @@ class $IntegrationsTableTable extends IntegrationsTable
         ),
       );
     }
+    if (data.containsKey('provider_athlete_body_fat_pct')) {
+      context.handle(
+        _providerAthleteBodyFatPctMeta,
+        providerAthleteBodyFatPct.isAcceptableOrUnknown(
+          data['provider_athlete_body_fat_pct']!,
+          _providerAthleteBodyFatPctMeta,
+        ),
+      );
+    }
     if (data.containsKey('athlete_zones_json')) {
       context.handle(
         _athleteZonesJsonMeta,
@@ -20050,6 +20071,10 @@ class $IntegrationsTableTable extends IntegrationsTable
         DriftSqlType.string,
         data['${effectivePrefix}provider_athlete_gender'],
       ),
+      providerAthleteBodyFatPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}provider_athlete_body_fat_pct'],
+      ),
       athleteZonesJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}athlete_zones_json'],
@@ -20102,6 +20127,7 @@ class Integration extends DataClass implements Insertable<Integration> {
   final double? providerAthleteWeightKg;
   final String? providerAthleteBirthMonth;
   final String? providerAthleteGender;
+  final double? providerAthleteBodyFatPct;
   final String? athleteZonesJson;
   final bool isActive;
   final DateTime? lastSyncAt;
@@ -20122,6 +20148,7 @@ class Integration extends DataClass implements Insertable<Integration> {
     this.providerAthleteWeightKg,
     this.providerAthleteBirthMonth,
     this.providerAthleteGender,
+    this.providerAthleteBodyFatPct,
     this.athleteZonesJson,
     required this.isActive,
     this.lastSyncAt,
@@ -20162,6 +20189,11 @@ class Integration extends DataClass implements Insertable<Integration> {
     }
     if (!nullToAbsent || providerAthleteGender != null) {
       map['provider_athlete_gender'] = Variable<String>(providerAthleteGender);
+    }
+    if (!nullToAbsent || providerAthleteBodyFatPct != null) {
+      map['provider_athlete_body_fat_pct'] = Variable<double>(
+        providerAthleteBodyFatPct,
+      );
     }
     if (!nullToAbsent || athleteZonesJson != null) {
       map['athlete_zones_json'] = Variable<String>(athleteZonesJson);
@@ -20210,6 +20242,10 @@ class Integration extends DataClass implements Insertable<Integration> {
       providerAthleteGender: providerAthleteGender == null && nullToAbsent
           ? const Value.absent()
           : Value(providerAthleteGender),
+      providerAthleteBodyFatPct:
+          providerAthleteBodyFatPct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerAthleteBodyFatPct),
       athleteZonesJson: athleteZonesJson == null && nullToAbsent
           ? const Value.absent()
           : Value(athleteZonesJson),
@@ -20256,6 +20292,9 @@ class Integration extends DataClass implements Insertable<Integration> {
       providerAthleteGender: serializer.fromJson<String?>(
         json['providerAthleteGender'],
       ),
+      providerAthleteBodyFatPct: serializer.fromJson<double?>(
+        json['providerAthleteBodyFatPct'],
+      ),
       athleteZonesJson: serializer.fromJson<String?>(json['athleteZonesJson']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       lastSyncAt: serializer.fromJson<DateTime?>(json['lastSyncAt']),
@@ -20287,6 +20326,9 @@ class Integration extends DataClass implements Insertable<Integration> {
       'providerAthleteGender': serializer.toJson<String?>(
         providerAthleteGender,
       ),
+      'providerAthleteBodyFatPct': serializer.toJson<double?>(
+        providerAthleteBodyFatPct,
+      ),
       'athleteZonesJson': serializer.toJson<String?>(athleteZonesJson),
       'isActive': serializer.toJson<bool>(isActive),
       'lastSyncAt': serializer.toJson<DateTime?>(lastSyncAt),
@@ -20310,6 +20352,7 @@ class Integration extends DataClass implements Insertable<Integration> {
     Value<double?> providerAthleteWeightKg = const Value.absent(),
     Value<String?> providerAthleteBirthMonth = const Value.absent(),
     Value<String?> providerAthleteGender = const Value.absent(),
+    Value<double?> providerAthleteBodyFatPct = const Value.absent(),
     Value<String?> athleteZonesJson = const Value.absent(),
     bool? isActive,
     Value<DateTime?> lastSyncAt = const Value.absent(),
@@ -20342,6 +20385,9 @@ class Integration extends DataClass implements Insertable<Integration> {
     providerAthleteGender: providerAthleteGender.present
         ? providerAthleteGender.value
         : this.providerAthleteGender,
+    providerAthleteBodyFatPct: providerAthleteBodyFatPct.present
+        ? providerAthleteBodyFatPct.value
+        : this.providerAthleteBodyFatPct,
     athleteZonesJson: athleteZonesJson.present
         ? athleteZonesJson.value
         : this.athleteZonesJson,
@@ -20388,6 +20434,9 @@ class Integration extends DataClass implements Insertable<Integration> {
       providerAthleteGender: data.providerAthleteGender.present
           ? data.providerAthleteGender.value
           : this.providerAthleteGender,
+      providerAthleteBodyFatPct: data.providerAthleteBodyFatPct.present
+          ? data.providerAthleteBodyFatPct.value
+          : this.providerAthleteBodyFatPct,
       athleteZonesJson: data.athleteZonesJson.present
           ? data.athleteZonesJson.value
           : this.athleteZonesJson,
@@ -20421,6 +20470,7 @@ class Integration extends DataClass implements Insertable<Integration> {
           ..write('providerAthleteWeightKg: $providerAthleteWeightKg, ')
           ..write('providerAthleteBirthMonth: $providerAthleteBirthMonth, ')
           ..write('providerAthleteGender: $providerAthleteGender, ')
+          ..write('providerAthleteBodyFatPct: $providerAthleteBodyFatPct, ')
           ..write('athleteZonesJson: $athleteZonesJson, ')
           ..write('isActive: $isActive, ')
           ..write('lastSyncAt: $lastSyncAt, ')
@@ -20446,6 +20496,7 @@ class Integration extends DataClass implements Insertable<Integration> {
     providerAthleteWeightKg,
     providerAthleteBirthMonth,
     providerAthleteGender,
+    providerAthleteBodyFatPct,
     athleteZonesJson,
     isActive,
     lastSyncAt,
@@ -20470,6 +20521,7 @@ class Integration extends DataClass implements Insertable<Integration> {
           other.providerAthleteWeightKg == this.providerAthleteWeightKg &&
           other.providerAthleteBirthMonth == this.providerAthleteBirthMonth &&
           other.providerAthleteGender == this.providerAthleteGender &&
+          other.providerAthleteBodyFatPct == this.providerAthleteBodyFatPct &&
           other.athleteZonesJson == this.athleteZonesJson &&
           other.isActive == this.isActive &&
           other.lastSyncAt == this.lastSyncAt &&
@@ -20492,6 +20544,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
   final Value<double?> providerAthleteWeightKg;
   final Value<String?> providerAthleteBirthMonth;
   final Value<String?> providerAthleteGender;
+  final Value<double?> providerAthleteBodyFatPct;
   final Value<String?> athleteZonesJson;
   final Value<bool> isActive;
   final Value<DateTime?> lastSyncAt;
@@ -20513,6 +20566,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     this.providerAthleteWeightKg = const Value.absent(),
     this.providerAthleteBirthMonth = const Value.absent(),
     this.providerAthleteGender = const Value.absent(),
+    this.providerAthleteBodyFatPct = const Value.absent(),
     this.athleteZonesJson = const Value.absent(),
     this.isActive = const Value.absent(),
     this.lastSyncAt = const Value.absent(),
@@ -20535,6 +20589,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     this.providerAthleteWeightKg = const Value.absent(),
     this.providerAthleteBirthMonth = const Value.absent(),
     this.providerAthleteGender = const Value.absent(),
+    this.providerAthleteBodyFatPct = const Value.absent(),
     this.athleteZonesJson = const Value.absent(),
     this.isActive = const Value.absent(),
     this.lastSyncAt = const Value.absent(),
@@ -20562,6 +20617,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     Expression<double>? providerAthleteWeightKg,
     Expression<String>? providerAthleteBirthMonth,
     Expression<String>? providerAthleteGender,
+    Expression<double>? providerAthleteBodyFatPct,
     Expression<String>? athleteZonesJson,
     Expression<bool>? isActive,
     Expression<DateTime>? lastSyncAt,
@@ -20589,6 +20645,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
         'provider_athlete_birth_month': providerAthleteBirthMonth,
       if (providerAthleteGender != null)
         'provider_athlete_gender': providerAthleteGender,
+      if (providerAthleteBodyFatPct != null)
+        'provider_athlete_body_fat_pct': providerAthleteBodyFatPct,
       if (athleteZonesJson != null) 'athlete_zones_json': athleteZonesJson,
       if (isActive != null) 'is_active': isActive,
       if (lastSyncAt != null) 'last_sync_at': lastSyncAt,
@@ -20613,6 +20671,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     Value<double?>? providerAthleteWeightKg,
     Value<String?>? providerAthleteBirthMonth,
     Value<String?>? providerAthleteGender,
+    Value<double?>? providerAthleteBodyFatPct,
     Value<String?>? athleteZonesJson,
     Value<bool>? isActive,
     Value<DateTime?>? lastSyncAt,
@@ -20638,6 +20697,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
           providerAthleteBirthMonth ?? this.providerAthleteBirthMonth,
       providerAthleteGender:
           providerAthleteGender ?? this.providerAthleteGender,
+      providerAthleteBodyFatPct:
+          providerAthleteBodyFatPct ?? this.providerAthleteBodyFatPct,
       athleteZonesJson: athleteZonesJson ?? this.athleteZonesJson,
       isActive: isActive ?? this.isActive,
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
@@ -20698,6 +20759,11 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
         providerAthleteGender.value,
       );
     }
+    if (providerAthleteBodyFatPct.present) {
+      map['provider_athlete_body_fat_pct'] = Variable<double>(
+        providerAthleteBodyFatPct.value,
+      );
+    }
     if (athleteZonesJson.present) {
       map['athlete_zones_json'] = Variable<String>(athleteZonesJson.value);
     }
@@ -20740,6 +20806,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
           ..write('providerAthleteWeightKg: $providerAthleteWeightKg, ')
           ..write('providerAthleteBirthMonth: $providerAthleteBirthMonth, ')
           ..write('providerAthleteGender: $providerAthleteGender, ')
+          ..write('providerAthleteBodyFatPct: $providerAthleteBodyFatPct, ')
           ..write('athleteZonesJson: $athleteZonesJson, ')
           ..write('isActive: $isActive, ')
           ..write('lastSyncAt: $lastSyncAt, ')
@@ -38677,6 +38744,7 @@ typedef $$IntegrationsTableTableCreateCompanionBuilder =
       Value<double?> providerAthleteWeightKg,
       Value<String?> providerAthleteBirthMonth,
       Value<String?> providerAthleteGender,
+      Value<double?> providerAthleteBodyFatPct,
       Value<String?> athleteZonesJson,
       Value<bool> isActive,
       Value<DateTime?> lastSyncAt,
@@ -38700,6 +38768,7 @@ typedef $$IntegrationsTableTableUpdateCompanionBuilder =
       Value<double?> providerAthleteWeightKg,
       Value<String?> providerAthleteBirthMonth,
       Value<String?> providerAthleteGender,
+      Value<double?> providerAthleteBodyFatPct,
       Value<String?> athleteZonesJson,
       Value<bool> isActive,
       Value<DateTime?> lastSyncAt,
@@ -38776,6 +38845,11 @@ class $$IntegrationsTableTableFilterComposer
 
   ColumnFilters<String> get providerAthleteGender => $composableBuilder(
     column: $table.providerAthleteGender,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get providerAthleteBodyFatPct => $composableBuilder(
+    column: $table.providerAthleteBodyFatPct,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -38884,6 +38958,11 @@ class $$IntegrationsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get providerAthleteBodyFatPct => $composableBuilder(
+    column: $table.providerAthleteBodyFatPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get athleteZonesJson => $composableBuilder(
     column: $table.athleteZonesJson,
     builder: (column) => ColumnOrderings(column),
@@ -38983,6 +39062,11 @@ class $$IntegrationsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get providerAthleteBodyFatPct => $composableBuilder(
+    column: $table.providerAthleteBodyFatPct,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get athleteZonesJson => $composableBuilder(
     column: $table.athleteZonesJson,
     builder: (column) => column,
@@ -39061,6 +39145,7 @@ class $$IntegrationsTableTableTableManager
                 Value<double?> providerAthleteWeightKg = const Value.absent(),
                 Value<String?> providerAthleteBirthMonth = const Value.absent(),
                 Value<String?> providerAthleteGender = const Value.absent(),
+                Value<double?> providerAthleteBodyFatPct = const Value.absent(),
                 Value<String?> athleteZonesJson = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime?> lastSyncAt = const Value.absent(),
@@ -39082,6 +39167,7 @@ class $$IntegrationsTableTableTableManager
                 providerAthleteWeightKg: providerAthleteWeightKg,
                 providerAthleteBirthMonth: providerAthleteBirthMonth,
                 providerAthleteGender: providerAthleteGender,
+                providerAthleteBodyFatPct: providerAthleteBodyFatPct,
                 athleteZonesJson: athleteZonesJson,
                 isActive: isActive,
                 lastSyncAt: lastSyncAt,
@@ -39105,6 +39191,7 @@ class $$IntegrationsTableTableTableManager
                 Value<double?> providerAthleteWeightKg = const Value.absent(),
                 Value<String?> providerAthleteBirthMonth = const Value.absent(),
                 Value<String?> providerAthleteGender = const Value.absent(),
+                Value<double?> providerAthleteBodyFatPct = const Value.absent(),
                 Value<String?> athleteZonesJson = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime?> lastSyncAt = const Value.absent(),
@@ -39126,6 +39213,7 @@ class $$IntegrationsTableTableTableManager
                 providerAthleteWeightKg: providerAthleteWeightKg,
                 providerAthleteBirthMonth: providerAthleteBirthMonth,
                 providerAthleteGender: providerAthleteGender,
+                providerAthleteBodyFatPct: providerAthleteBodyFatPct,
                 athleteZonesJson: athleteZonesJson,
                 isActive: isActive,
                 lastSyncAt: lastSyncAt,

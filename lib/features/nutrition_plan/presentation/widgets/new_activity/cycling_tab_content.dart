@@ -8,6 +8,7 @@ import '../../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
 import 'shared/workout_details_widget.dart';
+import 'shared/activity_name_field.dart';
 import '../../../../../shared/domain/activity_type.dart';
 
 import '../../../../../shared/widgets/kyle_design/inputs/indoor_outdoor_toggle.dart';
@@ -42,81 +43,93 @@ class CyclingTabContent extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        ActivityNameField(
+          value: formState.activityTitle,
+          onChanged: controller.updateActivityTitle,
+          hint: 'e.g., Long Ride',
+        ),
+        const SizedBox(height: AppSpacing.xl),
 
-          // WORKOUT DETAILS
-          WorkoutDetailsWidget(
-            sport: ActivityType.cycling,
-            distance: formState.distance,
-            distanceUnit: formState.distanceUnit == DistanceUnit.kilometers ? 'km' : 'mi',
-            mode: formState.durationPaceMode,
-            estimatedDuration: formState.estimatedDuration,
-            pace: formState.speedMph,
-            paceUnit: formState.distanceUnit == DistanceUnit.kilometers ? 'kph' : 'mph',
-            onDistanceChanged: controller.updateDistance,
-            onModeChanged: controller.updateDurationPaceMode,
-            onPaceChanged: controller.updateSpeed,
-            onDurationChanged: controller.updateDuration,
+        // WORKOUT DETAILS
+        WorkoutDetailsWidget(
+          sport: ActivityType.cycling,
+          distance: formState.distance,
+          distanceUnit: formState.distanceUnit == DistanceUnit.kilometers
+              ? 'km'
+              : 'mi',
+          mode: formState.durationPaceMode,
+          estimatedDuration: formState.estimatedDuration,
+          pace: formState.speedMph,
+          paceUnit: formState.distanceUnit == DistanceUnit.kilometers
+              ? 'kph'
+              : 'mph',
+          onDistanceChanged: controller.updateDistance,
+          onModeChanged: controller.updateDurationPaceMode,
+          onPaceChanged: controller.updateSpeed,
+          onDurationChanged: controller.updateDuration,
+        ),
+
+        const SizedBox(height: AppSpacing.xl),
+
+        // INTENSITY DISTRIBUTION
+        IntensityDistributionWidget(
+          value: formState.intensity,
+          onChanged: controller.updateIntensityDistribution,
+          sportType: ActivityType.cycling,
+        ),
+
+        const SizedBox(height: AppSpacing.xl),
+
+        // Time before Ride
+        KylePlusMinusControl(
+          label: 'Pre-Ride Fueling Window',
+          value: formState.preRideMinutes,
+          onChanged: controller.updatePreRideMinutes,
+          min: 0,
+          max: 480,
+          step: 15,
+          unit: 'minutes',
+        ),
+
+        // FASTED TOGGLE
+        FastedToggle(
+          isFasted: formState.isFasted,
+          onChanged: controller.updateFasted,
+          showWarning: !FastedToggle.isSuitable(
+            conversationalPct: formState.intensity.conversationalPct,
+            estimatedDurationMinutes:
+                formState.estimatedDuration?.inMinutes ?? 0,
+            isSwimming: false,
           ),
+          warningText:
+              'Fasted training is not recommended for longer or harder rides. Consider fueling before.',
+        ),
 
-          const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.xl),
 
-          // INTENSITY DISTRIBUTION
-          IntensityDistributionWidget(
-            value: formState.intensity,
-            onChanged: controller.updateIntensityDistribution,
-            sportType: ActivityType.cycling,
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Time before Ride
-          KylePlusMinusControl(
-            label: 'Pre-Ride Fueling Window',
-            value: formState.preRideMinutes,
-            onChanged: controller.updatePreRideMinutes,
-            min: 0,
-            max: 480,
-            step: 15,
-            unit: 'minutes',
-          ),
-
-          // FASTED TOGGLE
-          FastedToggle(
-            isFasted: formState.isFasted,
-            onChanged: controller.updateFasted,
-            showWarning: !FastedToggle.isSuitable(
-              conversationalPct: formState.intensity.conversationalPct,
-              estimatedDurationMinutes: formState.estimatedDuration?.inMinutes ?? 0,
-              isSwimming: false,
+        // Indoor / Outdoor Toggle
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Environment',
+              style: AppTextStyles.descriptor.copyWith(
+                color: isDark ? AppColors.cream : AppColors.blackberry,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            warningText: 'Fasted training is not recommended for longer or harder rides. Consider fueling before.',
-          ),
+            const SizedBox(height: AppSpacing.sm),
+            IndoorOutdoorToggle(
+              isIndoor: isIndoor,
+              onChanged: controller.updateIndoorOutdoor,
+              isDark: isDark,
+            ),
+          ],
+        ),
 
-          const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.xl),
 
-          // Indoor / Outdoor Toggle
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Environment',
-                style: AppTextStyles.descriptor.copyWith(
-                  color: isDark ? AppColors.cream : AppColors.blackberry,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              IndoorOutdoorToggle(
-                isIndoor: isIndoor,
-                onChanged: controller.updateIndoorOutdoor,
-                isDark: isDark,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Collapsible Environment Section
+        // Collapsible Environment Section
         EnvironmentSection(
           isExpanded: formState.showEnvironment,
           onToggle: controller.toggleEnvironmentSection,
@@ -136,13 +149,13 @@ class CyclingTabContent extends ConsumerWidget {
           weatherSource: formState.weatherForecast?.source,
           hasAttemptedWeatherFetch: formState.hasAttemptedWeatherFetch,
           locationFailureReason: formState.locationFailureReason,
-            onRequestPermission: controller.requestLocationPermissionAndFetch,
-            onOpenSettings: controller.openLocationSettings,
-            onOpenAppSettings: controller.openAppSettings,
-          ),
+          onRequestPermission: controller.requestLocationPermissionAndFetch,
+          onOpenSettings: controller.openLocationSettings,
+          onOpenAppSettings: controller.openAppSettings,
+        ),
 
-          const SizedBox(height: AppSpacing.xxl),
-        ],
+        const SizedBox(height: AppSpacing.xxl),
+      ],
     );
   }
 }

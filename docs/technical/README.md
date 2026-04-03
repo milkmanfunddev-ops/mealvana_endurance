@@ -13,6 +13,7 @@
 - FOA rules: `/docs/technical/foa-architecture.md`
 - App startup pattern: `/docs/technical/andrea/andrea_initialization.txt`
 - Sync architecture: `/docs/technical/sync-architecture.md`
+- Write consistency policy: `/docs/technical/write-consistency-policy.md`
 - Content management: `/docs/technical/content-management.md`
 - Database implementation: `lib/shared/database/`
 - App startup implementation: `lib/features/app_startup/` + `lib/shared/services/app_startup_service.dart`

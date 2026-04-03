@@ -5,6 +5,7 @@ import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/domain/activity_type.dart';
+import '../../../shared/domain/write_consistency.dart';
 import '../data/events_repository.dart';
 import '../../activities/application/activities_service.dart';
 import '../../coach_mode/data/coach_repository.dart';
@@ -43,7 +44,7 @@ class EventsService {
   Future<domain.Event?> getEventForActivity(String activityId) async {
     try {
       final query = _database.select(_database.eventsTable)
-            ..where((tbl) => tbl.activityId.equals(activityId));
+        ..where((tbl) => tbl.activityId.equals(activityId));
 
       final event = await query.getSingleOrNull();
 
@@ -63,9 +64,11 @@ class EventsService {
   Future<domain.Event?> getEventById(String userId, String eventId) async {
     try {
       final query = _database.select(_database.eventsTable)
-        ..where((tbl) =>
-            tbl.id.equals(eventId) &
-            tbl.userId.lower().equals(userId.toLowerCase()));
+        ..where(
+          (tbl) =>
+              tbl.id.equals(eventId) &
+              tbl.userId.lower().equals(userId.toLowerCase()),
+        );
 
       final event = await query.getSingleOrNull();
 
@@ -93,9 +96,14 @@ class EventsService {
   }
 
   /// Get events for a specific week
-  Future<List<domain.Event>> getEventsForWeek(String userId, DateTime weekStart) async {
+  Future<List<domain.Event>> getEventsForWeek(
+    String userId,
+    DateTime weekStart,
+  ) async {
     try {
-      final weekEnd = weekStart.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+      final weekEnd = weekStart.add(
+        const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+      );
 
       // Get all events
       final allEvents = await getAllEvents(userId);
@@ -104,7 +112,10 @@ class EventsService {
       final eventsInWeek = <domain.Event>[];
       for (final event in allEvents) {
         if (event.activityId != null) {
-          final activity = await _activitiesService.getActivityById(userId, event.activityId!);
+          final activity = await _activitiesService.getActivityById(
+            userId,
+            event.activityId!,
+          );
           if (activity != null &&
               activity.scheduledDateTime.isAfter(weekStart) &&
               activity.scheduledDateTime.isBefore(weekEnd)) {
@@ -124,7 +135,8 @@ class EventsService {
   /// If [forUserId] is provided and different from [deviceId], validates coach-athlete relationship
   Future<domain.Event> createEvent({
     required String deviceId,
-    String? forUserId, // NEW: If provided, create event for this user (coach creating for athlete)
+    String?
+    forUserId, // NEW: If provided, create event for this user (coach creating for athlete)
     String? activityId,
     required ActivityType eventType,
     String? eventSubtype,
@@ -141,30 +153,33 @@ class EventsService {
     String? bibNumber,
     String? waveStartTime,
     String? packetPickupInfo,
+    WriteConsistency? consistency,
   }) async {
     try {
       // Determine the owner of the event
       final ownerId = forUserId ?? deviceId;
+      final resolvedConsistency =
+          consistency ??
+          WriteConsistencyResolver.forActorAndOwner(
+            actorUserId: deviceId,
+            ownerUserId: ownerId,
+          );
 
       // Validate coach-athlete relationship if creating for someone else
       if (forUserId != null && forUserId != deviceId) {
         final hasActiveRelationship = await _coachRepository
             .isActiveCoachAthleteRelationship(
-          coachUserId: deviceId,
-          athleteUserId: forUserId,
-        );
+              coachUserId: deviceId,
+              athleteUserId: forUserId,
+            );
 
         if (!hasActiveRelationship) {
           _logger.error(
             'Coach does not have active relationship with athlete',
             context: 'EVENTS_SERVICE',
-            data: {
-              'coachUserId': deviceId,
-              'athleteUserId': forUserId,
-            },
+            data: {'coachUserId': deviceId, 'athleteUserId': forUserId},
           );
-          throw Exception(
-              'Not authorized to create events for this athlete');
+          throw Exception('Not authorized to create events for this athlete');
         }
       }
 
@@ -182,7 +197,10 @@ class EventsService {
             parsedDateTime.day,
           );
         } catch (e) {
-          _logger.warning('Failed to parse startTime for eventDate: $startTime', error: e);
+          _logger.warning(
+            'Failed to parse startTime for eventDate: $startTime',
+            error: e,
+          );
         }
       }
 
@@ -210,9 +228,23 @@ class EventsService {
         updatedAt: now,
       );
 
+      _logger.info(
+        'Resolved write consistency',
+        context: 'EVENTS_SERVICE',
+        data: {
+          'entity': 'event',
+          'operation': 'create',
+          'actorUserId': deviceId,
+          'ownerUserId': ownerId,
+          'consistencyMode': resolvedConsistency.value,
+        },
+      );
+
       return await _eventsRepository.createEvent(
         deviceId: deviceId,
         event: event,
+        requireRemoteAck:
+            resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
     } catch (e) {
       _logger.error('Error creating event', error: e);
@@ -225,36 +257,57 @@ class EventsService {
   Future<void> updateEvent({
     required String deviceId,
     required domain.Event event,
-    String? currentUserId, // NEW: Current user ID (for validation if coach is editing athlete's event)
+    String?
+    currentUserId, // NEW: Current user ID (for validation if coach is editing athlete's event)
+    WriteConsistency? consistency,
   }) async {
     try {
+      final actorUserId = currentUserId ?? event.userId;
+      final resolvedConsistency =
+          consistency ??
+          WriteConsistencyResolver.forActorAndOwner(
+            actorUserId: actorUserId,
+            ownerUserId: event.userId,
+          );
+
       // Validate coach-athlete relationship if editing for someone else
       if (currentUserId != null && currentUserId != event.userId) {
         final hasActiveRelationship = await _coachRepository
             .isActiveCoachAthleteRelationship(
-          coachUserId: currentUserId,
-          athleteUserId: event.userId,
-        );
+              coachUserId: currentUserId,
+              athleteUserId: event.userId,
+            );
 
         if (!hasActiveRelationship) {
           _logger.error(
             'Coach does not have active relationship with athlete',
             context: 'EVENTS_SERVICE',
-            data: {
-              'coachUserId': currentUserId,
-              'athleteUserId': event.userId,
-            },
+            data: {'coachUserId': currentUserId, 'athleteUserId': event.userId},
           );
-          throw Exception(
-              'Not authorized to update events for this athlete');
+          throw Exception('Not authorized to update events for this athlete');
         }
       }
 
       final updatedEvent = event.copyWith(updatedAt: DateTime.now());
 
+      _logger.info(
+        'Resolved write consistency',
+        context: 'EVENTS_SERVICE',
+        data: {
+          'entity': 'event',
+          'operation': 'update',
+          'actorUserId': actorUserId,
+          'ownerUserId': event.userId,
+          'consistencyMode': resolvedConsistency.value,
+          'eventId': event.id,
+        },
+      );
+
       await _eventsRepository.updateEvent(
         deviceId: deviceId,
         event: updatedEvent,
+        requireRemoteAck:
+            resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
     } catch (e, stackTrace) {
       _logger.error('Error updating event', error: e, stackTrace: stackTrace);
@@ -267,35 +320,60 @@ class EventsService {
   Future<void> deleteEvent({
     required String deviceId,
     required String eventId,
-    String? currentUserId, // NEW: Current user ID (for validation if coach is deleting athlete's event)
+    String?
+    currentUserId, // NEW: Current user ID (for validation if coach is deleting athlete's event)
     String? eventOwnerId, // NEW: Event owner ID (for validation)
+    WriteConsistency? consistency,
   }) async {
     try {
+      final actorUserId = currentUserId ?? deviceId;
+      final ownerUserId = eventOwnerId ?? actorUserId;
+      final resolvedConsistency =
+          consistency ??
+          WriteConsistencyResolver.forActorAndOwner(
+            actorUserId: actorUserId,
+            ownerUserId: ownerUserId,
+          );
+
       // Validate coach-athlete relationship if deleting for someone else
-      if (currentUserId != null && eventOwnerId != null && currentUserId != eventOwnerId) {
+      if (currentUserId != null &&
+          eventOwnerId != null &&
+          currentUserId != eventOwnerId) {
         final hasActiveRelationship = await _coachRepository
             .isActiveCoachAthleteRelationship(
-          coachUserId: currentUserId,
-          athleteUserId: eventOwnerId,
-        );
+              coachUserId: currentUserId,
+              athleteUserId: eventOwnerId,
+            );
 
         if (!hasActiveRelationship) {
           _logger.error(
             'Coach does not have active relationship with athlete',
             context: 'EVENTS_SERVICE',
-            data: {
-              'coachUserId': currentUserId,
-              'athleteUserId': eventOwnerId,
-            },
+            data: {'coachUserId': currentUserId, 'athleteUserId': eventOwnerId},
           );
-          throw Exception(
-              'Not authorized to delete events for this athlete');
+          throw Exception('Not authorized to delete events for this athlete');
         }
       }
+
+      _logger.info(
+        'Resolved write consistency',
+        context: 'EVENTS_SERVICE',
+        data: {
+          'entity': 'event',
+          'operation': 'delete',
+          'actorUserId': actorUserId,
+          'ownerUserId': ownerUserId,
+          'consistencyMode': resolvedConsistency.value,
+          'eventId': eventId,
+        },
+      );
 
       await _eventsRepository.deleteEvent(
         deviceId: deviceId,
         eventId: eventId,
+        requireRemoteAck:
+            resolvedConsistency == WriteConsistency.remoteAckRequired,
+        remoteUserId: ownerUserId,
       );
     } catch (e, stackTrace) {
       _logger.error('Error deleting event', error: e, stackTrace: stackTrace);
@@ -322,7 +400,8 @@ class EventsService {
       hasCarbLoading: event.hasCarbLoading,
       carbLoadingDays: event.carbLoadingDays,
       carbLoadingStartDate: event.carbLoadingStartDate,
-      hasNutritionPlan: event.hasNutritionPlan, // OBSOLETE: kept for backward compatibility
+      hasNutritionPlan:
+          event.hasNutritionPlan, // OBSOLETE: kept for backward compatibility
       bibNumber: event.bibNumber,
       waveStartTime: event.waveStartTime,
       packetPickupInfo: event.packetPickupInfo,

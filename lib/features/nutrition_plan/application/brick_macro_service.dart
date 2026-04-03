@@ -33,6 +33,8 @@ class BrickMacroService {
   final MacroRepository macroRepository;
   final AuthService authService;
   final AnalyticsTracker analytics;
+  static const double _overrideMatchToleranceGPerH = 0.5;
+  static const bool _enableTemporaryBrickClientFallback = true;
 
   /// Generate brick macro targets
   ///
@@ -71,6 +73,7 @@ class BrickMacroService {
         segmentOrder: segmentOrder,
         isFasted: isFasted,
         preActivityMinutes: preActivityMinutes,
+        overrides: overrides,
       );
 
       DebugLogger.info(
@@ -111,13 +114,31 @@ class BrickMacroService {
 
       // Parse brick-specific response (pass segments to store in MacroTargets)
       var macroTargets = _parseBrickMacroTargets(data, segments);
-      macroTargets = _applyDuringOverridesForBrick(
-        macroTargets: macroTargets,
-        overrides: overrides,
-      );
+
+      final usedClientFallback =
+          _enableTemporaryBrickClientFallback &&
+          _shouldApplyClientFallback(
+            macroTargets: macroTargets,
+            overrides: overrides,
+          );
+      if (usedClientFallback) {
+        DebugLogger.warning(
+          '🧱 BRICK MACRO SERVICE: Using temporary client fallback for brick during overrides.',
+        );
+        macroTargets = _applyDuringOverridesForBrick(
+          macroTargets: macroTargets,
+          overrides: overrides,
+        );
+      }
 
       // Cache the macro targets
       await macroRepository.saveMacroTargets(macroTargets);
+      if (activityId != null && activityId.trim().isNotEmpty) {
+        await macroRepository.saveMacroTargetsForActivity(
+          activityId,
+          macroTargets,
+        );
+      }
 
       // Track analytics
       await analytics.trackPlanGenerated(
@@ -349,6 +370,7 @@ class BrickMacroService {
     required List<String> segmentOrder,
     required bool isFasted,
     required int preActivityMinutes,
+    NutritionTargetOverrides? overrides,
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
@@ -383,7 +405,7 @@ class BrickMacroService {
       };
     }).toList();
 
-    return {
+    final requestData = {
       'activity_type': 'brick',
       'age': userMetrics['age'],
       'gender': userMetrics['gender'],
@@ -407,6 +429,64 @@ class BrickMacroService {
       },
       ...preferencePayload,
     };
+
+    if (overrides != null && overrides.hasAnyOverride) {
+      final clamped = NutritionTargetGuardrails.clampAll(overrides);
+      requestData['overrides'] = clamped.toBrickEdgeFunctionPayload(
+        sports: _extractBrickSports(segments),
+      );
+    }
+
+    return requestData;
+  }
+
+  Set<ActivityType> _extractBrickSports(List<BrickSegment> segments) {
+    final sports = <ActivityType>{};
+    for (final segment in segments) {
+      switch (segment.sport.toLowerCase()) {
+        case 'running':
+          sports.add(ActivityType.running);
+          break;
+        case 'cycling':
+          sports.add(ActivityType.cycling);
+          break;
+        case 'swimming':
+          sports.add(ActivityType.swimming);
+          break;
+      }
+    }
+    return sports;
+  }
+
+  bool _shouldApplyClientFallback({
+    required MacroTargets macroTargets,
+    NutritionTargetOverrides? overrides,
+  }) {
+    if (overrides == null) return false;
+    final phaseTargets = macroTargets.brickPhaseTargets;
+    if (phaseTargets == null || phaseTargets.duringSegments.isEmpty) {
+      return false;
+    }
+
+    for (final segment in phaseTargets.duringSegments) {
+      final sportOverride = _duringOverrideForSport(overrides, segment.sport);
+      final targetRate = sportOverride?.carbRateGPerH;
+      if (targetRate == null || targetRate <= 0) {
+        continue;
+      }
+
+      final durationH = segment.durationMinutes > 0
+          ? segment.durationMinutes / 60.0
+          : 0.0;
+      final observedRate =
+          segment.carbsRateGPerH ??
+          (durationH > 0 ? segment.carbsG / durationH : 0.0);
+      if ((observedRate - targetRate).abs() > _overrideMatchToleranceGPerH) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   Future<Map<String, dynamic>> _buildPreWorkoutPreferencePayload(
@@ -523,6 +603,8 @@ class BrickMacroService {
     final duringSegments =
         phasesData['during_segments'] as List<dynamic>? ?? [];
     final parsedDuringSegments = <BrickSegmentMacroTarget>[];
+    double duringCarbsLowTotal = 0.0;
+    double duringCarbsHighTotal = 0.0;
     for (final segmentData in duringSegments) {
       if (segmentData is Map<String, dynamic>) {
         duringCarbsTotal += _toDouble(
@@ -537,10 +619,20 @@ class BrickMacroService {
           segmentData['sodium_mg'],
           'during_segment.sodium_mg',
         );
+        final segCarbsLow = _toDoubleOrNull(segmentData['carbs_low_g']);
+        final segCarbsHigh = _toDoubleOrNull(segmentData['carbs_high_g']);
         final segSodiumLow = _toDoubleOrNull(segmentData['sodium_low_mg']);
         final segSodiumHigh = _toDoubleOrNull(segmentData['sodium_high_mg']);
         final segFluidsLow = _toDoubleOrNull(segmentData['water_low_ml']);
         final segFluidsHigh = _toDoubleOrNull(segmentData['water_high_ml']);
+        if (segCarbsLow != null) {
+          duringCarbsLowTotal += segCarbsLow;
+          hasDuringRanges = true;
+        }
+        if (segCarbsHigh != null) {
+          duringCarbsHighTotal += segCarbsHigh;
+          hasDuringRanges = true;
+        }
         if (segSodiumLow != null) {
           duringSodiumLowTotal += segSodiumLow;
           hasDuringRanges = true;
@@ -582,6 +674,27 @@ class BrickMacroService {
             ),
             waterLowMl: segFluidsLow,
             waterHighMl: segFluidsHigh,
+            carbsRateGPerH: _toDoubleOrNull(segmentData['carbs_rate_g_per_h']),
+            rawBandLowGPerH: _toDoubleOrNull(
+              segmentData['raw_band_low_g_per_h'],
+            ),
+            rawBandHighGPerH: _toDoubleOrNull(
+              segmentData['raw_band_high_g_per_h'],
+            ),
+            scaledBandLowGPerH: _toDoubleOrNull(
+              segmentData['scaled_band_low_g_per_h'],
+            ),
+            scaledBandHighGPerH: _toDoubleOrNull(
+              segmentData['scaled_band_high_g_per_h'],
+            ),
+            gutMultiplier: _toDoubleOrNull(segmentData['gut_multiplier']),
+            sportCeilingGPerH: _toDoubleOrNull(
+              segmentData['sport_ceiling_g_per_h'],
+            ),
+            brickPenalty: _toDoubleOrNull(segmentData['brick_penalty']),
+            cumulativeDurationMin: _toDoubleOrNull(
+              segmentData['cumulative_duration_min'],
+            ),
           ),
         );
       }
@@ -692,9 +805,16 @@ class BrickMacroService {
         sodiumRateMgPerH: duringSodiumRate,
         sodiumTotalMg: duringSodiumTotal,
         massNormRateGPerH: 0.0, // Not applicable for brick (multi-segment)
-        absClampRangeGPerH: [30, 90], // Default range
-        carbsLowG: totalDurationH > 0 ? 30 * totalDurationH : null,
-        carbsHighG: totalDurationH > 0 ? 90 * totalDurationH : null,
+        absClampRangeGPerH: [
+          30,
+          90,
+        ], // Placeholder — per-segment bands in brickPhaseTargets
+        carbsLowG: hasDuringRanges && duringCarbsLowTotal > 0
+            ? duringCarbsLowTotal
+            : null,
+        carbsHighG: hasDuringRanges && duringCarbsHighTotal > 0
+            ? duringCarbsHighTotal
+            : null,
         sodiumLowMg: hasDuringRanges ? duringSodiumLowTotal : null,
         sodiumHighMg: hasDuringRanges ? duringSodiumHighTotal : null,
         fluidsLowMl: hasDuringRanges ? duringFluidsLowTotal : null,

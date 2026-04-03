@@ -7,26 +7,170 @@
  * Endpoint: POST /functions/v1/garmin-push
  * Auth: garmin-client-id header validation
  *
+ * Activity Strategy (match-only):
+ * Garmin activities ONLY update existing planned activities from TP/FS.
+ * If no matching planned activity exists, the push is logged and skipped.
+ * Mealvana is a nutrition planning tool — unplanned workouts without
+ * nutrition context don't belong in the activity list.
+ *
  * Supported push types:
- * - activities: Activity summaries (runs, rides, swims, etc.)
- * - activityDetails: Detailed activity data with samples/laps
- * - dailies: Daily wellness summaries
- * - epochs: 15-minute granularity data
- * - sleeps: Sleep summaries
- * - bodyComps: Body composition measurements
- * - stressDetails: Stress + body battery timelines
- * - userMetrics: VO2 max, fitness age, etc.
+ * - activities: Activity summaries — matched to planned activities
+ * - activityDetails: Detailed activity data — matched to planned activities
+ * - manuallyUpdatedActivities: Edits to previously matched activities
+ * - dailies: Daily wellness summaries → garmin_health_data
+ * - epochs: 15-minute granularity data → garmin_health_data
+ * - sleeps: Sleep summaries → garmin_health_data
+ * - bodyComps: Body composition measurements → garmin_health_data
+ * - stressDetails: Stress + body battery timelines → garmin_health_data
+ * - userMetrics: VO2 max, fitness age, etc. → garmin_health_data
  */
 
-import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { validateGarminRequest } from '../_shared/garmin/auth.ts';
-import { mapGarminActivityToActivity, mapGarminDailySummary, mapGarminSleepSummary } from '../_shared/garmin/mappers.ts';
-import type { GarminPushNotification } from '../_shared/garmin/types.ts';
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { validateGarminRequest } from "../_shared/garmin/auth.ts";
+import {
+  garminTimestampToDateString,
+  mapGarminActivityToActivity,
+  mapGarminDailySummary,
+  mapGarminSleepSummary,
+  mapGarminSportType,
+} from "../_shared/garmin/mappers.ts";
+import type { GarminPushNotification } from "../_shared/garmin/types.ts";
 
-const GARMIN_CLIENT_ID = Deno.env.get('GARMIN_CLIENT_ID') ?? '';
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const GARMIN_CLIENT_ID = Deno.env.get("GARMIN_CLIENT_ID") ?? "";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+  "";
+const ONESIGNAL_APP_ID = Deno.env.get("ONESIGNAL_APP_ID") ?? "";
+const ONESIGNAL_REST_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY") ?? "";
+
+function toMmDdYyyy(dateString: string): string {
+  const [year, month, day] = dateString.split("-");
+  if (!year || !month || !day) return dateString;
+  return `${month}/${day}/${year}`;
+}
+
+async function sendActivityUploadedPush(params: {
+  userId: string;
+  activityId: string;
+  scheduledDate: string; // YYYY-MM-DD
+  provider?: string;
+}) {
+  if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
+    console.warn(
+      "[garmin-push] OneSignal credentials missing - skipping remote push",
+    );
+    return;
+  }
+
+  const provider = params.provider ?? "Garmin";
+  const activityDateText = toMmDdYyyy(params.scheduledDate);
+
+  const notificationPayload = {
+    app_id: ONESIGNAL_APP_ID,
+    include_aliases: {
+      external_id: [params.userId],
+    },
+    target_channel: "push",
+    headings: { en: "Workout uploaded" },
+    contents: {
+      en: `A workout for ${activityDateText} was uploaded from ${provider}.`,
+    },
+    data: {
+      type: "activity",
+      activityId: params.activityId,
+      activity_id: params.activityId,
+      provider: provider.toLowerCase(),
+      activity_date: activityDateText,
+    },
+  };
+
+  const response = await fetch("https://onesignal.com/api/v1/notifications", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Basic ${ONESIGNAL_REST_API_KEY}`,
+    },
+    body: JSON.stringify(notificationPayload),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    console.error(
+      "[garmin-push] OneSignal send failed:",
+      response.status,
+      errorBody,
+    );
+  } else {
+    console.log(
+      `[garmin-push] OneSignal notification sent for activity ${params.activityId} to user ${params.userId}`,
+    );
+  }
+}
+
+/**
+ * Try to find an existing planned activity from TP/FS that matches
+ * the incoming Garmin completed activity by date + sport type.
+ *
+ * Matching criteria:
+ * - Same user_id
+ * - Same activity_type (sport)
+ * - Scheduled on the same calendar date (comparing date portion only)
+ * - Status is 'planned' or 'draft' (not already completed)
+ * - Not from Garmin itself (avoid self-matching on re-push)
+ *
+ * Returns the matched activity row or null.
+ */
+async function findMatchingPlannedActivity(
+  supabase: any,
+  userId: string,
+  sportType: string,
+  scheduledDate: string, // YYYY-MM-DD
+): Promise<{ id: string; title?: string } | null> {
+  try {
+    // Query for planned activities on the same date with matching sport
+    const startOfDay = `${scheduledDate}T00:00:00.000Z`;
+    const endOfDay = `${scheduledDate}T23:59:59.999Z`;
+
+    const { data, error } = await supabase
+      .from("activities")
+      .select(
+        "id, title, status, nutrition_plan_data, synced_from_provider, provider_workout_id, scheduled_date_time",
+      )
+      .eq("user_id", userId)
+      .eq("activity_type", sportType)
+      .in("status", ["planned", "draft"])
+      .gte("scheduled_date_time", startOfDay)
+      .lte("scheduled_date_time", endOfDay)
+      .is("deleted_at", null)
+      .order("scheduled_date_time", { ascending: true })
+      .limit(1);
+
+    if (error) {
+      console.error("[garmin-push] Match query error:", error);
+      return null;
+    }
+
+    if (data && data.length > 0) {
+      const first = data[0] as Record<string, unknown>;
+      const id = first["id"]?.toString() ?? "";
+      const title = first["title"]?.toString();
+      if (!id) return null;
+
+      console.log(
+        `[garmin-push] Found matching planned activity: ${id} (${
+          title ?? "untitled"
+        })`,
+      );
+      return { id, title };
+    }
+
+    return null;
+  } catch (err) {
+    console.error("[garmin-push] Match lookup error:", err);
+    return null;
+  }
+}
 
 serve(async (req: Request) => {
   // Validate the request is from Garmin
@@ -35,7 +179,7 @@ serve(async (req: Request) => {
     console.error(`[garmin-push] Validation failed: ${validationError}`);
     return new Response(JSON.stringify({ error: validationError }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 
@@ -48,36 +192,124 @@ serve(async (req: Request) => {
 
     const results: Record<string, { processed: number; errors: number }> = {};
 
-    // Process activities
+    // Process activities — with matching to existing planned activities
     if (body.activities && body.activities.length > 0) {
-      const stats = { processed: 0, errors: 0 };
+      const stats = { processed: 0, errors: 0, matched: 0, skipped: 0 };
       for (const activity of body.activities) {
         try {
           // Look up our user by Garmin userId
           const { data: mapping } = await supabase
-            .from('garmin_user_mappings')
-            .select('user_id')
-            .eq('garmin_user_id', activity.userId)
+            .from("garmin_user_mappings")
+            .select("user_id")
+            .eq("garmin_user_id", activity.userId)
             .single();
 
           if (!mapping) {
-            console.warn(`[garmin-push] No user mapping for Garmin userId: ${activity.userId}`);
+            console.warn(
+              `[garmin-push] No user mapping for Garmin userId: ${activity.userId}`,
+            );
             stats.errors++;
             continue;
           }
 
-          const activityRow = mapGarminActivityToActivity(activity, mapping.user_id);
+          const activityRow = mapGarminActivityToActivity(
+            activity,
+            mapping.user_id,
+          );
+          const sportType = mapGarminSportType(activity.activityType);
+          const scheduledDate = garminTimestampToDateString(
+            activity.startTimeInSeconds,
+            activity.startTimeOffsetInSeconds,
+          );
 
-          // Upsert using id (primary key) - never use onConflict with partial unique indexes
-          const { error } = await supabase
-            .from('activities')
-            .upsert(activityRow, { onConflict: 'id' });
+          // Try to match an existing planned activity from TP/FS
+          const matchedActivity = await findMatchingPlannedActivity(
+            supabase,
+            mapping.user_id,
+            sportType,
+            scheduledDate,
+          );
 
-          if (error) {
-            console.error(`[garmin-push] Activity upsert error:`, error);
-            stats.errors++;
+          if (matchedActivity) {
+            // Update the existing planned activity with Garmin completion data.
+            // Preserve the original title, nutrition plan, and provider info.
+            // Tag with Garmin provider info so manuallyUpdatedActivities can find it.
+            const summaryId = activity.summaryId ??
+              (activity as { activityId?: string }).activityId;
+            if (!summaryId) {
+              console.warn(
+                "[garmin-push] Missing activity summary id - skipping",
+              );
+              stats.errors++;
+              continue;
+            }
+            const updateFields: Record<string, unknown> = {
+              status: "completed",
+              synced_from_provider: "garmin",
+              provider_workout_id: String(summaryId),
+              average_heart_rate: activityRow.average_heart_rate,
+              max_heart_rate: activityRow.max_heart_rate,
+              calories_burned: activityRow.calories_burned,
+              duration_minutes: activityRow.duration_minutes,
+              distance_meters: activityRow.distance_meters,
+            };
+
+            // Add sport-specific fields
+            if (activityRow.average_pace_minutes_per_mile !== undefined) {
+              updateFields.average_pace_minutes_per_mile =
+                activityRow.average_pace_minutes_per_mile;
+            }
+            if (activityRow.distance_miles !== undefined) {
+              updateFields.distance_miles = activityRow.distance_miles;
+            }
+            if (activityRow.cycling_power_watts !== undefined) {
+              updateFields.cycling_power_watts =
+                activityRow.cycling_power_watts;
+            }
+            if (activityRow.cycling_speed_mph !== undefined) {
+              updateFields.cycling_speed_mph = activityRow.cycling_speed_mph;
+            }
+            if (activityRow.cycling_elevation_gain_ft !== undefined) {
+              updateFields.cycling_elevation_gain_ft =
+                activityRow.cycling_elevation_gain_ft;
+            }
+            if (activityRow.swimming_pace_per_100m_seconds !== undefined) {
+              updateFields.swimming_pace_per_100m_seconds =
+                activityRow.swimming_pace_per_100m_seconds;
+            }
+
+            const { error } = await supabase
+              .from("activities")
+              .update(updateFields)
+              .eq("id", matchedActivity.id);
+
+            if (error) {
+              console.error(
+                `[garmin-push] Matched activity update error:`,
+                error,
+              );
+              stats.errors++;
+            } else {
+              console.log(
+                `[garmin-push] Matched & completed activity ${matchedActivity.id} (${matchedActivity.title})`,
+              );
+              await sendActivityUploadedPush({
+                userId: mapping.user_id,
+                activityId: String(matchedActivity.id),
+                scheduledDate,
+                provider: "Garmin",
+              });
+              stats.matched++;
+              stats.processed++;
+            }
           } else {
-            stats.processed++;
+            // No match — skip. Mealvana is a nutrition planning tool, not a
+            // workout logger. If there's no planned activity to complete,
+            // there's no nutrition context to attach to.
+            console.log(
+              `[garmin-push] No matching planned activity for ${sportType} on ${scheduledDate} — skipping`,
+            );
+            stats.skipped++;
           }
         } catch (err) {
           console.error(`[garmin-push] Activity processing error:`, err);
@@ -93,13 +325,15 @@ serve(async (req: Request) => {
       for (const daily of body.dailies) {
         try {
           const { data: mapping } = await supabase
-            .from('garmin_user_mappings')
-            .select('user_id')
-            .eq('garmin_user_id', daily.userId)
+            .from("garmin_user_mappings")
+            .select("user_id")
+            .eq("garmin_user_id", daily.userId)
             .single();
 
           if (!mapping) {
-            console.warn(`[garmin-push] No user mapping for Garmin userId: ${daily.userId}`);
+            console.warn(
+              `[garmin-push] No user mapping for Garmin userId: ${daily.userId}`,
+            );
             stats.errors++;
             continue;
           }
@@ -108,8 +342,8 @@ serve(async (req: Request) => {
           record.user_id = mapping.user_id;
 
           const { error } = await supabase
-            .from('garmin_health_data')
-            .upsert(record, { onConflict: 'summary_id' });
+            .from("garmin_health_data")
+            .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
             console.error(`[garmin-push] Daily upsert error:`, error);
@@ -131,13 +365,15 @@ serve(async (req: Request) => {
       for (const sleep of body.sleeps) {
         try {
           const { data: mapping } = await supabase
-            .from('garmin_user_mappings')
-            .select('user_id')
-            .eq('garmin_user_id', sleep.userId)
+            .from("garmin_user_mappings")
+            .select("user_id")
+            .eq("garmin_user_id", sleep.userId)
             .single();
 
           if (!mapping) {
-            console.warn(`[garmin-push] No user mapping for Garmin userId: ${sleep.userId}`);
+            console.warn(
+              `[garmin-push] No user mapping for Garmin userId: ${sleep.userId}`,
+            );
             stats.errors++;
             continue;
           }
@@ -146,8 +382,8 @@ serve(async (req: Request) => {
           record.user_id = mapping.user_id;
 
           const { error } = await supabase
-            .from('garmin_health_data')
-            .upsert(record, { onConflict: 'summary_id' });
+            .from("garmin_health_data")
+            .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
             console.error(`[garmin-push] Sleep upsert error:`, error);
@@ -169,9 +405,9 @@ serve(async (req: Request) => {
       for (const bodyComp of body.bodyComps) {
         try {
           const { data: mapping } = await supabase
-            .from('garmin_user_mappings')
-            .select('user_id')
-            .eq('garmin_user_id', bodyComp.userId)
+            .from("garmin_user_mappings")
+            .select("user_id")
+            .eq("garmin_user_id", bodyComp.userId)
             .single();
 
           if (!mapping) {
@@ -183,8 +419,10 @@ serve(async (req: Request) => {
             user_id: mapping.user_id,
             garmin_user_id: bodyComp.userId,
             summary_id: bodyComp.summaryId,
-            data_type: 'body_composition',
-            calendar_date: new Date(bodyComp.measurementTimeInSeconds * 1000).toISOString().split('T')[0],
+            data_type: "body_composition",
+            calendar_date:
+              new Date(bodyComp.measurementTimeInSeconds * 1000).toISOString()
+                .split("T")[0],
             data: {
               weight_grams: bodyComp.weightInGrams,
               percent_fat: bodyComp.percentFat,
@@ -196,8 +434,8 @@ serve(async (req: Request) => {
           };
 
           const { error } = await supabase
-            .from('garmin_health_data')
-            .upsert(record, { onConflict: 'summary_id' });
+            .from("garmin_health_data")
+            .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
             console.error(`[garmin-push] Body comp upsert error:`, error);
@@ -219,9 +457,9 @@ serve(async (req: Request) => {
       for (const stress of body.stressDetails) {
         try {
           const { data: mapping } = await supabase
-            .from('garmin_user_mappings')
-            .select('user_id')
-            .eq('garmin_user_id', stress.userId)
+            .from("garmin_user_mappings")
+            .select("user_id")
+            .eq("garmin_user_id", stress.userId)
             .single();
 
           if (!mapping) {
@@ -233,7 +471,7 @@ serve(async (req: Request) => {
             user_id: mapping.user_id,
             garmin_user_id: stress.userId,
             summary_id: stress.summaryId,
-            data_type: 'stress',
+            data_type: "stress",
             calendar_date: stress.calendarDate,
             data: {
               duration_seconds: stress.durationInSeconds,
@@ -243,8 +481,8 @@ serve(async (req: Request) => {
           };
 
           const { error } = await supabase
-            .from('garmin_health_data')
-            .upsert(record, { onConflict: 'summary_id' });
+            .from("garmin_health_data")
+            .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
             console.error(`[garmin-push] Stress upsert error:`, error);
@@ -260,72 +498,193 @@ serve(async (req: Request) => {
       results.stressDetails = stats;
     }
 
-    // Process manually updated activities (same format as regular activities)
-    if (body.manuallyUpdatedActivities && body.manuallyUpdatedActivities.length > 0) {
-      const stats = { processed: 0, errors: 0 };
+    // Process manually updated activities — edits to previously pushed activities.
+    // Only update if we already have an activity with this provider_workout_id
+    // (i.e., Garmin previously matched and completed a planned activity).
+    if (
+      body.manuallyUpdatedActivities &&
+      body.manuallyUpdatedActivities.length > 0
+    ) {
+      const stats = { processed: 0, errors: 0, skipped: 0 };
       for (const activity of body.manuallyUpdatedActivities) {
         try {
           const { data: mapping } = await supabase
-            .from('garmin_user_mappings')
-            .select('user_id')
-            .eq('garmin_user_id', activity.userId)
+            .from("garmin_user_mappings")
+            .select("user_id")
+            .eq("garmin_user_id", activity.userId)
             .single();
 
           if (!mapping) {
-            console.warn(`[garmin-push] No user mapping for Garmin userId: ${activity.userId}`);
+            console.warn(
+              `[garmin-push] No user mapping for Garmin userId: ${activity.userId}`,
+            );
             stats.errors++;
             continue;
           }
 
-          const activityRow = mapGarminActivityToActivity(activity, mapping.user_id);
+          const summaryId = activity.summaryId ??
+            (activity as { activityId?: string }).activityId;
+          if (!summaryId) {
+            console.warn(
+              "[garmin-push] Missing manual-update summary id - skipping",
+            );
+            stats.errors++;
+            continue;
+          }
+          const activityRow = mapGarminActivityToActivity(
+            activity,
+            mapping.user_id,
+          );
+
+          // Only update an existing activity that was previously matched
+          const { data: existing } = await supabase
+            .from("activities")
+            .select("id")
+            .eq("user_id", mapping.user_id)
+            .eq("provider_workout_id", String(summaryId))
+            .eq("synced_from_provider", "garmin")
+            .is("deleted_at", null)
+            .limit(1);
+
+          if (!existing || existing.length === 0) {
+            console.log(
+              `[garmin-push] No existing activity for manual update summaryId ${summaryId} — skipping`,
+            );
+            stats.skipped++;
+            continue;
+          }
+
+          const updateFields: Record<string, unknown> = {
+            average_heart_rate: activityRow.average_heart_rate,
+            max_heart_rate: activityRow.max_heart_rate,
+            calories_burned: activityRow.calories_burned,
+            duration_minutes: activityRow.duration_minutes,
+            distance_meters: activityRow.distance_meters,
+          };
+
+          if (activityRow.average_pace_minutes_per_mile !== undefined) {
+            updateFields.average_pace_minutes_per_mile =
+              activityRow.average_pace_minutes_per_mile;
+          }
+          if (activityRow.distance_miles !== undefined) {
+            updateFields.distance_miles = activityRow.distance_miles;
+          }
 
           const { error } = await supabase
-            .from('activities')
-            .upsert(activityRow, { onConflict: 'id' });
+            .from("activities")
+            .update(updateFields)
+            .eq("id", existing[0].id);
 
           if (error) {
-            console.error(`[garmin-push] Manually updated activity upsert error:`, error);
+            console.error(
+              `[garmin-push] Manually updated activity error:`,
+              error,
+            );
             stats.errors++;
           } else {
+            console.log(
+              `[garmin-push] Updated activity ${
+                existing[0].id
+              } from manual edit`,
+            );
             stats.processed++;
           }
         } catch (err) {
-          console.error(`[garmin-push] Manually updated activity processing error:`, err);
+          console.error(
+            `[garmin-push] Manually updated activity processing error:`,
+            err,
+          );
           stats.errors++;
         }
       }
       results.manuallyUpdatedActivities = stats;
     }
 
-    // Process activity details (extract summary and process like regular activities)
+    // Process activity details — same match-only strategy as regular activities.
+    // Only update an existing planned activity if one matches.
     if (body.activityDetails && body.activityDetails.length > 0) {
-      const stats = { processed: 0, errors: 0 };
+      const stats = { processed: 0, errors: 0, matched: 0, skipped: 0 };
       for (const detail of body.activityDetails) {
         try {
           const { data: mapping } = await supabase
-            .from('garmin_user_mappings')
-            .select('user_id')
-            .eq('garmin_user_id', detail.userId)
+            .from("garmin_user_mappings")
+            .select("user_id")
+            .eq("garmin_user_id", detail.userId)
             .single();
 
           if (!mapping) {
-            console.warn(`[garmin-push] No user mapping for Garmin userId: ${detail.userId}`);
+            console.warn(
+              `[garmin-push] No user mapping for Garmin userId: ${detail.userId}`,
+            );
             stats.errors++;
             continue;
           }
 
-          // Use the embedded summary for mapping
-          const activityRow = mapGarminActivityToActivity(detail.summary, mapping.user_id);
+          const summary = detail.summary;
+          const activityRow = mapGarminActivityToActivity(
+            summary,
+            mapping.user_id,
+          );
+          const sportType = mapGarminSportType(summary.activityType);
+          const scheduledDate = garminTimestampToDateString(
+            summary.startTimeInSeconds,
+            summary.startTimeOffsetInSeconds,
+          );
 
-          const { error } = await supabase
-            .from('activities')
-            .upsert(activityRow, { onConflict: 'id' });
+          const matchedActivity = await findMatchingPlannedActivity(
+            supabase,
+            mapping.user_id,
+            sportType,
+            scheduledDate,
+          );
 
-          if (error) {
-            console.error(`[garmin-push] Activity detail upsert error:`, error);
-            stats.errors++;
+          if (matchedActivity) {
+            const updateFields: Record<string, unknown> = {
+              status: "completed",
+              average_heart_rate: activityRow.average_heart_rate,
+              max_heart_rate: activityRow.max_heart_rate,
+              calories_burned: activityRow.calories_burned,
+              duration_minutes: activityRow.duration_minutes,
+              distance_meters: activityRow.distance_meters,
+            };
+
+            if (activityRow.average_pace_minutes_per_mile !== undefined) {
+              updateFields.average_pace_minutes_per_mile =
+                activityRow.average_pace_minutes_per_mile;
+            }
+            if (activityRow.distance_miles !== undefined) {
+              updateFields.distance_miles = activityRow.distance_miles;
+            }
+
+            const { error } = await supabase
+              .from("activities")
+              .update(updateFields)
+              .eq("id", matchedActivity.id);
+
+            if (error) {
+              console.error(
+                `[garmin-push] Activity detail matched update error:`,
+                error,
+              );
+              stats.errors++;
+            } else {
+              console.log(
+                `[garmin-push] Matched & completed activity ${matchedActivity.id} from detail push`,
+              );
+              await sendActivityUploadedPush({
+                userId: mapping.user_id,
+                activityId: String(matchedActivity.id),
+                scheduledDate,
+                provider: "Garmin",
+              });
+              stats.matched++;
+              stats.processed++;
+            }
           } else {
-            stats.processed++;
+            console.log(
+              `[garmin-push] No matching planned activity for detail ${sportType} on ${scheduledDate} — skipping`,
+            );
+            stats.skipped++;
           }
         } catch (err) {
           console.error(`[garmin-push] Activity detail processing error:`, err);
@@ -341,9 +700,9 @@ serve(async (req: Request) => {
       for (const epoch of body.epochs) {
         try {
           const { data: mapping } = await supabase
-            .from('garmin_user_mappings')
-            .select('user_id')
-            .eq('garmin_user_id', epoch.userId)
+            .from("garmin_user_mappings")
+            .select("user_id")
+            .eq("garmin_user_id", epoch.userId)
             .single();
 
           if (!mapping) {
@@ -351,14 +710,16 @@ serve(async (req: Request) => {
             continue;
           }
 
-          const localEpochMs = (epoch.startTimeInSeconds + epoch.startTimeOffsetInSeconds) * 1000;
-          const calendarDate = new Date(localEpochMs).toISOString().split('T')[0];
+          const localEpochMs =
+            (epoch.startTimeInSeconds + epoch.startTimeOffsetInSeconds) * 1000;
+          const calendarDate =
+            new Date(localEpochMs).toISOString().split("T")[0];
 
           const record = {
             user_id: mapping.user_id,
             garmin_user_id: epoch.userId,
             summary_id: epoch.summaryId,
-            data_type: 'epoch',
+            data_type: "epoch",
             calendar_date: calendarDate,
             data: {
               duration_seconds: epoch.durationInSeconds,
@@ -373,8 +734,8 @@ serve(async (req: Request) => {
           };
 
           const { error } = await supabase
-            .from('garmin_health_data')
-            .upsert(record, { onConflict: 'summary_id' });
+            .from("garmin_health_data")
+            .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
             stats.errors++;
@@ -395,9 +756,9 @@ serve(async (req: Request) => {
       for (const metric of body.userMetrics) {
         try {
           const { data: mapping } = await supabase
-            .from('garmin_user_mappings')
-            .select('user_id')
-            .eq('garmin_user_id', metric.userId)
+            .from("garmin_user_mappings")
+            .select("user_id")
+            .eq("garmin_user_id", metric.userId)
             .single();
 
           if (!mapping) {
@@ -409,7 +770,7 @@ serve(async (req: Request) => {
             user_id: mapping.user_id,
             garmin_user_id: metric.userId,
             summary_id: metric.summaryId,
-            data_type: 'user_metrics',
+            data_type: "user_metrics",
             calendar_date: metric.calendarDate,
             data: {
               vo2_max: metric.vo2Max,
@@ -418,8 +779,8 @@ serve(async (req: Request) => {
           };
 
           const { error } = await supabase
-            .from('garmin_health_data')
-            .upsert(record, { onConflict: 'summary_id' });
+            .from("garmin_health_data")
+            .upsert(record, { onConflict: "summary_id" });
 
           if (error) {
             console.error(`[garmin-push] User metrics upsert error:`, error);
@@ -437,24 +798,32 @@ serve(async (req: Request) => {
 
     // Process user permissions changes (just acknowledge - no data to store)
     if (body.userPermissionsChange && body.userPermissionsChange.length > 0) {
-      console.log(`[garmin-push] User permissions change received for ${body.userPermissionsChange.length} user(s)`);
+      console.log(
+        `[garmin-push] User permissions change received for ${body.userPermissionsChange.length} user(s)`,
+      );
       for (const perm of body.userPermissionsChange) {
-        console.log(`[garmin-push] Permissions for user ${perm.userId}:`, JSON.stringify(perm.permissions));
+        console.log(
+          `[garmin-push] Permissions for user ${perm.userId}:`,
+          JSON.stringify(perm.permissions),
+        );
       }
-      results.userPermissionsChange = { processed: body.userPermissionsChange.length, errors: 0 };
+      results.userPermissionsChange = {
+        processed: body.userPermissionsChange.length,
+        errors: 0,
+      };
     }
 
-    console.log('[garmin-push] Processing complete:', JSON.stringify(results));
+    console.log("[garmin-push] Processing complete:", JSON.stringify(results));
 
     return new Response(JSON.stringify({ success: true, results }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error('[garmin-push] Fatal error:', err);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    console.error("[garmin-push] Fatal error:", err);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
   }
 });

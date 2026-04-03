@@ -13,7 +13,7 @@ import '../../../auth/domain/user_preferences.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
-import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// User Profile Screen - Design System
 /// User setup screen during onboarding - RESTORED with database integration
@@ -136,23 +136,39 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         'final_surge',
       );
 
-      if (integration == null || !integration.isActive) return;
-      final data = integration; // Capture for closure
+      // Also check Garmin for body comp data (weight, body fat %)
+      final garminIntegration = await integrationsRepo.getIntegration(
+        userId,
+        'garmin',
+      );
+
+      if ((integration == null || !integration.isActive) &&
+          (garminIntegration == null || !garminIntegration.isActive)) {
+        return;
+      }
 
       if (kDebugMode) {
-        print('🔄 Auto-populating profile from ${data.provider}');
-        print('   Weight (kg): ${data.providerAthleteWeightKg}');
-        print('   Birth month: ${data.providerAthleteBirthMonth}');
-        print('   Gender: ${data.providerAthleteGender}');
+        if (integration?.isActive == true) {
+          print('🔄 Auto-populating profile from ${integration!.provider}');
+          print('   Weight (kg): ${integration.providerAthleteWeightKg}');
+          print('   Birth month: ${integration.providerAthleteBirthMonth}');
+          print('   Gender: ${integration.providerAthleteGender}');
+        }
+        if (garminIntegration?.isActive == true) {
+          print('🔄 Garmin body comp: '
+              'weight=${garminIntegration!.providerAthleteWeightKg}kg, '
+              'bodyFat=${garminIntegration.providerAthleteBodyFatPct}%');
+        }
       }
 
       if (!mounted) return;
 
       setState(() {
-        // Name
-        if (data.providerAthleteName != null &&
+        // Name (from TP/FS — Garmin doesn't provide real names)
+        if (integration?.isActive == true &&
+            integration!.providerAthleteName != null &&
             _firstNameController.text.isEmpty) {
-          final nameParts = data.providerAthleteName!.split(' ');
+          final nameParts = integration.providerAthleteName!.split(' ');
           if (nameParts.isNotEmpty) {
             _firstNameController.text = nameParts.first;
             if (nameParts.length > 1) {
@@ -161,23 +177,33 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           }
         }
 
-        // Weight (kg → lbs)
-        if (data.providerAthleteWeightLbs != null &&
-            _weightController.text.isEmpty) {
-          _weightController.text = data.providerAthleteWeightLbs!
-              .toStringAsFixed(1);
+        // Weight: prefer Garmin (scale data) over TP/FS
+        if (_weightController.text.isEmpty) {
+          final weightSource =
+              (garminIntegration?.isActive == true &&
+                      garminIntegration?.providerAthleteWeightKg != null)
+                  ? garminIntegration
+                  : integration;
+          if (weightSource?.providerAthleteWeightLbs != null) {
+            _weightController.text =
+                weightSource!.providerAthleteWeightLbs!.toStringAsFixed(1);
+          }
         }
 
-        // Birthday (default to 1st of month)
-        if (data.providerAthleteBirthday != null && _selectedBirthday == null) {
-          _selectedBirthday = data.providerAthleteBirthday;
+        // Birthday (from TP only — Garmin doesn't expose this)
+        if (integration?.isActive == true &&
+            integration!.providerAthleteBirthday != null &&
+            _selectedBirthday == null) {
+          _selectedBirthday = integration.providerAthleteBirthday;
         }
 
-        // Gender
-        if (data.providerAthleteGender == 'm') {
-          _selectedGender = Gender.male;
-        } else if (data.providerAthleteGender == 'f') {
-          _selectedGender = Gender.female;
+        // Gender (from TP only — Garmin doesn't expose this)
+        if (integration?.isActive == true) {
+          if (integration!.providerAthleteGender == 'm') {
+            _selectedGender = Gender.male;
+          } else if (integration.providerAthleteGender == 'f') {
+            _selectedGender = Gender.female;
+          }
         }
       });
     } catch (e) {
@@ -204,32 +230,26 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     final theme = Theme.of(context);
     final backgroundColor = theme.scaffoldBackgroundColor;
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: backgroundColor,
-      body: ContentArea.narrow(
-        child: Column(
-          children: [
-            // Progress bar at the very top (no SafeArea padding)
-            Container(
-              color: backgroundColor,
-              padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-              child: const OnboardingProgressBar(
-                currentSegment: 1, // Profile segment
-              ),
+      contentWidth: AdaptiveContentWidth.narrow,
+      body: Column(
+        children: [
+          // Progress bar at the very top (no SafeArea padding)
+          Container(
+            color: backgroundColor,
+            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+            child: const OnboardingProgressBar(
+              currentSegment: 1, // Profile segment
             ),
+          ),
 
-            // Content
-            Expanded(
-              child: SafeArea(
-                top: false,
-                child: _buildContent(context, asyncState),
-              ),
-            ),
+          // Content
+          Expanded(child: _buildContent(context, asyncState)),
 
-            // Footer navigation
-            _buildFooter(asyncState),
-          ],
-        ),
+          // Footer navigation
+          _buildFooter(asyncState),
+        ],
       ),
     );
   }
@@ -245,7 +265,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         FocusScope.of(context).unfocus();
       },
       behavior: HitTestBehavior.opaque,
-      child: SingleChildScrollView(
+      child: AdaptiveScrollableBody(
+        safeAreaTop: false,
+        safeAreaBottom: false,
         padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,

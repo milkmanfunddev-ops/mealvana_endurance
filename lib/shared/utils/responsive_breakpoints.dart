@@ -20,7 +20,17 @@ class Breakpoints {
 
   /// Width at which we switch from bottom nav to NavigationRail.
   static const double navigationRail = 768;
+
+  /// Height classes for compact-height behavior on small phones.
+  static const double shortHeight = 700;
+  static const double tallHeight = 900;
 }
+
+/// Canonical width size classes for responsive layout decisions.
+enum ResponsiveSizeClass { compact, medium, expanded, large }
+
+/// Canonical height classes for responsive spacing and hero sizing decisions.
+enum ResponsiveHeightClass { short, regular, tall }
 
 /// Extension on [BuildContext] for responsive layout queries.
 ///
@@ -28,6 +38,26 @@ class Breakpoints {
 /// [MediaQuery.of] because it only rebuilds on size changes).
 extension ResponsiveBreakpointsContext on BuildContext {
   double get screenWidth => MediaQuery.sizeOf(this).width;
+  double get screenHeight => MediaQuery.sizeOf(this).height;
+
+  ResponsiveSizeClass get sizeClass {
+    if (screenWidth >= Breakpoints.large) return ResponsiveSizeClass.large;
+    if (screenWidth >= Breakpoints.expanded) {
+      return ResponsiveSizeClass.expanded;
+    }
+    if (screenWidth >= Breakpoints.compact) return ResponsiveSizeClass.medium;
+    return ResponsiveSizeClass.compact;
+  }
+
+  ResponsiveHeightClass get heightClass {
+    if (screenHeight < Breakpoints.shortHeight) {
+      return ResponsiveHeightClass.short;
+    }
+    if (screenHeight >= Breakpoints.tallHeight) {
+      return ResponsiveHeightClass.tall;
+    }
+    return ResponsiveHeightClass.regular;
+  }
 
   /// True on phones / compact layouts.
   bool get isCompact => screenWidth < Breakpoints.compact;
@@ -40,4 +70,7 @@ extension ResponsiveBreakpointsContext on BuildContext {
 
   /// True when the screen is wide enough for a NavigationRail.
   bool get useNavigationRail => screenWidth >= Breakpoints.navigationRail;
+
+  /// True when the window height is constrained (small phone portrait split).
+  bool get isShortHeight => heightClass == ResponsiveHeightClass.short;
 }

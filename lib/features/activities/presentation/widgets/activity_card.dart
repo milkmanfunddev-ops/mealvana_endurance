@@ -289,6 +289,7 @@ class ActivityCard extends ConsumerWidget {
           'distance': activity.distanceMiles,
           'initialDurationMinutes': activity.durationMinutes,
           'goalPace': activity.paceTargetMinutesPerMile,
+          'initialTitle': activity.title,
           'activityType': activity.activityType.name,
           // Cycling-specific parameters
           'cyclingSpeedMph': activity.cyclingSpeedMph,

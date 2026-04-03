@@ -230,6 +230,15 @@ class BrickSegmentMacroTarget {
     required this.waterMl,
     this.waterLowMl,
     this.waterHighMl,
+    this.carbsRateGPerH,
+    this.rawBandLowGPerH,
+    this.rawBandHighGPerH,
+    this.scaledBandLowGPerH,
+    this.scaledBandHighGPerH,
+    this.gutMultiplier,
+    this.sportCeilingGPerH,
+    this.brickPenalty,
+    this.cumulativeDurationMin,
   });
 
   final int segmentOrder;
@@ -244,6 +253,15 @@ class BrickSegmentMacroTarget {
   final double waterMl;
   final double? waterLowMl;
   final double? waterHighMl;
+  final double? carbsRateGPerH;
+  final double? rawBandLowGPerH;
+  final double? rawBandHighGPerH;
+  final double? scaledBandLowGPerH;
+  final double? scaledBandHighGPerH;
+  final double? gutMultiplier;
+  final double? sportCeilingGPerH;
+  final double? brickPenalty;
+  final double? cumulativeDurationMin;
 
   Map<String, dynamic> toJson() {
     return {
@@ -259,6 +277,18 @@ class BrickSegmentMacroTarget {
       'waterMl': waterMl,
       if (waterLowMl != null) 'waterLowMl': waterLowMl,
       if (waterHighMl != null) 'waterHighMl': waterHighMl,
+      if (carbsRateGPerH != null) 'carbsRateGPerH': carbsRateGPerH,
+      if (rawBandLowGPerH != null) 'rawBandLowGPerH': rawBandLowGPerH,
+      if (rawBandHighGPerH != null) 'rawBandHighGPerH': rawBandHighGPerH,
+      if (scaledBandLowGPerH != null)
+        'scaledBandLowGPerH': scaledBandLowGPerH,
+      if (scaledBandHighGPerH != null)
+        'scaledBandHighGPerH': scaledBandHighGPerH,
+      if (gutMultiplier != null) 'gutMultiplier': gutMultiplier,
+      if (sportCeilingGPerH != null) 'sportCeilingGPerH': sportCeilingGPerH,
+      if (brickPenalty != null) 'brickPenalty': brickPenalty,
+      if (cumulativeDurationMin != null)
+        'cumulativeDurationMin': cumulativeDurationMin,
     };
   }
 
@@ -276,6 +306,16 @@ class BrickSegmentMacroTarget {
       waterMl: (json['waterMl'] as num).toDouble(),
       waterLowMl: (json['waterLowMl'] as num?)?.toDouble(),
       waterHighMl: (json['waterHighMl'] as num?)?.toDouble(),
+      carbsRateGPerH: (json['carbsRateGPerH'] as num?)?.toDouble(),
+      rawBandLowGPerH: (json['rawBandLowGPerH'] as num?)?.toDouble(),
+      rawBandHighGPerH: (json['rawBandHighGPerH'] as num?)?.toDouble(),
+      scaledBandLowGPerH: (json['scaledBandLowGPerH'] as num?)?.toDouble(),
+      scaledBandHighGPerH: (json['scaledBandHighGPerH'] as num?)?.toDouble(),
+      gutMultiplier: (json['gutMultiplier'] as num?)?.toDouble(),
+      sportCeilingGPerH: (json['sportCeilingGPerH'] as num?)?.toDouble(),
+      brickPenalty: (json['brickPenalty'] as num?)?.toDouble(),
+      cumulativeDurationMin:
+          (json['cumulativeDurationMin'] as num?)?.toDouble(),
     );
   }
 
@@ -294,7 +334,16 @@ class BrickSegmentMacroTarget {
         other.sodiumHighMg == sodiumHighMg &&
         other.waterMl == waterMl &&
         other.waterLowMl == waterLowMl &&
-        other.waterHighMl == waterHighMl;
+        other.waterHighMl == waterHighMl &&
+        other.carbsRateGPerH == carbsRateGPerH &&
+        other.rawBandLowGPerH == rawBandLowGPerH &&
+        other.rawBandHighGPerH == rawBandHighGPerH &&
+        other.scaledBandLowGPerH == scaledBandLowGPerH &&
+        other.scaledBandHighGPerH == scaledBandHighGPerH &&
+        other.gutMultiplier == gutMultiplier &&
+        other.sportCeilingGPerH == sportCeilingGPerH &&
+        other.brickPenalty == brickPenalty &&
+        other.cumulativeDurationMin == cumulativeDurationMin;
   }
 
   @override
@@ -311,6 +360,12 @@ class BrickSegmentMacroTarget {
     waterMl,
     waterLowMl,
     waterHighMl,
+    carbsRateGPerH,
+    rawBandLowGPerH,
+    rawBandHighGPerH,
+    scaledBandLowGPerH,
+    scaledBandHighGPerH,
+    Object.hash(gutMultiplier, sportCeilingGPerH, brickPenalty, cumulativeDurationMin),
   );
 }
 
@@ -565,6 +620,10 @@ class DuringRunMacros {
     this.sodiumHighMg,
     this.fluidsLowMl,
     this.fluidsHighMl,
+    this.gutMultiplier,
+    this.sportCeilingGPerH,
+    this.rawBandLowGPerH,
+    this.rawBandHighGPerH,
   });
 
   final double carbRateGPerH;
@@ -581,6 +640,10 @@ class DuringRunMacros {
   final double? sodiumHighMg;
   final double? fluidsLowMl;
   final double? fluidsHighMl;
+  final double? gutMultiplier;
+  final double? sportCeilingGPerH;
+  final double? rawBandLowGPerH;
+  final double? rawBandHighGPerH;
 
   /// Convert fluids to US units (fl oz)
   double get fluidRateFlOzPerH => fluidRateMlPerH * 0.033814;
@@ -625,6 +688,10 @@ class DuringRunMacros {
     double? sodiumHighMg,
     double? fluidsLowMl,
     double? fluidsHighMl,
+    double? gutMultiplier,
+    double? sportCeilingGPerH,
+    double? rawBandLowGPerH,
+    double? rawBandHighGPerH,
   }) {
     return DuringRunMacros(
       carbRateGPerH: carbRateGPerH ?? this.carbRateGPerH,
@@ -641,6 +708,10 @@ class DuringRunMacros {
       sodiumHighMg: sodiumHighMg ?? this.sodiumHighMg,
       fluidsLowMl: fluidsLowMl ?? this.fluidsLowMl,
       fluidsHighMl: fluidsHighMl ?? this.fluidsHighMl,
+      gutMultiplier: gutMultiplier ?? this.gutMultiplier,
+      sportCeilingGPerH: sportCeilingGPerH ?? this.sportCeilingGPerH,
+      rawBandLowGPerH: rawBandLowGPerH ?? this.rawBandLowGPerH,
+      rawBandHighGPerH: rawBandHighGPerH ?? this.rawBandHighGPerH,
     );
   }
 
@@ -660,6 +731,10 @@ class DuringRunMacros {
       if (sodiumHighMg != null) 'sodiumHighMg': sodiumHighMg,
       if (fluidsLowMl != null) 'fluidsLowMl': fluidsLowMl,
       if (fluidsHighMl != null) 'fluidsHighMl': fluidsHighMl,
+      if (gutMultiplier != null) 'gutMultiplier': gutMultiplier,
+      if (sportCeilingGPerH != null) 'sportCeilingGPerH': sportCeilingGPerH,
+      if (rawBandLowGPerH != null) 'rawBandLowGPerH': rawBandLowGPerH,
+      if (rawBandHighGPerH != null) 'rawBandHighGPerH': rawBandHighGPerH,
     };
   }
 
@@ -681,6 +756,10 @@ class DuringRunMacros {
       sodiumHighMg: (json['sodiumHighMg'] as num?)?.toDouble(),
       fluidsLowMl: (json['fluidsLowMl'] as num?)?.toDouble(),
       fluidsHighMl: (json['fluidsHighMl'] as num?)?.toDouble(),
+      gutMultiplier: (json['gutMultiplier'] as num?)?.toDouble(),
+      sportCeilingGPerH: (json['sportCeilingGPerH'] as num?)?.toDouble(),
+      rawBandLowGPerH: (json['rawBandLowGPerH'] as num?)?.toDouble(),
+      rawBandHighGPerH: (json['rawBandHighGPerH'] as num?)?.toDouble(),
     );
   }
 
@@ -701,7 +780,11 @@ class DuringRunMacros {
         other.sodiumLowMg == sodiumLowMg &&
         other.sodiumHighMg == sodiumHighMg &&
         other.fluidsLowMl == fluidsLowMl &&
-        other.fluidsHighMl == fluidsHighMl;
+        other.fluidsHighMl == fluidsHighMl &&
+        other.gutMultiplier == gutMultiplier &&
+        other.sportCeilingGPerH == sportCeilingGPerH &&
+        other.rawBandLowGPerH == rawBandLowGPerH &&
+        other.rawBandHighGPerH == rawBandHighGPerH;
   }
 
   @override
@@ -721,6 +804,10 @@ class DuringRunMacros {
       sodiumHighMg,
       fluidsLowMl,
       fluidsHighMl,
+      gutMultiplier,
+      sportCeilingGPerH,
+      rawBandLowGPerH,
+      rawBandHighGPerH,
     );
   }
 

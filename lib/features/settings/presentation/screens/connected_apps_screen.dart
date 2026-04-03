@@ -6,7 +6,9 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 
 import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
+import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
 import '../../../integrations/presentation/widgets/integration_provider_card.dart';
+import '../../../../shared/services/notification_service.dart';
 import '../../../../shared/services/preferences_service.dart';
 import '../../../../shared/widgets/content_area.dart';
 
@@ -21,7 +23,7 @@ import '../../../../shared/widgets/content_area.dart';
 /// - Has header text and onboarding footer
 /// - Shows "Skip for now" option
 /// - Auto-imports workouts after connecting
-/// - Shows "Notify Me" for coming soon providers
+/// - Shows "Connect" for Garmin, "Notify Me" for other coming soon providers
 class ConnectedAppsScreen extends ConsumerStatefulWidget {
   const ConnectedAppsScreen({super.key, this.onContinue, this.onBack});
 
@@ -48,7 +50,6 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   final Set<String> _notifiedProviders = {};
 
   static const List<_ComingSoonProviderConfig> _comingSoonProviders = [
-    _ComingSoonProviderConfig(name: 'Garmin Connect', key: 'garmin'),
     _ComingSoonProviderConfig(name: 'TriDot', key: 'tridot'),
     _ComingSoonProviderConfig(name: 'Runna', key: 'runna'),
     _ComingSoonProviderConfig(name: 'VDOT', key: 'vdot'),
@@ -324,6 +325,21 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
         const SizedBox(height: AppSpacing.lg),
 
+        // Garmin Connect - not yet released
+        IntegrationProviderCard(
+          name: 'Garmin',
+          iconPath: isDark
+              ? 'assets/images/integrations/garmin_tag_white.png'
+              : 'assets/images/integrations/garmin_tag_black.png',
+          logoHeight: 18,
+          isAvailable: false,
+          isConnected: false,
+          isConnecting: false,
+          statusText: 'Coming soon',
+        ),
+
+        const SizedBox(height: AppSpacing.lg),
+
         ..._buildComingSoonProviders(
           context,
           ref,
@@ -435,6 +451,21 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onDisconnect: () => _disconnectTrainingPeaks(context, ref),
           showSyncButton: true,
           hasSynced: _trainingPeaksSynced,
+        ),
+
+        const SizedBox(height: AppSpacing.md),
+
+        // Garmin Connect - not yet released
+        IntegrationProviderCard(
+          name: 'Garmin',
+          iconPath: isDark
+              ? 'assets/images/integrations/garmin_tag_white.png'
+              : 'assets/images/integrations/garmin_tag_black.png',
+          logoHeight: 18,
+          isAvailable: false,
+          isConnected: false,
+          isConnecting: false,
+          statusText: 'Coming soon',
         ),
 
         const SizedBox(height: AppSpacing.md),
@@ -594,10 +625,22 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final success = await controller.connectGarmin();
 
     if (success && context.mounted) {
+      final notificationsGranted =
+          await NotificationService.requestPermissions();
+      if (!context.mounted) return;
       MealvanaSnackbar.showSuccess(
         context,
-        'Garmin Connect connected! Activities will sync automatically.',
+        notificationsGranted
+            ? 'Garmin Connect connected! Activity upload alerts are enabled.'
+            : 'Garmin Connect connected! Activities will sync automatically.',
       );
+
+      if (!notificationsGranted && context.mounted) {
+        MealvanaSnackbar.showInfo(
+          context,
+          'Enable notifications in Settings to get Garmin activity upload alerts.',
+        );
+      }
     }
   }
 
@@ -711,10 +754,22 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final success = await controller.connectGarmin();
 
     if (success && context.mounted) {
+      final notificationsGranted =
+          await NotificationService.requestPermissions();
+      if (!context.mounted) return;
       MealvanaSnackbar.showSuccess(
         context,
-        'Garmin Connect connected! Activities will sync automatically when you use your Garmin device.',
+        notificationsGranted
+            ? 'Garmin Connect connected! We will alert you when activities upload.'
+            : 'Garmin Connect connected! Activities will sync automatically when you use your Garmin device.',
       );
+
+      if (!notificationsGranted && context.mounted) {
+        MealvanaSnackbar.showInfo(
+          context,
+          'Turn on notifications later in app settings for activity upload alerts.',
+        );
+      }
     }
   }
 
@@ -746,10 +801,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
-  Future<void> _disconnectGarmin(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _disconnectGarmin(BuildContext context, WidgetRef ref) async {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     await controller.disconnectGarmin();
 
@@ -828,6 +880,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
                     color: onSurfaceVariant,
                   ),
                 ),
+                if (premiumBlocked) ...[
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onTap: () => _recheckTpWritebackEligibility(context, ref),
+                    child: Text(
+                      'Re-check account status',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.dragonfruit,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -846,6 +910,47 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _recheckTpWritebackEligibility(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final userId = ref
+        .read(connectTrainingControllerProvider.notifier)
+        .currentUserId;
+    if (userId == null) {
+      if (context.mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          'Unable to verify account right now',
+        );
+      }
+      return;
+    }
+
+    final service = await ref.read(tpWritebackServiceProvider.future);
+    final premium = await service.refreshPremiumEligibility(userId: userId);
+    ref.invalidate(preferencesServiceProvider);
+
+    if (!context.mounted) return;
+
+    if (premium == true) {
+      MealvanaSnackbar.showSuccess(
+        context,
+        'Write-back is available for this account',
+      );
+    } else if (premium == false) {
+      MealvanaSnackbar.showInfo(
+        context,
+        'TrainingPeaks reports this account as non-Premium for planned workout write-back.',
+      );
+    } else {
+      MealvanaSnackbar.showError(
+        context,
+        'Could not verify TrainingPeaks account status. Please try again.',
+      );
+    }
   }
 
   void _skipConnection(WidgetRef ref) {

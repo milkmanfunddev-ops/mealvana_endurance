@@ -2130,13 +2130,13 @@ class CoachRepository with SyncableRepository {
 
   /// Get the athlete's connected coach info.
   /// Returns null if the athlete has no active coach connection.
-  Future<({String coachUserId, String? coachName})?> getMyCoach(
+  Future<({String relationshipId, String coachUserId, String? coachName})?> getMyCoach(
     String athleteUserId,
   ) async {
     try {
       final response = await _supabase
           .from('coach_athlete_relationships')
-          .select('coach_user_id')
+          .select('id, coach_user_id')
           .eq('athlete_user_id', athleteUserId)
           .eq('status', 'active')
           .limit(1)
@@ -2144,32 +2144,48 @@ class CoachRepository with SyncableRepository {
 
       if (response == null) return null;
 
+      final relationshipId = response['id'] as String;
       final coachUserId = response['coach_user_id'] as String;
 
-      // Look up coach name
+      // Look up coach name — check coaches table first, then users table
       String? coachName;
       try {
-        final coachRow = await _supabase
-            .from('users')
-            .select('first_name, last_name, sender_name')
-            .eq('id', coachUserId)
+        // Priority 1: coaches table (where coaches register with their name)
+        final coachesRow = await _supabase
+            .from('coaches')
+            .select('first_name, last_name')
+            .eq('user_id', coachUserId)
             .maybeSingle();
 
-        if (coachRow != null) {
-          final first = coachRow['first_name'] as String?;
-          final last = coachRow['last_name'] as String?;
-          final sender = coachRow['sender_name'] as String?;
-          coachName = [
-            first,
-            last,
-          ].where((s) => s?.isNotEmpty ?? false).join(' ');
-          if (coachName.isEmpty) coachName = sender;
+        if (coachesRow != null) {
+          final first = (coachesRow['first_name'] as String?)?.trim() ?? '';
+          final last = (coachesRow['last_name'] as String?)?.trim() ?? '';
+          if (first.isNotEmpty || last.isNotEmpty) {
+            coachName = [first, last].where((s) => s.isNotEmpty).join(' ');
+          }
+        }
+
+        // Priority 2: users table
+        if (coachName == null || coachName.isEmpty) {
+          final userRow = await _supabase
+              .from('users')
+              .select('first_name, last_name, sender_name')
+              .eq('id', coachUserId)
+              .maybeSingle();
+
+          if (userRow != null) {
+            final first = (userRow['first_name'] as String?)?.trim() ?? '';
+            final last = (userRow['last_name'] as String?)?.trim() ?? '';
+            final sender = userRow['sender_name'] as String?;
+            final fullName = [first, last].where((s) => s.isNotEmpty).join(' ');
+            coachName = fullName.isNotEmpty ? fullName : sender;
+          }
         }
       } catch (_) {
         // Name lookup is best-effort
       }
 
-      return (coachUserId: coachUserId, coachName: coachName);
+      return (relationshipId: relationshipId, coachUserId: coachUserId, coachName: coachName);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get athlete coach',

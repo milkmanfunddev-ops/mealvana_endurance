@@ -1,15 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../auth/domain/user_preferences.dart';
+import '../../../../settings/presentation/providers/settings_controller.dart';
 import '../../../application/macro_explanation_service.dart';
+import '../../../application/resolved_during_target_resolver.dart';
+import '../../../domain/carb_transparency_data.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/macro_targets.dart';
+import '../../../domain/nutrition_target_overrides.dart';
+import '../../../domain/resolved_during_target.dart';
+import '../../../../../shared/domain/activity_type.dart';
+import 'carb_full_story_section.dart';
+import 'carb_tldr_section.dart';
+import 'transparency_video_section.dart';
 
 /// Bottom sheet that explains how nutrition targets were calculated for a given phase.
 ///
 /// Shows personalized calculation breakdowns per macro with formula,
 /// range rationale, and source citations. Follows the existing
 /// HelpBottomSheetWidget DraggableScrollableSheet pattern.
-class PhaseExplanationSheet extends StatefulWidget {
+///
+/// The Carbohydrates card is replaced with a rich transparency UI
+/// (TL;DR formula + video + Full Story Q&A). Fluids/Sodium keep the
+/// existing expandable card layout.
+class PhaseExplanationSheet extends ConsumerStatefulWidget {
   const PhaseExplanationSheet({
     super.key,
     required this.phase,
@@ -18,6 +34,8 @@ class PhaseExplanationSheet extends StatefulWidget {
     this.sportLabel,
     this.useImperial = false,
     this.foods,
+    this.brickSegment,
+    this.isBrick = false,
   });
 
   final ExplanationPhase phase;
@@ -26,6 +44,8 @@ class PhaseExplanationSheet extends StatefulWidget {
   final String? sportLabel;
   final bool useImperial;
   final List<FoodItemData>? foods;
+  final BrickSegmentMacroTarget? brickSegment;
+  final bool isBrick;
 
   /// Show the explanation sheet as a modal bottom sheet.
   static void show(
@@ -36,6 +56,8 @@ class PhaseExplanationSheet extends StatefulWidget {
     String? sportLabel,
     bool useImperial = false,
     List<FoodItemData>? foods,
+    BrickSegmentMacroTarget? brickSegment,
+    bool isBrick = false,
   }) {
     showModalBottomSheet<void>(
       context: context,
@@ -48,15 +70,18 @@ class PhaseExplanationSheet extends StatefulWidget {
         sportLabel: sportLabel,
         useImperial: useImperial,
         foods: foods,
+        brickSegment: brickSegment,
+        isBrick: isBrick,
       ),
     );
   }
 
   @override
-  State<PhaseExplanationSheet> createState() => _PhaseExplanationSheetState();
+  ConsumerState<PhaseExplanationSheet> createState() =>
+      _PhaseExplanationSheetState();
 }
 
-class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
+class _PhaseExplanationSheetState extends ConsumerState<PhaseExplanationSheet> {
   final _service = const MacroExplanationService();
   String? _expandedMacro;
 
@@ -69,6 +94,7 @@ class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
       macroTargets: widget.macroTargets,
       bodyWeightKg: widget.bodyWeightKg,
       useImperial: widget.useImperial,
+      brickSegment: widget.brickSegment,
     );
     if (explanations.isNotEmpty) {
       _expandedMacro = explanations.first.macroName;
@@ -103,8 +129,92 @@ class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
     };
   }
 
+  CarbTransparencyData? _getCarbTransparencyData() {
+    final settingsState = ref.read(settingsControllerProvider).value;
+    final fallbackGutTraining =
+        settingsState?.gutTrainingLevel ?? GutTraining.moderate;
+    final snapshotGutMultiplier =
+        widget.brickSegment?.gutMultiplier ??
+        widget.macroTargets.duringRun.gutMultiplier;
+    final gutMultiplier =
+        snapshotGutMultiplier ??
+        switch (fallbackGutTraining) {
+          GutTraining.low => 0.7,
+          GutTraining.moderate => 1.0,
+          GutTraining.high => 1.2,
+        };
+    final gutTrainingLabel =
+        _gutTrainingLabelFromMultiplier(snapshotGutMultiplier) ??
+        fallbackGutTraining.name;
+    final overrides = settingsState?.nutritionTargetOverrides;
+    final sport =
+        widget.brickSegment?.sport ??
+        widget.sportLabel?.toLowerCase() ??
+        'running';
+    final resolvedDuringTarget = _resolveDuringTarget(
+      overrides: overrides,
+      sportLabel: sport,
+    );
+
+    return _service.getCarbTransparencyData(
+      phase: widget.phase,
+      macroTargets: widget.macroTargets,
+      bodyWeightKg: widget.bodyWeightKg,
+      gutTrainingLabel: gutTrainingLabel,
+      gutMultiplier: gutMultiplier,
+      personalCarbTargetGPerH: resolvedDuringTarget?.settingsOverrideRateGPerH,
+      personalTargetSport: sport,
+      sportLabel: widget.sportLabel,
+      brickSegment: widget.brickSegment,
+      isBrick: widget.isBrick,
+      resolvedDuringTarget: resolvedDuringTarget,
+    );
+  }
+
+  ResolvedDuringTarget? _resolveDuringTarget({
+    required NutritionTargetOverrides? overrides,
+    required String sportLabel,
+  }) {
+    if (widget.phase != ExplanationPhase.during) return null;
+
+    if (widget.isBrick && widget.brickSegment != null) {
+      return ResolvedDuringTargetResolver.resolveForBrickSegment(
+        macroTargets: widget.macroTargets,
+        segment: widget.brickSegment!,
+        settingsOverrides: overrides,
+      );
+    }
+
+    return ResolvedDuringTargetResolver.resolveForSingleSport(
+      macroTargets: widget.macroTargets,
+      sport: _sportFromLabel(sportLabel),
+      settingsOverrides: overrides,
+    );
+  }
+
+  ActivityType _sportFromLabel(String value) {
+    final sport = value.toLowerCase();
+    if (sport.contains('run')) return ActivityType.running;
+    if (sport.contains('cycl') || sport.contains('bike')) {
+      return ActivityType.cycling;
+    }
+    if (sport.contains('swim')) return ActivityType.swimming;
+    return ActivityType.running;
+  }
+
+  String? _gutTrainingLabelFromMultiplier(double? value) {
+    if (value == null) return null;
+    if ((value - 0.7).abs() <= 0.05) return GutTraining.low.name;
+    if ((value - 1.0).abs() <= 0.05) return GutTraining.moderate.name;
+    if ((value - 1.2).abs() <= 0.05) return GutTraining.high.name;
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Watch settings for live updates after inline edits
+    ref.watch(settingsControllerProvider);
+
     final title = _service.getSheetTitle(widget.phase, widget.sportLabel);
     final actuals = _computeActuals();
     final explanations = _service.getExplanations(
@@ -113,7 +223,10 @@ class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
       bodyWeightKg: widget.bodyWeightKg,
       useImperial: widget.useImperial,
       actuals: actuals,
+      brickSegment: widget.brickSegment,
     );
+
+    final carbTransparency = _getCarbTransparencyData();
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -128,9 +241,7 @@ class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
         ),
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(15),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,10 +252,9 @@ class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -168,10 +278,18 @@ class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ...explanations.map((explanation) => _buildExplanationCard(
+                    ...explanations.map((explanation) {
+                      // Replace carbs card with transparency UI
+                      if (explanation.macroName == 'Carbohydrates' &&
+                          carbTransparency != null) {
+                        return _buildCarbTransparencyCard(
                           context,
                           explanation,
-                        )),
+                          carbTransparency,
+                        );
+                      }
+                      return _buildExplanationCard(context, explanation);
+                    }),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -180,6 +298,192 @@ class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCarbTransparencyCard(
+    BuildContext context,
+    MacroExplanation explanation,
+    CarbTransparencyData transparency,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.electrolyte.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header: "Carbohydrates" + planned/target badge (HTML design)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Accent bar + title
+                Padding(
+                  padding: const EdgeInsets.only(top: 3),
+                  child: Container(
+                    width: 3,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: AppColors.electrolyte,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 3),
+                  child: Text(
+                    'Carbohydrates',
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      fontSize: 15,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                // Target badge: planned / target + range
+                _buildTargetBadge(context, explanation, transparency),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // TL;DR formula (always visible)
+            CarbTldrSection(data: transparency),
+            const SizedBox(height: 4),
+
+            // Video accordion
+            if (transparency.videoTitle != null)
+              TransparencyVideoSection(
+                title: transparency.videoTitle!,
+                videoUrl: transparency.videoUrl,
+              ),
+
+            // Full Story accordion
+            if (transparency.storySections.isNotEmpty)
+              CarbFullStorySection(
+                data: transparency,
+                onSettingsChanged: () => setState(() {}),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds the planned/target badge matching the HTML design.
+  ///
+  /// Shows: "52g planned / 48g target" with range badge below.
+  Widget _buildTargetBadge(
+    BuildContext context,
+    MacroExplanation explanation,
+    CarbTransparencyData transparency,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dimColor = isDark
+        ? Colors.white.withValues(alpha: 0.4)
+        : Colors.black.withValues(alpha: 0.4);
+    final secondaryText = isDark
+        ? AppColors.textDarkSecondary
+        : AppColors.textLightSecondary;
+
+    final planned = explanation.actualValue;
+    final target = transparency.targetGrams != null
+        ? transparency.targetGrams!.round().toString()
+        : explanation.value;
+    final unit = explanation.unit;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // Main row: planned / target
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            if (planned != null) ...[
+              Text(
+                '$planned$unit',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  letterSpacing: -0.8,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text('planned', style: TextStyle(fontSize: 11, color: dimColor)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Text(
+                  '/',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w300,
+                    color: dimColor,
+                  ),
+                ),
+              ),
+              Text(
+                '$target$unit',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: secondaryText,
+                  letterSpacing: -0.4,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text('target', style: TextStyle(fontSize: 11, color: dimColor)),
+            ] else ...[
+              // No planned food — just show target
+              Text(
+                '$target$unit',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  letterSpacing: -0.8,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text('target', style: TextStyle(fontSize: 11, color: dimColor)),
+            ],
+          ],
+        ),
+        // Range badge
+        if (transparency.rangeLow != null && transparency.rangeHigh != null)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.electrolyte.withValues(alpha: 0.09),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: AppColors.electrolyte.withValues(alpha: 0.22),
+              ),
+            ),
+            child: Text(
+              'Recommended range: ${transparency.rangeLow!.round()}\u2013${transparency.rangeHigh!.round()}${explanation.unit}',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: AppColors.electrolyte,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -204,8 +508,9 @@ class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
       child: InkWell(
         onTap: () {
           setState(() {
-            _expandedMacro =
-                _expandedMacro == explanation.macroName ? null : explanation.macroName;
+            _expandedMacro = _expandedMacro == explanation.macroName
+                ? null
+                : explanation.macroName;
           });
         },
         borderRadius: BorderRadius.circular(12),
@@ -234,7 +539,9 @@ class _PhaseExplanationSheetState extends State<PhaseExplanationSheet> {
                             explanation.displaySubHeader!,
                             style: AppTextStyles.bodyMedium.copyWith(
                               fontSize: 13,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],

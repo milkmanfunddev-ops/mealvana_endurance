@@ -8,6 +8,7 @@ import '../domain/brick_metadata.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/domain/write_consistency.dart';
 import '../data/activities_repository.dart';
 import '../../coach_mode/data/coach_repository.dart';
 
@@ -129,9 +130,9 @@ class ActivitiesService {
       if (drafts.isEmpty) return 0;
 
       for (final draft in drafts) {
-        await (_database.delete(_database.activitiesTable)
-              ..where((tbl) => tbl.id.equals(draft.id)))
-            .go();
+        await (_database.delete(
+          _database.activitiesTable,
+        )..where((tbl) => tbl.id.equals(draft.id))).go();
       }
 
       _logger.info(
@@ -213,10 +214,7 @@ class ActivitiesService {
         _logger.debug(
           'Orphan brick activity has no segment data; keeping visible',
           context: 'ACTIVITIES_SERVICE',
-          data: {
-            'brickId': activity.id,
-            'title': activity.title,
-          },
+          data: {'brickId': activity.id, 'title': activity.title},
         );
         hydrated.add(activity);
         continue;
@@ -619,10 +617,17 @@ class ActivitiesService {
     // Brick-specific parameters
     BrickMetadata? brickMetadata,
     String? brickId,
+    WriteConsistency? consistency,
   }) async {
     try {
       // Determine the owner of the activity
       final ownerId = forUserId ?? userId;
+      final resolvedConsistency =
+          consistency ??
+          WriteConsistencyResolver.forActorAndOwner(
+            actorUserId: userId,
+            ownerUserId: ownerId,
+          );
 
       // Validate coach-athlete relationship if creating for someone else
       if (forUserId != null && forUserId != userId) {
@@ -679,9 +684,23 @@ class ActivitiesService {
         updatedAt: now,
       );
 
+      _logger.info(
+        'Resolved write consistency',
+        context: 'ACTIVITIES_SERVICE',
+        data: {
+          'entity': 'activity',
+          'operation': 'create',
+          'actorUserId': userId,
+          'ownerUserId': ownerId,
+          'consistencyMode': resolvedConsistency.value,
+        },
+      );
+
       return await _activitiesRepository.createActivity(
         deviceId: deviceId,
         activity: activity,
+        requireRemoteAck:
+            resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
     } catch (e, stackTrace) {
       _logger.error(
@@ -711,6 +730,7 @@ class ActivitiesService {
     String? intensityTarget,
     int? timeBeforeMinutes,
     String? notes,
+    WriteConsistency? consistency,
   }) async {
     return createActivity(
       deviceId: deviceId,
@@ -729,6 +749,7 @@ class ActivitiesService {
       intensityTarget: intensityTarget,
       timeBeforeMinutes: timeBeforeMinutes,
       notes: notes,
+      consistency: consistency,
     );
   }
 
@@ -748,6 +769,7 @@ class ActivitiesService {
     String? intensityTarget,
     int? timeBeforeMinutes,
     String? notes,
+    WriteConsistency? consistency,
   }) async {
     return createActivity(
       deviceId: deviceId,
@@ -764,6 +786,7 @@ class ActivitiesService {
       intensityTarget: intensityTarget,
       timeBeforeMinutes: timeBeforeMinutes,
       notes: notes,
+      consistency: consistency,
     );
   }
 
@@ -817,8 +840,17 @@ class ActivitiesService {
     required domain.Activity activity,
     String?
     currentUserId, // NEW: Current user ID (for validation if coach is editing athlete's activity)
+    WriteConsistency? consistency,
   }) async {
     try {
+      final actorUserId = currentUserId ?? activity.userId;
+      final resolvedConsistency =
+          consistency ??
+          WriteConsistencyResolver.forActorAndOwner(
+            actorUserId: actorUserId,
+            ownerUserId: activity.userId,
+          );
+
       // Validate coach-athlete relationship if editing for someone else
       if (currentUserId != null && currentUserId != activity.userId) {
         final hasActiveRelationship = await _coachRepository
@@ -842,9 +874,24 @@ class ActivitiesService {
         }
       }
 
+      _logger.info(
+        'Resolved write consistency',
+        context: 'ACTIVITIES_SERVICE',
+        data: {
+          'entity': 'activity',
+          'operation': 'update',
+          'actorUserId': actorUserId,
+          'ownerUserId': activity.userId,
+          'consistencyMode': resolvedConsistency.value,
+          'activityId': activity.id,
+        },
+      );
+
       return await _activitiesRepository.updateActivity(
         deviceId: deviceId,
         activity: activity.copyWith(updatedAt: DateTime.now()),
+        requireRemoteAck:
+            resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
     } catch (e, stackTrace) {
       _logger.error(
@@ -864,8 +911,18 @@ class ActivitiesService {
     String?
     currentUserId, // NEW: Current user ID (for validation if coach is deleting athlete's activity)
     String? activityOwnerId, // NEW: Activity owner ID (for validation)
+    WriteConsistency? consistency,
   }) async {
     try {
+      final actorUserId = currentUserId ?? deviceId;
+      final ownerUserId = activityOwnerId ?? actorUserId;
+      final resolvedConsistency =
+          consistency ??
+          WriteConsistencyResolver.forActorAndOwner(
+            actorUserId: actorUserId,
+            ownerUserId: ownerUserId,
+          );
+
       // Validate coach-athlete relationship if deleting for someone else
       if (currentUserId != null &&
           activityOwnerId != null &&
@@ -891,9 +948,25 @@ class ActivitiesService {
         }
       }
 
+      _logger.info(
+        'Resolved write consistency',
+        context: 'ACTIVITIES_SERVICE',
+        data: {
+          'entity': 'activity',
+          'operation': 'delete',
+          'actorUserId': actorUserId,
+          'ownerUserId': ownerUserId,
+          'consistencyMode': resolvedConsistency.value,
+          'activityId': activityId,
+        },
+      );
+
       await _activitiesRepository.deleteActivity(
         deviceId: deviceId,
         activityId: activityId,
+        requireRemoteAck:
+            resolvedConsistency == WriteConsistency.remoteAckRequired,
+        remoteUserId: ownerUserId,
       );
     } catch (e, stackTrace) {
       _logger.error(
@@ -904,5 +977,4 @@ class ActivitiesService {
       rethrow;
     }
   }
-
 }

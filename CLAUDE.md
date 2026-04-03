@@ -39,6 +39,7 @@ mealvana_endurance/
 - Do not hardcode user-facing strings when content/default systems exist.
 - Use `MealvanaSnackbar`; do not use raw Flutter `SnackBar` directly.
 - Preserve offline-first behavior with local-first writes and upload-state tracking.
+- For coach-on-athlete writes that require immediate cross-user visibility, require remote server acknowledgment before success/navigation.
 - Use repository-level on-demand sync (`ensureSynced`), not startup-wide sync-all.
 - Keep initialization invariant explicit: `main()` for non-recoverable setup, recoverable init in startup flow.
 - Do not run `flutter build` as assistant execution.
@@ -57,6 +58,7 @@ mealvana_endurance/
 - FOA and UI/controller boundaries: `/docs/technical/foa-architecture.md`
 - App initialization flow: `/docs/technical/andrea/andrea_initialization.txt`
 - Sync architecture and staleness model: `/docs/technical/sync-architecture.md`
+- Write consistency policy (offline-first vs remote-ack): `/docs/technical/write-consistency-policy.md`
 - Content management system: `/docs/technical/content-management.md`
 - Database architecture and schema docs: `/docs/database/README.md`
 - Business logic and nutrition systems: `/docs/business_logic/README.md`

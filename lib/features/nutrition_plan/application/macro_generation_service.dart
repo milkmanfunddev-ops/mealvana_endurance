@@ -65,7 +65,7 @@ class MacroGenerationService {
       overrides: overrides,
     );
 
-    await _cacheMacroTargets(macroTargets);
+    await _cacheMacroTargets(macroTargets, activityId: activityId);
 
     await analytics.trackPlanGenerated(
       deviceId: deviceId,
@@ -134,7 +134,7 @@ class MacroGenerationService {
       '🚴 MACRO SERVICE: Edge function returned, caching targets...',
     );
 
-    await _cacheMacroTargets(macroTargets);
+    await _cacheMacroTargets(macroTargets, activityId: activityId);
     DebugLogger.info('🚴 MACRO SERVICE: Targets cached, tracking analytics...');
 
     await analytics.trackPlanGenerated(
@@ -199,7 +199,7 @@ class MacroGenerationService {
       '🏊 MACRO SERVICE: Edge function returned, caching targets...',
     );
 
-    await _cacheMacroTargets(macroTargets);
+    await _cacheMacroTargets(macroTargets, activityId: activityId);
     DebugLogger.info('🏊 MACRO SERVICE: Targets cached, tracking analytics...');
 
     await analytics.trackPlanGenerated(
@@ -580,6 +580,16 @@ class MacroGenerationService {
           sodiumHighMg: _toDoubleOrNull(macrosData['during_sodium_high_mg']),
           fluidsLowMl: _toDoubleOrNull(macrosData['during_water_low_ml']),
           fluidsHighMl: _toDoubleOrNull(macrosData['during_water_high_ml']),
+          gutMultiplier: _toDoubleOrNull(macrosData['during_gut_multiplier']),
+          sportCeilingGPerH: _toDoubleOrNull(
+            macrosData['during_sport_ceiling_g_per_h'],
+          ),
+          rawBandLowGPerH: _toDoubleOrNull(
+            macrosData['during_raw_band_low_g_per_h'],
+          ),
+          rawBandHighGPerH: _toDoubleOrNull(
+            macrosData['during_raw_band_high_g_per_h'],
+          ),
         );
       }(),
       postRun: PostRunMacros(
@@ -698,8 +708,17 @@ class MacroGenerationService {
     return results;
   }
 
-  Future<void> _cacheMacroTargets(MacroTargets macroTargets) async {
+  Future<void> _cacheMacroTargets(
+    MacroTargets macroTargets, {
+    String? activityId,
+  }) async {
     await macroRepository.saveMacroTargets(macroTargets);
+    if (activityId != null && activityId.trim().isNotEmpty) {
+      await macroRepository.saveMacroTargetsForActivity(
+        activityId,
+        macroTargets,
+      );
+    }
   }
 
   int _calculateTotalCarbs(MacroTargets macroTargets) {

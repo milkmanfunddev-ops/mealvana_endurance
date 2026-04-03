@@ -11,6 +11,7 @@
 import { createServiceClient } from "../_shared/supabase-client.ts";
 import { jsonResponse } from "../_shared/responses.ts";
 import {
+  adjustTargetsForOverrides,
   type ActivityType,
   buildLPModel,
   type FoodResult,
@@ -125,7 +126,7 @@ function collectTransitionTargets(
     const sodiumHigh = raw.sodium_high_mg != null ? Number(raw.sodium_high_mg) : undefined;
     const waterLow = raw.water_low_ml != null ? Number(raw.water_low_ml) : undefined;
     const waterHigh = raw.water_high_ml != null ? Number(raw.water_high_ml) : undefined;
-    map.set(key, {
+    map.set(key, adjustTargetsForOverrides({
       carbs_g: Number.isFinite(carbs) ? carbs : 0,
       ...(carbsLow != null && Number.isFinite(carbsLow) && { carbs_low_g: carbsLow }),
       ...(carbsHigh != null && Number.isFinite(carbsHigh) && { carbs_high_g: carbsHigh }),
@@ -135,7 +136,7 @@ function collectTransitionTargets(
       water_ml: Number.isFinite(water) ? water : 0,
       ...(waterLow != null && Number.isFinite(waterLow) && { water_low_ml: waterLow }),
       ...(waterHigh != null && Number.isFinite(waterHigh) && { water_high_ml: waterHigh }),
-    });
+    }));
   }
   return map;
 }
@@ -319,7 +320,7 @@ export async function handleBrickPlan(
     const segment = segments[i];
     const segmentOrder = i + 1;
     const sport = segment.sport as ActivityType;
-    const segmentTargets: MacroTargets = {
+    const segmentTargets: MacroTargets = adjustTargetsForOverrides({
       carbs_g: segment.macro_targets.carbs_g,
       sodium_mg: segment.macro_targets.sodium_mg,
       water_ml: segment.macro_targets.water_ml,
@@ -335,7 +336,7 @@ export async function handleBrickPlan(
         { water_low_ml: segment.macro_targets.water_low_ml }),
       ...(segment.macro_targets.water_high_ml != null &&
         { water_high_ml: segment.macro_targets.water_high_ml }),
-    };
+    });
 
     console.log(
       `[PLAN-V3-BRICK] Segment ${segmentOrder} (${sport}): carbs=${segmentTargets.carbs_g}g, sodium=${segmentTargets.sodium_mg}mg, water=${segmentTargets.water_ml}ml`,
@@ -374,7 +375,7 @@ export async function handleBrickPlan(
     if (i < segments.length - 1) {
       const transitionName = `T${i + 1}`;
       const transitionTargets = transitionTargetOverrides.get(transitionName) ??
-        getTransitionTargets(segments, i);
+        adjustTargetsForOverrides(getTransitionTargets(segments, i));
 
       transitionTargetsList.push({
         transition_name: transitionName,

@@ -6,6 +6,7 @@ import '../app_external_deps.dart';
 import '../logging_service.dart';
 import '../sentry/sentry_reporter.dart';
 import '../analytics/analytics_tracker.dart';
+import '../notification_service.dart';
 import '../sync/sync_coordinator.dart';
 import '../../providers/user_id_provider.dart';
 import '../../core/app_router.dart';
@@ -132,6 +133,8 @@ class AuthListenerService {
       },
     );
 
+    await NotificationService.setRemotePushUserId(null);
+
     _sentry.addBreadcrumb(
       message: wasOnboardingSignOut
           ? 'Onboarding signout - preserving cached data'
@@ -224,6 +227,8 @@ class AuthListenerService {
 
   /// Handle sign-in event
   Future<void> _handleSignedIn(String userId) async {
+    await NotificationService.setRemotePushUserId(userId);
+
     _sentry.addBreadcrumb(
       message: 'User signed in',
       category: 'auth',
@@ -238,7 +243,6 @@ class AuthListenerService {
       data: {'user_id': userId},
     );
   }
-
 
   /// Dispose of the auth listener
   void dispose() {

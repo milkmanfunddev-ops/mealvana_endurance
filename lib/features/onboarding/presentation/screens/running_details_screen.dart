@@ -10,7 +10,7 @@ import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// Running Details Screen - Unified for both onboarding and settings
 ///
@@ -42,7 +42,8 @@ class RunningDetailsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
 
   @override
-  ConsumerState<RunningDetailsScreen> createState() => _RunningDetailsScreenState();
+  ConsumerState<RunningDetailsScreen> createState() =>
+      _RunningDetailsScreenState();
 }
 
 class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
@@ -62,9 +63,10 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
     final screenName = _isOnboarding
         ? 'Running Details Onboarding'
         : 'Running Details Settings';
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': screenName,
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track('screen_viewed', properties: {'screen_name': screenName});
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {
@@ -116,15 +118,18 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
 
       if (_isOnboarding) {
         // ONBOARDING MODE: Just cache data, don't save
-        controller.cacheSportPreferences(
-          giSensitivity: giSensitivity,
-        );
+        controller.cacheSportPreferences(giSensitivity: giSensitivity);
 
         // Track analytics (fire-and-forget)
-        unawaited(analytics.track('running_details_completed', properties: {
-          'runs_with_water_bottle': _runsWithWaterBottle,
-          'gi_sensitivity': giSensitivity,
-        }));
+        unawaited(
+          analytics.track(
+            'running_details_completed',
+            properties: {
+              'runs_with_water_bottle': _runsWithWaterBottle,
+              'gi_sensitivity': giSensitivity,
+            },
+          ),
+        );
 
         if (!mounted) return;
 
@@ -134,9 +139,15 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
         } else {
           // Navigate to next sport detail screen or dietary preferences
           if (widget.selectedSports.contains('cycling')) {
-            context.push('/onboarding/cycling-details', extra: widget.selectedSports);
+            context.push(
+              '/onboarding/cycling-details',
+              extra: widget.selectedSports,
+            );
           } else if (widget.selectedSports.contains('swimming')) {
-            context.push('/onboarding/swimming-details', extra: widget.selectedSports);
+            context.push(
+              '/onboarding/swimming-details',
+              extra: widget.selectedSports,
+            );
           } else {
             context.push('/onboarding/dietary-preference');
           }
@@ -157,19 +168,27 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
         if (!mounted) return;
 
         if (success) {
-          unawaited(analytics.track('running_details_changed', properties: {
-            'from': _originalRunsWithWaterBottle,
-            'to': _runsWithWaterBottle,
-            'gi_sensitivity': giSensitivity,
-            'source': 'settings',
-          }));
+          unawaited(
+            analytics.track(
+              'running_details_changed',
+              properties: {
+                'from': _originalRunsWithWaterBottle,
+                'to': _runsWithWaterBottle,
+                'gi_sensitivity': giSensitivity,
+                'source': 'settings',
+              },
+            ),
+          );
 
           if (!mounted) return;
 
           MealvanaSnackbar.showSuccess(context, 'Running details updated');
           context.pop();
         } else {
-          MealvanaSnackbar.showError(context, 'Failed to save running details. Please try again.');
+          MealvanaSnackbar.showError(
+            context,
+            'Failed to save running details. Please try again.',
+          );
         }
       }
     } finally {
@@ -185,127 +204,125 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
       return Scaffold(
         backgroundColor: AppColors.blackberry,
         body: const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.orange,
-          ),
+          child: CircularProgressIndicator(color: AppColors.orange),
         ),
       );
     }
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: AppColors.blackberry,
-      body: ContentArea.narrow(
-        child: Column(
-          children: [
-            // Progress bar for onboarding, back button for settings
-            Container(
-              color: AppColors.blackberry,
-              padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-              child: _isOnboarding
-                  ? const OnboardingProgressBar(
-                      currentSegment: 2, // Still in Sports + Details segment
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.only(top: 0, bottom: 20),
-                      child: Row(
-                        children: [
-                          GestureDetector(
-                            onTap: widget.onBack ?? () => context.pop(),
-                            child: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: AppColors.orange.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.arrow_back,
-                                color: AppColors.orange,
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Running Details',
-                            style: TextStyle(
-                              fontFamily: 'Sansita',
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.orange,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-            ),
-
-            // Content
-            Expanded(
-              child: SafeArea(
-                top: false,
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
+      contentWidth: AdaptiveContentWidth.narrow,
+      body: Column(
+        children: [
+          // Progress bar for onboarding, back button for settings
+          Container(
+            color: AppColors.blackberry,
+            padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+            child: _isOnboarding
+                ? const OnboardingProgressBar(
+                    currentSegment: 2, // Still in Sports + Details segment
+                  )
+                : Padding(
+                    padding: const EdgeInsets.only(top: 0, bottom: 20),
+                    child: Row(
                       children: [
-                        // Title
+                        GestureDetector(
+                          onTap: widget.onBack ?? () => context.pop(),
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppColors.orange.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back,
+                              color: AppColors.orange,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
                         const Text(
-                          'Running details',
+                          'Running Details',
                           style: TextStyle(
                             fontFamily: 'Sansita',
-                            fontSize: 26,
+                            fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: AppColors.orange,
-                            height: 1.0,
                           ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Subtitle
-                        const Text(
-                          'Help us estimate your hydration needs.',
-                          style: TextStyle(
-                            fontFamily: 'Apercu',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.textDark,
-                            letterSpacing: 0.192,
-                            height: 1.0,
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Water bottle toggle
-                        FigmaToggleCard(
-                          label: 'I run with a water bottle',
-                          value: _runsWithWaterBottle,
-                          onChanged: (value) => setState(() => _runsWithWaterBottle = value),
                         ),
                       ],
                     ),
                   ),
+          ),
+
+          // Content
+          Expanded(
+            child: AdaptiveScrollableBody(
+              safeAreaTop: false,
+              safeAreaBottom: false,
+              padding: const EdgeInsets.all(20),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Title
+                    const Text(
+                      'Running details',
+                      style: TextStyle(
+                        fontFamily: 'Sansita',
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.orange,
+                        height: 1.0,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Subtitle
+                    const Text(
+                      'Help us estimate your hydration needs.',
+                      style: TextStyle(
+                        fontFamily: 'Apercu',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.textDark,
+                        letterSpacing: 0.192,
+                        height: 1.0,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Water bottle toggle
+                    FigmaToggleCard(
+                      label: 'I run with a water bottle',
+                      value: _runsWithWaterBottle,
+                      onChanged: (value) =>
+                          setState(() => _runsWithWaterBottle = value),
+                    ),
+                  ],
                 ),
               ),
             ),
+          ),
 
-            // Footer navigation
-            FigmaOnboardingFooter(
-              onContinue: _continue,
-              onBack: _isOnboarding
-                  ? (widget.onBack ?? () => context.pop())
-                  : null,
-              canContinue: true,
-              isLoading: _isSaving,
-              buttonText: _isSettings ? 'Save' : 'Continue',
-              showBackButton: _isOnboarding,
-            ),
-          ],
-        ),
+          // Footer navigation
+          FigmaOnboardingFooter(
+            onContinue: _continue,
+            onBack: _isOnboarding
+                ? (widget.onBack ?? () => context.pop())
+                : null,
+            canContinue: true,
+            isLoading: _isSaving,
+            buttonText: _isSettings ? 'Save' : 'Continue',
+            showBackButton: _isOnboarding,
+          ),
+        ],
       ),
     );
   }

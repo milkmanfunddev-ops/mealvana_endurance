@@ -60,6 +60,8 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
     this.macroTargets,
     this.bodyWeightKg = 70.0,
     this.sportLabel,
+    this.brickSegment,
+    this.isBrick = false,
   });
 
   final PlanSection section;
@@ -123,6 +125,10 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
   final MacroTargets? macroTargets;
   final double bodyWeightKg;
   final String? sportLabel;
+
+  /// Brick segment data for brick workout transparency
+  final BrickSegmentMacroTarget? brickSegment;
+  final bool isBrick;
 
   @override
   ConsumerState<DuringPhaseSectionWidget> createState() =>
@@ -240,6 +246,8 @@ class _DuringPhaseSectionWidgetState
                   sportLabel: widget.sportLabel,
                   useImperial: widget.useImperial,
                   foods: widget.section.foodItems,
+                  brickSegment: widget.brickSegment,
+                  isBrick: widget.isBrick,
                 );
               },
             ),

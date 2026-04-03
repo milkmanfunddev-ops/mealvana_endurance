@@ -16,6 +16,7 @@ class IntegrationModel {
     this.providerAthleteWeightKg,
     this.providerAthleteBirthMonth,
     this.providerAthleteGender,
+    this.providerAthleteBodyFatPct,
     this.athleteZonesJson,
     this.isActive = true,
     this.lastSyncAt,
@@ -40,6 +41,8 @@ class IntegrationModel {
   final String? providerAthleteBirthMonth;
   /// Gender: 'm' for male, 'f' for female (from Training Peaks profile)
   final String? providerAthleteGender;
+  /// Body fat percentage (from Garmin body composition API)
+  final double? providerAthleteBodyFatPct;
   /// Serialized athlete zone data (HR, Speed, Power zones from Training Peaks)
   final String? athleteZonesJson;
   final bool isActive;
@@ -118,6 +121,7 @@ class IntegrationModel {
     double? providerAthleteWeightKg,
     String? providerAthleteBirthMonth,
     String? providerAthleteGender,
+    double? providerAthleteBodyFatPct,
     String? athleteZonesJson,
     bool? isActive,
     DateTime? lastSyncAt,
@@ -139,6 +143,7 @@ class IntegrationModel {
       providerAthleteWeightKg: providerAthleteWeightKg ?? this.providerAthleteWeightKg,
       providerAthleteBirthMonth: providerAthleteBirthMonth ?? this.providerAthleteBirthMonth,
       providerAthleteGender: providerAthleteGender ?? this.providerAthleteGender,
+      providerAthleteBodyFatPct: providerAthleteBodyFatPct ?? this.providerAthleteBodyFatPct,
       athleteZonesJson: athleteZonesJson ?? this.athleteZonesJson,
       isActive: isActive ?? this.isActive,
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,

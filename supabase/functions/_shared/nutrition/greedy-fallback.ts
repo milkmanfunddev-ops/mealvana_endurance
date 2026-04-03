@@ -11,7 +11,9 @@ import {
   type MacroTargets,
   type Phase,
   type PhaseSolution,
+  shouldPrioritizeMacroTarget,
 } from "./types.ts";
+import { MACRO_CONSTRAINT_RANGES } from "./constants.ts";
 
 function floorToIncrement(value: number, increment = 0.5): number {
   if (value <= 0) return 0;
@@ -74,8 +76,13 @@ export function greedyFallback(
   const proteinTarget = targets.protein_g || 0;
   const sodiumTarget = targets.sodium_mg || 0;
   const waterTarget = targets.water_ml || 0;
-  const carbHigh = targets.carbs_high_g ??
-    (carbsTarget > 0 ? carbsTarget * 1.2 : Number.POSITIVE_INFINITY);
+  const prioritizeCarbTarget = shouldPrioritizeMacroTarget(targets, "carbs");
+  const defaultCarbHigh = carbsTarget > 0
+    ? carbsTarget * (MACRO_CONSTRAINT_RANGES.carbs[phase]?.max ?? 1.2)
+    : Number.POSITIVE_INFINITY;
+  const carbHigh = prioritizeCarbTarget
+    ? defaultCarbHigh
+    : (targets.carbs_high_g ?? defaultCarbHigh);
   const proteinHigh = targets.protein_high_g ??
     (proteinTarget > 0 ? proteinTarget * 1.2 : Number.POSITIVE_INFINITY);
   const sodiumHigh = targets.sodium_high_mg ??

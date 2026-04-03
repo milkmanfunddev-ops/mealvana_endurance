@@ -24,6 +24,7 @@ class NutritionTargetOverrides {
   });
 
   final PreActivityOverrides? pre;
+
   /// Legacy unified during override. Kept for backward compatibility.
   final DuringActivityOverrides? during;
   final PostActivityOverrides? post;
@@ -100,8 +101,12 @@ class NutritionTargetOverrides {
       during: during != null ? during() : this.during,
       post: post != null ? post() : this.post,
       duringRun: duringRun != null ? duringRun() : this.duringRun,
-      duringCycling: duringCycling != null ? duringCycling() : this.duringCycling,
-      duringSwimming: duringSwimming != null ? duringSwimming() : this.duringSwimming,
+      duringCycling: duringCycling != null
+          ? duringCycling()
+          : this.duringCycling,
+      duringSwimming: duringSwimming != null
+          ? duringSwimming()
+          : this.duringSwimming,
       duringBrick: duringBrick != null ? duringBrick() : this.duringBrick,
     );
   }
@@ -125,26 +130,31 @@ class NutritionTargetOverrides {
           : null,
       during: json['during'] != null
           ? DuringActivityOverrides.fromJson(
-              json['during'] as Map<String, dynamic>)
+              json['during'] as Map<String, dynamic>,
+            )
           : null,
       post: json['post'] != null
           ? PostActivityOverrides.fromJson(json['post'] as Map<String, dynamic>)
           : null,
       duringRun: json['duringRun'] != null
           ? DuringActivityOverrides.fromJson(
-              json['duringRun'] as Map<String, dynamic>)
+              json['duringRun'] as Map<String, dynamic>,
+            )
           : null,
       duringCycling: json['duringCycling'] != null
           ? DuringActivityOverrides.fromJson(
-              json['duringCycling'] as Map<String, dynamic>)
+              json['duringCycling'] as Map<String, dynamic>,
+            )
           : null,
       duringSwimming: json['duringSwimming'] != null
           ? DuringActivityOverrides.fromJson(
-              json['duringSwimming'] as Map<String, dynamic>)
+              json['duringSwimming'] as Map<String, dynamic>,
+            )
           : null,
       duringBrick: json['duringBrick'] != null
           ? DuringActivityOverrides.fromJson(
-              json['duringBrick'] as Map<String, dynamic>)
+              json['duringBrick'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -181,8 +191,14 @@ class NutritionTargetOverrides {
 
   @override
   int get hashCode => Object.hash(
-        pre, during, post, duringRun, duringCycling, duringSwimming, duringBrick,
-      );
+    pre,
+    during,
+    post,
+    duringRun,
+    duringCycling,
+    duringSwimming,
+    duringBrick,
+  );
 
   /// Convert to flat map matching the edge function's `NutritionOverrides` interface.
   ///
@@ -212,6 +228,44 @@ class NutritionTargetOverrides {
       if (post?.sodiumMg != null) 'post_sodium_mg': post!.sodiumMg,
       if (post?.fluidMl != null) 'post_water_ml': post!.fluidMl,
     };
+  }
+
+  /// Convert to edge payload for brick generation.
+  ///
+  /// Includes legacy/global during keys for compatibility and sport-specific
+  /// carb-rate keys so brick segments can apply run/bike/swim overrides.
+  Map<String, dynamic> toBrickEdgeFunctionPayload({Set<ActivityType>? sports}) {
+    final payload = toEdgeFunctionPayload(sport: ActivityType.brick);
+    final supportedSports = sports == null || sports.isEmpty
+        ? const {
+            ActivityType.running,
+            ActivityType.cycling,
+            ActivityType.swimming,
+          }
+        : sports;
+
+    if (supportedSports.contains(ActivityType.running)) {
+      final runningRate = getDuring(ActivityType.running)?.carbRateGPerH;
+      if (runningRate != null) {
+        payload['running_carb_rate_g_per_h'] = runningRate;
+      }
+    }
+
+    if (supportedSports.contains(ActivityType.cycling)) {
+      final cyclingRate = getDuring(ActivityType.cycling)?.carbRateGPerH;
+      if (cyclingRate != null) {
+        payload['cycling_carb_rate_g_per_h'] = cyclingRate;
+      }
+    }
+
+    if (supportedSports.contains(ActivityType.swimming)) {
+      final swimmingRate = getDuring(ActivityType.swimming)?.carbRateGPerH;
+      if (swimmingRate != null) {
+        payload['swimming_carb_rate_g_per_h'] = swimmingRate;
+      }
+    }
+
+    return payload;
   }
 
   @override
@@ -322,12 +376,15 @@ class DuringActivityOverrides {
     double? Function()? fluidRateMlPerH,
   }) {
     return DuringActivityOverrides(
-      carbRateGPerH:
-          carbRateGPerH != null ? carbRateGPerH() : this.carbRateGPerH,
-      sodiumRateMgPerH:
-          sodiumRateMgPerH != null ? sodiumRateMgPerH() : this.sodiumRateMgPerH,
-      fluidRateMlPerH:
-          fluidRateMlPerH != null ? fluidRateMlPerH() : this.fluidRateMlPerH,
+      carbRateGPerH: carbRateGPerH != null
+          ? carbRateGPerH()
+          : this.carbRateGPerH,
+      sodiumRateMgPerH: sodiumRateMgPerH != null
+          ? sodiumRateMgPerH()
+          : this.sodiumRateMgPerH,
+      fluidRateMlPerH: fluidRateMlPerH != null
+          ? fluidRateMlPerH()
+          : this.fluidRateMlPerH,
     );
   }
 
@@ -380,10 +437,7 @@ class PostActivityOverrides {
   final double? fluidMl;
 
   bool get hasAnyOverride =>
-      carbsG != null ||
-      proteinG != null ||
-      sodiumMg != null ||
-      fluidMl != null;
+      carbsG != null || proteinG != null || sodiumMg != null || fluidMl != null;
 
   PostActivityOverrides copyWith({
     double? Function()? carbsG,
@@ -484,11 +538,20 @@ class NutritionTargetGuardrails {
     if (d == null) return null;
     return DuringActivityOverrides(
       carbRateGPerH: clamp(
-          d.carbRateGPerH, duringMinCarbRateGPerH, duringMaxCarbRateGPerH),
-      sodiumRateMgPerH: clamp(d.sodiumRateMgPerH, duringMinSodiumRateMgPerH,
-          duringMaxSodiumRateMgPerH),
+        d.carbRateGPerH,
+        duringMinCarbRateGPerH,
+        duringMaxCarbRateGPerH,
+      ),
+      sodiumRateMgPerH: clamp(
+        d.sodiumRateMgPerH,
+        duringMinSodiumRateMgPerH,
+        duringMaxSodiumRateMgPerH,
+      ),
       fluidRateMlPerH: clamp(
-          d.fluidRateMlPerH, duringMinFluidRateMlPerH, duringMaxFluidRateMlPerH),
+        d.fluidRateMlPerH,
+        duringMinFluidRateMlPerH,
+        duringMaxFluidRateMlPerH,
+      ),
     );
   }
 
@@ -499,12 +562,21 @@ class NutritionTargetGuardrails {
           ? PreActivityOverrides(
               carbsG: clamp(overrides.pre!.carbsG, preMinCarbsG, preMaxCarbsG),
               proteinG: clamp(
-                  overrides.pre!.proteinG, preMinProteinG, preMaxProteinG),
+                overrides.pre!.proteinG,
+                preMinProteinG,
+                preMaxProteinG,
+              ),
               fatG: clamp(overrides.pre!.fatG, preMinFatG, preMaxFatG),
               sodiumMg: clamp(
-                  overrides.pre!.sodiumMg, preMinSodiumMg, preMaxSodiumMg),
+                overrides.pre!.sodiumMg,
+                preMinSodiumMg,
+                preMaxSodiumMg,
+              ),
               fluidMl: clamp(
-                  overrides.pre!.fluidMl, preMinFluidMl, preMaxFluidMl),
+                overrides.pre!.fluidMl,
+                preMinFluidMl,
+                preMaxFluidMl,
+              ),
             )
           : null,
       during: _clampDuring(overrides.during),
@@ -514,14 +586,26 @@ class NutritionTargetGuardrails {
       duringBrick: _clampDuring(overrides.duringBrick),
       post: overrides.post != null
           ? PostActivityOverrides(
-              carbsG:
-                  clamp(overrides.post!.carbsG, postMinCarbsG, postMaxCarbsG),
+              carbsG: clamp(
+                overrides.post!.carbsG,
+                postMinCarbsG,
+                postMaxCarbsG,
+              ),
               proteinG: clamp(
-                  overrides.post!.proteinG, postMinProteinG, postMaxProteinG),
+                overrides.post!.proteinG,
+                postMinProteinG,
+                postMaxProteinG,
+              ),
               sodiumMg: clamp(
-                  overrides.post!.sodiumMg, postMinSodiumMg, postMaxSodiumMg),
+                overrides.post!.sodiumMg,
+                postMinSodiumMg,
+                postMaxSodiumMg,
+              ),
               fluidMl: clamp(
-                  overrides.post!.fluidMl, postMinFluidMl, postMaxFluidMl),
+                overrides.post!.fluidMl,
+                postMinFluidMl,
+                postMaxFluidMl,
+              ),
             )
           : null,
     );

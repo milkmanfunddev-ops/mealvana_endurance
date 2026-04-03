@@ -7,6 +7,7 @@ import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../utils/sync_type_converters.dart';
 import '../../logging_service.dart';
+import '../../notification_service.dart';
 
 part 'activity_sync_handler.g.dart';
 
@@ -28,9 +29,15 @@ class ActivitySyncHandler {
 
   final AppDatabase _database;
   final AppLogger _logger;
+  static const Duration _garminNotificationFreshnessWindow = Duration(
+    minutes: 30,
+  );
 
   /// Upsert an activity from remote data.
-  Future<void> upsertActivity(Map<String, dynamic> data) async {
+  Future<void> upsertActivity(
+    Map<String, dynamic> data, {
+    bool enableNotifications = true,
+  }) async {
     try {
       final activityId = SyncTypeConverters.toRequiredStringId(
         data['id'],
@@ -46,6 +53,10 @@ class ActivitySyncHandler {
       )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
 
       final supabaseUpdatedAt = DateTime.parse(data['updated_at'] as String);
+      final incomingStatus = (data['status'] as String? ?? 'planned').trim();
+      final incomingProvider = (data['synced_from_provider'] as String?)
+          ?.toLowerCase()
+          .trim();
 
       // CRITICAL: Preserve local data if it has pending changes (needsUpload = true)
       // Phone data is the source of truth - never overwrite local changes
@@ -106,6 +117,7 @@ class ActivitySyncHandler {
           nutritionPlanData: Value(
             _encodeJsonIfNeeded(data['nutrition_plan_data']),
           ),
+          fuelLogData: Value(_encodeJsonIfNeeded(data['fuel_log_data'])),
           brickMetadata: Value(_encodeJsonIfNeeded(data['brick_metadata'])),
           brickId: Value(data['brick_id'] as String?),
           notes: Value(data['notes'] as String?),
@@ -116,6 +128,30 @@ class ActivitySyncHandler {
         await _database
             .into(_database.activitiesTable)
             .insert(companion, mode: InsertMode.insertOrReplace);
+
+        // Notify when Garmin push marks an activity as newly completed.
+        // We intentionally only notify for fresh server updates to avoid
+        // spamming users on historical backfills or first-time full syncs.
+        if (enableNotifications &&
+            _shouldNotifyGarminCompletion(
+              existingActivity: existingActivity,
+              incomingProvider: incomingProvider,
+              incomingStatus: incomingStatus,
+              supabaseUpdatedAt: supabaseUpdatedAt,
+            ) &&
+            !NotificationService.isRemotePushConfigured) {
+          final title = (data['title'] as String?)?.trim();
+          final scheduledAt = DateTime.parse(
+            data['scheduled_date_time'] as String,
+          );
+
+          await NotificationService.showActivityUploadedNotification(
+            activityId: activityId,
+            title: title == null || title.isEmpty ? 'Workout uploaded' : title,
+            activityDate: scheduledAt,
+            provider: 'Garmin',
+          );
+        }
       }
     } catch (e, stackTrace) {
       _logger.error(
@@ -128,11 +164,42 @@ class ActivitySyncHandler {
     }
   }
 
+  bool _shouldNotifyGarminCompletion({
+    required Activity? existingActivity,
+    required String? incomingProvider,
+    required String incomingStatus,
+    required DateTime supabaseUpdatedAt,
+  }) {
+    if (incomingProvider != 'garmin' || incomingStatus != 'completed') {
+      return false;
+    }
+
+    final wasAlreadyGarminCompleted =
+        existingActivity != null &&
+        existingActivity.syncedFromProvider == 'garmin' &&
+        existingActivity.status == 'completed';
+    if (wasAlreadyGarminCompleted) {
+      return false;
+    }
+
+    // Freshness gate to avoid noisy notifications from historical sync data.
+    final nowUtc = DateTime.now().toUtc();
+    final updatedAtUtc = supabaseUpdatedAt.toUtc();
+    final age = nowUtc.difference(updatedAtUtc);
+    if (age.isNegative) {
+      return age.abs() <= _garminNotificationFreshnessWindow;
+    }
+    return age <= _garminNotificationFreshnessWindow;
+  }
+
   /// Sync multiple athlete activities (for coach view).
   Future<void> syncAthleteActivities(List<dynamic> activities) async {
     try {
       for (final activityData in activities) {
-        await upsertActivity(activityData as Map<String, dynamic>);
+        await upsertActivity(
+          activityData as Map<String, dynamic>,
+          enableNotifications: false,
+        );
       }
 
       _logger.info(
@@ -183,6 +250,7 @@ class ActivitySyncHandler {
       'completion_rating': activity.completionRating,
       'completion_notes': activity.completionNotes,
       'nutrition_plan_data': _decodeJsonIfNeeded(activity.nutritionPlanData),
+      'fuel_log_data': _decodeJsonIfNeeded(activity.fuelLogData),
       'synced_from_provider': activity.syncedFromProvider,
       'provider_workout_id': activity.providerWorkoutId,
       'provider_workout_url': activity.providerWorkoutUrl,

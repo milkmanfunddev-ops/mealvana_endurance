@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-import '../utils/platform_io.dart' if (dart.library.html) '../utils/platform_web.dart';
+import '../utils/platform_io.dart'
+    if (dart.library.html) '../utils/platform_web.dart';
 import 'analytics/analytics_events.dart';
 import 'analytics/analytics_tracker.dart';
 
@@ -11,11 +13,28 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
+  static bool _isOneSignalInitialized = false;
   static String? _pendingNavigationActivityId;
+  static String? _pendingRemoteUserId;
+  static String? _lastSyncedRemoteUserId;
+  static void Function(String activityId)? _navigationHandler;
   static AnalyticsTracker _analytics = const NoopAnalyticsTracker();
+  static String _oneSignalAppId = '';
 
-  static void configure(AnalyticsTracker tracker) {
+  static void configure(
+    AnalyticsTracker tracker, {
+    String oneSignalAppId = '',
+  }) {
     _analytics = tracker;
+    _oneSignalAppId = oneSignalAppId.trim();
+  }
+
+  static bool get isRemotePushConfigured => _oneSignalAppId.isNotEmpty;
+
+  /// Registers a callback for notification-tap deep linking.
+  /// If no handler is set, taps are stored as pending navigation.
+  static void setNavigationHandler(void Function(String activityId)? handler) {
+    _navigationHandler = handler;
   }
 
   static Future<void> initialize() async {
@@ -40,7 +59,9 @@ class NotificationService {
       requestSoundPermission: false,
     );
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/launcher_icon');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/launcher_icon',
+    );
 
     const initializationSettings = InitializationSettings(
       android: androidSettings,
@@ -52,14 +73,105 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
+    // Handle cold-start launches from notification taps.
+    final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+    final launchResponse = launchDetails?.notificationResponse;
+    final launchPayload = launchResponse?.payload;
+    if (launchDetails?.didNotificationLaunchApp == true &&
+        launchPayload != null &&
+        launchPayload.isNotEmpty) {
+      _handleNotificationPayload(launchPayload);
+    }
+
+    await _initializeOneSignal();
+
     _isInitialized = true;
+  }
+
+  static Future<void> _initializeOneSignal() async {
+    if (_oneSignalAppId.isEmpty || _isOneSignalInitialized || kIsWeb) {
+      return;
+    }
+
+    try {
+      OneSignal.initialize(_oneSignalAppId);
+      OneSignal.Notifications.addClickListener((event) {
+        final data = event.notification.additionalData;
+        if (data == null) return;
+        _handleRemoteNotificationData(data);
+      });
+
+      _isOneSignalInitialized = true;
+      await _syncRemotePushUserIdentity();
+    } catch (e) {
+      debugPrint('OneSignal init failed: $e');
+    }
+  }
+
+  static void _handleRemoteNotificationData(Map<String, dynamic> data) {
+    final payload = data['payload']?.toString();
+    if (payload != null && payload.isNotEmpty) {
+      _handleNotificationPayload(payload);
+      return;
+    }
+
+    final activityId =
+        data['activityId']?.toString() ??
+        data['activity_id']?.toString() ??
+        data['id']?.toString();
+    if (activityId == null || activityId.isEmpty) return;
+
+    final type = data['type']?.toString().trim();
+    if (type != null && type.isNotEmpty) {
+      _handleNotificationPayload('$type:$activityId');
+      return;
+    }
+
+    _handleNotificationPayload('activity:$activityId');
+  }
+
+  /// Syncs Supabase auth user id to OneSignal external id.
+  /// This allows server-side targeting with include_aliases.external_id.
+  static Future<void> setRemotePushUserId(String? userId) async {
+    final normalized = userId?.trim();
+    _pendingRemoteUserId = (normalized == null || normalized.isEmpty)
+        ? null
+        : normalized;
+
+    if (!_isInitialized || !_isOneSignalInitialized) {
+      return;
+    }
+
+    await _syncRemotePushUserIdentity();
+  }
+
+  static Future<void> _syncRemotePushUserIdentity() async {
+    if (!_isOneSignalInitialized || kIsWeb) return;
+
+    final targetUserId = _pendingRemoteUserId;
+    if (targetUserId == _lastSyncedRemoteUserId) {
+      return;
+    }
+
+    try {
+      if (targetUserId == null) {
+        OneSignal.logout();
+      } else {
+        OneSignal.login(targetUserId);
+      }
+      _lastSyncedRemoteUserId = targetUserId;
+    } catch (e) {
+      debugPrint('OneSignal user identity sync failed: $e');
+    }
   }
 
   /// Creates notification channels for Android 8.0+ (API 26+)
   /// Required for notifications to work on Android
   static Future<void> _createAndroidNotificationChannels() async {
     final androidPlugin = _plugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     if (androidPlugin == null) return;
 
@@ -96,21 +208,76 @@ class NotificationService {
       showBadge: true,
     );
 
+    // Completed activity uploads from connected providers (Garmin, etc.)
+    const activityUploadsChannel = AndroidNotificationChannel(
+      'activity_upload_notifications',
+      'Activity Upload Notifications',
+      description: 'Alerts when completed activities are synced into Mealvana',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+    );
+
     await androidPlugin.createNotificationChannel(nutritionRemindersChannel);
     await androidPlugin.createNotificationChannel(carbLoadingChannel);
     await androidPlugin.createNotificationChannel(generalChannel);
+    await androidPlugin.createNotificationChannel(activityUploadsChannel);
   }
 
   static void _onNotificationTapped(NotificationResponse response) {
     if (response.payload == null) return;
 
-    final activityId = response.payload!;
-    if (activityId.isEmpty) return;
+    final payload = response.payload!;
+    if (payload.isEmpty) return;
 
+    _handleNotificationPayload(payload);
+  }
+
+  static void _handleNotificationPayload(String payload) {
+    if (payload.isEmpty) return;
+
+    // Typed payload format: "<type>:<activityId>"
+    final separatorIndex = payload.indexOf(':');
+    if (separatorIndex > 0 && separatorIndex < payload.length - 1) {
+      final type = payload.substring(0, separatorIndex);
+      final activityId = payload.substring(separatorIndex + 1);
+      if (activityId.isEmpty) return;
+
+      if (type == 'reminder') {
+        _analytics.trackReminderClicked(
+          deviceId: 'unknown', // Will be set properly when app identifies user
+          activityId: activityId,
+        );
+      } else if (type == 'activity') {
+        _analytics.track(
+          'activity_upload_notification_clicked',
+          properties: {
+            'device_id': 'unknown',
+            'activity_id': activityId,
+            'timestamp': DateTime.now().toIso8601String(),
+          },
+        );
+      }
+
+      _dispatchNavigation(activityId);
+      return;
+    }
+
+    // Legacy payload compatibility: raw activityId (treated as reminder)
     _analytics.trackReminderClicked(
       deviceId: 'unknown', // Will be set properly when app identifies user
-      activityId: activityId,
+      activityId: payload,
     );
+    _dispatchNavigation(payload);
+  }
+
+  static void _dispatchNavigation(String activityId) {
+    final handler = _navigationHandler;
+    if (handler != null) {
+      handler(activityId);
+      return;
+    }
     _pendingNavigationActivityId = activityId;
   }
 
@@ -126,7 +293,9 @@ class NotificationService {
 
     if (!kIsWeb && PlatformInfo.isIOS) {
       final iosPlugin = _plugin
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
       if (iosPlugin != null) {
         return await iosPlugin.requestPermissions(
               alert: true,
@@ -138,11 +307,14 @@ class NotificationService {
     } else if (!kIsWeb && PlatformInfo.isAndroid) {
       // Android 13+ (API 33+) requires runtime permission for notifications
       final androidPlugin = _plugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       if (androidPlugin != null) {
         // Request POST_NOTIFICATIONS permission (Android 13+)
         final granted = await androidPlugin.requestNotificationsPermission();
-        return granted ?? true; // Pre-Android 13 doesn't need permission, returns null
+        return granted ??
+            true; // Pre-Android 13 doesn't need permission, returns null
       }
     }
 
@@ -161,18 +333,23 @@ class NotificationService {
 
     if (!kIsWeb && PlatformInfo.isIOS) {
       final iosPlugin = _plugin
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
       if (iosPlugin != null) {
         final result = await iosPlugin.checkPermissions();
         return result?.isEnabled ?? false;
       }
     } else if (!kIsWeb && PlatformInfo.isAndroid) {
       final androidPlugin = _plugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       if (androidPlugin != null) {
         // Check if notifications are enabled (Android 13+)
         final enabled = await androidPlugin.areNotificationsEnabled();
-        return enabled ?? true; // Pre-Android 13 always returns null (no permission needed)
+        return enabled ??
+            true; // Pre-Android 13 always returns null (no permission needed)
       }
     }
 
@@ -204,7 +381,8 @@ class NotificationService {
       android: AndroidNotificationDetails(
         'nutrition_plan_reminders',
         'Nutrition Plan Reminders',
-        channelDescription: 'Reminders for your nutrition plans and upcoming activities',
+        channelDescription:
+            'Reminders for your nutrition plans and upcoming activities',
         importance: Importance.high,
         priority: Priority.high,
         playSound: true,
@@ -245,7 +423,7 @@ class NotificationService {
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-          payload: activityId?.toString(),
+        payload: activityId != null ? 'reminder:$activityId' : null,
       );
     } else {
       await _plugin.zonedSchedule(
@@ -255,9 +433,77 @@ class NotificationService {
         scheduledTZ,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          payload: activityId?.toString(),
+        payload: activityId != null ? 'reminder:$activityId' : null,
       );
     }
+  }
+
+  /// Shows an immediate local notification when a completed activity
+  /// is uploaded from Garmin (or another push-based provider).
+  static Future<void> showActivityUploadedNotification({
+    required String activityId,
+    required String title,
+    required DateTime activityDate,
+    String provider = 'Garmin',
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    if (kIsWeb) {
+      return;
+    }
+
+    final hasPermission = await areNotificationsEnabled();
+    if (!hasPermission) {
+      return;
+    }
+
+    final month = activityDate.month.toString().padLeft(2, '0');
+    final day = activityDate.day.toString().padLeft(2, '0');
+    final year = activityDate.year.toString();
+    final activityDateText = '$month/$day/$year';
+
+    final notificationDetails = NotificationDetails(
+      android: const AndroidNotificationDetails(
+        'activity_upload_notifications',
+        'Activity Upload Notifications',
+        channelDescription:
+            'Alerts when completed activities are synced into Mealvana',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+        showWhen: true,
+      ),
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+
+    final body = 'A workout for $activityDateText was uploaded from $provider.';
+
+    await _plugin.show(
+      // Stable-ish positive int for this activity ID
+      activityId.hashCode & 0x7fffffff,
+      title,
+      body,
+      notificationDetails,
+      payload: 'activity:$activityId',
+    );
+
+    await _analytics.track(
+      'activity_upload_notification_shown',
+      properties: {
+        'device_id': 'unknown',
+        'activity_id': activityId,
+        'provider': provider.toLowerCase(),
+        'activity_date': activityDateText,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   static Future<void> cancelAllReminders() async {
@@ -268,7 +514,8 @@ class NotificationService {
     await _plugin.cancelAll();
   }
 
-  static Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+  static Future<List<PendingNotificationRequest>>
+  getPendingNotifications() async {
     if (!_isInitialized) {
       await initialize();
     }

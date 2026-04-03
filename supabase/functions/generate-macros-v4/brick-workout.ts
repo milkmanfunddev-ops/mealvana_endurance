@@ -23,6 +23,7 @@ import {
   calculatePostWorkoutHydration,
   getIntensityDistribution,
   type MacroInputV4,
+  type NutritionOverrides,
 } from "./single-sport.ts";
 import { calculatePreWorkoutTargets } from "./pre-workout.ts";
 
@@ -35,6 +36,7 @@ export interface BrickSegmentInput {
   order: number;
   duration_minutes: number;
   intensity: string;
+  override_carb_rate_g_per_h?: number;
   distance_meters?: number;
   pace_per_100m_seconds?: number;
   pool_or_open_water?: string;
@@ -113,6 +115,35 @@ function getSegmentDistanceMiles(segment: BrickSegmentInput): number {
   return 0;
 }
 
+function resolveBrickSegmentCarbRateOverride(
+  segment: BrickSegmentInput,
+  overrides?: NutritionOverrides,
+): number | undefined {
+  if (
+    segment.override_carb_rate_g_per_h !== undefined &&
+    segment.override_carb_rate_g_per_h > 0
+  ) {
+    return segment.override_carb_rate_g_per_h;
+  }
+
+  if (!overrides) return undefined;
+
+  const sportSpecificKey = `${segment.sport}_carb_rate_g_per_h` as keyof NutritionOverrides;
+  const sportSpecificValue = overrides[sportSpecificKey];
+  if (typeof sportSpecificValue === "number" && sportSpecificValue > 0) {
+    return sportSpecificValue;
+  }
+
+  if (
+    overrides.during_carb_rate_g_per_h !== undefined &&
+    overrides.during_carb_rate_g_per_h > 0
+  ) {
+    return overrides.during_carb_rate_g_per_h;
+  }
+
+  return undefined;
+}
+
 // ============================================================================
 // MAIN BRICK CALCULATION
 // ============================================================================
@@ -127,6 +158,7 @@ export function calculateBrickMacrosV4(
   const sweatRateCategory = input.sweat_rate_category || "medium";
   const sweatSodiumCat = input.sweat_sodium || "medium";
   const gutTraining = input.gut_training || "moderate";
+  const ov = input.overrides;
   const [_envMultiplier, envLabel] = classifyEnvironment(
     input.temp_c ?? null,
     input.humidity_pct ?? null,
@@ -144,6 +176,8 @@ export function calculateBrickMacrosV4(
     sport: string;
     duration_minutes: number;
     carbs_g: number;
+    carbs_low_g: number;
+    carbs_high_g: number;
     carbs_rate_g_per_h: number;
     protein_g: number;
     fat_g: number;
@@ -154,12 +188,22 @@ export function calculateBrickMacrosV4(
     water_low_ml: number;
     water_high_ml: number;
     food_categories: string[];
+    // Transparency fields
+    raw_band_low_g_per_h: number;
+    raw_band_high_g_per_h: number;
+    scaled_band_low_g_per_h: number;
+    scaled_band_high_g_per_h: number;
+    gut_multiplier: number;
+    sport_ceiling_g_per_h: number;
+    brick_penalty: number;
+    cumulative_duration_min: number;
   }> = [];
 
   let totalGrossCalories = 0;
   let totalNetCalories = 0;
   let totalDistanceKm = 0;
   let totalDistanceMi = 0;
+  let cumulativeDurationMin = 0;
 
   for (let segIdx = 0; segIdx < segments.length; segIdx++) {
     const segment = segments[segIdx];
@@ -170,6 +214,8 @@ export function calculateBrickMacrosV4(
     const intensityDist = input.intensity_distribution
       ? getIntensityDistribution(input.intensity_distribution, met)
       : intensityDistFromLabel(segment.intensity || "moderate");
+
+    cumulativeDurationMin += durationMin;
 
     const prevSport = segIdx > 0 ? segments[segIdx - 1].sport : null;
     const brickPenalty = (sport === "running" && prevSport === "cycling")
@@ -196,6 +242,8 @@ export function calculateBrickMacrosV4(
         sport,
         duration_minutes: durationMin,
         carbs_g: 0,
+        carbs_low_g: 0,
+        carbs_high_g: 0,
         carbs_rate_g_per_h: 0,
         protein_g: 0,
         fat_g: 0,
@@ -206,6 +254,15 @@ export function calculateBrickMacrosV4(
         water_low_ml: 0,
         water_high_ml: 0,
         food_categories: ["during_swimming"],
+        // Transparency fields — zeroed for swim
+        raw_band_low_g_per_h: 0,
+        raw_band_high_g_per_h: 0,
+        scaled_band_low_g_per_h: 0,
+        scaled_band_high_g_per_h: 0,
+        gut_multiplier: 0,
+        sport_ceiling_g_per_h: 0,
+        brick_penalty: 1.0,
+        cumulative_duration_min: cumulativeDurationMin,
       });
     } else {
       // Use total brick duration for carb band lookup so each segment's
@@ -223,13 +280,25 @@ export function calculateBrickMacrosV4(
         input.temp_c ?? null,
         input.humidity_pct ?? null,
       );
-      const adjustedCarbRate = carbResult.rate_gph * brickPenalty;
+      const segmentCarbRateOverride = resolveBrickSegmentCarbRateOverride(
+        segment,
+        ov,
+      );
+      const adjustedCarbRate = segmentCarbRateOverride !== undefined
+        ? segmentCarbRateOverride
+        : (carbResult.rate_gph * brickPenalty);
+
+      // Per-segment carb ranges based on scaled band ± brick penalty
+      const segCarbsLow = Math.round(carbResult.band_low * brickPenalty * durationH);
+      const segCarbsHigh = Math.round(carbResult.band_high * brickPenalty * durationH);
 
       duringSegments.push({
         segment_order: segment.order,
         sport,
         duration_minutes: durationMin,
         carbs_g: Math.round(adjustedCarbRate * durationH),
+        carbs_low_g: segCarbsLow,
+        carbs_high_g: segCarbsHigh,
         carbs_rate_g_per_h: Math.round(adjustedCarbRate * 10) / 10,
         protein_g: 0,
         fat_g: 0,
@@ -240,6 +309,15 @@ export function calculateBrickMacrosV4(
         water_low_ml: Math.round(hydrationResult.hydration_total_ml * 0.85),
         water_high_ml: Math.round(hydrationResult.hydration_total_ml * 1.15),
         food_categories: [`during_${sport}`],
+        // Transparency fields
+        raw_band_low_g_per_h: carbResult.raw_band_low,
+        raw_band_high_g_per_h: carbResult.raw_band_high,
+        scaled_band_low_g_per_h: carbResult.band_low,
+        scaled_band_high_g_per_h: carbResult.band_high,
+        gut_multiplier: carbResult.gut_multiplier,
+        sport_ceiling_g_per_h: carbResult.sport_ceiling,
+        brick_penalty: brickPenalty,
+        cumulative_duration_min: cumulativeDurationMin,
       });
     }
   }

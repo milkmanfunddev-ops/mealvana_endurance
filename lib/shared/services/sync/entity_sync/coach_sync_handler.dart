@@ -121,6 +121,7 @@ class CoachSyncHandler {
             .select('*, nutrition_plan_data')
             .eq('user_id', athleteUserId)
             .isFilter('deleted_at', null)
+            .isFilter('provider_deleted_at', null)
             .order('scheduled_date_time', ascending: false),
         _supabase
             .from('carb_loading_plans')

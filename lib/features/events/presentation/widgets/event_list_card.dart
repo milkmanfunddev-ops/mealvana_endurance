@@ -33,7 +33,11 @@ class EventListCard extends StatelessWidget {
     // Determine if past/upcoming based on provided eventDate
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final eventDateOnly = DateTime(eventDate.year, eventDate.month, eventDate.day);
+    final eventDateOnly = DateTime(
+      eventDate.year,
+      eventDate.month,
+      eventDate.day,
+    );
     final isPast = eventDateOnly.isBefore(today);
 
     return Dismissible(
@@ -105,9 +109,7 @@ class EventListCard extends StatelessWidget {
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => EventDetailScreen(
-                eventId: event.id,
-              ),
+              builder: (context) => EventDetailScreen(eventId: event.id),
             ),
           );
         },
@@ -140,7 +142,8 @@ class EventListCard extends StatelessWidget {
                 children: [
                   Text(
                     event.eventName ?? event.formattedEventType,
-                    style: AppTextStyles.activityTitle.copyWith(
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w600,
                       color: isPast
                           ? Theme.of(context).colorScheme.onSurfaceVariant
                           : Theme.of(context).colorScheme.onSurface,
@@ -158,9 +161,13 @@ class EventListCard extends StatelessWidget {
                         const SizedBox(width: AppSpacing.xxs),
                         Expanded(
                           child: Text(
-                            LocationFormatter.parseAndFormatCityState(event.location),
+                            LocationFormatter.parseAndFormatCityState(
+                              event.location,
+                            ),
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -181,7 +188,9 @@ class EventListCard extends StatelessWidget {
                         Text(
                           'Goal: ${event.formattedGoalTime}',
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],

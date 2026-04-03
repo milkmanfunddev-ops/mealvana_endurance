@@ -6,7 +6,7 @@
 
 import solver from 'https://esm.sh/javascript-lp-solver@0.4.24?target=deno';
 import { roundToIncrement } from '../utils.ts';
-import { type Food, type Phase, type MacroTargets, type PhaseSolution, type LPModel, type LPSolution, deriveTimingCategory } from './types.ts';
+import { type Food, type Phase, type MacroTargets, type PhaseSolution, type LPModel, type LPSolution, deriveTimingCategory, shouldPrioritizeMacroTarget } from './types.ts';
 import { MACRO_CONSTRAINT_RANGES, PHASE_TIMING_LABELS } from './constants.ts';
 import type { MacroWeights } from './constants.ts';
 import { correctRoundingDrift } from './lp-solver-rounding.ts';
@@ -53,9 +53,21 @@ export function buildLPModel(
     binaries: {},
   };
 
-  // Phase-specific carb constraints — use V4-provided ranges when available
+  const prioritizeCarbTarget = shouldPrioritizeMacroTarget(targets, 'carbs');
+
+  // Phase-specific carb constraints — use V4-provided ranges when available,
+  // but prioritize explicit out-of-band/overridden targets.
   if (targets.carbs_g === 0) {
     model.constraints.carbs = { min: 0, max: 5 };
+  } else if (prioritizeCarbTarget) {
+    const carbBounds = MACRO_CONSTRAINT_RANGES.carbs[phase] ?? { min: 0.9, max: 1.1 };
+    model.constraints.carbs = {
+      min: targets.carbs_g * carbBounds.min,
+      max: targets.carbs_g * carbBounds.max,
+    };
+    console.log(
+      `[LP-SOLVER] Prioritizing carb target (${targets.carbs_g}g) over provided band`,
+    );
   } else if (targets.carbs_low_g != null && targets.carbs_high_g != null) {
     model.constraints.carbs = { min: targets.carbs_low_g, max: targets.carbs_high_g };
   } else {

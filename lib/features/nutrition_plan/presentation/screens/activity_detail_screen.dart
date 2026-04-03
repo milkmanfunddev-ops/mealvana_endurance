@@ -310,6 +310,26 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
                 ),
               ),
 
+            if (state.hasStaleDuringTarget && _extrasFadeOut.value > 0.01)
+              FadeTransition(
+                opacity: _extrasFadeOut,
+                child: Column(
+                  children: [
+                    StalePlanWarning(
+                      title: 'Nutrition Settings Changed',
+                      message:
+                          state.staleDuringTargetMessage ??
+                          'Nutrition settings changed. Regenerate plan to apply new targets.',
+                      icon: Icons.tune,
+                      onRegeneratePlan: () =>
+                          _handleRegeneratePlan(context, state),
+                      isRegenerating: state.isSaving,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                ),
+              ),
+
             // Low fuel risk badge (hidden during fuel log)
             if (state.nutritionPlan != null && _extrasFadeOut.value > 0.01)
               FadeTransition(
@@ -770,6 +790,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         'distance': activity.distanceMiles,
         'initialDurationMinutes': activity.durationMinutes,
         'goalPace': activity.paceTargetMinutesPerMile,
+        'initialTitle': activity.title,
         'activityId': activity.id,
         if (widget.isCoachView) 'forUserId': activity.userId,
         'activityType': activity.activityType.name,
@@ -818,6 +839,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         'distance': activity.distanceMiles,
         'initialDurationMinutes': activity.durationMinutes,
         'goalPace': activity.paceTargetMinutesPerMile,
+        'initialTitle': activity.title,
         'activityId': activity.id,
         if (widget.isCoachView) 'forUserId': activity.userId,
         'activityType': activity.activityType.name,
@@ -871,7 +893,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
 
       if (widget.isCoachView) {
         // Coach view: always navigate back to coach portal after save
-        Navigator.of(context).pop();
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        } else {
+          context.go('/coach-portal');
+        }
       } else if (widget.isNewActivity) {
         context.go('/main');
       }
