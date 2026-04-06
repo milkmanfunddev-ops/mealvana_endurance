@@ -23,6 +23,10 @@ import {
   PREFERENCE_SCORE_MAP,
 } from "./constants.ts";
 import { buildPreferenceSet, matchesPreference } from "./food-utils.ts";
+import type {
+  DuringWorkoutTemplate,
+  FoodWithConstraints,
+} from "./during-template-solver.ts";
 
 /**
  * Resolve composite activity types to their constituent sports for
@@ -321,9 +325,15 @@ export async function getTemplateFoodsForPhase(
       // Allergen-based diet filtering (for -free diets like gluten-free, dairy-free, peanut-free)
       if (dietPrefLower && !isUserFood && !isEssential) {
         const dietExcludedAllergens: string[] = [];
-        if (dietPrefLower === 'gluten-free' || dietPrefLower === 'all-free') dietExcludedAllergens.push('gluten');
-        if (dietPrefLower === 'dairy-free' || dietPrefLower === 'all-free') dietExcludedAllergens.push('dairy');
-        if (dietPrefLower === 'peanut-free' || dietPrefLower === 'all-free') dietExcludedAllergens.push('peanut');
+        if (dietPrefLower === "gluten-free" || dietPrefLower === "all-free") {
+          dietExcludedAllergens.push("gluten");
+        }
+        if (dietPrefLower === "dairy-free" || dietPrefLower === "all-free") {
+          dietExcludedAllergens.push("dairy");
+        }
+        if (dietPrefLower === "peanut-free" || dietPrefLower === "all-free") {
+          dietExcludedAllergens.push("peanut");
+        }
 
         if (dietExcludedAllergens.length > 0) {
           const foodAllergens = (f.allergens as string[] | null) ?? [];
@@ -332,7 +342,9 @@ export async function getTemplateFoodsForPhase(
           );
           if (hasDietAllergen) {
             console.log(
-              `[TMPL-FILTER-DIET-ALLERGEN] Excluding food with allergen for diet '${dietaryPreference}': ${f.name} (allergens: ${foodAllergens.join(",")})`,
+              `[TMPL-FILTER-DIET-ALLERGEN] Excluding food with allergen for diet '${dietaryPreference}': ${f.name} (allergens: ${
+                foodAllergens.join(",")
+              })`,
             );
             return false;
           }
@@ -835,4 +847,230 @@ export async function getTemplateEssentialFoods(
     is_user_food: false,
     is_indivisible: false,
   }));
+}
+
+// ============================================================================
+// During-Workout Template Queries
+// ============================================================================
+
+/**
+ * Fetch all active during_workout_templates from the database.
+ */
+export async function getDuringWorkoutTemplates(
+  supabase: SupabaseClient,
+): Promise<DuringWorkoutTemplate[]> {
+  const { data, error } = await supabase
+    .from("during_workout_templates")
+    .select(`
+      id, template_number, name, formula, food_form,
+      activity_types, duration_brackets, gut_training_levels,
+      component_food_names, component_carb_ratios,
+      primary_to_secondary_ratio,
+      allergens, excluded_diets, notes, is_active,
+      selection_priority
+    `)
+    .eq("is_active", true)
+    .order("template_number");
+
+  if (error) {
+    console.log("[DWT-QUERY] Error fetching during_workout_templates:", error);
+    return [];
+  }
+
+  const templates = (data ?? []) as DuringWorkoutTemplate[];
+  console.log(
+    `[DWT-QUERY] Fetched ${templates.length} active during workout templates`,
+  );
+  return templates;
+}
+
+/**
+ * Fetch during-phase foods with per-hour max constraint columns.
+ * Returns FoodWithConstraints[] — the standard Food fields plus
+ * max_per_hr_low, max_per_hr_moderate, max_per_hr_high, min_increment,
+ * sodium_top_up_eligible.
+ *
+ * Includes both template_foods and user_foods, with the same preference
+ * scoring and filtering as getTemplateFoodsForPhase.
+ */
+export async function getTemplateFoodsForDuringWithConstraints(
+  supabase: SupabaseClient,
+  activityType: ActivityType = "running",
+  likedFoods?: string[],
+  willingToTryFoods?: string[],
+  dislikedFoods?: string[],
+  deviceId?: string,
+  allergies?: string[],
+  dietaryPreference?: string,
+): Promise<FoodWithConstraints[]> {
+  const likedSet = buildPreferenceSet(likedFoods);
+  const willTrySet = buildPreferenceSet(willingToTryFoods);
+  const dislikedSet = buildPreferenceSet(dislikedFoods);
+
+  const categories = getCategoryForPhase("during", activityType);
+  const categoryFilter = buildCategoryFilter(categories);
+  const activityFilter = resolveActivityTypesFilter(activityType);
+
+  console.log(
+    `[TMPL-FOODS-DURING-CONSTRAINTS] Filtering for categories: ${
+      categories.join(", ")
+    }, activity: ${activityType}`,
+  );
+
+  const { data, error } = await supabase
+    .from("template_foods")
+    .select(`
+      id, name, display_name, display_name_plural, image_address, description,
+      calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
+      serving_amount, serving_size, serving_unit, serving_qualifier,
+      max_servings_before, max_servings_during, max_servings_after,
+      min_servings_during,
+      is_electrolyte, to_exclude_from_solver, is_essential, is_indivisible,
+      categories, activity_types, is_liquid, product_type, default_during,
+      allergens, excluded_diets,
+      max_per_hr_low, max_per_hr_moderate, max_per_hr_high, min_increment,
+      sodium_top_up_eligible
+    `)
+    .eq("is_active", true)
+    .filter("categories", "ov", categoryFilter)
+    .or(activityFilter);
+
+  if (error) {
+    console.log("[TMPL-FOODS-DURING-CONSTRAINTS] Error:", error);
+    return [];
+  }
+
+  const templateFoods = (data ?? []) as Record<string, unknown>[];
+  console.log(
+    `[TMPL-FOODS-DURING-CONSTRAINTS] Found ${templateFoods.length} template foods`,
+  );
+
+  const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
+  const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";
+
+  return templateFoods
+    .filter((f) => {
+      if (f.to_exclude_from_solver === true) return false;
+
+      const isEssential = f.is_essential === true;
+
+      // Disliked filter (keep essentials)
+      const isDisliked = matchesPreference(
+        f as { id?: string; name?: string; display_name?: string | null },
+        dislikedSet,
+      );
+      if (isDisliked && !isEssential) return false;
+
+      // Allergen filter
+      if (allergiesLower.length > 0 && !isEssential) {
+        const foodAllergens = (f.allergens as string[] | null) ?? [];
+        if (
+          foodAllergens.some((a) =>
+            allergiesLower.includes((a as string).toLowerCase())
+          )
+        ) return false;
+      }
+
+      // Diet filter
+      if (dietPrefLower && !isEssential) {
+        // Allergen-based diet filtering
+        const dietExcludedAllergens: string[] = [];
+        if (dietPrefLower === "gluten-free" || dietPrefLower === "all-free") {
+          dietExcludedAllergens.push("gluten");
+        }
+        if (dietPrefLower === "dairy-free" || dietPrefLower === "all-free") {
+          dietExcludedAllergens.push("dairy");
+        }
+        if (dietPrefLower === "peanut-free" || dietPrefLower === "all-free") {
+          dietExcludedAllergens.push("peanut");
+        }
+
+        if (dietExcludedAllergens.length > 0) {
+          const foodAllergens = (f.allergens as string[] | null) ?? [];
+          if (
+            foodAllergens.some((a) =>
+              dietExcludedAllergens.includes((a as string).toLowerCase())
+            )
+          ) return false;
+        }
+
+        const excludedDiets = (f.excluded_diets as string[] | null) ?? [];
+        if (
+          excludedDiets.some((d) =>
+            (d as string).toLowerCase() === dietPrefLower
+          )
+        ) return false;
+      }
+
+      return true;
+    })
+    .map((f): FoodWithConstraints => {
+      const isLiked = matchesPreference(
+        f as { id?: string; name?: string; display_name?: string | null },
+        likedSet,
+      );
+      const isWilling = matchesPreference(
+        f as { id?: string; name?: string; display_name?: string | null },
+        willTrySet,
+      );
+
+      let preferenceCategory: "liked" | "willing" | "essential" | "neutral" =
+        "neutral";
+      if (isLiked) preferenceCategory = "liked";
+      else if (isWilling) preferenceCategory = "willing";
+
+      const maxServings = (f.max_servings_during as number) ??
+        DEFAULT_MAX_SERVINGS;
+      const minServings = (f.min_servings_during as number) ?? 1.0;
+
+      return {
+        id: f.id as string,
+        name: f.name as string,
+        display_name: (f.display_name as string) ?? null,
+        display_name_plural: (f.display_name_plural as string) ?? null,
+        description: (f.description as string) ?? null,
+        image_address: (f.image_address as string) ?? null,
+        serving_size: (f.serving_size as string) ?? null,
+        serving_unit: (f.serving_unit as string) ?? null,
+        serving_qualifier: (f.serving_qualifier as string) ?? null,
+        per_serving: {
+          carbs_g: safe(f.carbs_g as number),
+          protein_g: safe(f.protein_g as number),
+          fat_g: safe(f.fat_g as number),
+          sodium_mg: safe(f.sodium_mg as number),
+          water_ml: safe(f.fluid_ml as number),
+          calories: safe(f.calories as number),
+        },
+        serving_amount: (f.serving_amount as number) ?? null,
+        min_servings: minServings,
+        max_servings: maxServings,
+        preference_score: PREFERENCE_SCORE_MAP[preferenceCategory],
+        is_electrolyte: (f.is_electrolyte as boolean) || false,
+        is_liquid: (f.is_liquid as boolean) || false,
+        is_essential: (f.is_essential as boolean) || false,
+        is_user_food: false,
+        is_indivisible: (f.is_indivisible as boolean) || false,
+        product_type: (f.product_type as string) ?? undefined,
+        // Constraint columns
+        max_per_hr_low: f.max_per_hr_low as number | null ?? null,
+        max_per_hr_moderate: f.max_per_hr_moderate as number | null ?? null,
+        max_per_hr_high: f.max_per_hr_high as number | null ?? null,
+        min_increment: f.min_increment as number | null ?? null,
+        sodium_top_up_eligible: f.sodium_top_up_eligible as boolean | null ??
+          null,
+      };
+    });
+}
+
+/**
+ * Build a Map<food.name, FoodWithConstraints> for template solver lookups.
+ */
+export function buildFoodsByNameMap(
+  foods: FoodWithConstraints[],
+): Map<string, FoodWithConstraints> {
+  const map = new Map<string, FoodWithConstraints>();
+  for (const food of foods) {
+    map.set(food.name, food);
+  }
+  return map;
 }

@@ -67,4 +67,6 @@ deno test --allow-net --allow-env supabase/functions/generate-macros-v4/index.te
 
 ## Deprecated/Legacy Notes
 - Historical docs often reference `run-plan`, `generate-ai-nutrition-plan`, and `save-food-preferences`; current app code invokes a different set of functions (see `/docs/deployment/README.md`).
-- `.github/workflows/test.yml` currently contains an `edge-function-tests` job pointing to `test/local_edge_functions/`, but that folder is not present in this repo. Treat this as CI configuration drift to be corrected separately.
+- `test/local_edge_functions/` is a compatibility harness for CI/deploy workflows.
+  It delegates to `supabase/functions/run-algorithm-tests.sh`, where the real
+  Deno edge-function tests live.

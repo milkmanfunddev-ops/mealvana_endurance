@@ -1882,7 +1882,6 @@ class MacroTargetsController extends _$MacroTargetsController {
               dislikedFoods: dislikedFoods,
               durationMinutes: resolvedDurationMinutes,
               gutTrainingLevel: userProfile?.gutTraining.name,
-              brickMetadata: draftActivity?.brickMetadata,
             );
 
         // Track successful plan creation (the service handles whether it's LLM or algorithmic)

@@ -20,10 +20,19 @@ import {
   solveLPModel,
 } from "../_shared/nutrition/index.ts";
 import {
+  buildFoodsByNameMap,
+  getDuringWorkoutTemplates,
   getTemplateElectrolyteFoods,
+  getTemplateFoodsForDuringWithConstraints,
   getTemplateFoodsForPhase,
 } from "../_shared/nutrition/template-food-queries.ts";
 import { generateDuringPhaseRuleBased } from "../_shared/nutrition/during-rule-solver.ts";
+import {
+  generateDuringPhaseTemplate,
+  type GutTrainingLevel,
+  selectTemplateCandidates,
+} from "../_shared/nutrition/during-template-solver.ts";
+import { buildPreferenceSet } from "../_shared/nutrition/food-utils.ts";
 import type { LPPhaseResult } from "./types.ts";
 import { validatePhaseResultAgainstTargets } from "./validation.ts";
 import { generateLPPhase } from "./lp-phase.ts";
@@ -242,7 +251,12 @@ export async function generateDuringPhase(
   deviceId?: string,
   allergies?: string[],
   dietaryPreference?: string,
+  gutTrainingLevel?: GutTrainingLevel,
+  durationMinutes?: number,
 ): Promise<LPPhaseResult> {
+  const phaseStart = performance.now();
+  const elapsed = (start: number) => Math.round(performance.now() - start);
+
   // Swimming: no during-phase nutrition
   if (activityType === "swimming") {
     console.log("[PLAN-V3] Swimming activity — skipping during phase");
@@ -250,10 +264,132 @@ export async function generateDuringPhase(
   }
 
   console.log(
-    `[PLAN-V3] Generating during phase via rule solver (${activityType})`,
+    `[PLAN-V3] Generating during phase (${activityType}, gut=${
+      gutTrainingLevel ?? "n/a"
+    }, duration=${durationMinutes ?? "n/a"}min)`,
   );
 
-  // Get foods from template_foods table
+  // ---- Template solver (primary path) ----
+  if (gutTrainingLevel && durationMinutes && durationMinutes > 0) {
+    try {
+      const templateQueryStart = performance.now();
+      const [templates, constrainedFoods] = await Promise.all([
+        getDuringWorkoutTemplates(supabase),
+        getTemplateFoodsForDuringWithConstraints(
+          supabase,
+          activityType,
+          likedFoods,
+          willingToTryFoods,
+          dislikedFoods,
+          deviceId,
+          allergies,
+          dietaryPreference,
+        ),
+      ]);
+      console.log(
+        `[PLAN-V3-TIMING] during_template_queries completed in ${
+          elapsed(templateQueryStart)
+        }ms ` +
+          `(templates=${templates.length}, foods=${constrainedFoods.length})`,
+      );
+
+      if (templates.length > 0 && constrainedFoods.length > 0) {
+        const templateSelectStart = performance.now();
+        const foodsByName = buildFoodsByNameMap(constrainedFoods);
+        const likedSet = buildPreferenceSet(likedFoods);
+        const willingSet = buildPreferenceSet(willingToTryFoods);
+        const dislikedSet = buildPreferenceSet(dislikedFoods);
+
+        const templateCandidates = selectTemplateCandidates(
+          templates,
+          activityType,
+          durationMinutes,
+          gutTrainingLevel,
+          foodsByName,
+          likedSet,
+          willingSet,
+          dislikedSet,
+          allergies,
+          dietaryPreference,
+        );
+        console.log(
+          `[PLAN-V3-TIMING] during_template_select completed in ${
+            elapsed(templateSelectStart)
+          }ms ` +
+            `(candidates=${templateCandidates.length}, selected=${
+              templateCandidates[0]?.template_number ?? "none"
+            })`,
+        );
+
+        if (templateCandidates.length > 0) {
+          const templateSolveStart = performance.now();
+          let templateResult: ReturnType<typeof generateDuringPhaseTemplate> =
+            null;
+          let triedTemplates = 0;
+          for (const template of templateCandidates) {
+            triedTemplates++;
+            templateResult = generateDuringPhaseTemplate(
+              template,
+              foodsByName,
+              targets,
+              durationMinutes,
+              gutTrainingLevel,
+            );
+            if (templateResult) break;
+          }
+          console.log(
+            `[PLAN-V3-TIMING] during_template_solve completed in ${
+              elapsed(templateSolveStart)
+            }ms ` +
+              `(result=${
+                templateResult ? "success" : "null"
+              }, tried=${triedTemplates})`,
+          );
+
+          if (templateResult) {
+            console.log(
+              `[PLAN-V3] Template solver succeeded: template ${templateResult.template_number} (${templateResult.template_name})`,
+            );
+            console.log(
+              `[PLAN-V3-TIMING] during_phase_total completed in ${
+                elapsed(phaseStart)
+              }ms (path=template)`,
+            );
+            return {
+              foods: templateResult.foods,
+              by_hour_data: null,
+              template_metadata: {
+                template_id: templateResult.template_id,
+                template_number: templateResult.template_number,
+                template_name: templateResult.template_name,
+                template_formula: templateResult.template_formula,
+              },
+            };
+          }
+
+          console.log(
+            "[PLAN-V3] Template solver returned null for all candidates (validation failed), falling back to rule solver",
+          );
+        } else {
+          console.log(
+            "[PLAN-V3] No matching template found, falling back to rule solver",
+          );
+        }
+      } else {
+        console.log(
+          `[PLAN-V3] Template solver skipped: ${templates.length} templates, ${constrainedFoods.length} constrained foods`,
+        );
+      }
+    } catch (err) {
+      console.warn(
+        "[PLAN-V3] Template solver error (falling back to rule solver):",
+        err,
+      );
+    }
+  }
+
+  // ---- Rule solver (fallback) ----
+  const ruleFoodsQueryStart = performance.now();
   let foods = await getTemplateFoodsForPhase(
     supabase,
     "during",
@@ -266,9 +402,16 @@ export async function generateDuringPhase(
     allergies,
     dietaryPreference,
   );
+  console.log(
+    `[PLAN-V3-TIMING] during_rule_food_query completed in ${
+      elapsed(ruleFoodsQueryStart)
+    }ms ` +
+      `(foods=${foods.length})`,
+  );
 
   if (foods.length === 0) {
     console.log("[PLAN-V3] No during foods found, trying expanded pool");
+    const expandedFoodsQueryStart = performance.now();
     foods = await getTemplateFoodsForPhase(
       supabase,
       "during",
@@ -281,14 +424,31 @@ export async function generateDuringPhase(
       allergies,
       dietaryPreference,
     );
+    console.log(
+      `[PLAN-V3-TIMING] during_expanded_food_query completed in ${
+        elapsed(expandedFoodsQueryStart)
+      }ms ` +
+        `(foods=${foods.length})`,
+    );
   }
 
   if (foods.length === 0) {
     console.log("[PLAN-V3] No during foods available at all");
+    console.log(
+      `[PLAN-V3-TIMING] during_phase_total completed in ${
+        elapsed(phaseStart)
+      }ms (path=empty)`,
+    );
     return { foods: [] };
   }
 
+  const ruleSolveStart = performance.now();
   const ruleResult = generateDuringPhaseRuleBased(foods, targets, activityType);
+  console.log(
+    `[PLAN-V3-TIMING] during_rule_solve completed in ${
+      elapsed(ruleSolveStart)
+    }ms`,
+  );
   const ruleValidation = validatePhaseResultAgainstTargets(
     ruleResult.foods,
     targets,
@@ -296,6 +456,11 @@ export async function generateDuringPhase(
   );
 
   if (ruleValidation.ok) {
+    console.log(
+      `[PLAN-V3-TIMING] during_phase_total completed in ${
+        elapsed(phaseStart)
+      }ms (path=rule)`,
+    );
     return { foods: ruleResult.foods, by_hour_data: null };
   }
 
@@ -306,6 +471,8 @@ export async function generateDuringPhase(
       `Retrying with LP solver.`,
   );
 
+  // ---- LP solver (last resort) ----
+  const lpStart = performance.now();
   const lpResult = await generateLPPhase(
     supabase,
     "during",
@@ -320,6 +487,9 @@ export async function generateDuringPhase(
     allergies,
     dietaryPreference,
   );
+  console.log(
+    `[PLAN-V3-TIMING] during_lp_fallback completed in ${elapsed(lpStart)}ms`,
+  );
 
   const lpValidation = validatePhaseResultAgainstTargets(
     lpResult.foods,
@@ -327,7 +497,6 @@ export async function generateDuringPhase(
     "during",
   );
   if (!lpValidation.ok) {
-    // Return best-effort LP result with warning instead of throwing
     console.warn(
       `[PLAN-V3] During phase LP out of range (non-fatal): ${
         lpValidation.issues.join("; ")
@@ -335,5 +504,10 @@ export async function generateDuringPhase(
     );
   }
 
+  console.log(
+    `[PLAN-V3-TIMING] during_phase_total completed in ${
+      elapsed(phaseStart)
+    }ms (path=lp)`,
+  );
   return lpResult;
 }

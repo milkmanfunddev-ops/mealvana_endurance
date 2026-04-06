@@ -14,11 +14,9 @@ import '../../../auth/application/auth_service.dart';
 import '../../../activities/domain/activity_reminder.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../application/nutrition_plan_service.dart';
 import '../../application/resolved_during_target_resolver.dart';
 import '../../data/macro_repository.dart';
 import '../../data/nutrition_plan_repository.dart';
-import '../../data/nutrition_plan_mapper.dart';
 import '../../data/template_foods_repository.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../domain/carb_adjustment_level.dart';
@@ -2041,53 +2039,6 @@ class ActivityDetailController extends _$ActivityDetailController {
   // ============================================================================
   // BUSINESS LOGIC METHODS (moved from ActivityDetailScreen for FOA compliance)
   // ============================================================================
-
-  /// Regenerate nutrition plan after schedule change
-  /// Returns true on success, false on failure
-  Future<bool> regenerateNutritionPlan() async {
-    final currentState = state.value;
-    if (currentState?.activity == null) return false;
-
-    final activity = currentState!.activity!;
-
-    try {
-      final nutritionService = ref.read(nutritionPlanServiceProvider);
-      final updatedActivity = await nutritionService
-          .regenerateForScheduleChange(activity);
-
-      // Refresh controller data from database
-      ref.invalidateSelf();
-
-      // Fire-and-forget write-back to TrainingPeaks (never blocks regeneration)
-      final planData = updatedActivity.nutritionPlanData;
-      if (planData != null) {
-        final user = await _authService.getCurrentUser();
-        if (user != null) {
-          final plan = NutritionPlanMapper.fromJson(planData);
-          unawaited(_pushToTrainingPeaks(user.id, updatedActivity, plan));
-        }
-      }
-
-      _trackAnalytics('nutrition_plan_regenerated_after_schedule_change', {
-        'activity_id': activity.id,
-        'activity_type': activity.activityType.name,
-        'provider': activity.syncedFromProvider ?? 'manual',
-        'distance_miles': activity.distanceMiles?.toString(),
-        'duration_minutes': activity.durationMinutes?.toString(),
-      });
-
-      return true;
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to regenerate nutrition plan',
-        context: 'ACTIVITY_DETAIL_CONTROLLER',
-        error: e,
-        stackTrace: stackTrace,
-        data: {'activityId': activity.id},
-      );
-      return false;
-    }
-  }
 
   /// Delete the current activity
   /// Returns true on success, false on failure

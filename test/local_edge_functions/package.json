@@ -1,0 +1,10 @@
+{
+  "name": "mealvana-local-edge-functions",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Compatibility harness for local edge-function tests.",
+  "scripts": {
+    "test": "bash ../../supabase/functions/run-algorithm-tests.sh",
+    "test:e2e": "bash ../../supabase/functions/run-algorithm-tests.sh --e2e"
+  }
+}

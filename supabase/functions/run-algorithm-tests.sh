@@ -95,6 +95,16 @@ run_test \
   "$SCRIPT_DIR/generate-macros-v4/pre-workout.test.ts" \
   --allow-write
 
+run_test \
+  "1f. During Template Solver (unit tests)" \
+  "$SHARED_DIR/during-template-solver.test.ts" \
+  --allow-write
+
+run_test \
+  "1g. During Template Migration Catalog (static tests)" \
+  "$SHARED_DIR/during-template-migration.test.ts" \
+  --allow-read
+
 # ─── Section 2: E2E Tests (optional) ───────────────────────────────────────
 
 if [ "$1" = "--e2e" ]; then

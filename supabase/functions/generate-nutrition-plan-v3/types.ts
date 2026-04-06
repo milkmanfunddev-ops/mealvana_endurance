@@ -100,7 +100,15 @@ export interface ByHourData {
   assignments: ByHourAssignment[];
 }
 
+export interface TemplateMetadata {
+  template_id: string;
+  template_number: number;
+  template_name: string;
+  template_formula: string;
+}
+
 export interface LPPhaseResult {
   foods: FoodResult[];
   by_hour_data?: ByHourData | null;
+  template_metadata?: TemplateMetadata | null;
 }

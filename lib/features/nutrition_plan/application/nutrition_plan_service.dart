@@ -1,28 +1,22 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../shared/constants/bottle_constants.dart';
+import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
-import '../../../shared/services/sentry/sentry_reporter.dart';
-import '../../../shared/constants/bottle_constants.dart';
 import '../../auth/application/auth_service.dart';
-import '../../auth/data/user_repository.dart';
-import '../../../shared/domain/activity_type.dart';
-import '../../activities/domain/activity.dart' as domain;
-import '../../activities/domain/brick_metadata.dart';
-import '../../activities/data/activities_repository.dart';
 import '../data/food_repository.dart';
-import '../data/nutrition_plan_repository.dart';
 import '../data/nutrition_plan_mapper.dart';
 import '../domain/food_item.dart';
+import '../domain/food_item_data.dart';
 import '../domain/macro_targets.dart';
 import '../domain/nutrition_plan.dart';
 import 'client_plan/client_plan_service.dart';
-import 'llm_nutrition_plan_service.dart';
 
 /// Application service for managing nutrition plans and food data
 /// Coordinates between food database, nutrition calculations, and plan storage
@@ -30,225 +24,14 @@ class NutritionPlanService {
   NutritionPlanService(this.ref);
   final Ref ref;
 
-  /// Get repositories and services
-  Future<NutritionPlanRepository> get _planRepository async =>
-      await ref.read(nutritionPlanRepositoryProvider.future);
   AuthService get _authService => ref.read(authServiceProvider);
-  ActivitiesRepository get _activitiesRepository =>
-      ref.read(activitiesRepositoryProvider);
   // Content service removed since algorithm logic moved to Edge Functions
   FoodRepository get _foodRepository => ref.read(foodRepositoryProvider);
-  LLMNutritionPlanService get _llmService =>
-      ref.read(llmNutritionPlanServiceProvider);
   ClientPlanService get _clientPlanService =>
       ref.read(clientPlanServiceProvider);
-  SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
 
   // Nutrition calculator removed - all logic moved to Edge Functions
-
-  /// Generate a new nutrition plan for the current user using new run-plan Edge Function
-  Future<NutritionPlan> generateNutritionPlan({
-    required double distanceMiles,
-    required double paceMinutesPerMile,
-    double timeBeforeRunHours = 2.0,
-    String? gutTrainingLevel,
-    double? tempF,
-    double? humidity,
-    String? sweatRate,
-    String? giSensitivity,
-    bool? allowHighCarbRun,
-    String? activityId,
-    bool debug = false,
-  }) async {
-    final user = await _authService.getCurrentUser();
-    if (user == null) {
-      throw Exception('No user found. Please complete onboarding first.');
-    }
-
-    // Analytics tracking is handled by the controllers with activity-level context
-
-    final startTime = DateTime.now();
-
-    try {
-      // FIRST: Try LLM-based nutrition plan generation
-      final llmPlan = await _llmService.generateLLMNutritionPlan(
-        distanceMiles: distanceMiles,
-        paceMinutesPerMile: paceMinutesPerMile,
-        timeBeforeRunHours: timeBeforeRunHours,
-        sweatRate: sweatRate,
-      );
-
-      if (llmPlan != null) {
-        // LLM plan generated successfully
-        final responseTime = DateTime.now().difference(startTime);
-
-        // Save the LLM plan to local repository
-        final planRepository = await _planRepository;
-        await planRepository.cachePlanLocally(user.id, llmPlan);
-
-        // Analytics tracking moved to controller level (activity-scoped)
-
-        // Track LLM success
-        _sentry.addBreadcrumb(
-          message: 'LLM nutrition plan used successfully',
-          category: 'nutrition_plan',
-          data: {
-            'plan_type': 'llm',
-            'response_time_ms': responseTime.inMilliseconds.toString(),
-          },
-        );
-
-        return llmPlan;
-      }
-
-      // FALLBACK: Use offline builder if LLM fails
-      _sentry.addBreadcrumb(
-        message: 'Falling back to offline nutrition plan',
-        category: 'nutrition_plan',
-        data: {'reason': 'llm_failed_or_unavailable'},
-      );
-
-      // Use fallback logic to generate plan if LLM fails or explicitly requests fallback
-      return await _generateFallbackPlan(
-        distanceMiles: distanceMiles,
-        paceMinutesPerMile: paceMinutesPerMile,
-        timeBeforeRunHours: timeBeforeRunHours,
-        sweatRate: sweatRate,
-        activityId: activityId,
-        debug: debug,
-        macroTargets:
-            null, // Let fallback calculate its own targets if not provided
-      );
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Error generating nutrition plan',
-        context: 'NUTRITION_PLAN',
-        error: e,
-        stackTrace: stackTrace,
-      );
-
-      // Last resort: try offline fallback if anything goes wrong
-      try {
-        _sentry.addBreadcrumb(
-          message: 'Exception caught, attempting offline fallback',
-          category: 'nutrition_plan',
-          data: {'error': e.toString()},
-        );
-
-        return await _generateFallbackPlan(
-          distanceMiles: distanceMiles,
-          paceMinutesPerMile: paceMinutesPerMile,
-          timeBeforeRunHours: timeBeforeRunHours,
-          sweatRate: sweatRate,
-          activityId: activityId,
-          debug: debug,
-        );
-      } catch (fallbackError) {
-        // If fallback also fails, rethrow original error
-        throw e;
-      }
-    }
-  }
-
-  /// Generate a nutrition plan using offline fallback (no network dependency)
-  Future<NutritionPlan> _generateFallbackPlan({
-    required double distanceMiles,
-    required double paceMinutesPerMile,
-    required double timeBeforeRunHours,
-    String? sweatRate,
-    String? activityId,
-    bool debug = false,
-    MacroTargets?
-    macroTargets, // Optional: use adjusted macro targets if available
-    String? userId,
-  }) async {
-    // Try to get user profile: prefer explicit userId lookup (auth-session-independent),
-    // fall back to auth service for backward compatibility
-    var user = userId != null
-        ? await (await ref.read(
-            userRepositoryProvider.future,
-          )).getUserProfileById(userId)
-        : null;
-    user ??= await _authService.getCurrentUser();
-    if (user == null) {
-      throw Exception('No user found. Please complete onboarding first.');
-    }
-
-    final planRepository = await _planRepository;
-    final resolvedMacroTargets =
-        macroTargets ??
-        _estimateMacroTargets(
-          distanceMiles: distanceMiles,
-          paceMinutesPerMile: paceMinutesPerMile,
-          timeBeforeRunHours: timeBeforeRunHours,
-          sweatRate: sweatRate,
-          userWeightPounds: user.weightPounds,
-        );
-
-    _logger.warning(
-      'LLM generation unavailable, using offline fallback plan.',
-      context: 'NUTRITION_PLAN_OFFLINE',
-      data: {
-        'distance_miles': distanceMiles,
-        'duration_h': resolvedMacroTargets.metrics.durationH,
-      },
-    );
-
-    // NEW: Try client-side solver with real foods from Drift/Supabase
-    try {
-      final clientPlan = await _clientPlanService.generatePlan(
-        userId: user.id,
-        macroTargets: resolvedMacroTargets,
-        activityId: activityId,
-        timeBeforeRunHours: timeBeforeRunHours,
-        activityType: resolvedMacroTargets.activityType,
-      );
-
-      try {
-        await planRepository.cachePlanLocally(user.id, clientPlan);
-      } catch (e) {
-        _logger.warning(
-          'Failed to cache client solver plan locally',
-          context: 'NUTRITION_PLAN_OFFLINE',
-          error: e,
-        );
-      }
-
-      _logger.info(
-        'Client solver produced plan with real foods',
-        context: 'NUTRITION_PLAN_OFFLINE',
-      );
-      return clientPlan;
-    } catch (e) {
-      _logger.warning(
-        'Client solver failed, using generic fallback',
-        context: 'NUTRITION_PLAN_OFFLINE',
-        error: e,
-      );
-    }
-
-    // EXISTING: Ultimate fallback with generic text
-    final offlinePlan = _buildOfflinePlanFromTargets(
-      userId: user.id,
-      macroTargets: resolvedMacroTargets,
-      activityId: activityId,
-      timeBeforeRunHours: timeBeforeRunHours,
-    );
-
-    try {
-      await planRepository.cachePlanLocally(user.id, offlinePlan);
-    } catch (e, stackTrace) {
-      _logger.warning(
-        'Failed to cache offline fallback plan locally',
-        context: 'NUTRITION_PLAN_OFFLINE',
-        error: e,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return offlinePlan;
-  }
 
   /// Build phase target map for the V3 plan generator.
   ///
@@ -315,289 +98,11 @@ class NutritionPlanService {
     return target < low || target > high;
   }
 
-  MacroTargets _estimateMacroTargets({
-    required double distanceMiles,
-    required double paceMinutesPerMile,
-    required double timeBeforeRunHours,
-    String? sweatRate,
-    required double userWeightPounds,
-  }) {
-    final uuid = const Uuid();
-    final distanceKm = (distanceMiles > 0 ? distanceMiles : 6.0) * 1.60934;
-    final durationMinutesRaw = (distanceMiles > 0 && paceMinutesPerMile > 0)
-        ? distanceMiles * paceMinutesPerMile
-        : 60.0;
-    final durationMinutes = durationMinutesRaw.clamp(15.0, 720.0);
-    final durationH = durationMinutes / 60.0;
-    final weightKg = userWeightPounds * 0.453592;
-
-    // Simple heuristics for offline macro estimates
-    final preRunCarbs = timeBeforeRunHours >= 2
-        ? (distanceMiles >= 10 ? 100.0 : 70.0)
-        : (distanceMiles >= 10 ? 80.0 : 55.0);
-    final preRunProtein = 15.0;
-    final preRunFat = 8.0;
-    final preRunFluidsMl = 500.0;
-    final preRunSodium = 400.0;
-
-    final gutAdjustedCarbRate = sweatRate == 'high' ? 55.0 : 45.0;
-    final duringCarbRate = gutAdjustedCarbRate;
-    final duringCarbTotal = duringCarbRate * durationH;
-    final duringFluidRate = 600.0;
-    final duringFluidTotal = duringFluidRate * durationH;
-    final duringSodiumRate = sweatRate == 'high' ? 600.0 : 400.0;
-    final duringSodiumTotal = duringSodiumRate * durationH;
-
-    final postCarbs = 60.0;
-    final postProtein = 25.0;
-    final postFluids = 700.0;
-    final postSodium = 500.0;
-
-    final estimatedCalories = (distanceMiles * weightKg * 1.0)
-        .clamp(200, 2200)
-        .toDouble();
-
-    return MacroTargets(
-      id: 'offline-macros-${uuid.v4()}',
-      activityType: ActivityType.running,
-      preRun: PreRunMacros(
-        carbsG: preRunCarbs,
-        proteinG: preRunProtein,
-        fatCapG: preRunFat,
-        fluidsMl: preRunFluidsMl,
-        sodiumMg: preRunSodium,
-      ),
-      duringRun: DuringRunMacros(
-        carbRateGPerH: duringCarbRate,
-        carbTotalG: duringCarbTotal,
-        fluidRateMlPerH: duringFluidRate,
-        fluidTotalMl: duringFluidTotal,
-        sodiumRateMgPerH: duringSodiumRate,
-        sodiumTotalMg: duringSodiumTotal,
-        massNormRateGPerH: duringCarbRate,
-      ),
-      postRun: PostRunMacros(
-        carbsG: postCarbs,
-        proteinG: postProtein,
-        fluidsMl: postFluids,
-        sodiumMg: postSodium,
-      ),
-      metrics: RunMetrics(
-        distanceMi: distanceMiles,
-        distanceKm: distanceKm,
-        durationH: durationH,
-        durationMin: durationMinutes,
-        paceMinPerMile: paceMinutesPerMile,
-        speedMph: durationH > 0 ? distanceMiles / durationH : 0,
-        caloriesGrossKcal: estimatedCalories,
-        caloriesNetKcal: estimatedCalories,
-        met: 9.5,
-      ),
-      calculationRule: 'offline_fallback',
-      timestamp: DateTime.now(),
-      isUserModified: false,
-      modifiedFields: const [],
-    );
-  }
-
-  NutritionPlan _buildOfflinePlanFromTargets({
-    required String userId,
-    required MacroTargets macroTargets,
-    String? activityId,
-    required double timeBeforeRunHours,
-  }) {
-    final uuid = const Uuid();
-    final now = DateTime.now();
-    final activityType = macroTargets.activityType;
-
-    final pre = macroTargets.preRun;
-    final during = macroTargets.duringRun;
-    final post = macroTargets.postRun;
-
-    final gelsNeeded = ((during.carbTotalG) / 25).ceil().clamp(1, 12);
-    final bottlesNeeded = ((during.fluidTotalMl) / kStandardBottleMl)
-        .ceil()
-        .clamp(1, 12);
-
-    final preSection = PlanSection(
-      id: 'before_run',
-      title: activityType.getSectionTitle('before'),
-      subtitle: '${timeBeforeRunHours.toStringAsFixed(1)} hours before',
-      timing: 'Finish eating ~60-90 min before',
-      foodItems: [
-        FoodItemData(
-          id: 'pre-simple-carbs',
-          name: 'Simple carbs + electrolytes',
-          quantity:
-              '${pre.carbsG.round()}g carbs, ${pre.proteinG.round()}g protein',
-          description:
-              'Use easy carbs (bagel + banana + honey) with low fat. Sip ${pre.fluidsMl.round()} ml fluids plus electrolytes.',
-        ),
-      ],
-      proteinTarget: pre.proteinG,
-      fatTarget: pre.fatCapG,
-      carbsTarget: pre.carbsG,
-      sodiumTarget: pre.sodiumMg,
-      fluidsTarget: pre.fluidsMl,
-    );
-
-    final duringSection = PlanSection(
-      id: 'during_run',
-      title: activityType.getSectionTitle('during'),
-      subtitle: 'Every 20-30 min',
-      timing:
-          'Spread across the activity to hit ${during.carbRateGPerH.round()}g carbs/hr',
-      foodItems: [
-        FoodItemData(
-          id: 'during-gels',
-          name: 'Gels/chews',
-          quantity:
-              '$gelsNeeded servings (~${during.carbTotalG.round()}g carbs total)',
-          description:
-              'Use gels/chews; rotate flavors. Pair with sips of fluid.',
-        ),
-        FoodItemData(
-          id: 'during-fluids',
-          name: 'Fluids + electrolytes',
-          quantity:
-              '$bottlesNeeded bottles (~${during.fluidTotalMl.round()} ml) with ${during.sodiumTotalMg.round()} mg sodium total',
-          description:
-              'Mix sports drink or water + electrolyte tab; aim for small, frequent sips.',
-        ),
-      ],
-      carbsTarget: during.carbTotalG,
-      sodiumTarget: during.sodiumTotalMg,
-      fluidsTarget: during.fluidTotalMl,
-    );
-
-    final postSection = PlanSection(
-      id: 'after_run',
-      title: activityType.getSectionTitle('after'),
-      subtitle: 'Within 30 minutes',
-      timing: 'Refuel quickly, then eat a full meal later',
-      foodItems: [
-        FoodItemData(
-          id: 'post-shake',
-          name: 'Carb + protein shake/snack',
-          quantity:
-              '${post.carbsG.round()}g carbs, ${post.proteinG.round()}g protein',
-          description:
-              'Chocolate milk or protein shake with fruit. Add salty snack to reach ${post.sodiumMg.round()} mg sodium.',
-        ),
-      ],
-      proteinTarget: post.proteinG,
-      carbsTarget: post.carbsG,
-      sodiumTarget: post.sodiumMg,
-      fluidsTarget: post.fluidsMl,
-    );
-
-    final totalCarbs = (pre.carbsG + during.carbTotalG + post.carbsG).round();
-    final totalProtein = (pre.proteinG + post.proteinG).round();
-    final totalFat = pre.fatCapG.round();
-    final totalFluids = (pre.fluidsMl + during.fluidTotalMl + post.fluidsMl)
-        .round();
-    final totalSodium = (pre.sodiumMg + during.sodiumTotalMg + post.sodiumMg)
-        .round();
-
-    final macroSummary = PlanMacroSummary(
-      calories: (totalCarbs * 4 + totalProtein * 4 + totalFat * 9).round(),
-      carbs: totalCarbs,
-      protein: totalProtein,
-      fat: totalFat,
-      sodium: totalSodium,
-      sodiumMin: pre.sodiumLowMg?.round(),
-      sodiumMax: pre.sodiumHighMg?.round(),
-      fluids: (totalFluids * 0.033814).round(),
-      fluidsMin: pre.fluidsLowMl != null
-          ? (pre.fluidsLowMl! * 0.033814).round()
-          : null,
-      fluidsMax: pre.fluidsHighMl != null
-          ? (pre.fluidsHighMl! * 0.033814).round()
-          : null,
-      carbsRange:
-          'Pre ${pre.carbsG.round()}g | During ${during.carbTotalG.round()}g | Post ${post.carbsG.round()}g',
-      proteinRange:
-          'Pre ${pre.proteinG.round()}g | Post ${post.proteinG.round()}g',
-      fatRange: 'Pre ${pre.fatCapG.round()}g | Post 0g',
-    );
-
-    return NutritionPlan(
-      id: 'offline-plan-${uuid.v4()}',
-      name: 'Offline Nutrition Plan',
-      sections: [preSection, duringSection, postSection],
-      macroTargets: macroSummary,
-      notes:
-          'Generated offline fallback based on your targets. Update when online for personalized foods.',
-      activityId: activityId,
-      createdAt: now,
-      updatedAt: now,
-      clientUpdatedAt: now,
-      lastModifiedBy: userId,
-      version: 1,
-    );
-  }
-
-  /// Generate nutrition plan from adjusted macro targets with fallback
-  Future<NutritionPlan> generatePlanFromMacrosWithFallback({
-    required MacroTargets macroTargets,
-    String? activityId,
-    BrickMetadata? brickMetadata,
-    String? userId,
-  }) async {
-    try {
-      // FIRST: Try LLM-based generation using the adjusted macros
-      final llmPlan = await _llmService.generateLLMNutritionPlanFromMacros(
-        macroTargets: macroTargets,
-        activityId: activityId,
-        brickMetadata: brickMetadata,
-        userId: userId,
-      );
-
-      if (llmPlan != null) {
-        return llmPlan;
-      }
-
-      // FALLBACK: If LLM returns null (fallback requested), use offline builder
-      // passing the adjusted macro targets to respect user's edits
-      _logger.info(
-        'LLM generation failed/requested fallback, using offline generation with adjusted macros',
-      );
-
-      return await _generateFallbackPlan(
-        distanceMiles: macroTargets.metrics.distanceMi,
-        paceMinutesPerMile:
-            macroTargets.metrics.paceMinPerMile ??
-            8.0, // Default to 8 min/mi if null
-        timeBeforeRunHours: 2.0, // Default or extract if stored
-        activityId: activityId,
-        macroTargets: macroTargets, // Pass the adjusted targets!
-        userId: userId,
-      );
-    } catch (e) {
-      _logger.error(
-        'Error generating plan from macros, attempting fallback',
-        error: e,
-      );
-
-      // Last resort fallback
-      return await _generateFallbackPlan(
-        distanceMiles: macroTargets.metrics.distanceMi,
-        paceMinutesPerMile:
-            macroTargets.metrics.paceMinPerMile ??
-            8.0, // Default to 8 min/mi if null
-        timeBeforeRunHours: 2.0,
-        activityId: activityId,
-        macroTargets: macroTargets,
-        userId: userId,
-      );
-    }
-  }
-
   /// Generate nutrition plan using template-based V2 edge function.
   ///
-  /// Pre-workout phase uses templates with proportional scaling and drink selection.
-  /// During/after phases reuse the existing LP solver.
-  /// Falls back to existing v1 flow if v2 fails.
+  /// Pre-workout phase uses Algorithm C selections from macro generation.
+  /// During phase uses the template solver with rule/LP fallback in the Edge
+  /// Function. After phase uses the LP solver.
   Future<NutritionPlan> generatePlanFromMacrosV2({
     required MacroTargets macroTargets,
     required double hoursBefore,
@@ -611,7 +116,6 @@ class NutritionPlanService {
     List<String>? willingToTryFoods,
     int? durationMinutes,
     String? gutTrainingLevel,
-    BrickMetadata? brickMetadata,
   }) async {
     try {
       _logger.info(
@@ -914,23 +418,299 @@ class NutritionPlanService {
       }
 
       return plan;
-    } catch (e) {
+    } catch (e, stackTrace) {
       _logger.error(
-        '❌ [V3-FAILED] V3 edge function failed, using offline fallback. Error: $e',
+        '❌ [V3-FAILED] V3 edge function failed. Error: $e',
         context: 'NUTRITION_PLAN_SERVICE',
         error: e,
+        stackTrace: stackTrace,
       );
 
-      // Fallback to offline plan (no V1 edge function - V1 is decommissioned)
-      return await _generateFallbackPlan(
-        distanceMiles: macroTargets.metrics.distanceMi,
-        paceMinutesPerMile: macroTargets.metrics.paceMinPerMile ?? 8.0,
-        timeBeforeRunHours: hoursBefore,
-        activityId: activityId,
+      return _generateLocalFallbackPlanFromMacros(
         macroTargets: macroTargets,
+        hoursBefore: hoursBefore,
+        activityId: activityId,
         userId: userId,
       );
     }
+  }
+
+  Future<NutritionPlan> _generateLocalFallbackPlanFromMacros({
+    required MacroTargets macroTargets,
+    required double hoursBefore,
+    String? activityId,
+    String? userId,
+  }) async {
+    final resolvedUserId = (userId != null && userId.isNotEmpty)
+        ? userId
+        : (await _authService.getCurrentUser())?.id;
+
+    if (resolvedUserId != null && resolvedUserId.isNotEmpty) {
+      try {
+        _logger.warning(
+          'Using client-side nutrition solver after V3 failure',
+          context: 'NUTRITION_PLAN_SERVICE',
+        );
+        return await _clientPlanService.generatePlan(
+          userId: resolvedUserId,
+          macroTargets: macroTargets,
+          activityId: activityId,
+          timeBeforeRunHours: hoursBefore,
+          activityType: macroTargets.activityType,
+        );
+      } catch (fallbackError) {
+        _logger.warning(
+          'Client-side nutrition solver failed; using generic local fallback',
+          context: 'NUTRITION_PLAN_SERVICE',
+          error: fallbackError,
+        );
+      }
+    }
+
+    return _buildGenericLocalFallbackPlanFromMacros(
+      macroTargets: macroTargets,
+      hoursBefore: hoursBefore,
+      activityId: activityId,
+      userId: resolvedUserId ?? userId,
+    );
+  }
+
+  NutritionPlan _buildGenericLocalFallbackPlanFromMacros({
+    required MacroTargets macroTargets,
+    required double hoursBefore,
+    String? activityId,
+    String? userId,
+  }) {
+    final activityType = macroTargets.activityType;
+    final pre = macroTargets.preRun;
+    final during = macroTargets.duringRun;
+    final post = macroTargets.postRun;
+    final now = DateTime.now();
+
+    final beforeItems = <FoodItemData>[
+      if (pre.carbsG > 0 || pre.proteinG > 0 || pre.fatCapG > 0)
+        _macroItem(
+          id: 'fallback-before-meal',
+          name: 'Pre-workout meal',
+          quantity: '1 target-based serving',
+          carbsG: pre.carbsG,
+          proteinG: pre.proteinG,
+          fatG: pre.fatCapG,
+          sodiumMg: pre.sodiumMg,
+          timing: 'Finish eating before the activity',
+        ),
+      if (pre.fluidsMl > 0)
+        _waterItem(
+          id: 'fallback-before-water',
+          name: 'Water',
+          ml: pre.fluidsMl,
+          timing: 'Sip before the activity',
+        ),
+    ];
+
+    final duringItems = <FoodItemData>[
+      if (during.carbTotalG > 0)
+        _macroItem(
+          id: 'fallback-during-fuel',
+          name: 'Energy gels or chews',
+          quantity:
+              '${max(1, (during.carbTotalG / 25).round())} target servings',
+          carbsG: during.carbTotalG,
+          sodiumMg: 0,
+          timing: 'Spread evenly during the activity',
+          timingCategory: TimingCategory.quickConsume,
+        ),
+      if (during.sodiumTotalMg > 0)
+        _macroItem(
+          id: 'fallback-during-electrolytes',
+          name: 'Electrolytes',
+          quantity: 'To target',
+          sodiumMg: during.sodiumTotalMg,
+          timing: 'Spread evenly during the activity',
+          timingCategory: TimingCategory.electrolyte,
+        ),
+      if (during.fluidTotalMl > 0)
+        _waterItem(
+          id: 'fallback-during-water',
+          name: 'Water',
+          ml: during.fluidTotalMl,
+          timing: 'Sip steadily during the activity',
+          timingCategory: TimingCategory.sipThroughout,
+        ),
+    ];
+
+    final afterItems = <FoodItemData>[
+      if (post.carbsG > 0 || post.proteinG > 0)
+        _macroItem(
+          id: 'fallback-after-recovery',
+          name: 'Recovery meal',
+          quantity: '1 target-based serving',
+          carbsG: post.carbsG,
+          proteinG: post.proteinG,
+          sodiumMg: post.sodiumMg,
+          timing: 'Within 30 minutes',
+        ),
+      if (post.fluidsMl > 0)
+        _waterItem(
+          id: 'fallback-after-water',
+          name: 'Water',
+          ml: post.fluidsMl,
+          timing: 'Sip after the activity',
+        ),
+    ];
+
+    final sections = [
+      PlanSection(
+        id: 'before_run',
+        title: activityType.getSectionTitle('before'),
+        subtitle: '${hoursBefore.toStringAsFixed(1)} hours before',
+        timing: 'Finish eating before the activity',
+        foodItems: beforeItems,
+        carbsTarget: pre.carbsG,
+        proteinTarget: pre.proteinG,
+        fatTarget: pre.fatCapG,
+        sodiumTarget: pre.sodiumMg,
+        fluidsTarget: pre.fluidsMl,
+        carbsLowTarget: pre.carbsLowG,
+        carbsHighTarget: pre.carbsHighG,
+        proteinLowTarget: pre.proteinLowG,
+        proteinHighTarget: pre.proteinHighG,
+        sodiumLowTarget: pre.sodiumLowMg,
+        sodiumHighTarget: pre.sodiumHighMg,
+        fluidsLowTarget: pre.fluidsLowMl,
+        fluidsHighTarget: pre.fluidsHighMl,
+      ),
+      PlanSection(
+        id: 'during_run',
+        title: activityType.getSectionTitle('during'),
+        subtitle: during.carbRateGPerH > 0
+            ? '${during.carbRateGPerH.round()}g carbs/hr'
+            : 'As needed',
+        timing: 'Spread evenly during the activity',
+        foodItems: duringItems,
+        carbsTarget: during.carbTotalG,
+        sodiumTarget: during.sodiumTotalMg,
+        fluidsTarget: during.fluidTotalMl,
+        carbsLowTarget: during.carbsLowG,
+        carbsHighTarget: during.carbsHighG,
+        sodiumLowTarget: during.sodiumLowMg,
+        sodiumHighTarget: during.sodiumHighMg,
+        fluidsLowTarget: during.fluidsLowMl,
+        fluidsHighTarget: during.fluidsHighMl,
+      ),
+      PlanSection(
+        id: 'after_run',
+        title: activityType.getSectionTitle('after'),
+        subtitle: 'Within 30 minutes',
+        timing: 'Refuel quickly, then eat a full meal later',
+        foodItems: afterItems,
+        carbsTarget: post.carbsG,
+        proteinTarget: post.proteinG,
+        sodiumTarget: post.sodiumMg,
+        fluidsTarget: post.fluidsMl,
+        carbsLowTarget: post.carbsLowG,
+        carbsHighTarget: post.carbsHighG,
+        proteinLowTarget: post.proteinLowG,
+        proteinHighTarget: post.proteinHighG,
+        sodiumLowTarget: post.sodiumLowMg,
+        sodiumHighTarget: post.sodiumHighMg,
+        fluidsLowTarget: post.fluidsLowMl,
+        fluidsHighTarget: post.fluidsHighMl,
+      ),
+    ];
+
+    final totalCarbs =
+        pre.carbsG.round() + during.carbTotalG.round() + post.carbsG.round();
+    final totalProtein = pre.proteinG.round() + post.proteinG.round();
+    final totalFat = pre.fatCapG.round();
+    final totalSodium =
+        pre.sodiumMg.round() +
+        during.sodiumTotalMg.round() +
+        post.sodiumMg.round();
+    final totalFluidsMl = pre.fluidsMl + during.fluidTotalMl + post.fluidsMl;
+
+    return NutritionPlan(
+      id: 'local-fallback-${const Uuid().v4()}',
+      name: 'Nutrition Plan',
+      sections: sections,
+      macroTargets: PlanMacroSummary(
+        calories: totalCarbs * 4 + totalProtein * 4 + totalFat * 9,
+        carbs: totalCarbs,
+        protein: totalProtein,
+        fat: totalFat,
+        sodium: totalSodium,
+        fluids: (totalFluidsMl * 0.033814).round(),
+        carbsRange:
+            'Pre ${pre.carbsG.round()}g | During ${during.carbTotalG.round()}g | Post ${post.carbsG.round()}g',
+        proteinRange:
+            'Pre ${pre.proteinG.round()}g | Post ${post.proteinG.round()}g',
+        fatRange: 'Pre ${pre.fatCapG.round()}g',
+      ),
+      notes:
+          'Generated locally from your macro targets. Refresh when the plan generator is available.',
+      activityId: activityId,
+      createdAt: now,
+      updatedAt: now,
+      clientUpdatedAt: now,
+      lastModifiedBy: userId,
+      version: 1,
+    );
+  }
+
+  FoodItemData _macroItem({
+    required String id,
+    required String name,
+    required String quantity,
+    double carbsG = 0,
+    double proteinG = 0,
+    double fatG = 0,
+    double sodiumMg = 0,
+    String? timing,
+    TimingCategory? timingCategory,
+  }) {
+    return FoodItemData(
+      id: id,
+      name: name,
+      quantity: quantity,
+      timing: timing,
+      nutritionalInfo: NutritionalInfo(
+        calories: (carbsG * 4 + proteinG * 4 + fatG * 9).round(),
+        carbs: carbsG.round(),
+        protein: proteinG.round(),
+        fat: fatG.round(),
+        sodium: sodiumMg.round(),
+      ),
+      timingCategory: timingCategory,
+    );
+  }
+
+  FoodItemData _waterItem({
+    required String id,
+    required String name,
+    required double ml,
+    String? timing,
+    TimingCategory? timingCategory,
+  }) {
+    final bottleQty = ml > 0 ? ml / kStandardBottleMl : 0;
+    final roundedBottles = (bottleQty * 2).round() / 2;
+    final quantity = roundedBottles > 0
+        ? '${_formatQuantity(roundedBottles)} bottle${roundedBottles == 1 ? '' : 's'}'
+        : '${ml.round()} mL';
+
+    return FoodItemData(
+      id: id,
+      name: name,
+      quantity: quantity,
+      timing: timing,
+      nutritionalInfo: NutritionalInfo(fluids: ml),
+      isDrink: true,
+      timingCategory: timingCategory ?? TimingCategory.sipThroughout,
+    );
+  }
+
+  String _formatQuantity(double value) {
+    if (value == value.roundToDouble()) return value.round().toString();
+    return value.toStringAsFixed(1);
   }
 
   /// Whether a [FunctionException] represents a transient error worth retrying.
@@ -970,175 +750,6 @@ class NutritionPlanService {
   /// Search foods by query
   Future<List<FoodItem>> searchFoods(String query) async {
     return await _foodRepository.searchFoods(query);
-  }
-
-  /// Regenerate nutrition plan after schedule change from provider
-  ///
-  /// Called when an activity's schedule has changed (e.g., time, duration, distance)
-  /// and the existing nutrition plan is now stale. This method:
-  /// 1. Extracts parameters from the updated activity
-  /// 2. Generates a new nutrition plan using the updated parameters
-  /// 3. Updates the activity with the new nutrition plan
-  /// 4. Clears the needsNutritionRefresh flag
-  /// 5. Returns the updated activity with fresh nutrition plan
-  ///
-  /// User food preferences are preserved during regeneration (handled by LLM service).
-  Future<domain.Activity> regenerateForScheduleChange(
-    domain.Activity activity,
-  ) async {
-    try {
-      _logger.info(
-        'Regenerating nutrition plan after schedule change',
-        context: 'NUTRITION_PLAN_SERVICE',
-        data: {
-          'activityId': activity.id,
-          'activityType': activity.activityType.name,
-          'provider': activity.syncedFromProvider,
-        },
-      );
-
-      // Extract parameters from activity
-      final distanceMiles = activity.distanceMiles ?? 0;
-      final durationMinutes = activity.durationMinutes ?? 0;
-
-      // Calculate pace from distance and duration
-      final paceMinutesPerMile = distanceMiles > 0 && durationMinutes > 0
-          ? durationMinutes / distanceMiles
-          : 8.0; // Default to 8 min/mile if not calculable
-
-      // Calculate time before run from scheduled date/time
-      // Default to 2 hours if activity is in the future
-      final now = DateTime.now();
-      final timeBeforeRunHours = activity.scheduledDateTime.isAfter(now)
-          ? 2.0
-          : 2.0; // Always use 2 hours as default for regeneration
-
-      // Get user for context
-      final user = await _authService.getCurrentUser();
-      if (user == null) {
-        throw Exception('User not found during nutrition plan regeneration');
-      }
-
-      // Generate new nutrition plan with updated parameters
-      // This calls the LLM service which preserves user food preferences
-      final newPlan = await generateNutritionPlan(
-        distanceMiles: distanceMiles,
-        paceMinutesPerMile: paceMinutesPerMile,
-        timeBeforeRunHours: timeBeforeRunHours,
-        activityId: activity.id,
-        // Use user preferences from profile
-        sweatRate: user.sweatRate.value,
-        gutTrainingLevel: user.gutTraining.value,
-        giSensitivity:
-            null, // GI sensitivity not stored as string in user profile
-      );
-
-      _logger.info(
-        'Nutrition plan regenerated successfully',
-        context: 'NUTRITION_PLAN_SERVICE',
-        data: {'activityId': activity.id, 'planId': newPlan.id},
-      );
-
-      // Update activity with new nutrition plan data
-      final updatedActivity = activity.copyWith(
-        nutritionPlanData: {
-          'id': newPlan.id,
-          'name': newPlan.name,
-          'sections': newPlan.sections
-              .map(
-                (s) => {
-                  'id': s.id,
-                  'title': s.title,
-                  'subtitle': s.subtitle,
-                  'timing': s.timing,
-                  'food_items': s.foodItems
-                      .map(
-                        (f) => {
-                          'id': f.id,
-                          'name': f.name,
-                          'quantity': f.quantity,
-                          'description': f.description,
-                        },
-                      )
-                      .toList(),
-                  'carbs_target': s.carbsTarget,
-                  'protein_target': s.proteinTarget,
-                  'fat_target': s.fatTarget,
-                  'sodium_target': s.sodiumTarget,
-                  'fluids_target': s.fluidsTarget,
-                },
-              )
-              .toList(),
-          'macro_targets': newPlan.macroTargets != null
-              ? {
-                  'calories': newPlan.macroTargets!.calories,
-                  'carbs': newPlan.macroTargets!.carbs,
-                  'protein': newPlan.macroTargets!.protein,
-                  'fat': newPlan.macroTargets!.fat,
-                  'sodium': newPlan.macroTargets!.sodium,
-                  'fluids': newPlan.macroTargets!.fluids,
-                  'carbs_range': newPlan.macroTargets!.carbsRange,
-                  'protein_range': newPlan.macroTargets!.proteinRange,
-                  'fat_range': newPlan.macroTargets!.fatRange,
-                }
-              : null,
-          'notes': newPlan.notes,
-          'created_at': newPlan.createdAt?.toIso8601String(),
-          'updated_at': newPlan.updatedAt?.toIso8601String(),
-        },
-      );
-
-      // Save updated activity with new nutrition plan
-      await _activitiesRepository.updateActivity(
-        deviceId: user.id,
-        activity: updatedActivity,
-      );
-
-      // Clear the nutrition refresh flag
-      await _activitiesRepository.clearNutritionRefreshFlag(activity.id);
-
-      _logger.info(
-        'Activity updated with regenerated nutrition plan',
-        context: 'NUTRITION_PLAN_SERVICE',
-        data: {'activityId': activity.id, 'needsNutritionRefresh': false},
-      );
-
-      // Track analytics for regeneration
-      _sentry.addBreadcrumb(
-        message: 'Nutrition plan regenerated after schedule change',
-        category: 'nutrition_plan',
-        data: {
-          'activity_id': activity.id,
-          'activity_type': activity.activityType.name,
-          'provider': activity.syncedFromProvider ?? 'manual',
-          'distance_miles': distanceMiles.toString(),
-          'duration_minutes': durationMinutes.toString(),
-        },
-      );
-
-      return updatedActivity;
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to regenerate nutrition plan after schedule change',
-        context: 'NUTRITION_PLAN_SERVICE',
-        error: e,
-        stackTrace: stackTrace,
-        data: {'activityId': activity.id},
-      );
-
-      // Report error to Sentry for monitoring
-      await _sentry.reportCriticalError(
-        e,
-        stackTrace: stackTrace,
-        context: 'nutrition_plan_regeneration_failed',
-        tags: {
-          'activity_id': activity.id,
-          'operation': 'regenerate_after_schedule_change',
-        },
-      );
-
-      rethrow;
-    }
   }
 
   // All sync and versioning logic removed - Edge Functions handle storage directly

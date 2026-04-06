@@ -11,8 +11,8 @@
 import { createServiceClient } from "../_shared/supabase-client.ts";
 import { jsonResponse } from "../_shared/responses.ts";
 import {
-  adjustTargetsForOverrides,
   type ActivityType,
+  adjustTargetsForOverrides,
   buildLPModel,
   type FoodResult,
   getOptimizationWeights,
@@ -20,12 +20,26 @@ import {
   type MacroTargets,
   solveLPModel,
 } from "../_shared/nutrition/index.ts";
-import { getTransitionFoods } from "../_shared/nutrition/template-food-queries.ts";
+import {
+  buildFoodsByNameMap,
+  getDuringWorkoutTemplates,
+  getTemplateFoodsForDuringWithConstraints,
+  getTransitionFoods,
+} from "../_shared/nutrition/template-food-queries.ts";
+import {
+  generateDuringPhaseTemplate,
+  type GutTrainingLevel,
+  selectTemplateCandidates,
+} from "../_shared/nutrition/during-template-solver.ts";
 import { generateBeforePhaseV3 } from "./before-phase.ts";
 import { generateDuringPhase } from "./during-phase.ts";
 import { generateLPPhase } from "./lp-phase.ts";
-import { flattenBeforeFoods, validatePhaseResultAgainstTargets } from "./validation.ts";
+import {
+  flattenBeforeFoods,
+  validatePhaseResultAgainstTargets,
+} from "./validation.ts";
 import type { LPPhaseResult, PlanInputV2 } from "./types.ts";
+import { buildPreferenceSet } from "../_shared/nutrition/food-utils.ts";
 
 // ============================================================================
 // Transition Targets (Distance-Based)
@@ -52,42 +66,78 @@ function getTransitionTargets(
 
   if (totalDurationMinutes < 90) {
     return {
-      carbs_g: 0, carbs_low_g: 0, carbs_high_g: 0,
-      sodium_mg: 0, sodium_low_mg: 0, sodium_high_mg: 0,
-      water_ml: 0, water_low_ml: 0, water_high_ml: 0,
+      carbs_g: 0,
+      carbs_low_g: 0,
+      carbs_high_g: 0,
+      sodium_mg: 0,
+      sodium_low_mg: 0,
+      sodium_high_mg: 0,
+      water_ml: 0,
+      water_low_ml: 0,
+      water_high_ml: 0,
     };
   }
   if (totalDurationMinutes < 180) {
     return {
-      carbs_g: 0, carbs_low_g: 0, carbs_high_g: 0,
-      sodium_mg: 0, sodium_low_mg: 0, sodium_high_mg: 0,
-      water_ml: 50, water_low_ml: 45, water_high_ml: 55,
+      carbs_g: 0,
+      carbs_low_g: 0,
+      carbs_high_g: 0,
+      sodium_mg: 0,
+      sodium_low_mg: 0,
+      sodium_high_mg: 0,
+      water_ml: 50,
+      water_low_ml: 45,
+      water_high_ml: 55,
     };
   }
   if (totalDurationMinutes < 420) {
     return transitionIndex === 0
       ? {
-        carbs_g: 25, carbs_low_g: 23, carbs_high_g: 28,
-        sodium_mg: 150, sodium_low_mg: 135, sodium_high_mg: 165,
-        water_ml: 150, water_low_ml: 128, water_high_ml: 173,
+        carbs_g: 25,
+        carbs_low_g: 23,
+        carbs_high_g: 28,
+        sodium_mg: 150,
+        sodium_low_mg: 135,
+        sodium_high_mg: 165,
+        water_ml: 150,
+        water_low_ml: 128,
+        water_high_ml: 173,
       }
       : {
-        carbs_g: 10, carbs_low_g: 9, carbs_high_g: 11,
-        sodium_mg: 100, sodium_low_mg: 90, sodium_high_mg: 110,
-        water_ml: 100, water_low_ml: 85, water_high_ml: 115,
+        carbs_g: 10,
+        carbs_low_g: 9,
+        carbs_high_g: 11,
+        sodium_mg: 100,
+        sodium_low_mg: 90,
+        sodium_high_mg: 110,
+        water_ml: 100,
+        water_low_ml: 85,
+        water_high_ml: 115,
       };
   }
   // Ironman (420+ min)
   return transitionIndex === 0
     ? {
-      carbs_g: 30, carbs_low_g: 27, carbs_high_g: 33,
-      sodium_mg: 200, sodium_low_mg: 180, sodium_high_mg: 220,
-      water_ml: 200, water_low_ml: 170, water_high_ml: 230,
+      carbs_g: 30,
+      carbs_low_g: 27,
+      carbs_high_g: 33,
+      sodium_mg: 200,
+      sodium_low_mg: 180,
+      sodium_high_mg: 220,
+      water_ml: 200,
+      water_low_ml: 170,
+      water_high_ml: 230,
     }
     : {
-      carbs_g: 25, carbs_low_g: 23, carbs_high_g: 28,
-      sodium_mg: 150, sodium_low_mg: 135, sodium_high_mg: 165,
-      water_ml: 150, water_low_ml: 128, water_high_ml: 173,
+      carbs_g: 25,
+      carbs_low_g: 23,
+      carbs_high_g: 28,
+      sodium_mg: 150,
+      sodium_low_mg: 135,
+      sodium_high_mg: 165,
+      water_ml: 150,
+      water_low_ml: 128,
+      water_high_ml: 173,
     };
 }
 
@@ -120,23 +170,44 @@ function collectTransitionTargets(
     const carbs = Number(raw.carbs_g ?? 0);
     const sodium = Number(raw.sodium_mg ?? 0);
     const water = Number(raw.water_ml ?? 0);
-    const carbsLow = raw.carbs_low_g != null ? Number(raw.carbs_low_g) : undefined;
-    const carbsHigh = raw.carbs_high_g != null ? Number(raw.carbs_high_g) : undefined;
-    const sodiumLow = raw.sodium_low_mg != null ? Number(raw.sodium_low_mg) : undefined;
-    const sodiumHigh = raw.sodium_high_mg != null ? Number(raw.sodium_high_mg) : undefined;
-    const waterLow = raw.water_low_ml != null ? Number(raw.water_low_ml) : undefined;
-    const waterHigh = raw.water_high_ml != null ? Number(raw.water_high_ml) : undefined;
-    map.set(key, adjustTargetsForOverrides({
-      carbs_g: Number.isFinite(carbs) ? carbs : 0,
-      ...(carbsLow != null && Number.isFinite(carbsLow) && { carbs_low_g: carbsLow }),
-      ...(carbsHigh != null && Number.isFinite(carbsHigh) && { carbs_high_g: carbsHigh }),
-      sodium_mg: Number.isFinite(sodium) ? sodium : 0,
-      ...(sodiumLow != null && Number.isFinite(sodiumLow) && { sodium_low_mg: sodiumLow }),
-      ...(sodiumHigh != null && Number.isFinite(sodiumHigh) && { sodium_high_mg: sodiumHigh }),
-      water_ml: Number.isFinite(water) ? water : 0,
-      ...(waterLow != null && Number.isFinite(waterLow) && { water_low_ml: waterLow }),
-      ...(waterHigh != null && Number.isFinite(waterHigh) && { water_high_ml: waterHigh }),
-    }));
+    const carbsLow = raw.carbs_low_g != null
+      ? Number(raw.carbs_low_g)
+      : undefined;
+    const carbsHigh = raw.carbs_high_g != null
+      ? Number(raw.carbs_high_g)
+      : undefined;
+    const sodiumLow = raw.sodium_low_mg != null
+      ? Number(raw.sodium_low_mg)
+      : undefined;
+    const sodiumHigh = raw.sodium_high_mg != null
+      ? Number(raw.sodium_high_mg)
+      : undefined;
+    const waterLow = raw.water_low_ml != null
+      ? Number(raw.water_low_ml)
+      : undefined;
+    const waterHigh = raw.water_high_ml != null
+      ? Number(raw.water_high_ml)
+      : undefined;
+    map.set(
+      key,
+      adjustTargetsForOverrides({
+        carbs_g: Number.isFinite(carbs) ? carbs : 0,
+        ...(carbsLow != null && Number.isFinite(carbsLow) &&
+          { carbs_low_g: carbsLow }),
+        ...(carbsHigh != null && Number.isFinite(carbsHigh) &&
+          { carbs_high_g: carbsHigh }),
+        sodium_mg: Number.isFinite(sodium) ? sodium : 0,
+        ...(sodiumLow != null && Number.isFinite(sodiumLow) &&
+          { sodium_low_mg: sodiumLow }),
+        ...(sodiumHigh != null && Number.isFinite(sodiumHigh) &&
+          { sodium_high_mg: sodiumHigh }),
+        water_ml: Number.isFinite(water) ? water : 0,
+        ...(waterLow != null && Number.isFinite(waterLow) &&
+          { water_low_ml: waterLow }),
+        ...(waterHigh != null && Number.isFinite(waterHigh) &&
+          { water_high_ml: waterHigh }),
+      }),
+    );
   }
   return map;
 }
@@ -154,12 +225,14 @@ async function generateTransitionPhase(
   supabase: ReturnType<typeof createServiceClient>,
   transitionName: string,
   targets: MacroTargets,
+  totalDurationMinutes: number,
   likedFoods?: string[],
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
   deviceId?: string,
   allergies?: string[],
   dietaryPreference?: string,
+  gutTrainingLevel?: string,
 ): Promise<LPPhaseResult> {
   console.log(
     `[PLAN-V3-BRICK] Generating transition phase ${transitionName}: carbs=${targets.carbs_g}g, sodium=${targets.sodium_mg}mg, water=${targets.water_ml}ml`,
@@ -173,6 +246,71 @@ async function generateTransitionPhase(
       `[PLAN-V3-BRICK] ${transitionName}: all targets are 0, returning empty foods`,
     );
     return { foods: [] };
+  }
+
+  const resolvedGutTrainingLevel = (
+    gutTrainingLevel === "low" ||
+      gutTrainingLevel === "moderate" ||
+      gutTrainingLevel === "high"
+      ? gutTrainingLevel
+      : "moderate"
+  ) as GutTrainingLevel;
+
+  try {
+    const [templates, constrainedFoods] = await Promise.all([
+      getDuringWorkoutTemplates(supabase),
+      getTemplateFoodsForDuringWithConstraints(
+        supabase,
+        "triathlon",
+        likedFoods,
+        willingToTryFoods,
+        dislikedFoods,
+        deviceId,
+        allergies,
+        dietaryPreference,
+      ),
+    ]);
+    const foodsByName = buildFoodsByNameMap(constrainedFoods);
+    const templateCandidates = selectTemplateCandidates(
+      templates,
+      "triathlon",
+      totalDurationMinutes,
+      resolvedGutTrainingLevel,
+      foodsByName,
+      buildPreferenceSet(likedFoods),
+      buildPreferenceSet(willingToTryFoods),
+      buildPreferenceSet(dislikedFoods),
+      allergies,
+      dietaryPreference,
+    ).filter((template) => template.template_number === 0);
+
+    if (templateCandidates.length > 0) {
+      const templateResult = generateDuringPhaseTemplate(
+        templateCandidates[0],
+        foodsByName,
+        targets,
+        60,
+        resolvedGutTrainingLevel,
+      );
+      if (templateResult) {
+        console.log(
+          `[PLAN-V3-BRICK] ${transitionName} template solved with template 0 (${templateResult.template_name})`,
+        );
+        return { foods: templateResult.foods };
+      }
+      console.log(
+        `[PLAN-V3-BRICK] ${transitionName} template 0 failed validation, using transition LP fallback`,
+      );
+    } else {
+      console.log(
+        `[PLAN-V3-BRICK] ${transitionName}: template 0 not available for total duration ${totalDurationMinutes}min, using transition LP fallback`,
+      );
+    }
+  } catch (err) {
+    console.warn(
+      `[PLAN-V3-BRICK] ${transitionName} template 0 path failed, using transition LP fallback:`,
+      err,
+    );
   }
 
   const foods = await getTransitionFoods(
@@ -346,14 +484,20 @@ export async function handleBrickPlan(
       segment_order: segmentOrder,
       sport: segment.sport,
       carbs_g: segmentTargets.carbs_g,
-      ...(segmentTargets.carbs_low_g != null && { carbs_low_g: segmentTargets.carbs_low_g }),
-      ...(segmentTargets.carbs_high_g != null && { carbs_high_g: segmentTargets.carbs_high_g }),
+      ...(segmentTargets.carbs_low_g != null &&
+        { carbs_low_g: segmentTargets.carbs_low_g }),
+      ...(segmentTargets.carbs_high_g != null &&
+        { carbs_high_g: segmentTargets.carbs_high_g }),
       sodium_mg: segmentTargets.sodium_mg,
-      ...(segmentTargets.sodium_low_mg != null && { sodium_low_mg: segmentTargets.sodium_low_mg }),
-      ...(segmentTargets.sodium_high_mg != null && { sodium_high_mg: segmentTargets.sodium_high_mg }),
+      ...(segmentTargets.sodium_low_mg != null &&
+        { sodium_low_mg: segmentTargets.sodium_low_mg }),
+      ...(segmentTargets.sodium_high_mg != null &&
+        { sodium_high_mg: segmentTargets.sodium_high_mg }),
       water_ml: segmentTargets.water_ml,
-      ...(segmentTargets.water_low_ml != null && { water_low_ml: segmentTargets.water_low_ml }),
-      ...(segmentTargets.water_high_ml != null && { water_high_ml: segmentTargets.water_high_ml }),
+      ...(segmentTargets.water_low_ml != null &&
+        { water_low_ml: segmentTargets.water_low_ml }),
+      ...(segmentTargets.water_high_ml != null &&
+        { water_high_ml: segmentTargets.water_high_ml }),
     });
 
     // Generate during phase for this segment
@@ -367,6 +511,8 @@ export async function handleBrickPlan(
       input.device_id,
       input.allergies,
       input.dietary_preference,
+      input.gut_training_level,
+      segment.duration_minutes,
     );
 
     duringSegments[String(segmentOrder)] = duringResult.foods;
@@ -380,26 +526,34 @@ export async function handleBrickPlan(
       transitionTargetsList.push({
         transition_name: transitionName,
         carbs_g: transitionTargets.carbs_g,
-        ...(transitionTargets.carbs_low_g != null && { carbs_low_g: transitionTargets.carbs_low_g }),
-        ...(transitionTargets.carbs_high_g != null && { carbs_high_g: transitionTargets.carbs_high_g }),
+        ...(transitionTargets.carbs_low_g != null &&
+          { carbs_low_g: transitionTargets.carbs_low_g }),
+        ...(transitionTargets.carbs_high_g != null &&
+          { carbs_high_g: transitionTargets.carbs_high_g }),
         sodium_mg: transitionTargets.sodium_mg,
-        ...(transitionTargets.sodium_low_mg != null && { sodium_low_mg: transitionTargets.sodium_low_mg }),
-        ...(transitionTargets.sodium_high_mg != null && { sodium_high_mg: transitionTargets.sodium_high_mg }),
+        ...(transitionTargets.sodium_low_mg != null &&
+          { sodium_low_mg: transitionTargets.sodium_low_mg }),
+        ...(transitionTargets.sodium_high_mg != null &&
+          { sodium_high_mg: transitionTargets.sodium_high_mg }),
         water_ml: transitionTargets.water_ml,
-        ...(transitionTargets.water_low_ml != null && { water_low_ml: transitionTargets.water_low_ml }),
-        ...(transitionTargets.water_high_ml != null && { water_high_ml: transitionTargets.water_high_ml }),
+        ...(transitionTargets.water_low_ml != null &&
+          { water_low_ml: transitionTargets.water_low_ml }),
+        ...(transitionTargets.water_high_ml != null &&
+          { water_high_ml: transitionTargets.water_high_ml }),
       });
 
       const transitionResult = await generateTransitionPhase(
         supabase,
         transitionName,
         transitionTargets,
+        segments.reduce((sum, s) => sum + s.duration_minutes, 0),
         input.liked_foods,
         input.willing_to_try_foods,
         input.disliked_foods,
         input.device_id,
         input.allergies,
         input.dietary_preference,
+        input.gut_training_level,
       );
 
       const transitionValidation = validatePhaseResultAgainstTargets(

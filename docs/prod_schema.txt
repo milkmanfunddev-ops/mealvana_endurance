@@ -1121,36 +1121,39 @@ grant delete, insert, references, select, trigger, truncate, update on public_ev
 
 create table integrations
 (
-    id                          uuid                     default gen_random_uuid() not null
+    id                            uuid                     default gen_random_uuid() not null
         primary key,
-    user_id                     uuid                                               not null
+    user_id                       uuid                                               not null
         references users
             on delete cascade,
-    provider                    text                                               not null
+    provider                      text                                               not null
         constraint integrations_provider_check
             check (provider = ANY
                    (ARRAY ['final_surge'::text, 'training_peaks'::text, 'strava'::text, 'garmin'::text])),
-    access_token                text                                               not null,
-    refresh_token               text,
-    token_expires_at            timestamp with time zone,
-    provider_athlete_id         text                                               not null,
-    provider_athlete_name       text,
-    provider_athlete_email      text,
-    is_active                   boolean                  default true,
-    last_sync_at                timestamp with time zone,
-    last_sync_status            text
+    access_token                  text                                               not null,
+    refresh_token                 text,
+    token_expires_at              timestamp with time zone,
+    provider_athlete_id           text                                               not null,
+    provider_athlete_name         text,
+    provider_athlete_email        text,
+    is_active                     boolean                  default true,
+    last_sync_at                  timestamp with time zone,
+    last_sync_status              text
         constraint integrations_last_sync_status_check
             check ((last_sync_status IS NULL) OR
                    (last_sync_status = ANY (ARRAY ['success'::text, 'error'::text, 'pending'::text]))),
-    last_sync_error             text,
-    created_at                  timestamp with time zone default now(),
-    updated_at                  timestamp with time zone default now(),
-    threshold_pace_min_per_mile real,
-    athlete_zones_json          jsonb,
+    last_sync_error               text,
+    created_at                    timestamp with time zone default now(),
+    updated_at                    timestamp with time zone default now(),
+    threshold_pace_min_per_mile   real,
+    athlete_zones_json            jsonb,
+    provider_athlete_body_fat_pct real,
     unique (user_id, provider)
 );
 
 comment on column integrations.threshold_pace_min_per_mile is 'Athlete threshold pace in minutes per mile (e.g., 7.5 = 7:30/mi). Used to calculate accurate workout pace from Training Peaks IF and Structure data. Fetched from provider speed zones during sync.';
+
+comment on column integrations.provider_athlete_body_fat_pct is 'Athlete body fat percentage from Garmin body composition API. Used to auto-populate nutrition profile.';
 
 alter table integrations
     owner to postgres;

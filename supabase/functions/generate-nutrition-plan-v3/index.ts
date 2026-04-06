@@ -37,25 +37,62 @@ import {
 } from "../_shared/responses.ts";
 import { createServiceClient } from "../_shared/supabase-client.ts";
 import { generateUUID } from "../_shared/utils.ts";
-import { adjustTargetsForOverrides, type ActivityType, type FoodResult } from "../_shared/nutrition/index.ts";
+import {
+  type ActivityType,
+  adjustTargetsForOverrides,
+  type FoodResult,
+} from "../_shared/nutrition/index.ts";
 
-import type { PlanInputV2, LPPhaseResult } from "./types.ts";
+import type { LPPhaseResult, PlanInputV2 } from "./types.ts";
 import { generateBeforePhaseV3 } from "./before-phase.ts";
 import { generateDuringPhase } from "./during-phase.ts";
 import { generateLPPhase } from "./lp-phase.ts";
-import { flattenBeforeFoods, validatePhaseResultAgainstTargets } from "./validation.ts";
+import {
+  flattenBeforeFoods,
+  validatePhaseResultAgainstTargets,
+} from "./validation.ts";
 import { handleBrickPlan } from "./brick-handler.ts";
+
+// ============================================================================
+// Timing Helpers
+// ============================================================================
+
+function elapsedMs(start: number): number {
+  return Math.round(performance.now() - start);
+}
+
+async function timeAsync<T>(
+  label: string,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const start = performance.now();
+  try {
+    const result = await fn();
+    console.log(`[PLAN-V3-TIMING] ${label} completed in ${elapsedMs(start)}ms`);
+    return result;
+  } catch (error) {
+    console.warn(
+      `[PLAN-V3-TIMING] ${label} failed after ${elapsedMs(start)}ms`,
+    );
+    throw error;
+  }
+}
 
 // ============================================================================
 // Main Handler
 // ============================================================================
 
 serve(async (req) => {
+  const requestStart = performance.now();
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
   try {
+    const parseStart = performance.now();
     const input: PlanInputV2 = await req.json();
+    console.log(
+      `[PLAN-V3-TIMING] parse_input completed in ${elapsedMs(parseStart)}ms`,
+    );
 
     // Validate required fields
     if (!input.device_id) {
@@ -81,61 +118,87 @@ serve(async (req) => {
 
     // Adjust band bounds for user-overridden macros so solvers can reach the target
     if (input.macro_targets.pre_run) {
-      input.macro_targets.pre_run = adjustTargetsForOverrides(input.macro_targets.pre_run);
+      input.macro_targets.pre_run = adjustTargetsForOverrides(
+        input.macro_targets.pre_run,
+      );
     }
     if (input.macro_targets.during_run) {
-      input.macro_targets.during_run = adjustTargetsForOverrides(input.macro_targets.during_run);
+      input.macro_targets.during_run = adjustTargetsForOverrides(
+        input.macro_targets.during_run,
+      );
     }
     if (input.macro_targets.post_run) {
-      input.macro_targets.post_run = adjustTargetsForOverrides(input.macro_targets.post_run);
+      input.macro_targets.post_run = adjustTargetsForOverrides(
+        input.macro_targets.post_run,
+      );
     }
 
     // Brick workouts: route to dedicated handler
     if (activityType === "brick") {
-      return await handleBrickPlan(supabase, input, planId);
+      const response = await timeAsync(
+        "brick_total",
+        () => handleBrickPlan(supabase, input, planId),
+      );
+      console.log(
+        `[PLAN-V3-TIMING] request_total completed in ${
+          elapsedMs(requestStart)
+        }ms`,
+      );
+      return response;
     }
 
     // Generate all phases
     const [beforeResult, duringPhaseResult, afterPhaseResult] = await Promise
       .all([
         // Before: Algorithm C
-        generateBeforePhaseV3(supabase, input),
+        timeAsync("before_phase", () => generateBeforePhaseV3(supabase, input)),
 
-        // During: rule-based solver (no server-side by-hour apportionment)
+        // During: template solver → rule solver → LP fallback
         input.macro_targets.during_run
-          ? generateDuringPhase(
-            supabase,
-            input.macro_targets.during_run,
-            activityType,
-            input.liked_foods,
-            input.willing_to_try_foods,
-            input.disliked_foods,
-            input.device_id,
-            input.allergies,
-            input.dietary_preference,
+          ? timeAsync(
+            "during_phase",
+            () =>
+              generateDuringPhase(
+                supabase,
+                input.macro_targets.during_run,
+                activityType,
+                input.liked_foods,
+                input.willing_to_try_foods,
+                input.disliked_foods,
+                input.device_id,
+                input.allergies,
+                input.dietary_preference,
+                input.gut_training_level,
+                input.duration_minutes,
+              ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
 
         // After: LP-based
         input.macro_targets.post_run
-          ? generateLPPhase(
-            supabase,
-            "after",
-            input.macro_targets.post_run,
-            activityType,
-            input.liked_foods,
-            input.willing_to_try_foods,
-            input.disliked_foods,
-            input.device_id,
-            undefined,
-            undefined,
-            input.allergies,
-            input.dietary_preference,
+          ? timeAsync(
+            "after_phase",
+            () =>
+              generateLPPhase(
+                supabase,
+                "after",
+                input.macro_targets.post_run,
+                activityType,
+                input.liked_foods,
+                input.willing_to_try_foods,
+                input.disliked_foods,
+                input.device_id,
+                undefined,
+                undefined,
+                input.allergies,
+                input.dietary_preference,
+              ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
       ]);
 
     // Validate phases (non-fatal warnings)
+    const validationStart = performance.now();
     const warnings: string[] = [];
 
     const beforeValidation = validatePhaseResultAgainstTargets(
@@ -166,7 +229,7 @@ serve(async (req) => {
             duringValidation.issues.join("; ")
           }`,
         );
-        warnings.push(...duringValidation.issues.map(i => `during: ${i}`));
+        warnings.push(...duringValidation.issues.map((i) => `during: ${i}`));
       }
     }
 
@@ -182,15 +245,23 @@ serve(async (req) => {
             afterValidation.issues.join("; ")
           }`,
         );
-        warnings.push(...afterValidation.issues.map(i => `after: ${i}`));
+        warnings.push(...afterValidation.issues.map((i) => `after: ${i}`));
       }
     }
+    console.log(
+      `[PLAN-V3-TIMING] validation completed in ${
+        elapsedMs(validationStart)
+      }ms`,
+    );
 
     // Build response
-    const duringResponse = {
+    const duringResponse: Record<string, unknown> = {
       foods: duringPhaseResult.foods,
       by_hour_data: duringPhaseResult.by_hour_data ?? null,
     };
+    if (duringPhaseResult.template_metadata) {
+      duringResponse.template_metadata = duringPhaseResult.template_metadata;
+    }
 
     const response: Record<string, unknown> = {
       success: true,
@@ -227,10 +298,20 @@ serve(async (req) => {
       );
     }
     console.log(`[PLAN-V3] Plan generated successfully (plan_id=${planId})`);
+    console.log(
+      `[PLAN-V3-TIMING] request_total completed in ${
+        elapsedMs(requestStart)
+      }ms`,
+    );
 
     return jsonResponse(response);
   } catch (error) {
     console.error("[PLAN-V3] Error:", error);
+    console.warn(
+      `[PLAN-V3-TIMING] request_total failed after ${
+        elapsedMs(requestStart)
+      }ms`,
+    );
     return serverError(error, true);
   }
 });
