@@ -37,6 +37,7 @@ import 'tables/personal_templates_table.dart';
 import 'tables/athlete_pairing_codes_table.dart';
 import 'tables/coach_pairing_codes_table.dart';
 import 'tables/daily_macro_targets_table.dart';
+import 'tables/race_checklist_items_table.dart';
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
@@ -86,6 +87,7 @@ part 'app_database.g.dart';
     // Calendar feature tables
     ActivitiesTable,
     EventsTable,
+    RaceChecklistItemsTable,
     CarbLoadingPlansTable,
     CarbLoadingDaysTable,
 
