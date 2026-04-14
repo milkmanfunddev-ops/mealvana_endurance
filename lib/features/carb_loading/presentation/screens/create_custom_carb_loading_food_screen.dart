@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/content_area.dart';
 import '../../../../theme/app_theme.dart';
 import '../../application/food_import_service.dart';
 import '../../domain/meal_type.dart';
@@ -289,11 +286,13 @@ class _CreateCustomCarbLoadingFoodScreenState
               // Save Button (fixed at bottom)
               Padding(
                 padding: AppSpacing.screenPadding,
-                child: PrimaryButton(
-                  text: _isSaving ? 'Saving...' : 'Save Food',
-                  onPressed: _isSaving ? null : _handleSave,
-                  width: double.infinity,
-                ),
+                child: _isSaving
+                    ? const Center(child: CircularProgressIndicator())
+                    : KylePrimaryButton(
+                        text: 'Save Food',
+                        onPressed: _handleSave,
+                        isFullWidth: true,
+                      ),
               ),
             ],
           ),
