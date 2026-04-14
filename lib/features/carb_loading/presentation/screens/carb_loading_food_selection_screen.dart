@@ -756,7 +756,7 @@ class _CarbLoadingFoodSelectionScreenState
                   ),
                 ),
 
-                // Show edit button for custom foods, plus for others
+                // Show edit button for custom foods, customize button for templates
                 if (isCustom)
                   IconButton(
                     icon: Icon(
@@ -768,10 +768,25 @@ class _CarbLoadingFoodSelectionScreenState
                     tooltip: 'Edit food',
                   )
                 else
-                  Icon(
-                    FontAwesomeIcons.circlePlus,
-                    color: AppColors.orange,
-                    size: AppIconSizes.md,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          FontAwesomeIcons.copy,
+                          color: AppColors.electrolyte.withValues(alpha: 0.7),
+                          size: AppIconSizes.sm,
+                        ),
+                        onPressed: () => _duplicateAndCustomizeTemplateFood(food),
+                        tooltip: 'Duplicate & customize',
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Icon(
+                        FontAwesomeIcons.circlePlus,
+                        color: AppColors.orange,
+                        size: AppIconSizes.md,
+                      ),
+                    ],
                   ),
               ],
             ),
@@ -779,6 +794,49 @@ class _CarbLoadingFoodSelectionScreenState
         ),
       ),
     );
+  }
+
+  /// Duplicate a template food and open edit screen to customize
+  Future<void> _duplicateAndCustomizeTemplateFood(dynamic food) async {
+    if (food is! CarbLoadingFood) return;
+
+    final carbLoadingFoodService = ref.read(carbLoadingFoodServiceProvider);
+    final deviceId = await ref.read(userIdProvider.future);
+
+    try {
+      // Create custom food with "(customized)" suffix
+      final customizedName = '${food.displayName} (customized)';
+
+      debugPrint('📋 Duplicating template food: ${food.displayName}');
+
+      final customFood = await carbLoadingFoodService.createUserFood(
+        deviceId: deviceId,
+        userId: deviceId,
+        name: _toInternalFoodName(customizedName),
+        displayName: customizedName,
+        displayNamePlural: '${customizedName}s',
+        carbsPerServing: food.carbsPerServing,
+        mealTypes: [_params.mealType],
+      );
+
+      debugPrint('✅ Created custom food: ${customFood.displayName} (ID: ${customFood.id})');
+
+      // Refresh the food list to show the new custom food
+      ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
+
+      // Open edit screen so user can customize carbs and name
+      if (mounted) {
+        await _showUserFoodEditSheet(customFood);
+      }
+    } catch (e) {
+      debugPrint('❌ Error duplicating food: $e');
+      if (mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          'Failed to duplicate food. Please try again.',
+        );
+      }
+    }
   }
 
   /// Show the edit screen for a user food (no categories for carb loading)

@@ -52,6 +52,7 @@ class CarbLoadingFoodPill extends StatelessWidget {
   final int quantity;
   final Function() onIncrement;
   final Function() onDecrement;
+  final double? carbsPerServing; // Optional carbs for customized foods
 
   const CarbLoadingFoodPill({
     super.key,
@@ -59,6 +60,7 @@ class CarbLoadingFoodPill extends StatelessWidget {
     required this.quantity,
     required this.onIncrement,
     required this.onDecrement,
+    this.carbsPerServing,
   });
 
   @override
@@ -103,7 +105,7 @@ class CarbLoadingFoodPill extends StatelessWidget {
               children: [
                 // Food name and quantity (top line)
                 Text(
-                  '${food?.displayName ?? foodName} x $quantity',
+                  '${food?.displayName ?? foodName}${carbsPerServing != null ? ' ${carbsPerServing!.toInt()}g carbs' : ''} x $quantity',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,

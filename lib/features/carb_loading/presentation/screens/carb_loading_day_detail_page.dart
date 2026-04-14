@@ -428,6 +428,7 @@ class _CarbLoadingDayDetailPageState
                         return CarbLoadingFoodPill(
                           foodName: food.displayName,
                           quantity: meal.quantity,
+                          carbsPerServing: food.carbsPerServing,
                           onIncrement: () {
                             ref
                                 .read(
@@ -497,6 +498,7 @@ class _CarbLoadingDayDetailPageState
                         return CarbLoadingFoodPill(
                           foodName: food.displayName,
                           quantity: meal.quantity,
+                          carbsPerServing: food.carbsPerServing,
                           onIncrement: () {
                             ref
                                 .read(
