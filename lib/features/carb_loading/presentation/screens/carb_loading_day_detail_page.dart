@@ -579,13 +579,13 @@ class _CarbLoadingDayDetailPageState
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          // Semi-transparent dark background with teal outline
+          // Semi-transparent purple background for unselected pills
           color: isDark
               ? AppColors.blackberryLight.withValues(alpha: 0.3)
               : AppColors.cream.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            // Teal border (outlined style)
+            // Teal border
             color: isDark
                 ? AppColors.electrolyte.withValues(alpha: 0.6)
                 : AppColors.blackberry.withValues(alpha: 0.3),
@@ -595,12 +595,16 @@ class _CarbLoadingDayDetailPageState
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              name,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark
-                    ? AppColors.cream
-                    : AppColors.blackberry,
+            Flexible(
+              child: Text(
+                name,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark
+                      ? AppColors.cream
+                      : AppColors.blackberry,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
             SizedBox(width: AppSpacing.xs),
