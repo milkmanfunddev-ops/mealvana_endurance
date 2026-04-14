@@ -50,6 +50,8 @@ class _CarbLoadingFoodSelectionScreenState
 
   double _selectedQuantity = 1.0;
   bool _isMyFoodsExpanded = true;
+  bool _isNutritionPlanFoodsExpanded = false;
+  bool _isNutritionPlanUserFoodsExpanded = false;
 
   late final CarbLoadingFoodSelectionParams _params;
 
@@ -142,6 +144,8 @@ class _CarbLoadingFoodSelectionScreenState
   void _seedSearchController(CarbLoadingFoodSelectionState state) {
     final userFoods = <Food>[];
     final templateFoods = <Food>[];
+    final nutritionPlanFoods = <Food>[];
+    final nutritionPlanUserFoods = <Food>[];
     _searchSourceById.clear();
 
     for (final food in state.carbLoadingUserFoods) {
@@ -157,10 +161,45 @@ class _CarbLoadingFoodSelectionScreenState
       _searchSourceById[mapped.id] = food;
     }
 
+    // Add nutrition plan foods to search pool
+    for (final food in state.nutritionPlanFoods) {
+      final mapped = Food(
+        id: 'nutrition_plan_${food.id}',
+        name: food.name,
+        displayName: food.displayName,
+        displayNamePlural: food.displayNamePlural,
+        imageAddress: food.imageUrl,
+        carbsPerServing: food.carbsPerServing,
+        categories: const [],
+      );
+      nutritionPlanFoods.add(mapped);
+      _searchSourceById[mapped.id] = food;
+    }
+
+    // Add nutrition plan user foods to search pool
+    for (final food in state.nutritionPlanUserFoods) {
+      final mapped = Food(
+        id: 'nutrition_plan_user_${food.id}',
+        name: food.name,
+        displayName: food.displayName,
+        displayNamePlural: food.displayNamePlural,
+        imageAddress: food.imageAddress,
+        carbsPerServing: food.carbsPerServing,
+        categories: const [],
+      );
+      nutritionPlanUserFoods.add(mapped);
+      _searchSourceById[mapped.id] = food;
+    }
+
     ref
         .read(foodSearchControllerProvider(_searchControllerKey).notifier)
         .updateFoodPool(
-          allFoods: [...templateFoods, ...userFoods],
+          allFoods: [
+            ...templateFoods,
+            ...userFoods,
+            ...nutritionPlanUserFoods,
+            ...nutritionPlanFoods,
+          ],
           userFoods: userFoods,
         );
   }
@@ -267,6 +306,122 @@ class _CarbLoadingFoodSelectionScreenState
             ),
           ),
           ...templateFoods.map((food) => _buildFoodCard(food)),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        if (state.nutritionPlanUserFoods.isNotEmpty) ...[
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isNutritionPlanUserFoodsExpanded = !_isNutritionPlanUserFoodsExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Icon(
+                    FontAwesomeIcons.solidHeart,
+                    size: AppIconSizes.sm,
+                    color: AppColors.orange,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'My Nutrition Foods',
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.orange.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${state.nutritionPlanUserFoods.length}',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: AppColors.orange,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _isNutritionPlanUserFoodsExpanded
+                        ? FontAwesomeIcons.chevronUp
+                        : FontAwesomeIcons.chevronDown,
+                    size: AppIconSizes.sm,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isNutritionPlanUserFoodsExpanded)
+            ...state.nutritionPlanUserFoods.map((food) => _buildFoodCard(food)),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        if (state.nutritionPlanFoods.isNotEmpty) ...[
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isNutritionPlanFoodsExpanded = !_isNutritionPlanFoodsExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Icon(
+                    FontAwesomeIcons.utensils,
+                    size: AppIconSizes.sm,
+                    color: AppColors.electrolyte,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'Nutrition Plan Foods',
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.electrolyte.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${state.nutritionPlanFoods.length}',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: AppColors.electrolyte,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _isNutritionPlanFoodsExpanded
+                        ? FontAwesomeIcons.chevronUp
+                        : FontAwesomeIcons.chevronDown,
+                    size: AppIconSizes.sm,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isNutritionPlanFoodsExpanded)
+            ...state.nutritionPlanFoods.map((food) => _buildFoodCard(food)),
         ],
       ],
     );
