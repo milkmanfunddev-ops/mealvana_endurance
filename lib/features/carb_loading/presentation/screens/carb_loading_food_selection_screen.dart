@@ -11,6 +11,7 @@ import '../../../../shared/controllers/food_search_controller.dart';
 import '../../../../shared/widgets/food_search/unified_food_search_results.dart';
 import '../providers/carb_loading_food_selection_controller.dart';
 import '../../application/carb_loading_food_service.dart';
+import '../../data/carb_loading_day_meal_repository.dart';
 import '../../domain/meal_type.dart';
 import '../../domain/carb_loading_food.dart';
 import '../../domain/carb_loading_user_food.dart';
@@ -18,6 +19,7 @@ import '../../../nutrition_plan/domain/food.dart';
 import '../../../barcode_scanning/application/catalog_search_service.dart';
 import '../../../nutrition_plan/presentation/widgets/swap_food/catalog_section_widget.dart';
 import '../../../../shared/database/app_database.dart' as db;
+import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -782,6 +784,9 @@ class _CarbLoadingFoodSelectionScreenState
   /// Show the edit screen for a user food (no categories for carb loading)
   Future<void> _showUserFoodEditSheet(dynamic food) async {
     final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+    final carbLoadingFoodService = ref.read(carbLoadingFoodServiceProvider);
+    final database = ref.read(appDatabaseProvider);
+    final deviceId = await ref.read(userIdProvider.future);
 
     String foodId = '';
     String foodName = '';
@@ -794,29 +799,60 @@ class _CarbLoadingFoodSelectionScreenState
     double? fluidMlPerServing;
     int? caloriesPerServing;
 
-    // Extract data based on food type
+    // Extract food ID first to fetch fresh data
     if (food is CarbLoadingUserFood) {
       foodId = food.id;
-      foodName = food.name;
+    } else if (food is db.UserFood) {
+      foodId = food.id;
+    } else {
+      return; // Not an editable food type
+    }
+
+    // **CRITICAL FIX**: Fetch FRESH data from database instead of using cached food object
+    // This ensures we always see the latest carbs value after edits
+    if (food is CarbLoadingUserFood) {
+      debugPrint('🔍 Fetching fresh data for CarbLoadingUserFood: $foodId');
+      final freshFood = await carbLoadingFoodService.getUserFoodById(foodId);
+      if (freshFood == null) {
+        debugPrint('❌ Food not found: $foodId');
+        return;
+      }
+
+      // Use displayName (user-facing) not name (internal identifier)
+      foodName = freshFood.displayName;
       servingAmount = null;
       servingUnit = null;
-      carbsPerServing = food.carbsPerServing;
+      carbsPerServing = freshFood.carbsPerServing;
       proteinPerServing = null;
       fatPerServing = null;
       sodiumMg = null;
       fluidMlPerServing = null;
       caloriesPerServing = null;
+
+      debugPrint('✅ Fresh data loaded: ${freshFood.displayName} with ${freshFood.carbsPerServing}g carbs');
     } else if (food is db.UserFood) {
-      foodId = food.id;
-      foodName = food.name;
-      servingAmount = food.servingAmount;
-      servingUnit = food.servingUnit;
-      carbsPerServing = food.carbsPerServing;
-      proteinPerServing = food.proteinPerServing;
-      fatPerServing = food.fatPerServing;
-      sodiumMg = food.sodiumMg;
-      fluidMlPerServing = food.fluidMlPerServing;
-      caloriesPerServing = food.caloriesPerServing;
+      debugPrint('🔍 Fetching fresh data for UserFood: $foodId');
+      final freshFoodQuery = database.select(database.userFoodsTable)
+        ..where((tbl) => tbl.id.equals(foodId));
+      final freshFoodList = await freshFoodQuery.get();
+
+      if (freshFoodList.isEmpty) {
+        debugPrint('❌ Food not found: $foodId');
+        return;
+      }
+
+      final freshFood = freshFoodList.first;
+      foodName = freshFood.name;
+      servingAmount = freshFood.servingAmount;
+      servingUnit = freshFood.servingUnit;
+      carbsPerServing = freshFood.carbsPerServing;
+      proteinPerServing = freshFood.proteinPerServing;
+      fatPerServing = freshFood.fatPerServing;
+      sodiumMg = freshFood.sodiumMg;
+      fluidMlPerServing = freshFood.fluidMlPerServing;
+      caloriesPerServing = freshFood.caloriesPerServing;
+
+      debugPrint('✅ Fresh data loaded: ${freshFood.name} with ${freshFood.carbsPerServing}g carbs');
     } else {
       return; // Not an editable food type
     }
@@ -849,6 +885,8 @@ class _CarbLoadingFoodSelectionScreenState
 
     if (!mounted) return;
 
+    debugPrint('📥 Result handler received result: ${result.runtimeType}');
+
     // Handle delete
     if (result is String && result.startsWith('DELETE:')) {
       final deletedFoodId = result.substring(7);
@@ -871,30 +909,47 @@ class _CarbLoadingFoodSelectionScreenState
     }
     // Handle update
     else if (result is FoodDetailResult) {
+      debugPrint('📦 FoodDetailResult received: ${result.name} with ${result.carbsPerServing}g carbs (ID: ${result.foodId})');
+
       try {
-        await userFoodCrudService.updateUserFood(
-          foodId: result.foodId,
-          name: result.name,
-          displayName: result.name,
-          displayNamePlural: '${result.name}s',
-          servingAmount: result.servingAmount,
-          servingUnit: result.servingUnit,
+        debugPrint('🔧 Updating food: ${result.name} with ${result.carbsPerServing}g carbs');
+        debugPrint('🔧 Food ID: ${result.foodId}');
+
+        // CRITICAL FIX: Use carbLoadingFoodService for carb loading foods, not userFoodCrudService
+        // userFoodCrudService updates user_foods table (nutrition plan)
+        // carbLoadingFoodService updates carb_loading_user_foods table
+        // result.name from FoodDetailScreen maps to displayName (user-facing name)
+        await carbLoadingFoodService.updateUserFood(
+          id: result.foodId,
+          displayName: result.name,  // FoodDetailScreen's name field = displayName
           carbsPerServing: result.carbsPerServing,
-          proteinPerServing: result.proteinPerServing,
-          fatPerServing: result.fatPerServing,
-          sodiumMg: result.sodiumMg,
-          fluidMlPerServing: result.fluidMlPerServing,
-          // Don't update categories for carb loading foods
         );
+
+        debugPrint('🔧 Carb loading user food updated successfully in correct table');
+
+        // Update carbs in all existing meal entries that use this food
+        final dayMealRepo = ref.read(carbLoadingDayMealRepositoryProvider);
+        debugPrint('🔧 Updating meal entries with food ID: ${result.foodId}');
+
+        final mealsUpdated = await dayMealRepo.updateCarbsForUserFood(
+          carbLoadingUserFoodId: result.foodId,
+          newCarbsPerServing: result.carbsPerServing,
+        );
+
+        debugPrint('🔧 Updated $mealsUpdated meal entries');
 
         // Refresh foods to reflect changes
         ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
 
         if (mounted) {
-          MealvanaSnackbar.showSuccess(context, '${result.name} updated!');
+          final message = mealsUpdated > 0
+              ? '${result.name} updated! ($mealsUpdated meal${mealsUpdated > 1 ? 's' : ''} updated)'
+              : '${result.name} updated!';
+          MealvanaSnackbar.showSuccess(context, message);
         }
-      } catch (e) {
-        debugPrint('Error updating user food: $e');
+      } catch (e, stackTrace) {
+        debugPrint('❌ Error updating user food: $e');
+        debugPrint('Stack trace: $stackTrace');
         if (mounted) {
           MealvanaSnackbar.showError(
             context,

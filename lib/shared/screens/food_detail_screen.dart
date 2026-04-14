@@ -236,6 +236,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   // Prevent double-tap navigation crashes
   bool _isNavigating = false;
 
+  // Prevent double-save
+  bool _isSaving = false;
+
   @override
   void initState() {
     super.initState();
@@ -390,6 +393,12 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   }
 
   void _handleSave() {
+    // Prevent double-save
+    if (_isSaving) {
+      debugPrint('⚠️ Double-save prevented!');
+      return;
+    }
+
     if (!_hasValidName) {
       MealvanaSnackbar.showError(context, 'Please enter a food name');
       return;
@@ -403,6 +412,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       return;
     }
 
+    _isSaving = true;
+
     // Get selected category IDs
     final selectedCategoryIds = widget.showCategories
         ? _selectedCategories.entries
@@ -412,6 +423,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
         : <int>[];
 
     // Parse values
+    final carbsValue = double.tryParse(_carbsController.text) ?? 0.0;
+
     final result = FoodDetailResult(
       foodId: widget.foodData.id,
       name: _nameController.text.trim(),
@@ -423,7 +436,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
           ? _servingUnitController.text.trim()
           : null,
       caloriesPerServing: int.tryParse(_caloriesController.text) ?? 0,
-      carbsPerServing: double.tryParse(_carbsController.text) ?? 0.0,
+      carbsPerServing: carbsValue,
       proteinPerServing: double.tryParse(_proteinController.text) ?? 0.0,
       fatPerServing: double.tryParse(_fatController.text) ?? 0.0,
       sodiumMg: int.tryParse(_sodiumController.text) ?? 0,
@@ -433,6 +446,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       productType: _selectedProductType,
       categoryIds: selectedCategoryIds,
     );
+
+    debugPrint('💾 FoodDetailScreen saving with ${carbsValue}g carbs for food: ${widget.foodData.id}');
 
     // Pop with the result - the calling screen handles the result
     context.pop(result);
