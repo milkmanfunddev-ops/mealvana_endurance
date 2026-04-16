@@ -52,6 +52,7 @@ import '../../features/carb_loading/domain/meal_type.dart';
 import '../widgets/tabs_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/events/presentation/screens/event_form_screen.dart';
+import '../../features/race_checklist/presentation/screens/race_checklist_screen.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/education/presentation/screens/video_player_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
@@ -488,6 +489,16 @@ class AppRouter {
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             return EventFormScreen(forUserId: extra?['forUserId'] as String?);
+          },
+        ),
+
+        // Race Day Checklist - Gear checklist for an event
+        GoRoute(
+          path: '/events/:eventId/checklist',
+          name: 'race-checklist',
+          builder: (context, state) {
+            final eventId = state.pathParameters['eventId']!;
+            return RaceChecklistScreen(eventId: eventId);
           },
         ),
 

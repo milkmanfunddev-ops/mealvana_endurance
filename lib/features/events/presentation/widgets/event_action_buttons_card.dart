@@ -133,6 +133,16 @@ class EventActionButtonsCard extends ConsumerWidget {
                 : FontAwesomeIcons.plus,
           ),
 
+          const SizedBox(height: AppSpacing.sm),
+
+          // Race Day Checklist Button
+          KyleSecondaryButton(
+            onPressed: () {
+              context.push('/events/$eventId/checklist');
+            },
+            text: 'Race Day Checklist',
+            icon: FontAwesomeIcons.listCheck,
+          ),
 
           // const SizedBox(height: AppSpacing.md),
 
