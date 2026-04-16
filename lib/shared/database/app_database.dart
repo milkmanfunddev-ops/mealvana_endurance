@@ -287,6 +287,25 @@ class AppDatabase extends _$AppDatabase {
           )
         ''');
 
+        // Create race_checklist_items table if not exists (local-only feature)
+        await customStatement('''
+          CREATE TABLE IF NOT EXISTS race_checklist_items (
+            id TEXT NOT NULL PRIMARY KEY,
+            event_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            category TEXT NOT NULL,
+            item_name TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            is_checked INTEGER NOT NULL DEFAULT 0,
+            checked_at INTEGER,
+            notes TEXT,
+            is_template_item INTEGER NOT NULL DEFAULT 1,
+            created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+            updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+            CHECK (category IN ('gear', 'nutrition', 'logistics', 'pre_race', 'race_morning'))
+          )
+        ''');
+
         // Schema integrity validation - fail fast if schema is corrupted
         if (!details.wasCreated) {
           await _validateSchemaIntegrity();

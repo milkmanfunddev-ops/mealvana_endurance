@@ -14796,32 +14796,6 @@ class $RaceChecklistItemsTableTable extends RaceChecklistItemsTable
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
-  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
-    'needsUpload',
-  );
-  @override
-  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
-    'needs_upload',
-    aliasedName,
-    true,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("needs_upload" IN (0, 1))',
-    ),
-  );
-  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
-    'localUpdatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> localUpdatedAt =
-      GeneratedColumn<DateTime>(
-        'local_updated_at',
-        aliasedName,
-        true,
-        type: DriftSqlType.dateTime,
-        requiredDuringInsert: false,
-      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -14836,8 +14810,6 @@ class $RaceChecklistItemsTableTable extends RaceChecklistItemsTable
     isTemplateItem,
     createdAt,
     updatedAt,
-    needsUpload,
-    localUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -14931,24 +14903,6 @@ class $RaceChecklistItemsTableTable extends RaceChecklistItemsTable
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
-    if (data.containsKey('needs_upload')) {
-      context.handle(
-        _needsUploadMeta,
-        needsUpload.isAcceptableOrUnknown(
-          data['needs_upload']!,
-          _needsUploadMeta,
-        ),
-      );
-    }
-    if (data.containsKey('local_updated_at')) {
-      context.handle(
-        _localUpdatedAtMeta,
-        localUpdatedAt.isAcceptableOrUnknown(
-          data['local_updated_at']!,
-          _localUpdatedAtMeta,
-        ),
-      );
-    }
     return context;
   }
 
@@ -15006,14 +14960,6 @@ class $RaceChecklistItemsTableTable extends RaceChecklistItemsTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
-      needsUpload: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}needs_upload'],
-      ),
-      localUpdatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}local_updated_at'],
-      ),
     );
   }
 
@@ -15057,10 +15003,6 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
   /// Metadata
   final DateTime createdAt;
   final DateTime updatedAt;
-
-  /// Sync tracking (offline-first architecture)
-  final bool? needsUpload;
-  final DateTime? localUpdatedAt;
   const ChecklistItem({
     required this.id,
     required this.eventId,
@@ -15074,8 +15016,6 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     required this.isTemplateItem,
     required this.createdAt,
     required this.updatedAt,
-    this.needsUpload,
-    this.localUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -15096,12 +15036,6 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     map['is_template_item'] = Variable<bool>(isTemplateItem);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
-    if (!nullToAbsent || needsUpload != null) {
-      map['needs_upload'] = Variable<bool>(needsUpload);
-    }
-    if (!nullToAbsent || localUpdatedAt != null) {
-      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
-    }
     return map;
   }
 
@@ -15123,12 +15057,6 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       isTemplateItem: Value(isTemplateItem),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
-      needsUpload: needsUpload == null && nullToAbsent
-          ? const Value.absent()
-          : Value(needsUpload),
-      localUpdatedAt: localUpdatedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(localUpdatedAt),
     );
   }
 
@@ -15150,8 +15078,6 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       isTemplateItem: serializer.fromJson<bool>(json['isTemplateItem']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
-      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
     );
   }
   @override
@@ -15170,8 +15096,6 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
       'isTemplateItem': serializer.toJson<bool>(isTemplateItem),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'needsUpload': serializer.toJson<bool?>(needsUpload),
-      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
     };
   }
 
@@ -15188,8 +15112,6 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     bool? isTemplateItem,
     DateTime? createdAt,
     DateTime? updatedAt,
-    Value<bool?> needsUpload = const Value.absent(),
-    Value<DateTime?> localUpdatedAt = const Value.absent(),
   }) => ChecklistItem(
     id: id ?? this.id,
     eventId: eventId ?? this.eventId,
@@ -15203,10 +15125,6 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     isTemplateItem: isTemplateItem ?? this.isTemplateItem,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
-    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
-    localUpdatedAt: localUpdatedAt.present
-        ? localUpdatedAt.value
-        : this.localUpdatedAt,
   );
   ChecklistItem copyWithCompanion(RaceChecklistItemsTableCompanion data) {
     return ChecklistItem(
@@ -15224,12 +15142,6 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
           : this.isTemplateItem,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      needsUpload: data.needsUpload.present
-          ? data.needsUpload.value
-          : this.needsUpload,
-      localUpdatedAt: data.localUpdatedAt.present
-          ? data.localUpdatedAt.value
-          : this.localUpdatedAt,
     );
   }
 
@@ -15247,9 +15159,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
           ..write('notes: $notes, ')
           ..write('isTemplateItem: $isTemplateItem, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('needsUpload: $needsUpload, ')
-          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
@@ -15268,8 +15178,6 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
     isTemplateItem,
     createdAt,
     updatedAt,
-    needsUpload,
-    localUpdatedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -15286,9 +15194,7 @@ class ChecklistItem extends DataClass implements Insertable<ChecklistItem> {
           other.notes == this.notes &&
           other.isTemplateItem == this.isTemplateItem &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.needsUpload == this.needsUpload &&
-          other.localUpdatedAt == this.localUpdatedAt);
+          other.updatedAt == this.updatedAt);
 }
 
 class RaceChecklistItemsTableCompanion extends UpdateCompanion<ChecklistItem> {
@@ -15304,8 +15210,6 @@ class RaceChecklistItemsTableCompanion extends UpdateCompanion<ChecklistItem> {
   final Value<bool> isTemplateItem;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
-  final Value<bool?> needsUpload;
-  final Value<DateTime?> localUpdatedAt;
   final Value<int> rowid;
   const RaceChecklistItemsTableCompanion({
     this.id = const Value.absent(),
@@ -15320,8 +15224,6 @@ class RaceChecklistItemsTableCompanion extends UpdateCompanion<ChecklistItem> {
     this.isTemplateItem = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
-    this.needsUpload = const Value.absent(),
-    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RaceChecklistItemsTableCompanion.insert({
@@ -15337,8 +15239,6 @@ class RaceChecklistItemsTableCompanion extends UpdateCompanion<ChecklistItem> {
     this.isTemplateItem = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
-    this.needsUpload = const Value.absent(),
-    this.localUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : eventId = Value(eventId),
        userId = Value(userId),
@@ -15357,8 +15257,6 @@ class RaceChecklistItemsTableCompanion extends UpdateCompanion<ChecklistItem> {
     Expression<bool>? isTemplateItem,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
-    Expression<bool>? needsUpload,
-    Expression<DateTime>? localUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -15374,8 +15272,6 @@ class RaceChecklistItemsTableCompanion extends UpdateCompanion<ChecklistItem> {
       if (isTemplateItem != null) 'is_template_item': isTemplateItem,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
-      if (needsUpload != null) 'needs_upload': needsUpload,
-      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -15393,8 +15289,6 @@ class RaceChecklistItemsTableCompanion extends UpdateCompanion<ChecklistItem> {
     Value<bool>? isTemplateItem,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
-    Value<bool?>? needsUpload,
-    Value<DateTime?>? localUpdatedAt,
     Value<int>? rowid,
   }) {
     return RaceChecklistItemsTableCompanion(
@@ -15410,8 +15304,6 @@ class RaceChecklistItemsTableCompanion extends UpdateCompanion<ChecklistItem> {
       isTemplateItem: isTemplateItem ?? this.isTemplateItem,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      needsUpload: needsUpload ?? this.needsUpload,
-      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -15455,12 +15347,6 @@ class RaceChecklistItemsTableCompanion extends UpdateCompanion<ChecklistItem> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
-    if (needsUpload.present) {
-      map['needs_upload'] = Variable<bool>(needsUpload.value);
-    }
-    if (localUpdatedAt.present) {
-      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
-    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -15482,8 +15368,6 @@ class RaceChecklistItemsTableCompanion extends UpdateCompanion<ChecklistItem> {
           ..write('isTemplateItem: $isTemplateItem, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('needsUpload: $needsUpload, ')
-          ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -37219,8 +37103,6 @@ typedef $$RaceChecklistItemsTableTableCreateCompanionBuilder =
       Value<bool> isTemplateItem,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
-      Value<bool?> needsUpload,
-      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 typedef $$RaceChecklistItemsTableTableUpdateCompanionBuilder =
@@ -37237,8 +37119,6 @@ typedef $$RaceChecklistItemsTableTableUpdateCompanionBuilder =
       Value<bool> isTemplateItem,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
-      Value<bool?> needsUpload,
-      Value<DateTime?> localUpdatedAt,
       Value<int> rowid,
     });
 
@@ -37308,16 +37188,6 @@ class $$RaceChecklistItemsTableTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get needsUpload => $composableBuilder(
-    column: $table.needsUpload,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
-    column: $table.localUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -37390,16 +37260,6 @@ class $$RaceChecklistItemsTableTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
-
-  ColumnOrderings<bool> get needsUpload => $composableBuilder(
-    column: $table.needsUpload,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
-    column: $table.localUpdatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
 }
 
 class $$RaceChecklistItemsTableTableAnnotationComposer
@@ -37448,16 +37308,6 @@ class $$RaceChecklistItemsTableTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumn<bool> get needsUpload => $composableBuilder(
-    column: $table.needsUpload,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
-    column: $table.localUpdatedAt,
-    builder: (column) => column,
-  );
 }
 
 class $$RaceChecklistItemsTableTableTableManager
@@ -37518,8 +37368,6 @@ class $$RaceChecklistItemsTableTableTableManager
                 Value<bool> isTemplateItem = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
-                Value<bool?> needsUpload = const Value.absent(),
-                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RaceChecklistItemsTableCompanion(
                 id: id,
@@ -37534,8 +37382,6 @@ class $$RaceChecklistItemsTableTableTableManager
                 isTemplateItem: isTemplateItem,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
-                needsUpload: needsUpload,
-                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -37552,8 +37398,6 @@ class $$RaceChecklistItemsTableTableTableManager
                 Value<bool> isTemplateItem = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
-                Value<bool?> needsUpload = const Value.absent(),
-                Value<DateTime?> localUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RaceChecklistItemsTableCompanion.insert(
                 id: id,
@@ -37568,8 +37412,6 @@ class $$RaceChecklistItemsTableTableTableManager
                 isTemplateItem: isTemplateItem,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
-                needsUpload: needsUpload,
-                localUpdatedAt: localUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

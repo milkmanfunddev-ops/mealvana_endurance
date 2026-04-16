@@ -74,8 +74,6 @@ class ChecklistRepository {
           sortOrder: Value(entry.key),
           isChecked: const Value(false),
           isTemplateItem: const Value(true),
-          needsUpload: const Value(true),
-          localUpdatedAt: Value(DateTime.now()),
         );
       }).toList();
 
@@ -108,8 +106,6 @@ class ChecklistRepository {
           isChecked: Value(isChecked),
           checkedAt: Value(isChecked ? DateTime.now() : null),
           updatedAt: Value(DateTime.now()),
-          needsUpload: const Value(true),
-          localUpdatedAt: Value(DateTime.now()),
         ),
       );
 
@@ -153,8 +149,6 @@ class ChecklistRepository {
               itemName: itemName,
               sortOrder: Value(maxSort + 1),
               isTemplateItem: const Value(false),
-              needsUpload: const Value(true),
-              localUpdatedAt: Value(DateTime.now()),
             ),
           );
 
@@ -256,8 +250,6 @@ class ChecklistRepository {
       isTemplateItem: item.isTemplateItem,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
-      needsUpload: item.needsUpload,
-      localUpdatedAt: item.localUpdatedAt,
     );
   }
 }

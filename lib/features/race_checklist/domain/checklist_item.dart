@@ -13,8 +13,6 @@ class ChecklistItem {
     this.isTemplateItem = true,
     required this.createdAt,
     required this.updatedAt,
-    this.needsUpload,
-    this.localUpdatedAt,
   });
 
   final String id;
@@ -29,8 +27,6 @@ class ChecklistItem {
   final bool isTemplateItem;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final bool? needsUpload;
-  final DateTime? localUpdatedAt;
 
   ChecklistItem copyWith({
     String? id,
@@ -45,8 +41,6 @@ class ChecklistItem {
     bool? isTemplateItem,
     DateTime? createdAt,
     DateTime? updatedAt,
-    bool? needsUpload,
-    DateTime? localUpdatedAt,
   }) {
     return ChecklistItem(
       id: id ?? this.id,
@@ -61,8 +55,6 @@ class ChecklistItem {
       isTemplateItem: isTemplateItem ?? this.isTemplateItem,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      needsUpload: needsUpload ?? this.needsUpload,
-      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
     );
   }
 
