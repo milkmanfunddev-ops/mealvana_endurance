@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../events/domain/event.dart';
+import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
+import '../../../events/presentation/providers/events_controller.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Screen for selecting carb loading protocol
 /// Displays 2-day and 3-day protocol options with detailed information
@@ -13,7 +16,17 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose Carb Loading Protocol')),
+      appBar: AppBar(
+        title: const Text('Choose Carb Loading Protocol'),
+        actions: [
+          if (event.hasCarbLoading)
+            IconButton(
+              onPressed: () => _confirmDeletePlan(context, ref),
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Delete Carb Loading Plan',
+            ),
+        ],
+      ),
       body: SafeArea(
         child: ContentArea.wide(
           child: SingleChildScrollView(
@@ -103,6 +116,7 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
                   ],
                   onTap: () => _selectProtocol(context, ref, 2),
                 ),
+
               ],
             ),
           ),
@@ -112,9 +126,50 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
   }
 
   void _selectProtocol(BuildContext context, WidgetRef ref, int days) {
-    // TODO: Navigate to carb loading plan generation
-    // This will be implemented in the next step
     Navigator.pop(context, days);
+  }
+
+  Future<void> _confirmDeletePlan(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Carb Loading Plan'),
+        content: const Text(
+          'This will delete the carb loading plan and all associated days. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await ref
+          .read(carbLoadingControllerProvider.notifier)
+          .deleteCarbLoadingPlan(event.id);
+
+      // Refresh event detail
+      ref.invalidate(eventDetailProvider(event.id));
+
+      if (context.mounted) {
+        MealvanaSnackbar.showSuccess(context, 'Carb loading plan deleted');
+        Navigator.pop(context); // Return to event detail
+      }
+    } catch (e) {
+      if (context.mounted) {
+        MealvanaSnackbar.showError(context, 'Failed to delete plan: $e');
+      }
+    }
   }
 }
 

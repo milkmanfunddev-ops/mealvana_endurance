@@ -282,6 +282,20 @@ Future<({Activity? activity, Event event})> eventDetail(
   final logger = ref.read(appLoggerProvider);
   final String userId = forUserId ?? await ref.read(userIdProvider.future);
 
+  // Sync events from remote if stale (respects 1-hour staleness threshold).
+  // This ensures coach-created changes (e.g. hasCarbLoading flag) are visible.
+  try {
+    final repo = ref.read(eventsRepositoryProvider);
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    await syncCoordinator.ensureSynced('events', userId, repository: repo);
+  } catch (e) {
+    logger.warning(
+      'Could not sync events from remote; using local data',
+      context: 'EVENT_DETAIL',
+      data: {'error': e.toString()},
+    );
+  }
+
   final eventsService = ref.read(eventsServiceProvider);
   final activitiesService = ref.read(activitiesServiceProvider);
   final event = await eventsService.getEventById(userId, eventId);

@@ -121,24 +121,35 @@ class _CarbLoadingDayDetailPageState
       ),
       body: controllerState.when(
         data: (state) => ContentArea(
-          child: SingleChildScrollView(
-            padding: AppSpacing.screenPaddingHorizontal,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: AppSpacing.lg),
+          child: RefreshIndicator(
+            color: AppColors.electrolyte,
+            onRefresh: () => ref
+                .read(
+                  carbLoadingDayDetailControllerProvider(
+                    widget.carbLoadingDay.id,
+                  ).notifier,
+                )
+                .forceRefresh(),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: AppSpacing.screenPaddingHorizontal,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: AppSpacing.lg),
 
-                // Progress Card (Kyle's Design)
-                _buildProgressCard(context, state),
+                  // Progress Card (Kyle's Design)
+                  _buildProgressCard(context, state),
 
-                SizedBox(height: AppSpacing.lg),
+                  SizedBox(height: AppSpacing.lg),
 
-                // Meal sections
-                _buildMealSections(context, state),
+                  // Meal sections
+                  _buildMealSections(context, state),
 
-                // Bottom padding
-                SizedBox(height: AppSpacing.xxxl),
-              ],
+                  // Bottom padding
+                  SizedBox(height: AppSpacing.xxxl),
+                ],
+              ),
             ),
           ),
         ),

@@ -448,10 +448,31 @@ class _PortalAthleteDetailPanelState
           )
         else
           ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: carbLoadingDays.length,
+            padding: const EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: 80, // Space for FABs
+            ),
+            itemCount: carbLoadingDays.length + 1, // +1 for delete button
             itemBuilder: (context, index) {
-              final carbLoadingDay = carbLoadingDays[index];
+              // First item: delete plan button
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmDeleteCarbLoadingPlan(state),
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    label: const Text('Delete Carb Loading Plan'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red[300],
+                      side: BorderSide(color: Colors.red[300]!),
+                    ),
+                  ),
+                );
+              }
+
+              final carbLoadingDay = carbLoadingDays[index - 1];
               final progressLabel =
                   '${carbLoadingDay.loggedCarbsGrams}/${carbLoadingDay.carbTargetGrams}g';
 
@@ -524,6 +545,57 @@ class _PortalAthleteDetailPanelState
         ),
       ],
     );
+  }
+
+  Future<void> _confirmDeleteCarbLoadingPlan(AthleteDetailState state) async {
+    // Find the event with carb loading enabled
+    final carbEvent = state.events.where((e) => e.hasCarbLoading).firstOrNull;
+    if (carbEvent == null) {
+      MealvanaSnackbar.showWarning(
+        context,
+        'No carb loading plan found to delete',
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Carb Loading Plan'),
+        content: Text(
+          'Delete the carb loading plan${carbEvent.eventName != null ? ' for ${carbEvent.eventName}' : ''}? This will remove all associated days and cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref
+          .read(
+            athleteDetailControllerProvider(widget.relationshipId).notifier,
+          )
+          .deleteCarbLoadingPlan(eventId: carbEvent.id);
+
+      if (mounted) {
+        MealvanaSnackbar.showSuccess(context, 'Carb loading plan deleted');
+      }
+    } catch (e) {
+      if (mounted) {
+        MealvanaSnackbar.showError(context, 'Failed to delete plan: $e');
+      }
+    }
   }
 
   Future<void> _openCarbLoadingDay(db.CarbLoadingDay carbLoadingDay) async {

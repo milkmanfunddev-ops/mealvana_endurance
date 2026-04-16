@@ -51,6 +51,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
   // Track whether we've attempted to load integration data
   bool _hasLoadedIntegrationData = false;
+  bool _weightFromGarmin = false;
 
   @override
   void initState() {
@@ -179,14 +180,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
         // Weight: prefer Garmin (scale data) over TP/FS
         if (_weightController.text.isEmpty) {
-          final weightSource =
-              (garminIntegration?.isActive == true &&
-                      garminIntegration?.providerAthleteWeightKg != null)
-                  ? garminIntegration
-                  : integration;
+          final useGarmin = garminIntegration?.isActive == true &&
+              garminIntegration?.providerAthleteWeightKg != null;
+          final weightSource = useGarmin ? garminIntegration : integration;
           if (weightSource?.providerAthleteWeightLbs != null) {
             _weightController.text =
                 weightSource!.providerAthleteWeightLbs!.toStringAsFixed(1);
+            if (useGarmin) _weightFromGarmin = true;
           }
         }
 
@@ -512,7 +512,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           _buildTextField(
             context: context,
             controller: _weightController,
-            label: 'Weight',
+            label: _weightFromGarmin ? 'Weight (from Garmin)' : 'Weight',
             hint: 'Enter your weight',
             icon: FontAwesomeIcons.weightScale,
             keyboardType: TextInputType.number,

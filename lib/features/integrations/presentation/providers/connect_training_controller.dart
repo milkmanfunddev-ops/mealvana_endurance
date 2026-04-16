@@ -11,10 +11,10 @@ import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/services/preferences_service.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
-import '../../../calendar/application/calendar_service.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../calendar/presentation/providers/calendar_controller.dart';
 import '../../../events/data/events_repository.dart';
+import '../../../events/domain/event.dart' as domain;
 import '../../../events/presentation/providers/events_controller.dart'
     hide nextUpcomingEventProvider;
 import '../../application/final_surge_oauth_service.dart';
@@ -184,8 +184,6 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       ref.read(integrationsRepositoryProvider);
   ActivitiesRepository get _activitiesRepo =>
       ref.read(activitiesRepositoryProvider);
-  CalendarService get _calendarService => ref.read(calendarServiceProvider);
-
   static const _uuid = Uuid();
 
   /// Prevents concurrent sync operations from causing duplicate inserts.
@@ -715,14 +713,22 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       }
 
       try {
-        await _calendarService.createEvent(
-          userId: _currentUserId!,
-          activityId: activityId,
-          eventType: candidate.eventType,
-          eventName: eventName,
-          startTime: candidate.scheduledAt.toIso8601String(),
-          goalTimeMinutes: candidate.goalTimeMinutes,
-          goalPaceMinutesPerMile: candidate.goalPaceMinutesPerMile,
+        final now = DateTime.now();
+        await eventsRepository.createEvent(
+          deviceId: _currentUserId!,
+          event: domain.Event(
+            id: '', // Let DB auto-generate
+            userId: _currentUserId!,
+            activityId: activityId,
+            eventType: candidate.eventType,
+            eventName: eventName,
+            eventDate: candidate.scheduledAt,
+            startTime: candidate.scheduledAt.toIso8601String(),
+            goalTimeMinutes: candidate.goalTimeMinutes,
+            goalPaceMinutesPerMile: candidate.goalPaceMinutesPerMile,
+            createdAt: now,
+            updatedAt: now,
+          ),
         );
         savedEventsCount++;
       } catch (e) {
@@ -762,18 +768,23 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       }
 
       try {
-        final savedEvent = await _calendarService.createEvent(
-          userId: _currentUserId!,
-          eventType: event.activityType,
-          // TP eventType (e.g. "RoadCycling") is a sport category, NOT a race
-          // distance — don't store it as event_subtype (DB enum expects values
-          // like "metric_century", "marathon", etc.).
-          eventSubtype: null,
-          eventName: event.eventName,
-          startTime: event.eventDate.toIso8601String(),
-          goalTimeMinutes: event.goalTimeHours != null
-              ? (event.goalTimeHours! * 60).round()
-              : null,
+        final now = DateTime.now();
+        final savedEvent = await eventsRepository.createEvent(
+          deviceId: _currentUserId!,
+          event: domain.Event(
+            id: '', // Let DB auto-generate
+            userId: _currentUserId!,
+            eventType: event.activityType,
+            eventSubtype: null,
+            eventName: event.eventName,
+            eventDate: event.eventDate,
+            startTime: event.eventDate.toIso8601String(),
+            goalTimeMinutes: event.goalTimeHours != null
+                ? (event.goalTimeHours! * 60).round()
+                : null,
+            createdAt: now,
+            updatedAt: now,
+          ),
         );
         savedEventsCount++;
         if (kDebugMode) {

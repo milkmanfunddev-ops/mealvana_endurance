@@ -12,6 +12,7 @@ import '../../application/proportional_scaling_service.dart';
 import '../../application/by_hour_sync_service.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../activities/domain/activity_reminder.dart';
+import '../../../activities/data/activities_repository.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../application/resolved_during_target_resolver.dart';
@@ -79,6 +80,20 @@ class ActivityDetailController extends _$ActivityDetailController {
         'idsMatch': userId == authUser?.id,
       },
     );
+
+    // Sync this specific activity from Supabase before reading local Drift.
+    // This ensures coach-created nutrition plans are visible immediately.
+    try {
+      final repo = ref.read(activitiesRepositoryProvider);
+      await repo.refreshActivityFromRemote(activityId);
+    } catch (e) {
+      // Non-fatal: fall back to local data if network unavailable
+      _logger.warning(
+        'Could not sync activity from remote; using local data',
+        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        error: e,
+      );
+    }
 
     final activity = await _activitiesService.getActivityById(
       userId,
@@ -234,6 +249,22 @@ class ActivityDetailController extends _$ActivityDetailController {
       settingsOverrides: overrides,
     );
     return resolved.isStaleVsSettings;
+  }
+
+  /// Force refresh activity data from Supabase (for pull-to-refresh).
+  Future<void> forceRefresh() async {
+    try {
+      final repo = ref.read(activitiesRepositoryProvider);
+      await repo.refreshActivityFromRemote(activityId);
+      ref.invalidateSelf();
+    } catch (e) {
+      _logger.warning(
+        'Force refresh failed',
+        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        error: e,
+      );
+      ref.invalidateSelf();
+    }
   }
 
   /// Save activity and any nutrition plan changes

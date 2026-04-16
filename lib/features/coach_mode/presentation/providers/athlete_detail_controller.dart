@@ -449,6 +449,27 @@ class AthleteDetailController extends _$AthleteDetailController {
     });
   }
 
+  /// Delete carb loading plan for athlete
+  Future<void> deleteCarbLoadingPlan({required String eventId}) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = await AsyncValue.guard(() async {
+      final coachUserId = await ref.read(userIdProvider.future);
+      final service = ref.read(carbLoadingServiceProvider);
+
+      await service.deleteCarbLoadingPlan(
+        deviceId: coachUserId,
+        eventId: eventId,
+        currentUserId: coachUserId,
+        planOwnerId: currentState.relationship.athleteUserId,
+      );
+
+      // Reload to reflect the deleted plan
+      return await _loadAthleteDetails(currentState.relationship.id);
+    });
+  }
+
   /// Clear error
   void clearError() {
     final currentState = state.value;

@@ -274,9 +274,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
 
     return AnimatedBuilder(
       animation: _fuelLogAnimation,
-      builder: (context, _) => SingleChildScrollView(
-        padding: AppSpacing.screenPaddingHorizontal,
-        child: Column(
+      builder: (context, _) => RefreshIndicator(
+        color: AppColors.electrolyte,
+        onRefresh: () => _handlePullToRefresh(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: AppSpacing.screenPaddingHorizontal,
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: AppSpacing.xxl),
@@ -442,6 +446,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
             const SizedBox(height: AppSpacing.xxxl),
           ],
         ),
+      ),
       ),
     );
   }
@@ -752,6 +757,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     }
 
     // Standard single-sport header
+    final isFromGarmin = activity?.syncedFromProvider == 'garmin';
+
     return Column(
       children: [
         SingleSportHeroImage(activityType: activityType),
@@ -769,6 +776,30 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
               ? null
               : () => _showTimePicker(context, state),
         ),
+        // Garmin brand attribution (required by Garmin API Brand Guidelines)
+        if (isFromGarmin) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                Theme.of(context).brightness == Brightness.dark
+                    ? 'assets/images/integrations/garmin_tag_white.png'
+                    : 'assets/images/integrations/garmin_tag_black.png',
+                height: 12,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Activity data from Garmin',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: AppSpacing.sm),
       ],
     );
@@ -807,6 +838,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         'swimmingWaterTempC': activity.swimmingWaterTempC,
       },
     );
+  }
+
+  /// Pull-to-refresh: force sync activity data from Supabase
+  Future<void> _handlePullToRefresh() async {
+    try {
+      final controller = _getControllerNotifier();
+      if (controller is ActivityDetailController) {
+        await controller.forceRefresh();
+      }
+    } catch (e) {
+      // Best-effort refresh
+    }
   }
 
   /// Navigate to NewActivityScreen with all activity fields pre-populated for editing

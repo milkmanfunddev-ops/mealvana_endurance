@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../application/calendar_service.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../../activities/domain/activity.dart';
+import '../../../events/data/events_repository.dart';
 import '../../../events/domain/event.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/logging_service.dart';
@@ -324,19 +325,34 @@ class CalendarController extends _$CalendarController {
       final user = await _authService.getCurrentUser();
       final userId = user?.id ?? 'unknown';
 
-      await _calendarService.createEvent(
-        userId: userId,
-        activityId: activityId,
-        eventType: eventType,
-        eventSubtype: eventSubtype,
-        eventName: eventName,
-        location: location,
-        registrationUrl: registrationUrl,
-        startTime: startTime,
-        goalTimeMinutes: goalTimeMinutes,
-        goalPaceMinutesPerMile: goalPaceMinutesPerMile,
-        hasCarbLoading: hasCarbLoading,
-        carbLoadingDays: carbLoadingDays,
+      // Parse eventDate from startTime for calendar display
+      DateTime? eventDate;
+      if (startTime != null && startTime.isNotEmpty) {
+        eventDate = DateTime.tryParse(startTime);
+      }
+
+      final now = DateTime.now();
+      final eventsRepo = ref.read(eventsRepositoryProvider);
+      await eventsRepo.createEvent(
+        deviceId: userId,
+        event: Event(
+          id: '', // Let DB auto-generate
+          userId: userId,
+          activityId: activityId,
+          eventType: eventType,
+          eventSubtype: eventSubtype,
+          eventName: eventName,
+          location: location,
+          registrationUrl: registrationUrl,
+          eventDate: eventDate,
+          startTime: startTime,
+          goalTimeMinutes: goalTimeMinutes,
+          goalPaceMinutesPerMile: goalPaceMinutesPerMile,
+          hasCarbLoading: hasCarbLoading,
+          carbLoadingDays: carbLoadingDays,
+          createdAt: now,
+          updatedAt: now,
+        ),
       );
 
       // Refresh activities and upcoming event providers

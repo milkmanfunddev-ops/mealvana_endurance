@@ -1,0 +1,217 @@
+@page {
+  size: letter;
+  margin: 0.75in 0.85in 0.75in 0.85in;
+
+  @bottom-center {
+    content: "Mealvana Endurance  |  Post-Workout Recovery Nutrition Guide";
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 8pt;
+    color: #999;
+  }
+  @bottom-right {
+    content: counter(page);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 8pt;
+    color: #999;
+  }
+}
+
+@page :first {
+  @bottom-center { content: none; }
+  @bottom-right  { content: none; }
+}
+
+/* ---- Base ---- */
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.55;
+  color: #222;
+}
+
+/* ---- Title block ---- */
+h1 {
+  font-size: 26pt;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-top: 1.8in;
+  margin-bottom: 0.15in;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+/* Subtitle lines (the bold and italic right after h1) */
+h1 + p {
+  text-align: center;
+  font-size: 13pt;
+  color: #2d6a4f;
+  font-weight: 600;
+  margin-bottom: 0.05in;
+}
+h1 + p + p {
+  text-align: center;
+  font-size: 11pt;
+  color: #666;
+  font-style: italic;
+  margin-bottom: 0.5in;
+}
+
+/* ---- Headings ---- */
+h2 {
+  font-size: 17pt;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-top: 0.45in;
+  margin-bottom: 0.12in;
+  padding-bottom: 4pt;
+  border-bottom: 2.5px solid #2d6a4f;
+  page-break-after: avoid;
+}
+
+h3 {
+  font-size: 13pt;
+  font-weight: 700;
+  color: #2d6a4f;
+  margin-top: 0.3in;
+  margin-bottom: 0.08in;
+  page-break-after: avoid;
+}
+
+h4 {
+  font-size: 11pt;
+  font-weight: 700;
+  color: #333;
+  margin-top: 0.2in;
+  margin-bottom: 0.06in;
+  page-break-after: avoid;
+}
+
+/* ---- Horizontal rules ---- */
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 0.3in 0;
+}
+
+/* ---- Paragraphs ---- */
+p {
+  margin-top: 0;
+  margin-bottom: 0.08in;
+  orphans: 3;
+  widows: 3;
+}
+
+/* ---- Bold / emphasis ---- */
+strong { font-weight: 700; }
+em     { font-style: italic; color: #444; }
+
+/* ---- Blockquotes (Dr. Mitchell quote, etc.) ---- */
+blockquote {
+  margin: 0.15in 0 0.15in 0;
+  padding: 0.12in 0.2in;
+  background: #f0f7f4;
+  border-left: 4px solid #2d6a4f;
+  font-style: italic;
+  color: #333;
+  page-break-inside: avoid;
+}
+blockquote p { margin-bottom: 0; }
+
+/* ---- Lists ---- */
+ul, ol {
+  margin-top: 0.04in;
+  margin-bottom: 0.1in;
+  padding-left: 0.25in;
+}
+li {
+  margin-bottom: 0.03in;
+}
+
+/* ---- Tables ---- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.1in 0 0.15in 0;
+  font-size: 9.5pt;
+  page-break-inside: avoid;
+}
+
+thead {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+th {
+  font-weight: 600;
+  padding: 6px 8px;
+  text-align: left;
+  border: 1px solid #1a1a2e;
+}
+
+/* Center-aligned header cells (matching :--:) */
+th[style*="text-align: center"] {
+  text-align: center;
+}
+
+td {
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  vertical-align: top;
+}
+
+/* Center-aligned data cells */
+td[style*="text-align: center"] {
+  text-align: center;
+}
+
+/* Zebra stripe */
+tbody tr:nth-child(even) {
+  background: #f8f9fa;
+}
+
+/* ---- Nutrition Summary tables (small, highlight) ---- */
+
+/* ---- Template cards ---- */
+/* Keep template headings with their content */
+h3 + p,
+h3 + p + p {
+  page-break-before: avoid;
+}
+
+/* ---- Source / footnote style ---- */
+p > em:only-child {
+  font-size: 9pt;
+  color: #888;
+}
+
+/* ---- Code (if any sneaks in) ---- */
+code {
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 9pt;
+  background: #f4f4f4;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* ---- Page break helpers ---- */
+h2 {
+  page-break-before: auto;
+}
+
+/* Force page break before major sections */
+/* The "The 10 Recovery Templates" heading */
+h2:nth-of-type(5) {
+  page-break-before: always;
+}
+
+/* Keep template blocks together */
+h3 + p + table + table + table + p + p + p {
+  page-break-inside: avoid;
+}
+
+/* ---- "Met" status styling ---- */
+
+/* ---- Print tweaks ---- */
+@media print {
+  body { font-size: 10pt; }
+}

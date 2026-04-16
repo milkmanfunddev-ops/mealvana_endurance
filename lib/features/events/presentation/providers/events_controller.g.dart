@@ -131,7 +131,7 @@ final class EventDetailProvider
   }
 }
 
-String _$eventDetailHash() => r'c158c3035126e36f39dcb87ae5940f339a170ccf';
+String _$eventDetailHash() => r'098f27d333b4d4bdfe2704383ff34ae1a85272f0';
 
 /// Provider for getting event detail with associated activity.
 /// Accepts an optional [forUserId] to query on behalf of another user

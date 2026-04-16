@@ -861,6 +861,21 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
+  /// Fetch a single activity from Supabase and upsert it locally,
+  /// preserving any dirty local changes. Used to pick up coach-made
+  /// updates (e.g. nutrition plans) without a full sync.
+  Future<void> refreshActivityFromRemote(String activityId) async {
+    final response = await _supabase
+        .from('activities')
+        .select()
+        .eq('id', activityId)
+        .maybeSingle();
+
+    if (response == null) return;
+
+    await _upsertRemoteActivitiesPreservingDirty([response]);
+  }
+
   /// Get a specific activity by ID (REMOTE/SUPABASE)
   /// Used by coaches to view athlete activities without syncing everything locally
   Future<domain.Activity?> getRemoteActivityById(String activityId) async {

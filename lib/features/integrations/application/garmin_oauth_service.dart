@@ -25,12 +25,12 @@ class GarminOAuthService {
     required String clientSecret,
     required String redirectUri,
     String callbackUrlScheme = 'com.milkman.mealvanaendurance',
-  })  : _repository = repository,
-        _supabaseClient = supabaseClient,
-        _clientId = clientId,
-        _clientSecret = clientSecret,
-        _redirectUri = redirectUri,
-        _callbackUrlScheme = callbackUrlScheme;
+  }) : _repository = repository,
+       _supabaseClient = supabaseClient,
+       _clientId = clientId,
+       _clientSecret = clientSecret,
+       _redirectUri = redirectUri,
+       _callbackUrlScheme = callbackUrlScheme;
 
   final IntegrationsRepository _repository;
   final SupabaseClient _supabaseClient;
@@ -42,8 +42,7 @@ class GarminOAuthService {
   static const _authorizeUrl = 'https://connect.garmin.com/oauth2Confirm';
   static const _tokenUrl =
       'https://diauth.garmin.com/di-oauth2-service/oauth/token';
-  static const _userIdUrl =
-      'https://apis.garmin.com/wellness-api/rest/user/id';
+  static const _userIdUrl = 'https://apis.garmin.com/wellness-api/rest/user/id';
 
   /// Authenticate with Garmin Connect via OAuth 2.0 PKCE
   ///
@@ -91,9 +90,7 @@ class GarminOAuthService {
     final result = await FlutterWebAuth2.authenticate(
       url: authUrl.toString(),
       callbackUrlScheme: _callbackUrlScheme,
-      options: const FlutterWebAuth2Options(
-        preferEphemeral: true,
-      ),
+      options: const FlutterWebAuth2Options(preferEphemeral: true),
     );
 
     // 5. Extract authorization code from callback URL
@@ -115,8 +112,7 @@ class GarminOAuthService {
 
     if (code == null || code.isEmpty) {
       final error = callbackUri.queryParameters['error'];
-      final errorDescription =
-          callbackUri.queryParameters['error_description'];
+      final errorDescription = callbackUri.queryParameters['error_description'];
       throw GarminOAuthException(
         errorDescription ?? error ?? 'No authorization code received',
       );
@@ -141,12 +137,15 @@ class GarminOAuthService {
     }
 
     // 7b. Fetch latest body composition (best-effort, non-blocking)
-    final bodyComp =
-        await _fetchLatestBodyComposition(tokenResponse.accessToken);
+    final bodyComp = await _fetchLatestBodyComposition(
+      tokenResponse.accessToken,
+    );
 
     if (kDebugMode) {
-      print('📊 Garmin body comp: weight=${bodyComp?.weightKg}kg, '
-          'bodyFat=${bodyComp?.bodyFatPct}%');
+      print(
+        '📊 Garmin body comp: weight=${bodyComp?.weightKg}kg, '
+        'bodyFat=${bodyComp?.bodyFatPct}%',
+      );
     }
 
     // 8. Create and store integration
@@ -199,12 +198,15 @@ class GarminOAuthService {
   ///
   /// Marks the integration as inactive and deletes the garmin_user_mappings row.
   Future<void> disconnect(String userId) async {
-    // Delete garmin_user_mappings row first
+    final integration = await _repository.getIntegration(userId, 'garmin');
+
+    // Delete garmin_user_mappings row first.
     try {
-      await _supabaseClient
-          .from('garmin_user_mappings')
-          .delete()
-          .eq('user_id', userId);
+      await _invokeGarminUserMapping(
+        action: 'delete',
+        userId: userId,
+        garminUserId: integration?.providerAthleteId,
+      );
 
       if (kDebugMode) {
         print('✅ Garmin user mapping deleted');
@@ -265,9 +267,7 @@ class GarminOAuthService {
   ) async {
     final response = await http.post(
       Uri.parse(_tokenUrl),
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
       body: {
         'grant_type': 'authorization_code',
         'code': code,
@@ -306,9 +306,7 @@ class GarminOAuthService {
   Future<String> _fetchGarminUserId(String accessToken) async {
     final response = await http.get(
       Uri.parse(_userIdUrl),
-      headers: {
-        'Authorization': 'Bearer $accessToken',
-      },
+      headers: {'Authorization': 'Bearer $accessToken'},
     );
 
     if (response.statusCode != 200) {
@@ -350,8 +348,8 @@ class GarminOAuthService {
         queryParameters: {
           'uploadStartTimeInSeconds':
               (thirtyDaysAgo.millisecondsSinceEpoch ~/ 1000).toString(),
-          'uploadEndTimeInSeconds':
-              (now.millisecondsSinceEpoch ~/ 1000).toString(),
+          'uploadEndTimeInSeconds': (now.millisecondsSinceEpoch ~/ 1000)
+              .toString(),
         },
       );
 
@@ -377,8 +375,10 @@ class GarminOAuthService {
       final percentFat = (latest['percentFat'] as num?)?.toDouble();
 
       if (kDebugMode) {
-        print('📊 Garmin body comp raw: weightGrams=$weightGrams, '
-            'percentFat=$percentFat');
+        print(
+          '📊 Garmin body comp raw: weightGrams=$weightGrams, '
+          'percentFat=$percentFat',
+        );
       }
 
       return _GarminBodyCompData(
@@ -401,8 +401,7 @@ class GarminOAuthService {
     final integration = await _repository.getIntegration(userId, 'garmin');
     if (integration == null || !integration.isActive) return null;
 
-    final bodyComp =
-        await _fetchLatestBodyComposition(integration.accessToken);
+    final bodyComp = await _fetchLatestBodyComposition(integration.accessToken);
     if (bodyComp == null) return integration; // No new data
 
     final updated = integration.copyWith(
@@ -426,20 +425,64 @@ class GarminOAuthService {
     required String accessToken,
     String? refreshToken,
   }) async {
-    await _supabaseClient.from('garmin_user_mappings').upsert(
-      {
-        'user_id': userId,
-        'garmin_user_id': garminUserId,
-        'access_token': accessToken,
-        'refresh_token': refreshToken,
-        'token_expires_at': DateTime.now()
-            .add(const Duration(hours: 1))
-            .toUtc()
-            .toIso8601String(),
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      },
-      onConflict: 'garmin_user_id',
+    await _invokeGarminUserMapping(
+      action: 'upsert',
+      userId: userId,
+      garminUserId: garminUserId,
+      garminAccessToken: accessToken,
+      refreshToken: refreshToken,
+      tokenExpiresAt: DateTime.now().add(const Duration(hours: 1)),
     );
+  }
+
+  Future<void> _invokeGarminUserMapping({
+    required String action,
+    required String userId,
+    String? garminUserId,
+    String? garminAccessToken,
+    String? refreshToken,
+    DateTime? tokenExpiresAt,
+  }) async {
+    final session = _supabaseClient.auth.currentSession;
+    final supabaseAccessToken = session?.accessToken;
+    if (supabaseAccessToken == null || supabaseAccessToken.isEmpty) {
+      throw const GarminOAuthException(
+        'No active Supabase session for Garmin mapping request',
+      );
+    }
+
+    final response = await _supabaseClient.functions.invoke(
+      'garmin-user-mapping',
+      headers: {'Authorization': 'Bearer $supabaseAccessToken'},
+      body: {
+        'action': action,
+        'user_id': userId,
+        if (garminUserId != null) 'garmin_user_id': garminUserId,
+        if (garminAccessToken != null) 'access_token': garminAccessToken,
+        if (refreshToken != null) 'refresh_token': refreshToken,
+        if (tokenExpiresAt != null)
+          'token_expires_at': tokenExpiresAt.toUtc().toIso8601String(),
+      },
+    );
+
+    if (response.status < 200 || response.status >= 300) {
+      throw GarminOAuthException(
+        'Garmin mapping $action failed: ${response.status} ${response.data}',
+      );
+    }
+
+    final data = response.data;
+    if (data is Map && data['success'] != true) {
+      throw GarminOAuthException(
+        'Garmin mapping $action failed: ${data['error'] ?? data}',
+      );
+    }
+
+    if (action == 'delete' && data is Map && data['remaining'] != 0) {
+      throw GarminOAuthException(
+        'Garmin mapping delete incomplete: ${data['remaining']} row(s) remain',
+      );
+    }
   }
 
   /// Generate a PKCE code verifier (43-128 chars, URL-safe)

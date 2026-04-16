@@ -325,9 +325,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
         const SizedBox(height: AppSpacing.lg),
 
-        // Garmin Connect - not yet released
+        // Garmin Connect - temporarily disabled (pending Garmin production approval)
+        // Brand Guidelines: Use full app name "Garmin Connect" with badge icon
         IntegrationProviderCard(
-          name: 'Garmin',
+          name: 'Garmin Connect',
           iconPath: isDark
               ? 'assets/images/integrations/garmin_tag_white.png'
               : 'assets/images/integrations/garmin_tag_black.png',
@@ -335,7 +336,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           isAvailable: false,
           isConnected: false,
           isConnecting: false,
-          statusText: 'Coming soon',
+          showSyncButton: false,
         ),
 
         const SizedBox(height: AppSpacing.lg),
@@ -455,9 +456,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
         const SizedBox(height: AppSpacing.md),
 
-        // Garmin Connect - not yet released
+        // Garmin Connect - temporarily disabled (pending Garmin production approval)
+        // Brand Guidelines: Use full app name "Garmin Connect" with badge icon
         IntegrationProviderCard(
-          name: 'Garmin',
+          name: 'Garmin Connect',
           iconPath: isDark
               ? 'assets/images/integrations/garmin_tag_white.png'
               : 'assets/images/integrations/garmin_tag_black.png',
@@ -465,7 +467,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           isAvailable: false,
           isConnected: false,
           isConnecting: false,
-          statusText: 'Coming soon',
+          showSyncButton: false,
         ),
 
         const SizedBox(height: AppSpacing.md),

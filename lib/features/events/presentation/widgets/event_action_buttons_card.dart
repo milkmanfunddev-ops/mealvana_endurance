@@ -84,6 +84,7 @@ class EventActionButtonsCard extends ConsumerWidget {
                   'initialTitle': event.eventName,
                   'eventName':
                       event.eventName, // Pass event name for activity title
+                  if (forUserId != null) 'forUserId': forUserId,
                 };
 
                 // For brick events, pass individual leg distances from EventSubtype
@@ -131,6 +132,7 @@ class EventActionButtonsCard extends ConsumerWidget {
                 ? FontAwesomeIcons.pen
                 : FontAwesomeIcons.plus,
           ),
+
 
           // const SizedBox(height: AppSpacing.md),
 
@@ -332,4 +334,5 @@ class EventActionButtonsCard extends ConsumerWidget {
       }
     }
   }
+
 }

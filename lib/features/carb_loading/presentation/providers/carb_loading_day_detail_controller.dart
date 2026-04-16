@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/providers/user_id_provider.dart';
+import '../../../../shared/services/logging_service.dart';
+import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../application/carb_loading_service.dart';
 import '../../application/carb_loading_food_service.dart';
 import '../../application/food_selection_service.dart';
@@ -79,8 +81,28 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   CarbLoadingRepository get _repository =>
       ref.read(carbLoadingRepositoryProvider);
 
+  AppLogger get _logger => ref.read(appLoggerProvider);
+
   @override
   Future<CarbLoadingDayDetailState> build(String carbLoadingDayId) async {
+    // Sync carb loading data from remote if stale (respects 1-hour staleness).
+    // This ensures coach-created changes are visible to athletes.
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+      await syncCoordinator.ensureSynced(
+        'carb_loading_plans',
+        userId,
+        repository: _repository,
+      );
+    } catch (e) {
+      _logger.warning(
+        'Could not sync carb loading from remote; using local data',
+        context: 'CARB_LOADING_DAY_DETAIL',
+        data: {'error': e.toString()},
+      );
+    }
+
     // Fetch fresh data from repository
     final carbLoadingDay = await _repository.getCarbLoadingDayById(
       carbLoadingDayId,
@@ -283,6 +305,27 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
   /// Refresh data from repository
   Future<void> refresh() async {
     ref.invalidateSelf();
+  }
+
+  /// Force refresh from Supabase (pull-to-refresh).
+  Future<void> forceRefresh() async {
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+      await syncCoordinator.forceSyncRepository(
+        'carb_loading_plans',
+        userId,
+        repository: _repository,
+      );
+      ref.invalidateSelf();
+    } catch (e) {
+      _logger.warning(
+        'Force refresh failed',
+        context: 'CARB_LOADING_DAY_DETAIL',
+        error: e,
+      );
+      ref.invalidateSelf();
+    }
   }
 
   /// Update the carb target for this day

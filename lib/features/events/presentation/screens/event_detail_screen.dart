@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/content_area.dart';
+import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../providers/events_controller.dart';
 import '../widgets/event_header_card.dart';
 import '../widgets/event_details_card.dart';
@@ -138,8 +139,20 @@ class EventDetailScreen extends ConsumerWidget {
             final activity = eventDetail.activity;
             final event = eventDetail.event;
 
-            return SingleChildScrollView(
-              child: Column(
+            return RefreshIndicator(
+              color: AppColors.electrolyte,
+              onRefresh: () async {
+                await ref
+                    .read(eventsControllerProvider.notifier)
+                    .forceRefresh();
+                ref.invalidate(
+                  eventDetailProvider(eventId, forUserId: forUserId),
+                );
+                ref.invalidate(carbLoadingControllerProvider);
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Event Header Card
@@ -167,6 +180,7 @@ class EventDetailScreen extends ConsumerWidget {
 
                   const SizedBox(height: AppSpacing.xxl),
                 ],
+              ),
               ),
             );
           },

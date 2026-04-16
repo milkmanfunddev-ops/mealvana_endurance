@@ -6,6 +6,7 @@ import '../../../shared/services/logging_service.dart';
 import '../../../shared/domain/write_consistency.dart';
 import '../data/carb_loading_repository.dart';
 import '../../coach_mode/data/coach_repository.dart';
+import '../../events/data/events_repository.dart';
 
 part 'carb_loading_service.g.dart';
 
@@ -16,6 +17,7 @@ CarbLoadingService carbLoadingService(Ref ref) {
     ref.read(appLoggerProvider),
     ref.read(carbLoadingRepositoryProvider),
     ref.read(coachRepositoryProvider),
+    ref.read(eventsRepositoryProvider),
   );
 }
 
@@ -26,12 +28,14 @@ class CarbLoadingService {
   final AppLogger _logger;
   final CarbLoadingRepository _carbLoadingRepository;
   final CoachRepository _coachRepository;
+  final EventsRepository _eventsRepository;
 
   CarbLoadingService(
     this._database,
     this._logger,
     this._carbLoadingRepository,
     this._coachRepository,
+    this._eventsRepository,
   );
 
   /// Create a carb loading plan for an event
@@ -118,7 +122,18 @@ class CarbLoadingService {
             localUpdatedAt: Value(DateTime.now()),
           ),
         );
-      } else {}
+
+        // Upload the updated event to Supabase so athlete can see hasCarbLoading=true
+        try {
+          await _eventsRepository.uploadDirtyRecords(ownerId);
+        } catch (e) {
+          _logger.warning(
+            'Failed to upload event after carb loading update; will retry on next sync',
+            context: 'CARB_LOADING_SERVICE',
+            error: e,
+          );
+        }
+      }
     } catch (e) {
       _logger.error('Error creating carb loading plan', error: e);
       rethrow;
@@ -211,6 +226,17 @@ class CarbLoadingService {
           localUpdatedAt: Value(DateTime.now()),
         ),
       );
+
+      // Upload the updated event to Supabase so athlete sees hasCarbLoading=false
+      try {
+        await _eventsRepository.uploadDirtyRecords(ownerUserId);
+      } catch (e) {
+        _logger.warning(
+          'Failed to upload event after carb loading deletion; will retry on next sync',
+          context: 'CARB_LOADING_SERVICE',
+          error: e,
+        );
+      }
     } catch (e) {
       _logger.error('Error deleting carb loading plan', error: e);
       rethrow;

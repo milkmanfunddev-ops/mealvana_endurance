@@ -1,138 +1,43 @@
-Launching lib/main_prod.dart on iPhone 15 Pro Max in debug mode...
-CocoaPods' output:
-↳
-      Preparing
-
-    Analyzing dependencies
-
-    Inspecting targets to integrate
-      Using `ARCHS` setting to build architectures of target `Pods-Runner`: (``)
-      Using `ARCHS` setting to build architectures of target `Pods-RunnerTests`: (``)
-
-    Finding Podfile changes
-      A onesignal_flutter
-      - Flutter
-      - app_links
-      - connectivity_plus
-      - device_info_plus
-      - flutter_local_notifications
-      - flutter_native_splash
-      - flutter_web_auth_2
-      - geolocator_apple
-      - google_sign_in_ios
-      - integration_test
-      - mixpanel_flutter
-      - mobile_scanner
-      - package_info_plus
-      - path_provider_foundation
-      - patrol
-      - printing
-      - sentry_flutter
-      - shared_preferences_foundation
-      - sign_in_with_apple
-      - speech_to_text
-      - sqlite3_flutter_libs
-      - url_launcher_ios
-      - video_player_avfoundation
-      - wakelock_plus
-
-    Fetching external sources
-    -> Fetching podspec for `Flutter` from `Flutter`
-    -> Fetching podspec for `app_links` from `.symlinks/plugins/app_links/ios`
-    -> Fetching podspec for `connectivity_plus` from `.symlinks/plugins/connectivity_plus/ios`
-    -> Fetching podspec for `device_info_plus` from `.symlinks/plugins/device_info_plus/ios`
-    -> Fetching podspec for `flutter_local_notifications` from `.symlinks/plugins/flutter_local_notifications/ios`
-    -> Fetching podspec for `flutter_native_splash` from `.symlinks/plugins/flutter_native_splash/ios`
-    -> Fetching podspec for `flutter_web_auth_2` from `.symlinks/plugins/flutter_web_auth_2/ios`
-    -> Fetching podspec for `geolocator_apple` from `.symlinks/plugins/geolocator_apple/darwin`
-    -> Fetching podspec for `google_sign_in_ios` from `.symlinks/plugins/google_sign_in_ios/darwin`
-    -> Fetching podspec for `integration_test` from `.symlinks/plugins/integration_test/ios`
-    -> Fetching podspec for `mixpanel_flutter` from `.symlinks/plugins/mixpanel_flutter/ios`
-    -> Fetching podspec for `mobile_scanner` from `.symlinks/plugins/mobile_scanner/darwin`
-    -> Fetching podspec for `onesignal_flutter` from `.symlinks/plugins/onesignal_flutter/ios`
-    -> Fetching podspec for `package_info_plus` from `.symlinks/plugins/package_info_plus/ios`
-    -> Fetching podspec for `path_provider_foundation` from `.symlinks/plugins/path_provider_foundation/darwin`
-    -> Fetching podspec for `patrol` from `.symlinks/plugins/patrol/darwin`
-    -> Fetching podspec for `printing` from `.symlinks/plugins/printing/ios`
-    -> Fetching podspec for `sentry_flutter` from `.symlinks/plugins/sentry_flutter/ios`
-    -> Fetching podspec for `shared_preferences_foundation` from `.symlinks/plugins/shared_preferences_foundation/darwin`
-    -> Fetching podspec for `sign_in_with_apple` from `.symlinks/plugins/sign_in_with_apple/ios`
-    -> Fetching podspec for `speech_to_text` from `.symlinks/plugins/speech_to_text/darwin`
-    -> Fetching podspec for `sqlite3_flutter_libs` from `.symlinks/plugins/sqlite3_flutter_libs/darwin`
-    -> Fetching podspec for `url_launcher_ios` from `.symlinks/plugins/url_launcher_ios/ios`
-    -> Fetching podspec for `video_player_avfoundation` from `.symlinks/plugins/video_player_avfoundation/darwin`
-    -> Fetching podspec for `wakelock_plus` from `.symlinks/plugins/wakelock_plus/ios`
-
-    Resolving dependencies of `Podfile`
-      CDN: trunk Relative path: CocoaPods-version.yml exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: all_pods_versions_4_2_c.txt exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/4/2/c/FlutterMacOS/3.16.0/FlutterMacOS.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: all_pods_versions_b_b_9.txt exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/b/b/9/AppAuth/2.0.0/AppAuth.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: all_pods_versions_c_e_3.txt exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/c/e/3/GTMSessionFetcher/5.0.0/GTMSessionFetcher.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: all_pods_versions_d_4_0.txt exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/d/4/0/GoogleSignIn/9.1.0/GoogleSignIn.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: all_pods_versions_2_d_e.txt exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/2/d/e/Mixpanel-swift/5.1.3/Mixpanel-swift.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: all_pods_versions_d_f_3.txt exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/d/f/3/OneSignalXCFramework/5.4.0-alpha-01/OneSignalXCFramework.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: all_pods_versions_1_d_4.txt exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/1/d/4/CocoaAsyncSocket/7.6.5/CocoaAsyncSocket.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: all_pods_versions_a_b_d.txt exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/a/b/d/Sentry/9.2.0/Sentry.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/a/b/d/Sentry/8.52.1/Sentry.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: all_pods_versions_f_5_6.txt exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/f/5/6/CwlCatchException/2.2.1/CwlCatchException.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: all_pods_versions_d_c_2.txt exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/d/c/2/sqlite3/3.51.1/sqlite3.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/d/c/2/sqlite3/3.50.4/sqlite3.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/d/c/2/sqlite3/3.50.4/sqlite3.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/d/c/2/sqlite3/3.50.4/sqlite3.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/d/c/2/sqlite3/3.50.4/sqlite3.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/d/c/2/sqlite3/3.50.4/sqlite3.podspec.json exists! Returning local because checking is only performed in repo update
-      CDN: trunk Relative path: Specs/d/c/2/sqlite3/3.50.4/sqlite3.podspec.json exists! Returning local because checking is only performed in repo update
-    [!] CocoaPods could not find compatible versions for pod "OneSignalXCFramework":
-      In Podfile:
-        onesignal_flutter (from `.symlinks/plugins/onesignal_flutter/ios`) was resolved to 5.5.0, which depends on
-          OneSignalXCFramework (= 5.5.0)
-
-    None of your spec sources contain a spec satisfying the dependency: `OneSignalXCFramework (= 5.5.0)`.
-
-    You have either:
-     * out-of-date source repos which you can update with `pod repo update` or with `pod install --repo-update`.
-     * mistyped the name or version.
-     * not added the source repo that hosts the Podspec to your Podfile.
-
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/molinillo-0.8.0/lib/molinillo/resolution.rb:317:in 'Molinillo::Resolver::Resolution#raise_error_unless_state'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/molinillo-0.8.0/lib/molinillo/resolution.rb:299:in 'block in Molinillo::Resolver::Resolution#unwind_for_conflict'
-    <internal:kernel>:91:in 'Kernel#tap'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/molinillo-0.8.0/lib/molinillo/resolution.rb:297:in 'Molinillo::Resolver::Resolution#unwind_for_conflict'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/molinillo-0.8.0/lib/molinillo/resolution.rb:257:in 'Molinillo::Resolver::Resolution#process_topmost_state'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/molinillo-0.8.0/lib/molinillo/resolution.rb:182:in 'Molinillo::Resolver::Resolution#resolve'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/molinillo-0.8.0/lib/molinillo/resolver.rb:43:in 'Molinillo::Resolver#resolve'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/resolver.rb:94:in 'Pod::Resolver#resolve'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/analyzer.rb:1082:in 'block in Pod::Installer::Analyzer#resolve_dependencies'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/user_interface.rb:64:in 'Pod::UserInterface.section'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/analyzer.rb:1080:in 'Pod::Installer::Analyzer#resolve_dependencies'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer/analyzer.rb:125:in 'Pod::Installer::Analyzer#analyze'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer.rb:422:in 'Pod::Installer#analyze'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer.rb:244:in 'block in Pod::Installer#resolve_dependencies'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/user_interface.rb:64:in 'Pod::UserInterface.section'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer.rb:243:in 'Pod::Installer#resolve_dependencies'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/installer.rb:162:in 'Pod::Installer#install!'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/command/install.rb:52:in 'Pod::Command::Install#run'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/claide-1.1.0/lib/claide/command.rb:334:in 'CLAide::Command.run'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/lib/cocoapods/command.rb:52:in 'Pod::Command.run'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/gems/cocoapods-1.16.2/bin/pod:55:in '<top (required)>'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/bin/pod:25:in 'Kernel#load'
-    /opt/homebrew/Cellar/cocoapods/1.16.2_1/libexec/bin/pod:25:in '<main>'
-
-Error: CocoaPods's specs repository is too out-of-date to satisfy dependencies.
-To update the CocoaPods specs, run:
-  pod repo update
-
-Error running pod install
-Error launching application on iPhone 15 Pro Max.
-
-Exited (1).
+Restarted application in 1,629ms.
+flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
+flutter: ✅ Schema validation passed (26 tables verified)
+flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+flutter: 🔄 Integration sync skipped (training_peaks) - data is fresh
+flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+flutter: 🔄 Integration sync skipped (training_peaks) - data is fresh
+flutter: 🔑 ConnectTrainingController: Using real user ID: 09cd66df-b38e-42c9-a738-1f002f7c1f1e
+flutter:    (user profile exists: true, onboardingCompleted: true)
+flutter:    (auth user: 09cd66df-b38e-42c9-a738-1f002f7c1f1e, resolved user: 09cd66df-b38e-42c9-a738-1f002f7c1f1e)
+flutter: 🔑 ConnectTrainingController: Using real user ID: 09cd66df-b38e-42c9-a738-1f002f7c1f1e
+flutter:    (user profile exists: true, onboardingCompleted: true)
+flutter:    (auth user: 09cd66df-b38e-42c9-a738-1f002f7c1f1e, resolved user: 09cd66df-b38e-42c9-a738-1f002f7c1f1e)
+flutter: ✅ Garmin user mapping deleted
+flutter: ✅ Garmin Connect integration disconnected
+flutter: 🔌 connectgarmin: Starting connection for user 09cd66df-b38e-42c9-a738-1f002f7c1f1e
+flutter: 🔐 Starting Garmin Connect OAuth flow...
+flutter:    Auth URL: https://connect.garmin.com/oauth2Confirm?client_id=6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6&response_type=code&redirect_uri=https%3A%2F%2Fwvmvsodrvbkxfydabqed.supabase.co%2Ffunctions%2Fv1%2Fgarmin-oauth-callback&scope=ACTIVITY_EXPORT+HEALTH_EXPORT&code_challenge=kSvERmyOhV97CJC3TFANzQlwPna009PQ8BJcJmbtmO8&code_challenge_method=S256&state=b6fe213a5db9ba33b328663ace2ea08b1091c6e6286bf5990bf81377084e773c
+flutter:    Redirect URI: https://wvmvsodrvbkxfydabqed.supabase.co/functions/v1/garmin-oauth-callback
+flutter: 📥 Garmin callback received:
+flutter:    Raw callback: com.milkman.mealvanaendurance://callback?code=09531ed95dde47a491464ba48f8364c9&state=b6fe213a5db9ba33b328663ace2ea08b1091c6e6286bf5990bf81377084e773c
+flutter:    Code param: 09531ed95dde47a491464ba48f8364c9
+flutter:    Code length: 32
+flutter: ✅ Received Garmin authorization code
+flutter: ✅ Garmin token exchange successful
+flutter: ✅ Garmin user ID fetched: af701316-e43f-4a8c-be41-a3fde89a8e96
+flutter: ⚠️ Garmin body comp fetch returned 404
+flutter: 📊 Garmin body comp: weight=nullkg, bodyFat=null%
+flutter: ✅ Garmin integration saved to database
+flutter: ❌ connectgarmin: Error occurred
+flutter:    Error: FunctionException(status: 401, details: {success: false, error: Unable to verify Garmin account}, reasonPhrase: Unauthorized)
+flutter:    Stack: #0      FunctionsClient.invoke (package:functions_client/src/functions_client.dart:186:7)
+<asynchronous suspension>
+#1      GarminOAuthService._invokeGarminUserMapping (package:mealvana_endurance/features/integrations/application/garmin_oauth_service.dart:454:22)
+<asynchronous suspension>
+#2      GarminOAuthService._upsertGarminUserMapping (package:mealvana_endurance/features/integrations/application/garmin_oauth_service.dart:428:5)
+<asynchronous suspension>
+#3      GarminOAuthService.authenticate (package:mealvana_endurance/features/integrations/application/garmin_oauth_service.dart:180:7)
+<asynchronous suspension>
+#4      ConnectTrainingController._connectProvider (package:mealvana_endurance/features/integrations/presentation/providers/connect_training_controller.dart:357:27)
+<asynchronous suspension>
+#5      _ConnectedAppsScreenState._connectGarmin (package:mealvana_endurance/features/settings/presentation/screens/connected_apps_screen.dart:633:21)
+<asynchronous suspension>

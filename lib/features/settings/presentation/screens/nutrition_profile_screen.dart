@@ -28,6 +28,7 @@ class _NutritionProfileScreenState
   bool _carbCycleOptIn = false;
   TrainingPhase _trainingPhase = TrainingPhase.base;
   bool _hasChanges = false;
+  bool _bodyFatFromGarmin = false;
   bool _isSaving = false;
 
   @override
@@ -75,6 +76,7 @@ class _NutritionProfileScreenState
             _bodyFatController.text =
                 garminIntegration!.providerAthleteBodyFatPct!
                     .toStringAsFixed(1);
+            _bodyFatFromGarmin = true;
           });
         }
       } catch (_) {
@@ -166,6 +168,17 @@ class _NutritionProfileScreenState
 
               // Body Fat %
               _buildSectionLabel(context, 'Body Fat % (optional)'),
+              // Garmin brand attribution (required by Garmin API Brand Guidelines)
+              if (_bodyFatFromGarmin) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'Data from Garmin',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.sm),
               _buildBodyFatInput(context),
 

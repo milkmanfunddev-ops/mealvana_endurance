@@ -186,6 +186,8 @@ class ActivityCard extends ConsumerWidget {
   }
 
   Widget _buildActivityDetails(BuildContext context, bool isDark) {
+    final isFromGarmin = activity.syncedFromProvider == 'garmin';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -215,6 +217,21 @@ class ActivityCard extends ConsumerWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+        // Garmin brand attribution (required by Garmin API Brand Guidelines)
+        if (isFromGarmin) ...[
+          const SizedBox(height: 2),
+          Text(
+            'Garmin',
+            style: TextStyle(
+              fontFamily: 'Apercu',
+              fontSize: 10,
+              color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+                alpha: 0.5,
+              ),
+              height: 1.3,
+            ),
+          ),
+        ],
       ],
     );
   }

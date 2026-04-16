@@ -35,6 +35,10 @@ import {
   mapGarminSleepSummary,
   mapGarminSportType,
 } from "../_shared/garmin/mappers.ts";
+import {
+  buildGarminCompletionUpdate,
+  findMatchingPlannedActivity,
+} from "../_shared/garmin/activity_completion.ts";
 import type { GarminPushNotification } from "../_shared/garmin/types.ts";
 
 const GARMIN_CLIENT_ID = Deno.env.get("GARMIN_CLIENT_ID") ?? "";
@@ -108,70 +112,6 @@ async function sendActivityUploadedPush(params: {
   }
 }
 
-/**
- * Try to find an existing planned activity from TP/FS that matches
- * the incoming Garmin completed activity by date + sport type.
- *
- * Matching criteria:
- * - Same user_id
- * - Same activity_type (sport)
- * - Scheduled on the same calendar date (comparing date portion only)
- * - Status is 'planned' or 'draft' (not already completed)
- * - Not from Garmin itself (avoid self-matching on re-push)
- *
- * Returns the matched activity row or null.
- */
-async function findMatchingPlannedActivity(
-  supabase: any,
-  userId: string,
-  sportType: string,
-  scheduledDate: string, // YYYY-MM-DD
-): Promise<{ id: string; title?: string } | null> {
-  try {
-    // Query for planned activities on the same date with matching sport
-    const startOfDay = `${scheduledDate}T00:00:00.000Z`;
-    const endOfDay = `${scheduledDate}T23:59:59.999Z`;
-
-    const { data, error } = await supabase
-      .from("activities")
-      .select(
-        "id, title, status, nutrition_plan_data, synced_from_provider, provider_workout_id, scheduled_date_time",
-      )
-      .eq("user_id", userId)
-      .eq("activity_type", sportType)
-      .in("status", ["planned", "draft"])
-      .gte("scheduled_date_time", startOfDay)
-      .lte("scheduled_date_time", endOfDay)
-      .is("deleted_at", null)
-      .order("scheduled_date_time", { ascending: true })
-      .limit(1);
-
-    if (error) {
-      console.error("[garmin-push] Match query error:", error);
-      return null;
-    }
-
-    if (data && data.length > 0) {
-      const first = data[0] as Record<string, unknown>;
-      const id = first["id"]?.toString() ?? "";
-      const title = first["title"]?.toString();
-      if (!id) return null;
-
-      console.log(
-        `[garmin-push] Found matching planned activity: ${id} (${
-          title ?? "untitled"
-        })`,
-      );
-      return { id, title };
-    }
-
-    return null;
-  } catch (err) {
-    console.error("[garmin-push] Match lookup error:", err);
-    return null;
-  }
-}
-
 serve(async (req: Request) => {
   // Validate the request is from Garmin
   const validationError = validateGarminRequest(req, GARMIN_CLIENT_ID);
@@ -227,13 +167,13 @@ serve(async (req: Request) => {
             supabase,
             mapping.user_id,
             sportType,
-            scheduledDate,
+            activity,
           );
 
           if (matchedActivity) {
-            // Update the existing planned activity with Garmin completion data.
-            // Preserve the original title, nutrition plan, and provider info.
-            // Tag with Garmin provider info so manuallyUpdatedActivities can find it.
+            // Update the existing planned activity with Garmin completion data
+            // while preserving the original provider identity (TP/FS/etc).
+            // Store Garmin linkage separately for follow-up Garmin updates.
             const summaryId = activity.summaryId ??
               (activity as { activityId?: string }).activityId;
             if (!summaryId) {
@@ -243,40 +183,11 @@ serve(async (req: Request) => {
               stats.errors++;
               continue;
             }
-            const updateFields: Record<string, unknown> = {
-              status: "completed",
-              synced_from_provider: "garmin",
-              provider_workout_id: String(summaryId),
-              average_heart_rate: activityRow.average_heart_rate,
-              max_heart_rate: activityRow.max_heart_rate,
-              calories_burned: activityRow.calories_burned,
-              duration_minutes: activityRow.duration_minutes,
-              distance_meters: activityRow.distance_meters,
-            };
-
-            // Add sport-specific fields
-            if (activityRow.average_pace_minutes_per_mile !== undefined) {
-              updateFields.average_pace_minutes_per_mile =
-                activityRow.average_pace_minutes_per_mile;
-            }
-            if (activityRow.distance_miles !== undefined) {
-              updateFields.distance_miles = activityRow.distance_miles;
-            }
-            if (activityRow.cycling_power_watts !== undefined) {
-              updateFields.cycling_power_watts =
-                activityRow.cycling_power_watts;
-            }
-            if (activityRow.cycling_speed_mph !== undefined) {
-              updateFields.cycling_speed_mph = activityRow.cycling_speed_mph;
-            }
-            if (activityRow.cycling_elevation_gain_ft !== undefined) {
-              updateFields.cycling_elevation_gain_ft =
-                activityRow.cycling_elevation_gain_ft;
-            }
-            if (activityRow.swimming_pace_per_100m_seconds !== undefined) {
-              updateFields.swimming_pace_per_100m_seconds =
-                activityRow.swimming_pace_per_100m_seconds;
-            }
+            const updateFields = buildGarminCompletionUpdate(
+              activity,
+              activityRow,
+            );
+            updateFields.garmin_summary_id = String(summaryId);
 
             const { error } = await supabase
               .from("activities")
@@ -498,9 +409,9 @@ serve(async (req: Request) => {
       results.stressDetails = stats;
     }
 
-    // Process manually updated activities — edits to previously pushed activities.
-    // Only update if we already have an activity with this provider_workout_id
-    // (i.e., Garmin previously matched and completed a planned activity).
+    // Process manually updated activities — edits to previously matched Garmin
+    // completions. We preserve the original workout provider identity and use
+    // garmin_summary_id as the Garmin-side linkage.
     if (
       body.manuallyUpdatedActivities &&
       body.manuallyUpdatedActivities.length > 0
@@ -541,8 +452,7 @@ serve(async (req: Request) => {
             .from("activities")
             .select("id")
             .eq("user_id", mapping.user_id)
-            .eq("provider_workout_id", String(summaryId))
-            .eq("synced_from_provider", "garmin")
+            .eq("garmin_summary_id", String(summaryId))
             .is("deleted_at", null)
             .limit(1);
 
@@ -555,6 +465,8 @@ serve(async (req: Request) => {
           }
 
           const updateFields: Record<string, unknown> = {
+            updated_at: new Date().toISOString(),
+            garmin_last_synced_at: new Date().toISOString(),
             average_heart_rate: activityRow.average_heart_rate,
             max_heart_rate: activityRow.max_heart_rate,
             calories_burned: activityRow.calories_burned,
@@ -635,26 +547,15 @@ serve(async (req: Request) => {
             supabase,
             mapping.user_id,
             sportType,
-            scheduledDate,
+            summary,
           );
 
           if (matchedActivity) {
-            const updateFields: Record<string, unknown> = {
-              status: "completed",
-              average_heart_rate: activityRow.average_heart_rate,
-              max_heart_rate: activityRow.max_heart_rate,
-              calories_burned: activityRow.calories_burned,
-              duration_minutes: activityRow.duration_minutes,
-              distance_meters: activityRow.distance_meters,
-            };
-
-            if (activityRow.average_pace_minutes_per_mile !== undefined) {
-              updateFields.average_pace_minutes_per_mile =
-                activityRow.average_pace_minutes_per_mile;
-            }
-            if (activityRow.distance_miles !== undefined) {
-              updateFields.distance_miles = activityRow.distance_miles;
-            }
+            const updateFields = buildGarminCompletionUpdate(
+              summary,
+              activityRow,
+            );
+            updateFields.garmin_summary_id = String(summary.summaryId);
 
             const { error } = await supabase
               .from("activities")
