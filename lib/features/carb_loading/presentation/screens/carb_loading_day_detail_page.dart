@@ -439,6 +439,7 @@ class _CarbLoadingDayDetailPageState
                         return CarbLoadingFoodPill(
                           foodName: food.displayName,
                           quantity: meal.quantity,
+                          carbsPerServing: food.carbsPerServing,
                           onIncrement: () {
                             ref
                                 .read(
@@ -508,6 +509,7 @@ class _CarbLoadingDayDetailPageState
                         return CarbLoadingFoodPill(
                           foodName: food.displayName,
                           quantity: meal.quantity,
+                          carbsPerServing: food.carbsPerServing,
                           onIncrement: () {
                             ref
                                 .read(
@@ -588,25 +590,32 @@ class _CarbLoadingDayDetailPageState
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
+          // Semi-transparent purple background for unselected pills
           color: isDark
-              ? AppColors.blackberryLight.withValues(alpha: 0.5)
-              : AppColors.cream.withValues(alpha: 0.5),
+              ? AppColors.blackberryLight.withValues(alpha: 0.3)
+              : AppColors.cream.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
+            // Teal border
             color: isDark
-                ? AppColors.cream.withValues(alpha: 0.3)
-                : AppColors.blackberry.withValues(alpha: 0.2),
+                ? AppColors.electrolyte.withValues(alpha: 0.6)
+                : AppColors.blackberry.withValues(alpha: 0.3),
+            width: 1.5,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              name,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark
-                    ? AppColors.cream.withValues(alpha: 0.7)
-                    : AppColors.blackberry.withValues(alpha: 0.7),
+            Flexible(
+              child: Text(
+                name,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark
+                      ? AppColors.cream
+                      : AppColors.blackberry,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
             SizedBox(width: AppSpacing.xs),
@@ -614,8 +623,8 @@ class _CarbLoadingDayDetailPageState
               carbs,
               style: AppTextStyles.smallLabel.copyWith(
                 color: isDark
-                    ? AppColors.cream.withValues(alpha: 0.5)
-                    : AppColors.blackberry.withValues(alpha: 0.5),
+                    ? AppColors.cream.withValues(alpha: 0.7)
+                    : AppColors.blackberry.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -646,13 +655,38 @@ class _CarbLoadingDayDetailPageState
       },
       borderRadius: BorderRadius.circular(24),
       child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8B4BC), // Light pink/rose from Kyle's design
-          shape: BoxShape.circle,
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
         ),
-        child: Icon(Icons.add, color: AppColors.blackberry, size: 24),
+        decoration: BoxDecoration(
+          // Orange outlined button (matching branded design)
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.orange,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.add,
+              color: AppColors.orange,
+              size: 20,
+            ),
+            SizedBox(width: AppSpacing.xs),
+            Text(
+              'ADD FOOD',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.orange,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

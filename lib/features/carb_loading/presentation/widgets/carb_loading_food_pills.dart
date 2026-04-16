@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/carb_foods_list.dart';
+import '../../../../theme/kyle_design/app_colors.dart';
 
 /// Interactive blue food pills widget matching screenshot design
 /// Shows selected foods with quantities and +/- controls
@@ -52,6 +53,7 @@ class CarbLoadingFoodPill extends StatelessWidget {
   final int quantity;
   final Function() onIncrement;
   final Function() onDecrement;
+  final double? carbsPerServing; // Optional carbs for customized foods
 
   const CarbLoadingFoodPill({
     super.key,
@@ -59,71 +61,85 @@ class CarbLoadingFoodPill extends StatelessWidget {
     required this.quantity,
     required this.onIncrement,
     required this.onDecrement,
+    this.carbsPerServing,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final food = CarbFoodsList.getFoodByName(foodName);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF4285F4),
+        // Teal background matching "4 days away" badge style
+        color: AppColors.electrolyte.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(25),
+        // Teal border matching "4 days away" badge
+        border: Border.all(
+          color: AppColors.electrolyte.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+      child: IntrinsicWidth(
+        child: Row(
+          children: [
           // Decrement button
           GestureDetector(
             onTap: onDecrement,
             child: Container(
               width: 32,
               height: 32,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
               margin: const EdgeInsets.all(4),
-              child: const Icon(
+              child: Icon(
                 Icons.remove,
-                color: Color(0xFF4285F4),
+                color: AppColors.electrolyte,
                 size: 18,
               ),
             ),
           ),
 
-          // Food name, quantity and description
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Food name and quantity (top line)
-                Text(
-                  '${food?.displayName ?? foodName} x $quantity',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-
-                // Description (bottom line)
-                if (food?.description != null) ...[
-                  const SizedBox(height: 2),
+          // Food name, quantity and description (flexible to prevent overflow)
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Food name and quantity (top line with ellipsis overflow)
                   Text(
-                    food!.description,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontWeight: FontWeight.w400,
-                      fontSize: 12,
+                    '${food?.displayName ?? foodName}${carbsPerServing != null ? ' ${carbsPerServing!.toInt()}g carbs' : ''} x $quantity',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.electrolyte,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
+
+                  // Description (bottom line)
+                  if (food?.description != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      food!.description,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.electrolyte.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
 
@@ -133,19 +149,20 @@ class CarbLoadingFoodPill extends StatelessWidget {
             child: Container(
               width: 32,
               height: 32,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
               margin: const EdgeInsets.all(4),
-              child: const Icon(
+              child: Icon(
                 Icons.add,
-                color: Color(0xFF4285F4),
+                color: AppColors.electrolyte,
                 size: 18,
               ),
             ),
           ),
         ],
+        ),
       ),
     );
   }

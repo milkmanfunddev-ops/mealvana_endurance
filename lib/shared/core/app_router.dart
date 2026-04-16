@@ -723,7 +723,7 @@ class AppRouter {
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             return CreateCustomCarbLoadingFoodScreen(
-              dayId: extra?['dayId'] as int,
+              dayId: extra?['dayId'] as String,
               mealType: extra?['mealType'] as MealType,
             );
           },

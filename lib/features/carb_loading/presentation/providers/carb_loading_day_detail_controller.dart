@@ -12,6 +12,7 @@ import '../../domain/carb_loading_food.dart';
 import '../../domain/carb_loading_user_food.dart';
 import '../../domain/carb_loading_day_meal.dart';
 import '../../domain/meal_type.dart';
+import 'carb_loading_controller.dart';
 
 part 'carb_loading_day_detail_controller.g.dart';
 
@@ -363,6 +364,9 @@ class CarbLoadingDayDetailController extends _$CarbLoadingDayDetailController {
           'carbProtocolGPerKg': carbsPerKg,
         },
       );
+
+      // Invalidate calendar view to refresh and show updated target
+      ref.invalidate(carbLoadingDaysForRangeProvider);
 
       return currentState.copyWith(
         carbLoadingDay: updatedDay,

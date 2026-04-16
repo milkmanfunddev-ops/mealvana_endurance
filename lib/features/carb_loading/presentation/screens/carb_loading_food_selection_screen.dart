@@ -11,6 +11,7 @@ import '../../../../shared/controllers/food_search_controller.dart';
 import '../../../../shared/widgets/food_search/unified_food_search_results.dart';
 import '../providers/carb_loading_food_selection_controller.dart';
 import '../../application/carb_loading_food_service.dart';
+import '../../data/carb_loading_day_meal_repository.dart';
 import '../../domain/meal_type.dart';
 import '../../domain/carb_loading_food.dart';
 import '../../domain/carb_loading_user_food.dart';
@@ -18,6 +19,7 @@ import '../../../nutrition_plan/domain/food.dart';
 import '../../../barcode_scanning/application/catalog_search_service.dart';
 import '../../../nutrition_plan/presentation/widgets/swap_food/catalog_section_widget.dart';
 import '../../../../shared/database/app_database.dart' as db;
+import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/food_management/user_food_crud_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
@@ -48,6 +50,8 @@ class _CarbLoadingFoodSelectionScreenState
 
   double _selectedQuantity = 1.0;
   bool _isMyFoodsExpanded = true;
+  bool _isNutritionPlanFoodsExpanded = false;
+  bool _isNutritionPlanUserFoodsExpanded = false;
 
   late final CarbLoadingFoodSelectionParams _params;
 
@@ -140,6 +144,8 @@ class _CarbLoadingFoodSelectionScreenState
   void _seedSearchController(CarbLoadingFoodSelectionState state) {
     final userFoods = <Food>[];
     final templateFoods = <Food>[];
+    final nutritionPlanFoods = <Food>[];
+    final nutritionPlanUserFoods = <Food>[];
     _searchSourceById.clear();
 
     for (final food in state.carbLoadingUserFoods) {
@@ -155,10 +161,45 @@ class _CarbLoadingFoodSelectionScreenState
       _searchSourceById[mapped.id] = food;
     }
 
+    // Add nutrition plan foods to search pool
+    for (final food in state.nutritionPlanFoods) {
+      final mapped = Food(
+        id: 'nutrition_plan_${food.id}',
+        name: food.name,
+        displayName: food.displayName,
+        displayNamePlural: food.displayNamePlural,
+        imageAddress: food.imageUrl,
+        carbsPerServing: food.carbsPerServing,
+        categories: const [],
+      );
+      nutritionPlanFoods.add(mapped);
+      _searchSourceById[mapped.id] = food;
+    }
+
+    // Add nutrition plan user foods to search pool
+    for (final food in state.nutritionPlanUserFoods) {
+      final mapped = Food(
+        id: 'nutrition_plan_user_${food.id}',
+        name: food.name,
+        displayName: food.displayName,
+        displayNamePlural: food.displayNamePlural,
+        imageAddress: food.imageAddress,
+        carbsPerServing: food.carbsPerServing,
+        categories: const [],
+      );
+      nutritionPlanUserFoods.add(mapped);
+      _searchSourceById[mapped.id] = food;
+    }
+
     ref
         .read(foodSearchControllerProvider(_searchControllerKey).notifier)
         .updateFoodPool(
-          allFoods: [...templateFoods, ...userFoods],
+          allFoods: [
+            ...templateFoods,
+            ...userFoods,
+            ...nutritionPlanUserFoods,
+            ...nutritionPlanFoods,
+          ],
           userFoods: userFoods,
         );
   }
@@ -265,6 +306,122 @@ class _CarbLoadingFoodSelectionScreenState
             ),
           ),
           ...templateFoods.map((food) => _buildFoodCard(food)),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        if (state.nutritionPlanUserFoods.isNotEmpty) ...[
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isNutritionPlanUserFoodsExpanded = !_isNutritionPlanUserFoodsExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Icon(
+                    FontAwesomeIcons.solidHeart,
+                    size: AppIconSizes.sm,
+                    color: AppColors.orange,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'My Nutrition Foods',
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.orange.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${state.nutritionPlanUserFoods.length}',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: AppColors.orange,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _isNutritionPlanUserFoodsExpanded
+                        ? FontAwesomeIcons.chevronUp
+                        : FontAwesomeIcons.chevronDown,
+                    size: AppIconSizes.sm,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isNutritionPlanUserFoodsExpanded)
+            ...state.nutritionPlanUserFoods.map((food) => _buildFoodCard(food)),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        if (state.nutritionPlanFoods.isNotEmpty) ...[
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isNutritionPlanFoodsExpanded = !_isNutritionPlanFoodsExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Icon(
+                    FontAwesomeIcons.utensils,
+                    size: AppIconSizes.sm,
+                    color: AppColors.electrolyte,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'Nutrition Plan Foods',
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.electrolyte.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${state.nutritionPlanFoods.length}',
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: AppColors.electrolyte,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _isNutritionPlanFoodsExpanded
+                        ? FontAwesomeIcons.chevronUp
+                        : FontAwesomeIcons.chevronDown,
+                    size: AppIconSizes.sm,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isNutritionPlanFoodsExpanded)
+            ...state.nutritionPlanFoods.map((food) => _buildFoodCard(food)),
         ],
       ],
     );
@@ -754,7 +911,7 @@ class _CarbLoadingFoodSelectionScreenState
                   ),
                 ),
 
-                // Show edit button for custom foods, plus for others
+                // Show edit button for custom foods, customize button for templates
                 if (isCustom)
                   IconButton(
                     icon: Icon(
@@ -766,10 +923,25 @@ class _CarbLoadingFoodSelectionScreenState
                     tooltip: 'Edit food',
                   )
                 else
-                  Icon(
-                    FontAwesomeIcons.circlePlus,
-                    color: AppColors.orange,
-                    size: AppIconSizes.md,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          FontAwesomeIcons.copy,
+                          color: AppColors.electrolyte.withValues(alpha: 0.7),
+                          size: AppIconSizes.sm,
+                        ),
+                        onPressed: () => _duplicateAndCustomizeTemplateFood(food),
+                        tooltip: 'Duplicate & customize',
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Icon(
+                        FontAwesomeIcons.circlePlus,
+                        color: AppColors.orange,
+                        size: AppIconSizes.md,
+                      ),
+                    ],
                   ),
               ],
             ),
@@ -779,9 +951,55 @@ class _CarbLoadingFoodSelectionScreenState
     );
   }
 
+  /// Duplicate a template food and open edit screen to customize
+  Future<void> _duplicateAndCustomizeTemplateFood(dynamic food) async {
+    if (food is! CarbLoadingFood) return;
+
+    final carbLoadingFoodService = ref.read(carbLoadingFoodServiceProvider);
+    final deviceId = await ref.read(userIdProvider.future);
+
+    try {
+      // Create custom food with "(customized)" suffix
+      final customizedName = '${food.displayName} (customized)';
+
+      debugPrint('📋 Duplicating template food: ${food.displayName}');
+
+      final customFood = await carbLoadingFoodService.createUserFood(
+        deviceId: deviceId,
+        userId: deviceId,
+        name: _toInternalFoodName(customizedName),
+        displayName: customizedName,
+        displayNamePlural: '${customizedName}s',
+        carbsPerServing: food.carbsPerServing,
+        mealTypes: [_params.mealType],
+      );
+
+      debugPrint('✅ Created custom food: ${customFood.displayName} (ID: ${customFood.id})');
+
+      // Refresh the food list to show the new custom food
+      ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
+
+      // Open edit screen so user can customize carbs and name
+      if (mounted) {
+        await _showUserFoodEditSheet(customFood);
+      }
+    } catch (e) {
+      debugPrint('❌ Error duplicating food: $e');
+      if (mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          'Failed to duplicate food. Please try again.',
+        );
+      }
+    }
+  }
+
   /// Show the edit screen for a user food (no categories for carb loading)
   Future<void> _showUserFoodEditSheet(dynamic food) async {
     final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
+    final carbLoadingFoodService = ref.read(carbLoadingFoodServiceProvider);
+    final database = ref.read(appDatabaseProvider);
+    final deviceId = await ref.read(userIdProvider.future);
 
     String foodId = '';
     String foodName = '';
@@ -794,29 +1012,60 @@ class _CarbLoadingFoodSelectionScreenState
     double? fluidMlPerServing;
     int? caloriesPerServing;
 
-    // Extract data based on food type
+    // Extract food ID first to fetch fresh data
     if (food is CarbLoadingUserFood) {
       foodId = food.id;
-      foodName = food.name;
+    } else if (food is db.UserFood) {
+      foodId = food.id;
+    } else {
+      return; // Not an editable food type
+    }
+
+    // **CRITICAL FIX**: Fetch FRESH data from database instead of using cached food object
+    // This ensures we always see the latest carbs value after edits
+    if (food is CarbLoadingUserFood) {
+      debugPrint('🔍 Fetching fresh data for CarbLoadingUserFood: $foodId');
+      final freshFood = await carbLoadingFoodService.getUserFoodById(foodId);
+      if (freshFood == null) {
+        debugPrint('❌ Food not found: $foodId');
+        return;
+      }
+
+      // Use displayName (user-facing) not name (internal identifier)
+      foodName = freshFood.displayName;
       servingAmount = null;
       servingUnit = null;
-      carbsPerServing = food.carbsPerServing;
+      carbsPerServing = freshFood.carbsPerServing;
       proteinPerServing = null;
       fatPerServing = null;
       sodiumMg = null;
       fluidMlPerServing = null;
       caloriesPerServing = null;
+
+      debugPrint('✅ Fresh data loaded: ${freshFood.displayName} with ${freshFood.carbsPerServing}g carbs');
     } else if (food is db.UserFood) {
-      foodId = food.id;
-      foodName = food.name;
-      servingAmount = food.servingAmount;
-      servingUnit = food.servingUnit;
-      carbsPerServing = food.carbsPerServing;
-      proteinPerServing = food.proteinPerServing;
-      fatPerServing = food.fatPerServing;
-      sodiumMg = food.sodiumMg;
-      fluidMlPerServing = food.fluidMlPerServing;
-      caloriesPerServing = food.caloriesPerServing;
+      debugPrint('🔍 Fetching fresh data for UserFood: $foodId');
+      final freshFoodQuery = database.select(database.userFoodsTable)
+        ..where((tbl) => tbl.id.equals(foodId));
+      final freshFoodList = await freshFoodQuery.get();
+
+      if (freshFoodList.isEmpty) {
+        debugPrint('❌ Food not found: $foodId');
+        return;
+      }
+
+      final freshFood = freshFoodList.first;
+      foodName = freshFood.name;
+      servingAmount = freshFood.servingAmount;
+      servingUnit = freshFood.servingUnit;
+      carbsPerServing = freshFood.carbsPerServing;
+      proteinPerServing = freshFood.proteinPerServing;
+      fatPerServing = freshFood.fatPerServing;
+      sodiumMg = freshFood.sodiumMg;
+      fluidMlPerServing = freshFood.fluidMlPerServing;
+      caloriesPerServing = freshFood.caloriesPerServing;
+
+      debugPrint('✅ Fresh data loaded: ${freshFood.name} with ${freshFood.carbsPerServing}g carbs');
     } else {
       return; // Not an editable food type
     }
@@ -849,6 +1098,8 @@ class _CarbLoadingFoodSelectionScreenState
 
     if (!mounted) return;
 
+    debugPrint('📥 Result handler received result: ${result.runtimeType}');
+
     // Handle delete
     if (result is String && result.startsWith('DELETE:')) {
       final deletedFoodId = result.substring(7);
@@ -871,30 +1122,47 @@ class _CarbLoadingFoodSelectionScreenState
     }
     // Handle update
     else if (result is FoodDetailResult) {
+      debugPrint('📦 FoodDetailResult received: ${result.name} with ${result.carbsPerServing}g carbs (ID: ${result.foodId})');
+
       try {
-        await userFoodCrudService.updateUserFood(
-          foodId: result.foodId,
-          name: result.name,
-          displayName: result.name,
-          displayNamePlural: '${result.name}s',
-          servingAmount: result.servingAmount,
-          servingUnit: result.servingUnit,
+        debugPrint('🔧 Updating food: ${result.name} with ${result.carbsPerServing}g carbs');
+        debugPrint('🔧 Food ID: ${result.foodId}');
+
+        // CRITICAL FIX: Use carbLoadingFoodService for carb loading foods, not userFoodCrudService
+        // userFoodCrudService updates user_foods table (nutrition plan)
+        // carbLoadingFoodService updates carb_loading_user_foods table
+        // result.name from FoodDetailScreen maps to displayName (user-facing name)
+        await carbLoadingFoodService.updateUserFood(
+          id: result.foodId,
+          displayName: result.name,  // FoodDetailScreen's name field = displayName
           carbsPerServing: result.carbsPerServing,
-          proteinPerServing: result.proteinPerServing,
-          fatPerServing: result.fatPerServing,
-          sodiumMg: result.sodiumMg,
-          fluidMlPerServing: result.fluidMlPerServing,
-          // Don't update categories for carb loading foods
         );
+
+        debugPrint('🔧 Carb loading user food updated successfully in correct table');
+
+        // Update carbs in all existing meal entries that use this food
+        final dayMealRepo = ref.read(carbLoadingDayMealRepositoryProvider);
+        debugPrint('🔧 Updating meal entries with food ID: ${result.foodId}');
+
+        final mealsUpdated = await dayMealRepo.updateCarbsForUserFood(
+          carbLoadingUserFoodId: result.foodId,
+          newCarbsPerServing: result.carbsPerServing,
+        );
+
+        debugPrint('🔧 Updated $mealsUpdated meal entries');
 
         // Refresh foods to reflect changes
         ref.invalidate(carbLoadingFoodSelectionControllerProvider(_params));
 
         if (mounted) {
-          MealvanaSnackbar.showSuccess(context, '${result.name} updated!');
+          final message = mealsUpdated > 0
+              ? '${result.name} updated! ($mealsUpdated meal${mealsUpdated > 1 ? 's' : ''} updated)'
+              : '${result.name} updated!';
+          MealvanaSnackbar.showSuccess(context, message);
         }
-      } catch (e) {
-        debugPrint('Error updating user food: $e');
+      } catch (e, stackTrace) {
+        debugPrint('❌ Error updating user food: $e');
+        debugPrint('Stack trace: $stackTrace');
         if (mounted) {
           MealvanaSnackbar.showError(
             context,
