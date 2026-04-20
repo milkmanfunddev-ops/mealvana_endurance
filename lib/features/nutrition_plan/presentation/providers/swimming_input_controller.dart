@@ -5,6 +5,7 @@ import '../../domain/intensity_distribution.dart';
 import '../../domain/meal_type.dart';
 import '../../domain/run_parameters.dart' show UnitSystem;
 import '../../../../shared/domain/activity_type.dart';
+import '../../../activities/domain/activity_title_formatter.dart';
 import '../../../auth/data/user_repository.dart';
 import 'macro_targets_controller.dart';
 import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
@@ -19,6 +20,8 @@ part 'swimming_input_controller.g.dart';
 
 /// Swimming-specific form state that persists during tab switches
 class SwimmingFormState {
+  final String activityTitle;
+  final bool activityTitleManuallySet;
   final int distanceMeters;
   final int pacePer100mSeconds;
   final int preSwimMinutes;
@@ -56,6 +59,8 @@ class SwimmingFormState {
   final LocationFailureReason? locationFailureReason;
 
   SwimmingFormState({
+    this.activityTitle = '2000 m Swim',
+    this.activityTitleManuallySet = false,
     this.distanceMeters = 2000,
     this.pacePer100mSeconds = 120,
     this.preSwimMinutes = 120,
@@ -81,13 +86,17 @@ class SwimmingFormState {
     this.isLoadingWeather = false,
     this.hasAttemptedWeatherFetch = false,
     this.locationFailureReason,
-  }) : intensity = intensity ?? IntensityDistribution(
-         conversationalPct: 70,
-         tempoPct: 20,
-         allOutPct: 10,
-       );
+  }) : intensity =
+           intensity ??
+           IntensityDistribution(
+             conversationalPct: 70,
+             tempoPct: 20,
+             allOutPct: 10,
+           );
 
   SwimmingFormState copyWith({
+    String? activityTitle,
+    bool? activityTitleManuallySet,
     int? distanceMeters,
     int? pacePer100mSeconds,
     int? preSwimMinutes,
@@ -115,6 +124,9 @@ class SwimmingFormState {
     LocationFailureReason? locationFailureReason,
   }) {
     return SwimmingFormState(
+      activityTitle: activityTitle ?? this.activityTitle,
+      activityTitleManuallySet:
+          activityTitleManuallySet ?? this.activityTitleManuallySet,
       distanceMeters: distanceMeters ?? this.distanceMeters,
       pacePer100mSeconds: pacePer100mSeconds ?? this.pacePer100mSeconds,
       preSwimMinutes: preSwimMinutes ?? this.preSwimMinutes,
@@ -132,15 +144,19 @@ class SwimmingFormState {
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
       zonePaceApplied: zonePaceApplied ?? this.zonePaceApplied,
       zoneSuggestedPacePer100mSeconds:
-          zoneSuggestedPacePer100mSeconds ?? this.zoneSuggestedPacePer100mSeconds,
-      preSwimMinutesManuallySet: preSwimMinutesManuallySet ?? this.preSwimMinutesManuallySet,
+          zoneSuggestedPacePer100mSeconds ??
+          this.zoneSuggestedPacePer100mSeconds,
+      preSwimMinutesManuallySet:
+          preSwimMinutesManuallySet ?? this.preSwimMinutesManuallySet,
       unitSystem: unitSystem ?? this.unitSystem,
       location: location ?? this.location,
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
       isLoadingWeather: isLoadingWeather ?? this.isLoadingWeather,
-      hasAttemptedWeatherFetch: hasAttemptedWeatherFetch ?? this.hasAttemptedWeatherFetch,
-      locationFailureReason: locationFailureReason ?? this.locationFailureReason,
+      hasAttemptedWeatherFetch:
+          hasAttemptedWeatherFetch ?? this.hasAttemptedWeatherFetch,
+      locationFailureReason:
+          locationFailureReason ?? this.locationFailureReason,
     );
   }
 }
@@ -160,16 +176,25 @@ class SwimmingInputController extends _$SwimmingInputController {
     final initialDurationMinutes = ((2000 / 100) * 120 / 60).round();
 
     // V3: Pre-fill timing from recommendation based on default intensity
-    final defaultIntensity = IntensityDistribution(conversationalPct: 70, tempoPct: 20, allOutPct: 10);
-    final recommendedMinutes = (recommendedHoursBefore(
-      ActivityType.swimming, defaultIntensity,
-      durationMinutes: initialDurationMinutes,
-    ) * 60).round();
+    final defaultIntensity = IntensityDistribution(
+      conversationalPct: 70,
+      tempoPct: 20,
+      allOutPct: 10,
+    );
+    final recommendedMinutes =
+        (recommendedHoursBefore(
+                  ActivityType.swimming,
+                  defaultIntensity,
+                  durationMinutes: initialDurationMinutes,
+                ) *
+                60)
+            .round();
 
     // Load unit system from user preferences
     _loadUserPreferences();
 
     final initialState = SwimmingFormState(
+      activityTitle: ActivityTitleFormatter.formatSwimmingTitle(2000),
       selectedDate: now,
       selectedTime: const TimeOfDay(hour: 6, minute: 0),
       preSwimMinutes: recommendedMinutes,
@@ -191,13 +216,16 @@ class SwimmingInputController extends _$SwimmingInputController {
       final userProfile = await userRepository.getCurrentUser();
 
       if (userProfile != null) {
-        state = state.copyWith(
-          unitSystem: userProfile.unitSystem,
+        state = state.copyWith(unitSystem: userProfile.unitSystem);
+        DebugLogger.info(
+          '🏊 SWIMMING CONTROLLER: Loaded user preferences - unitSystem: ${userProfile.unitSystem.name}',
         );
-        DebugLogger.info('🏊 SWIMMING CONTROLLER: Loaded user preferences - unitSystem: ${userProfile.unitSystem.name}');
       }
     } catch (e) {
-      DebugLogger.error('🏊 SWIMMING CONTROLLER: Failed to load user preferences', error: e);
+      DebugLogger.error(
+        '🏊 SWIMMING CONTROLLER: Failed to load user preferences',
+        error: e,
+      );
     }
   }
 
@@ -213,27 +241,37 @@ class SwimmingInputController extends _$SwimmingInputController {
     try {
       final zones = await ref.read(athleteZonesProvider(userId).future);
       final zone2PaceSeconds = zones?.zone2SwimPaceSecondsPer100m;
-      if (zone2PaceSeconds != null && zone2PaceSeconds > 30 && zone2PaceSeconds < 300) {
+      if (zone2PaceSeconds != null &&
+          zone2PaceSeconds > 30 &&
+          zone2PaceSeconds < 300) {
         final paceSeconds = zone2PaceSeconds.round();
-        final estimatedSeconds = ((state.distanceMeters / 100) * paceSeconds).round();
+        final estimatedSeconds = ((state.distanceMeters / 100) * paceSeconds)
+            .round();
         state = state.copyWith(
           pacePer100mSeconds: paceSeconds,
           zonePaceApplied: true,
           zoneSuggestedPacePer100mSeconds: paceSeconds,
           estimatedDuration: Duration(seconds: estimatedSeconds),
         );
-        DebugLogger.info('🏊 SWIMMING CONTROLLER: Applied zone-based pace: ${paceSeconds}s/100m');
+        DebugLogger.info(
+          '🏊 SWIMMING CONTROLLER: Applied zone-based pace: ${paceSeconds}s/100m',
+        );
       }
     } catch (e) {
       // Non-blocking - keep default pace if zone fetch fails
-      DebugLogger.error('🏊 SWIMMING CONTROLLER: Zone pace unavailable', error: e);
+      DebugLogger.error(
+        '🏊 SWIMMING CONTROLLER: Zone pace unavailable',
+        error: e,
+      );
     }
   }
 
   /// Fetch location if this controller needs it and doesn't already have it.
   /// Called when this sport tab becomes active or the screen initializes.
   Future<void> fetchLocationIfNeeded() async {
-    if (!state.isLoadingLocation && !state.isLoadingWeather && state.location == null) {
+    if (!state.isLoadingLocation &&
+        !state.isLoadingWeather &&
+        state.location == null) {
       await fetchCurrentLocation();
       if (state.location == null && state.weatherForecast == null) {
         await fetchWeatherForecast();
@@ -256,13 +294,20 @@ class SwimmingInputController extends _$SwimmingInputController {
 
   /// Update form field values
   void updateDistance(int distanceMeters) {
+    final resolvedTitle = state.activityTitleManuallySet
+        ? state.activityTitle
+        : ActivityTitleFormatter.formatSwimmingTitle(distanceMeters);
     final hasDuration =
-        state.estimatedDuration != null && state.estimatedDuration!.inSeconds > 0;
+        state.estimatedDuration != null &&
+        state.estimatedDuration!.inSeconds > 0;
 
     if (state.durationPaceMode == DurationPaceMode.byDuration && hasDuration) {
-      final newPace =
-          _estimatePaceFromDuration(distanceMeters: distanceMeters, duration: state.estimatedDuration);
+      final newPace = _estimatePaceFromDuration(
+        distanceMeters: distanceMeters,
+        duration: state.estimatedDuration,
+      );
       state = state.copyWith(
+        activityTitle: resolvedTitle,
         distanceMeters: distanceMeters,
         pacePer100mSeconds: newPace ?? state.pacePer100mSeconds,
       );
@@ -270,14 +315,23 @@ class SwimmingInputController extends _$SwimmingInputController {
       return;
     }
 
-    state = state.copyWith(distanceMeters: distanceMeters);
-    _estimateDuration(distanceMeters: distanceMeters, pacePer100mSeconds: state.pacePer100mSeconds);
+    state = state.copyWith(
+      activityTitle: resolvedTitle,
+      distanceMeters: distanceMeters,
+    );
+    _estimateDuration(
+      distanceMeters: distanceMeters,
+      pacePer100mSeconds: state.pacePer100mSeconds,
+    );
     _autoUpdateFuelingWindow();
   }
 
   void updatePace(int pacePer100mSeconds) {
     state = state.copyWith(pacePer100mSeconds: pacePer100mSeconds);
-    _estimateDuration(distanceMeters: state.distanceMeters, pacePer100mSeconds: pacePer100mSeconds);
+    _estimateDuration(
+      distanceMeters: state.distanceMeters,
+      pacePer100mSeconds: pacePer100mSeconds,
+    );
     _autoUpdateFuelingWindow();
   }
 
@@ -293,7 +347,8 @@ class SwimmingInputController extends _$SwimmingInputController {
   void _autoUpdateFuelingWindow() {
     if (!state.preSwimMinutesManuallySet) {
       final recommended = recommendedHoursBefore(
-        ActivityType.swimming, state.intensity,
+        ActivityType.swimming,
+        state.intensity,
         durationMinutes: state.estimatedDuration?.inMinutes ?? 90,
       );
       state = state.copyWith(preSwimMinutes: (recommended * 60).round());
@@ -328,10 +383,27 @@ class SwimmingInputController extends _$SwimmingInputController {
     state = state.copyWith(deckHumidity: deckHumidity);
   }
 
+  void updateActivityTitle(String title) {
+    state = state.copyWith(
+      activityTitle: title.trim(),
+      activityTitleManuallySet: true,
+    );
+  }
+
+  void seedActivityTitle(String title, {bool markManuallySet = true}) {
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) return;
+    state = state.copyWith(
+      activityTitle: trimmed,
+      activityTitleManuallySet: markManuallySet,
+    );
+  }
+
   void updateDateTime(DateTime date, TimeOfDay time) {
     final currentDate = state.selectedDate;
     final currentTime = state.selectedTime;
-    final hasChanged = currentDate.year != date.year ||
+    final hasChanged =
+        currentDate.year != date.year ||
         currentDate.month != date.month ||
         currentDate.day != date.day ||
         currentTime.hour != time.hour ||
@@ -405,10 +477,7 @@ class SwimmingInputController extends _$SwimmingInputController {
     }
   }
 
-  int? _estimatePaceFromDuration({
-    int? distanceMeters,
-    Duration? duration,
-  }) {
+  int? _estimatePaceFromDuration({int? distanceMeters, Duration? duration}) {
     final currentDistance = distanceMeters ?? state.distanceMeters;
     final currentDuration = duration ?? state.estimatedDuration;
 
@@ -438,7 +507,9 @@ class SwimmingInputController extends _$SwimmingInputController {
       state = state.copyWith(
         location: location,
         isLoadingLocation: false,
-        locationFailureReason: location != null ? null : state.locationFailureReason,
+        locationFailureReason: location != null
+            ? null
+            : state.locationFailureReason,
       );
 
       // Auto-fetch weather after getting location
@@ -511,7 +582,9 @@ class SwimmingInputController extends _$SwimmingInputController {
       state = state.copyWith(locationFailureReason: null);
       await fetchCurrentLocation();
     } else {
-      state = state.copyWith(locationFailureReason: LocationFailureReason.permissionDenied);
+      state = state.copyWith(
+        locationFailureReason: LocationFailureReason.permissionDenied,
+      );
     }
   }
 
@@ -527,10 +600,7 @@ class SwimmingInputController extends _$SwimmingInputController {
 
   /// Clear location (allows manual entry)
   void clearLocation() {
-    state = state.copyWith(
-      location: null,
-      weatherForecast: null,
-    );
+    state = state.copyWith(location: null, weatherForecast: null);
   }
 
   /// Delegate to the main controller for macro generation
@@ -542,20 +612,26 @@ class SwimmingInputController extends _$SwimmingInputController {
     final currentState = state;
 
     // Delegate to the main controller
-    await ref.read(macroTargetsControllerProvider.notifier).generateSwimmingMacros(
-      distanceMeters: currentState.distanceMeters,
-      paceSecondsper100m: currentState.pacePer100mSeconds,
-      poolOrOpenWater: currentState.poolOrOpenWater,
-      waterTempC: currentState.waterTempC,
-      intensityTarget: currentState.intensityTarget,
-      sessionGoal: currentState.sessionGoal,
-      timeBeforeMinutes: currentState.preSwimMinutes,
-      intensity: currentState.intensity,
-      scheduledDate: currentState.selectedDate,
-      scheduledTime: currentState.selectedTime,
-      activityId: activityId,
-      eventId: eventId,
-      forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
-    );
+    await ref
+        .read(macroTargetsControllerProvider.notifier)
+        .generateSwimmingMacros(
+          distanceMeters: currentState.distanceMeters,
+          paceSecondsper100m: currentState.pacePer100mSeconds,
+          poolOrOpenWater: currentState.poolOrOpenWater,
+          waterTempC: currentState.waterTempC,
+          intensityTarget: currentState.intensityTarget,
+          sessionGoal: currentState.sessionGoal,
+          timeBeforeMinutes: currentState.preSwimMinutes,
+          intensity: currentState.intensity,
+          scheduledDate: currentState.selectedDate,
+          scheduledTime: currentState.selectedTime,
+          activityTitle: currentState.activityTitleManuallySet
+              ? currentState.activityTitle
+              : null,
+          activityId: activityId,
+          eventId: eventId,
+          forUserId:
+              forUserId, // NEW: Pass through forUserId for coach-created activities
+        );
   }
 }

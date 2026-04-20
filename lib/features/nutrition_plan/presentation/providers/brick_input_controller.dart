@@ -131,7 +131,8 @@ class BrickSegmentInput {
       order: order ?? this.order,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       intensity: intensity ?? this.intensity,
-      intensityDistribution: intensityDistribution ?? this.intensityDistribution,
+      intensityDistribution:
+          intensityDistribution ?? this.intensityDistribution,
       durationPaceMode: durationPaceMode ?? this.durationPaceMode,
       preActivityMinutes: preActivityMinutes ?? this.preActivityMinutes,
       sessionGoal: sessionGoal ?? this.sessionGoal,
@@ -164,11 +165,20 @@ class BrickSegmentInput {
 
   /// Compute duration from distance/pace when in byPace mode
   int _computeDurationFromPace() {
-    if (sport == 'swimming' && distanceMeters != null && pacePer100mSeconds != null && pacePer100mSeconds! > 0) {
+    if (sport == 'swimming' &&
+        distanceMeters != null &&
+        pacePer100mSeconds != null &&
+        pacePer100mSeconds! > 0) {
       return ((distanceMeters! / 100) * (pacePer100mSeconds! / 60)).round();
-    } else if (sport == 'cycling' && distanceMiles != null && speedMph != null && speedMph! > 0) {
+    } else if (sport == 'cycling' &&
+        distanceMiles != null &&
+        speedMph != null &&
+        speedMph! > 0) {
       return ((distanceMiles! / speedMph!) * 60).round();
-    } else if (sport == 'running' && distanceMiles != null && paceMinutesPerMile != null && paceMinutesPerMile! > 0) {
+    } else if (sport == 'running' &&
+        distanceMiles != null &&
+        paceMinutesPerMile != null &&
+        paceMinutesPerMile! > 0) {
       return (distanceMiles! * paceMinutesPerMile!).round();
     }
     return 0;
@@ -241,6 +251,12 @@ class BrickSegmentInput {
 
 /// Brick form state
 class BrickFormState {
+  /// Activity title shown on the new activity screen.
+  final String activityTitle;
+
+  /// Whether the activity title was explicitly edited by the user.
+  final bool activityTitleManuallySet;
+
   /// Which sports are checked/selected (minimum 2)
   final Set<String> selectedSports;
 
@@ -264,6 +280,8 @@ class BrickFormState {
   final TimeOfDay selectedTime;
 
   const BrickFormState({
+    required this.activityTitle,
+    required this.activityTitleManuallySet,
     required this.selectedSports,
     required this.sportOrder,
     required this.segmentInputs,
@@ -275,6 +293,8 @@ class BrickFormState {
   });
 
   BrickFormState copyWith({
+    String? activityTitle,
+    bool? activityTitleManuallySet,
     Set<String>? selectedSports,
     List<String>? sportOrder,
     Map<String, BrickSegmentInput>? segmentInputs,
@@ -285,6 +305,9 @@ class BrickFormState {
     TimeOfDay? selectedTime,
   }) {
     return BrickFormState(
+      activityTitle: activityTitle ?? this.activityTitle,
+      activityTitleManuallySet:
+          activityTitleManuallySet ?? this.activityTitleManuallySet,
       selectedSports: selectedSports ?? this.selectedSports,
       sportOrder: sportOrder ?? this.sportOrder,
       segmentInputs: segmentInputs ?? this.segmentInputs,
@@ -321,15 +344,33 @@ class BrickInputController extends _$BrickInputController {
     final defaultIntensity = IntensityDistribution.defaultDistribution();
     // Default durations for each sport
     final defaultSwimDuration = ((1500 / 100) * (120 / 60)).round(); // 30 min
-    final defaultCycleDuration = ((20.0 / 18.0) * 60).round();       // 67 min
-    final defaultRunDuration = (3.0 * 9.0).round();                   // 27 min
+    final defaultCycleDuration = ((20.0 / 18.0) * 60).round(); // 67 min
+    final defaultRunDuration = (3.0 * 9.0).round(); // 27 min
 
     final defaultPreSwimMinutes =
-        (recommendedHoursBefore(ActivityType.swimming, defaultIntensity, durationMinutes: defaultSwimDuration) * 60).round();
+        (recommendedHoursBefore(
+                  ActivityType.swimming,
+                  defaultIntensity,
+                  durationMinutes: defaultSwimDuration,
+                ) *
+                60)
+            .round();
     final defaultPreRideMinutes =
-        (recommendedHoursBefore(ActivityType.cycling, defaultIntensity, durationMinutes: defaultCycleDuration) * 60).round();
+        (recommendedHoursBefore(
+                  ActivityType.cycling,
+                  defaultIntensity,
+                  durationMinutes: defaultCycleDuration,
+                ) *
+                60)
+            .round();
     final defaultPreRunMinutes =
-        (recommendedHoursBefore(ActivityType.running, defaultIntensity, durationMinutes: defaultRunDuration) * 60).round();
+        (recommendedHoursBefore(
+                  ActivityType.running,
+                  defaultIntensity,
+                  durationMinutes: defaultRunDuration,
+                ) *
+                60)
+            .round();
 
     // Initialize segment inputs for all possible sports
     final defaultInputs = <String, BrickSegmentInput>{
@@ -376,10 +417,14 @@ class BrickInputController extends _$BrickInputController {
       ),
     };
 
-    final defaultBrickPreActivityMinutes =
-        _recommendedPreActivityMinutes(selectedSports: defaultSports, segmentInputs: defaultInputs);
+    final defaultBrickPreActivityMinutes = _recommendedPreActivityMinutes(
+      selectedSports: defaultSports,
+      segmentInputs: defaultInputs,
+    );
 
     return BrickFormState(
+      activityTitle: _buildBrickTitle(defaultOrder, defaultSports),
+      activityTitleManuallySet: false,
       selectedSports: defaultSports,
       sportOrder: defaultOrder,
       segmentInputs: defaultInputs,
@@ -394,7 +439,9 @@ class BrickInputController extends _$BrickInputController {
   /// Update date and time
   void updateDateTime(DateTime date, TimeOfDay time) {
     state = state.copyWith(selectedDate: date, selectedTime: time);
-    DebugLogger.info('🧱 BRICK CONTROLLER: Updated date/time - $date ${time.hour}:${time.minute}');
+    DebugLogger.info(
+      '🧱 BRICK CONTROLLER: Updated date/time - $date ${time.hour}:${time.minute}',
+    );
   }
 
   /// Toggle sport selection (add or remove)
@@ -407,7 +454,9 @@ class BrickInputController extends _$BrickInputController {
     if (newSelected.contains(sport)) {
       // Removing sport - enforce minimum 2
       if (newSelected.length <= 2) {
-        DebugLogger.warning('🧱 BRICK CONTROLLER: Cannot remove $sport - minimum 2 sports required');
+        DebugLogger.warning(
+          '🧱 BRICK CONTROLLER: Cannot remove $sport - minimum 2 sports required',
+        );
         return;
       }
 
@@ -417,7 +466,9 @@ class BrickInputController extends _$BrickInputController {
     } else {
       // Adding sport - enforce maximum 3
       if (newSelected.length >= 3) {
-        DebugLogger.warning('🧱 BRICK CONTROLLER: Cannot add $sport - maximum 3 sports allowed');
+        DebugLogger.warning(
+          '🧱 BRICK CONTROLLER: Cannot add $sport - maximum 3 sports allowed',
+        );
         return;
       }
 
@@ -427,7 +478,9 @@ class BrickInputController extends _$BrickInputController {
       // Create default segment input if one doesn't exist
       if (!newInputs.containsKey(sport)) {
         newInputs[sport] = _createDefaultSegmentInput(sport, newOrder.length);
-        DebugLogger.info('🧱 BRICK CONTROLLER: Created default segment input for $sport');
+        DebugLogger.info(
+          '🧱 BRICK CONTROLLER: Created default segment input for $sport',
+        );
       }
 
       DebugLogger.info('🧱 BRICK CONTROLLER: Added sport: $sport');
@@ -440,12 +493,16 @@ class BrickInputController extends _$BrickInputController {
             segmentInputs: newInputs,
           )
         : state.preActivityMinutes;
+    final updatedTitle = state.activityTitleManuallySet
+        ? state.activityTitle
+        : _buildBrickTitle(newOrder, newSelected);
 
     state = state.copyWith(
       selectedSports: newSelected,
       sportOrder: newOrder,
       segmentInputs: newInputs,
       preActivityMinutes: updatedPreActivityMinutes,
+      activityTitle: updatedTitle,
     );
   }
 
@@ -456,13 +513,31 @@ class BrickInputController extends _$BrickInputController {
     // Default durations for each sport (used for fueling window calculation)
     const defaultSwimDuration = 30; // 1500m at 2:00/100m
     const defaultCycleDuration = 67; // 20mi at 18mph
-    const defaultRunDuration = 27;  // 3mi at 9:00/mi
+    const defaultRunDuration = 27; // 3mi at 9:00/mi
     final defaultPreSwimMinutes =
-        (recommendedHoursBefore(ActivityType.swimming, defaultIntensity, durationMinutes: defaultSwimDuration) * 60).round();
+        (recommendedHoursBefore(
+                  ActivityType.swimming,
+                  defaultIntensity,
+                  durationMinutes: defaultSwimDuration,
+                ) *
+                60)
+            .round();
     final defaultPreRideMinutes =
-        (recommendedHoursBefore(ActivityType.cycling, defaultIntensity, durationMinutes: defaultCycleDuration) * 60).round();
+        (recommendedHoursBefore(
+                  ActivityType.cycling,
+                  defaultIntensity,
+                  durationMinutes: defaultCycleDuration,
+                ) *
+                60)
+            .round();
     final defaultPreRunMinutes =
-        (recommendedHoursBefore(ActivityType.running, defaultIntensity, durationMinutes: defaultRunDuration) * 60).round();
+        (recommendedHoursBefore(
+                  ActivityType.running,
+                  defaultIntensity,
+                  durationMinutes: defaultRunDuration,
+                ) *
+                60)
+            .round();
 
     switch (sport) {
       case 'swimming':
@@ -530,9 +605,14 @@ class BrickInputController extends _$BrickInputController {
 
     final sport = newOrder.removeAt(oldIndex);
     newOrder.insert(newIndex, sport);
+    final updatedTitle = state.activityTitleManuallySet
+        ? state.activityTitle
+        : _buildBrickTitle(newOrder, state.selectedSports);
 
-    state = state.copyWith(sportOrder: newOrder);
-    DebugLogger.info('🧱 BRICK CONTROLLER: Reordered sports - new order: $newOrder');
+    state = state.copyWith(sportOrder: newOrder, activityTitle: updatedTitle);
+    DebugLogger.info(
+      '🧱 BRICK CONTROLLER: Reordered sports - new order: $newOrder',
+    );
   }
 
   /// Update segment input data for a specific sport
@@ -573,13 +653,19 @@ class BrickInputController extends _$BrickInputController {
   void updateSegmentIntensity(String sport, IntensityDistribution intensity) {
     final currentInput = state.segmentInputs[sport];
     if (currentInput == null) {
-      DebugLogger.warning('🧱 BRICK CONTROLLER: Cannot update intensity - no segment found for $sport');
+      DebugLogger.warning(
+        '🧱 BRICK CONTROLLER: Cannot update intensity - no segment found for $sport',
+      );
       return;
     }
 
-    final updatedInput = currentInput.copyWith(intensityDistribution: intensity);
+    final updatedInput = currentInput.copyWith(
+      intensityDistribution: intensity,
+    );
     updateSegmentInput(sport, updatedInput);
-    DebugLogger.info('🧱 BRICK CONTROLLER: Updated $sport intensity distribution - $intensity');
+    DebugLogger.info(
+      '🧱 BRICK CONTROLLER: Updated $sport intensity distribution - $intensity',
+    );
   }
 
   int _recommendedPreActivityMinutes({
@@ -592,7 +678,8 @@ class BrickInputController extends _$BrickInputController {
     final defaultIntensity = IntensityDistribution.defaultDistribution();
 
     if (sports.isEmpty) {
-      return (recommendedHoursBefore(ActivityType.brick, defaultIntensity) * 60).round();
+      return (recommendedHoursBefore(ActivityType.brick, defaultIntensity) * 60)
+          .round();
     }
 
     int maxMinutes = 0;
@@ -600,17 +687,22 @@ class BrickInputController extends _$BrickInputController {
       final input = inputs[sport];
       final intensity = input?.intensityDistribution ?? defaultIntensity;
       final duration = input?.durationMinutes ?? 90;
-      final minutes = (recommendedHoursBefore(
-        ActivityType.brick, intensity,
-        durationMinutes: duration,
-      ) * 60).round();
+      final minutes =
+          (recommendedHoursBefore(
+                    ActivityType.brick,
+                    intensity,
+                    durationMinutes: duration,
+                  ) *
+                  60)
+              .round();
       if (minutes > maxMinutes) {
         maxMinutes = minutes;
       }
     }
 
     if (maxMinutes == 0) {
-      return (recommendedHoursBefore(ActivityType.brick, defaultIntensity) * 60).round();
+      return (recommendedHoursBefore(ActivityType.brick, defaultIntensity) * 60)
+          .round();
     }
 
     return maxMinutes;
@@ -667,12 +759,7 @@ class BrickInputController extends _$BrickInputController {
 
   /// Get a human-readable brick type (e.g., "SWIM/RUN BRICK")
   String getBrickType() {
-    final sportNames = state.sportOrder
-        .where((sport) => state.selectedSports.contains(sport))
-        .map((sport) => sport.toUpperCase())
-        .toList();
-
-    return '${sportNames.join('/')} BRICK';
+    return _buildBrickTitle(state.sportOrder, state.selectedSports);
   }
 
   /// Initialize form from event subtype distances (triathlon/duathlon/multisport)
@@ -685,8 +772,10 @@ class BrickInputController extends _$BrickInputController {
     double? bikeMiles,
     double? runMiles,
   }) {
-    DebugLogger.info('🧱 BRICK CONTROLLER: Initializing from event subtype '
-        '(swim=${swimMeters}m, bike=${bikeMiles}mi, run=${runMiles}mi)');
+    DebugLogger.info(
+      '🧱 BRICK CONTROLLER: Initializing from event subtype '
+      '(swim=${swimMeters}m, bike=${bikeMiles}mi, run=${runMiles}mi)',
+    );
 
     final defaultIntensity = IntensityDistribution.defaultDistribution();
 
@@ -710,7 +799,9 @@ class BrickInputController extends _$BrickInputController {
 
     // Must have at least 2 sports for a brick
     if (selectedSports.length < 2) {
-      DebugLogger.warning('🧱 BRICK CONTROLLER: Not enough sports from event subtype, keeping defaults');
+      DebugLogger.warning(
+        '🧱 BRICK CONTROLLER: Not enough sports from event subtype, keeping defaults',
+      );
       return;
     }
 
@@ -721,9 +812,14 @@ class BrickInputController extends _$BrickInputController {
     if (selectedSports.contains('swimming')) {
       const defaultPace = 120; // 2:00 per 100m
       final duration = ((swimMeters! / 100) * (defaultPace / 60)).round();
-      final preMinutes = (recommendedHoursBefore(
-        ActivityType.swimming, defaultIntensity, durationMinutes: duration,
-      ) * 60).round();
+      final preMinutes =
+          (recommendedHoursBefore(
+                    ActivityType.swimming,
+                    defaultIntensity,
+                    durationMinutes: duration,
+                  ) *
+                  60)
+              .round();
 
       segmentInputs['swimming'] = BrickSegmentInput(
         sport: 'swimming',
@@ -745,9 +841,14 @@ class BrickInputController extends _$BrickInputController {
     if (selectedSports.contains('cycling')) {
       const defaultSpeed = 18.0; // 18 mph
       final duration = ((bikeMiles! / defaultSpeed) * 60).round();
-      final preMinutes = (recommendedHoursBefore(
-        ActivityType.cycling, defaultIntensity, durationMinutes: duration,
-      ) * 60).round();
+      final preMinutes =
+          (recommendedHoursBefore(
+                    ActivityType.cycling,
+                    defaultIntensity,
+                    durationMinutes: duration,
+                  ) *
+                  60)
+              .round();
 
       segmentInputs['cycling'] = BrickSegmentInput(
         sport: 'cycling',
@@ -771,9 +872,14 @@ class BrickInputController extends _$BrickInputController {
     if (selectedSports.contains('running')) {
       const defaultPace = 9.0; // 9:00/mile
       final duration = (runMiles! * defaultPace).round();
-      final preMinutes = (recommendedHoursBefore(
-        ActivityType.running, defaultIntensity, durationMinutes: duration,
-      ) * 60).round();
+      final preMinutes =
+          (recommendedHoursBefore(
+                    ActivityType.running,
+                    defaultIntensity,
+                    durationMinutes: duration,
+                  ) *
+                  60)
+              .round();
 
       segmentInputs['running'] = BrickSegmentInput(
         sport: 'running',
@@ -790,6 +896,8 @@ class BrickInputController extends _$BrickInputController {
     }
 
     state = BrickFormState(
+      activityTitle: _buildBrickTitle(sportOrder, selectedSports),
+      activityTitleManuallySet: false,
       selectedSports: selectedSports,
       sportOrder: sportOrder,
       segmentInputs: segmentInputs,
@@ -803,14 +911,21 @@ class BrickInputController extends _$BrickInputController {
       selectedTime: state.selectedTime,
     );
 
-    DebugLogger.info('🧱 BRICK CONTROLLER: Initialized from event subtype with '
-        '${selectedSports.length} sports in order: $sportOrder');
+    DebugLogger.info(
+      '🧱 BRICK CONTROLLER: Initialized from event subtype with '
+      '${selectedSports.length} sports in order: $sportOrder',
+    );
   }
 
   /// Initialize form from existing brick metadata
   /// Called when opening an existing brick activity that needs a nutrition plan
-  void initializeFromBrickMetadata(BrickMetadata metadata, DateTime activityDate) {
-    DebugLogger.info('🧱 BRICK CONTROLLER: Initializing from existing brick metadata');
+  void initializeFromBrickMetadata(
+    BrickMetadata metadata,
+    DateTime activityDate,
+  ) {
+    DebugLogger.info(
+      '🧱 BRICK CONTROLLER: Initializing from existing brick metadata',
+    );
 
     // Extract sports and order from segments
     final sports = <String>{};
@@ -829,9 +944,30 @@ class BrickInputController extends _$BrickInputController {
       // Defaults to 70/20/10 if not present
       final segmentDuration = segment.durationMinutes;
       final preActivityMinutes = switch (segment.sport) {
-        'swimming' => (recommendedHoursBefore(ActivityType.swimming, defaultIntensity, durationMinutes: segmentDuration) * 60).round(),
-        'cycling' => (recommendedHoursBefore(ActivityType.cycling, defaultIntensity, durationMinutes: segmentDuration) * 60).round(),
-        'running' => (recommendedHoursBefore(ActivityType.running, defaultIntensity, durationMinutes: segmentDuration) * 60).round(),
+        'swimming' =>
+          (recommendedHoursBefore(
+                    ActivityType.swimming,
+                    defaultIntensity,
+                    durationMinutes: segmentDuration,
+                  ) *
+                  60)
+              .round(),
+        'cycling' =>
+          (recommendedHoursBefore(
+                    ActivityType.cycling,
+                    defaultIntensity,
+                    durationMinutes: segmentDuration,
+                  ) *
+                  60)
+              .round(),
+        'running' =>
+          (recommendedHoursBefore(
+                    ActivityType.running,
+                    defaultIntensity,
+                    durationMinutes: segmentDuration,
+                  ) *
+                  60)
+              .round(),
         _ => 0,
       };
 
@@ -857,11 +993,15 @@ class BrickInputController extends _$BrickInputController {
         paceMinutesPerMile: segment.paceMinutesPerMile,
       );
 
-      segmentInputs[segment.sport] = _hydrateDerivedFields(segmentInputs[segment.sport]!);
+      segmentInputs[segment.sport] = _hydrateDerivedFields(
+        segmentInputs[segment.sport]!,
+      );
     }
 
     // Update state with loaded data
     state = BrickFormState(
+      activityTitle: _buildBrickTitle(sportOrder, sports),
+      activityTitleManuallySet: false,
       selectedSports: sports,
       sportOrder: sportOrder,
       segmentInputs: segmentInputs,
@@ -872,10 +1012,42 @@ class BrickInputController extends _$BrickInputController {
       preActivityMinutesManuallySet: false,
       isFasted: false,
       selectedDate: activityDate,
-      selectedTime: TimeOfDay(hour: activityDate.hour, minute: activityDate.minute),
+      selectedTime: TimeOfDay(
+        hour: activityDate.hour,
+        minute: activityDate.minute,
+      ),
     );
 
-    DebugLogger.info('🧱 BRICK CONTROLLER: Loaded ${sports.length} segments in order: $sportOrder');
+    DebugLogger.info(
+      '🧱 BRICK CONTROLLER: Loaded ${sports.length} segments in order: $sportOrder',
+    );
+  }
+
+  void updateActivityTitle(String title) {
+    state = state.copyWith(
+      activityTitle: title.trim(),
+      activityTitleManuallySet: true,
+    );
+  }
+
+  void seedActivityTitle(String title, {bool markManuallySet = true}) {
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) return;
+    state = state.copyWith(
+      activityTitle: trimmed,
+      activityTitleManuallySet: markManuallySet,
+    );
+  }
+
+  String _buildBrickTitle(List<String> sportOrder, Set<String> selectedSports) {
+    final sportNames = sportOrder
+        .where((sport) => selectedSports.contains(sport))
+        .map((sport) => sport.toUpperCase())
+        .toList();
+    if (sportNames.isEmpty) {
+      return 'BRICK';
+    }
+    return '${sportNames.join('/')} BRICK';
   }
 
   BrickSegmentInput _hydrateDerivedFields(BrickSegmentInput input) {
@@ -940,10 +1112,7 @@ class BrickInputController extends _$BrickInputController {
       durationMinutes = ((distance / speed) * 60).round();
     }
 
-    return input.copyWith(
-      speedMph: speed,
-      durationMinutes: durationMinutes,
-    );
+    return input.copyWith(speedMph: speed, durationMinutes: durationMinutes);
   }
 
   BrickSegmentInput _hydrateSwimmingInput(BrickSegmentInput input) {

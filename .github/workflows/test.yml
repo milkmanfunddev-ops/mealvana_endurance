@@ -41,7 +41,7 @@ jobs:
           fail_ci_if_error: false
 
   edge-function-tests:
-    name: Edge Function Tests (Vitest)
+    name: Edge Function Tests (Deno)
     runs-on: ubuntu-latest
 
     steps:
@@ -54,6 +54,11 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: test/local_edge_functions/package-lock.json
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
 
       - name: Install dependencies
         working-directory: test/local_edge_functions
@@ -69,7 +74,7 @@ jobs:
         run: |
           echo "## Edge Function Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ 150+ edge function tests executed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Edge function algorithm tests executed" >> $GITHUB_STEP_SUMMARY
 
   edge-integration-tests:
     name: Edge Integration Tests (Dev Cloud)
@@ -122,6 +127,6 @@ jobs:
           echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Flutter/Dart (11+) | ${{ needs.flutter-tests.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Edge Functions (150+) | ${{ needs.edge-function-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Edge Functions | ${{ needs.edge-function-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Total Coverage:** 160+ tests" >> $GITHUB_STEP_SUMMARY
+          echo "**Coverage:** Flutter, Dart, and edge function algorithm suites" >> $GITHUB_STEP_SUMMARY

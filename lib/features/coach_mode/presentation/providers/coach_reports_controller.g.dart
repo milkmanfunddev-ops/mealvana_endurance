@@ -34,7 +34,7 @@ final class CoachReportsControllerProvider
 }
 
 String _$coachReportsControllerHash() =>
-    r'633a4ae014fdaf6328a6214d436c724bdd3559a0';
+    r'67a946aac8cf89b653562f9e3f8c09220a72ed0a';
 
 abstract class _$CoachReportsController
     extends $AsyncNotifier<CoachReportsState> {

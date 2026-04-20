@@ -170,6 +170,46 @@ class CarbLoadingDayMealRepository {
         .go();
   }
 
+  /// Update carbs for all meals that use a specific user food
+  /// Called when a user food's carbs are updated to keep meal entries in sync
+  Future<int> updateCarbsForUserFood({
+    required String carbLoadingUserFoodId,
+    required double newCarbsPerServing,
+  }) async {
+    print('🔍 Looking for meals with carbLoadingUserFoodId: $carbLoadingUserFoodId');
+
+    // Get all meals that use this user food
+    final mealsQuery = _database.select(_database.carbLoadingDayMealsTable)
+      ..where((tbl) => tbl.carbLoadingUserFoodId.equals(carbLoadingUserFoodId));
+
+    final meals = await mealsQuery.get();
+
+    print('🔍 Found ${meals.length} meals to update');
+    for (final meal in meals) {
+      print('  - Meal ${meal.id}: ${meal.foodDisplayName} (qty: ${meal.quantity}, old carbs: ${meal.carbsConsumed})');
+    }
+
+    // Update each meal's carbsConsumed
+    for (final meal in meals) {
+      final oldCarbs = meal.carbsConsumed;
+      final newCarbsConsumed = meal.quantity * newCarbsPerServing;
+
+      print('  → Updating meal ${meal.id}: $oldCarbs g → $newCarbsConsumed g');
+
+      await (_database.update(_database.carbLoadingDayMealsTable)
+            ..where((tbl) => tbl.id.equals(meal.id)))
+          .write(
+        CarbLoadingDayMealsTableCompanion(
+          carbsConsumed: Value(newCarbsConsumed),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
+    }
+
+    print('✅ Updated ${meals.length} meals');
+    return meals.length; // Return number of meals updated
+  }
+
   /// Calculate total carbs consumed for a specific day
   Future<double> calculateTotalCarbsForDay(String carbLoadingDayId) async {
     final query = _database.select(_database.carbLoadingDayMealsTable)

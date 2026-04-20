@@ -161,6 +161,14 @@ class PlanSection {
     this.carbsTarget,
     this.sodiumTarget,
     this.fluidsTarget,
+    this.carbsLowTarget,
+    this.carbsHighTarget,
+    this.proteinLowTarget,
+    this.proteinHighTarget,
+    this.sodiumLowTarget,
+    this.sodiumHighTarget,
+    this.fluidsLowTarget,
+    this.fluidsHighTarget,
     this.subPhases,
     this.byHourData,
   });
@@ -177,6 +185,14 @@ class PlanSection {
   final double? carbsTarget; // grams
   final double? sodiumTarget; // milligrams
   final double? fluidsTarget; // milliliters
+  final double? carbsLowTarget; // grams
+  final double? carbsHighTarget; // grams
+  final double? proteinLowTarget; // grams
+  final double? proteinHighTarget; // grams
+  final double? sodiumLowTarget; // milligrams
+  final double? sodiumHighTarget; // milligrams
+  final double? fluidsLowTarget; // milliliters
+  final double? fluidsHighTarget; // milliliters
 
   /// Nested sub-phases for template-based "before" sections.
   /// When present, foodItems list is empty (foods live in sub-phases instead).
@@ -226,6 +242,14 @@ class PlanSection {
       carbsTarget: (json['carbsTarget'] as num?)?.toDouble(),
       sodiumTarget: (json['sodiumTarget'] as num?)?.toDouble(),
       fluidsTarget: (json['fluidsTarget'] as num?)?.toDouble(),
+      carbsLowTarget: (json['carbsLowTarget'] as num?)?.toDouble(),
+      carbsHighTarget: (json['carbsHighTarget'] as num?)?.toDouble(),
+      proteinLowTarget: (json['proteinLowTarget'] as num?)?.toDouble(),
+      proteinHighTarget: (json['proteinHighTarget'] as num?)?.toDouble(),
+      sodiumLowTarget: (json['sodiumLowTarget'] as num?)?.toDouble(),
+      sodiumHighTarget: (json['sodiumHighTarget'] as num?)?.toDouble(),
+      fluidsLowTarget: (json['fluidsLowTarget'] as num?)?.toDouble(),
+      fluidsHighTarget: (json['fluidsHighTarget'] as num?)?.toDouble(),
       subPhases: subPhases,
       byHourData: byHourData,
     );
@@ -273,6 +297,14 @@ class PlanSection {
       'carbsTarget': carbsTarget,
       'sodiumTarget': sodiumTarget,
       'fluidsTarget': fluidsTarget,
+      'carbsLowTarget': carbsLowTarget,
+      'carbsHighTarget': carbsHighTarget,
+      'proteinLowTarget': proteinLowTarget,
+      'proteinHighTarget': proteinHighTarget,
+      'sodiumLowTarget': sodiumLowTarget,
+      'sodiumHighTarget': sodiumHighTarget,
+      'fluidsLowTarget': fluidsLowTarget,
+      'fluidsHighTarget': fluidsHighTarget,
       if (subPhases != null)
         'subPhases': subPhases!.map((sp) => sp.toJson()).toList(),
       if (byHourData != null) 'byHourData': byHourData!.toJson(),
@@ -291,6 +323,14 @@ class PlanSection {
     double? carbsTarget,
     double? sodiumTarget,
     double? fluidsTarget,
+    double? carbsLowTarget,
+    double? carbsHighTarget,
+    double? proteinLowTarget,
+    double? proteinHighTarget,
+    double? sodiumLowTarget,
+    double? sodiumHighTarget,
+    double? fluidsLowTarget,
+    double? fluidsHighTarget,
     List<BeforeSubPhase>? subPhases,
     ByHourData? byHourData,
     bool clearByHourData = false,
@@ -306,6 +346,14 @@ class PlanSection {
       carbsTarget: carbsTarget ?? this.carbsTarget,
       sodiumTarget: sodiumTarget ?? this.sodiumTarget,
       fluidsTarget: fluidsTarget ?? this.fluidsTarget,
+      carbsLowTarget: carbsLowTarget ?? this.carbsLowTarget,
+      carbsHighTarget: carbsHighTarget ?? this.carbsHighTarget,
+      proteinLowTarget: proteinLowTarget ?? this.proteinLowTarget,
+      proteinHighTarget: proteinHighTarget ?? this.proteinHighTarget,
+      sodiumLowTarget: sodiumLowTarget ?? this.sodiumLowTarget,
+      sodiumHighTarget: sodiumHighTarget ?? this.sodiumHighTarget,
+      fluidsLowTarget: fluidsLowTarget ?? this.fluidsLowTarget,
+      fluidsHighTarget: fluidsHighTarget ?? this.fluidsHighTarget,
       subPhases: subPhases ?? this.subPhases,
       byHourData: clearByHourData ? null : (byHourData ?? this.byHourData),
     );

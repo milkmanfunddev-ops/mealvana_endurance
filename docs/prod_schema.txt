@@ -158,7 +158,13 @@ create table users
     default_running_pace_min_per_mile real,
     default_cycling_speed_mph         real,
     default_swimming_pace_per_100_sec integer,
-    nutrition_target_overrides        jsonb
+    nutrition_target_overrides        jsonb,
+    email                             text,
+    body_fat_pct                      real,
+    lifestyle                         text                     default 'mixed'::text,
+    typical_weekly_hours              real,
+    carb_cycle_opt_in                 boolean                  default false                           not null,
+    training_phase                    text                     default 'base'::text
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -212,6 +218,8 @@ comment on column users.default_cycling_speed_mph is 'User default cycling speed
 comment on column users.default_swimming_pace_per_100_sec is 'User default swimming pace in seconds per 100 yards/meters. Used to estimate workout duration from distance in new activity forms. Example: 90 = 1:30 per 100 yards.';
 
 comment on column users.nutrition_target_overrides is 'User-configured nutrition target overrides. JSON with pre/during/post activity macro targets. Null = use algorithm defaults.';
+
+comment on column users.email is 'User email address for feedback prefill and profile display';
 
 alter table users
     owner to postgres;
@@ -553,7 +561,9 @@ create table activities
     needs_nutrition_refresh        boolean              default false not null,
     provider_deleted_at            timestamp with time zone,
     provider_scheduled_at          timestamp with time zone,
-    schedule_changed_at            timestamp with time zone
+    schedule_changed_at            timestamp with time zone,
+    fuel_log_data                  jsonb,
+    tss                            real
 );
 
 comment on table activities is 'User activities including single-sport (run/bike/swim) and multi-sport (brick/triathlon/duathlon). Brick activities store segment details in brick_metadata and link to archived originals via brick_id.';
@@ -607,6 +617,8 @@ comment on column activities.provider_deleted_at is 'Timestamp when provider rem
 comment on column activities.provider_scheduled_at is 'Original scheduled date/time from provider. Used for change detection during sync. If scheduled_date_time differs from this by >30 min, triggers needs_nutrition_refresh flag.';
 
 comment on column activities.schedule_changed_at is 'Timestamp when schedule change was last detected during sync. Helps track change history and debugging.';
+
+comment on column activities.fuel_log_data is 'Actual consumption data logged on activity completion. JSON with items array containing planned vs actual quantities per food.';
 
 alter table activities
     owner to postgres;
@@ -1109,36 +1121,39 @@ grant delete, insert, references, select, trigger, truncate, update on public_ev
 
 create table integrations
 (
-    id                          uuid                     default gen_random_uuid() not null
+    id                            uuid                     default gen_random_uuid() not null
         primary key,
-    user_id                     uuid                                               not null
+    user_id                       uuid                                               not null
         references users
             on delete cascade,
-    provider                    text                                               not null
+    provider                      text                                               not null
         constraint integrations_provider_check
             check (provider = ANY
                    (ARRAY ['final_surge'::text, 'training_peaks'::text, 'strava'::text, 'garmin'::text])),
-    access_token                text                                               not null,
-    refresh_token               text,
-    token_expires_at            timestamp with time zone,
-    provider_athlete_id         text                                               not null,
-    provider_athlete_name       text,
-    provider_athlete_email      text,
-    is_active                   boolean                  default true,
-    last_sync_at                timestamp with time zone,
-    last_sync_status            text
+    access_token                  text                                               not null,
+    refresh_token                 text,
+    token_expires_at              timestamp with time zone,
+    provider_athlete_id           text                                               not null,
+    provider_athlete_name         text,
+    provider_athlete_email        text,
+    is_active                     boolean                  default true,
+    last_sync_at                  timestamp with time zone,
+    last_sync_status              text
         constraint integrations_last_sync_status_check
             check ((last_sync_status IS NULL) OR
                    (last_sync_status = ANY (ARRAY ['success'::text, 'error'::text, 'pending'::text]))),
-    last_sync_error             text,
-    created_at                  timestamp with time zone default now(),
-    updated_at                  timestamp with time zone default now(),
-    threshold_pace_min_per_mile real,
-    athlete_zones_json          jsonb,
+    last_sync_error               text,
+    created_at                    timestamp with time zone default now(),
+    updated_at                    timestamp with time zone default now(),
+    threshold_pace_min_per_mile   real,
+    athlete_zones_json            jsonb,
+    provider_athlete_body_fat_pct real,
     unique (user_id, provider)
 );
 
 comment on column integrations.threshold_pace_min_per_mile is 'Athlete threshold pace in minutes per mile (e.g., 7.5 = 7:30/mi). Used to calculate accurate workout pace from Training Peaks IF and Structure data. Fetched from provider speed zones during sync.';
+
+comment on column integrations.provider_athlete_body_fat_pct is 'Athlete body fat percentage from Garmin body composition API. Used to auto-populate nutrition profile.';
 
 alter table integrations
     owner to postgres;
@@ -1870,49 +1885,137 @@ grant delete, insert, references, select, trigger, truncate, update on catalog_v
 
 grant delete, insert, references, select, trigger, truncate, update on catalog_variants to service_role;
 
-create view v_food_sport_phase_settings
-            (food_id, food_name, display_name, product_type, sport, phase, effective_max_servings, is_suitable, notes,
-             legacy_max_before, legacy_max_during, legacy_max_after)
-as
-SELECT f.id                            AS food_id,
-       f.name                          AS food_name,
-       f.display_name,
-       f.product_type,
-       fsp.sport,
-       fsp.phase,
-       COALESCE(fsp.max_servings, 4)   AS effective_max_servings,
-       COALESCE(fsp.is_suitable, true) AS is_suitable,
-       fsp.notes,
-       f.max_servings_before           AS legacy_max_before,
-       f.max_servings_during           AS legacy_max_during,
-       f.max_servings_after            AS legacy_max_after
-FROM foods f
-         CROSS JOIN (SELECT unnest(ARRAY ['running'::activity_type_enum, 'cycling'::activity_type_enum, 'swimming'::activity_type_enum]) AS sport) sports
-         CROSS JOIN (SELECT unnest(ARRAY ['before'::phase_enum, 'during'::phase_enum, 'after'::phase_enum]) AS phase) phases
-         LEFT JOIN food_sport_phases fsp
-                   ON f.id = fsp.food_id AND fsp.sport = sports.sport AND fsp.phase = phases.phase;
+create table garmin_user_mappings
+(
+    id               uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id          uuid                                               not null
+        references users
+            on delete cascade,
+    garmin_user_id   text                                               not null
+        unique,
+    access_token     text,
+    refresh_token    text,
+    token_expires_at timestamp with time zone,
+    created_at       timestamp with time zone default now(),
+    updated_at       timestamp with time zone default now()
+);
 
-comment on view v_food_sport_phase_settings is 'View showing effective food settings for all sport+phase combinations.
-Uses COALESCE to show defaults when no override exists in food_sport_phases.';
-
-alter table v_food_sport_phase_settings
+alter table garmin_user_mappings
     owner to postgres;
 
-grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to anon;
+create index idx_garmin_user_mappings_user_id
+    on garmin_user_mappings (user_id);
 
-grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to authenticated;
+grant delete, insert, references, select, trigger, truncate, update on garmin_user_mappings to anon;
 
-grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to service_role;
+grant delete, insert, references, select, trigger, truncate, update on garmin_user_mappings to authenticated;
 
-create view catalog_items
-            (id, shopify_product_id, shopify_variant_id, handle, title, variant_title, brand, product_type, tags,
-             barcode, sku, price_cents, currency_code, available_for_sale, image_url, product_url, calories_per_serving,
-             carbs_g, protein_g, fat_g, sodium_mg, serving_size, serving_grams, caffeine_mg, sugar_g, fiber_g,
-             ingredients, servings_per_container, nutrition_source, nutrition_confidence, nutrition_enriched_at,
-             raw_payload, shopify_updated_at, created_at, updated_at, product_type_id, categories, allergens,
-             excluded_diets, is_electrolyte, is_liquid, activity_types, classification_source,
-             classification_confidence)
-as
+grant delete, insert, references, select, trigger, truncate, update on garmin_user_mappings to service_role;
+
+create table garmin_health_data
+(
+    id             uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id        uuid                                               not null
+        references users
+            on delete cascade,
+    garmin_user_id text                                               not null,
+    summary_id     text                                               not null
+        unique,
+    data_type      text                                               not null,
+    calendar_date  date                                               not null,
+    data           jsonb                    default '{}'::jsonb       not null,
+    created_at     timestamp with time zone default now(),
+    updated_at     timestamp with time zone default now()
+);
+
+alter table garmin_health_data
+    owner to postgres;
+
+create index idx_garmin_health_data_user_date
+    on garmin_health_data (user_id, calendar_date);
+
+create index idx_garmin_health_data_type
+    on garmin_health_data (user_id, data_type, calendar_date);
+
+grant delete, insert, references, select, trigger, truncate, update on garmin_health_data to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on garmin_health_data to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on garmin_health_data to service_role;
+
+create table daily_macro_targets
+(
+    id                uuid                     default gen_random_uuid()   not null
+        primary key,
+    user_id           uuid                                                 not null
+        references users
+            on delete cascade,
+    target_date       date                                                 not null,
+    carb_g            real                                                 not null,
+    prot_g            real                                                 not null,
+    fat_g             real                                                 not null,
+    tdee              real                                                 not null,
+    rmr               real                                                 not null,
+    session_kcal      real                     default 0                   not null,
+    neat_kcal         real,
+    tef_kcal          real,
+    mode              text                     default 'prospective'::text not null,
+    ea                real,
+    ea_status         text,
+    calculation_input jsonb,
+    algorithm_version text                     default 'v4'::text          not null,
+    needs_upload      boolean                  default false,
+    created_at        timestamp with time zone default now(),
+    updated_at        timestamp with time zone default now(),
+    unique (user_id, target_date)
+);
+
+alter table daily_macro_targets
+    owner to postgres;
+
+create index idx_daily_macro_targets_user_date
+    on daily_macro_targets (user_id, target_date);
+
+grant delete, insert, references, select, trigger, truncate, update on daily_macro_targets to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on daily_macro_targets to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on daily_macro_targets to service_role;
+
+create table coach_pairing_codes
+(
+    id                 uuid                     default gen_random_uuid()              not null
+        primary key,
+    coach_user_id      uuid                                                            not null
+        references users,
+    code               varchar(6)                                                      not null
+        unique,
+    created_at         timestamp with time zone default now()                          not null,
+    expires_at         timestamp with time zone default (now() + '24:00:00'::interval) not null,
+    used_by_athlete_id uuid
+        references users,
+    used_at            timestamp with time zone
+);
+
+alter table coach_pairing_codes
+    owner to postgres;
+
+create index idx_coach_pairing_codes_code
+    on coach_pairing_codes (code);
+
+create index idx_coach_pairing_codes_coach
+    on coach_pairing_codes (coach_user_id, expires_at)
+    where (used_at IS NULL);
+
+grant delete, insert, references, select, trigger, truncate, update on coach_pairing_codes to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on coach_pairing_codes to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on coach_pairing_codes to service_role;
+
+create materialized view catalog_items as
 SELECT v.id,
        p.shopify_product_id,
        v.shopify_variant_id,
@@ -1960,14 +2063,73 @@ SELECT v.id,
 FROM catalog_variants v
          JOIN catalog_products p ON p.id = v.catalog_product_id;
 
-alter table catalog_items
-    owner to postgres;
+alter materialized view catalog_items owner to postgres;
+
+create unique index idx_catalog_items_mv_id
+    on catalog_items (id);
+
+create index idx_catalog_items_mv_title_trgm
+    on catalog_items using gin (title gin_trgm_ops);
+
+create index idx_catalog_items_mv_brand_trgm
+    on catalog_items using gin (brand gin_trgm_ops);
+
+create index idx_catalog_items_mv_variant_title_trgm
+    on catalog_items using gin (variant_title gin_trgm_ops);
+
+create index idx_catalog_items_mv_barcode
+    on catalog_items (barcode)
+    where (barcode IS NOT NULL);
+
+create index idx_catalog_items_mv_available
+    on catalog_items (available_for_sale)
+    where (available_for_sale = true);
+
+create index idx_catalog_items_mv_nutrition_confidence
+    on catalog_items (nutrition_confidence desc);
+
+create index idx_catalog_items_mv_product_type_id
+    on catalog_items (product_type_id);
 
 grant delete, insert, references, select, trigger, truncate, update on catalog_items to anon;
 
 grant delete, insert, references, select, trigger, truncate, update on catalog_items to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on catalog_items to service_role;
+
+create view v_food_sport_phase_settings
+            (food_id, food_name, display_name, product_type, sport, phase, effective_max_servings, is_suitable, notes,
+             legacy_max_before, legacy_max_during, legacy_max_after)
+as
+SELECT f.id                            AS food_id,
+       f.name                          AS food_name,
+       f.display_name,
+       f.product_type,
+       fsp.sport,
+       fsp.phase,
+       COALESCE(fsp.max_servings, 4)   AS effective_max_servings,
+       COALESCE(fsp.is_suitable, true) AS is_suitable,
+       fsp.notes,
+       f.max_servings_before           AS legacy_max_before,
+       f.max_servings_during           AS legacy_max_during,
+       f.max_servings_after            AS legacy_max_after
+FROM foods f
+         CROSS JOIN (SELECT unnest(ARRAY ['running'::activity_type_enum, 'cycling'::activity_type_enum, 'swimming'::activity_type_enum]) AS sport) sports
+         CROSS JOIN (SELECT unnest(ARRAY ['before'::phase_enum, 'during'::phase_enum, 'after'::phase_enum]) AS phase) phases
+         LEFT JOIN food_sport_phases fsp
+                   ON f.id = fsp.food_id AND fsp.sport = sports.sport AND fsp.phase = phases.phase;
+
+comment on view v_food_sport_phase_settings is 'View showing effective food settings for all sport+phase combinations.
+Uses COALESCE to show defaults when no override exists in food_sport_phases.';
+
+alter table v_food_sport_phase_settings
+    owner to postgres;
+
+grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to service_role;
 
 create function delete_nutrition_plan_by_device_plan_id(p_device_id text, p_plan_id text) returns boolean
     language plpgsql

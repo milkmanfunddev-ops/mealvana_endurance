@@ -25,6 +25,7 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
   bool _isConnecting = false;
   String? _coachName;
   String? _coachUserId;
+  String? _relationshipId;
   final _codeController = TextEditingController();
   String? _codeError;
 
@@ -51,6 +52,7 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
+        _relationshipId = coach?.relationshipId;
         _coachUserId = coach?.coachUserId;
         _coachName = coach?.coachName;
       });
@@ -230,21 +232,13 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Connected to Coach',
+                      _coachName != null
+                          ? 'Connected to $_coachName'
+                          : 'Connected to Coach',
                       style: TextStyle(
                         color: isDark ? AppColors.cream : AppColors.blackberry,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _coachName ?? 'Your coach',
-                      style: TextStyle(
-                        color: isDark
-                            ? AppColors.textDarkSecondary
-                            : AppColors.textLightSecondary,
-                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -259,7 +253,9 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () => context.push('/coach-chat'),
+            onPressed: _relationshipId != null
+                ? () => context.push('/chat/$_relationshipId')
+                : null,
             icon: const Icon(Icons.chat_outlined),
             label: const Text('Message Coach'),
             style: OutlinedButton.styleFrom(

@@ -37,6 +37,7 @@ import 'tables/personal_templates_table.dart';
 import 'tables/athlete_pairing_codes_table.dart';
 import 'tables/coach_pairing_codes_table.dart';
 import 'tables/daily_macro_targets_table.dart';
+import 'tables/race_checklist_items_table.dart';
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
@@ -86,6 +87,7 @@ part 'app_database.g.dart';
     // Calendar feature tables
     ActivitiesTable,
     EventsTable,
+    RaceChecklistItemsTable,
     CarbLoadingPlansTable,
     CarbLoadingDaysTable,
 
@@ -242,6 +244,10 @@ class AppDatabase extends _$AppDatabase {
         await _addColumnIfNotExists('users', 'training_phase', "TEXT DEFAULT 'base'");
         await _addColumnIfNotExists('activities', 'tss', 'REAL');
 
+        // Garmin body composition pull
+        await _addColumnIfNotExists(
+            'integrations', 'provider_athlete_body_fat_pct', 'REAL');
+
         // Create daily_macro_targets table if not exists
         await customStatement('''
           CREATE TABLE IF NOT EXISTS daily_macro_targets (
@@ -278,6 +284,25 @@ class AppDatabase extends _$AppDatabase {
             expires_at INTEGER NOT NULL,
             used_by_athlete_id TEXT,
             used_at INTEGER
+          )
+        ''');
+
+        // Create race_checklist_items table if not exists (local-only feature)
+        await customStatement('''
+          CREATE TABLE IF NOT EXISTS race_checklist_items (
+            id TEXT NOT NULL PRIMARY KEY,
+            event_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            category TEXT NOT NULL,
+            item_name TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            is_checked INTEGER NOT NULL DEFAULT 0,
+            checked_at INTEGER,
+            notes TEXT,
+            is_template_item INTEGER NOT NULL DEFAULT 1,
+            created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+            updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
+            CHECK (category IN ('gear', 'nutrition', 'logistics', 'pre_race', 'race_morning'))
           )
         ''');
 

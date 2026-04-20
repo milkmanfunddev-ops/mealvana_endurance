@@ -9,6 +9,7 @@ import '../../../../shared/widgets/content_area.dart';
 import '../../../daily_macros/domain/enums.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/data/user_repository.dart';
+import '../../../integrations/presentation/providers/integrations_providers.dart';
 
 class NutritionProfileScreen extends ConsumerStatefulWidget {
   const NutritionProfileScreen({super.key});
@@ -27,6 +28,7 @@ class _NutritionProfileScreenState
   bool _carbCycleOptIn = false;
   TrainingPhase _trainingPhase = TrainingPhase.base;
   bool _hasChanges = false;
+  bool _bodyFatFromGarmin = false;
   bool _isSaving = false;
 
   @override
@@ -58,6 +60,29 @@ class _NutritionProfileScreenState
       _carbCycleOptIn = profile.carbCycleOptIn;
       _trainingPhase = profile.trainingPhase;
     });
+
+    // If body fat is empty, try to populate from Garmin integration
+    if (profile.bodyFatPct == null) {
+      try {
+        final integrationsRepo = ref.read(integrationsRepositoryProvider);
+        final garminIntegration = await integrationsRepo.getIntegration(
+          profile.id,
+          'garmin',
+        );
+        if (garminIntegration?.isActive == true &&
+            garminIntegration?.providerAthleteBodyFatPct != null &&
+            mounted) {
+          setState(() {
+            _bodyFatController.text =
+                garminIntegration!.providerAthleteBodyFatPct!
+                    .toStringAsFixed(1);
+            _bodyFatFromGarmin = true;
+          });
+        }
+      } catch (_) {
+        // Non-fatal — body fat from Garmin is best-effort
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -143,6 +168,17 @@ class _NutritionProfileScreenState
 
               // Body Fat %
               _buildSectionLabel(context, 'Body Fat % (optional)'),
+              // Garmin brand attribution (required by Garmin API Brand Guidelines)
+              if (_bodyFatFromGarmin) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'Data from Garmin',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.sm),
               _buildBodyFatInput(context),
 

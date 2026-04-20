@@ -4,15 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser, AuthException;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    hide AuthUser, AuthException;
 import '../../../shared/services/device_info_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/app_config.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
 import '../../../shared/services/notification_service.dart';
-import '../../../shared/services/app_config.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/database/app_database.dart';
 import '../../nutrition_plan/data/food_repository.dart';
@@ -32,8 +33,10 @@ class AppStartupService {
 
   SentryReporter get _sentry => ref.read(appExternalDepsProvider).sentry;
   AppLogger get _logger => ref.read(appExternalDepsProvider).logger;
-  AnalyticsTracker get _analytics => ref.read(appExternalDepsProvider).analytics;
-  SupabaseClient get _supabase => ref.read(appExternalDepsProvider).supabaseClient;
+  AnalyticsTracker get _analytics =>
+      ref.read(appExternalDepsProvider).analytics;
+  SupabaseClient get _supabase =>
+      ref.read(appExternalDepsProvider).supabaseClient;
 
   /// Initialize Drift database with v2 migration support and corruption detection
   Future<void> initializeDatabase() async {
@@ -70,32 +73,36 @@ class AppStartupService {
       if (needsRecovery) {
         try {
           // First check which columns exist (migration may have been interrupted)
-          final usersColumns = await db.customSelect("PRAGMA table_info(users)").get();
-          final columnNames = usersColumns.map((row) => row.read<String>('name')).toSet();
+          final usersColumns = await db
+              .customSelect("PRAGMA table_info(users)")
+              .get();
+          final columnNames = usersColumns
+              .map((row) => row.read<String>('name'))
+              .toSet();
 
           // Add missing columns if needed (interrupted migration recovery)
           if (!columnNames.contains('allergies')) {
             await db.customStatement(
-              "ALTER TABLE users ADD COLUMN allergies TEXT NOT NULL DEFAULT '{}'"
+              "ALTER TABLE users ADD COLUMN allergies TEXT NOT NULL DEFAULT '{}'",
             );
           }
           if (!columnNames.contains('dietary_preference')) {
             await db.customStatement(
-              'ALTER TABLE users ADD COLUMN dietary_preference TEXT'
+              'ALTER TABLE users ADD COLUMN dietary_preference TEXT',
             );
           }
           if (!columnNames.contains('needs_upload')) {
             await db.customStatement(
-              'ALTER TABLE users ADD COLUMN needs_upload INTEGER NOT NULL DEFAULT 0'
+              'ALTER TABLE users ADD COLUMN needs_upload INTEGER NOT NULL DEFAULT 0',
             );
           }
 
           // Now fix null values that slipped through migration
           await db.customStatement(
-            "UPDATE users SET allergies = '{}' WHERE allergies IS NULL OR allergies = ''"
+            "UPDATE users SET allergies = '{}' WHERE allergies IS NULL OR allergies = ''",
           );
           await db.customStatement(
-            "UPDATE users SET needs_upload = 0 WHERE needs_upload IS NULL"
+            "UPDATE users SET needs_upload = 0 WHERE needs_upload IS NULL",
           );
 
           // Verify fix worked
@@ -123,14 +130,19 @@ class AppStartupService {
       bool isHealthy;
       final prefs = await SharedPreferences.getInstance();
       final lastFullCheck = prefs.getInt('last_full_db_health_check') ?? 0;
-      final hoursSinceFullCheck = DateTime.now().millisecondsSinceEpoch - lastFullCheck;
-      final needsFullCheck = hoursSinceFullCheck > const Duration(hours: 24).inMilliseconds;
+      final hoursSinceFullCheck =
+          DateTime.now().millisecondsSinceEpoch - lastFullCheck;
+      final needsFullCheck =
+          hoursSinceFullCheck > const Duration(hours: 24).inMilliseconds;
 
       if (needsFullCheck) {
         // Full PRAGMA integrity_check (slow but thorough)
         isHealthy = await db.diagnosticDao.isDatabaseHealthy();
         if (isHealthy) {
-          await prefs.setInt('last_full_db_health_check', DateTime.now().millisecondsSinceEpoch);
+          await prefs.setInt(
+            'last_full_db_health_check',
+            DateTime.now().millisecondsSinceEpoch,
+          );
         }
       } else {
         // Fast query check (SELECT COUNT(*) FROM users)
@@ -147,7 +159,9 @@ class AppStartupService {
         try {
           final userId = _supabase.auth.currentUser?.id;
           if (userId != null) {
-            await ref.read(syncCoordinatorProvider.notifier).uploadAllDirtyRecords(userId);
+            await ref
+                .read(syncCoordinatorProvider.notifier)
+                .uploadAllDirtyRecords(userId);
           }
         } catch (e) {
           _logger.warning(
@@ -170,18 +184,20 @@ class AppStartupService {
         // Verify fresh database is healthy
         final isFreshHealthy = await freshDb.diagnosticDao.canExecuteQueries();
         if (!isFreshHealthy) {
-          throw Exception('Fresh database creation failed after corruption recovery');
+          throw Exception(
+            'Fresh database creation failed after corruption recovery',
+          );
         }
 
         // Reset full check timestamp so next startup runs full check
         await prefs.setInt('last_full_db_health_check', 0);
       }
-
     } catch (e, stackTrace) {
-      _logger.error('Database initialization failed',
+      _logger.error(
+        'Database initialization failed',
         context: 'DATABASE',
         error: e,
-        stackTrace: stackTrace
+        stackTrace: stackTrace,
       );
 
       // Last resort: try to recover from catastrophic failure
@@ -216,10 +232,13 @@ class AppStartupService {
         // 2. Initialize analytics with device ID
         await _initializeAnalytics();
 
-        // 3. Check user session for analytics identification
+        // 3. Initialize local notifications and tap callbacks
+        await NotificationService.initialize();
+
+        // 4. Check user session for analytics identification
         await checkUserSession();
 
-        // 4. Sync is_coach status from Supabase (for coach mode)
+        // 5. Sync is_coach status from Supabase (for coach mode)
         // This picks up any admin approvals since last app launch
         await _syncCoachStatus();
       } catch (e, stackTrace) {
@@ -241,15 +260,22 @@ class AppStartupService {
       final deviceId = DeviceInfoService.instance.deviceId;
       await _analytics.initialize();
       await _analytics.identifyUser(deviceId);
-      NotificationService.configure(_analytics);
+      final config = ref.read(appConfigProvider);
+      NotificationService.configure(
+        _analytics,
+        oneSignalAppId: config.oneSignalAppId,
+      );
 
       // Track app opened event with session ID
       final sessionId = const Uuid().v4();
-      await _analytics.track('app_opened', properties: {
-        'device_id': deviceId,
-        'session_id': sessionId,
-        'timestamp': DateTime.now().toIso8601String(),
-      });
+      await _analytics.track(
+        'app_opened',
+        properties: {
+          'device_id': deviceId,
+          'session_id': sessionId,
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'Analytics initialization failed',
@@ -292,17 +318,14 @@ class AppStartupService {
       final supabaseUser = _supabase.auth.currentUser;
       final userId = supabaseUser?.id ?? 'anonymous';
 
-      await _sentry.setUserContext(
-        deviceId: userId,
-        appVersion: '1.1.0+8',
-      );
-
+      await _sentry.setUserContext(deviceId: userId, appVersion: '1.1.0+8');
     } catch (e, stackTrace) {
       // Don't use Sentry to report Sentry initialization errors
-      _logger.error('Sentry user context error',
+      _logger.error(
+        'Sentry user context error',
         context: 'SENTRY',
         error: e,
-        stackTrace: stackTrace
+        stackTrace: stackTrace,
       );
       // Don't rethrow - app should continue even if Sentry fails
     }
@@ -334,11 +357,15 @@ class AppStartupService {
           gutTrainingLevel: user.gutTraining.name,
         );
       }
+
+      final authUserId = _supabase.auth.currentUser?.id;
+      await NotificationService.setRemotePushUserId(authUserId);
     } catch (e, stackTrace) {
-      _logger.error('Session check error',
+      _logger.error(
+        'Session check error',
         context: 'AUTH',
         error: e,
-        stackTrace: stackTrace
+        stackTrace: stackTrace,
       );
       // Continue without user session - this is expected on fresh installs
     }
@@ -360,9 +387,10 @@ class AppStartupService {
         // No initialization needed - plans are loaded with activities
       }
     } catch (e) {
-      _logger.error('Plan initialization error',
+      _logger.error(
+        'Plan initialization error',
         context: 'NUTRITION_PLAN',
-        error: e
+        error: e,
       );
       // Continue - app should work without plans (expected on fresh installs)
     }
@@ -376,7 +404,10 @@ class AppStartupService {
       final database = ref.read(appDatabaseProvider);
 
       // Check if foods table is empty
-      final foodCount = await database.select(database.foodsTable).get().then((rows) => rows.length);
+      final foodCount = await database
+          .select(database.foodsTable)
+          .get()
+          .then((rows) => rows.length);
 
       if (foodCount == 0) {
         // Last resort: call get-foods edge function directly
@@ -444,15 +475,21 @@ class AppStartupService {
       // Handle user choice
       if (userChoice == RecoveryChoice.upload) {
         await _uploadBackupRecords(backup);
-        await _analytics.track('dirty_records_uploaded', properties: {
-          'record_count': backup.totalRecordCount,
-          'repositories': backup.dirtyRecords.keys.toList(),
-        });
+        await _analytics.track(
+          'dirty_records_uploaded',
+          properties: {
+            'record_count': backup.totalRecordCount,
+            'repositories': backup.dirtyRecords.keys.toList(),
+          },
+        );
       } else {
-        await _analytics.track('dirty_records_discarded', properties: {
-          'record_count': backup.totalRecordCount,
-          'repositories': backup.dirtyRecords.keys.toList(),
-        });
+        await _analytics.track(
+          'dirty_records_discarded',
+          properties: {
+            'record_count': backup.totalRecordCount,
+            'repositories': backup.dirtyRecords.keys.toList(),
+          },
+        );
       }
 
       // Delete backup file regardless of choice
@@ -557,14 +594,17 @@ class AppStartupService {
     );
 
     // Track analytics
-    await _analytics.track('backup_upload_completed', properties: {
-      'total_records': backup.totalRecordCount,
-      'success_count': successCount,
-      'failure_count': failureCount,
-      'success_rate': backup.totalRecordCount > 0
-          ? (successCount / backup.totalRecordCount)
-          : 0,
-    });
+    await _analytics.track(
+      'backup_upload_completed',
+      properties: {
+        'total_records': backup.totalRecordCount,
+        'success_count': successCount,
+        'failure_count': failureCount,
+        'success_rate': backup.totalRecordCount > 0
+            ? (successCount / backup.totalRecordCount)
+            : 0,
+      },
+    );
   }
 
   /// Map repository key to Supabase table name

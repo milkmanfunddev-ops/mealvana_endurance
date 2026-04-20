@@ -270,14 +270,31 @@ class EventsController extends _$EventsController {
   }
 }
 
-/// Provider for getting event detail with associated activity
+/// Provider for getting event detail with associated activity.
+/// Accepts an optional [forUserId] to query on behalf of another user
+/// (e.g. when a coach views an athlete's event).
 @riverpod
 Future<({Activity? activity, Event event})> eventDetail(
   Ref ref,
-  String eventId,
-) async {
+  String eventId, {
+  String? forUserId,
+}) async {
   final logger = ref.read(appLoggerProvider);
-  final userId = await ref.read(userIdProvider.future);
+  final String userId = forUserId ?? await ref.read(userIdProvider.future);
+
+  // Sync events from remote if stale (respects 1-hour staleness threshold).
+  // This ensures coach-created changes (e.g. hasCarbLoading flag) are visible.
+  try {
+    final repo = ref.read(eventsRepositoryProvider);
+    final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
+    await syncCoordinator.ensureSynced('events', userId, repository: repo);
+  } catch (e) {
+    logger.warning(
+      'Could not sync events from remote; using local data',
+      context: 'EVENT_DETAIL',
+      data: {'error': e.toString()},
+    );
+  }
 
   final eventsService = ref.read(eventsServiceProvider);
   final activitiesService = ref.read(activitiesServiceProvider);
@@ -286,7 +303,7 @@ Future<({Activity? activity, Event event})> eventDetail(
     logger.error(
       'EventDetail: Event not found',
       context: 'EVENT_DETAIL',
-      data: {'eventId': eventId},
+      data: {'eventId': eventId, 'userId': userId},
     );
     throw Exception('Event not found: $eventId');
   }

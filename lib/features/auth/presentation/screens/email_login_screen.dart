@@ -1,12 +1,14 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../content/application/content_service.dart';
+import '../../../coach_mode/application/coach_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../application/email_auth_service.dart';
 
@@ -62,6 +64,22 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
       if (context.canPop()) {
         context.pop(true);
       } else {
+        // On web, check if user is a coach and redirect to coach portal
+        if (kIsWeb) {
+          try {
+            final isCoach = await ref
+                .read(coachServiceProvider)
+                .isCurrentUserCoach();
+            if (!mounted) return;
+            if (isCoach) {
+              context.go('/coach-portal');
+              return;
+            }
+          } catch (_) {
+            // Fall through to /main
+          }
+        }
+        if (!mounted) return;
         context.go('/main');
       }
     } else if (!success && mounted) {
@@ -82,179 +100,176 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
     final contentService = ref.watch(contentServiceProvider);
     final emailAuthService = ref.watch(emailAuthServiceProvider.notifier);
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context, isLoading: asyncState.isLoading),
-      body: ContentArea.narrow(
-        child: Stack(
-          children: [
-            // Main content
-            SafeArea(
-            child: SingleChildScrollView(
-              padding: AppSpacing.screenPaddingHorizontal,
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: AppSpacing.xl),
+      contentWidth: AdaptiveContentWidth.narrow,
+      body: Stack(
+        children: [
+          // Main content
+          AdaptiveScrollableBody(
+            padding: AppSpacing.screenPaddingHorizontal,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: AppSpacing.xl),
 
-                    // Title
-                    Text(
-                      contentService.getValue(
-                        'auth.login.title',
-                        defaultValue: 'Log In',
-                      ),
-                      style: AppTextStyles.sectionTitle.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 28,
-                      ),
-                      textAlign: TextAlign.center,
+                  // Title
+                  Text(
+                    contentService.getValue(
+                      'auth.login.title',
+                      defaultValue: 'Log In',
                     ),
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 28,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
 
-                    const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.sm),
 
-                    // Subtitle
-                    Text(
-                      contentService.getValue(
-                        'auth.login.subtitle',
-                        defaultValue: 'Welcome back',
+                  // Subtitle
+                  Text(
+                    contentService.getValue(
+                      'auth.login.subtitle',
+                      defaultValue: 'Welcome back',
+                    ),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: AppSpacing.xxxl),
+
+                  // Email field
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    decoration: InputDecoration(
+                      labelText: contentService.getValue(
+                        'auth.email_signup.email_label',
+                        defaultValue: 'Email Address',
                       ),
-                      style: AppTextStyles.bodyMedium.copyWith(
+                      hintText: contentService.getValue(
+                        'auth.email_signup.email_hint',
+                        defaultValue: 'you@example.com',
+                      ),
+                      prefixIcon: Icon(
+                        FontAwesomeIcons.envelope,
+                        size: AppIconSizes.controlIcon,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                      textAlign: TextAlign.center,
+                      border: OutlineInputBorder(
+                        borderRadius: AppRadius.inputRadius,
+                      ),
                     ),
+                    style: AppTextStyles.bodyMedium,
+                    validator: (value) {
+                      return emailAuthService.validateEmail(value ?? '');
+                    },
+                  ),
 
-                    const SizedBox(height: AppSpacing.xxxl),
+                  const SizedBox(height: AppSpacing.lg),
 
-                    // Email field
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        labelText: contentService.getValue(
-                          'auth.email_signup.email_label',
-                          defaultValue: 'Email Address',
-                        ),
-                        hintText: contentService.getValue(
-                          'auth.email_signup.email_hint',
-                          defaultValue: 'you@example.com',
-                        ),
-                        prefixIcon: Icon(
-                          FontAwesomeIcons.envelope,
+                  // Password field
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    autocorrect: false,
+                    decoration: InputDecoration(
+                      labelText: contentService.getValue(
+                        'auth.email_signup.password_label',
+                        defaultValue: 'Password',
+                      ),
+                      hintText: contentService.getValue(
+                        'auth.email_signup.password_hint',
+                        defaultValue: 'Enter your password',
+                      ),
+                      prefixIcon: Icon(
+                        FontAwesomeIcons.lock,
+                        size: AppIconSizes.controlIcon,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? FontAwesomeIcons.eye
+                              : FontAwesomeIcons.eyeSlash,
                           size: AppIconSizes.controlIcon,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
                       ),
-                      style: AppTextStyles.bodyMedium,
-                      validator: (value) {
-                        return emailAuthService.validateEmail(value ?? '');
-                      },
-                    ),
-
-                    const SizedBox(height: AppSpacing.lg),
-
-                    // Password field
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        labelText: contentService.getValue(
-                          'auth.email_signup.password_label',
-                          defaultValue: 'Password',
-                        ),
-                        hintText: contentService.getValue(
-                          'auth.email_signup.password_hint',
-                          defaultValue: 'Enter your password',
-                        ),
-                        prefixIcon: Icon(
-                          FontAwesomeIcons.lock,
-                          size: AppIconSizes.controlIcon,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? FontAwesomeIcons.eye
-                                : FontAwesomeIcons.eyeSlash,
-                            size: AppIconSizes.controlIcon,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                        ),
-                      ),
-                      style: AppTextStyles.bodyMedium,
-                      validator: (value) {
-                        if ((value ?? '').isEmpty)
-                          return 'Password is required';
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Forgot Password link
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: asyncState.isLoading
-                            ? null
-                            : () => context.push('/auth/forgot-password'),
-                        child: Text(
-                          contentService.getValue(
-                            'auth.login.forgot_password',
-                            defaultValue: 'Forgot Password?',
-                          ),
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.electrolyte,
-                          ),
-                        ),
+                      border: OutlineInputBorder(
+                        borderRadius: AppRadius.inputRadius,
                       ),
                     ),
+                    style: AppTextStyles.bodyMedium,
+                    validator: (value) {
+                      if ((value ?? '').isEmpty) return 'Password is required';
+                      return null;
+                    },
+                  ),
 
-                    const SizedBox(height: AppSpacing.xxxl),
+                  const SizedBox(height: AppSpacing.md),
 
-                    // Login button
-                    KylePrimaryButton(
-                      text: contentService.getValue(
-                        asyncState.isLoading
-                            ? 'auth.login.logging_in_button'
-                            : 'auth.login.button',
-                        defaultValue: asyncState.isLoading
-                            ? 'Logging in...'
-                            : 'Log In',
-                      ),
-                      onPressed: asyncState.isLoading ? null : _handleLogin,
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Back button
-                    KyleSecondaryButton(
-                      text: contentService.getValue(
-                        'auth.email_signup.back_button',
-                        defaultValue: 'Back',
-                      ),
-                      onPressed: asyncState.isLoading
+                  // Forgot Password link
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: asyncState.isLoading
                           ? null
-                          : () => context.pop(),
+                          : () => context.push('/auth/forgot-password'),
+                      child: Text(
+                        contentService.getValue(
+                          'auth.login.forgot_password',
+                          defaultValue: 'Forgot Password?',
+                        ),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.electrolyte,
+                        ),
+                      ),
                     ),
+                  ),
 
-                    const SizedBox(height: AppSpacing.xxl),
-                  ],
-                ),
+                  const SizedBox(height: AppSpacing.xxxl),
+
+                  // Login button
+                  KylePrimaryButton(
+                    text: contentService.getValue(
+                      asyncState.isLoading
+                          ? 'auth.login.logging_in_button'
+                          : 'auth.login.button',
+                      defaultValue: asyncState.isLoading
+                          ? 'Logging in...'
+                          : 'Log In',
+                    ),
+                    onPressed: asyncState.isLoading ? null : _handleLogin,
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Back button
+                  KyleSecondaryButton(
+                    text: contentService.getValue(
+                      'auth.email_signup.back_button',
+                      defaultValue: 'Back',
+                    ),
+                    onPressed: asyncState.isLoading
+                        ? null
+                        : () => context.pop(),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xxl),
+                ],
               ),
             ),
           ),
@@ -262,7 +277,9 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
           // Loading overlay
           if (asyncState.isLoading)
             Container(
-              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
+              color: Theme.of(
+                context,
+              ).scaffoldBackgroundColor.withValues(alpha: 0.9),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -286,8 +303,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                 ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

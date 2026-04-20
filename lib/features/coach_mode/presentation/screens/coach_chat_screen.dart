@@ -57,6 +57,7 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final chatAsync = ref.watch(
       coachChatControllerProvider(widget.relationshipId),
     );
@@ -76,35 +77,47 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.blackberry,
+      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: AppBar(
-        backgroundColor: AppColors.blackberryDark,
-        foregroundColor: AppColors.cream,
+        backgroundColor: isDark ? AppColors.blackberryDark : AppColors.surfaceLight,
+        foregroundColor: isDark ? AppColors.cream : AppColors.blackberry,
         title: chatAsync.when(
           data: (state) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 state.otherParticipantName,
-                style: const TextStyle(color: AppColors.cream),
+                style: TextStyle(
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
+                ),
               ),
               Text(
                 state.otherParticipantRole,
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textDarkSecondary.withOpacity(0.7),
+                  color: isDark
+                      ? AppColors.textDarkSecondary.withOpacity(0.7)
+                      : AppColors.textLightSecondary.withOpacity(0.7),
                 ),
               ),
             ],
           ),
-          loading: () =>
-              const Text('Chat', style: TextStyle(color: AppColors.cream)),
-          error: (_, __) =>
-              const Text('Chat', style: TextStyle(color: AppColors.cream)),
+          loading: () => Text(
+            'Chat',
+            style: TextStyle(
+              color: isDark ? AppColors.cream : AppColors.blackberry,
+            ),
+          ),
+          error: (_, __) => Text(
+            'Chat',
+            style: TextStyle(
+              color: isDark ? AppColors.cream : AppColors.blackberry,
+            ),
+          ),
         ),
-        leading: const CustomAppBarBackButton(
-          iconColor: AppColors.cream,
-          backgroundColor: AppColors.blackberry,
+        leading: CustomAppBarBackButton(
+          iconColor: isDark ? AppColors.cream : AppColors.blackberry,
+          backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
         ),
         actions: [
           IconButton(
@@ -121,13 +134,13 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
       ),
       body: chatAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => _buildErrorView(context, error.toString()),
-        data: (state) => _buildChatBody(context, state),
+        error: (error, stack) => _buildErrorView(context, error.toString(), isDark),
+        data: (state) => _buildChatBody(context, state, isDark),
       ),
     );
   }
 
-  Widget _buildErrorView(BuildContext context, String error) {
+  Widget _buildErrorView(BuildContext context, String error, bool isDark) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -140,21 +153,23 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
               color: AppColors.dragonfruit,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Unable to load chat',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.cream,
+                color: isDark ? AppColors.cream : AppColors.blackberry,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               error,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textDarkSecondary,
+                color: isDark
+                    ? AppColors.textDarkSecondary
+                    : AppColors.textLightSecondary,
               ),
             ),
             const SizedBox(height: 24),
@@ -181,18 +196,18 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     );
   }
 
-  Widget _buildChatBody(BuildContext context, CoachChatState state) {
+  Widget _buildChatBody(BuildContext context, CoachChatState state, bool isDark) {
     return Column(
       children: [
         // Messages list
         Expanded(
           child: state.allMessages.isEmpty
-              ? _buildEmptyView(context, state)
-              : _buildMessagesList(context, state),
+              ? _buildEmptyView(context, state, isDark)
+              : _buildMessagesList(context, state, isDark),
         ),
 
         // Error banner
-        if (state.error != null) _buildErrorBanner(context, state, ref),
+        if (state.error != null) _buildErrorBanner(context, state, ref, isDark),
 
         // Input field
         ChatInputField(
@@ -204,7 +219,7 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     );
   }
 
-  Widget _buildMessagesList(BuildContext context, CoachChatState state) {
+  Widget _buildMessagesList(BuildContext context, CoachChatState state, bool isDark) {
     final messages = state.allMessages;
 
     return ListView.builder(
@@ -226,12 +241,12 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
         return Column(
           children: [
             if (showDateSeparator)
-              _buildDateSeparator(context, message.createdAt),
+              _buildDateSeparator(context, message.createdAt, isDark),
             ChatMessageBubble(
               message: message,
               isFromCurrentUser: isFromCurrentUser,
               showSenderName: !isFromCurrentUser,
-              senderName: state.otherParticipantRole,
+              senderName: state.otherParticipantName,
             ),
           ],
         );
@@ -239,28 +254,31 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     );
   }
 
-  Widget _buildDateSeparator(BuildContext context, DateTime date) {
+  Widget _buildDateSeparator(BuildContext context, DateTime date, bool isDark) {
+    final separatorColor = isDark
+        ? AppColors.textDarkSecondary.withOpacity(0.2)
+        : AppColors.textLightSecondary.withOpacity(0.2);
+    final textColor = isDark
+        ? AppColors.textDarkSecondary.withOpacity(0.6)
+        : AppColors.textLightSecondary.withOpacity(0.6);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         children: [
-          Expanded(
-            child: Divider(color: AppColors.textDarkSecondary.withOpacity(0.2)),
-          ),
+          Expanded(child: Divider(color: separatorColor)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
               _formatDateLabel(date),
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textDarkSecondary.withOpacity(0.6),
+                color: textColor,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          Expanded(
-            child: Divider(color: AppColors.textDarkSecondary.withOpacity(0.2)),
-          ),
+          Expanded(child: Divider(color: separatorColor)),
         ],
       ),
     );
@@ -296,7 +314,7 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     }
   }
 
-  Widget _buildEmptyView(BuildContext context, CoachChatState state) {
+  Widget _buildEmptyView(BuildContext context, CoachChatState state, bool isDark) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -309,21 +327,23 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
               color: AppColors.electrolyte.withOpacity(0.5),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Start the Conversation',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppColors.cream,
+                color: isDark ? AppColors.cream : AppColors.blackberry,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               'Send a message to ${state.otherParticipantName} to get started.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textDarkSecondary,
+                color: isDark
+                    ? AppColors.textDarkSecondary
+                    : AppColors.textLightSecondary,
               ),
             ),
           ],
@@ -336,6 +356,7 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
     BuildContext context,
     CoachChatState state,
     WidgetRef ref,
+    bool isDark,
   ) {
     return Container(
       color: AppColors.dragonfruit.withOpacity(0.2),
@@ -351,7 +372,10 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
           Expanded(
             child: Text(
               state.error!,
-              style: const TextStyle(fontSize: 12, color: AppColors.cream),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? AppColors.cream : AppColors.blackberry,
+              ),
             ),
           ),
           if (state.pendingMessages.any(
@@ -376,7 +400,11 @@ class _CoachChatScreenState extends ConsumerState<CoachChatScreen> {
               ),
             ),
           IconButton(
-            icon: const Icon(Icons.close, size: 18, color: AppColors.cream),
+            icon: Icon(
+              Icons.close,
+              size: 18,
+              color: isDark ? AppColors.cream : AppColors.blackberry,
+            ),
             onPressed: () {
               ref
                   .read(

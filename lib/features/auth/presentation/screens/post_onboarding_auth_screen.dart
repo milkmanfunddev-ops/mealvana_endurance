@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/auth/auth_listener_service.dart';
@@ -15,6 +15,7 @@ import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../application/auth_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../domain/auth_exceptions.dart';
+import '../../../coach_mode/application/coach_service.dart';
 
 /// Post-Onboarding Authentication Screen
 /// Shown after food preferences to encourage account creation
@@ -322,8 +323,26 @@ class _PostOnboardingAuthScreenState
   }
 
   /// Navigate directly to main app (for login mode - no onboarding data to save)
+  /// On web, coaches are redirected to the coach portal instead.
   Future<void> _navigateToMain() async {
     if (!mounted) return;
+
+    // On web, check if user is a coach and redirect to coach portal
+    if (kIsWeb) {
+      try {
+        final isCoach = await ref
+            .read(coachServiceProvider)
+            .isCurrentUserCoach();
+        if (!mounted) return;
+        if (isCoach) {
+          context.go('/coach-portal');
+          return;
+        }
+      } catch (_) {
+        // Fall through to normal /main navigation
+      }
+    }
+
     context.go('/main');
   }
 
@@ -416,80 +435,78 @@ class _PostOnboardingAuthScreenState
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isLogin = widget.mode == 'login';
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context, isLoading: asyncState.isLoading),
-      body: ContentArea.narrow(
-        child: Stack(
-          children: [
-            // Main content
-            SafeArea(
-            child: SingleChildScrollView(
-              padding: AppSpacing.screenPaddingHorizontal,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: AppSpacing.xl),
+      contentWidth: AdaptiveContentWidth.narrow,
+      body: Stack(
+        children: [
+          // Main content
+          AdaptiveScrollableBody(
+            padding: AppSpacing.screenPaddingHorizontal,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppSpacing.xl),
 
-                  // Title
-                  Text(
-                    contentService.getValue(
-                      isLogin
-                          ? 'auth.login.title'
-                          : 'auth.post_onboarding.title',
-                      defaultValue: isLogin ? 'Log In' : 'Create Your Account',
-                    ),
-                    style: AppTextStyles.sectionTitle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 28,
-                    ),
-                    textAlign: TextAlign.center,
+                // Title
+                Text(
+                  contentService.getValue(
+                    isLogin ? 'auth.login.title' : 'auth.post_onboarding.title',
+                    defaultValue: isLogin ? 'Log In' : 'Create Your Account',
                   ),
+                  style: AppTextStyles.sectionTitle.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 28,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
 
-                  const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.sm),
 
-                  // Subtitle
+                // Subtitle
+                Text(
+                  contentService.getValue(
+                    isLogin
+                        ? 'auth.login.subtitle'
+                        : 'auth.post_onboarding.subtitle',
+                    defaultValue: isLogin
+                        ? 'Welcome back'
+                        : 'Secure your data and sync across devices',
+                  ),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: AppSpacing.xxl),
+
+                if (!isLogin) ...[
+                  // Hero text
                   Text(
                     contentService.getValue(
-                      isLogin
-                          ? 'auth.login.subtitle'
-                          : 'auth.post_onboarding.subtitle',
-                      defaultValue: isLogin
-                          ? 'Welcome back'
-                          : 'Secure your data and sync across devices',
+                      'auth.post_onboarding.hero_text',
+                      defaultValue:
+                          'Save your nutrition plans, training progress, and preferences with a free account.',
                     ),
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 16,
                     ),
                     textAlign: TextAlign.center,
                   ),
 
                   const SizedBox(height: AppSpacing.xxl),
 
-                  if (!isLogin) ...[
-                    // Hero text
-                    Text(
-                      contentService.getValue(
-                        'auth.post_onboarding.hero_text',
-                        defaultValue:
-                            'Save your nutrition plans, training progress, and preferences with a free account.',
-                      ),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                  // Benefits card
+                  _buildBenefitsCard(context, contentService, isDark),
 
-                    const SizedBox(height: AppSpacing.xxl),
+                  const SizedBox(height: AppSpacing.xxxl),
+                ],
 
-                    // Benefits card
-                    _buildBenefitsCard(context, contentService, isDark),
-
-                    const SizedBox(height: AppSpacing.xxxl),
-                  ],
-
-                  // Apple Sign-In button
+                // Apple Sign-In button (iOS/Android only)
+                if (!kIsWeb)
                   _buildOAuthButton(
                     context: context,
                     label: contentService.getValue(
@@ -501,83 +518,82 @@ class _PostOnboardingAuthScreenState
                     isLoading: asyncState.isLoading,
                   ),
 
-                  const SizedBox(height: AppSpacing.md),
+                if (!kIsWeb) const SizedBox(height: AppSpacing.md),
 
-                  // Google Sign-In button
-                  _buildOAuthButton(
-                    context: context,
-                    label: contentService.getValue(
-                      'auth.post_onboarding.google_button',
-                      defaultValue: 'Continue with Google',
-                    ),
-                    icon: FontAwesomeIcons.google,
-                    onPressed: asyncState.isLoading
-                        ? null
-                        : _handleGoogleSignIn,
-                    isLoading: asyncState.isLoading,
+                // Google Sign-In button
+                _buildOAuthButton(
+                  context: context,
+                  label: contentService.getValue(
+                    'auth.post_onboarding.google_button',
+                    defaultValue: 'Continue with Google',
                   ),
+                  icon: FontAwesomeIcons.google,
+                  onPressed: asyncState.isLoading ? null : _handleGoogleSignIn,
+                  isLoading: asyncState.isLoading,
+                ),
 
-                  const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
 
-                  // Email button
-                  KylePrimaryButton(
-                    text: contentService.getValue(
-                      isLogin
-                          ? 'auth.login.email_button'
-                          : 'auth.post_onboarding.email_button',
-                      defaultValue: isLogin
-                          ? 'Log in with Email'
-                          : 'Sign up with Email',
-                    ),
-                    onPressed: asyncState.isLoading
-                        ? null
-                        : (isLogin ? _handleEmailLogin : _handleEmailSignUp),
+                // Email button
+                KylePrimaryButton(
+                  text: contentService.getValue(
+                    isLogin
+                        ? 'auth.login.email_button'
+                        : 'auth.post_onboarding.email_button',
+                    defaultValue: isLogin
+                        ? 'Log in with Email'
+                        : 'Sign up with Email',
                   ),
+                  onPressed: asyncState.isLoading
+                      ? null
+                      : (isLogin ? _handleEmailLogin : _handleEmailSignUp),
+                ),
 
-                  const SizedBox(height: AppSpacing.xxl),
+                const SizedBox(height: AppSpacing.xxl),
 
-                  // Skip button (only for signup mode)
-                  if (!isLogin) ...[
-                    TextButton(
-                      onPressed: asyncState.isLoading ? null : _handleSkip,
-                      child: Text(
-                        contentService.getValue(
-                          'auth.post_onboarding.skip_button',
-                          defaultValue: 'Continue without signing in',
-                        ),
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.sm),
-
-                    // Skip reminder text
-                    Text(
+                // Skip button (only for signup mode)
+                if (!isLogin) ...[
+                  TextButton(
+                    onPressed: asyncState.isLoading ? null : _handleSkip,
+                    child: Text(
                       contentService.getValue(
-                        'auth.post_onboarding.skip_reminder',
-                        defaultValue:
-                            'You can always create an account later in Settings',
+                        'auth.post_onboarding.skip_button',
+                        defaultValue: 'Continue without signing in',
                       ),
-                      style: AppTextStyles.smallLabel.copyWith(
+                      style: AppTextStyles.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        decoration: TextDecoration.underline,
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                  ],
+                  ),
 
-                  const SizedBox(height: AppSpacing.xxl),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  // Skip reminder text
+                  Text(
+                    contentService.getValue(
+                      'auth.post_onboarding.skip_reminder',
+                      defaultValue:
+                          'You can always create an account later in Settings',
+                    ),
+                    style: AppTextStyles.smallLabel.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
-              ),
+
+                const SizedBox(height: AppSpacing.xxl),
+              ],
             ),
           ),
 
           // Loading overlay for OAuth sign-in flows
           if (asyncState.isLoading)
             Container(
-              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
+              color: Theme.of(
+                context,
+              ).scaffoldBackgroundColor.withValues(alpha: 0.9),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -601,8 +617,7 @@ class _PostOnboardingAuthScreenState
                 ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -665,11 +680,11 @@ class _PostOnboardingAuthScreenState
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark
-            ? AppColors.blackberry.withOpacity(0.3)
-            : AppColors.electrolyte.withOpacity(0.1),
+            ? AppColors.blackberry.withValues(alpha: 0.3)
+            : AppColors.electrolyte.withValues(alpha: 0.1),
         borderRadius: AppRadius.cardRadius,
         border: Border.all(
-          color: AppColors.electrolyte.withOpacity(0.3),
+          color: AppColors.electrolyte.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -746,14 +761,16 @@ class _PostOnboardingAuthScreenState
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: isDark
-              ? AppColors.blackberry.withOpacity(0.5)
+              ? AppColors.blackberry.withValues(alpha: 0.5)
               : Colors.white,
           foregroundColor: Theme.of(context).colorScheme.onSurface,
           elevation: isDark ? 0 : 2,
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.buttonRadius,
             side: BorderSide(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.2),
               width: 1,
             ),
           ),

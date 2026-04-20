@@ -4,85 +4,77 @@ import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// Welcome Screen - Design System
 /// First screen in onboarding flow
 class WelcomeScreen extends ConsumerWidget {
-  const WelcomeScreen({
-    super.key,
-    this.onContinue,
-  });
+  const WelcomeScreen({super.key, this.onContinue});
 
   /// Callback to advance to next page (optional for standalone use)
   final VoidCallback? onContinue;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: AppColors.blackberry,
-      body: ContentArea.narrow(
-        child: _buildContent(context, ref),
+      contentWidth: AdaptiveContentWidth.narrow,
+      body: AdaptiveScrollableBody(
+        safeAreaTop: true,
+        safeAreaBottom: true,
+        padding: AppSpacing.screenPadding,
+        footer: _buildFooter(context, ref),
+        child: _buildContent(context),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref) {
-    return SafeArea(
-      child: Padding(
-        padding: AppSpacing.screenPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: AppSpacing.xxxl),
-            // Hero image
-            _buildHeroImage(context),
-            const SizedBox(height: AppSpacing.lg),
-            // Logo and title
-            _buildHeader(context),
-
-
-            
-
-            const SizedBox(height: AppSpacing.xxxl),
-            const SizedBox(height: AppSpacing.xxxl),
-
-            // Welcome message
-            _buildWelcomeMessage(context),
-
-            const Spacer(),
-
-            // Get Started button
-            KylePrimaryButton(
-              text: 'Get Started',
-              onPressed: () => _getStarted(context, ref),
-              isFullWidth: false,
-            ),
-
-            const SizedBox(height: AppSpacing.md),
-
-            // Login button
-            KyleSecondaryButton(
-              text: 'Log In',
-              onPressed: () => _goToLogin(context, ref),
-              isFullWidth: false,
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // // Skip link
-            // InkWell(
-            //   onTap: () => _skipOnboarding(context, ref),
-            //   child: Text(
-            //     'Skip for now',
-            //     style: AppTextStyles.buttonTertiary.copyWith(
-            //       color: AppColors.dragonfruit,
-            //       decoration: TextDecoration.underline,
-            //     ),
-            //   ),
-            // ),
-          ],
+  Widget _buildContent(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          height: AdaptiveSpacing.byHeightClass(
+            context,
+            short: AppSpacing.lg,
+            regular: AppSpacing.xxxl,
+            tall: AppSpacing.huge,
+          ),
         ),
+        // Hero image
+        _buildHeroImage(context),
+        const SizedBox(height: AppSpacing.lg),
+        // Logo and title
+        _buildHeader(context),
+        SizedBox(height: AdaptiveSpacing.sectionGap(context)),
+        // Welcome message
+        _buildWelcomeMessage(context),
+      ],
+    );
+  }
+
+  Widget _buildFooter(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.md,
+        right: AppSpacing.md,
+        bottom: AppSpacing.lg,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          KylePrimaryButton(
+            text: 'Get Started',
+            onPressed: () => _getStarted(context, ref),
+            isFullWidth: false,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          KyleSecondaryButton(
+            text: 'Log In',
+            onPressed: () => _goToLogin(context, ref),
+            isFullWidth: false,
+          ),
+        ],
       ),
     );
   }
@@ -110,9 +102,7 @@ class WelcomeScreen extends ConsumerWidget {
         // App title
         Text(
           'Mealvana',
-          style: AppTextStyles.pageTitle.copyWith(
-            color: AppColors.cream,
-          ),
+          style: AppTextStyles.pageTitle.copyWith(color: AppColors.cream),
         ),
 
         const SizedBox(height: AppSpacing.sm),
@@ -121,7 +111,7 @@ class WelcomeScreen extends ConsumerWidget {
         Text(
           'Endurance',
           style: AppTextStyles.subtitle.copyWith(
-            color: AppColors.cream.withOpacity(0.8),
+            color: AppColors.cream.withValues(alpha: 0.8),
           ),
         ),
       ],
@@ -129,13 +119,15 @@ class WelcomeScreen extends ConsumerWidget {
   }
 
   Widget _buildHeroImage(BuildContext context) {
-    // scale the image down
     return Container(
       width: double.infinity,
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: AppRadius.lgRadius,
+      height: AdaptiveSpacing.heroHeight(
+        context,
+        short: 130,
+        regular: 200,
+        tall: 220,
       ),
+      decoration: BoxDecoration(borderRadius: AppRadius.lgRadius),
       child: ClipRRect(
         borderRadius: AppRadius.lgRadius,
         child: Image.asset(
@@ -150,7 +142,7 @@ class WelcomeScreen extends ConsumerWidget {
     return Text(
       'Get personalized nutrition plans tailored to your endurance activities. Track your fueling, optimize your performance, and achieve your goals.',
       style: AppTextStyles.bodyMedium.copyWith(
-        color: AppColors.cream.withOpacity(0.9),
+        color: AppColors.cream.withValues(alpha: 0.9),
         height: 1.5,
       ),
       textAlign: TextAlign.center,
@@ -203,14 +195,5 @@ class WelcomeScreen extends ConsumerWidget {
 
     // Navigate to post-onboarding auth screen in login mode
     context.push('/auth/post-onboarding?mode=login');
-  }
-
-  void _skipOnboarding(BuildContext context, WidgetRef ref) {
-    // Track skip onboarding
-    final analytics = ref.read(appExternalDepsProvider);
-    analytics.analytics.track('welcome_skip_tapped');
-
-    // Navigate to main app
-    context.push('/main');
   }
 }

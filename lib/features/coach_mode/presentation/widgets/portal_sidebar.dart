@@ -216,7 +216,7 @@ class PortalSidebar extends ConsumerWidget {
               ),
               onPressed: () => _showAthleteCodeDialog(context, ref),
               icon: const Icon(Icons.key, size: 16),
-              label: const Text('Add Athlete'),
+              label: const Text('Generate Athlete Code'),
             ),
           ),
         ),
@@ -423,7 +423,7 @@ class _CoachCodeGeneratorDialogState
         children: [
           const Expanded(
             child: Text(
-              'Add Athlete',
+              'Generate Athlete Code',
               style: TextStyle(
                 color: AppColors.cream,
                 fontSize: 18,

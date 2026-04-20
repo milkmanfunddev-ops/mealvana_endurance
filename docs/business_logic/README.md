@@ -3,7 +3,8 @@
 ## Current State (Repo Truth)
 - Nutrition planning logic is split between Flutter services and Supabase edge functions.
 - Main app flow invokes:
-  - `generate-nutrition-plan` for plan generation
+  - `generate-nutrition-plan-v3` for plan generation (main production flow, via `nutrition_plan_service.dart`)
+  - `generate-nutrition-plan` for plan generation (V1 — legacy LLM pathway only, via `llm_nutrition_plan_service.dart`)
   - `generate-macros-v4` for macro target generation
 - App code currently invokes 11 edge functions total (see deployment doc for full list).
 - Legacy function names (`run-plan`, `generate-ai-nutrition-plan`, `save-food-preferences`) are not part of the current app-invoked set.
@@ -34,7 +35,8 @@ deno test --allow-net --allow-env supabase/functions/generate-macros-v4/index.te
 ```
 
 ## Verification Checklist
-- `llm_nutrition_plan_service.dart` still invokes `generate-nutrition-plan`.
+- `nutrition_plan_service.dart` still invokes `generate-nutrition-plan-v3` (main production flow).
+- `llm_nutrition_plan_service.dart` still invokes `generate-nutrition-plan` (V1, legacy LLM pathway).
 - Macro services still invoke `generate-macros-v4`.
 - Any documented active function exists as a folder under `supabase/functions/`.
 - App-invoked set in docs matches extracted usage from `lib/** functions.invoke(...)`.

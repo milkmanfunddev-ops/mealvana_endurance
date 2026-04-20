@@ -197,6 +197,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
                 isCompleting: d.isCompleting ?? false,
                 hasUnsavedChanges: d.hasUnsavedChanges ?? false,
                 error: d.error,
+                fuelLogViewMode: d.fuelLogViewMode ?? FuelLogViewMode.planned,
+                fuelLogData: d.fuelLogData,
               );
             }
             return _buildContent(context, state);
@@ -272,9 +274,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
 
     return AnimatedBuilder(
       animation: _fuelLogAnimation,
-      builder: (context, _) => SingleChildScrollView(
-        padding: AppSpacing.screenPaddingHorizontal,
-        child: Column(
+      builder: (context, _) => RefreshIndicator(
+        color: AppColors.electrolyte,
+        onRefresh: () => _handlePullToRefresh(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: AppSpacing.screenPaddingHorizontal,
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: AppSpacing.xxl),
@@ -299,6 +305,26 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
                 child: Column(
                   children: [
                     StalePlanWarning(
+                      onRegeneratePlan: () =>
+                          _handleRegeneratePlan(context, state),
+                      isRegenerating: state.isSaving,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                ),
+              ),
+
+            if (state.hasStaleDuringTarget && _extrasFadeOut.value > 0.01)
+              FadeTransition(
+                opacity: _extrasFadeOut,
+                child: Column(
+                  children: [
+                    StalePlanWarning(
+                      title: 'Nutrition Settings Changed',
+                      message:
+                          state.staleDuringTargetMessage ??
+                          'Nutrition settings changed. Regenerate plan to apply new targets.',
+                      icon: Icons.tune,
                       onRegeneratePlan: () =>
                           _handleRegeneratePlan(context, state),
                       isRegenerating: state.isSaving,
@@ -420,6 +446,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
             const SizedBox(height: AppSpacing.xxxl),
           ],
         ),
+      ),
       ),
     );
   }
@@ -612,8 +639,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
               label: 'Planned',
               isSelected: state.fuelLogViewMode == FuelLogViewMode.planned,
               onTap: () {
-                final controller =
-                    _getControllerNotifier() as ActivityDetailController;
+                final controller = _getControllerNotifier();
                 if (state.fuelLogViewMode != FuelLogViewMode.planned) {
                   controller.toggleFuelLogViewMode();
                 }
@@ -626,8 +652,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
               label: 'Actual',
               isSelected: state.fuelLogViewMode == FuelLogViewMode.actual,
               onTap: () {
-                final controller =
-                    _getControllerNotifier() as ActivityDetailController;
+                final controller = _getControllerNotifier();
                 if (state.fuelLogViewMode != FuelLogViewMode.actual) {
                   controller.toggleFuelLogViewMode();
                 }
@@ -732,6 +757,8 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     }
 
     // Standard single-sport header
+    final isFromGarmin = activity?.syncedFromProvider == 'garmin';
+
     return Column(
       children: [
         SingleSportHeroImage(activityType: activityType),
@@ -749,6 +776,30 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
               ? null
               : () => _showTimePicker(context, state),
         ),
+        // Garmin brand attribution (required by Garmin API Brand Guidelines)
+        if (isFromGarmin) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                Theme.of(context).brightness == Brightness.dark
+                    ? 'assets/images/integrations/garmin_tag_white.png'
+                    : 'assets/images/integrations/garmin_tag_black.png',
+                height: 12,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Activity data from Garmin',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: AppSpacing.sm),
       ],
     );
@@ -770,6 +821,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         'distance': activity.distanceMiles,
         'initialDurationMinutes': activity.durationMinutes,
         'goalPace': activity.paceTargetMinutesPerMile,
+        'initialTitle': activity.title,
         'activityId': activity.id,
         if (widget.isCoachView) 'forUserId': activity.userId,
         'activityType': activity.activityType.name,
@@ -786,6 +838,18 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         'swimmingWaterTempC': activity.swimmingWaterTempC,
       },
     );
+  }
+
+  /// Pull-to-refresh: force sync activity data from Supabase
+  Future<void> _handlePullToRefresh() async {
+    try {
+      final controller = _getControllerNotifier();
+      if (controller is ActivityDetailController) {
+        await controller.forceRefresh();
+      }
+    } catch (e) {
+      // Best-effort refresh
+    }
   }
 
   /// Navigate to NewActivityScreen with all activity fields pre-populated for editing
@@ -818,6 +882,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         'distance': activity.distanceMiles,
         'initialDurationMinutes': activity.durationMinutes,
         'goalPace': activity.paceTargetMinutesPerMile,
+        'initialTitle': activity.title,
         'activityId': activity.id,
         if (widget.isCoachView) 'forUserId': activity.userId,
         'activityType': activity.activityType.name,
@@ -869,12 +934,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     if (context.mounted) {
       MealvanaSnackbar.showSuccess(context, 'Changes saved successfully!');
 
-      if (widget.isNewActivity) {
-        if (widget.isCoachView) {
-          context.go('/main?tab=coach');
+      if (widget.isCoachView) {
+        // Coach view: always navigate back to coach portal after save
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
         } else {
-          context.go('/main');
+          context.go('/coach-portal');
         }
+      } else if (widget.isNewActivity) {
+        context.go('/main');
       }
     }
   }
@@ -1187,7 +1255,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     if (mounted) {
       if (success) {
         MealvanaSnackbar.showSuccess(context, 'Activity deleted successfully');
-        context.go('/main');
+        if (widget.isCoachView) {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          } else {
+            context.go('/coach-portal');
+          }
+        } else {
+          context.go('/main');
+        }
       } else {
         MealvanaSnackbar.showError(
           context,

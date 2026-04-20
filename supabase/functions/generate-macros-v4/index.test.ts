@@ -856,6 +856,226 @@ describe('generate-macros-v4 Integration Tests', () => {
       assertWithinPercent(data.macros.duration_min, 165, PERCENT_TOLERANCE, 'Total duration min');
       assertWithinPercent(data.macros.duration_h, 2.75, PERCENT_TOLERANCE, 'Total duration hours');
     });
+
+    it('top-level during_carb_rate_g_per_h override applies to all non-swim brick segments', async () => {
+      const payload = {
+        weight: 70,
+        weight_unit: 'kg',
+        hours_before: 2,
+        is_fasted: false,
+        activity_type: 'brick',
+        gut_training: 'high',
+        sweat_rate_category: 'medium',
+        sweat_sodium: 'medium',
+        overrides: {
+          during_carb_rate_g_per_h: 120,
+        },
+        brick_segments: [
+          {
+            sport: 'cycling',
+            order: 1,
+            duration_minutes: 180,
+            intensity: 'moderate',
+            distance_miles: 54,
+            speed_mph: 18,
+            terrain: 'flat',
+          },
+          {
+            sport: 'running',
+            order: 2,
+            duration_minutes: 120,
+            intensity: 'moderate',
+            pace_minutes_per_mile: 9.2,
+          },
+        ],
+      };
+
+      const { status, data } = await callMacrosV4(payload);
+      assertEquals(status, 200);
+      assertEquals(data.success, true);
+
+      const bikeSeg = data.macros.phases.during_segments.find((s: any) => s.sport === 'cycling');
+      const runSeg = data.macros.phases.during_segments.find((s: any) => s.sport === 'running');
+      assertExists(bikeSeg);
+      assertExists(runSeg);
+
+      assertEquals(bikeSeg.carbs_rate_g_per_h, 120);
+      assertEquals(runSeg.carbs_rate_g_per_h, 120);
+      assertEquals(bikeSeg.carbs_g, 360); // 120 g/h * 3 h
+      assertEquals(runSeg.carbs_g, 240); // 120 g/h * 2 h
+    });
+
+    it('segment override_carb_rate_g_per_h supports per-segment brick targets and takes precedence', async () => {
+      const payload = {
+        weight: 70,
+        weight_unit: 'kg',
+        hours_before: 2,
+        is_fasted: false,
+        activity_type: 'brick',
+        gut_training: 'high',
+        sweat_rate_category: 'medium',
+        sweat_sodium: 'medium',
+        overrides: {
+          during_carb_rate_g_per_h: 90,
+          cycling_carb_rate_g_per_h: 110,
+          running_carb_rate_g_per_h: 45,
+        },
+        brick_segments: [
+          {
+            sport: 'cycling',
+            order: 1,
+            duration_minutes: 180,
+            intensity: 'moderate',
+            override_carb_rate_g_per_h: 120,
+            distance_miles: 54,
+            speed_mph: 18,
+            terrain: 'flat',
+          },
+          {
+            sport: 'running',
+            order: 2,
+            duration_minutes: 120,
+            intensity: 'moderate',
+            override_carb_rate_g_per_h: 30,
+            pace_minutes_per_mile: 9.2,
+          },
+        ],
+      };
+
+      const { status, data } = await callMacrosV4(payload);
+      assertEquals(status, 200);
+      assertEquals(data.success, true);
+
+      const bikeSeg = data.macros.phases.during_segments.find((s: any) => s.sport === 'cycling');
+      const runSeg = data.macros.phases.during_segments.find((s: any) => s.sport === 'running');
+      assertExists(bikeSeg);
+      assertExists(runSeg);
+
+      // Segment-level overrides should win over sport-specific and global overrides.
+      assertEquals(bikeSeg.carbs_rate_g_per_h, 120);
+      assertEquals(runSeg.carbs_rate_g_per_h, 30);
+      assertEquals(bikeSeg.carbs_g, 360); // 120 g/h * 3 h
+      assertEquals(runSeg.carbs_g, 60); // 30 g/h * 2 h
+    });
+
+    // Regression test: 1500m swim + 20mi bike + 3mi run (2h4m total)
+    // Validates cumulative_duration_min, per-segment carbs, and brick penalty
+    it('swim-bike-run 2h4m brick: cumulative times and per-segment carbs are accurate', async () => {
+      const payload = {
+        weight: 165,
+        weight_unit: 'lbs',
+        hours_before: 2,
+        is_fasted: false,
+        activity_type: 'brick',
+        gut_training: 'low',
+        sweat_rate_category: 'medium',
+        sweat_sodium_category: 'average',
+        brick_segments: [
+          {
+            sport: 'swimming',
+            order: 1,
+            duration_minutes: 30,
+            distance_meters: 1500,
+          },
+          {
+            sport: 'cycling',
+            order: 2,
+            duration_minutes: 67,
+            distance_miles: 20,
+            speed_mph: 18,
+          },
+          {
+            sport: 'running',
+            order: 3,
+            duration_minutes: 27,
+            distance_miles: 3.0,
+            pace_minutes_per_mile: 9,
+          },
+        ],
+      };
+
+      const { status, data } = await callMacrosV4(payload);
+      assertEquals(status, 200);
+      assertEquals(data.success, true);
+
+      const phases = data.macros.phases;
+      assertExists(phases.during_segments);
+      assertEquals(phases.during_segments.length, 3, 'Should have 3 during segments');
+      assertEquals(phases.transitions.length, 2, 'Should have 2 transitions');
+
+      // Total duration
+      assertEquals(data.macros.duration_min, 124, 'Total duration = 30+67+27 = 124 min');
+
+      // --- Segment 1: Swim ---
+      const swim = phases.during_segments[0];
+      assertEquals(swim.sport, 'swimming');
+      assertEquals(swim.duration_minutes, 30);
+      assertEquals(swim.carbs_g, 0, 'Swim carbs = 0');
+      assertEquals(swim.carbs_low_g, 0, 'Swim carbs_low = 0');
+      assertEquals(swim.carbs_high_g, 0, 'Swim carbs_high = 0');
+      assertEquals(swim.cumulative_duration_min, 30, 'Swim cumulative = 30');
+
+      // --- Segment 2: Bike ---
+      const bike = phases.during_segments[1];
+      assertEquals(bike.sport, 'cycling');
+      assertEquals(bike.duration_minutes, 67);
+      assertEquals(bike.cumulative_duration_min, 97, 'Bike cumulative = 30+67 = 97');
+      assertEquals(bike.brick_penalty, 1, 'No brick penalty for cycling');
+
+      // Band lookup uses totalDurationMin=124 → [45,60] g/hr
+      assertEquals(bike.raw_band_low_g_per_h, 45, 'Bike raw band low = 45');
+      assertEquals(bike.raw_band_high_g_per_h, 60, 'Bike raw band high = 60');
+
+      // Gut training = low → multiplier 0.7
+      assertEquals(bike.gut_multiplier, 0.7, 'Low gut training = 0.7');
+      // Scaled band: [45*0.7, 60*0.7] = [31.5, 42] → rounded [31, 42]
+      assertInRange(bike.scaled_band_low_g_per_h, 31, 32, 'Bike scaled low');
+      assertInRange(bike.scaled_band_high_g_per_h, 42, 42, 'Bike scaled high');
+
+      // Sport ceiling for cycling = 120 g/hr
+      assertEquals(bike.sport_ceiling_g_per_h, 120, 'Cycling ceiling = 120');
+
+      // Midpoint = (31.5+42)/2 ≈ 36.75 → rate ≈ 36.8 g/hr (no cap, no penalty)
+      // carbs_g = round(36.75 * 67/60) = round(41.0) = 41
+      assertInRange(bike.carbs_g, 39, 43, 'Bike carbs ≈ 41g');
+
+      // Per-segment carb ranges: band_low * penalty * durationH to band_high * penalty * durationH
+      // Bike: round(31.5 * 1.0 * 67/60) = round(35.2) = 35
+      // Bike: round(42 * 1.0 * 67/60) = round(46.9) = 47
+      assertInRange(bike.carbs_low_g, 33, 37, 'Bike carbs_low ≈ 35g');
+      assertInRange(bike.carbs_high_g, 45, 49, 'Bike carbs_high ≈ 47g');
+
+      // --- Segment 3: Run ---
+      const run = phases.during_segments[2];
+      assertEquals(run.sport, 'running');
+      assertEquals(run.duration_minutes, 27);
+      assertEquals(run.cumulative_duration_min, 124, 'Run cumulative = 30+67+27 = 124');
+      assertEquals(run.brick_penalty, 0.8, 'Run-after-bike penalty = 0.8');
+
+      // Same band [45,60] scaled by 0.7 → [31.5, 42], midpoint 36.75
+      // After brick penalty: 36.75 * 0.8 = 29.4 g/hr
+      // carbs_g = round(29.4 * 27/60) = round(13.2) = 13
+      assertInRange(run.carbs_g, 12, 15, 'Run carbs ≈ 13g (with 0.8 brick penalty)');
+
+      // Per-segment carb ranges with brick penalty:
+      // Run: round(31.5 * 0.8 * 27/60) = round(11.3) = 11
+      // Run: round(42 * 0.8 * 27/60) = round(15.1) = 15
+      assertInRange(run.carbs_low_g, 10, 13, 'Run carbs_low ≈ 11g');
+      assertInRange(run.carbs_high_g, 14, 17, 'Run carbs_high ≈ 15g');
+
+      // Running sport ceiling = 70
+      assertEquals(run.sport_ceiling_g_per_h, 70, 'Running ceiling = 70');
+
+      // Verify per-segment carbs are NOT equal (the bug was showing same target for both)
+      assert(
+        bike.carbs_g !== run.carbs_g,
+        `Bike (${bike.carbs_g}g) and run (${run.carbs_g}g) should have different carb targets`,
+      );
+
+      // Verify total during carbs = swim + bike + run
+      const totalDuringCarbs = swim.carbs_g + bike.carbs_g + run.carbs_g;
+      assertInRange(totalDuringCarbs, 50, 60, 'Total during carbs ≈ 0+41+13 = 54g');
+    });
   });
 
   // =========================================================================

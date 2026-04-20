@@ -11,7 +11,7 @@ import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// Swimming Details Screen - Unified for both onboarding and settings
 ///
@@ -45,7 +45,8 @@ class SwimmingDetailsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
 
   @override
-  ConsumerState<SwimmingDetailsScreen> createState() => _SwimmingDetailsScreenState();
+  ConsumerState<SwimmingDetailsScreen> createState() =>
+      _SwimmingDetailsScreenState();
 }
 
 class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
@@ -79,16 +80,18 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
     final screenName = _isOnboarding
         ? 'Swimming Details Onboarding'
         : 'Swimming Details Settings';
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': screenName,
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track('screen_viewed', properties: {'screen_name': screenName});
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {
       final controller = ref.read(onboardingControllerProvider.notifier);
       final cachedPrefs = controller.cachedSportPreferences;
       if (cachedPrefs != null) {
-        final cssPacePer100mSeconds = cachedPrefs['cssPacePer100mSeconds'] as int?;
+        final cssPacePer100mSeconds =
+            cachedPrefs['cssPacePer100mSeconds'] as int?;
         if (cssPacePer100mSeconds != null) {
           _cssMinutesController.text = (cssPacePer100mSeconds ~/ 60).toString();
           _cssSecondsController.text = (cssPacePer100mSeconds % 60).toString();
@@ -187,11 +190,16 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
           typicalSwimCapType: _swimCapType,
         );
 
-        unawaited(analytics.track('swimming_details_completed', properties: {
-          'css_seconds': cssSeconds,
-          'typical_wetsuit': _typicalWetsuit,
-          'swim_cap_type': _swimCapType,
-        }));
+        unawaited(
+          analytics.track(
+            'swimming_details_completed',
+            properties: {
+              'css_seconds': cssSeconds,
+              'typical_wetsuit': _typicalWetsuit,
+              'swim_cap_type': _swimCapType,
+            },
+          ),
+        );
 
         if (!mounted) return;
 
@@ -218,19 +226,27 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
         if (!mounted) return;
 
         if (success) {
-          unawaited(analytics.track('swimming_details_changed', properties: {
-            'css_seconds': cssSeconds,
-            'typical_wetsuit': _typicalWetsuit,
-            'swim_cap_type': _swimCapType,
-            'source': 'settings',
-          }));
+          unawaited(
+            analytics.track(
+              'swimming_details_changed',
+              properties: {
+                'css_seconds': cssSeconds,
+                'typical_wetsuit': _typicalWetsuit,
+                'swim_cap_type': _swimCapType,
+                'source': 'settings',
+              },
+            ),
+          );
 
           if (!mounted) return;
 
           MealvanaSnackbar.showSuccess(context, 'Swimming details updated');
           context.pop();
         } else {
-          MealvanaSnackbar.showError(context, 'Failed to save swimming details. Please try again.');
+          MealvanaSnackbar.showError(
+            context,
+            'Failed to save swimming details. Please try again.',
+          );
         }
       }
     } finally {
@@ -246,152 +262,163 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
       return Scaffold(
         backgroundColor: AppColors.blackberry,
         body: const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.orange,
-          ),
+          child: CircularProgressIndicator(color: AppColors.orange),
         ),
       );
     }
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: AppColors.blackberry,
-      body: ContentArea.narrow(
-        child: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Column(
-            children: [
-              // Progress bar for onboarding, back button for settings
-              Container(
-                color: AppColors.blackberry,
-                padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
-                child: _isOnboarding
-                    ? const OnboardingProgressBar(
-                        currentSegment: 2, // Sports + Details segment
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.only(top: 0, bottom: 20),
-                        child: Row(
-                          children: [
-                            GestureDetector(
-                              onTap: widget.onBack ?? () => context.pop(),
-                              child: Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: AppColors.orange.withValues(alpha: 0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.arrow_back,
-                                  color: AppColors.orange,
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Swimming Details',
-                              style: TextStyle(
-                                fontFamily: 'Sansita',
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.orange,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-              ),
-
-              // Scrollable content - vertically centered
-              Expanded(
-                child: Center(
-                  child: Form(
-                    key: _formKey,
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+      contentWidth: AdaptiveContentWidth.narrow,
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Column(
+          children: [
+            // Progress bar for onboarding, back button for settings
+            Container(
+              color: AppColors.blackberry,
+              padding: const EdgeInsets.fromLTRB(20, 48, 20, 0),
+              child: _isOnboarding
+                  ? const OnboardingProgressBar(
+                      currentSegment: 2, // Sports + Details segment
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 0, bottom: 20),
+                      child: Row(
                         children: [
-                          // Title
+                          GestureDetector(
+                            onTap: widget.onBack ?? () => context.pop(),
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: AppColors.orange.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back,
+                                color: AppColors.orange,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
                           const Text(
-                            'Swimming details',
+                            'Swimming Details',
                             style: TextStyle(
                               fontFamily: 'Sansita',
-                              fontSize: 26,
+                              fontSize: 20,
                               fontWeight: FontWeight.w700,
                               color: AppColors.orange,
-                              height: 1.0,
                             ),
-                          ),
-
-                          const SizedBox(height: 28),
-
-                          // CSS Section
-                          _CSSSection(
-                            minutesController: _cssMinutesController,
-                            secondsController: _cssSecondsController,
-                            figmaCream: AppColors.textDark,
-                          ),
-
-                          const SizedBox(height: 28),
-
-                          // Wetsuit toggle
-                          FigmaToggleCard(
-                            label: 'I typically wear a wetsuit',
-                            value: _typicalWetsuit,
-                            onChanged: (value) => setState(() => _typicalWetsuit = value),
-                          ),
-
-                          const SizedBox(height: 28),
-
-                          // Swim cap type
-                          const Text(
-                            'Swim Cap Type',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textDark,
-                              height: 1.2,
-                              letterSpacing: 0.24,
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Swim cap options
-                          FigmaRadioOptionList<String>(
-                            items: const [
-                              FigmaRadioOptionItem(value: 'none', label: 'None'),
-                              FigmaRadioOptionItem(value: 'latex', label: 'Latex'),
-                              FigmaRadioOptionItem(value: 'silicone', label: 'Silicone'),
-                              FigmaRadioOptionItem(value: 'neoprene', label: 'Neoprene'),
-                            ],
-                            selectedValue: _swimCapType,
-                            onSelected: (value) => setState(() => _swimCapType = value),
                           ),
                         ],
                       ),
                     ),
+            ),
+
+            // Scrollable content - vertically centered
+            Expanded(
+              child: AdaptiveScrollableBody(
+                safeAreaTop: false,
+                safeAreaBottom: false,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Title
+                        const Text(
+                          'Swimming details',
+                          style: TextStyle(
+                            fontFamily: 'Sansita',
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.orange,
+                            height: 1.0,
+                          ),
+                        ),
+
+                        const SizedBox(height: 28),
+
+                        // CSS Section
+                        _CSSSection(
+                          minutesController: _cssMinutesController,
+                          secondsController: _cssSecondsController,
+                          figmaCream: AppColors.textDark,
+                        ),
+
+                        const SizedBox(height: 28),
+
+                        // Wetsuit toggle
+                        FigmaToggleCard(
+                          label: 'I typically wear a wetsuit',
+                          value: _typicalWetsuit,
+                          onChanged: (value) =>
+                              setState(() => _typicalWetsuit = value),
+                        ),
+
+                        const SizedBox(height: 28),
+
+                        // Swim cap type
+                        const Text(
+                          'Swim Cap Type',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textDark,
+                            height: 1.2,
+                            letterSpacing: 0.24,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Swim cap options
+                        FigmaRadioOptionList<String>(
+                          items: const [
+                            FigmaRadioOptionItem(value: 'none', label: 'None'),
+                            FigmaRadioOptionItem(
+                              value: 'latex',
+                              label: 'Latex',
+                            ),
+                            FigmaRadioOptionItem(
+                              value: 'silicone',
+                              label: 'Silicone',
+                            ),
+                            FigmaRadioOptionItem(
+                              value: 'neoprene',
+                              label: 'Neoprene',
+                            ),
+                          ],
+                          selectedValue: _swimCapType,
+                          onSelected: (value) =>
+                              setState(() => _swimCapType = value),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
+            ),
 
-              // Footer navigation
-              FigmaOnboardingFooter(
-                onContinue: _continue,
-                onBack: _isOnboarding
-                    ? (widget.onBack ?? () => context.pop())
-                    : null,
-                canContinue: true,
-                isLoading: _isSaving,
-                buttonText: _isSettings ? 'Save' : 'Continue',
-                showBackButton: _isOnboarding,
-              ),
-            ],
-          ),
+            // Footer navigation
+            FigmaOnboardingFooter(
+              onContinue: _continue,
+              onBack: _isOnboarding
+                  ? (widget.onBack ?? () => context.pop())
+                  : null,
+              canContinue: true,
+              isLoading: _isSaving,
+              buttonText: _isSettings ? 'Save' : 'Continue',
+              showBackButton: _isOnboarding,
+            ),
+          ],
         ),
       ),
     );
@@ -451,7 +478,10 @@ class _CSSSection extends StatelessWidget {
             // Minutes field
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: figmaCream.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
@@ -516,7 +546,10 @@ class _CSSSection extends StatelessWidget {
             // Seconds field
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: figmaCream.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),

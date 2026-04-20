@@ -17,8 +17,6 @@ import {
   type SubPhaseTargets,
   type SubPhaseType,
   type PlanState,
-  type ScoredFormula,
-  type AddOn,
   type TemplateSelection,
   type PreWorkoutPhaseResult,
   BUDGET_SPLITS,
@@ -30,72 +28,26 @@ import {
   SPORTS_DRINK_FLUID,
 } from './types.ts';
 
+import {
+  ADDON_GAP_THRESHOLD,
+  STACK_THRESHOLD,
+  CROSS_PHASE_EXEMPT_FOODS,
+  ALLERGEN_ALIASES,
+  COMPONENT_ALLERGEN_HINTS,
+  normalizeToken,
+} from './pre-workout-constants.ts';
+
+import {
+  scoreFormula,
+  pickBestFormula,
+} from './pre-workout-scoring.ts';
+
 // ============================================================================
-// Algorithm Constants
+// Utility Helpers
 // ============================================================================
 
-const ADDON_GAP_THRESHOLD = 10;  // Only add banana/drink if gap > 10g
-const STACK_THRESHOLD = 0.20;    // Stack second formula if >20% short AND >20g gap
-const DIVERSITY_BAND = 0.15;     // Pick among formulas within 15% of best carb gap
-const DIVERSITY_FLOOR = 8;       // Minimum absolute carb gap for diversity band
-const RANDOM_PICK_MARGIN = 0.08; // Keep slight variety among near-equal safe candidates
-const RANDOM_PICK_LIMIT = 3;     // Avoid broad randomness that can drift output
-
-// Foods that may appear across multiple sub-phases without feeling repetitive
-const CROSS_PHASE_EXEMPT_FOODS = new Set([
-  'water', 'sports_drink', 'sports_drink_mix',
-  'electrolyte_tablet', 'electrolyte_drink_mix',
-]);
-
-const ALLERGEN_ALIASES: Record<string, string> = {
-  peanut: 'peanut',
-  peanuts: 'peanut',
-  tree_nut: 'tree_nuts',
-  tree_nuts: 'tree_nuts',
-  tree_nuts_allergy: 'tree_nuts',
-  dairy: 'dairy',
-  milk: 'dairy',
-  eggs: 'eggs',
-  egg: 'eggs',
-  gluten: 'gluten',
-  soy: 'soy',
-};
-
-const COMPONENT_ALLERGEN_HINTS: Record<string, string[]> = {
-  oatmeal: ['gluten'],
-  toast: ['gluten'],
-  bagel: ['gluten'],
-  cereal: ['gluten'],
-  granola: ['gluten'],
-  granola_bar: ['gluten'],
-  pancake: ['gluten', 'eggs', 'dairy'],
-  toaster_waffle: ['gluten', 'eggs', 'dairy'],
-  graham_crackers: ['gluten'],
-  fig_bar: ['gluten'],
-  stroopwafel: ['gluten', 'dairy'],
-  pretzels: ['gluten'],
-  milk: ['dairy'],
-  yogurt: ['dairy'],
-  cream_cheese: ['dairy'],
-  cheese_slice: ['dairy'],
-  butter: ['dairy'],
-  protein_shake: ['dairy'],
-  protein_powder: ['dairy'],
-  peanut_butter: ['peanut'],
-  almond_butter: ['tree_nuts'],
-  trail_mix: ['tree_nuts', 'peanut'],
-  egg: ['eggs'],
-  soy_sauce: ['soy', 'gluten'],
-  teriyaki_sauce: ['soy', 'gluten'],
-};
-
-function normalizeToken(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[+]/g, ' ')
-    .replace(/[-/]/g, ' ')
-    .replace(/\s+/g, '_');
+function snapToHalf(value: number): number {
+  return Math.round(value * 2) / 2;
 }
 
 function normalizeAllergen(value: string): string {
@@ -111,6 +63,56 @@ function inferAllergensFromComponents(componentFoodNames: string[] = []): Set<st
     for (const a of hinted) inferred.add(a);
   }
   return inferred;
+}
+
+function wouldExceedHighs(
+  state: PlanState,
+  addCarbs: number,
+  addProtein: number,
+  addSodium: number,
+  addFluid: number,
+): boolean {
+  return (
+    (state.carbs_delivered + addCarbs) > (state.carbs_high + 1e-6) ||
+    (state.protein_delivered + addProtein) > (state.protein_high + 1e-6) ||
+    (state.sodium_delivered + addSodium) > (state.sodium_high + 1e-6) ||
+    (state.fluid_delivered + addFluid) > (state.fluid_high + 1e-6)
+  );
+}
+
+function templateCarbs(t: PreWorkoutTemplate, servings: number): number {
+  return t.carbs_per_serving * servings;
+}
+
+function makeSelection(t: PreWorkoutTemplate, servings: number): TemplateSelection {
+  return {
+    id: t.id,
+    name: t.name,
+    base_category: t.base_category,
+    serving_unit: t.serving_unit,
+    servings,
+    carbs_g: Math.round(t.carbs_per_serving * servings * 10) / 10,
+    protein_g: Math.round(t.protein_per_serving * servings * 10) / 10,
+    fat_g: Math.round(t.fat_per_serving * servings * 10) / 10,
+    sodium_mg: Math.round(t.sodium_mg * servings * 10) / 10,
+    fluid_ml: Math.round(t.fluid_ml * servings * 10) / 10,
+    component_food_names: t.component_food_names ?? [],
+    component_quantities: t.component_quantities ?? {},
+  };
+}
+
+function makeBananaAddOn() {
+  return { type: 'banana' as const, carbs_g: BANANA_CARBS, sodium_mg: BANANA_SODIUM, fluid_ml: BANANA_FLUID, servings: 1 };
+}
+
+function makeSportsDrinkAddOn(servings: number = 1) {
+  return {
+    type: 'sports_drink' as const,
+    carbs_g: Math.round(SPORTS_DRINK_CARBS * servings * 10) / 10,
+    sodium_mg: Math.round(SPORTS_DRINK_SODIUM * servings * 10) / 10,
+    fluid_ml: Math.round(SPORTS_DRINK_FLUID * servings * 10) / 10,
+    servings,
+  };
 }
 
 // ============================================================================
@@ -359,277 +361,8 @@ export function getEligibleTemplates(
 }
 
 // ============================================================================
-// Utility Helpers
+// Stacking Logic
 // ============================================================================
-
-function snapToHalf(value: number): number {
-  return Math.round(value * 2) / 2;
-}
-
-/** Cryptographically secure random integer in [0, max). */
-function secureRandomInt(max: number): number {
-  if (max <= 1) return 0;
-  const array = new Uint32Array(1);
-  crypto.getRandomValues(array);
-  return array[0] % max;
-}
-
-function wouldExceedHighs(
-  state: PlanState,
-  addCarbs: number,
-  addProtein: number,
-  addSodium: number,
-  addFluid: number,
-): boolean {
-  return (
-    (state.carbs_delivered + addCarbs) > (state.carbs_high + 1e-6) ||
-    (state.protein_delivered + addProtein) > (state.protein_high + 1e-6) ||
-    (state.sodium_delivered + addSodium) > (state.sodium_high + 1e-6) ||
-    (state.fluid_delivered + addFluid) > (state.fluid_high + 1e-6)
-  );
-}
-
-function templateCarbs(t: PreWorkoutTemplate, servings: number): number {
-  return t.carbs_per_serving * servings;
-}
-
-function makeSelection(t: PreWorkoutTemplate, servings: number): TemplateSelection {
-  return {
-    id: t.id,
-    name: t.name,
-    base_category: t.base_category,
-    serving_unit: t.serving_unit,
-    servings,
-    carbs_g: Math.round(t.carbs_per_serving * servings * 10) / 10,
-    protein_g: Math.round(t.protein_per_serving * servings * 10) / 10,
-    fat_g: Math.round(t.fat_per_serving * servings * 10) / 10,
-    sodium_mg: Math.round(t.sodium_mg * servings * 10) / 10,
-    fluid_ml: Math.round(t.fluid_ml * servings * 10) / 10,
-    component_food_names: t.component_food_names ?? [],
-    component_quantities: t.component_quantities ?? {},
-  };
-}
-
-function makeBananaAddOn(): AddOn {
-  return { type: 'banana', carbs_g: BANANA_CARBS, sodium_mg: BANANA_SODIUM, fluid_ml: BANANA_FLUID, servings: 1 };
-}
-
-function makeSportsDrinkAddOn(servings: number = 1): AddOn {
-  return {
-    type: 'sports_drink',
-    carbs_g: Math.round(SPORTS_DRINK_CARBS * servings * 10) / 10,
-    sodium_mg: Math.round(SPORTS_DRINK_SODIUM * servings * 10) / 10,
-    fluid_ml: Math.round(SPORTS_DRINK_FLUID * servings * 10) / 10,
-    servings,
-  };
-}
-
-// ============================================================================
-// Algorithm C Core Logic
-// ============================================================================
-
-/**
- * Score a single food template: calculate ideal servings, add-ons.
- * Add-on ordering is sodium-aware.
- */
-function scoreFormula(
-  template: PreWorkoutTemplate,
-  carbTarget: number,
-  state: PlanState,
-  dislikedSet: Set<string>,
-  likedFoods: string[] = [],
-): ScoredFormula {
-  // Calculate ideal servings directly
-  const ideal = carbTarget / template.carbs_per_serving;
-  const clamped = Math.max(template.min_servings, Math.min(template.max_servings, ideal));
-  const servings = snapToHalf(clamped);
-
-  let carbs = templateCarbs(template, servings);
-  let protein = template.protein_per_serving * servings;
-  let sodium = template.sodium_mg * servings;
-  let fluid = template.fluid_ml * servings;
-  const addOns: AddOn[] = [];
-
-  // Fill gap with add-ons — sodium-aware ordering
-  let gap = carbTarget - carbs;
-
-  // Banana add-on: skip if banana already used in any prior phase or in this template's components
-  const bananaAlreadyUsed = state.used_foods.has('banana') ||
-    (template.component_food_names ?? []).includes('banana');
-  const bananaEligible = template.plus_banana && !bananaAlreadyUsed && !dislikedSet.has('banana');
-  const drinkEligible = template.plus_sports_drink &&
-    !state.sports_drink_used &&
-    !dislikedSet.has('sports_drink') &&
-    !dislikedSet.has('sports_drink_mix');
-
-  const sodiumRemaining = state.sodium_target - (state.sodium_delivered + sodium);
-  const preferDrinkFirst = sodiumRemaining > 100;
-
-  const addOnOrder = preferDrinkFirst
-    ? [{ type: 'sports_drink' as const, eligible: drinkEligible }, { type: 'banana' as const, eligible: bananaEligible }]
-    : [{ type: 'banana' as const, eligible: bananaEligible }, { type: 'sports_drink' as const, eligible: drinkEligible }];
-
-  for (const addOn of addOnOrder) {
-    if (gap <= ADDON_GAP_THRESHOLD || !addOn.eligible) continue;
-
-    if (addOn.type === 'banana') {
-      if (wouldExceedHighs(state, carbs + BANANA_CARBS, protein, sodium + BANANA_SODIUM, fluid + BANANA_FLUID)) {
-        continue;
-      }
-      const withBanana = Math.abs(carbTarget - (carbs + BANANA_CARBS));
-      if (withBanana < Math.abs(gap)) {
-        carbs += BANANA_CARBS;
-        sodium += BANANA_SODIUM;
-        fluid += BANANA_FLUID;
-        addOns.push(makeBananaAddOn());
-        gap = carbTarget - carbs;
-      }
-    } else {
-      // Try variable sports drink servings (0.5, 1, 2 cups) — pick best fit
-      const servingOptions = [0.5, 1, 2];
-      let bestDrinkServings = 0;
-      let bestDrinkGap = Math.abs(gap);
-
-      for (const srv of servingOptions) {
-        const drinkCarbs = SPORTS_DRINK_CARBS * srv;
-        const drinkSodium = SPORTS_DRINK_SODIUM * srv;
-        const drinkFluid = SPORTS_DRINK_FLUID * srv;
-
-        const sodiumWouldOvershoot = (state.sodium_delivered + sodium + drinkSodium) > state.sodium_high;
-        const fluidWouldOvershoot = state.fluid_target > 0 &&
-          (state.fluid_delivered + fluid + drinkFluid) > state.fluid_high;
-        const carbsWouldOvershoot = (state.carbs_delivered + carbs + drinkCarbs) > state.carbs_high;
-        const wouldOvershoot = sodiumWouldOvershoot || fluidWouldOvershoot;
-
-        const newGap = Math.abs(carbTarget - (carbs + drinkCarbs));
-        const carbImprovement = Math.abs(gap) - newGap;
-        const carbsNeedHelp = carbImprovement > 5 && carbTarget > 0 && Math.abs(gap) / carbTarget > 0.15;
-
-        if ((wouldOvershoot || carbsWouldOvershoot) && !preferDrinkFirst && !carbsNeedHelp) continue;
-        if (wouldExceedHighs(state, carbs + drinkCarbs, protein, sodium + drinkSodium, fluid + drinkFluid)) continue;
-
-        if (newGap < bestDrinkGap) {
-          bestDrinkGap = newGap;
-          bestDrinkServings = srv;
-        }
-      }
-
-      if (bestDrinkServings > 0) {
-        const srv = bestDrinkServings;
-        carbs += SPORTS_DRINK_CARBS * srv;
-        sodium += SPORTS_DRINK_SODIUM * srv;
-        fluid += SPORTS_DRINK_FLUID * srv;
-        addOns.push(makeSportsDrinkAddOn(srv));
-        gap = carbTarget - carbs;
-      }
-    }
-  }
-
-  // Liked-food bonus: reduce effective gap by 15% for templates containing liked ingredients
-  let effectiveGap = Math.abs(gap);
-  if (likedFoods.length > 0) {
-    const components = template.component_food_names ?? [];
-    const likedSet = new Set(likedFoods.map(normalizeToken));
-    const hasLiked = components.some((name) => likedSet.has(normalizeToken(name)));
-    if (hasLiked) {
-      effectiveGap *= 0.85; // 15% preference boost
-    }
-  }
-
-  return { template, servings, carbs, protein, addOns, gap: effectiveGap, sodium, fluid };
-}
-
-/**
- * Pick from the carb-close pool using sodium/fluid alignment as tiebreaker,
- * with controlled randomization so repeated plans get variety.
- */
-function pickBestFormula(
-  scored: ScoredFormula[],
-  state: PlanState,
-  carbTarget: number,
-): ScoredFormula {
-  if (scored.length === 0) throw new Error('No candidates');
-  if (scored.length === 1) return scored[0];
-
-  scored.sort((a, b) => a.gap - b.gap);
-  const bestGap = scored[0].gap;
-
-  const threshold = bestGap + (bestGap * DIVERSITY_BAND) + DIVERSITY_FLOOR;
-  const pool = scored.filter((s) => s.gap <= threshold);
-  const safePool = pool.filter((candidate) => {
-    const resultCarbs = state.carbs_delivered + candidate.carbs;
-    const resultProtein = state.protein_delivered + candidate.protein;
-    const resultSodium = state.sodium_delivered + candidate.sodium;
-    const resultFluid = state.fluid_delivered + candidate.fluid;
-    return (
-      resultCarbs <= state.carbs_high + 1e-6 &&
-      resultProtein <= state.protein_high + 1e-6 &&
-      resultSodium <= state.sodium_high + 1e-6 &&
-      resultFluid <= state.fluid_high + 1e-6
-    );
-  });
-  const rankedPool = safePool.length > 0 ? safePool : pool;
-
-  if (rankedPool.length === 1) return rankedPool[0];
-
-  // Score each candidate with hard penalties for macro high-bound violations.
-  const scoredPool: Array<{ candidate: ScoredFormula; score: number }> = [];
-
-  for (const candidate of rankedPool) {
-    const resultCarbs = state.carbs_delivered + candidate.carbs;
-    const resultProtein = state.protein_delivered + candidate.protein;
-    const resultSodium = state.sodium_delivered + candidate.sodium;
-    const resultFluid = state.fluid_delivered + candidate.fluid;
-
-    const carbErr = carbTarget > 0 ? candidate.gap / carbTarget : 0;
-    const proteinErr = state.protein_target > 0
-      ? Math.abs(resultProtein - state.protein_target) / state.protein_target
-      : 0;
-    const sodiumErr = state.sodium_target > 0
-      ? Math.abs(resultSodium - state.sodium_target) / state.sodium_target
-      : 0;
-    const fluidErr = state.fluid_target > 0
-      ? Math.abs(resultFluid - state.fluid_target) / state.fluid_target
-      : 0;
-
-    const carbOverPenalty = state.carbs_target > 0 && resultCarbs > state.carbs_high
-      ? ((resultCarbs - state.carbs_high) / state.carbs_target) * 8
-      : 0;
-    const carbUnderPenalty = state.carbs_target > 0 && resultCarbs < state.carbs_low
-      ? ((state.carbs_low - resultCarbs) / state.carbs_target) * 5
-      : 0;
-    const proteinOverPenalty = state.protein_target > 0 && resultProtein > state.protein_high
-      ? ((resultProtein - state.protein_high) / state.protein_target) * 10
-      : 0;
-    const proteinUnderPenalty = state.protein_target > 0 && resultProtein < state.protein_low
-      ? ((state.protein_low - resultProtein) / state.protein_target) * 3
-      : 0;
-    const sodiumOverPenalty = state.sodium_target > 0 && resultSodium > state.sodium_high
-      ? ((resultSodium - state.sodium_high) / state.sodium_target) * 8
-      : 0;
-    const sodiumUnderPenalty = state.sodium_target > 0 && resultSodium < state.sodium_low
-      ? ((state.sodium_low - resultSodium) / state.sodium_target) * 2
-      : 0;
-    const fluidOverPenalty = state.fluid_target > 0 && resultFluid > state.fluid_high
-      ? ((resultFluid - state.fluid_high) / state.fluid_target) * 6
-      : 0;
-    const fluidUnderPenalty = state.fluid_target > 0 && resultFluid < state.fluid_low
-      ? ((state.fluid_low - resultFluid) / state.fluid_target) * 2
-      : 0;
-
-    const baseScore = carbErr + proteinErr + sodiumErr + fluidErr +
-      carbOverPenalty + carbUnderPenalty + proteinOverPenalty + proteinUnderPenalty +
-      sodiumOverPenalty + sodiumUnderPenalty + fluidOverPenalty + fluidUnderPenalty;
-    scoredPool.push({ candidate, score: baseScore });
-  }
-
-  scoredPool.sort((a, b) => a.score - b.score);
-  const bestScore = scoredPool[0].score;
-  const margin = Math.max(0.03, bestScore * RANDOM_PICK_MARGIN);
-  const randomPool = scoredPool.filter((c) => c.score <= bestScore + margin)
-    .slice(0, RANDOM_PICK_LIMIT);
-  return randomPool[secureRandomInt(randomPool.length)].candidate;
-}
 
 /**
  * Try to stack a second food template to fill a large remaining gap.

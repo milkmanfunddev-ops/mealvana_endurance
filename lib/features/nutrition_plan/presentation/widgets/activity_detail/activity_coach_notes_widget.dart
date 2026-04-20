@@ -17,11 +17,14 @@ class ActivityCoachNotesWidget extends StatelessWidget {
 
     final isFromTP = activity.syncedFromProvider == 'training_peaks';
     final isFromFS = activity.syncedFromProvider == 'final_surge';
+    final isFromGarmin = activity.syncedFromProvider == 'garmin';
     final providerName = isFromTP
         ? 'TrainingPeaks'
         : isFromFS
             ? 'Final Surge'
-            : null;
+            : isFromGarmin
+                ? 'Garmin'
+                : null;
 
     // Extract the coach description (before metadata line)
     // The notes format from TP transformer: "description\nElevation: ... | Calories: ... | Tags: ..."

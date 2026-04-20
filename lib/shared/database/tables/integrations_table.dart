@@ -22,10 +22,11 @@ class IntegrationsTable extends Table {
   TextColumn get providerAthleteEmail => text().nullable().named('provider_athlete_email')();
 
   // Provider-specific profile data (for auto-populating user profile during onboarding)
-  // These fields are populated from Training Peaks profile API (Final Surge doesn't provide this data)
+  // Weight/birth/gender from Training Peaks profile API; weight/body fat from Garmin body comp API
   RealColumn get providerAthleteWeightKg => real().nullable().named('provider_athlete_weight_kg')();
   TextColumn get providerAthleteBirthMonth => text().nullable().named('provider_athlete_birth_month')(); // "YYYY-MM" format
   TextColumn get providerAthleteGender => text().nullable().named('provider_athlete_gender')(); // 'm' or 'f'
+  RealColumn get providerAthleteBodyFatPct => real().nullable().named('provider_athlete_body_fat_pct')();
 
   // Athlete zone data (HR, Speed, Power zones from Training Peaks)
   TextColumn get athleteZonesJson => text().nullable().named('athlete_zones_json')();

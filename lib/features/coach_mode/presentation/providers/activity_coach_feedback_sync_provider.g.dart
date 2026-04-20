@@ -9,22 +9,34 @@ part of 'activity_coach_feedback_sync_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Provider that syncs coach messages for a specific activity from Supabase
-/// This is triggered when the ActivityCoachFeedbackWidget is displayed
-/// to ensure athletes see the latest coach feedback immediately
+/// AND subscribes to Supabase Realtime for instant updates.
+///
+/// When the widget is displayed, this provider:
+/// 1. Syncs existing messages from Supabase to local DB
+/// 2. Sets up a Realtime subscription for new activity comments
+/// 3. Invalidates the feedback provider whenever new data arrives
 
 @ProviderFor(activityCoachFeedbackSync)
 const activityCoachFeedbackSyncProvider = ActivityCoachFeedbackSyncFamily._();
 
 /// Provider that syncs coach messages for a specific activity from Supabase
-/// This is triggered when the ActivityCoachFeedbackWidget is displayed
-/// to ensure athletes see the latest coach feedback immediately
+/// AND subscribes to Supabase Realtime for instant updates.
+///
+/// When the widget is displayed, this provider:
+/// 1. Syncs existing messages from Supabase to local DB
+/// 2. Sets up a Realtime subscription for new activity comments
+/// 3. Invalidates the feedback provider whenever new data arrives
 
 final class ActivityCoachFeedbackSyncProvider
     extends $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
     with $FutureModifier<void>, $FutureProvider<void> {
   /// Provider that syncs coach messages for a specific activity from Supabase
-  /// This is triggered when the ActivityCoachFeedbackWidget is displayed
-  /// to ensure athletes see the latest coach feedback immediately
+  /// AND subscribes to Supabase Realtime for instant updates.
+  ///
+  /// When the widget is displayed, this provider:
+  /// 1. Syncs existing messages from Supabase to local DB
+  /// 2. Sets up a Realtime subscription for new activity comments
+  /// 3. Invalidates the feedback provider whenever new data arrives
   const ActivityCoachFeedbackSyncProvider._({
     required ActivityCoachFeedbackSyncFamily super.from,
     required String super.argument,
@@ -70,11 +82,15 @@ final class ActivityCoachFeedbackSyncProvider
 }
 
 String _$activityCoachFeedbackSyncHash() =>
-    r'c04f7a69c321ef35b6b114ed7437c07a6a98a015';
+    r'c71575f5d9c96877128fe7d9e1e73d0e18b3dd2d';
 
 /// Provider that syncs coach messages for a specific activity from Supabase
-/// This is triggered when the ActivityCoachFeedbackWidget is displayed
-/// to ensure athletes see the latest coach feedback immediately
+/// AND subscribes to Supabase Realtime for instant updates.
+///
+/// When the widget is displayed, this provider:
+/// 1. Syncs existing messages from Supabase to local DB
+/// 2. Sets up a Realtime subscription for new activity comments
+/// 3. Invalidates the feedback provider whenever new data arrives
 
 final class ActivityCoachFeedbackSyncFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<void>, String> {
@@ -88,8 +104,12 @@ final class ActivityCoachFeedbackSyncFamily extends $Family
       );
 
   /// Provider that syncs coach messages for a specific activity from Supabase
-  /// This is triggered when the ActivityCoachFeedbackWidget is displayed
-  /// to ensure athletes see the latest coach feedback immediately
+  /// AND subscribes to Supabase Realtime for instant updates.
+  ///
+  /// When the widget is displayed, this provider:
+  /// 1. Syncs existing messages from Supabase to local DB
+  /// 2. Sets up a Realtime subscription for new activity comments
+  /// 3. Invalidates the feedback provider whenever new data arrives
 
   ActivityCoachFeedbackSyncProvider call(String activityId) =>
       ActivityCoachFeedbackSyncProvider._(argument: activityId, from: this);

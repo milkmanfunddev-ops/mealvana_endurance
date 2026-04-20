@@ -1,0 +1,360 @@
+Delivered-To: lee.martin@mealvana.io
+Received: by 2002:a05:651c:2c2:b0:38a:3506:f1f7 with SMTP id f2csp521836ljo;
+        Wed, 8 Apr 2026 13:00:41 -0700 (PDT)
+X-Received: by 2002:a05:6000:24c6:b0:43b:3bed:f34 with SMTP id ffacd0b85a97d-43d5a18bdafmr795274f8f.30.1775678441454;
+        Wed, 08 Apr 2026 13:00:41 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1775678441; cv=none;
+        d=google.com; s=arc-20240605;
+        b=MLuWAdKVIhFqBMGanDs5iZ5Nn1w3MpFG4yZyBO2ugoJkHCiZpNUApi29JfLwzkJIwO
+         TV3lMVVpNdn36UNMY5V00flqPfs3ZffjG4Gv41tJCxUQDyQmRfTBGd28YeJL53VZDmQj
+         LjUfmOTPc32AxNOKqPRqJJZj3Lcqt7uqWUA11N7bJPgm2hnVmb2MzuNVRQSajhGzD9Q2
+         jpv3GNqPYO/xhsqXbfmrhRmsj6zo+U7GBdsNI+C1GWIivQ56VxbGAhCEx2fe4zz0b4+h
+         pFqPsaqY3jk6Fqb0bUAOnM4JgJRvd42j/2hdC/ALnjVw3a/Egont92fLf6fkaCXXkJVD
+         yRaw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=dkim-signature:auto-submitted:content-transfer-encoding
+         :mime-version:subject:references:in-reply-to:message-id:to:reply-to
+         :from:date;
+        bh=w4QR77sAczkQb6JECy5j3S9GWVYXjMJAa7wawSBLyBY=;
+        fh=VXk90QDQHE/prYygoXUc9wr/WUbe/taFMOGZV+SIBRM=;
+        b=I8xbQjECmqm+/6zllHkM4++/Q08y/mg7R9w9lS7WkysXqsBTpaYiKT1j29IKF+dhlP
+         MnqjEaD5wB55D++kJ3UDlB7w8fhWBCbqmY54vfZEcGiDENCHouJsUHaw6YQgVeEnjJ5F
+         AlYdl8mr8va1IDA7fCWlPmDrG/hLYwpjfHKRCsPHUe2jWWJTTyaTx4DK1cgs4//rJn+T
+         BvjjsbSDhkDJ3tcsQhGsGdH3cvwXzWuamrB9gJzIIuBlRuozWr4CftmRfa2zqyXoge5w
+         IY+AFEQzY/Jlz7h0QhUzmNkSbEDkJhEXjaaNj0oOQan4P3QU/DLM+I+gixeRLfKjMHvz
+         YUhg==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@developer.garmin.com header.s=zendesk2 header.b=OsWdN6ui;
+       spf=pass (google.com: domain of connect-support@developer.garmin.com designates 188.172.138.32 as permitted sender) smtp.mailfrom=connect-support@developer.garmin.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=developer.garmin.com
+Return-Path: <connect-support@developer.garmin.com>
+Received: from mta-out2.pod28.euc1.zdsys.com (mta-out2.pod28.euc1.zdsys.com. [188.172.138.32])
+        by mx.google.com with ESMTPS id ffacd0b85a97d-43d1e2b2a97si41535811f8f.25.2026.04.08.13.00.41
+        for <lee.martin@mealvana.io>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 08 Apr 2026 13:00:41 -0700 (PDT)
+Received-SPF: pass (google.com: domain of connect-support@developer.garmin.com designates 188.172.138.32 as permitted sender) client-ip=188.172.138.32;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@developer.garmin.com header.s=zendesk2 header.b=OsWdN6ui;
+       spf=pass (google.com: domain of connect-support@developer.garmin.com designates 188.172.138.32 as permitted sender) smtp.mailfrom=connect-support@developer.garmin.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=developer.garmin.com
+Received: from zendesk.com (unknown [127.0.0.6])
+	by mta-out15.pod28.euc1.zdsys.com (Zendesk) with ESMTP
+	id 6f89a316-a262-41bf-b975-f9fa6712ec17;
+	Wed, 08 Apr 2026 20:00:40 +0000 (UTC)
+Date: Wed, 08 Apr 2026 20:00:40 +0000
+From: "Elena Kononova (Garmin Connect Developer Program Support)" <connect-support@developer.garmin.com>
+Reply-To: Garmin Connect Developer Program Support <connect-support@developer.garmin.com>
+To: Lee Martin <lee.martin@mealvana.io>
+Message-ID: <6NM4VG19LWV_69d6b3e8ab8af_65c90923d5a723_sprut@zendesk.com>
+In-Reply-To: <422667760.687.1775579849862@prod1-cv1-gcps-pobt-service-5677984fdc-tmmql>
+References: <6NM4VG19LWV@zendesk.com>
+ <422667760.687.1775579849862@prod1-cv1-gcps-pobt-service-5677984fdc-tmmql>
+Subject: Production Review for "Milkman Inc": Requirements, Ticket: 206017
+Mime-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="--==_mimepart_69d6b3e8c4b90_5619b841138";
+ charset=utf-8
+Content-Transfer-Encoding: 7bit
+X-Delivery-Context: rule-2-event-id-26661592030492
+X-Zendesk-From-Account-Id: 4620e1d
+Auto-Submitted: auto-generated
+X-Auto-Response-Suppress: All
+X-Mailer: Zendesk Mailer
+X-Zendesk-Email-Id: 01KNQAXH3PGHFVJ03475AJG2YZ
+DKIM-Signature:  v=1; a=rsa-sha256; c=relaxed/relaxed; d=developer.garmin.com;
+ q=dns/txt; s=zendesk2; t=1775678440;
+ bh=w4QR77sAczkQb6JECy5j3S9GWVYXjMJAa7wawSBLyBY=;
+ h=date:from:reply-to:to:message-id:in-reply-to:references:subject:mime-version:content-type:content-transfer-encoding;
+ b=OsWdN6uiZfX0FZLa5HUctW90vaYlkbbE7sArRoiwewiFB98nbb16J+PVNrg3b6O6xnsnaoC3Qn+neEx4hOKxKo5X+SFJI313UqQbt8aovJvVJDorpYVyf21pAyfxE/1Woy/6yY88vVw2y7QLnt8XeEAPhRj1ElcO3Q0GMiz233XaGUxsW9iBJjX4pCT/t/6cNO0SZN/enCJkrPDNpJYRVnxksl0DamAqiXP+dHYbrqHyzsAgpt6sP0aIbqTmIaGPx1In1EUolPTfmTewVbWqoL6KkzNhiUMzP1F4RQLzeKNysuuso00EJ1CTRvACUlJ5Yf6anV1G/p72K/K5q/bFOw==
+
+
+----==_mimepart_69d6b3e8c4b90_5619b841138
+Content-Type: text/plain;
+ charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+##- Please type your reply above this line -##
+
+----------------------------------------------
+
+Elena Kononova, Apr 8, 2026, 22:00 GMT+2
+
+Dear Lee,
+
+
+
+To be approved for production-level access, please make sure your account=
+ and app are **fully compliant with** **all** **items** outlined below.
+
+Any future **changes** to your Privacy Policy in relation to Garmin data =
+must be submitted to the
+Garmin Connect Developer Program team and require **written approval befo=
+re implementation**.
+
+Please **respond** to this ticket by providing screenshots of your evalua=
+tion app for **each** API requested by you.
+_Note: Please only use zipped files. Do not send videos or shared folder =
+links._
+
+
+**1. Legal:**
+As part of the Garmin Connect Developer Program requirements, **data obta=
+ined via API must not be shared with**,
+processed by, or otherwise made available to **any third-party**, includi=
+ng external AI or data processing services.
+
+Your Privacy Policy must **explicitly** state that data is not being proc=
+essed or shared with any external AI providers.
+Please provide a **direc**t _(anchor)_ **link** to the **specific section=
+ of your Privacy Policy** where this is clearly addressed.
+
+
+**2. Technical Review:**
+Please use [Data Generator] and [Partner Verification] with your **curren=
+t**
+**Evaluation Key** to ensure that the following technical requirements ar=
+e met:
+
+- Authorization for at least two Garmin Connect users,
+- User Deregistration **and** User Permission endpoints enabled,
+- PING/PUSH notification processing _(PULL-ONLY requests not allowed)_,
+- HTTP 200 sent **asynchronously** within 30 seconds to all data received=
+ _(min. payload allowed 10MB, 100MB for Activity) _
+-
+
+Training/Courses API: screenshot of successful transfer of workout/course=
+ at Garmin Connect
+
+
+
+**3. Team Members and Account Set up:**
+
+- Signed up for the API Blog email to be aware of future changes.
+- **All** authorized users were added to the account (see Section 4 of th=
+e Start Guide).
+  - **Non-personalized/generic** email addresses_ (support@, info@, conta=
+ct@, dev@, etc.)_ are **restricted** from being added or sharing data wit=
+h/via,
+  - **Non-company domain** accounts and any freemail accounts  _(gmail, o=
+utlook, hotmail, etc.)_ are **restricted** from being or sharing data wit=
+h/via,
+  -
+
+**Third-party integrator** accounts are only allowed after providing a co=
+py of the **NDA** between them and you.
+To do so, please **respond** to this ticket and attach the NDA.
+
+
+
+
+**4. UX and Brand Compliance Review:**
+All instances where Garmin data appears in your app must be included in t=
+he submission.
+_See attached "API BRAND GUIDELINES" of "GCDP Branding Assets_ _v2__", sp=
+ecifically pages 2 (Activities) and 4 (Health), available at developerpor=
+tal.garmin.com for detailed examples._
+
+- All uses of Garmin trademarks, logos, and brand elements throughout the=
+ app,
+- All instances of Garmin products and imagery,
+- All required attribution statements, as specified in the API brand guid=
+elines,
+- A complete view of the user experience (UX) flow, ensuring Garmin is ac=
+curately represented and not mischaracterized
+
+
+ _![](https://supportgarminhealth.zendesk.com/attachments/token/FCCU5Lden=
+VP3RA2DV1MPWNqgi/?name=3Dimage.png) ![](https://supportgarminhealth.zende=
+sk.com/attachments/token/vvqblVOfyBhZLwmDA5tuy5lYO/?name=3Dimage.png)_
+
+
+Best Regards / Freundliche Gr=C3=BC=C3=9Fe / Cordialement
+**Elena Kononova**
+Garmin Connect Partner Services
+
+Attachment(s):
+Garmin_Developer_API_Brand_Guidelines.pdf - https://supportgarminhealth.z=
+endesk.com/attachments/token/2ByLGdNqa6tn9ruXM91YADrV0/?name=3DGarmin_Dev=
+eloper_API_Brand_Guidelines.pdf
+
+--------------------------------
+This email is a service from Developer Program.
+
+
+
+
+
+
+
+
+
+[6NM4VG-19LWV]=
+
+----==_mimepart_69d6b3e8c4b90_5619b841138
+Content-Type: text/html;
+ charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html><html><head>
+  <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+">
+  <style type=3D"text/css">
+    table td {
+      border-collapse: collapse;
+    }
+    body[dir=3Drtl] .directional_text_wrapper { direction: rtl; unicode-b=
+idi: embed; }
+
+  </style>
+</head>
+<body lang=3D"en-us" style=3D"width: 100%!important; margin: 0; padding: =
+0;">
+  <div style=3D"padding: 10px ; line-height: 18px; font-family: Veranda,A=
+rial; font-size: 12px; color:#0A122A;">
+    <div style=3D"color: #C9C9C9;">##- Please type your reply above this =
+line -##</div>
+    <p dir=3D"ltr"></p><div style=3D"margin-top: 25px" data-version=3D"2"=
+><table class=3D"zd-liquid-comment" width=3D"100%" cellpadding=3D"0" cell=
+spacing=3D"0" border=3D"0" role=3D"presentation">  <tbody><tr>    <td wid=
+th=3D"100%" style=3D"padding: 15px 0; border-top: 1px dotted #c5c5c5;">  =
+    <table width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0=
+" style=3D"table-layout:fixed;" role=3D"presentation">        <tbody><tr>=
+                      <td valign=3D"top" style=3D"padding: 0 15px 0 15px;=
+ width: 40px;">              <img width=3D"40" height=3D"40" alt=3D"" sty=
+le=3D"height: auto; line-height: 100%; outline: none; text-decoration: no=
+ne; -webkit-border-radius: 5px; -moz-border-radius: 5px; border-radius: 5=
+px;" src=3D"https://supportgarminhealth.zendesk.com/images/2016/default-a=
+vatar-80.png">            </td>                    <td width=3D"100%" sty=
+le=3D"padding: 0; margin: 0;" valign=3D"top">            <p style=3D"font=
+-family:'Lucida Grande','Lucida Sans Unicode','Lucida Sans',Verdana,Tahom=
+a,sans-serif; font-size: 15px; line-height: 18px; margin-bottom: 0; margi=
+n-top: 0; padding: 0; color:#1b1d1e;" dir=3D"ltr">                       =
+                         <strong>Elena Kononova</strong> (Developer Progr=
+am)                                          </p>            <p style=3D"=
+font-family:'Lucida Grande','Lucida Sans Unicode','Lucida Sans',Verdana,T=
+ahoma,sans-serif; font-size: 13px; line-height: 25px; margin-bottom: 15px=
+; margin-top: 0; padding: 0; color:#bbbbbb;" dir=3D"ltr">              Ap=
+r 8, 2026, 22:00 GMT+2            </p>                                   =
+ <div class=3D"zd-comment" dir=3D"auto" style=3D"color: #2b2e2f; line-hei=
+ght: 22px; margin: 15px 0;">Dear Lee,<br>&nbsp;<br>&nbsp;<br>&nbsp;<br>To=
+ be approved for production-level access, please make sure your account a=
+nd app are <strong>fully compliant with </strong><span style=3D"color: rg=
+b(199,40,9);"><strong>all </strong></span><strong>items</strong> outlined=
+ below.<br>&nbsp;<br>Any future <strong>changes </strong>to your Privacy =
+Policy in relation to Garmin data must be submitted to the<br>Garmin Conn=
+ect Developer Program team and require <strong>written approval before im=
+plementation</strong>.<br>&nbsp;<br>Please <strong>respond </strong>to th=
+is ticket by providing <span style=3D"color: rgb(199,40,9);">screenshots<=
+/span><span style=3D"color: #C72809;"> of your evaluation app</span><span=
+ style=3D"color: rgb(199,40,9);"> for <strong>each </strong>API requested=
+ </span>by you.<br><i><u>Note</u>: Please only use zipped files. Do not s=
+end videos or shared folder links.</i><br>&nbsp;<br>&nbsp;<br><strong>1. =
+Legal:</strong><br>As part of the Garmin Connect Developer Program requir=
+ements, <strong>data obtained via API must not be shared with</strong>,<b=
+r>processed by, or otherwise made available to <strong>any third-party</s=
+trong>, including external AI or data processing services.<br>&nbsp;<br>Y=
+our <span style=3D"color: rgb(199,40,9);">Privacy Policy must <strong>exp=
+licitly </strong>state that data is not being processed or shared with an=
+y external AI providers</span>.<br>Please provide a <strong>direc</strong=
+>t <i>(anchor)</i> <strong>link </strong>to the <strong>specific section =
+of your Privacy Policy</strong> where this is clearly addressed.<br>&nbsp=
+;<br>&nbsp;<br><span style=3D"color: black;"><strong>2. Technical Review:=
+</strong>&nbsp;</span><br><span style=3D"color: black;">Please use </span=
+><span style=3D"color: #096ECC;">[</span><a rel=3D"noopener noreferrer" h=
+ref=3D"https://apis.garmin.com/tools/dataGenerator"><span style=3D"color:=
+ #096ECC;">Data Generator]</span></a><span style=3D"color: black;"> and <=
+/span><span style=3D"color: #096ECC;">[</span><a rel=3D"noopener noreferr=
+er" href=3D"https://apis.garmin.com/tools/partnerVerification"><span styl=
+e=3D"color: #096ECC;">Partner Verification]</span></a><span style=3D"colo=
+r: black;"> with </span>your <strong>current</strong><br><strong>Evaluati=
+on Key </strong><span style=3D"color: black;">to<strong> </strong>ensure =
+that the following technical requirements are met:</span><br><ul dir=3D"a=
+uto" style=3D"padding-left: 15px; list-style-type: disc; margin: 10px 0 1=
+5px 30px;"><li style=3D"line-height: 22px; margin: 10px 0;">Authorization=
+ for at least two Garmin Connect users,</li><li style=3D"line-height: 22p=
+x; margin: 10px 0;"><span style=3D"color: black;">User Deregistration <st=
+rong>and </strong>User Permission endpoints enabled,</span></li><li style=
+=3D"line-height: 22px; margin: 10px 0;"><span style=3D"color: black;">PIN=
+G/PUSH notification processing <i>(PULL-ONLY requests not allowed)</i>,</=
+span></li><li style=3D"line-height: 22px; margin: 10px 0;"><span style=3D=
+"color: black;">HTTP 200 sent <strong>asynchronously</strong> within 30 s=
+econds to all data received <i>(min. payload allowed 10MB, 100MB for Acti=
+vity)&nbsp;</i></span></li><li style=3D"line-height: 22px; margin: 10px 0=
+;"><p dir=3D"ltr" style=3D"color: #2b2e2f; line-height: 22px; margin: 15p=
+x 0;"><span style=3D"color: black;">Training/Courses API: screenshot of s=
+uccessful transfer of workout/course at Garmin Connect</span></p><p dir=3D=
+"ltr" style=3D"color: #2b2e2f; line-height: 22px; margin: 15px 0;"><br>&n=
+bsp;</p></li></ul><strong>3. Team Members and Account Set up:</strong><br=
+><ul dir=3D"auto" style=3D"padding-left: 15px; list-style-type: disc; mar=
+gin: 10px 0 15px 30px;"><li style=3D"line-height: 22px; margin: 10px 0;">=
+Signed up for the API Blog email to be aware of future changes.</li><li s=
+tyle=3D"line-height: 22px; margin: 10px 0;"><strong>All </strong>authoriz=
+ed users were added to the account (see Section 4 of the Start Guide).<ul=
+ dir=3D"auto" style=3D"padding-left: 15px; list-style-type: disc; margin:=
+ 10px 0 15px 30px;"><li style=3D"line-height: 22px; margin: 10px 0;"><str=
+ong>Non-personalized/generic</strong> email addresses<i>&nbsp;(support@, =
+info@, contact@, dev@, etc.)</i>&nbsp;are <strong>restricted </strong>fro=
+m being added or sharing data with/via,</li><li style=3D"line-height: 22p=
+x; margin: 10px 0;"><strong>Non-company domain </strong>accounts and any =
+freemail accounts &nbsp;<i>(gmail, outlook, hotmail, etc.) </i>are <stron=
+g>restricted </strong>from being or sharing data with/via,</li><li style=3D=
+"line-height: 22px; margin: 10px 0;"><p dir=3D"ltr" style=3D"color: #2b2e=
+2f; line-height: 22px; margin: 15px 0;"><strong>Third-party integrator</s=
+trong> accounts are only allowed after providing a copy of the <strong>ND=
+A </strong>between them and you.<br>To do so, please <strong>respond </st=
+rong>to this ticket and attach the NDA.<br>&nbsp;</p><p dir=3D"ltr" style=
+=3D"color: #2b2e2f; line-height: 22px; margin: 15px 0;">&nbsp;</p></li></=
+ul></li></ul><span style=3D"color: black;"><strong>4. UX and Brand Compli=
+ance Review:</strong></span><br><span style=3D"color: rgb(199,40,9);">All=
+ instances</span> where Garmin data appears in your app <span style=3D"co=
+lor: rgb(199,40,9);">must </span>be included in the submission.<br><i>See=
+ attached "API BRAND GUIDELINES" of "GCDP Branding Assets </i><span style=
+=3D"color: rgb(199,40,9);"><i>v2</i></span><i>", specifically pages 2 (Ac=
+tivities) and 4 (Health), available at developerportal.garmin.com for det=
+ailed examples.</i><br><ul dir=3D"auto" style=3D"padding-left: 15px; list=
+-style-type: disc; margin: 10px 0 15px 30px;"><li style=3D"line-height: 2=
+2px; margin: 10px 0;"><span style=3D"color: black;">All uses of Garmin tr=
+ademarks, logos, and brand elements throughout the app,</span></li><li st=
+yle=3D"line-height: 22px; margin: 10px 0;"><span style=3D"color: black;">=
+All instances of Garmin products and imagery,</span></li><li style=3D"lin=
+e-height: 22px; margin: 10px 0;"><span style=3D"color: black;">All requir=
+ed attribution statements, as specified in the API brand guidelines,</spa=
+n></li><li style=3D"line-height: 22px; margin: 10px 0;"><span style=3D"co=
+lor: black;">A complete view of the user experience (UX) flow, ensuring G=
+armin is accurately represented and not mischaracterized</span></li></ul>=
+&nbsp;<br>&nbsp;<br><span style=3D"color: black;"><i><img src=3D"https://=
+supportgarminhealth.zendesk.com/attachments/token/FCCU5LdenVP3RA2DV1MPWNq=
+gi/?name=3Dimage.png" style=3D"width: 395px; max-width: 100%;"><img src=3D=
+"https://supportgarminhealth.zendesk.com/attachments/token/vvqblVOfyBhZLw=
+mDA5tuy5lYO/?name=3Dimage.png" style=3D"width: 225px; max-width: 100%;"><=
+/i></span><br><div class=3D"signature"><p dir=3D"ltr" style=3D"color: #2b=
+2e2f; line-height: 22px; margin: 15px 0;">&nbsp;<br>
+Best Regards / Freundliche Gr=C3=BC=C3=9Fe / Cordialement<br><strong>Elen=
+a Kononova</strong><br>
+Garmin Connect Partner Services</p></div></div><p dir=3D"ltr">           =
+             </p><p style=3D"line-height: 22px; font-family:'Lucida Grand=
+e','Lucida Sans Unicode','Lucida Sans',Verdana,Tahoma,sans-serif; margin-=
+top: 15px; margin-bottom: 15px; font-size: 14px; color:#333333;" dir=3D"l=
+tr">              Attachment(s)<br>                              <a href=3D=
+"https://supportgarminhealth.zendesk.com/attachments/token/2ByLGdNqa6tn9r=
+uXM91YADrV0/?name=3DGarmin_Developer_API_Brand_Guidelines.pdf">Garmin_Dev=
+eloper_API_Brand_Guidelines.pdf</a><br>                          </p>    =
+                  </td>        </tr>      </tbody></table>    </td>  </tr=
+></tbody></table></div>
+  </div>
+  <div style=3D"padding: 10px ; line-height: 18px; font-family: Veranda,A=
+rial; font-size: 12px; color: #585858;
+    margin: 10px 0 14px 0; padding-top: 10px; border-top: 1px solid #C9C9=
+C9;">
+  </div>
+<span style=3D"color:#FFFFFF" aria-hidden=3D"true" class=3D"zd_encoded_id=
+">[6NM4VG-19LWV]</span>
+<div itemscope=3D"" itemtype=3D"http://schema.org/EmailMessage" style=3D"=
+display:none">  <div itemprop=3D"action" itemscope=3D"" itemtype=3D"http:=
+//schema.org/ViewAction">    <link itemprop=3D"url" href=3D"https://suppo=
+rtgarminhealth.zendesk.com/hc/requests/206017">    <meta itemprop=3D"name=
+" content=3D"View ticket">  </div></div></body></html>=
+
+----==_mimepart_69d6b3e8c4b90_5619b841138--

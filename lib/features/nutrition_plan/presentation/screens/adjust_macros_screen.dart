@@ -14,7 +14,6 @@ import '../providers/brick_input_controller.dart';
 import '../../domain/macro_targets.dart' as domain;
 import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/domain/activity_type.dart';
-import '../../../../features/auth/domain/user_preferences.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import '../utils/unit_formatter.dart';
 import '../../../../shared/widgets/content_area.dart';
@@ -29,8 +28,6 @@ class AdjustMacrosScreen extends ConsumerStatefulWidget {
 }
 
 class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
-  int _buildCount = 0;
-
   @override
   void dispose() {
     // ⚠️ IMPORTANT: Cannot use ref.read() in dispose() - violates Riverpod safety
@@ -41,7 +38,6 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _buildCount++;
     final asyncState = ref.watch(macroTargetsControllerProvider);
 
     return Scaffold(
@@ -53,7 +49,8 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
             asyncState.when(
               data: (state) => _buildContent(context, ref, state),
               loading: () => _buildLoadingState(context),
-              error: (error, stackTrace) => _buildErrorState(context, ref, error),
+              error: (error, stackTrace) =>
+                  _buildErrorState(context, ref, error),
             ),
             if (asyncState.value?.isCreatingPlan == true)
               const GeneratingPlanOverlay(),
@@ -546,6 +543,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
   }
 
   Future<void> _handleCreatePlan(BuildContext context, WidgetRef ref) async {
+    final logger = ref.read(appExternalDepsProvider).logger;
     ref
         .read(appExternalDepsProvider)
         .analytics
@@ -554,27 +552,77 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           properties: {'screen': 'adjust_macros'},
         );
 
+    final macroStateBefore = ref.read(macroTargetsControllerProvider).value;
+    logger.warning(
+      'Coach create-plan tapped',
+      context: 'ADJUST_MACROS_SCREEN',
+      data: {
+        'activityId': macroStateBefore?.activityId,
+        'eventId': macroStateBefore?.eventId,
+        'forUserId': macroStateBefore?.forUserId,
+      },
+    );
+
     // CRITICAL FIX: Get activityId directly from return value instead of state
     // This prevents race conditions where state hasn't propagated yet
-    final activityId = await ref
-        .read(macroTargetsControllerProvider.notifier)
-        .createNutritionPlan();
+    String? activityId;
+    try {
+      activityId = await ref
+          .read(macroTargetsControllerProvider.notifier)
+          .createNutritionPlan();
+    } catch (e) {
+      if (!context.mounted) return;
+      MealvanaSnackbar.showError(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
+      );
+      return;
+    }
 
     if (context.mounted && activityId != null) {
       final macroState = ref.read(macroTargetsControllerProvider).value;
       final isCoachView = macroState?.forUserId != null;
-      context.push(
-        '/current-plan',
-        extra: {
-          'activityId': activityId,
-          'isNewActivity': true,
-          if (isCoachView) 'isCoachView': true,
-        },
-      );
+
+      if (isCoachView) {
+        // Force a fresh route load so we don't surface stale pre-generation state.
+        logger.warning(
+          'Coach create-plan navigating to fresh activity detail route',
+          context: 'ADJUST_MACROS_SCREEN',
+          data: {'activityId': activityId, 'isCoachView': true},
+        );
+        context.go(
+          '/plan',
+          extra: {'activityId': activityId, 'isCoachView': true},
+        );
+      } else {
+        context.push(
+          '/current-plan',
+          extra: {'activityId': activityId, 'isNewActivity': true},
+        );
+      }
     } else if (activityId == null) {
       DebugLogger.error(
         '🚫 ADJUST_MACROS: Cannot navigate - activityId is null!',
       );
+      if (context.mounted) {
+        final asyncState = ref.read(macroTargetsControllerProvider);
+        final message =
+            asyncState.error?.toString().replaceFirst('Exception: ', '') ??
+            'Could not save nutrition plan. Please try again.';
+        logger.error(
+          'Create-plan returned null activityId',
+          context: 'ADJUST_MACROS_SCREEN',
+          data: {
+            'activityId': macroStateBefore?.activityId,
+            'eventId': macroStateBefore?.eventId,
+            'forUserId': macroStateBefore?.forUserId,
+            'providerError': asyncState.error?.toString(),
+          },
+          error: asyncState.error,
+          stackTrace: asyncState.stackTrace,
+        );
+        MealvanaSnackbar.showError(context, message);
+      }
     }
   }
 

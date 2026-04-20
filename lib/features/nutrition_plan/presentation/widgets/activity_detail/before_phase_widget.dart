@@ -37,6 +37,14 @@ class BeforePhaseWidget extends StatefulWidget {
     this.sodiumHigh,
     this.fluidsLow,
     this.fluidsHigh,
+    this.carbsOverridden = false,
+    this.proteinOverridden = false,
+    this.sodiumOverridden = false,
+    this.fluidsOverridden = false,
+    this.carbsOverrideLabel,
+    this.proteinOverrideLabel,
+    this.sodiumOverrideLabel,
+    this.fluidsOverrideLabel,
   });
 
   final PlanSection section;
@@ -66,6 +74,14 @@ class BeforePhaseWidget extends StatefulWidget {
   final int? sodiumHigh;
   final int? fluidsLow;
   final int? fluidsHigh;
+  final bool carbsOverridden;
+  final bool proteinOverridden;
+  final bool sodiumOverridden;
+  final bool fluidsOverridden;
+  final String? carbsOverrideLabel;
+  final String? proteinOverrideLabel;
+  final String? sodiumOverrideLabel;
+  final String? fluidsOverrideLabel;
 
   @override
   State<BeforePhaseWidget> createState() => _BeforePhaseWidgetState();
@@ -202,6 +218,14 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
       sodiumHigh: widget.sodiumHigh,
       fluidsLow: widget.fluidsLow,
       fluidsHigh: widget.fluidsHigh,
+      carbsOverridden: widget.carbsOverridden,
+      proteinOverridden: widget.proteinOverridden,
+      sodiumOverridden: widget.sodiumOverridden,
+      fluidsOverridden: widget.fluidsOverridden,
+      carbsOverrideLabel: widget.carbsOverrideLabel,
+      proteinOverrideLabel: widget.proteinOverrideLabel,
+      sodiumOverrideLabel: widget.sodiumOverrideLabel,
+      fluidsOverrideLabel: widget.fluidsOverrideLabel,
     );
   }
 

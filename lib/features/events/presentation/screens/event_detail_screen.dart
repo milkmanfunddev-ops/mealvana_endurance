@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
+import 'package:mealvana_endurance/shared/widgets/content_area.dart';
+import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../providers/events_controller.dart';
 import '../widgets/event_header_card.dart';
 import '../widgets/event_details_card.dart';
@@ -29,12 +31,15 @@ import 'event_form_screen.dart';
 /// Carb loading is a separate action initiated from this screen.
 class EventDetailScreen extends ConsumerWidget {
   final String eventId;
+  final String? forUserId;
 
-  const EventDetailScreen({super.key, required this.eventId});
+  const EventDetailScreen({super.key, required this.eventId, this.forUserId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final eventDetailAsync = ref.watch(eventDetailProvider(eventId));
+    final eventDetailAsync = ref.watch(
+      eventDetailProvider(eventId, forUserId: forUserId),
+    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -77,7 +82,9 @@ class EventDetailScreen extends ConsumerWidget {
                       builder: (context) => EventFormScreen(event: event),
                     ),
                   ).then((_) {
-                    ref.invalidate(eventDetailProvider(eventId));
+                    ref.invalidate(
+                      eventDetailProvider(eventId, forUserId: forUserId),
+                    );
                   });
                 } else if (value == 'delete') {
                   await _showDeleteConfirmation(context, ref, event.eventName);
@@ -126,90 +133,106 @@ class EventDetailScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: eventDetailAsync.when(
-        data: (eventDetail) {
-          final activity = eventDetail.activity;
-          final event = eventDetail.event;
+      body: ContentArea.wide(
+        child: eventDetailAsync.when(
+          data: (eventDetail) {
+            final activity = eventDetail.activity;
+            final event = eventDetail.event;
 
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Event Header Card
-                EventHeaderCard(activity: activity, event: event),
+            return RefreshIndicator(
+              color: AppColors.electrolyte,
+              onRefresh: () async {
+                await ref
+                    .read(eventsControllerProvider.notifier)
+                    .forceRefresh();
+                ref.invalidate(
+                  eventDetailProvider(eventId, forUserId: forUserId),
+                );
+                ref.invalidate(carbLoadingControllerProvider);
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Event Header Card
+                  EventHeaderCard(activity: activity, event: event),
 
-                const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.md),
 
-                // Event Details Card
-                EventDetailsCard(activity: activity, event: event),
+                  // Event Details Card
+                  EventDetailsCard(activity: activity, event: event),
 
-                const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.md),
 
-                // Action Buttons Card
-                EventActionButtonsCard(
-                  activity: activity,
-                  event: event,
-                  eventId: eventId,
-                ),
+                  // Action Buttons Card
+                  EventActionButtonsCard(
+                    activity: activity,
+                    event: event,
+                    eventId: eventId,
+                    forUserId: forUserId,
+                  ),
 
-                const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.md),
 
-                // Footer links for navigation
-                const EventFooterLinks(),
+                  // Footer links for navigation
+                  const EventFooterLinks(),
 
-                const SizedBox(height: AppSpacing.xxl),
-              ],
+                  const SizedBox(height: AppSpacing.xxl),
+                ],
+              ),
               ),
             );
           },
           loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.electrolyte),
-        ),
-        error: (error, stack) => SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: AppSpacing.xl),
+            child: CircularProgressIndicator(color: AppColors.electrolyte),
+          ),
+          error: (error, stack) => SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppSpacing.xl),
 
-              // Error message card
-              BaseCard(
-                margin: AppSpacing.screenPaddingHorizontal.copyWith(
-                  top: AppSpacing.lg,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      FontAwesomeIcons.circleExclamation,
-                      size: AppIconSizes.xl,
-                      color: AppColors.dragonfruit,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'Error loading event',
-                      style: AppTextStyles.subtitle.copyWith(
+                // Error message card
+                BaseCard(
+                  margin: AppSpacing.screenPaddingHorizontal.copyWith(
+                    top: AppSpacing.lg,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        FontAwesomeIcons.circleExclamation,
+                        size: AppIconSizes.xl,
                         color: AppColors.dragonfruit,
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      error.toString(),
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        'Error loading event',
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: AppColors.dragonfruit,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        error.toString(),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.md),
 
-              // Footer links still visible even on error
-              const EventFooterLinks(),
+                // Footer links still visible even on error
+                const EventFooterLinks(),
 
-              const SizedBox(height: AppSpacing.xxl),
-            ],
+                const SizedBox(height: AppSpacing.xxl),
+              ],
+            ),
           ),
         ),
       ),

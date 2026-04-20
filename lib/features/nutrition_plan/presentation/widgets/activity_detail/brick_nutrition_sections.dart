@@ -15,7 +15,6 @@ import 'dismissible_food_item.dart';
 import 'during_phase_section_widget.dart';
 import 'macro_summary_row.dart';
 import 'phase_explanation_sheet.dart';
-import '../../utils/fuel_log_hero_tags.dart';
 
 /// BrickNutritionSections widget - renders multi-phase nutrition sections for brick workouts
 ///
@@ -138,24 +137,10 @@ class BrickNutritionSections extends StatelessWidget {
   }
 
   Widget _wrapWithSectionHero(String sectionId, Widget child) {
-    if (!enableSectionHeroes || heroTagSeed == null) {
-      return child;
-    }
-
-    return Hero(
-      tag: fuelLogSectionHeroTag(
-        activityId: heroTagSeed!,
-        sectionId: sectionId,
-      ),
-      flightShuttleBuilder: (_, __, direction, fromCtx, toCtx) {
-        return ClipRect(
-          child: direction == HeroFlightDirection.push
-              ? toCtx.widget
-              : fromCtx.widget,
-        );
-      },
-      child: Material(type: MaterialType.transparency, child: child),
-    );
+    // Hero animations removed — they caused RenderFlex overflow during flight
+    // (section widgets are too tall for overlay constraints) which cascaded
+    // into deactivated-widget and Riverpod state-modification errors.
+    return child;
   }
 
   /// Sort sections by brick phase order
@@ -265,6 +250,14 @@ class BrickNutritionSections extends StatelessWidget {
         onMoveFoodToTimeSlot != null) {
       final segmentDuration = _getSegmentDuration(duringIndex);
       if (segmentDuration >= 60) {
+        // Look up brick segment for this during section
+        BrickSegmentMacroTarget? brickSeg;
+        if (duringIndex != null && macroTargets?.brickPhaseTargets != null) {
+          final segments = macroTargets!.brickPhaseTargets!.duringSegments;
+          if (duringIndex < segments.length) {
+            brickSeg = segments[duringIndex];
+          }
+        }
         return DuringPhaseSectionWidget(
           section: section,
           sectionColor: sectionColor,
@@ -290,12 +283,14 @@ class BrickNutritionSections extends StatelessWidget {
           macroTargets: macroTargets,
           bodyWeightKg: bodyWeightKg,
           sportLabel: _sportDisplayName(sportType) ?? 'Brick',
-          carbsLow: _getCarbsLow(category),
-          carbsHigh: _getCarbsHigh(category),
-          sodiumLow: _getSodiumLow(category),
-          sodiumHigh: _getSodiumHigh(category),
-          fluidsLow: _getFluidsLow(category),
-          fluidsHigh: _getFluidsHigh(category),
+          carbsLow: _getCarbsLow(section, category),
+          carbsHigh: _getCarbsHigh(section, category),
+          sodiumLow: _getSodiumLow(section, category),
+          sodiumHigh: _getSodiumHigh(section, category),
+          fluidsLow: _getFluidsLow(section, category),
+          fluidsHigh: _getFluidsHigh(section, category),
+          brickSegment: brickSeg,
+          isBrick: true, // Always true — we're in BrickNutritionSections
         );
       }
     }
@@ -321,6 +316,7 @@ class BrickNutritionSections extends StatelessWidget {
             section.id,
             section,
             isDark: isDark,
+            duringIndex: duringIndex,
           ),
           if (section.subtitle != null) ...[
             const SizedBox(height: AppSpacing.xs),
@@ -341,14 +337,14 @@ class BrickNutritionSections extends StatelessWidget {
               section: section,
               category: category,
               useImperial: useImperial,
-              carbsLow: _getCarbsLow(category),
-              carbsHigh: _getCarbsHigh(category),
-              proteinLow: _getProteinLow(category),
-              proteinHigh: _getProteinHigh(category),
-              sodiumLow: _getSodiumLow(category),
-              sodiumHigh: _getSodiumHigh(category),
-              fluidsLow: _getFluidsLow(category),
-              fluidsHigh: _getFluidsHigh(category),
+              carbsLow: _getCarbsLow(section, category),
+              carbsHigh: _getCarbsHigh(section, category),
+              proteinLow: _getProteinLow(section, category),
+              proteinHigh: _getProteinHigh(section, category),
+              sodiumLow: _getSodiumLow(section, category),
+              sodiumHigh: _getSodiumHigh(section, category),
+              fluidsLow: _getFluidsLow(section, category),
+              fluidsHigh: _getFluidsHigh(section, category),
             ),
             const SizedBox(height: AppSpacing.md),
             ...section.foodItems.asMap().entries.map((entry) {
@@ -393,6 +389,7 @@ class BrickNutritionSections extends StatelessWidget {
     String sectionId,
     PlanSection section, {
     required bool isDark,
+    int? duringIndex,
   }) {
     return Row(
       children: [
@@ -431,6 +428,16 @@ class BrickNutritionSections extends StatelessWidget {
               onPressed: () {
                 final phase = _sectionIdToPhase(sectionId);
                 final sportLabel = _sportDisplayName(sportType) ?? 'Brick';
+                // Find the brick segment for this during section
+                BrickSegmentMacroTarget? brickSegment;
+                if (duringIndex != null &&
+                    macroTargets!.brickPhaseTargets != null) {
+                  final segments =
+                      macroTargets!.brickPhaseTargets!.duringSegments;
+                  if (duringIndex < segments.length) {
+                    brickSegment = segments[duringIndex];
+                  }
+                }
                 PhaseExplanationSheet.show(
                   context,
                   phase: phase,
@@ -439,6 +446,10 @@ class BrickNutritionSections extends StatelessWidget {
                   sportLabel: sportLabel,
                   useImperial: useImperial,
                   foods: section.foodItems,
+                  brickSegment: brickSegment,
+                  // Always true for during/transition — we're in BrickNutritionSections
+                  isBrick: phase != ExplanationPhase.before &&
+                      phase != ExplanationPhase.after,
                 );
               },
             ),
@@ -683,7 +694,8 @@ class BrickNutritionSections extends StatelessWidget {
   }
 
   // Range helpers: resolve per-phase ranges from MacroTargets based on category
-  int? _getCarbsLow(String category) {
+  int? _getCarbsLow(PlanSection section, String category) {
+    if (section.carbsLowTarget != null) return section.carbsLowTarget!.round();
     final mt = macroTargets;
     if (mt == null) return null;
     if (category.startsWith('before')) return mt.preRun.carbsLowG?.round();
@@ -692,7 +704,9 @@ class BrickNutritionSections extends StatelessWidget {
     return null;
   }
 
-  int? _getCarbsHigh(String category) {
+  int? _getCarbsHigh(PlanSection section, String category) {
+    if (section.carbsHighTarget != null)
+      return section.carbsHighTarget!.round();
     final mt = macroTargets;
     if (mt == null) return null;
     if (category.startsWith('before')) return mt.preRun.carbsHighG?.round();
@@ -701,7 +715,9 @@ class BrickNutritionSections extends StatelessWidget {
     return null;
   }
 
-  int? _getProteinLow(String category) {
+  int? _getProteinLow(PlanSection section, String category) {
+    if (section.proteinLowTarget != null)
+      return section.proteinLowTarget!.round();
     final mt = macroTargets;
     if (mt == null) return null;
     if (category.startsWith('before')) return mt.preRun.proteinLowG?.round();
@@ -709,7 +725,9 @@ class BrickNutritionSections extends StatelessWidget {
     return null;
   }
 
-  int? _getProteinHigh(String category) {
+  int? _getProteinHigh(PlanSection section, String category) {
+    if (section.proteinHighTarget != null)
+      return section.proteinHighTarget!.round();
     final mt = macroTargets;
     if (mt == null) return null;
     if (category.startsWith('before')) return mt.preRun.proteinHighG?.round();
@@ -717,7 +735,9 @@ class BrickNutritionSections extends StatelessWidget {
     return null;
   }
 
-  int? _getSodiumLow(String category) {
+  int? _getSodiumLow(PlanSection section, String category) {
+    if (section.sodiumLowTarget != null)
+      return section.sodiumLowTarget!.round();
     final mt = macroTargets;
     if (mt == null) return null;
     if (category.startsWith('before')) return mt.preRun.sodiumLowMg?.round();
@@ -726,7 +746,9 @@ class BrickNutritionSections extends StatelessWidget {
     return null;
   }
 
-  int? _getSodiumHigh(String category) {
+  int? _getSodiumHigh(PlanSection section, String category) {
+    if (section.sodiumHighTarget != null)
+      return section.sodiumHighTarget!.round();
     final mt = macroTargets;
     if (mt == null) return null;
     if (category.startsWith('before')) return mt.preRun.sodiumHighMg?.round();
@@ -736,7 +758,9 @@ class BrickNutritionSections extends StatelessWidget {
     return null;
   }
 
-  int? _getFluidsLow(String category) {
+  int? _getFluidsLow(PlanSection section, String category) {
+    if (section.fluidsLowTarget != null)
+      return section.fluidsLowTarget!.round();
     final mt = macroTargets;
     if (mt == null) return null;
     if (category.startsWith('before')) return mt.preRun.fluidsLowMl?.round();
@@ -745,7 +769,9 @@ class BrickNutritionSections extends StatelessWidget {
     return null;
   }
 
-  int? _getFluidsHigh(String category) {
+  int? _getFluidsHigh(PlanSection section, String category) {
+    if (section.fluidsHighTarget != null)
+      return section.fluidsHighTarget!.round();
     final mt = macroTargets;
     if (mt == null) return null;
     if (category.startsWith('before')) return mt.preRun.fluidsHighMl?.round();

@@ -9,7 +9,6 @@ import '../../domain/fuel_log_data.dart';
 import '../providers/activity_detail_controller.dart';
 import '../providers/activity_detail_state.dart';
 import '../utils/activity_detail_helpers.dart';
-import '../utils/fuel_log_hero_tags.dart';
 import '../widgets/fuel_log/fuel_log_feedback_section.dart';
 import '../widgets/fuel_log/fuel_log_section_widget.dart';
 import '../widgets/fuel_log/fuel_log_success_overlay.dart';
@@ -54,7 +53,11 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
   @override
   void dispose() {
     if (!_didCompleteFuelLog) {
-      _cachedController?.exitFuelLogMode();
+      final controller = _cachedController;
+      if (controller != null) {
+        // Defer provider modification to avoid modifying state during dispose.
+        Future.microtask(() => controller.exitFuelLogMode());
+      }
     }
     super.dispose();
   }
@@ -249,38 +252,22 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
       }
 
       sectionWidgets.add(
-        Hero(
-          tag: fuelLogSectionHeroTag(
-            activityId: widget.activityId,
-            sectionId: sectionId,
+        FuelLogSectionWidget(
+          sectionId: sectionId,
+          title: sectionTitle,
+          items: sectionItems,
+          sectionColor: sectionColor,
+          subPhaseGroups: subPhaseGroups?.map(
+            (k, v) => MapEntry(k, v.cast()),
           ),
-          flightShuttleBuilder: (_, __, direction, fromCtx, toCtx) {
-            return ClipRect(
-              child: direction == HeroFlightDirection.push
-                  ? toCtx.widget
-                  : fromCtx.widget,
-            );
+          isViewOnly: false,
+          onIncrement: (foodId, secId) {
+            _controller().updateFuelLogItemQuantity(foodId, secId, 0.5);
           },
-          child: Material(
-            type: MaterialType.transparency,
-            child: FuelLogSectionWidget(
-              sectionId: sectionId,
-              title: sectionTitle,
-              items: sectionItems,
-              sectionColor: sectionColor,
-              subPhaseGroups: subPhaseGroups?.map(
-                (k, v) => MapEntry(k, v.cast()),
-              ),
-              isViewOnly: false,
-              onIncrement: (foodId, secId) {
-                _controller().updateFuelLogItemQuantity(foodId, secId, 0.5);
-              },
-              onDecrement: (foodId, secId) {
-                _controller().updateFuelLogItemQuantity(foodId, secId, -0.5);
-              },
-              onAddFood: () => _addFood(context, sectionId),
-            ),
-          ),
+          onDecrement: (foodId, secId) {
+            _controller().updateFuelLogItemQuantity(foodId, secId, -0.5);
+          },
+          onAddFood: () => _addFood(context, sectionId),
         ),
       );
     }
@@ -305,8 +292,11 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
 
   Future<void> _closeWithoutSaving() async {
     _controller().exitFuelLogMode();
-    if (mounted) {
+    if (!mounted) return;
+    if (context.canPop()) {
       context.pop();
+    } else {
+      context.go('/plan', extra: {'activityId': widget.activityId});
     }
   }
 
@@ -343,7 +333,11 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
       onDismiss: () {
         if (!mounted) return;
         Navigator.of(context).pop();
-        context.pop(true);
+        if (context.canPop()) {
+          context.pop(true);
+        } else {
+          context.go('/plan', extra: {'activityId': widget.activityId});
+        }
       },
     );
   }

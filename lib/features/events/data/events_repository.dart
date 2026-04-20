@@ -12,6 +12,7 @@ import '../../../shared/services/sync/sync_dependency_graph.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/data/syncable_repository.dart';
 import '../../carb_loading/data/carb_loading_repository.dart';
+import '../../calendar/domain/event_subtype.dart';
 import '../domain/event.dart' as domain;
 
 part 'events_repository.g.dart';
@@ -189,7 +190,7 @@ class EventsRepository with SyncableRepository {
         return _toSupabaseJson(_mapToEventDomain(record), record.userId);
       }).toList();
 
-      await _supabase.from('events').upsert(eventsToUpload);
+      await _supabase.from('events').upsert(eventsToUpload, onConflict: 'id');
 
       // Clear dirty flags
       await _database.batch((batch) {
@@ -229,6 +230,7 @@ class EventsRepository with SyncableRepository {
   Future<domain.Event> createEvent({
     required String deviceId,
     required domain.Event event,
+    bool requireRemoteAck = false,
   }) async {
     try {
       // OFFLINE-FIRST: Save to Drift IMMEDIATELY with dirty flag
@@ -262,6 +264,9 @@ class EventsRepository with SyncableRepository {
           method: 'INSERT',
           stackTrace: stackTrace,
         );
+        if (requireRemoteAck) {
+          rethrow;
+        }
       }
       if (uploaded) {
         createdEvent = createdEvent.copyWith(
@@ -286,6 +291,7 @@ class EventsRepository with SyncableRepository {
   Future<domain.Event> updateEvent({
     required String deviceId,
     required domain.Event event,
+    bool requireRemoteAck = false,
   }) async {
     try {
       // OFFLINE-FIRST: Save to Drift IMMEDIATELY with dirty flag
@@ -298,8 +304,7 @@ class EventsRepository with SyncableRepository {
       // Save to Drift (will use existing ID for updates)
       await _saveToDrift(eventWithDirtyFlag);
 
-      // Attempt background upload (non-blocking) with logging
-      unawaited(() async {
+      if (requireRemoteAck) {
         try {
           await _uploadEventToSupabase(eventWithDirtyFlag, 'update');
         } catch (e, stackTrace) {
@@ -316,8 +321,30 @@ class EventsRepository with SyncableRepository {
             method: 'UPSERT',
             stackTrace: stackTrace,
           );
+          rethrow;
         }
-      }());
+      } else {
+        // Attempt background upload (non-blocking) with logging
+        unawaited(() async {
+          try {
+            await _uploadEventToSupabase(eventWithDirtyFlag, 'update');
+          } catch (e, stackTrace) {
+            _logger.warning(
+              'Immediate upload failed; record stays dirty for retry',
+              context: 'EVENTS_REPOSITORY',
+              error: e,
+              stackTrace: stackTrace,
+              data: {'operation': 'update', 'recordId': eventWithDirtyFlag.id},
+            );
+            _sentry.reportNetworkError(
+              e,
+              url: 'supabase:events:update',
+              method: 'UPSERT',
+              stackTrace: stackTrace,
+            );
+          }
+        }());
+      }
 
       return eventWithDirtyFlag;
     } catch (e, stackTrace) {
@@ -336,8 +363,16 @@ class EventsRepository with SyncableRepository {
   Future<void> deleteEvent({
     required String deviceId,
     required String eventId,
+    bool requireRemoteAck = false,
+    String? remoteUserId,
   }) async {
     try {
+      final userIdForRemoteDelete = remoteUserId ?? deviceId;
+
+      if (requireRemoteAck) {
+        await _uploadEventDeletion(userIdForRemoteDelete, eventId);
+      }
+
       // Get the event first to check for associated activity
       final event = await getEventById(deviceId, eventId);
 
@@ -365,27 +400,29 @@ class EventsRepository with SyncableRepository {
         _database.eventsTable,
       )..where((tbl) => tbl.id.equals(eventId))).go();
 
-      // Attempt background upload (non-blocking)
-      // Note: Supabase CASCADE will also delete the carb_loading_plan on the server
-      unawaited(() async {
-        try {
-          await _uploadEventDeletion(deviceId, eventId);
-        } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; record stays dirty for retry',
-            context: 'EVENTS_REPOSITORY',
-            error: e,
-            stackTrace: stackTrace,
-            data: {'operation': 'delete', 'recordId': eventId},
-          );
-          _sentry.reportNetworkError(
-            e,
-            url: 'supabase:events:delete',
-            method: 'DELETE',
-            stackTrace: stackTrace,
-          );
-        }
-      }());
+      if (!requireRemoteAck) {
+        // Attempt background upload (non-blocking)
+        // Note: Supabase CASCADE will also delete the carb_loading_plan on the server
+        unawaited(() async {
+          try {
+            await _uploadEventDeletion(userIdForRemoteDelete, eventId);
+          } catch (e, stackTrace) {
+            _logger.warning(
+              'Immediate upload failed; record stays dirty for retry',
+              context: 'EVENTS_REPOSITORY',
+              error: e,
+              stackTrace: stackTrace,
+              data: {'operation': 'delete', 'recordId': eventId},
+            );
+            _sentry.reportNetworkError(
+              e,
+              url: 'supabase:events:delete',
+              method: 'DELETE',
+              stackTrace: stackTrace,
+            );
+          }
+        }());
+      }
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete event',
@@ -656,11 +693,22 @@ class EventsRepository with SyncableRepository {
 
   /// Helper to map domain Event to Supabase JSON (snake_case columns)
   Map<String, dynamic> _toSupabaseJson(domain.Event event, String userUuid) {
+    // Validate event_subtype against DB enum — invalid values (e.g. raw TP
+    // event types like "RoadCycling") would cause a PostgreSQL 22P02 error.
+    final subtype = event.eventSubtype;
+    final validSubtype =
+        subtype != null &&
+            EventSubtype.findByName(event.eventType.dbValue, subtype) != null
+        ? subtype
+        : null;
+
     return {
+      // Production events.id has no server default; always send the local UUID.
+      'id': event.id,
       'user_id': userUuid,
       'activity_id': event.activityId,
       'event_type': event.eventType.dbValue,
-      'event_subtype': event.eventSubtype,
+      'event_subtype': validSubtype,
       'event_name': event.eventName,
       'location': event.location,
       'registration_url': event.registrationUrl,

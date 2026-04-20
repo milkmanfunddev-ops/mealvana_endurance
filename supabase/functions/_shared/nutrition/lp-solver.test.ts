@@ -125,6 +125,35 @@ describe('LP Solver — Basic Feasibility', () => {
     assertExists(result, 'LP should solve during-phase targets');
     assert(result!.foods.length > 0, 'Should select at least one food');
   });
+
+  it('should prioritize out-of-band carb target over provided carb band', async () => {
+    const foods = makeDuringFoods();
+    const targets = makeTargets({
+      carbs_g: 90,
+      carbs_low_g: 180,
+      carbs_high_g: 270,
+      sodium_mg: 600,
+      water_ml: 700,
+    });
+    const model = buildLPModel(
+      foods,
+      targets,
+      'during',
+      DEFAULT_OPTIMIZATION_WEIGHTS.during,
+    );
+
+    await logs.writeToFile(
+      'lp-basic-out-of-band-carb-priority',
+      'Phase: during | out-of-band carb target should drive LP carb constraints',
+    );
+
+    // During carb range is 0.9..1.1 of target when target-priority mode is active.
+    assertEquals(model.constraints.carbs?.min, 81);
+    assert(
+      Math.abs((model.constraints.carbs?.max ?? 0) - 99) < 1e-6,
+      `Expected carb max near 99, got ${model.constraints.carbs?.max}`,
+    );
+  });
 });
 
 // ============================================================================

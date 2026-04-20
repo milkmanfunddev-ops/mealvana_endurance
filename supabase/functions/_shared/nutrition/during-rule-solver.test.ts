@@ -115,6 +115,29 @@ describe('During Rule Solver — Running Scenarios', () => {
     const hasBikeSolid = result.foods.some(f => f.product_type === 'bar');
     assertEquals(hasBikeSolid, false, 'Running should NOT select bar/waffle bike solids');
   });
+
+  it('should cap carbs near target when target is below provided band', async () => {
+    const foods = makeDuringFoods();
+    const targets = makeTargets({
+      carbs_g: 90,
+      carbs_low_g: 180,
+      carbs_high_g: 270,
+      sodium_mg: 800,
+      water_ml: 900,
+    });
+    const result = generateDuringPhaseRuleBased(foods, targets, 'running');
+
+    await logs.writeToFile(
+      'during-running-out-of-band-carb-priority',
+      'Sport: running | out-of-band carb target should be prioritized over stale band',
+    );
+
+    const totals = sumTotals(result.foods);
+    assert(
+      totals.carbs_g <= 100,
+      `Expected carbs to stay near 90g target (<=100g), got ${totals.carbs_g.toFixed(1)}g`,
+    );
+  });
 });
 
 // ============================================================================

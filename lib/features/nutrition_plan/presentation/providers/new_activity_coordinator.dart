@@ -250,6 +250,9 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           final selectedTime = brickController.state.selectedTime;
           final isFasted = brickController.state.isFasted;
           final preActivityMinutes = brickController.state.preActivityMinutes;
+          final activityTitle = brickController.state.activityTitleManuallySet
+              ? brickController.state.activityTitle
+              : null;
 
           DebugLogger.info(
             '🎮 COORDINATOR: Got ${segments.length} brick segments (preActivityMinutes=$preActivityMinutes), calling macroTargetsController...',
@@ -263,6 +266,7 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
                 scheduledTime: selectedTime,
                 isFasted: isFasted,
                 preActivityMinutes: preActivityMinutes,
+                activityTitle: activityTitle,
                 activityId: activityId,
                 eventId: eventId,
                 forUserId: forUserId,

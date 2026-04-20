@@ -52,6 +52,7 @@ import '../../features/carb_loading/domain/meal_type.dart';
 import '../widgets/tabs_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/events/presentation/screens/event_form_screen.dart';
+import '../../features/race_checklist/presentation/screens/race_checklist_screen.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/education/presentation/screens/video_player_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
@@ -62,6 +63,7 @@ import '../../features/coach_mode/presentation/screens/athlete_feedback_screen.d
 import '../../features/coach_mode/presentation/screens/coach_registration_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_directory_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
+import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/coach_mode/application/coach_service.dart';
 
 /// Notifier that triggers GoRouter redirect re-evaluation on auth state changes.
@@ -257,6 +259,9 @@ class AppRouter {
               initialDistance: extra?['distance'] as double?,
               initialDurationMinutes: extra?['initialDurationMinutes'] as int?,
               initialPace: extra?['goalPace'] as double?,
+              initialTitle:
+                  extra?['initialTitle'] as String? ??
+                  extra?['eventName'] as String?,
               activityId: extra?['activityId'] as String?,
               eventId: extra?['eventId'] as String?,
               forUserId:
@@ -301,6 +306,9 @@ class AppRouter {
               initialDistance: extra?['distance'] as double?,
               initialDurationMinutes: extra?['initialDurationMinutes'] as int?,
               initialPace: extra?['goalPace'] as double?,
+              initialTitle:
+                  extra?['initialTitle'] as String? ??
+                  extra?['eventName'] as String?,
               activityId: extra?['activityId'] as String?,
               eventId: extra?['eventId'] as String?,
               forUserId:
@@ -350,9 +358,6 @@ class AppRouter {
               case 'nutrition':
                 initialTab = 1;
                 break;
-              case 'coach':
-                initialTab = hasCoachTab ? 2 : 0;
-                break;
               case 'notes':
               case 'workout-notes':
               case 'events':
@@ -367,6 +372,17 @@ class AppRouter {
             }
 
             return TabsScreen(initialTabIndex: initialTab);
+          },
+        ),
+
+        // Coach Portal — dedicated route for coach users (web only)
+        GoRoute(
+          path: '/coach-portal',
+          name: 'coach-portal',
+          builder: (context, state) {
+            return CoachPortalScreen(
+              onBackToApp: () => GoRouter.of(context).go('/main'),
+            );
           },
         ),
 
@@ -473,6 +489,16 @@ class AppRouter {
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             return EventFormScreen(forUserId: extra?['forUserId'] as String?);
+          },
+        ),
+
+        // Race Day Checklist - Gear checklist for an event
+        GoRoute(
+          path: '/events/:eventId/checklist',
+          name: 'race-checklist',
+          builder: (context, state) {
+            final eventId = state.pathParameters['eventId']!;
+            return RaceChecklistScreen(eventId: eventId);
           },
         ),
 
@@ -708,7 +734,7 @@ class AppRouter {
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             return CreateCustomCarbLoadingFoodScreen(
-              dayId: extra?['dayId'] as int,
+              dayId: extra?['dayId'] as String,
               mealType: extra?['mealType'] as MealType,
             );
           },

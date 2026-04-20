@@ -102,6 +102,161 @@ export interface MacroTargets {
   water_ml: number;
   water_low_ml?: number;
   water_high_ml?: number;
+  /** Per-macro override flags from user settings. When a macro is overridden
+   *  and the target falls outside the algorithm's band, solvers should expand
+   *  the band to include the target so food selection can actually reach it. */
+  overrides?: {
+    carbs?: boolean;
+    protein?: boolean;
+    sodium?: boolean;
+    water?: boolean;
+  };
+}
+
+export type MacroKey = "carbs" | "protein" | "sodium" | "water";
+
+function isTargetOutsideBand(
+  target: number | undefined,
+  low: number | undefined,
+  high: number | undefined,
+): boolean {
+  if (target == null || !Number.isFinite(target)) return false;
+  if (low != null && Number.isFinite(low) && target < low) return true;
+  if (high != null && Number.isFinite(high) && target > high) return true;
+  return false;
+}
+
+/**
+ * Returns true when solvers should prioritize hitting the explicit macro target
+ * (`*_g` / `*_mg` / `*_ml`) over the provided low/high band.
+ *
+ * This is true for:
+ * - explicit user overrides (`targets.overrides[macro] === true`)
+ * - out-of-band targets (e.g. carbs_g below carbs_low_g), which commonly occur
+ *   when upstream systems pass an override target but keep the default band.
+ */
+export function shouldPrioritizeMacroTarget(
+  targets: MacroTargets,
+  macro: MacroKey,
+): boolean {
+  const explicitOverride = Boolean(targets.overrides?.[macro]);
+  if (explicitOverride) return true;
+
+  switch (macro) {
+    case "carbs":
+      return isTargetOutsideBand(
+        targets.carbs_g,
+        targets.carbs_low_g,
+        targets.carbs_high_g,
+      );
+    case "protein":
+      return isTargetOutsideBand(
+        targets.protein_g,
+        targets.protein_low_g,
+        targets.protein_high_g,
+      );
+    case "sodium":
+      return isTargetOutsideBand(
+        targets.sodium_mg,
+        targets.sodium_low_mg,
+        targets.sodium_high_mg,
+      );
+    case "water":
+      return isTargetOutsideBand(
+        targets.water_ml,
+        targets.water_low_ml,
+        targets.water_high_ml,
+      );
+  }
+}
+
+/**
+ * Adjust band bounds for overridden macros so they include the target.
+ *
+ * When a user override pushes a target outside the algorithm-derived band
+ * (e.g. carbs_g=360 but carbs_high_g=324), solvers would cap food selection
+ * at the band limit. This function expands the band to include the target,
+ * allowing the solver to actually reach it.
+ *
+ * If explicit override flags are missing but a target is already outside the
+ * supplied band, this function infers override intent and applies the same
+ * adjustment.
+ *
+ * When the override is within the band, no adjustment is made — the band
+ * constrains normally.
+ */
+export function adjustTargetsForOverrides(targets: MacroTargets): MacroTargets {
+  const effectiveOverrides: NonNullable<MacroTargets["overrides"]> = {
+    ...(targets.overrides ?? {}),
+  };
+
+  const inferOverride = (macro: MacroKey) => {
+    if (effectiveOverrides[macro]) return;
+    if (shouldPrioritizeMacroTarget(targets, macro)) {
+      effectiveOverrides[macro] = true;
+      console.log(
+        `[OVERRIDE] Inferred ${macro} override from out-of-band target (target will be prioritized)`,
+      );
+    }
+  };
+
+  inferOverride("carbs");
+  inferOverride("protein");
+  inferOverride("sodium");
+  inferOverride("water");
+
+  const hasAnyOverride = Boolean(
+    effectiveOverrides.carbs || effectiveOverrides.protein ||
+      effectiveOverrides.sodium || effectiveOverrides.water,
+  );
+
+  if (!hasAnyOverride) return targets;
+
+  const adjusted = { ...targets, overrides: effectiveOverrides };
+
+  if (effectiveOverrides.carbs) {
+    if (adjusted.carbs_high_g != null && adjusted.carbs_g > adjusted.carbs_high_g) {
+      console.log(
+        `[OVERRIDE] Expanding carbs_high_g from ${adjusted.carbs_high_g} to ${adjusted.carbs_g} (user override)`
+      );
+      adjusted.carbs_high_g = adjusted.carbs_g;
+    }
+    if (adjusted.carbs_low_g != null && adjusted.carbs_g < adjusted.carbs_low_g) {
+      console.log(
+        `[OVERRIDE] Lowering carbs_low_g from ${adjusted.carbs_low_g} to ${adjusted.carbs_g} (user override)`
+      );
+      adjusted.carbs_low_g = adjusted.carbs_g;
+    }
+  }
+
+  if (effectiveOverrides.protein && adjusted.protein_g != null) {
+    if (adjusted.protein_high_g != null && adjusted.protein_g > adjusted.protein_high_g) {
+      adjusted.protein_high_g = adjusted.protein_g;
+    }
+    if (adjusted.protein_low_g != null && adjusted.protein_g < adjusted.protein_low_g) {
+      adjusted.protein_low_g = adjusted.protein_g;
+    }
+  }
+
+  if (effectiveOverrides.sodium) {
+    if (adjusted.sodium_high_mg != null && adjusted.sodium_mg > adjusted.sodium_high_mg) {
+      adjusted.sodium_high_mg = adjusted.sodium_mg;
+    }
+    if (adjusted.sodium_low_mg != null && adjusted.sodium_mg < adjusted.sodium_low_mg) {
+      adjusted.sodium_low_mg = adjusted.sodium_mg;
+    }
+  }
+
+  if (effectiveOverrides.water) {
+    if (adjusted.water_high_ml != null && adjusted.water_ml > adjusted.water_high_ml) {
+      adjusted.water_high_ml = adjusted.water_ml;
+    }
+    if (adjusted.water_low_ml != null && adjusted.water_ml < adjusted.water_low_ml) {
+      adjusted.water_low_ml = adjusted.water_ml;
+    }
+  }
+
+  return adjusted;
 }
 
 export interface PhaseTargets {

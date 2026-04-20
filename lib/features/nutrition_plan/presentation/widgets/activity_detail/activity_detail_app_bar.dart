@@ -77,7 +77,13 @@ class ActivityDetailAppBar extends ConsumerWidget
                   ),
                 )
               : CustomAppBarBackButton(
-                  onPressed: () => context.pop(),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/main');
+                    }
+                  },
                   margin: EdgeInsets.zero,
                   iconColor: Theme.of(context).colorScheme.onSurface,
                   backgroundColor: Theme.of(
@@ -212,8 +218,8 @@ class ActivityDetailAppBar extends ConsumerWidget
           onPressed: onEditFuelLog,
           tooltip: 'Edit Fuel Log',
         ),
-      // Only show delete button for existing activities (not new ones, not coach view)
-      if (!isNewActivity && !isCoachView)
+      // Show delete button for existing activities (including coach view)
+      if (!isNewActivity)
         IconButton(
           icon: Icon(
             FontAwesomeIcons.trash,

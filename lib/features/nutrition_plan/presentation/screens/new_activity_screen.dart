@@ -56,6 +56,7 @@ class NewActivityScreen extends ConsumerStatefulWidget {
     this.initialDistance,
     this.initialDurationMinutes,
     this.initialPace,
+    this.initialTitle,
     this.activityId,
     this.eventId,
     this.forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
@@ -84,6 +85,7 @@ class NewActivityScreen extends ConsumerStatefulWidget {
   final double? initialDistance;
   final int? initialDurationMinutes;
   final double? initialPace;
+  final String? initialTitle;
   final String? activityId;
   final String? eventId;
   final String?
@@ -293,6 +295,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     if (widget.timeBeforeMinutes != null) {
       controller.updatePreRunMinutes(widget.timeBeforeMinutes!);
     }
+
+    if (widget.initialTitle != null && widget.initialTitle!.trim().isNotEmpty) {
+      controller.seedActivityTitle(widget.initialTitle!, markManuallySet: true);
+    }
   }
 
   /// Initialize cycling controller with synced activity data
@@ -357,6 +363,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     if (widget.timeBeforeMinutes != null) {
       controller.updatePreRideMinutes(widget.timeBeforeMinutes!);
     }
+
+    if (widget.initialTitle != null && widget.initialTitle!.trim().isNotEmpty) {
+      controller.seedActivityTitle(widget.initialTitle!, markManuallySet: true);
+    }
   }
 
   /// Initialize swimming controller with synced activity data
@@ -392,6 +402,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     if (widget.timeBeforeMinutes != null) {
       controller.updatePreSwimMinutes(widget.timeBeforeMinutes!);
     }
+
+    if (widget.initialTitle != null && widget.initialTitle!.trim().isNotEmpty) {
+      controller.seedActivityTitle(widget.initialTitle!, markManuallySet: true);
+    }
   }
 
   /// Initialize brick controller from existing brick activity or event subtype distances
@@ -401,6 +415,8 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   /// 2. If event subtype distances exist → pre-populate from event (triathlon/duathlon)
   /// 3. Otherwise → start fresh with defaults
   void _initializeBrickController() {
+    final initialTitle = widget.initialTitle;
+
     if (widget.activityId != null) {
       DebugLogger.info(
         '🧱 NEW ACTIVITY: Loading existing brick activity: ${widget.activityId}',
@@ -425,12 +441,23 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         bikeMiles: widget.brickBikeDistanceMiles,
         runMiles: widget.brickRunDistanceMiles,
       );
+      if (initialTitle != null && initialTitle.trim().isNotEmpty) {
+        brickController.seedActivityTitle(initialTitle, markManuallySet: true);
+      }
       return;
     }
 
     DebugLogger.info(
       '🧱 NEW ACTIVITY: No activityId or event distances for brick - starting fresh',
     );
+
+    // Event-linked brick flows may not have subtype distances; still seed title
+    // so generated activity names use the event label instead of fallback caps.
+    if (initialTitle != null && initialTitle.trim().isNotEmpty) {
+      ref
+          .read(brickInputControllerProvider.notifier)
+          .seedActivityTitle(initialTitle, markManuallySet: true);
+    }
   }
 
   /// Load existing brick activity data and populate the form
@@ -465,6 +492,13 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         activity.brickMetadata!,
         activity.scheduledDateTime,
       );
+      if (widget.initialTitle != null &&
+          widget.initialTitle!.trim().isNotEmpty) {
+        brickController.seedActivityTitle(
+          widget.initialTitle!,
+          markManuallySet: true,
+        );
+      }
 
       DebugLogger.info(
         '🧱 NEW ACTIVITY: Brick form initialized from existing activity',
@@ -499,8 +533,8 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
                     children: [
                       const SizedBox(height: 20),
 
-                      // Sport Selector Buttons (center these)
-                      const Center(child: SportSelector()),
+                      // Sport selector is horizontally scrollable on compact widths.
+                      const SportSelector(),
 
                       const SizedBox(height: 24),
 

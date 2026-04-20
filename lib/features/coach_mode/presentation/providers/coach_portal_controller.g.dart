@@ -45,7 +45,7 @@ final class CoachPortalControllerProvider
 }
 
 String _$coachPortalControllerHash() =>
-    r'ebf98820ebb256660c183df16947c1d7bab6a3dc';
+    r'f28222f070bcd25f9e9a975caa7362b9a1f189d0';
 
 /// Controller for coach portal UI state (selected athlete, active section)
 

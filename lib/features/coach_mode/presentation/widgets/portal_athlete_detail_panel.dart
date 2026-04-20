@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../activities/domain/activity.dart';
@@ -12,8 +13,12 @@ import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../../shared/providers/user_id_provider.dart';
 import '../../domain/coach_athlete_relationship.dart';
+import '../../../carb_loading/presentation/screens/carb_loading_day_detail_page.dart';
+import '../../../activities/application/activities_service.dart';
 import '../providers/athlete_detail_controller.dart';
+import '../providers/coach_portal_controller.dart';
 import '../screens/coach_chat_screen.dart';
 import 'portal_athlete_profile_form.dart';
 import 'create_carb_loading_dialog.dart';
@@ -32,8 +37,27 @@ class PortalAthleteDetailPanel extends ConsumerStatefulWidget {
 }
 
 class _PortalAthleteDetailPanelState
-    extends ConsumerState<PortalAthleteDetailPanel> {
+    extends ConsumerState<PortalAthleteDetailPanel>
+    with SingleTickerProviderStateMixin {
   DateTime _selectedDate = DateTime.now();
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    final portalState = ref.read(coachPortalControllerProvider);
+    _tabController = TabController(
+      length: 6,
+      initialIndex: portalState.initialTabIndex.clamp(0, 5),
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,58 +119,57 @@ class _PortalAthleteDetailPanelState
   }
 
   Widget _buildContent(AthleteDetailState state) {
-    return DefaultTabController(
-      length: 6,
-      child: Column(
-        children: [
-          // Athlete header
-          _buildAthleteHeader(state),
+    return Column(
+      children: [
+        // Athlete header
+        _buildAthleteHeader(state),
 
-          // Tab bar
-          Container(
-            color: AppColors.blackberry,
-            child: TabBar(
-              labelColor: AppColors.electrolyte,
-              unselectedLabelColor: AppColors.textDarkSecondary,
-              indicatorColor: AppColors.electrolyte,
-              dividerColor: AppColors.blackberryLight,
-              tabs: [
-                const Tab(icon: Icon(Icons.person, size: 18), text: 'Profile'),
-                const Tab(icon: Icon(Icons.tune, size: 18), text: 'Targets'),
-                Tab(
-                  icon: const Icon(Icons.calendar_today, size: 18),
-                  text: 'Events (${state.events.length})',
-                ),
-                const Tab(
-                  icon: Icon(Icons.restaurant, size: 18),
-                  text: 'Carb Loading',
-                ),
-                Tab(
-                  icon: const Icon(Icons.directions_run, size: 18),
-                  text: 'Activities (${state.activities.length})',
-                ),
-                const Tab(icon: Icon(Icons.chat, size: 18), text: 'Chat'),
+        // Tab bar
+        Container(
+          color: AppColors.blackberry,
+          child: TabBar(
+            controller: _tabController,
+            labelColor: AppColors.electrolyte,
+            unselectedLabelColor: AppColors.textDarkSecondary,
+            indicatorColor: AppColors.electrolyte,
+            dividerColor: AppColors.blackberryLight,
+            tabs: [
+              const Tab(icon: Icon(Icons.person, size: 18), text: 'Profile'),
+              const Tab(icon: Icon(Icons.tune, size: 18), text: 'Targets'),
+              Tab(
+                icon: const Icon(Icons.calendar_today, size: 18),
+                text: 'Events (${state.events.length})',
+              ),
+              const Tab(
+                icon: Icon(Icons.restaurant, size: 18),
+                text: 'Carb Loading',
+              ),
+              Tab(
+                icon: const Icon(Icons.directions_run, size: 18),
+                text: 'Activities (${state.activities.length})',
+              ),
+              const Tab(icon: Icon(Icons.chat, size: 18), text: 'Chat'),
+            ],
+          ),
+        ),
+
+        // Tab views — constrained so forms don't stretch on wide screens
+        Expanded(
+          child: ContentArea.wide(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildProfileTab(state),
+                _buildNutritionTargetsTab(state),
+                _buildEventsTab(state),
+                _buildCarbLoadingTab(state),
+                _buildActivitiesTab(state),
+                _buildChatTab(state),
               ],
             ),
           ),
-
-          // Tab views — constrained so forms don't stretch on wide screens
-          Expanded(
-            child: ContentArea.wide(
-              child: TabBarView(
-                children: [
-                  _buildProfileTab(state),
-                  _buildNutritionTargetsTab(state),
-                  _buildEventsTab(state),
-                  _buildCarbLoadingTab(state),
-                  _buildActivitiesTab(state),
-                  _buildChatTab(state),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -228,9 +251,9 @@ class _PortalAthleteDetailPanelState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         label,
@@ -279,7 +302,10 @@ class _PortalAthleteDetailPanelState
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => EventDetailScreen(eventId: event.id),
+                      builder: (_) => EventDetailScreen(
+                        eventId: event.id,
+                        forUserId: state.relationship.athleteUserId,
+                      ),
                     ),
                   );
                 },
@@ -313,7 +339,7 @@ class _PortalAthleteDetailPanelState
                             Text(
                               event.eventDate != null
                                   ? _formatDate(event.eventDate!)
-                                  : 'No Date',
+                                  : 'Date TBD',
                               style: const TextStyle(
                                 color: AppColors.textDarkSecondary,
                                 fontSize: 12,
@@ -365,6 +391,19 @@ class _PortalAthleteDetailPanelState
 
     if (result is Map && result['success'] == true) {
       MealvanaSnackbar.showSuccess(context, 'Event created');
+
+      // Navigate to event detail screen so coach can review and manage the event
+      final eventId = result['eventId'] as String?;
+      if (eventId != null && mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => EventDetailScreen(
+              eventId: eventId,
+              forUserId: state.relationship.athleteUserId,
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -397,65 +436,96 @@ class _PortalAthleteDetailPanelState
   }
 
   Widget _buildCarbLoadingTab(AthleteDetailState state) {
+    final carbLoadingDays = state.carbLoadingDays;
+
     return Stack(
       children: [
-        if (state.carbLoadingPlans.isEmpty)
+        if (carbLoadingDays.isEmpty)
           _buildEmptyView(
-            'No Carb Loading Plans',
-            'This athlete has no active carb loading plans.',
+            'No Carb Loading Days',
+            'This athlete has no carb loading days yet.',
             Icons.restaurant,
           )
         else
           ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: state.carbLoadingPlans.length,
+            padding: const EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: 80, // Space for FABs
+            ),
+            itemCount: carbLoadingDays.length + 1, // +1 for delete button
             itemBuilder: (context, index) {
-              final plan = state.carbLoadingPlans[index];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.blackberry,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.blackberryLight),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.restaurant_menu,
-                      color: AppColors.electrolyte,
-                      size: 20,
+              // First item: delete plan button
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmDeleteCarbLoadingPlan(state),
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    label: const Text('Delete Carb Loading Plan'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red[300],
+                      side: BorderSide(color: Colors.red[300]!),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${plan.raceDistance.displayName} - ${_formatDate(plan.raceDate)}',
-                            style: const TextStyle(
-                              color: AppColors.cream,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '${plan.dailyCarbTargetG}g carbs/day',
-                            style: const TextStyle(
-                              color: AppColors.textDarkSecondary,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                  ),
+                );
+              }
+
+              final carbLoadingDay = carbLoadingDays[index - 1];
+              final progressLabel =
+                  '${carbLoadingDay.loggedCarbsGrams}/${carbLoadingDay.carbTargetGrams}g';
+
+              return GestureDetector(
+                onTap: () => _openCarbLoadingDay(carbLoadingDay),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.blackberry,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.blackberryLight),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.restaurant_menu,
+                        color: AppColors.electrolyte,
+                        size: 20,
                       ),
-                    ),
-                    Icon(
-                      plan.isActive ? Icons.check_circle : Icons.pause_circle,
-                      color: plan.isActive
-                          ? AppColors.electrolyte
-                          : AppColors.inactive,
-                      size: 20,
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Carb Loading Day ${carbLoadingDay.dayNumber}',
+                              style: const TextStyle(
+                                color: AppColors.cream,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              '${_formatDate(carbLoadingDay.planDate)} • $progressLabel',
+                              style: const TextStyle(
+                                color: AppColors.textDarkSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        carbLoadingDay.completed
+                            ? Icons.check_circle
+                            : Icons.chevron_right,
+                        color: carbLoadingDay.completed
+                            ? AppColors.electrolyte
+                            : AppColors.textDarkSecondary,
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -475,6 +545,71 @@ class _PortalAthleteDetailPanelState
         ),
       ],
     );
+  }
+
+  Future<void> _confirmDeleteCarbLoadingPlan(AthleteDetailState state) async {
+    // Find the event with carb loading enabled
+    final carbEvent = state.events.where((e) => e.hasCarbLoading).firstOrNull;
+    if (carbEvent == null) {
+      MealvanaSnackbar.showWarning(
+        context,
+        'No carb loading plan found to delete',
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Carb Loading Plan'),
+        content: Text(
+          'Delete the carb loading plan${carbEvent.eventName != null ? ' for ${carbEvent.eventName}' : ''}? This will remove all associated days and cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref
+          .read(
+            athleteDetailControllerProvider(widget.relationshipId).notifier,
+          )
+          .deleteCarbLoadingPlan(eventId: carbEvent.id);
+
+      if (mounted) {
+        MealvanaSnackbar.showSuccess(context, 'Carb loading plan deleted');
+      }
+    } catch (e) {
+      if (mounted) {
+        MealvanaSnackbar.showError(context, 'Failed to delete plan: $e');
+      }
+    }
+  }
+
+  Future<void> _openCarbLoadingDay(db.CarbLoadingDay carbLoadingDay) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            CarbLoadingDayDetailPage(carbLoadingDay: carbLoadingDay),
+      ),
+    );
+
+    if (!mounted) return;
+    ref
+        .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
+        .refresh();
   }
 
   Widget _buildActivitiesTab(AthleteDetailState state) {
@@ -568,11 +703,17 @@ class _PortalAthleteDetailPanelState
 
   Widget _buildActivityItem(Activity activity) {
     return GestureDetector(
-      onTap: () {
-        context.push(
+      onTap: () async {
+        await context.push(
           '/plan',
           extra: {'activityId': activity.id, 'isCoachView': true},
         );
+        if (!mounted) return;
+        ref
+            .read(
+              athleteDetailControllerProvider(widget.relationshipId).notifier,
+            )
+            .refresh();
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
@@ -611,15 +752,73 @@ class _PortalAthleteDetailPanelState
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.textDarkSecondary,
-              size: 20,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.dragonfruit,
+                    size: 20,
+                  ),
+                  tooltip: 'Delete activity',
+                  onPressed: () => _confirmDeleteActivity(activity),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textDarkSecondary,
+                  size: 20,
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDeleteActivity(Activity activity) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Activity'),
+        content: Text('Are you sure you want to delete "${activity.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.dragonfruit),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final coachUserId = await ref.read(userIdProvider.future);
+      await ref
+          .read(activitiesServiceProvider)
+          .deleteActivity(
+            deviceId: coachUserId,
+            activityId: activity.id,
+            currentUserId: coachUserId,
+            activityOwnerId: activity.userId,
+          );
+
+      if (!mounted) return;
+      MealvanaSnackbar.showSuccess(context, 'Activity deleted successfully');
+      await ref
+          .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
+          .refresh();
+    } catch (e) {
+      if (!mounted) return;
+      MealvanaSnackbar.showError(context, 'Failed to delete activity: $e');
+    }
   }
 
   Widget _buildChatTab(AthleteDetailState state) {

@@ -7,6 +7,7 @@ import '../../../../../shared/utils/food_display_utils.dart' as food_utils;
 import '../../providers/activity_detail_state.dart';
 import '../../../../settings/presentation/providers/settings_controller.dart';
 import '../../../application/macro_explanation_service.dart';
+import '../../../application/resolved_during_target_resolver.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/run_parameters.dart';
@@ -17,7 +18,6 @@ import 'brick_nutrition_sections.dart';
 import 'before_phase_widget.dart';
 import 'during_phase_section_widget.dart';
 import 'phase_explanation_sheet.dart';
-import '../../utils/fuel_log_hero_tags.dart';
 
 /// Callback signatures for food operations
 typedef FoodOperationCallback = void Function(String foodId, String category);
@@ -149,6 +149,19 @@ class _NutritionSectionsBuilderState
     final settings = ref.watch(settingsControllerProvider).value;
     final useImperial = settings?.preferredDistanceUnit == DistanceUnit.miles;
     final bodyWeightKg = _getBodyWeightKg(settings?.weightPounds);
+    final resolvedDuringTarget = widget.state.macroTargets != null
+        ? ResolvedDuringTargetResolver.resolveForSingleSport(
+            macroTargets: widget.state.macroTargets!,
+            sport: activityType,
+            settingsOverrides: settings?.nutritionTargetOverrides,
+          )
+        : null;
+    final duringOverrideApplied =
+        resolvedDuringTarget?.isOverrideApplied ?? false;
+    final duringOverrideLabel =
+        duringOverrideApplied && resolvedDuringTarget != null
+        ? '${resolvedDuringTarget.rateGPerH.round()}g/hr'
+        : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,6 +224,14 @@ class _NutritionSectionsBuilderState
                     ?.round(),
                 fluidsHigh: widget.state.macroTargets?.preRun.fluidsHighMl
                     ?.round(),
+                carbsOverridden: false,
+                proteinOverridden: false,
+                sodiumOverridden: false,
+                fluidsOverridden: false,
+                carbsOverrideLabel: null,
+                proteinOverrideLabel: null,
+                sodiumOverrideLabel: null,
+                fluidsOverrideLabel: null,
               ),
             ),
           );
@@ -260,6 +281,12 @@ class _NutritionSectionsBuilderState
                     ?.round(),
                 fluidsHigh: widget.state.macroTargets?.duringRun.fluidsHighMl
                     ?.round(),
+                carbsOverridden: duringOverrideApplied,
+                sodiumOverridden: false,
+                fluidsOverridden: false,
+                carbsOverrideLabel: duringOverrideLabel,
+                sodiumOverrideLabel: null,
+                fluidsOverrideLabel: null,
               ),
             ),
           );
@@ -309,6 +336,14 @@ class _NutritionSectionsBuilderState
               fluidsLow: fluidsLow,
               fluidsHigh: fluidsHigh,
               useImperial: useImperial,
+              carbsOverridden: false,
+              proteinOverridden: false,
+              sodiumOverridden: false,
+              fluidsOverridden: false,
+              carbsOverrideLabel: null,
+              proteinOverrideLabel: null,
+              sodiumOverrideLabel: null,
+              fluidsOverrideLabel: null,
             ),
           ),
         );
@@ -317,24 +352,10 @@ class _NutritionSectionsBuilderState
   }
 
   Widget _wrapWithSectionHero(String sectionId, Widget child) {
-    if (!widget.enableSectionHeroes || widget.heroTagSeed == null) {
-      return child;
-    }
-
-    return Hero(
-      tag: fuelLogSectionHeroTag(
-        activityId: widget.heroTagSeed!,
-        sectionId: sectionId,
-      ),
-      flightShuttleBuilder: (_, __, direction, fromCtx, toCtx) {
-        return ClipRect(
-          child: direction == HeroFlightDirection.push
-              ? toCtx.widget
-              : fromCtx.widget,
-        );
-      },
-      child: Material(type: MaterialType.transparency, child: child),
-    );
+    // Hero animations removed — they caused RenderFlex overflow during flight
+    // (section widgets are too tall for overlay constraints) which cascaded
+    // into deactivated-widget and Riverpod state-modification errors.
+    return child;
   }
 
   Widget _buildNutritionSection({
@@ -352,6 +373,14 @@ class _NutritionSectionsBuilderState
     int? sodiumHigh,
     int? fluidsLow,
     int? fluidsHigh,
+    bool carbsOverridden = false,
+    bool proteinOverridden = false,
+    bool sodiumOverridden = false,
+    bool fluidsOverridden = false,
+    String? carbsOverrideLabel,
+    String? proteinOverrideLabel,
+    String? sodiumOverrideLabel,
+    String? fluidsOverrideLabel,
   }) {
     final isExpanded = _expandedSections[category] ?? false;
 
@@ -393,6 +422,14 @@ class _NutritionSectionsBuilderState
             sodiumHigh: sodiumHigh,
             fluidsLow: fluidsLow,
             fluidsHigh: fluidsHigh,
+            carbsOverridden: carbsOverridden,
+            proteinOverridden: proteinOverridden,
+            sodiumOverridden: sodiumOverridden,
+            fluidsOverridden: fluidsOverridden,
+            carbsOverrideLabel: carbsOverrideLabel,
+            proteinOverrideLabel: proteinOverrideLabel,
+            sodiumOverrideLabel: sodiumOverrideLabel,
+            fluidsOverrideLabel: fluidsOverrideLabel,
           ),
           const SizedBox(height: AppSpacing.md),
           // Collapsible food list

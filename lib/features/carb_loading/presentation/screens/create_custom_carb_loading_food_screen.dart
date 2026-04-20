@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/content_area.dart';
 import '../../../../theme/app_theme.dart';
 import '../../application/food_import_service.dart';
 import '../../domain/meal_type.dart';
@@ -15,7 +12,7 @@ import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Screen for creating a custom carb loading food from scratch
 class CreateCustomCarbLoadingFoodScreen extends ConsumerStatefulWidget {
-  final int dayId;
+  final String dayId;
   final MealType mealType;
 
   const CreateCustomCarbLoadingFoodScreen({
@@ -106,10 +103,12 @@ class _CreateCustomCarbLoadingFoodScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppTheme.baseCream,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppTheme.baseCream,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: CustomAppBarBackButton(
@@ -117,259 +116,242 @@ class _CreateCustomCarbLoadingFoodScreenState
         ),
         title: Text(
           'Create Custom Food',
-          style: AppTheme.titleStyle.copyWith(
-            color: AppTheme.primary900,
-            fontSize: 18.sp,
+          style: AppTextStyles.sectionTitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         centerTitle: true,
       ),
-      body: ContentArea(
-        child: SafeArea(
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              padding: EdgeInsets.all(16.w),
-              children: [
-              // Instructions
-              Container(
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary50.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: AppTheme.primary100),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: AppTheme.primary600,
-                      size: 24.sp,
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Text(
-                        'Create a custom carb loading food to quickly track your carb intake.',
-                        style: AppTheme.textStyle.copyWith(
-                          color: AppTheme.primary900,
-                          fontSize: 14.sp,
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: AppSpacing.screenPadding,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Food Name
+                      _buildSectionTitle('Food Name'),
+                      const SizedBox(height: AppSpacing.sm),
+                      _buildTextField(
+                        controller: _nameController,
+                        hint: 'Enter food name',
+                        isDark: isDark,
+                      ),
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Display Name
+                      _buildSectionTitle('Display Name (with serving)'),
+                      const SizedBox(height: AppSpacing.sm),
+                      _buildTextField(
+                        controller: _displayNameController,
+                        hint: 'e.g., 2 cups cooked pasta',
+                        isDark: isDark,
+                      ),
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Carbs Per Serving
+                      _buildSectionTitle('Carbs Per Serving (grams)'),
+                      const SizedBox(height: AppSpacing.sm),
+                      TextField(
+                        controller: _carbsController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}')),
+                        ],
+                        decoration: InputDecoration(
+                          hintText: 'e.g., 65',
+                          hintStyle: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          suffixText: 'g',
+                          suffixStyle: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: BorderSide(
+                              color: isDark
+                                  ? AppColors.cream.withValues(alpha: 0.3)
+                                  : AppColors.blackberry.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: BorderSide(
+                              color: isDark
+                                  ? AppColors.cream.withValues(alpha: 0.3)
+                                  : AppColors.blackberry.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: AppRadius.inputRadius,
+                            borderSide: const BorderSide(
+                              color: AppColors.electrolyte,
+                              width: 2,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: AppSpacing.sm,
+                          ),
+                          isDense: true,
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surface,
+                        ),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
 
-              SizedBox(height: 24.h),
+                      const SizedBox(height: AppSpacing.lg),
 
-              // Food Name
-              Text(
-                'Food Name*',
-                style: AppTheme.textStyle.copyWith(
-                  color: AppTheme.primary900,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  hintText: 'e.g., My Favorite Pasta',
-                  filled: true,
-                  fillColor: AppTheme.baseWhite,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide(color: AppTheme.baseGrey),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide(color: AppTheme.primary600, width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: const BorderSide(color: Colors.red),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a food name';
-                  }
-                  return null;
-                },
-              ),
+                      // Meal Type Selection
+                      _buildSectionTitle('Suitable for Meals'),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'Select which meals this food is suitable for',
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
 
-              SizedBox(height: 20.h),
+                      Wrap(
+                        spacing: AppSpacing.xs,
+                        runSpacing: AppSpacing.xs,
+                        children: MealType.values.map((mealType) {
+                          final isSelected = _selectedMealTypes.contains(mealType);
+                          String mealName;
+                          switch (mealType) {
+                            case MealType.breakfast:
+                              mealName = 'Breakfast';
+                            case MealType.lunch:
+                              mealName = 'Lunch';
+                            case MealType.dinner:
+                              mealName = 'Dinner';
+                            case MealType.snacks:
+                              mealName = 'Snacks';
+                            case MealType.morningSnack:
+                              mealName = 'Morning Snack';
+                            case MealType.afternoonSnack:
+                              mealName = 'Afternoon Snack';
+                            case MealType.eveningSnack:
+                              mealName = 'Evening Snack';
+                          }
 
-              // Display Name (serving info)
-              Text(
-                'Display Name (with serving)*',
-                style: AppTheme.textStyle.copyWith(
-                  color: AppTheme.primary900,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              TextFormField(
-                controller: _displayNameController,
-                decoration: InputDecoration(
-                  hintText: 'e.g., 2 cups cooked pasta',
-                  filled: true,
-                  fillColor: AppTheme.baseWhite,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide(color: AppTheme.baseGrey),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide(color: AppTheme.primary600, width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: const BorderSide(color: Colors.red),
+                          return FilterChip(
+                            label: Text(mealName),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedMealTypes.add(mealType);
+                                } else {
+                                  _selectedMealTypes.remove(mealType);
+                                }
+                              });
+                            },
+                            selectedColor: AppColors.electrolyte,
+                            checkmarkColor: AppColors.cream,
+                            labelStyle: AppTextStyles.bodyMedium.copyWith(
+                              color: isSelected
+                                  ? AppColors.cream
+                                  : Theme.of(context).colorScheme.onSurface,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                            backgroundColor: Theme.of(context).colorScheme.surface,
+                            side: BorderSide(
+                              color: isSelected
+                                  ? AppColors.electrolyte
+                                  : (isDark
+                                      ? AppColors.cream.withValues(alpha: 0.3)
+                                      : AppColors.blackberry.withValues(alpha: 0.3)),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+
+                      const SizedBox(height: AppSpacing.xxxl),
+                    ],
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a display name';
-                  }
-                  return null;
-                },
               ),
 
-              SizedBox(height: 20.h),
-
-              // Carbs Per Serving
-              Text(
-                'Carbs Per Serving (grams)*',
-                style: AppTheme.textStyle.copyWith(
-                  color: AppTheme.primary900,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                ),
+              // Save Button (fixed at bottom)
+              Padding(
+                padding: AppSpacing.screenPadding,
+                child: _isSaving
+                    ? const Center(child: CircularProgressIndicator())
+                    : KylePrimaryButton(
+                        text: 'Save Food',
+                        onPressed: _handleSave,
+                        isFullWidth: true,
+                      ),
               ),
-              SizedBox(height: 8.h),
-              TextFormField(
-                controller: _carbsController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}')),
-                ],
-                decoration: InputDecoration(
-                  hintText: 'e.g., 65',
-                  suffixText: 'g',
-                  filled: true,
-                  fillColor: AppTheme.baseWhite,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide(color: AppTheme.baseGrey),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: BorderSide(color: AppTheme.primary600, width: 2),
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    borderSide: const BorderSide(color: Colors.red),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter carbs per serving';
-                  }
-                  final carbs = double.tryParse(value.trim());
-                  if (carbs == null || carbs <= 0) {
-                    return 'Please enter a valid number greater than 0';
-                  }
-                  return null;
-                },
-              ),
-
-              SizedBox(height: 24.h),
-
-              // Meal Type Selection
-              Text(
-                'Suitable for Meals*',
-                style: AppTheme.textStyle.copyWith(
-                  color: AppTheme.primary900,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                'Select which meals this food is suitable for',
-                style: AppTheme.textStyle.copyWith(
-                  color: AppTheme.baseGrey,
-                  fontSize: 12.sp,
-                ),
-              ),
-              SizedBox(height: 12.h),
-
-              Wrap(
-                spacing: 8.w,
-                runSpacing: 8.h,
-                children: MealType.values.map((mealType) {
-                  final isSelected = _selectedMealTypes.contains(mealType);
-                  String mealName;
-                  switch (mealType) {
-                    case MealType.breakfast:
-                      mealName = 'Breakfast';
-                    case MealType.lunch:
-                      mealName = 'Lunch';
-                    case MealType.dinner:
-                      mealName = 'Dinner';
-                    case MealType.snacks:
-                      mealName = 'Snacks';
-                    case MealType.morningSnack:
-                      mealName = 'Morning Snack';
-                    case MealType.afternoonSnack:
-                      mealName = 'Afternoon Snack';
-                    case MealType.eveningSnack:
-                      mealName = 'Evening Snack';
-                  }
-
-                  return FilterChip(
-                    label: Text(mealName),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedMealTypes.add(mealType);
-                        } else {
-                          _selectedMealTypes.remove(mealType);
-                        }
-                      });
-                    },
-                    selectedColor: AppTheme.primary600,
-                    checkmarkColor: AppTheme.baseWhite,
-                    labelStyle: TextStyle(
-                      color: isSelected ? AppTheme.baseWhite : AppTheme.primary900,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                    backgroundColor: AppTheme.baseWhite,
-                    side: BorderSide(
-                      color: isSelected ? AppTheme.primary600 : AppTheme.primary100,
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              SizedBox(height: 32.h),
-
-              // Save Button
-              PrimaryButton(
-                text: _isSaving ? 'Saving...' : 'Save Food',
-                onPressed: _isSaving ? null : _handleSave,
-                width: double.infinity,
-              ),
-
-              SizedBox(height: 16.h),
             ],
-            ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: AppTextStyles.subtitle.copyWith(
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required bool isDark,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: AppRadius.inputRadius,
+          borderSide: BorderSide(
+            color: isDark
+                ? AppColors.cream.withValues(alpha: 0.3)
+                : AppColors.blackberry.withValues(alpha: 0.3),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadius.inputRadius,
+          borderSide: BorderSide(
+            color: isDark
+                ? AppColors.cream.withValues(alpha: 0.3)
+                : AppColors.blackberry.withValues(alpha: 0.3),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppRadius.inputRadius,
+          borderSide: const BorderSide(color: AppColors.electrolyte, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.sm,
+        ),
+        isDense: true,
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
+      ),
+      style: AppTextStyles.bodyMedium.copyWith(
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }

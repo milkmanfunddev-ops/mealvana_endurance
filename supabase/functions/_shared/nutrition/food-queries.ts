@@ -10,11 +10,15 @@
  * - transition: Triathlon transition zone
  */
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { safe } from '../utils.ts';
-import type { Food, Phase, ActivityType } from './types.ts';
-import { PREFERENCE_SCORE_MAP, DEFAULT_MAX_SERVINGS, getCategoryForPhase } from './constants.ts';
-import { matchesPreference } from './food-utils.ts';
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { safe } from "../utils.ts";
+import type { ActivityType, Food, Phase } from "./types.ts";
+import {
+  DEFAULT_MAX_SERVINGS,
+  getCategoryForPhase,
+  PREFERENCE_SCORE_MAP,
+} from "./constants.ts";
+import { matchesPreference } from "./food-utils.ts";
 
 /**
  * Build a Supabase category filter for the given categories
@@ -22,7 +26,7 @@ import { matchesPreference } from './food-utils.ts';
  */
 function buildCategoryFilter(categories: string[]): string {
   // Create an "overlaps" filter: categories && {cat1,cat2,cat3}
-  return `{${categories.join(',')}}`;
+  return `{${categories.join(",")}}`;
 }
 
 /**
@@ -35,19 +39,23 @@ export async function getFoodsForPhase(
   likedFoods: Set<string>,
   willTryFoods: Set<string>,
   dislikedFoods: Set<string>,
-  activityType: ActivityType = 'running'
+  activityType: ActivityType = "running",
 ): Promise<Food[]> {
   // Get the appropriate categories for this phase and sport
   const categories = getCategoryForPhase(phase, activityType);
   const categoryFilter = buildCategoryFilter(categories);
 
-  console.log(`[FOODS-${phase.toUpperCase()}] Filtering for categories: ${categories.join(', ')}, activity_type: ${activityType}`);
+  console.log(
+    `[FOODS-${phase.toUpperCase()}] Filtering for categories: ${
+      categories.join(", ")
+    }, activity_type: ${activityType}`,
+  );
 
   // STEP 1: Get generic foods for this phase
   // Filter by categories AND activity_types for backwards compatibility
   let genericFoods: any[] = [];
   const { data: foods, error: foodsError } = await supabase
-    .from('foods')
+    .from("foods")
     .select(`
       id, name, display_name, display_name_plural, image_address, description,
       calories_per_serving, carbs_per_serving, protein_per_serving,
@@ -57,22 +65,29 @@ export async function getFoodsForPhase(
       is_electrolyte, to_exclude_from_solver, is_essential,
       categories, activity_types
     `)
-    .filter('categories', 'ov', categoryFilter)
+    .filter("categories", "ov", categoryFilter)
     .or(`activity_types.is.null,activity_types.cs.{${activityType}}`);
 
   if (foodsError) {
-    console.log(`[FOODS-${phase.toUpperCase()}] Error fetching generic foods:`, foodsError);
+    console.log(
+      `[FOODS-${phase.toUpperCase()}] Error fetching generic foods:`,
+      foodsError,
+    );
   } else if (foods) {
     genericFoods = foods;
-    console.log(`[FOODS-${phase.toUpperCase()}] Found ${genericFoods.length} generic foods for ${activityType}`);
+    console.log(
+      `[FOODS-${phase.toUpperCase()}] Found ${genericFoods.length} generic foods for ${activityType}`,
+    );
   }
 
   // STEP 2: Get user foods for this phase
   let userFoods: any[] = [];
-  console.log(`[FOODS-${phase.toUpperCase()}] Querying user foods for user_id: ${userId}`);
+  console.log(
+    `[FOODS-${phase.toUpperCase()}] Querying user foods for user_id: ${userId}`,
+  );
 
   const { data: categoryUserFoods, error: userFoodsError } = await supabase
-    .from('user_foods')
+    .from("user_foods")
     .select(`
       id, name, display_name, display_name_plural, image_address, description,
       calories_per_serving, carbs_per_serving, protein_per_serving,
@@ -81,20 +96,23 @@ export async function getFoodsForPhase(
       is_electrolyte, to_exclude_from_solver, is_deleted,
       categories, activity_types
     `)
-    .eq('user_id', userId)
-    .eq('is_deleted', false)
-    .filter('categories', 'ov', categoryFilter)
+    .eq("user_id", userId)
+    .eq("is_deleted", false)
+    .filter("categories", "ov", categoryFilter)
     .or(`activity_types.is.null,activity_types.cs.{${activityType}}`);
 
   if (userFoodsError) {
-    console.log(`[FOODS-${phase.toUpperCase()}] Error fetching categorized user foods:`, userFoodsError);
+    console.log(
+      `[FOODS-${phase.toUpperCase()}] Error fetching categorized user foods:`,
+      userFoodsError,
+    );
   } else if (categoryUserFoods) {
     userFoods = userFoods.concat(categoryUserFoods);
   }
 
   // Get user foods WITHOUT category assignments (empty array = available for all phases)
   const { data: uncategorizedUserFoods, error: uncatError } = await supabase
-    .from('user_foods')
+    .from("user_foods")
     .select(`
       id, name, display_name, display_name_plural, image_address, description,
       calories_per_serving, carbs_per_serving, protein_per_serving,
@@ -103,18 +121,25 @@ export async function getFoodsForPhase(
       is_electrolyte, to_exclude_from_solver, is_deleted,
       categories, activity_types
     `)
-    .eq('user_id', userId)
-    .eq('is_deleted', false)
+    .eq("user_id", userId)
+    .eq("is_deleted", false)
     .or(`categories.eq.{},categories.is.null`)
     .or(`activity_types.is.null,activity_types.cs.{${activityType}}`);
 
   if (uncatError) {
-    console.log(`[FOODS-${phase.toUpperCase()}] Error fetching uncategorized user foods:`, uncatError);
+    console.log(
+      `[FOODS-${phase.toUpperCase()}] Error fetching uncategorized user foods:`,
+      uncatError,
+    );
   } else if (uncategorizedUserFoods) {
     const categorizedUserFoodIds = new Set(userFoods.map((f) => f.id));
-    const filteredUncategorized = uncategorizedUserFoods.filter((f) => !categorizedUserFoodIds.has(f.id));
+    const filteredUncategorized = uncategorizedUserFoods.filter((f) =>
+      !categorizedUserFoodIds.has(f.id)
+    );
     userFoods = userFoods.concat(filteredUncategorized);
-    console.log(`[FOODS-${phase.toUpperCase()}] Found ${filteredUncategorized.length} uncategorized user foods (${userFoods.length} total user foods)`);
+    console.log(
+      `[FOODS-${phase.toUpperCase()}] Found ${filteredUncategorized.length} uncategorized user foods (${userFoods.length} total user foods)`,
+    );
   }
 
   // STEP 3: Combine generic and user foods
@@ -134,7 +159,9 @@ export async function getFoodsForPhase(
 
   const allFoods = Array.from(allFoodsMap.values());
   const userFoodCount = allFoods.filter((f) => f._isUserFood).length;
-  console.log(`[FOODS-${phase.toUpperCase()}] Combined ${genericFoods.length} generic + ${userFoods.length} user foods = ${allFoods.length} total (${userFoodCount} marked as user foods)`);
+  console.log(
+    `[FOODS-${phase.toUpperCase()}] Combined ${genericFoods.length} generic + ${userFoods.length} user foods = ${allFoods.length} total (${userFoodCount} marked as user foods)`,
+  );
 
   if (allFoods.length === 0) return [];
 
@@ -147,12 +174,16 @@ export async function getFoodsForPhase(
 
       // CRITICAL: Never filter out user foods as disliked
       if (isDisliked && !isUserFood) {
-        console.log(`[FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`);
+        console.log(
+          `[FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`,
+        );
         return false;
       }
 
       if (isDisliked && isUserFood) {
-        console.log(`[FILTER-DISLIKED] Keeping user food despite dislike match: ${f.name} (id: ${f.id})`);
+        console.log(
+          `[FILTER-DISLIKED] Keeping user food despite dislike match: ${f.name} (id: ${f.id})`,
+        );
       }
 
       return !isExcludedFromSolver;
@@ -162,11 +193,12 @@ export async function getFoodsForPhase(
       const isLiked = isUserFood || matchesPreference(f, likedFoods);
       const isWilling = matchesPreference(f, willTryFoods);
 
-      let preferenceCategory: 'liked' | 'willing' | 'essential' | 'neutral' = 'neutral';
+      let preferenceCategory: "liked" | "willing" | "essential" | "neutral" =
+        "neutral";
       if (isLiked) {
-        preferenceCategory = 'liked';
+        preferenceCategory = "liked";
       } else if (isWilling) {
-        preferenceCategory = 'willing';
+        preferenceCategory = "willing";
       }
 
       const preference_score = PREFERENCE_SCORE_MAP[preferenceCategory];
@@ -200,6 +232,7 @@ export async function getFoodsForPhase(
         is_liquid: false,
         is_essential: f.is_essential || false,
         is_user_food: isUserFood,
+        is_indivisible: false,
       };
     });
 }
@@ -210,11 +243,11 @@ export async function getFoodsForPhase(
  */
 function getMaxServings(food: any, phase: Phase): number {
   switch (phase) {
-    case 'before':
+    case "before":
       return food.max_servings_before ?? DEFAULT_MAX_SERVINGS;
-    case 'during':
+    case "during":
       return food.max_servings_during ?? DEFAULT_MAX_SERVINGS;
-    case 'after':
+    case "after":
       return food.max_servings_after ?? DEFAULT_MAX_SERVINGS;
   }
 }
@@ -227,12 +260,12 @@ export async function getElectrolyteFoods(
   userId: string,
   likedFoods: Set<string>,
   willTryFoods: Set<string>,
-  activityType: ActivityType = 'running',
-  phase: Phase = 'during'
+  activityType: ActivityType = "running",
+  phase: Phase = "during",
 ): Promise<Food[]> {
   // Get generic electrolyte foods
   const { data: genericElectrolytes, error: genericError } = await supabase
-    .from('foods')
+    .from("foods")
     .select(`
       id, name, display_name, display_name_plural, description, image_address,
       sodium_mg, fluid_ml_per_serving,
@@ -240,38 +273,53 @@ export async function getElectrolyteFoods(
       serving_size, serving_unit, serving_qualifier,
       is_electrolyte, to_exclude_from_solver, is_essential
     `)
-    .eq('is_electrolyte', true);
+    .eq("is_electrolyte", true);
 
   if (genericError) {
-    console.log('[ELECTROLYTES] Error fetching generic electrolytes:', genericError);
+    console.log(
+      "[ELECTROLYTES] Error fetching generic electrolytes:",
+      genericError,
+    );
   }
 
   // Get user electrolyte foods
-  console.log(`[ELECTROLYTES] Querying user electrolytes for user_id: ${userId}`);
+  console.log(
+    `[ELECTROLYTES] Querying user electrolytes for user_id: ${userId}`,
+  );
   const { data: userElectrolytes, error: userElectrolyteError } = await supabase
-    .from('user_foods')
+    .from("user_foods")
     .select(`
       id, name, display_name, display_name_plural, description, image_address,
       sodium_mg, fluid_ml_per_serving,
       serving_amount, serving_unit,
       is_electrolyte, to_exclude_from_solver, is_deleted
     `)
-    .eq('user_id', userId)
-    .eq('is_electrolyte', true)
-    .eq('is_deleted', false);
+    .eq("user_id", userId)
+    .eq("is_electrolyte", true)
+    .eq("is_deleted", false);
 
   if (userElectrolyteError) {
-    console.log('[ELECTROLYTES] Error fetching user electrolytes:', userElectrolyteError);
+    console.log(
+      "[ELECTROLYTES] Error fetching user electrolytes:",
+      userElectrolyteError,
+    );
   }
 
-  const allElectrolytes = [...(genericElectrolytes || []), ...(userElectrolytes || [])];
-  console.log(`[ELECTROLYTES] Found ${genericElectrolytes?.length || 0} generic + ${userElectrolytes?.length || 0} user electrolytes = ${allElectrolytes.length} total`);
+  const allElectrolytes = [
+    ...(genericElectrolytes || []),
+    ...(userElectrolytes || []),
+  ];
+  console.log(
+    `[ELECTROLYTES] Found ${genericElectrolytes?.length || 0} generic + ${
+      userElectrolytes?.length || 0
+    } user electrolytes = ${allElectrolytes.length} total`,
+  );
 
   if (allElectrolytes.length === 0) return [];
 
   return allElectrolytes
     .filter((e) => {
-      const isGenericFood = 'is_essential' in e;
+      const isGenericFood = "is_essential" in e;
       const isEssential = isGenericFood && e.is_essential === true;
 
       if (isEssential) {
@@ -283,7 +331,9 @@ export async function getElectrolyteFoods(
       const isWillingToTry = matchesPreference(e, willTryFoods);
 
       if (isLiked || isWillingToTry) {
-        console.log(`[ELECTROLYTE] Including electrolyte: ${e.name} (liked: ${isLiked}, willing: ${isWillingToTry})`);
+        console.log(
+          `[ELECTROLYTE] Including electrolyte: ${e.name} (liked: ${isLiked}, willing: ${isWillingToTry})`,
+        );
         return true;
       }
 
@@ -297,9 +347,11 @@ export async function getElectrolyteFoods(
         display_name_plural: e.display_name_plural,
         description: e.description,
         image_address: e.image_address,
-        serving_size: e.serving_size,
+        serving_size: "serving_size" in e ? e.serving_size : null,
         serving_unit: e.serving_unit,
-        serving_qualifier: e.serving_qualifier,
+        serving_qualifier: "serving_qualifier" in e
+          ? e.serving_qualifier
+          : null,
         per_serving: {
           carbs_g: 0,
           protein_g: 0,
@@ -314,8 +366,9 @@ export async function getElectrolyteFoods(
         preference_score: 50,
         is_electrolyte: true,
         is_liquid: false,
-        is_essential: 'is_essential' in e ? e.is_essential : false,
+        is_essential: "is_essential" in e ? e.is_essential : false,
         is_user_food: false,
+        is_indivisible: false,
       };
     });
 }
@@ -325,21 +378,21 @@ export async function getElectrolyteFoods(
  */
 export async function getEssentialFoods(
   supabase: SupabaseClient,
-  activityType: ActivityType = 'running',
-  phase: Phase = 'during'
+  activityType: ActivityType = "running",
+  phase: Phase = "during",
 ): Promise<Food[]> {
   const { data: essentialFoods, error } = await supabase
-    .from('foods')
+    .from("foods")
     .select(`
       id, name, display_name, display_name_plural, image_address, description,
       calories_per_serving, carbs_per_serving, protein_per_serving,
       fat_per_serving, sodium_mg, fluid_ml_per_serving,
       serving_amount, serving_size, serving_unit, serving_qualifier, is_electrolyte, is_essential
     `)
-    .eq('is_essential', true);
+    .eq("is_essential", true);
 
   if (error) {
-    console.log('[ESSENTIAL] Error fetching essential foods:', error);
+    console.log("[ESSENTIAL] Error fetching essential foods:", error);
     return [];
   }
 
@@ -371,6 +424,7 @@ export async function getEssentialFoods(
       is_electrolyte: f.is_electrolyte || false,
       is_liquid: false,
       is_user_food: false,
+      is_indivisible: false,
     };
   });
 }

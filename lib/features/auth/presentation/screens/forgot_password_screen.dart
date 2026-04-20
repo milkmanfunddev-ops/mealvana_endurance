@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
-import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../content/application/content_service.dart';
 import '../../application/email_auth_service.dart';
@@ -57,103 +57,100 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     final contentService = ref.watch(contentServiceProvider);
     final emailAuthService = ref.watch(emailAuthServiceProvider.notifier);
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
-      body: ContentArea.narrow(
-        child: SafeArea(
-          child: SingleChildScrollView(
-          padding: AppSpacing.screenPaddingHorizontal,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: AppSpacing.xl),
+      contentWidth: AdaptiveContentWidth.narrow,
+      body: AdaptiveScrollableBody(
+        padding: AppSpacing.screenPaddingHorizontal,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: AppSpacing.xl),
 
-                // Title
-                Text(
-                  contentService.getValue(
-                    'auth.forgot_password.title',
-                    defaultValue: 'Forgot Password',
-                  ),
-                  style: AppTextStyles.sectionTitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 28,
-                  ),
-                  textAlign: TextAlign.center,
+              // Title
+              Text(
+                contentService.getValue(
+                  'auth.forgot_password.title',
+                  defaultValue: 'Forgot Password',
                 ),
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 28,
+                ),
+                textAlign: TextAlign.center,
+              ),
 
-                const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
 
-                // Subtitle
-                Text(
-                  contentService.getValue(
-                    'auth.forgot_password.subtitle',
-                    defaultValue:
-                        'Enter your email and we\'ll send you a reset code',
+              // Subtitle
+              Text(
+                contentService.getValue(
+                  'auth.forgot_password.subtitle',
+                  defaultValue:
+                      'Enter your email and we\'ll send you a reset code',
+                ),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: AppSpacing.xxxl),
+
+              // Email field
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  labelText: contentService.getValue(
+                    'auth.email_signup.email_label',
+                    defaultValue: 'Email Address',
                   ),
-                  style: AppTextStyles.bodyMedium.copyWith(
+                  hintText: contentService.getValue(
+                    'auth.email_signup.email_hint',
+                    defaultValue: 'you@example.com',
+                  ),
+                  prefixIcon: Icon(
+                    FontAwesomeIcons.envelope,
+                    size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: AppSpacing.xxxl),
-
-                // Email field
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  autocorrect: false,
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(
-                    labelText: contentService.getValue(
-                      'auth.email_signup.email_label',
-                      defaultValue: 'Email Address',
-                    ),
-                    hintText: contentService.getValue(
-                      'auth.email_signup.email_hint',
-                      defaultValue: 'you@example.com',
-                    ),
-                    prefixIcon: Icon(
-                      FontAwesomeIcons.envelope,
-                      size: AppIconSizes.controlIcon,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: AppRadius.inputRadius,
-                    ),
+                  border: OutlineInputBorder(
+                    borderRadius: AppRadius.inputRadius,
                   ),
-                  style: AppTextStyles.bodyMedium,
-                  validator: (value) {
-                    return emailAuthService.validateEmail(value?.trim() ?? '');
-                  },
-                  onFieldSubmitted: (_) => _handleSendCode(),
                 ),
+                style: AppTextStyles.bodyMedium,
+                validator: (value) {
+                  return emailAuthService.validateEmail(value?.trim() ?? '');
+                },
+                onFieldSubmitted: (_) => _handleSendCode(),
+              ),
 
-                const SizedBox(height: AppSpacing.xxxl),
+              const SizedBox(height: AppSpacing.xxxl),
 
-                // Send code button
-                KylePrimaryButton(
-                  text: asyncState.isLoading ? 'Sending...' : 'Send Reset Code',
-                  onPressed: asyncState.isLoading ? null : _handleSendCode,
-                ),
+              // Send code button
+              KylePrimaryButton(
+                text: asyncState.isLoading ? 'Sending...' : 'Send Reset Code',
+                onPressed: asyncState.isLoading ? null : _handleSendCode,
+              ),
 
-                const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.md),
 
-                // Back button
-                KyleSecondaryButton(
-                  text: 'Back',
-                  onPressed: asyncState.isLoading ? null : () => context.pop(),
-                ),
+              // Back button
+              KyleSecondaryButton(
+                text: 'Back',
+                onPressed: asyncState.isLoading ? null : () => context.pop(),
+              ),
 
-                const SizedBox(height: AppSpacing.xxl),
-              ],
-            ),
+              const SizedBox(height: AppSpacing.xxl),
+            ],
           ),
         ),
-      ),
       ),
     );
   }

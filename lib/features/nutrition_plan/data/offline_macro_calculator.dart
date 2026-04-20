@@ -185,9 +185,9 @@ class OfflineMacroCalculator {
     // Gut training affects carb absorption capacity
     final gutRate = {
       'low': 0.7,
-      'moderate': 0.8,
-      'high': 1.0,
-    }[gutTraining] ?? 0.8;
+      'moderate': 1.0,
+      'high': 1.2,
+    }[gutTraining] ?? 1.0;
     
     // ISSN: 30-60g/h for runs >2.5h, scaled by gut training
     final massNormRate = gutRate * weightKg;

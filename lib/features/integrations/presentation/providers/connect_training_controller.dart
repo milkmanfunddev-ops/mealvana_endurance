@@ -8,12 +8,13 @@ import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../../shared/services/preferences_service.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
-import '../../../calendar/application/calendar_service.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../calendar/presentation/providers/calendar_controller.dart';
 import '../../../events/data/events_repository.dart';
+import '../../../events/domain/event.dart' as domain;
 import '../../../events/presentation/providers/events_controller.dart'
     hide nextUpcomingEventProvider;
 import '../../application/final_surge_oauth_service.dart';
@@ -34,8 +35,10 @@ const _tempUserIdKey = 'onboarding_temp_user_id';
 class _TPCombinedResultWrapper {
   _TPCombinedResultWrapper(this.fullResult);
   _TPCombinedResultWrapper.error(TrainingPeaksSyncResult workoutResult)
-      : fullResult = TrainingPeaksFullSyncResult(
-            workoutResult: workoutResult, eventResult: null);
+    : fullResult = TrainingPeaksFullSyncResult(
+        workoutResult: workoutResult,
+        eventResult: null,
+      );
 
   final TrainingPeaksFullSyncResult fullResult;
 }
@@ -176,14 +179,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       ref.read(trainingPeaksOAuthServiceProvider.future);
   Future<TrainingPeaksSyncService> get _trainingPeaksSync =>
       ref.read(trainingPeaksSyncServiceProvider.future);
-  GarminOAuthService get _garminOAuth =>
-      ref.read(garminOAuthServiceProvider);
+  GarminOAuthService get _garminOAuth => ref.read(garminOAuthServiceProvider);
   IntegrationsRepository get _integrationsRepo =>
       ref.read(integrationsRepositoryProvider);
   ActivitiesRepository get _activitiesRepo =>
       ref.read(activitiesRepositoryProvider);
-  CalendarService get _calendarService => ref.read(calendarServiceProvider);
-
   static const _uuid = Uuid();
 
   /// Prevents concurrent sync operations from causing duplicate inserts.
@@ -440,7 +440,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   Future<bool> connectGarmin() async {
     return _connectProvider(
       providerId: 'garmin',
-      authenticate: () => _garminOAuth.authenticate(_currentUserId!),
+      authenticate: () => _garminOAuth.authenticate(
+        _currentUserId!,
+        skipRemoteMapping: _isUsingTempUserId,
+      ),
       updateState: (athleteName) => state.value!.copyWith(
         isConnecting: false,
         clearConnectingProvider: true,
@@ -710,14 +713,22 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       }
 
       try {
-        await _calendarService.createEvent(
-          userId: _currentUserId!,
-          activityId: activityId,
-          eventType: candidate.eventType,
-          eventName: eventName,
-          startTime: candidate.scheduledAt.toIso8601String(),
-          goalTimeMinutes: candidate.goalTimeMinutes,
-          goalPaceMinutesPerMile: candidate.goalPaceMinutesPerMile,
+        final now = DateTime.now();
+        await eventsRepository.createEvent(
+          deviceId: _currentUserId!,
+          event: domain.Event(
+            id: '', // Let DB auto-generate
+            userId: _currentUserId!,
+            activityId: activityId,
+            eventType: candidate.eventType,
+            eventName: eventName,
+            eventDate: candidate.scheduledAt,
+            startTime: candidate.scheduledAt.toIso8601String(),
+            goalTimeMinutes: candidate.goalTimeMinutes,
+            goalPaceMinutesPerMile: candidate.goalPaceMinutesPerMile,
+            createdAt: now,
+            updatedAt: now,
+          ),
         );
         savedEventsCount++;
       } catch (e) {
@@ -757,15 +768,23 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       }
 
       try {
-        final savedEvent = await _calendarService.createEvent(
-          userId: _currentUserId!,
-          eventType: event.activityType,
-          eventSubtype: event.eventType, // Store TP event type as subtype
-          eventName: event.eventName,
-          startTime: event.eventDate.toIso8601String(),
-          goalTimeMinutes: event.goalTimeHours != null
-              ? (event.goalTimeHours! * 60).round()
-              : null,
+        final now = DateTime.now();
+        final savedEvent = await eventsRepository.createEvent(
+          deviceId: _currentUserId!,
+          event: domain.Event(
+            id: '', // Let DB auto-generate
+            userId: _currentUserId!,
+            eventType: event.activityType,
+            eventSubtype: null,
+            eventName: event.eventName,
+            eventDate: event.eventDate,
+            startTime: event.eventDate.toIso8601String(),
+            goalTimeMinutes: event.goalTimeHours != null
+                ? (event.goalTimeHours! * 60).round()
+                : null,
+            createdAt: now,
+            updatedAt: now,
+          ),
         );
         savedEventsCount++;
         if (kDebugMode) {
@@ -808,7 +827,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<bool> connectTrainingPeaks() async {
-    return _connectProvider(
+    final connected = await _connectProvider(
       providerId: 'training_peaks',
       authenticate: () async {
         final oauthService = await _trainingPeaksOAuth;
@@ -821,6 +840,16 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         trainingPeaksAthleteName: athleteName,
       ),
     );
+
+    // Clear stale local block state when TP OAuth succeeds.
+    // We will re-apply the block later only if TP confirms non-premium.
+    if (connected) {
+      final prefs = ref.read(preferencesServiceProvider);
+      await prefs.setTpWritebackPremiumBlocked(false);
+      ref.invalidate(preferencesServiceProvider);
+    }
+
+    return connected;
   }
 
   Future<void> disconnectTrainingPeaks() async {
@@ -849,30 +878,33 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     // Use a wrapper class to handle the combined result from TrainingPeaks
     final _TPCombinedResultWrapper combinedResult =
         await _importWorkouts<_TPCombinedResultWrapper>(
-      providerId: 'training_peaks',
-      syncWorkouts: () async {
-        final result = await syncService.syncAll(_currentUserId!);
-        return _TPCombinedResultWrapper(result);
-      },
-      checkSuccess: (wrapper) => wrapper.fullResult.workoutResult.success,
-      checkNeedsReauth: (wrapper) =>
-          wrapper.fullResult.workoutResult.tokenExpired,
-      checkIsNetworkError: null,
-      getError: (wrapper) => wrapper.fullResult.workoutResult.error,
-      getSummary: (wrapper) => wrapper.fullResult.workoutResult.summary,
-      getErrorType: (wrapper) => 'sync_error',
-      getActivities: (wrapper) => wrapper.fullResult.workoutResult.activities,
-      getNewWorkouts: (wrapper) => wrapper.fullResult.workoutResult.newWorkouts,
-      getUpdated: (wrapper) => wrapper.fullResult.workoutResult.updated,
-      getSkipped: (wrapper) => wrapper.fullResult.workoutResult.unchanged,
-      getRaceCandidates: null,
-      getEventData: (wrapper) =>
-          wrapper.fullResult.eventResult?.hasEvent ?? false
+          providerId: 'training_peaks',
+          syncWorkouts: () async {
+            final result = await syncService.syncAll(_currentUserId!);
+            return _TPCombinedResultWrapper(result);
+          },
+          checkSuccess: (wrapper) => wrapper.fullResult.workoutResult.success,
+          checkNeedsReauth: (wrapper) =>
+              wrapper.fullResult.workoutResult.tokenExpired,
+          checkIsNetworkError: null,
+          getError: (wrapper) => wrapper.fullResult.workoutResult.error,
+          getSummary: (wrapper) => wrapper.fullResult.workoutResult.summary,
+          getErrorType: (wrapper) => 'sync_error',
+          getActivities: (wrapper) =>
+              wrapper.fullResult.workoutResult.activities,
+          getNewWorkouts: (wrapper) =>
+              wrapper.fullResult.workoutResult.newWorkouts,
+          getUpdated: (wrapper) => wrapper.fullResult.workoutResult.updated,
+          getSkipped: (wrapper) => wrapper.fullResult.workoutResult.unchanged,
+          getRaceCandidates: null,
+          getEventData: (wrapper) =>
+              wrapper.fullResult.eventResult?.hasEvent ?? false
               ? wrapper.fullResult.eventResult!.events
               : [],
-      createError: (error) =>
-          _TPCombinedResultWrapper.error(TrainingPeaksSyncResult.error(error)),
-    );
+          createError: (error) => _TPCombinedResultWrapper.error(
+            TrainingPeaksSyncResult.error(error),
+          ),
+        );
 
     return combinedResult.fullResult.workoutResult;
   }
@@ -894,7 +926,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       ref.invalidate(eventsControllerProvider);
       ref.invalidate(allEventsProvider);
       if (kDebugMode) {
-        print('🔄 Activities, calendar, events, and daily macros providers invalidated');
+        print(
+          '🔄 Activities, calendar, events, and daily macros providers invalidated',
+        );
       }
     } catch (e) {
       if (kDebugMode) {

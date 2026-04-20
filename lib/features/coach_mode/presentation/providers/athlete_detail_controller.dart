@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../activities/domain/activity.dart';
@@ -26,6 +27,7 @@ class AthleteDetailState {
   final UserProfile? athleteProfile;
   final List<Event> events;
   final List<CarbLoadingPlan> carbLoadingPlans;
+  final List<db.CarbLoadingDay> carbLoadingDays;
   final List<Activity> activities;
   final List<CoachMessage> messages;
   final bool isLoading;
@@ -36,6 +38,7 @@ class AthleteDetailState {
     this.athleteProfile,
     this.events = const [],
     this.carbLoadingPlans = const [],
+    this.carbLoadingDays = const [],
     this.activities = const [],
     this.messages = const [],
     this.isLoading = false,
@@ -47,6 +50,7 @@ class AthleteDetailState {
     UserProfile? athleteProfile,
     List<Event>? events,
     List<CarbLoadingPlan>? carbLoadingPlans,
+    List<db.CarbLoadingDay>? carbLoadingDays,
     List<Activity>? activities,
     List<CoachMessage>? messages,
     bool? isLoading,
@@ -57,6 +61,7 @@ class AthleteDetailState {
       athleteProfile: athleteProfile ?? this.athleteProfile,
       events: events ?? this.events,
       carbLoadingPlans: carbLoadingPlans ?? this.carbLoadingPlans,
+      carbLoadingDays: carbLoadingDays ?? this.carbLoadingDays,
       activities: activities ?? this.activities,
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
@@ -109,33 +114,69 @@ class AthleteDetailController extends _$AthleteDetailController {
       );
 
       // Fetch athlete's data from local database
-      final db = ref.read(appDatabaseProvider);
+      final database = ref.read(appDatabaseProvider);
 
       // Load athlete profile by user ID
-      final athleteProfile = await db.userDao.getUserProfileById(relationship.athleteUserId);
+      final athleteProfile = await database.userDao.getUserProfileById(
+        relationship.athleteUserId,
+      );
 
       // Load athlete events using Drift select syntax
-      final eventEntries = await (db.select(db.eventsTable)
-            ..where((t) => t.userId.equals(relationship.athleteUserId))
-            ..orderBy([(t) => OrderingTerm.asc(t.eventDate)]))
-          .get();
+      final eventEntries =
+          await (database.select(database.eventsTable)
+                ..where((t) => t.userId.equals(relationship.athleteUserId))
+                ..orderBy([(t) => OrderingTerm.asc(t.eventDate)]))
+              .get();
       final events = eventEntries.map((e) => _mapEventEntry(e)).toList();
 
       // Load athlete activities using Drift select syntax
-      final activityEntries = await (db.select(db.activitiesTable)
-            ..where((t) => t.userId.equals(relationship.athleteUserId) & t.deletedAt.isNull())
-            ..orderBy([(t) => OrderingTerm.desc(t.scheduledDateTime)]))
-          .get();
-      final activities = activityEntries.map((a) => _mapActivityEntry(a)).toList();
+      final activityEntries =
+          await (database.select(database.activitiesTable)
+                ..where(
+                  (t) =>
+                      t.userId.equals(relationship.athleteUserId) &
+                      t.deletedAt.isNull() &
+                      t.providerDeletedAt.isNull(),
+                )
+                ..orderBy([(t) => OrderingTerm.desc(t.scheduledDateTime)]))
+              .get();
+      final activities = activityEntries
+          .map((a) => _mapActivityEntry(a))
+          .toList();
 
       // Load athlete carb loading plans using Drift select syntax
       // Note: Database schema differs from domain model, so we map available fields
-      final carbLoadingPlanEntries = await (db.select(db.carbLoadingPlansTable)
-            ..where((t) => t.userId.equals(relationship.athleteUserId))
-            ..orderBy([(t) => OrderingTerm.desc(t.generatedAt)]))
-          .get();
+      final carbLoadingPlanEntries =
+          await (database.select(database.carbLoadingPlansTable)
+                ..where((t) => t.userId.equals(relationship.athleteUserId))
+                ..orderBy([(t) => OrderingTerm.desc(t.generatedAt)]))
+              .get();
       final carbLoadingPlans = carbLoadingPlanEntries
           .map((e) => _mapCarbLoadingPlanEntry(e))
+          .toList();
+
+      // Load athlete carb loading days by joining through plans (days table has no user_id column).
+      final carbLoadingDayRows =
+          await (database.select(database.carbLoadingDaysTable).join([
+                  innerJoin(
+                    database.carbLoadingPlansTable,
+                    database.carbLoadingPlansTable.id.equalsExp(
+                      database.carbLoadingDaysTable.carbLoadingPlanId,
+                    ),
+                  ),
+                ])
+                ..where(
+                  database.carbLoadingPlansTable.userId.equals(
+                    relationship.athleteUserId,
+                  ),
+                )
+                ..orderBy([
+                  OrderingTerm.asc(database.carbLoadingDaysTable.planDate),
+                  OrderingTerm.asc(database.carbLoadingDaysTable.dayNumber),
+                ]))
+              .get();
+      final carbLoadingDays = carbLoadingDayRows
+          .map((row) => row.readTable(database.carbLoadingDaysTable))
           .toList();
 
       return AthleteDetailState(
@@ -145,6 +186,7 @@ class AthleteDetailController extends _$AthleteDetailController {
         events: events,
         activities: activities,
         carbLoadingPlans: carbLoadingPlans,
+        carbLoadingDays: carbLoadingDays,
       );
     } catch (e) {
       return AthleteDetailState(
@@ -271,21 +313,24 @@ class AthleteDetailController extends _$AthleteDetailController {
 
       if (newMessage != null) {
         final updatedMessages = [newMessage, ...currentState.messages];
-        state = AsyncData(currentState.copyWith(
-          messages: updatedMessages,
-          isLoading: false,
-        ));
+        state = AsyncData(
+          currentState.copyWith(messages: updatedMessages, isLoading: false),
+        );
       } else {
-        state = AsyncData(currentState.copyWith(
-          isLoading: false,
-          error: 'Failed to send message',
-        ));
+        state = AsyncData(
+          currentState.copyWith(
+            isLoading: false,
+            error: 'Failed to send message',
+          ),
+        );
       }
     } catch (e) {
-      state = AsyncData(currentState.copyWith(
-        isLoading: false,
-        error: 'Failed to send message: ${e.toString()}',
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          isLoading: false,
+          error: 'Failed to send message: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -303,15 +348,16 @@ class AthleteDetailController extends _$AthleteDetailController {
           .where((m) => m.id != messageId)
           .toList();
 
-      state = AsyncData(currentState.copyWith(
-        messages: updatedMessages,
-        isLoading: false,
-      ));
+      state = AsyncData(
+        currentState.copyWith(messages: updatedMessages, isLoading: false),
+      );
     } catch (e) {
-      state = AsyncData(currentState.copyWith(
-        isLoading: false,
-        error: 'Failed to delete message: ${e.toString()}',
-      ));
+      state = AsyncData(
+        currentState.copyWith(
+          isLoading: false,
+          error: 'Failed to delete message: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -328,10 +374,12 @@ class AthleteDetailController extends _$AthleteDetailController {
 
     state = await AsyncValue.guard(() async {
       // Invalidate the cached sync provider to force a fresh sync
-      ref.invalidate(athleteDataSyncProvider(
-        currentState.relationship.id,
-        currentState.relationship.athleteUserId,
-      ));
+      ref.invalidate(
+        athleteDataSyncProvider(
+          currentState.relationship.id,
+          currentState.relationship.athleteUserId,
+        ),
+      );
 
       // Trigger on-demand sync for this athlete from Supabase
       await ref.read(
@@ -397,6 +445,27 @@ class AthleteDetailController extends _$AthleteDetailController {
       );
 
       // Reload to pick up the new plan
+      return await _loadAthleteDetails(currentState.relationship.id);
+    });
+  }
+
+  /// Delete carb loading plan for athlete
+  Future<void> deleteCarbLoadingPlan({required String eventId}) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = await AsyncValue.guard(() async {
+      final coachUserId = await ref.read(userIdProvider.future);
+      final service = ref.read(carbLoadingServiceProvider);
+
+      await service.deleteCarbLoadingPlan(
+        deviceId: coachUserId,
+        eventId: eventId,
+        currentUserId: coachUserId,
+        planOwnerId: currentState.relationship.athleteUserId,
+      );
+
+      // Reload to reflect the deleted plan
       return await _loadAthleteDetails(currentState.relationship.id);
     });
   }

@@ -9,6 +9,7 @@ import '../core/app_router.dart';
 import '../services/app_config.dart';
 import '../services/app_external_deps.dart';
 import '../services/auth/auth_listener_service.dart';
+import '../services/notification_service.dart';
 
 /// Root app widget that handles app initialization and navigation
 /// Following Andrea Bizzotto's patterns for app startup with deep link support
@@ -19,11 +20,63 @@ import '../services/auth/auth_listener_service.dart';
 /// - MaterialApp.builder wraps the router child with AppStartupWidget
 /// - This allows deep links to be processed while app initializes
 /// - Critical for OAuth redirects (e.g., com.milkman.mealvanaendurance://auth-callback)
-class RootAppWidget extends ConsumerWidget {
+class RootAppWidget extends ConsumerStatefulWidget {
   const RootAppWidget({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RootAppWidget> createState() => _RootAppWidgetState();
+}
+
+class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
+  @override
+  void initState() {
+    super.initState();
+
+    NotificationService.setNavigationHandler(_handleNotificationNavigation);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final pendingActivityId =
+          NotificationService.getPendingNavigationActivityId();
+      final pendingType = NotificationService.getPendingNavigationType();
+      if (pendingActivityId != null && pendingActivityId.isNotEmpty) {
+        _handleNotificationNavigation(pendingActivityId, pendingType);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    NotificationService.setNavigationHandler(null);
+    super.dispose();
+  }
+
+  void _handleNotificationNavigation(String activityId, String? type) {
+    if (!mounted || activityId.isEmpty) return;
+
+    final router = ref.read(AppRouter.routerProvider);
+
+    // Activity-upload notifications (Garmin, etc.) route to the fuel log screen
+    // so the user can rate the workout and log what they actually ate vs
+    // what they planned. Seed the stack with /plan first, then push /fuel-log
+    // on top — that way the close/back buttons pop back to the activity
+    // detail screen instead of crashing with "nothing to pop".
+    if (type == 'activity') {
+      router.go('/plan', extra: {'activityId': activityId});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        router.push(
+          '/fuel-log',
+          extra: {'activityId': activityId, 'isNewActivity': false},
+        );
+      });
+      return;
+    }
+
+    router.go('/plan', extra: {'activityId': activityId});
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Initialize auth listener ONCE at app startup
     // This is a singleton that lives for the lifetime of the app
     // It listens for auth state changes, invalidates user-specific providers,
@@ -128,9 +181,7 @@ class RootAppWidget extends ConsumerWidget {
                 themeMode: ThemeMode.dark,
                 routerConfig: goRouter,
                 builder: (context, child) {
-                  return AppStartupWidget(
-                    onLoaded: (_) => child!,
-                  );
+                  return AppStartupWidget(onLoaded: (_) => child!);
                 },
               ),
             );
@@ -152,9 +203,7 @@ class RootAppWidget extends ConsumerWidget {
                 themeMode: ThemeMode.dark,
                 routerConfig: goRouter,
                 builder: (context, child) {
-                  return AppStartupWidget(
-                    onLoaded: (_) => child!,
-                  );
+                  return AppStartupWidget(onLoaded: (_) => child!);
                 },
               ),
             );

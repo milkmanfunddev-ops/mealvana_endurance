@@ -51,9 +51,17 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
     this.sodiumHigh,
     this.fluidsLow,
     this.fluidsHigh,
+    this.carbsOverridden = false,
+    this.sodiumOverridden = false,
+    this.fluidsOverridden = false,
+    this.carbsOverrideLabel,
+    this.sodiumOverrideLabel,
+    this.fluidsOverrideLabel,
     this.macroTargets,
     this.bodyWeightKg = 70.0,
     this.sportLabel,
+    this.brickSegment,
+    this.isBrick = false,
   });
 
   final PlanSection section;
@@ -106,11 +114,21 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
   final int? sodiumHigh;
   final int? fluidsLow;
   final int? fluidsHigh;
+  final bool carbsOverridden;
+  final bool sodiumOverridden;
+  final bool fluidsOverridden;
+  final String? carbsOverrideLabel;
+  final String? sodiumOverrideLabel;
+  final String? fluidsOverrideLabel;
 
   /// Optional macro targets for explanation sheet
   final MacroTargets? macroTargets;
   final double bodyWeightKg;
   final String? sportLabel;
+
+  /// Brick segment data for brick workout transparency
+  final BrickSegmentMacroTarget? brickSegment;
+  final bool isBrick;
 
   @override
   ConsumerState<DuringPhaseSectionWidget> createState() =>
@@ -170,6 +188,12 @@ class _DuringPhaseSectionWidgetState
             sodiumHigh: widget.sodiumHigh,
             fluidsLow: widget.fluidsLow,
             fluidsHigh: widget.fluidsHigh,
+            carbsOverridden: widget.carbsOverridden,
+            sodiumOverridden: widget.sodiumOverridden,
+            fluidsOverridden: widget.fluidsOverridden,
+            carbsOverrideLabel: widget.carbsOverrideLabel,
+            sodiumOverrideLabel: widget.sodiumOverrideLabel,
+            fluidsOverrideLabel: widget.fluidsOverrideLabel,
           ),
           const SizedBox(height: AppSpacing.md),
           if (_showByHour && widget.section.byHourData != null)
@@ -222,6 +246,8 @@ class _DuringPhaseSectionWidgetState
                   sportLabel: widget.sportLabel,
                   useImperial: widget.useImperial,
                   foods: widget.section.foodItems,
+                  brickSegment: widget.brickSegment,
+                  isBrick: widget.isBrick,
                 );
               },
             ),

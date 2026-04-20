@@ -96,135 +96,153 @@ class NutritionPlanMapper {
           if (plan.containsKey('during_segments')) {
             sections = _parseBrickV2Plan(plan, planData);
           } else {
+            final List<PlanSection> parsedSections = [];
 
-          final List<PlanSection> parsedSections = [];
+            // Parse "before" section - check for v2 sub-phase format vs v1 flat list
+            if (plan['before'] is Map) {
+              // V2 format: before is an object with meal/snack/top_up sub-phases
+              final beforeMap = plan['before'] as Map<String, dynamic>;
+              final List<BeforeSubPhase> subPhases = [];
 
-          // Parse "before" section - check for v2 sub-phase format vs v1 flat list
-          if (plan['before'] is Map) {
-            // V2 format: before is an object with meal/snack/top_up sub-phases
-            final beforeMap = plan['before'] as Map<String, dynamic>;
-            final List<BeforeSubPhase> subPhases = [];
-
-            for (final key in ['meal', 'snack', 'top_up']) {
-              if (beforeMap[key] is Map) {
-                subPhases.add(
-                  BeforeSubPhase.fromJson(
-                    beforeMap[key] as Map<String, dynamic>,
-                  ),
-                );
+              for (final key in ['meal', 'snack', 'top_up']) {
+                if (beforeMap[key] is Map) {
+                  subPhases.add(
+                    BeforeSubPhase.fromJson(
+                      beforeMap[key] as Map<String, dynamic>,
+                    ),
+                  );
+                }
               }
-            }
 
-            parsedSections.add(
-              PlanSection(
-                id: 'before_run',
-                title: 'Before Run',
-                subtitle: 'Pre-workout nutrition',
-                foodItems: const [], // Foods live in sub-phases
-                subPhases: subPhases,
-              ),
-            );
-          } else if (plan['before'] is List) {
-            // V1 format: before is a flat list of food items
-            parsedSections.add(
-              PlanSection.fromEdgeFunctionJson(
-                'before_run',
-                plan['before'] as List<dynamic>,
-              ),
-            );
-          }
-
-          // Parse "during" section — V2 may return Map {foods, by_hour_data} or List
-          if (plan['during'] is Map) {
-            final duringMap = plan['during'] as Map<String, dynamic>;
-            final duringFoods = duringMap['foods'] as List<dynamic>? ?? [];
-            final section = PlanSection.fromEdgeFunctionJson(
-              'during_run',
-              duringFoods,
-            );
-            // Parse byHourData if server provided it
-            final byHourJson =
-                duringMap['by_hour_data'] as Map<String, dynamic>?;
-            if (byHourJson != null) {
               parsedSections.add(
-                section.copyWith(byHourData: ByHourData.fromJson(byHourJson)),
+                PlanSection(
+                  id: 'before_run',
+                  title: 'Before Run',
+                  subtitle: 'Pre-workout nutrition',
+                  foodItems: const [], // Foods live in sub-phases
+                  subPhases: subPhases,
+                ),
               );
-            } else {
-              parsedSections.add(section);
+            } else if (plan['before'] is List) {
+              // V1 format: before is a flat list of food items
+              parsedSections.add(
+                PlanSection.fromEdgeFunctionJson(
+                  'before_run',
+                  plan['before'] as List<dynamic>,
+                ),
+              );
             }
-          } else if (plan['during'] is List) {
-            // Backward compat: plain array of food items
-            parsedSections.add(
-              PlanSection.fromEdgeFunctionJson(
+
+            // Parse "during" section — V2 may return Map {foods, by_hour_data} or List
+            if (plan['during'] is Map) {
+              final duringMap = plan['during'] as Map<String, dynamic>;
+              final duringFoods = duringMap['foods'] as List<dynamic>? ?? [];
+              final section = PlanSection.fromEdgeFunctionJson(
                 'during_run',
-                plan['during'] as List<dynamic>,
-              ),
-            );
-          }
-
-          // Parse "after" section
-          if (plan['after'] is List) {
-            parsedSections.add(
-              PlanSection.fromEdgeFunctionJson(
-                'after_run',
-                plan['after'] as List<dynamic>,
-              ),
-            );
-          }
-
-          // Apply per-phase targets from macro_targets (snake_case from V2 edge function)
-          final macroTargetsMap =
-              planData['macro_targets'] as Map<String, dynamic>?;
-          DebugLogger.info(
-            '🎯 OVERRIDE DEBUG [3/5]: fromSupabaseJson - macro_targets found=${macroTargetsMap != null}, '
-            'planData keys=${planData.keys.toList()}, '
-            'pre_run=${macroTargetsMap?['pre_run']}, '
-            'during_run=${macroTargetsMap?['during_run']}, '
-            'post_run=${macroTargetsMap?['post_run']}',
-          );
-          if (macroTargetsMap != null) {
-            sections = parsedSections.map((section) {
-              Map<String, dynamic>? phaseTargets;
-              if (section.id == 'before_run') {
-                phaseTargets =
-                    macroTargetsMap['pre_run'] as Map<String, dynamic>?;
-              } else if (section.id == 'during_run') {
-                phaseTargets =
-                    macroTargetsMap['during_run'] as Map<String, dynamic>?;
-              } else if (section.id == 'after_run') {
-                phaseTargets =
-                    macroTargetsMap['post_run'] as Map<String, dynamic>?;
-              }
-              if (phaseTargets != null) {
-                DebugLogger.info(
-                  '🎯 OVERRIDE DEBUG [3/5]: Applying targets to section ${section.id}: '
-                  'carbs=${phaseTargets['carbs_g']}, protein=${phaseTargets['protein_g']}, '
-                  'sodium=${phaseTargets['sodium_mg']}, fluids=${phaseTargets['water_ml']}',
-                );
-                return section.copyWith(
-                  carbsTarget: (phaseTargets['carbs_g'] as num?)?.toDouble(),
-                  proteinTarget: (phaseTargets['protein_g'] as num?)
-                      ?.toDouble(),
-                  fatTarget: (phaseTargets['fat_g'] as num?)?.toDouble(),
-                  sodiumTarget: (phaseTargets['sodium_mg'] as num?)?.toDouble(),
-                  fluidsTarget: (phaseTargets['water_ml'] as num?)?.toDouble(),
-                );
-              }
-              DebugLogger.info(
-                '🎯 OVERRIDE DEBUG [3/5]: No phaseTargets for section ${section.id}',
+                duringFoods,
               );
-              return section;
-            }).toList();
-          } else {
-            DebugLogger.info(
-              '🎯 OVERRIDE DEBUG [3/5]: macro_targets NOT found in planData - targets will be null!',
-            );
-            sections = parsedSections;
-          }
-          DebugLogger.info(
-            '✅ Parsed ${sections.length} sections from Edge Function format',
-          );
+              // Parse byHourData if server provided it
+              final byHourJson =
+                  duringMap['by_hour_data'] as Map<String, dynamic>?;
+              if (byHourJson != null) {
+                parsedSections.add(
+                  section.copyWith(byHourData: ByHourData.fromJson(byHourJson)),
+                );
+              } else {
+                parsedSections.add(section);
+              }
+            } else if (plan['during'] is List) {
+              // Backward compat: plain array of food items
+              parsedSections.add(
+                PlanSection.fromEdgeFunctionJson(
+                  'during_run',
+                  plan['during'] as List<dynamic>,
+                ),
+              );
+            }
 
+            // Parse "after" section
+            if (plan['after'] is List) {
+              parsedSections.add(
+                PlanSection.fromEdgeFunctionJson(
+                  'after_run',
+                  plan['after'] as List<dynamic>,
+                ),
+              );
+            }
+
+            // Apply per-phase targets from macro_targets (snake_case from V2 edge function)
+            // Use Map.from() to guarantee Map<String, dynamic> runtime type
+            final macroTargetsMap = planData['macro_targets'] is Map
+                ? Map<String, dynamic>.from(planData['macro_targets'] as Map)
+                : null;
+            DebugLogger.info(
+              '🎯 OVERRIDE DEBUG [3/5]: fromSupabaseJson - macro_targets found=${macroTargetsMap != null}, '
+              'planData keys=${planData.keys.toList()}, '
+              'pre_run type=${macroTargetsMap?['pre_run']?.runtimeType}, '
+              'during_run type=${macroTargetsMap?['during_run']?.runtimeType}, '
+              'post_run type=${macroTargetsMap?['post_run']?.runtimeType}',
+            );
+            if (macroTargetsMap != null) {
+              sections = parsedSections.map((section) {
+                Map<String, dynamic>? phaseTargets;
+                final rawTargets = section.id == 'before_run'
+                    ? macroTargetsMap['pre_run']
+                    : section.id == 'during_run'
+                    ? macroTargetsMap['during_run']
+                    : section.id == 'after_run'
+                    ? macroTargetsMap['post_run']
+                    : null;
+                if (rawTargets is Map) {
+                  phaseTargets = Map<String, dynamic>.from(rawTargets);
+                }
+                if (phaseTargets != null) {
+                  DebugLogger.info(
+                    '🎯 OVERRIDE DEBUG [3/5]: Applying targets to section ${section.id}: '
+                    'carbs=${phaseTargets['carbs_g']}, protein=${phaseTargets['protein_g']}, '
+                    'sodium=${phaseTargets['sodium_mg']}, fluids=${phaseTargets['water_ml']}',
+                  );
+                  return section.copyWith(
+                    carbsTarget: (phaseTargets['carbs_g'] as num?)?.toDouble(),
+                    proteinTarget: (phaseTargets['protein_g'] as num?)
+                        ?.toDouble(),
+                    fatTarget: (phaseTargets['fat_g'] as num?)?.toDouble(),
+                    sodiumTarget: (phaseTargets['sodium_mg'] as num?)
+                        ?.toDouble(),
+                    fluidsTarget: (phaseTargets['water_ml'] as num?)
+                        ?.toDouble(),
+                    carbsLowTarget: (phaseTargets['carbs_low_g'] as num?)
+                        ?.toDouble(),
+                    carbsHighTarget: (phaseTargets['carbs_high_g'] as num?)
+                        ?.toDouble(),
+                    proteinLowTarget: (phaseTargets['protein_low_g'] as num?)
+                        ?.toDouble(),
+                    proteinHighTarget: (phaseTargets['protein_high_g'] as num?)
+                        ?.toDouble(),
+                    sodiumLowTarget: (phaseTargets['sodium_low_mg'] as num?)
+                        ?.toDouble(),
+                    sodiumHighTarget: (phaseTargets['sodium_high_mg'] as num?)
+                        ?.toDouble(),
+                    fluidsLowTarget: (phaseTargets['water_low_ml'] as num?)
+                        ?.toDouble(),
+                    fluidsHighTarget: (phaseTargets['water_high_ml'] as num?)
+                        ?.toDouble(),
+                  );
+                }
+                DebugLogger.info(
+                  '🎯 OVERRIDE DEBUG [3/5]: No phaseTargets for section ${section.id}',
+                );
+                return section;
+              }).toList();
+            } else {
+              DebugLogger.info(
+                '🎯 OVERRIDE DEBUG [3/5]: macro_targets NOT found in planData - targets will be null!',
+              );
+              sections = parsedSections;
+            }
+            DebugLogger.info(
+              '✅ Parsed ${sections.length} sections from Edge Function format',
+            );
           } // end of non-brick else block
         } catch (e) {
           DebugLogger.error(
@@ -252,9 +270,15 @@ class NutritionPlanMapper {
         planData != null &&
         planData['macro_targets'] is Map) {
       try {
-        final mt = planData['macro_targets'] as Map<String, dynamic>;
-        final pre = mt['pre_run'] as Map<String, dynamic>? ?? {};
-        final post = mt['post_run'] as Map<String, dynamic>? ?? {};
+        // Use Map.from() to ensure Map<String, dynamic> runtime type — JSON-decoded
+        // maps can have inferred value types that cause 'is not a subtype' errors.
+        final mt = Map<String, dynamic>.from(planData['macro_targets'] as Map);
+        final pre = mt['pre_run'] is Map
+            ? Map<String, dynamic>.from(mt['pre_run'] as Map)
+            : <String, dynamic>{};
+        final post = mt['post_run'] is Map
+            ? Map<String, dynamic>.from(mt['post_run'] as Map)
+            : <String, dynamic>{};
 
         // Check for brick format with phases structure
         num duringCarbs = 0;
@@ -277,14 +301,17 @@ class NutritionPlanMapper {
             }
           }
         } else {
-          final during = mt['during_run'] as Map<String, dynamic>? ?? {};
+          final during = mt['during_run'] is Map
+              ? Map<String, dynamic>.from(mt['during_run'] as Map)
+              : <String, dynamic>{};
           duringCarbs = (during['carbs_g'] as num?) ?? 0;
           duringSodium = (during['sodium_mg'] as num?) ?? 0;
         }
 
         // Sum across all phases for the overall summary
         final totalCarbs =
-            ((pre['carbs_g'] as num?) ?? 0) + duringCarbs +
+            ((pre['carbs_g'] as num?) ?? 0) +
+            duringCarbs +
             ((post['carbs_g'] as num?) ?? 0);
         final totalProtein =
             ((pre['protein_g'] as num?) ?? 0) +
@@ -292,7 +319,8 @@ class NutritionPlanMapper {
         final totalFat =
             ((pre['fat_g'] as num?) ?? 0) + ((post['fat_g'] as num?) ?? 0);
         final totalSodium =
-            ((pre['sodium_mg'] as num?) ?? 0) + duringSodium +
+            ((pre['sodium_mg'] as num?) ?? 0) +
+            duringSodium +
             ((post['sodium_mg'] as num?) ?? 0);
         final totalCalories = (totalCarbs * 4 + totalProtein * 4 + totalFat * 9)
             .round();
@@ -367,10 +395,12 @@ class NutritionPlanMapper {
     Map<String, dynamic> planData,
   ) {
     final sections = <PlanSection>[];
-    final macroTargetsMap =
-        planData['macro_targets'] as Map<String, dynamic>?;
-    final phases =
-        macroTargetsMap?['phases'] as Map<String, dynamic>?;
+    final macroTargetsMap = planData['macro_targets'] is Map
+        ? Map<String, dynamic>.from(planData['macro_targets'] as Map)
+        : null;
+    final phases = macroTargetsMap?['phases'] is Map
+        ? Map<String, dynamic>.from(macroTargetsMap!['phases'] as Map)
+        : null;
 
     // 1. Before Brick — parse V2 sub-phases (meal/snack/top_up) or V1 flat list
     DebugLogger.info(
@@ -380,62 +410,92 @@ class NutritionPlanMapper {
       final beforeMap = plan['before'] as Map<String, dynamic>;
       final subPhases = <BeforeSubPhase>[];
 
-      DebugLogger.info(
-        'Brick V2: before keys=${beforeMap.keys.toList()}',
-      );
+      DebugLogger.info('Brick V2: before keys=${beforeMap.keys.toList()}');
 
       for (final key in ['meal', 'snack', 'top_up']) {
         if (beforeMap[key] is Map) {
           subPhases.add(
-            BeforeSubPhase.fromJson(
-              beforeMap[key] as Map<String, dynamic>,
-            ),
+            BeforeSubPhase.fromJson(beforeMap[key] as Map<String, dynamic>),
           );
         }
       }
 
       // Apply before targets from phases or pre_run
-      final beforeTargets =
-          (phases?['before'] ?? macroTargetsMap?['pre_run'])
-              as Map<String, dynamic>?;
+      final rawBeforeTargets = phases?['before'] ?? macroTargetsMap?['pre_run'];
+      final beforeTargets = rawBeforeTargets is Map
+          ? Map<String, dynamic>.from(rawBeforeTargets)
+          : null;
 
-      sections.add(PlanSection(
-        id: 'before',
-        title: 'Before Brick',
-        subtitle: 'Pre-workout nutrition',
-        foodItems: const [],
-        subPhases: subPhases,
-        carbsTarget: (beforeTargets?['carbs_g'] as num?)?.toDouble(),
-        proteinTarget: (beforeTargets?['protein_g'] as num?)?.toDouble(),
-        fatTarget: (beforeTargets?['fat_g'] as num?)?.toDouble(),
-        sodiumTarget: (beforeTargets?['sodium_mg'] as num?)?.toDouble(),
-        fluidsTarget: (beforeTargets?['water_ml'] as num?)?.toDouble(),
-      ));
+      sections.add(
+        PlanSection(
+          id: 'before',
+          title: 'Before Brick',
+          subtitle: 'Pre-workout nutrition',
+          foodItems: const [],
+          subPhases: subPhases,
+          carbsTarget: (beforeTargets?['carbs_g'] as num?)?.toDouble(),
+          proteinTarget: (beforeTargets?['protein_g'] as num?)?.toDouble(),
+          fatTarget: (beforeTargets?['fat_g'] as num?)?.toDouble(),
+          sodiumTarget: (beforeTargets?['sodium_mg'] as num?)?.toDouble(),
+          fluidsTarget: (beforeTargets?['water_ml'] as num?)?.toDouble(),
+          carbsLowTarget: (beforeTargets?['carbs_low_g'] as num?)?.toDouble(),
+          carbsHighTarget: (beforeTargets?['carbs_high_g'] as num?)?.toDouble(),
+          proteinLowTarget: (beforeTargets?['protein_low_g'] as num?)
+              ?.toDouble(),
+          proteinHighTarget: (beforeTargets?['protein_high_g'] as num?)
+              ?.toDouble(),
+          sodiumLowTarget: (beforeTargets?['sodium_low_mg'] as num?)
+              ?.toDouble(),
+          sodiumHighTarget: (beforeTargets?['sodium_high_mg'] as num?)
+              ?.toDouble(),
+          fluidsLowTarget: (beforeTargets?['water_low_ml'] as num?)?.toDouble(),
+          fluidsHighTarget: (beforeTargets?['water_high_ml'] as num?)
+              ?.toDouble(),
+        ),
+      );
     } else if (plan['before'] is List) {
-      final beforeTargets =
-          (phases?['before'] ?? macroTargetsMap?['pre_run'])
-              as Map<String, dynamic>?;
-      sections.add(PlanSection(
-        id: 'before',
-        title: 'Before Brick',
-        subtitle: 'Pre-workout nutrition',
-        foodItems: (plan['before'] as List<dynamic>)
-            .map((item) =>
-                FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>))
-            .toList(),
-        carbsTarget: (beforeTargets?['carbs_g'] as num?)?.toDouble(),
-        proteinTarget: (beforeTargets?['protein_g'] as num?)?.toDouble(),
-        fatTarget: (beforeTargets?['fat_g'] as num?)?.toDouble(),
-        sodiumTarget: (beforeTargets?['sodium_mg'] as num?)?.toDouble(),
-        fluidsTarget: (beforeTargets?['water_ml'] as num?)?.toDouble(),
-      ));
+      final rawBt = phases?['before'] ?? macroTargetsMap?['pre_run'];
+      final beforeTargets = rawBt is Map
+          ? Map<String, dynamic>.from(rawBt)
+          : null;
+      sections.add(
+        PlanSection(
+          id: 'before',
+          title: 'Before Brick',
+          subtitle: 'Pre-workout nutrition',
+          foodItems: (plan['before'] as List<dynamic>)
+              .map(
+                (item) => FoodItemData.fromEdgeFunctionJson(
+                  item as Map<String, dynamic>,
+                ),
+              )
+              .toList(),
+          carbsTarget: (beforeTargets?['carbs_g'] as num?)?.toDouble(),
+          proteinTarget: (beforeTargets?['protein_g'] as num?)?.toDouble(),
+          fatTarget: (beforeTargets?['fat_g'] as num?)?.toDouble(),
+          sodiumTarget: (beforeTargets?['sodium_mg'] as num?)?.toDouble(),
+          fluidsTarget: (beforeTargets?['water_ml'] as num?)?.toDouble(),
+          carbsLowTarget: (beforeTargets?['carbs_low_g'] as num?)?.toDouble(),
+          carbsHighTarget: (beforeTargets?['carbs_high_g'] as num?)?.toDouble(),
+          proteinLowTarget: (beforeTargets?['protein_low_g'] as num?)
+              ?.toDouble(),
+          proteinHighTarget: (beforeTargets?['protein_high_g'] as num?)
+              ?.toDouble(),
+          sodiumLowTarget: (beforeTargets?['sodium_low_mg'] as num?)
+              ?.toDouble(),
+          sodiumHighTarget: (beforeTargets?['sodium_high_mg'] as num?)
+              ?.toDouble(),
+          fluidsLowTarget: (beforeTargets?['water_low_ml'] as num?)?.toDouble(),
+          fluidsHighTarget: (beforeTargets?['water_high_ml'] as num?)
+              ?.toDouble(),
+        ),
+      );
     }
 
     // 2. During segments + interleaved transitions
     final duringSegmentsData =
         plan['during_segments'] as Map<String, dynamic>? ?? {};
-    final transitionsData =
-        plan['transitions'] as Map<String, dynamic>? ?? {};
+    final transitionsData = plan['transitions'] as Map<String, dynamic>? ?? {};
 
     // Build segment targets map from phases.during_segments
     final segmentTargetsMap = <int, Map<String, dynamic>>{};
@@ -471,19 +531,29 @@ class NutritionPlanMapper {
       final sportName = _getSportDisplayName(sport);
 
       final foodItems = segmentItems
-          .map((item) =>
-              FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>))
+          .map(
+            (item) =>
+                FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>),
+          )
           .toList();
 
-      sections.add(PlanSection(
-        id: 'during_segment_$segmentOrder',
-        title: 'During $sportName',
-        subtitle: null,
-        foodItems: foodItems,
-        carbsTarget: (segTargets?['carbs_g'] as num?)?.toDouble(),
-        sodiumTarget: (segTargets?['sodium_mg'] as num?)?.toDouble(),
-        fluidsTarget: (segTargets?['water_ml'] as num?)?.toDouble(),
-      ));
+      sections.add(
+        PlanSection(
+          id: 'during_segment_$segmentOrder',
+          title: 'During $sportName',
+          subtitle: null,
+          foodItems: foodItems,
+          carbsTarget: (segTargets?['carbs_g'] as num?)?.toDouble(),
+          sodiumTarget: (segTargets?['sodium_mg'] as num?)?.toDouble(),
+          fluidsTarget: (segTargets?['water_ml'] as num?)?.toDouble(),
+          carbsLowTarget: (segTargets?['carbs_low_g'] as num?)?.toDouble(),
+          carbsHighTarget: (segTargets?['carbs_high_g'] as num?)?.toDouble(),
+          sodiumLowTarget: (segTargets?['sodium_low_mg'] as num?)?.toDouble(),
+          sodiumHighTarget: (segTargets?['sodium_high_mg'] as num?)?.toDouble(),
+          fluidsLowTarget: (segTargets?['water_low_ml'] as num?)?.toDouble(),
+          fluidsHighTarget: (segTargets?['water_high_ml'] as num?)?.toDouble(),
+        ),
+      );
 
       // Add transition after each segment (except the last)
       final transitionKey = 'T${segmentIndex + 1}';
@@ -492,18 +562,34 @@ class NutritionPlanMapper {
             transitionsData[transitionKey] as List<dynamic>? ?? [];
         final transTargets = transitionTargetsMap[transitionKey];
 
-        sections.add(PlanSection(
-          id: transitionKey,
-          title: 'Transition ($transitionKey)',
-          subtitle: 'Quick refuel between segments',
-          foodItems: transitionItems
-              .map((item) => FoodItemData.fromEdgeFunctionJson(
-                  item as Map<String, dynamic>))
-              .toList(),
-          carbsTarget: (transTargets?['carbs_g'] as num?)?.toDouble(),
-          sodiumTarget: (transTargets?['sodium_mg'] as num?)?.toDouble(),
-          fluidsTarget: (transTargets?['water_ml'] as num?)?.toDouble(),
-        ));
+        sections.add(
+          PlanSection(
+            id: transitionKey,
+            title: 'Transition ($transitionKey)',
+            subtitle: 'Quick refuel between segments',
+            foodItems: transitionItems
+                .map(
+                  (item) => FoodItemData.fromEdgeFunctionJson(
+                    item as Map<String, dynamic>,
+                  ),
+                )
+                .toList(),
+            carbsTarget: (transTargets?['carbs_g'] as num?)?.toDouble(),
+            sodiumTarget: (transTargets?['sodium_mg'] as num?)?.toDouble(),
+            fluidsTarget: (transTargets?['water_ml'] as num?)?.toDouble(),
+            carbsLowTarget: (transTargets?['carbs_low_g'] as num?)?.toDouble(),
+            carbsHighTarget: (transTargets?['carbs_high_g'] as num?)
+                ?.toDouble(),
+            sodiumLowTarget: (transTargets?['sodium_low_mg'] as num?)
+                ?.toDouble(),
+            sodiumHighTarget: (transTargets?['sodium_high_mg'] as num?)
+                ?.toDouble(),
+            fluidsLowTarget: (transTargets?['water_low_ml'] as num?)
+                ?.toDouble(),
+            fluidsHighTarget: (transTargets?['water_high_ml'] as num?)
+                ?.toDouble(),
+          ),
+        );
       }
 
       segmentIndex++;
@@ -511,23 +597,41 @@ class NutritionPlanMapper {
 
     // 3. After Brick
     if (plan['after'] is List) {
-      final afterTargets =
-          (phases?['after'] ?? macroTargetsMap?['post_run'])
-              as Map<String, dynamic>?;
+      final rawAt = phases?['after'] ?? macroTargetsMap?['post_run'];
+      final afterTargets = rawAt is Map
+          ? Map<String, dynamic>.from(rawAt)
+          : null;
 
-      sections.add(PlanSection(
-        id: 'after',
-        title: 'After Brick',
-        subtitle: 'Within 30-60 minutes post-workout',
-        foodItems: (plan['after'] as List<dynamic>)
-            .map((item) =>
-                FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>))
-            .toList(),
-        carbsTarget: (afterTargets?['carbs_g'] as num?)?.toDouble(),
-        proteinTarget: (afterTargets?['protein_g'] as num?)?.toDouble(),
-        sodiumTarget: (afterTargets?['sodium_mg'] as num?)?.toDouble(),
-        fluidsTarget: (afterTargets?['water_ml'] as num?)?.toDouble(),
-      ));
+      sections.add(
+        PlanSection(
+          id: 'after',
+          title: 'After Brick',
+          subtitle: 'Within 30-60 minutes post-workout',
+          foodItems: (plan['after'] as List<dynamic>)
+              .map(
+                (item) => FoodItemData.fromEdgeFunctionJson(
+                  item as Map<String, dynamic>,
+                ),
+              )
+              .toList(),
+          carbsTarget: (afterTargets?['carbs_g'] as num?)?.toDouble(),
+          proteinTarget: (afterTargets?['protein_g'] as num?)?.toDouble(),
+          sodiumTarget: (afterTargets?['sodium_mg'] as num?)?.toDouble(),
+          fluidsTarget: (afterTargets?['water_ml'] as num?)?.toDouble(),
+          carbsLowTarget: (afterTargets?['carbs_low_g'] as num?)?.toDouble(),
+          carbsHighTarget: (afterTargets?['carbs_high_g'] as num?)?.toDouble(),
+          proteinLowTarget: (afterTargets?['protein_low_g'] as num?)
+              ?.toDouble(),
+          proteinHighTarget: (afterTargets?['protein_high_g'] as num?)
+              ?.toDouble(),
+          sodiumLowTarget: (afterTargets?['sodium_low_mg'] as num?)?.toDouble(),
+          sodiumHighTarget: (afterTargets?['sodium_high_mg'] as num?)
+              ?.toDouble(),
+          fluidsLowTarget: (afterTargets?['water_low_ml'] as num?)?.toDouble(),
+          fluidsHighTarget: (afterTargets?['water_high_ml'] as num?)
+              ?.toDouble(),
+        ),
+      );
     }
 
     DebugLogger.info(

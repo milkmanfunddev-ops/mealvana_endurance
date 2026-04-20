@@ -507,6 +507,8 @@ class FoodRepository with SyncableRepository {
     final servingAmount = (json['serving_amount'] as num?)?.toDouble() ?? 1.0;
     final String? servingSize = json['serving_size'] as String?;
     final imageAddress = json['image_address'] as String?;
+    final displayName = json['display_name'] as String?;
+    final rawName = json['name'] as String;
 
     // Parse categories from JSON array
     final categoriesJson = json['categories'];
@@ -519,7 +521,7 @@ class FoodRepository with SyncableRepository {
 
     return FoodItem(
       id: json['id'] as String,
-      name: json['name'] as String,
+      name: displayName ?? rawName,
       imageAddress: imageAddress,
       categories: mappedCategories,
       servingSize: servingSize,
@@ -549,7 +551,7 @@ class FoodRepository with SyncableRepository {
         fluids: fluids,
       ),
       tags: _generateTagsFromNutrition(carbs, protein, fat),
-      displayName: json['display_name'] as String?,
+      displayName: displayName,
       displayNamePlural: json['display_name_plural'] as String?,
       toExcludeFromSolver: json['to_exclude_from_solver'] == true,
     );
@@ -585,6 +587,8 @@ class FoodRepository with SyncableRepository {
 
     // Debug logging
     final imageAddress = json['image_address'] as String?;
+    final edgeDisplayName = json['display_name'] as String?;
+    final edgeRawName = json['name'] as String;
 
     // Parse categories from JSON array
     final categoriesJson = json['categories'];
@@ -597,7 +601,7 @@ class FoodRepository with SyncableRepository {
 
     return FoodItem(
       id: json['id'] as String,
-      name: json['name'] as String,
+      name: edgeDisplayName ?? edgeRawName,
       imageAddress: imageAddress,
       description: json['description'] as String?,
       instructions: json['instructions'] as String?,
@@ -634,7 +638,7 @@ class FoodRepository with SyncableRepository {
         fluids: fluids,
       ),
       tags: _generateTagsFromNutrition(carbs, protein, fat),
-      displayName: json['display_name'] as String?,
+      displayName: edgeDisplayName,
       displayNamePlural: json['display_name_plural'] as String?,
       displayOverride:
           null, // Removed - no longer needed in simplified approach

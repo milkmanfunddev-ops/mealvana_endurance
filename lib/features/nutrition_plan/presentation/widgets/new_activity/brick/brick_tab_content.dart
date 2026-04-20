@@ -13,6 +13,7 @@ import '../../../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../../../theme/kyle_design/app_colors.dart';
 import '../shared/workout_details_widget.dart';
+import '../shared/activity_name_field.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/indoor_outdoor_toggle.dart';
 import '../shared/environment_section.dart';
 import '../shared/fasted_toggle.dart';
@@ -42,6 +43,14 @@ class BrickTabContent extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        ActivityNameField(
+          value: formState.activityTitle,
+          onChanged: controller.updateActivityTitle,
+          hint: 'e.g., SWIM/BIKE BRICK',
+        ),
+
+        const SizedBox(height: AppSpacing.xl),
+
         // Sport toggle selector (horizontal row)
         BrickSportToggleSelector(
           selectedSports: formState.selectedSports,
@@ -70,7 +79,8 @@ class BrickTabContent extends ConsumerWidget {
           isFasted: formState.isFasted,
           onChanged: controller.updateFasted,
           showWarning: showFastedWarning,
-          warningText: 'Fasted training is not recommended for longer or harder bricks. Consider fueling before.',
+          warningText:
+              'Fasted training is not recommended for longer or harder bricks. Consider fueling before.',
         ),
 
         const SizedBox(height: AppSpacing.xl),
@@ -98,7 +108,10 @@ class BrickTabContent extends ConsumerWidget {
     );
   }
 
-  bool _shouldWarnFasted(BrickFormState formState, BrickInputController controller) {
+  bool _shouldWarnFasted(
+    BrickFormState formState,
+    BrickInputController controller,
+  ) {
     // Warn if any segment is swimming, any segment is hard (conversational < 70),
     // or the total brick duration is long.
     if (formState.selectedSports.contains('swimming')) return true;
@@ -106,7 +119,9 @@ class BrickTabContent extends ConsumerWidget {
     for (final sport in formState.selectedSports) {
       final input = formState.segmentInputs[sport];
       if (input == null) continue;
-      final intensity = input.intensityDistribution ?? IntensityDistribution.defaultDistribution();
+      final intensity =
+          input.intensityDistribution ??
+          IntensityDistribution.defaultDistribution();
       if (intensity.conversationalPct < 70) return true;
     }
 
@@ -213,8 +228,11 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
                     index: widget.order - 1,
                     child: Icon(
                       Icons.drag_handle,
-                      color: (widget.isDark ? AppColors.cream : AppColors.blackberry)
-                          .withValues(alpha: 0.5),
+                      color:
+                          (widget.isDark
+                                  ? AppColors.cream
+                                  : AppColors.blackberry)
+                              .withValues(alpha: 0.5),
                     ),
                   ),
 
@@ -234,7 +252,9 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
                     child: Text(
                       '${widget.order}. ${_getSportDisplayName(widget.sport)}',
                       style: AppTextStyles.descriptor.copyWith(
-                        color: widget.isDark ? AppColors.cream : AppColors.blackberry,
+                        color: widget.isDark
+                            ? AppColors.cream
+                            : AppColors.blackberry,
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),
@@ -242,12 +262,16 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
                   ),
 
                   // Duration summary (when collapsed)
-                  if (!_isExpanded && (widget.segmentInput?.durationMinutes ?? 0) > 0)
+                  if (!_isExpanded &&
+                      (widget.segmentInput?.durationMinutes ?? 0) > 0)
                     Text(
                       '${widget.segmentInput!.durationMinutes} min',
                       style: AppTextStyles.descriptor.copyWith(
-                        color: (widget.isDark ? AppColors.cream : AppColors.blackberry)
-                            .withValues(alpha: 0.7),
+                        color:
+                            (widget.isDark
+                                    ? AppColors.cream
+                                    : AppColors.blackberry)
+                                .withValues(alpha: 0.7),
                         fontSize: 13,
                       ),
                     ),
@@ -256,9 +280,12 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
 
                   // Expand/collapse icon
                   Icon(
-                    _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    color: (widget.isDark ? AppColors.cream : AppColors.blackberry)
-                        .withValues(alpha: 0.5),
+                    _isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color:
+                        (widget.isDark ? AppColors.cream : AppColors.blackberry)
+                            .withValues(alpha: 0.5),
                   ),
                 ],
               ),
@@ -282,7 +309,8 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
   }
 
   Widget _buildSportInputs() {
-    final input = widget.segmentInput ??
+    final input =
+        widget.segmentInput ??
         BrickSegmentInput(sport: widget.sport, order: widget.order);
 
     switch (widget.sport) {
@@ -438,18 +466,22 @@ class _BrickRunningInputs extends StatelessWidget {
           estimatedDuration: _getDisplayedDuration(),
           pace: input.paceMinutesPerMile ?? 9.0,
           paceUnit: 'min/mi',
-          onDistanceChanged: (v) => _updateDerivedFields(input.copyWith(distanceMiles: v)),
+          onDistanceChanged: (v) =>
+              _updateDerivedFields(input.copyWith(distanceMiles: v)),
           onModeChanged: (mode) {
             final updated = input.copyWith(durationPaceMode: mode);
             _updateDerivedFields(updated);
           },
-          onPaceChanged: (v) => _updateDerivedFields(input.copyWith(paceMinutesPerMile: v)),
+          onPaceChanged: (v) =>
+              _updateDerivedFields(input.copyWith(paceMinutesPerMile: v)),
           onDurationChanged: (duration) {
             final pace = _computePaceFromDuration(input, duration);
-            onUpdate(input.copyWith(
-              durationMinutes: duration.inMinutes,
-              paceMinutesPerMile: pace ?? input.paceMinutesPerMile,
-            ));
+            onUpdate(
+              input.copyWith(
+                durationMinutes: duration.inMinutes,
+                paceMinutesPerMile: pace ?? input.paceMinutesPerMile,
+              ),
+            );
           },
           enabled: true,
         ),
@@ -458,7 +490,8 @@ class _BrickRunningInputs extends StatelessWidget {
 
         // 2. INTENSITY DISTRIBUTION
         IntensityDistributionWidget(
-          value: input.intensityDistribution ??
+          value:
+              input.intensityDistribution ??
               IntensityDistribution.defaultDistribution(),
           onChanged: (intensity) {
             onUpdate(input.copyWith(intensityDistribution: intensity));
@@ -519,7 +552,8 @@ class _BrickCyclingInputs extends StatelessWidget {
     required this.onUpdate,
   });
 
-  bool get _isIndoor => (input.indoorOutdoor ?? 'outdoor') == 'indoor' ||
+  bool get _isIndoor =>
+      (input.indoorOutdoor ?? 'outdoor') == 'indoor' ||
       (input.terrain ?? '').contains('indoor');
 
   int _computeEstimatedDurationMinutesFor(BrickSegmentInput data) {
@@ -593,18 +627,22 @@ class _BrickCyclingInputs extends StatelessWidget {
           estimatedDuration: _getDisplayedDuration(),
           pace: input.speedMph ?? 18.0,
           paceUnit: 'mph',
-          onDistanceChanged: (v) => _updateDerivedFields(input.copyWith(distanceMiles: v)),
+          onDistanceChanged: (v) =>
+              _updateDerivedFields(input.copyWith(distanceMiles: v)),
           onModeChanged: (mode) {
             final updated = input.copyWith(durationPaceMode: mode);
             _updateDerivedFields(updated);
           },
-          onPaceChanged: (v) => _updateDerivedFields(input.copyWith(speedMph: v)),
+          onPaceChanged: (v) =>
+              _updateDerivedFields(input.copyWith(speedMph: v)),
           onDurationChanged: (duration) {
             final speed = _computeSpeedFromDuration(input, duration);
-            onUpdate(input.copyWith(
-              durationMinutes: duration.inMinutes,
-              speedMph: speed ?? input.speedMph,
-            ));
+            onUpdate(
+              input.copyWith(
+                durationMinutes: duration.inMinutes,
+                speedMph: speed ?? input.speedMph,
+              ),
+            );
           },
         ),
 
@@ -612,7 +650,8 @@ class _BrickCyclingInputs extends StatelessWidget {
 
         // 2. INTENSITY DISTRIBUTION
         IntensityDistributionWidget(
-          value: input.intensityDistribution ??
+          value:
+              input.intensityDistribution ??
               IntensityDistribution.defaultDistribution(),
           onChanged: (intensity) {
             onUpdate(input.copyWith(intensityDistribution: intensity));
@@ -638,10 +677,12 @@ class _BrickCyclingInputs extends StatelessWidget {
               isIndoor: isIndoor,
               onChanged: (indoor) {
                 final terrain = indoor ? 'flat_indoor' : 'flat_outdoor';
-                onUpdate(input.copyWith(
-                  indoorOutdoor: indoor ? 'indoor' : 'outdoor',
-                  terrain: terrain,
-                ));
+                onUpdate(
+                  input.copyWith(
+                    indoorOutdoor: indoor ? 'indoor' : 'outdoor',
+                    terrain: terrain,
+                  ),
+                );
               },
               isDark: isDark,
             ),
@@ -653,9 +694,11 @@ class _BrickCyclingInputs extends StatelessWidget {
         // 4. ENVIRONMENT SECTION (collapsible, no weather params)
         EnvironmentSection(
           isExpanded: input.showEnvironment,
-          onToggle: () => onUpdate(input.copyWith(showEnvironment: !input.showEnvironment)),
+          onToggle: () =>
+              onUpdate(input.copyWith(showEnvironment: !input.showEnvironment)),
           temperatureC: input.temperatureC,
-          onTemperatureChanged: (v) => onUpdate(input.copyWith(temperatureC: v)),
+          onTemperatureChanged: (v) =>
+              onUpdate(input.copyWith(temperatureC: v)),
           humidityPct: input.humidityPct,
           onHumidityChanged: (v) => onUpdate(input.copyWith(humidityPct: v)),
           windCondition: input.windCondition,
@@ -675,10 +718,7 @@ class _BrickCyclingInputs extends StatelessWidget {
 // =============================================================================
 
 /// Water type enum for segmented control in brick swimming segment
-enum _BrickWaterType {
-  pool,
-  openWater,
-}
+enum _BrickWaterType { pool, openWater }
 
 /// Swimming segment inputs matching the standalone swimming tab:
 /// 1. WorkoutDetailsWidget
@@ -765,7 +805,9 @@ class _BrickSwimmingInputs extends StatelessWidget {
           distanceUnit: 'meters',
           mode: input.durationPaceMode,
           estimatedDuration: _getDisplayedDuration(),
-          pace: (input.pacePer100mSeconds ?? 120).toDouble() / 60, // Convert seconds to minutes
+          pace:
+              (input.pacePer100mSeconds ?? 120).toDouble() /
+              60, // Convert seconds to minutes
           paceUnit: 'min/100m',
           onDistanceChanged: (distance) =>
               _updateDerivedFields(input.copyWith(distanceMeters: distance)),
@@ -773,14 +815,17 @@ class _BrickSwimmingInputs extends StatelessWidget {
             final updated = input.copyWith(durationPaceMode: mode);
             _updateDerivedFields(updated);
           },
-          onPaceChanged: (paceMinutes) =>
-              _updateDerivedFields(input.copyWith(pacePer100mSeconds: (paceMinutes * 60).round())),
+          onPaceChanged: (paceMinutes) => _updateDerivedFields(
+            input.copyWith(pacePer100mSeconds: (paceMinutes * 60).round()),
+          ),
           onDurationChanged: (duration) {
             final pace = _computePaceFromDuration(input, duration);
-            onUpdate(input.copyWith(
-              durationMinutes: duration.inMinutes,
-              pacePer100mSeconds: pace ?? input.pacePer100mSeconds,
-            ));
+            onUpdate(
+              input.copyWith(
+                durationMinutes: duration.inMinutes,
+                pacePer100mSeconds: pace ?? input.pacePer100mSeconds,
+              ),
+            );
           },
         ),
 
@@ -788,7 +833,8 @@ class _BrickSwimmingInputs extends StatelessWidget {
 
         // 2. INTENSITY DISTRIBUTION
         IntensityDistributionWidget(
-          value: input.intensityDistribution ??
+          value:
+              input.intensityDistribution ??
               IntensityDistribution.defaultDistribution(),
           onChanged: (intensity) {
             onUpdate(input.copyWith(intensityDistribution: intensity));
@@ -816,9 +862,13 @@ class _BrickSwimmingInputs extends StatelessWidget {
                   ? _BrickWaterType.pool
                   : _BrickWaterType.openWater,
               onChanged: (type) {
-                onUpdate(input.copyWith(
-                  poolOrOpenWater: type == _BrickWaterType.pool ? 'pool' : 'open_water',
-                ));
+                onUpdate(
+                  input.copyWith(
+                    poolOrOpenWater: type == _BrickWaterType.pool
+                        ? 'pool'
+                        : 'open_water',
+                  ),
+                );
               },
             ),
           ],
