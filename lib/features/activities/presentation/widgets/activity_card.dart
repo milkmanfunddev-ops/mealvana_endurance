@@ -218,18 +218,32 @@ class ActivityCard extends ConsumerWidget {
           overflow: TextOverflow.ellipsis,
         ),
         // Garmin brand attribution (required by Garmin API Brand Guidelines)
+        // Tag logo + wordmark identifies data origin for primary displays.
         if (isFromGarmin) ...[
-          const SizedBox(height: 2),
-          Text(
-            'Garmin',
-            style: TextStyle(
-              fontFamily: 'Apercu',
-              fontSize: 10,
-              color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
-                alpha: 0.5,
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                isDark
+                    ? 'assets/images/integrations/garmin_tag_white.png'
+                    : 'assets/images/integrations/garmin_tag_black.png',
+                height: 10,
               ),
-              height: 1.3,
-            ),
+              const SizedBox(width: 4),
+              Text(
+                'GARMIN',
+                style: TextStyle(
+                  fontFamily: 'Apercu',
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: (isDark ? AppColors.cream : AppColors.blackberry)
+                      .withValues(alpha: 0.7),
+                  height: 1.3,
+                ),
+              ),
+            ],
           ),
         ],
       ],

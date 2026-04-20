@@ -37,8 +37,9 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final pendingActivityId =
           NotificationService.getPendingNavigationActivityId();
+      final pendingType = NotificationService.getPendingNavigationType();
       if (pendingActivityId != null && pendingActivityId.isNotEmpty) {
-        _handleNotificationNavigation(pendingActivityId);
+        _handleNotificationNavigation(pendingActivityId, pendingType);
       }
     });
   }
@@ -49,10 +50,28 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
     super.dispose();
   }
 
-  void _handleNotificationNavigation(String activityId) {
+  void _handleNotificationNavigation(String activityId, String? type) {
     if (!mounted || activityId.isEmpty) return;
 
     final router = ref.read(AppRouter.routerProvider);
+
+    // Activity-upload notifications (Garmin, etc.) route to the fuel log screen
+    // so the user can rate the workout and log what they actually ate vs
+    // what they planned. Seed the stack with /plan first, then push /fuel-log
+    // on top — that way the close/back buttons pop back to the activity
+    // detail screen instead of crashing with "nothing to pop".
+    if (type == 'activity') {
+      router.go('/plan', extra: {'activityId': activityId});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        router.push(
+          '/fuel-log',
+          extra: {'activityId': activityId, 'isNewActivity': false},
+        );
+      });
+      return;
+    }
+
     router.go('/plan', extra: {'activityId': activityId});
   }
 

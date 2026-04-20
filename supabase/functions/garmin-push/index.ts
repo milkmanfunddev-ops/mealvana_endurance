@@ -39,78 +39,13 @@ import {
   buildGarminCompletionUpdate,
   findMatchingPlannedActivity,
 } from "../_shared/garmin/activity_completion.ts";
+import { sendActivityUploadedPush } from "../_shared/garmin/onesignal.ts";
 import type { GarminPushNotification } from "../_shared/garmin/types.ts";
 
 const GARMIN_CLIENT_ID = Deno.env.get("GARMIN_CLIENT_ID") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
   "";
-const ONESIGNAL_APP_ID = Deno.env.get("ONESIGNAL_APP_ID") ?? "";
-const ONESIGNAL_REST_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY") ?? "";
-
-function toMmDdYyyy(dateString: string): string {
-  const [year, month, day] = dateString.split("-");
-  if (!year || !month || !day) return dateString;
-  return `${month}/${day}/${year}`;
-}
-
-async function sendActivityUploadedPush(params: {
-  userId: string;
-  activityId: string;
-  scheduledDate: string; // YYYY-MM-DD
-  provider?: string;
-}) {
-  if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
-    console.warn(
-      "[garmin-push] OneSignal credentials missing - skipping remote push",
-    );
-    return;
-  }
-
-  const provider = params.provider ?? "Garmin";
-  const activityDateText = toMmDdYyyy(params.scheduledDate);
-
-  const notificationPayload = {
-    app_id: ONESIGNAL_APP_ID,
-    include_aliases: {
-      external_id: [params.userId],
-    },
-    target_channel: "push",
-    headings: { en: "Workout uploaded" },
-    contents: {
-      en: `A workout for ${activityDateText} was uploaded from ${provider}.`,
-    },
-    data: {
-      type: "activity",
-      activityId: params.activityId,
-      activity_id: params.activityId,
-      provider: provider.toLowerCase(),
-      activity_date: activityDateText,
-    },
-  };
-
-  const response = await fetch("https://onesignal.com/api/v1/notifications", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Basic ${ONESIGNAL_REST_API_KEY}`,
-    },
-    body: JSON.stringify(notificationPayload),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error(
-      "[garmin-push] OneSignal send failed:",
-      response.status,
-      errorBody,
-    );
-  } else {
-    console.log(
-      `[garmin-push] OneSignal notification sent for activity ${params.activityId} to user ${params.userId}`,
-    );
-  }
-}
 
 serve(async (req: Request) => {
   // Validate the request is from Garmin
@@ -189,10 +124,16 @@ serve(async (req: Request) => {
             );
             updateFields.garmin_summary_id = String(summaryId);
 
-            const { error } = await supabase
+            // Atomic "win-the-race" update: only complete the activity if it
+            // is still planned/draft. Garmin often fires the Activities and
+            // ActivityDetails webhooks for the same workout simultaneously;
+            // whichever request updates the row first gets to notify.
+            const { data: updatedRows, error } = await supabase
               .from("activities")
               .update(updateFields)
-              .eq("id", matchedActivity.id);
+              .eq("id", matchedActivity.id)
+              .in("status", ["planned", "draft"])
+              .select("id");
 
             if (error) {
               console.error(
@@ -200,6 +141,11 @@ serve(async (req: Request) => {
                 error,
               );
               stats.errors++;
+            } else if (!updatedRows || updatedRows.length === 0) {
+              console.log(
+                `[garmin-push] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
+              );
+              stats.skipped++;
             } else {
               console.log(
                 `[garmin-push] Matched & completed activity ${matchedActivity.id} (${matchedActivity.title})`,
@@ -209,14 +155,12 @@ serve(async (req: Request) => {
                 activityId: String(matchedActivity.id),
                 scheduledDate,
                 provider: "Garmin",
+                logPrefix: "[garmin-push]",
               });
               stats.matched++;
               stats.processed++;
             }
           } else {
-            // No match — skip. Mealvana is a nutrition planning tool, not a
-            // workout logger. If there's no planned activity to complete,
-            // there's no nutrition context to attach to.
             console.log(
               `[garmin-push] No matching planned activity for ${sportType} on ${scheduledDate} — skipping`,
             );
@@ -557,10 +501,12 @@ serve(async (req: Request) => {
             );
             updateFields.garmin_summary_id = String(summary.summaryId);
 
-            const { error } = await supabase
+            const { data: updatedRows, error } = await supabase
               .from("activities")
               .update(updateFields)
-              .eq("id", matchedActivity.id);
+              .eq("id", matchedActivity.id)
+              .in("status", ["planned", "draft"])
+              .select("id");
 
             if (error) {
               console.error(
@@ -568,6 +514,11 @@ serve(async (req: Request) => {
                 error,
               );
               stats.errors++;
+            } else if (!updatedRows || updatedRows.length === 0) {
+              console.log(
+                `[garmin-push] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
+              );
+              stats.skipped++;
             } else {
               console.log(
                 `[garmin-push] Matched & completed activity ${matchedActivity.id} from detail push`,
@@ -577,6 +528,7 @@ serve(async (req: Request) => {
                 activityId: String(matchedActivity.id),
                 scheduledDate,
                 provider: "Garmin",
+                logPrefix: "[garmin-push]",
               });
               stats.matched++;
               stats.processed++;

@@ -15,9 +15,10 @@ class NotificationService {
   static bool _isInitialized = false;
   static bool _isOneSignalInitialized = false;
   static String? _pendingNavigationActivityId;
+  static String? _pendingNavigationType;
   static String? _pendingRemoteUserId;
   static String? _lastSyncedRemoteUserId;
-  static void Function(String activityId)? _navigationHandler;
+  static void Function(String activityId, String? type)? _navigationHandler;
   static AnalyticsTracker _analytics = const NoopAnalyticsTracker();
   static String _oneSignalAppId = '';
 
@@ -33,7 +34,10 @@ class NotificationService {
 
   /// Registers a callback for notification-tap deep linking.
   /// If no handler is set, taps are stored as pending navigation.
-  static void setNavigationHandler(void Function(String activityId)? handler) {
+  /// The [type] is the payload prefix: `reminder`, `activity`, or null for legacy.
+  static void setNavigationHandler(
+    void Function(String activityId, String? type)? handler,
+  ) {
     _navigationHandler = handler;
   }
 
@@ -99,6 +103,13 @@ class NotificationService {
         final data = event.notification.additionalData;
         if (data == null) return;
         _handleRemoteNotificationData(data);
+      });
+
+      // Show push banners while the app is in the foreground. Without this,
+      // iOS suppresses the alert entirely when Mealvana is open.
+      OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+        event.preventDefault();
+        event.notification.display();
       });
 
       _isOneSignalInitialized = true;
@@ -260,7 +271,7 @@ class NotificationService {
         );
       }
 
-      _dispatchNavigation(activityId);
+      _dispatchNavigation(activityId, type);
       return;
     }
 
@@ -269,16 +280,17 @@ class NotificationService {
       deviceId: 'unknown', // Will be set properly when app identifies user
       activityId: payload,
     );
-    _dispatchNavigation(payload);
+    _dispatchNavigation(payload, null);
   }
 
-  static void _dispatchNavigation(String activityId) {
+  static void _dispatchNavigation(String activityId, String? type) {
     final handler = _navigationHandler;
     if (handler != null) {
-      handler(activityId);
+      handler(activityId, type);
       return;
     }
     _pendingNavigationActivityId = activityId;
+    _pendingNavigationType = type;
   }
 
   static Future<bool> requestPermissions() async {
@@ -527,6 +539,12 @@ class NotificationService {
     final activityId = _pendingNavigationActivityId;
     _pendingNavigationActivityId = null;
     return activityId;
+  }
+
+  static String? getPendingNavigationType() {
+    final type = _pendingNavigationType;
+    _pendingNavigationType = null;
+    return type;
   }
 
   static bool hasPendingNavigation() {

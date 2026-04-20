@@ -31,25 +31,24 @@ export function getGarminScheduledDate(activity: GarminActivityTiming): string {
 
 export function getGarminLocalDayBounds(activity: GarminActivityTiming): {
   scheduledDate: string;
-  startOfDayIso: string;
-  endOfDayIso: string;
+  nextDate: string;
+  startOfDayNaive: string;
+  endOfDayNaiveExclusive: string;
 } {
-  const localEpochMs =
-    (activity.startTimeInSeconds + activity.startTimeOffsetInSeconds) * 1000;
-  const localDate = new Date(localEpochMs);
+  const scheduledDate = getGarminScheduledDate(activity);
 
-  const year = localDate.getUTCFullYear();
-  const month = localDate.getUTCMonth();
-  const day = localDate.getUTCDate();
-
-  const startOfDayUtcMs = Date.UTC(year, month, day, 0, 0, 0, 0) -
-    activity.startTimeOffsetInSeconds * 1000;
-  const endOfDayUtcMs = startOfDayUtcMs + 24 * 60 * 60 * 1000 - 1;
+  const [y, m, d] = scheduledDate.split("-").map(Number);
+  const nextLocal = new Date(Date.UTC(y, m - 1, d + 1));
+  const nextYear = nextLocal.getUTCFullYear();
+  const nextMonth = String(nextLocal.getUTCMonth() + 1).padStart(2, "0");
+  const nextDay = String(nextLocal.getUTCDate()).padStart(2, "0");
+  const nextDate = `${nextYear}-${nextMonth}-${nextDay}`;
 
   return {
-    scheduledDate: getGarminScheduledDate(activity),
-    startOfDayIso: new Date(startOfDayUtcMs).toISOString(),
-    endOfDayIso: new Date(endOfDayUtcMs).toISOString(),
+    scheduledDate,
+    nextDate,
+    startOfDayNaive: `${scheduledDate} 00:00:00`,
+    endOfDayNaiveExclusive: `${nextDate} 00:00:00`,
   };
 }
 
@@ -69,17 +68,31 @@ export async function findMatchingPlannedActivity(
   sportType: string,
   activity: GarminActivityTiming,
 ): Promise<MatchingPlannedActivity> {
-  try {
-    const { startOfDayIso, endOfDayIso } = getGarminLocalDayBounds(activity);
+  // Refuse to match unknown/unmapped sport types. Falling back to "other"
+  // would let any generic planned activity get silently completed by an
+  // unrelated Garmin upload.
+  if (!sportType || sportType === "other") {
+    console.log(
+      `[garmin] Skipping match — unsupported sport type "${sportType}"`,
+    );
+    return null;
+  }
 
+  try {
+    const { startOfDayNaive, endOfDayNaiveExclusive } =
+      getGarminLocalDayBounds(activity);
+
+    // scheduled_date_time is `timestamp without time zone`, so we match using
+    // naive local-date bounds. Using tz-aware ISO strings would cause Postgres
+    // to strip the zone and bleed into the next day.
     const { data, error } = await supabase
       .from("activities")
       .select("id, title, scheduled_date_time")
       .eq("user_id", userId)
       .eq("activity_type", sportType)
       .in("status", ["planned", "draft"])
-      .gte("scheduled_date_time", startOfDayIso)
-      .lte("scheduled_date_time", endOfDayIso)
+      .gte("scheduled_date_time", startOfDayNaive)
+      .lt("scheduled_date_time", endOfDayNaiveExclusive)
       .is("deleted_at", null)
       .order("scheduled_date_time", { ascending: true })
       .limit(1);

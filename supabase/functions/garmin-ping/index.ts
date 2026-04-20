@@ -30,6 +30,7 @@ import {
   findMatchingPlannedActivity,
   getGarminScheduledDate,
 } from "../_shared/garmin/activity_completion.ts";
+import { sendActivityUploadedPush } from "../_shared/garmin/onesignal.ts";
 import type {
   GarminActivityDetail,
   GarminActivitySummary,
@@ -127,10 +128,12 @@ serve(async (req: Request) => {
             );
             updateFields.garmin_summary_id = String(summaryId);
 
-            const { error } = await supabase
+            const { data: updatedRows, error } = await supabase
               .from("activities")
               .update(updateFields)
-              .eq("id", matchedActivity.id);
+              .eq("id", matchedActivity.id)
+              .in("status", ["planned", "draft"])
+              .select("id");
 
             if (error) {
               console.error(
@@ -138,7 +141,22 @@ serve(async (req: Request) => {
                 error,
               );
               stats.errors++;
+            } else if (!updatedRows || updatedRows.length === 0) {
+              console.log(
+                `[garmin-ping] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
+              );
+              stats.skipped++;
             } else {
+              console.log(
+                `[garmin-ping] Matched & completed activity ${matchedActivity.id} (${matchedActivity.title})`,
+              );
+              await sendActivityUploadedPush({
+                userId: mapping.user_id,
+                activityId: String(matchedActivity.id),
+                scheduledDate,
+                provider: "Garmin",
+                logPrefix: "[garmin-ping]",
+              });
               stats.matched++;
               stats.processed++;
             }
@@ -210,10 +228,12 @@ serve(async (req: Request) => {
             );
             updateFields.garmin_summary_id = String(summary.summaryId);
 
-            const { error } = await supabase
+            const { data: updatedRows, error } = await supabase
               .from("activities")
               .update(updateFields)
-              .eq("id", matchedActivity.id);
+              .eq("id", matchedActivity.id)
+              .in("status", ["planned", "draft"])
+              .select("id");
 
             if (error) {
               console.error(
@@ -221,7 +241,22 @@ serve(async (req: Request) => {
                 error,
               );
               stats.errors++;
+            } else if (!updatedRows || updatedRows.length === 0) {
+              console.log(
+                `[garmin-ping] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
+              );
+              stats.skipped++;
             } else {
+              console.log(
+                `[garmin-ping] Matched & completed activity ${matchedActivity.id} from detail ping`,
+              );
+              await sendActivityUploadedPush({
+                userId: mapping.user_id,
+                activityId: String(matchedActivity.id),
+                scheduledDate,
+                provider: "Garmin",
+                logPrefix: "[garmin-ping]",
+              });
               stats.matched++;
               stats.processed++;
             }

@@ -325,17 +325,21 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
         const SizedBox(height: AppSpacing.lg),
 
-        // Garmin Connect - temporarily disabled (pending Garmin production approval)
-        // Brand Guidelines: Use full app name "Garmin Connect" with badge icon
+        // Garmin Connect — push-only integration.
+        // Brand Guidelines: Use full app name "Garmin Connect" with tag logo.
         IntegrationProviderCard(
           name: 'Garmin Connect',
           iconPath: isDark
               ? 'assets/images/integrations/garmin_tag_white.png'
               : 'assets/images/integrations/garmin_tag_black.png',
           logoHeight: 18,
-          isAvailable: false,
-          isConnected: false,
-          isConnecting: false,
+          isAvailable: true,
+          isConnected: data.isGarminConnected,
+          isConnecting:
+              data.isConnecting && data.connectingProvider == 'garmin',
+          athleteName: data.garminAthleteName,
+          onConnect: () => _connectGarmin(context, ref),
+          onDisconnect: () => _disconnectGarmin(context, ref),
           showSyncButton: false,
         ),
 
@@ -456,17 +460,21 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
         const SizedBox(height: AppSpacing.md),
 
-        // Garmin Connect - temporarily disabled (pending Garmin production approval)
-        // Brand Guidelines: Use full app name "Garmin Connect" with badge icon
+        // Garmin Connect — push-only integration.
+        // Brand Guidelines: Use full app name "Garmin Connect" with tag logo.
         IntegrationProviderCard(
           name: 'Garmin Connect',
           iconPath: isDark
               ? 'assets/images/integrations/garmin_tag_white.png'
               : 'assets/images/integrations/garmin_tag_black.png',
           logoHeight: 18,
-          isAvailable: false,
-          isConnected: false,
-          isConnecting: false,
+          isAvailable: true,
+          isConnected: data.isGarminConnected,
+          isConnecting:
+              data.isConnecting && data.connectingProvider == 'garmin',
+          athleteName: data.garminAthleteName,
+          onConnect: () => _connectGarminOnboarding(context, ref),
+          onDisconnect: () => _disconnectGarmin(context, ref),
           showSyncButton: false,
         ),
 

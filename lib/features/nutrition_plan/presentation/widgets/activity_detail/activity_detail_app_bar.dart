@@ -77,7 +77,13 @@ class ActivityDetailAppBar extends ConsumerWidget
                   ),
                 )
               : CustomAppBarBackButton(
-                  onPressed: () => context.pop(),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/main');
+                    }
+                  },
                   margin: EdgeInsets.zero,
                   iconColor: Theme.of(context).colorScheme.onSurface,
                   backgroundColor: Theme.of(

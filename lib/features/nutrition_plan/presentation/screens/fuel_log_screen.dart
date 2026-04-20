@@ -292,8 +292,11 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
 
   Future<void> _closeWithoutSaving() async {
     _controller().exitFuelLogMode();
-    if (mounted) {
+    if (!mounted) return;
+    if (context.canPop()) {
       context.pop();
+    } else {
+      context.go('/plan', extra: {'activityId': widget.activityId});
     }
   }
 
@@ -330,7 +333,11 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
       onDismiss: () {
         if (!mounted) return;
         Navigator.of(context).pop();
-        context.pop(true);
+        if (context.canPop()) {
+          context.pop(true);
+        } else {
+          context.go('/plan', extra: {'activityId': widget.activityId});
+        }
       },
     );
   }
