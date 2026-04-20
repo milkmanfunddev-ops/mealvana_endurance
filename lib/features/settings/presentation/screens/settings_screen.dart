@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../providers/settings_controller.dart';
 import 'debug_screen.dart';
 
@@ -53,9 +54,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final settingsAsync = ref.watch(settingsControllerProvider);
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
+      contentWidth: AdaptiveContentWidth.standard,
       body: settingsAsync.when(
         data: (state) => _buildContent(context, state),
         loading: () => _buildLoadingState(context),
@@ -69,7 +71,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      automaticallyImplyLeading: false,
+      leading: IconButton(
+        onPressed: () => context.pop(),
+        icon: Icon(
+          Icons.arrow_back_ios_new,
+          color: Theme.of(context).colorScheme.onSurface,
+          size: 20,
+        ),
+      ),
       title: Text(
         'Settings',
         style: AppTextStyles.sectionTitle.copyWith(
@@ -116,7 +125,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildContent(BuildContext context, dynamic state) {
-    return SingleChildScrollView(
+    return AdaptiveScrollableBody(
       padding: AppSpacing.screenPaddingHorizontal,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +138,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: AppSpacing.lg),
 
           // Quick links section (removed label, added preferences link)
-          _buildQuickLinksSection(context, state),
+          _buildQuickLinksSection(context),
 
           const SizedBox(height: AppSpacing.xl),
 
@@ -499,9 +508,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildQuickLinksSection(BuildContext context, dynamic state) {
-    final isCoach = state.isCoach == true;
-
+  Widget _buildQuickLinksSection(BuildContext context) {
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,6 +578,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: AppSpacing.sm),
 
+          // Nutrition Profile - Body composition, training phase, lifestyle
+          _buildQuickLink(
+            context: context,
+            icon: FontAwesomeIcons.chartPie,
+            title: 'Nutrition Profile',
+            subtitle: 'Body composition, training phase, lifestyle',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_nutrition_profile_tapped');
+              context.push('/settings/nutrition-profile');
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
           // Nutrition Targets - Default macro target overrides
           _buildQuickLink(
             context: context,
@@ -586,28 +608,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: AppSpacing.sm),
 
-          // Athlete coach connection (pairing code generation)
-          if (!isCoach) ...[
-            _buildQuickLink(
-              context: context,
-              icon: FontAwesomeIcons.userGroup,
-              title: 'Coach Connection',
-              subtitle: 'Generate a code to connect with your coach',
-              onTap: () {
-                final analytics = ref.read(appExternalDepsProvider);
-                analytics.analytics.track('settings_coach_connection_tapped');
-                context.push('/settings/coach-connection');
-              },
-            ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
+          // Always available: connect, review status, or message coach.
+          _buildQuickLink(
+            context: context,
+            icon: FontAwesomeIcons.userGroup,
+            title: 'Coach Connection',
+            subtitle: 'Connect with your coach or manage your connection',
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_coach_connection_tapped');
+              context.push('/settings/coach-connection');
+            },
+          ),
 
-          // Connected Apps (Final Surge, TrainingPeaks, Strava integrations)
+          const SizedBox(height: AppSpacing.sm),
+
+          // Connected Apps (Final Surge, TrainingPeaks, Garmin integrations)
           _buildQuickLink(
             context: context,
             icon: FontAwesomeIcons.link,
             title: 'Connected Apps',
-            subtitle: 'Final Surge, TrainingPeaks, Strava',
+            subtitle: 'Final Surge, TrainingPeaks, Garmin Connect',
             onTap: () {
               final analytics = ref.read(appExternalDepsProvider);
               analytics.analytics.track('settings_connected_apps_tapped');

@@ -43,6 +43,6 @@ export const cyclingConfig: SportConfig = {
   optimizationWeights: {
     before: { carbs: 1.0, protein: 0.5, sodium: 0.3 },
     during: { carbs: 1.0, sodium: 0.7 }, // Sodium important for long rides
-    after: { carbs: 0.8, protein: 0.8, sodium: 0.3 },
+    after: { carbs: 0.8, protein: 1.0, sodium: 0.3 },
   },
 };

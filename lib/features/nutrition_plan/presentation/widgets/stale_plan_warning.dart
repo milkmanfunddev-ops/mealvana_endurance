@@ -13,6 +13,11 @@ class StalePlanWarning extends StatelessWidget {
     required this.onRegeneratePlan,
     this.onDismiss,
     this.isRegenerating = false,
+    this.title = 'Schedule Changed',
+    this.message =
+        'Schedule has changed since this plan was generated. Regenerate to match your updated workout.',
+    this.icon = Icons.schedule_outlined,
+    this.buttonText = 'Regenerate Plan',
   });
 
   /// Callback when "Regenerate Plan" button is tapped
@@ -23,6 +28,10 @@ class StalePlanWarning extends StatelessWidget {
 
   /// Whether plan regeneration is in progress
   final bool isRegenerating;
+  final String title;
+  final String message;
+  final IconData icon;
+  final String buttonText;
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +54,7 @@ class StalePlanWarning extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Warning icon
-              Icon(
-                Icons.schedule_outlined,
-                color: AppColors.warning,
-                size: 22,
-              ),
+              Icon(icon, color: AppColors.warning, size: 22),
               const SizedBox(width: AppSpacing.sm),
 
               // Warning message
@@ -58,7 +63,7 @@ class StalePlanWarning extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Schedule Changed',
+                      title,
                       style: AppTextStyles.bodyLarge.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
@@ -66,7 +71,7 @@ class StalePlanWarning extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xxs),
                     Text(
-                      'Schedule has changed since this plan was generated. Regenerate to match your updated workout.',
+                      message,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -119,14 +124,10 @@ class StalePlanWarning extends StatelessWidget {
                       ),
                     )
                   else
-                    Icon(
-                      Icons.refresh,
-                      size: 18,
-                      color: AppColors.textDark,
-                    ),
+                    Icon(Icons.refresh, size: 18, color: AppColors.textDark),
                   const SizedBox(width: AppSpacing.xs),
                   Text(
-                    isRegenerating ? 'Regenerating...' : 'Regenerate Plan',
+                    isRegenerating ? 'Regenerating...' : buttonText,
                     style: AppTextStyles.buttonPrimary.copyWith(
                       color: AppColors.textDark,
                       fontSize: 15,

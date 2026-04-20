@@ -7,6 +7,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// Sports Selection Screen - Step 2 of Onboarding
 ///
@@ -35,7 +36,8 @@ class SportsSelectionScreen extends ConsumerStatefulWidget {
   final void Function(Set<String>)? onSportsChanged;
 
   @override
-  ConsumerState<SportsSelectionScreen> createState() => _SportsSelectionScreenState();
+  ConsumerState<SportsSelectionScreen> createState() =>
+      _SportsSelectionScreenState();
 }
 
 class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
@@ -50,9 +52,13 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
     final controller = ref.read(onboardingControllerProvider.notifier);
     _selectedSports = Set.from(controller.cachedSelectedSports);
 
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': 'Sports Selection Onboarding',
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {'screen_name': 'Sports Selection Onboarding'},
+        );
   }
 
   void _toggleSport(String sport) {
@@ -82,12 +88,15 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
 
     // Track selection
     final analytics = ref.read(appExternalDepsProvider).analytics;
-    await analytics.track('sports_selected', properties: {
-      'running': _selectedSports.contains('running'),
-      'cycling': _selectedSports.contains('cycling'),
-      'swimming': _selectedSports.contains('swimming'),
-      'count': _selectedSports.length,
-    });
+    await analytics.track(
+      'sports_selected',
+      properties: {
+        'running': _selectedSports.contains('running'),
+        'cycling': _selectedSports.contains('cycling'),
+        'swimming': _selectedSports.contains('swimming'),
+        'count': _selectedSports.length,
+      },
+    );
 
     if (!mounted) return;
 
@@ -102,11 +111,20 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
       // Navigate to first sport detail screen or skip to diet if only running with no details needed
       // For now, go to running details if running selected, else cycling, else swimming
       if (_selectedSports.contains('running')) {
-        context.push('/onboarding/running-details', extra: _selectedSports.toList());
+        context.push(
+          '/onboarding/running-details',
+          extra: _selectedSports.toList(),
+        );
       } else if (_selectedSports.contains('cycling')) {
-        context.push('/onboarding/cycling-details', extra: _selectedSports.toList());
+        context.push(
+          '/onboarding/cycling-details',
+          extra: _selectedSports.toList(),
+        );
       } else if (_selectedSports.contains('swimming')) {
-        context.push('/onboarding/swimming-details', extra: _selectedSports.toList());
+        context.push(
+          '/onboarding/swimming-details',
+          extra: _selectedSports.toList(),
+        );
       } else {
         // Fallback to dietary preferences
         context.push('/onboarding/dietary-preference');
@@ -116,8 +134,9 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: AppColors.blackberry,
+      contentWidth: AdaptiveContentWidth.narrow,
       body: Column(
         children: [
           // Progress bar at the very top (no SafeArea padding)
@@ -131,68 +150,68 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
 
           // Content
           Expanded(
-            child: SafeArea(
-              top: false,
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Title
-                      const Text(
-                        'Which sports do you train for?',
-                        style: TextStyle(
-                          fontFamily: 'Sansita',
-                          fontSize: 26,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.orange,
-                          height: 1.0,
-                        ),
+            child: AdaptiveScrollableBody(
+              safeAreaTop: false,
+              safeAreaBottom: false,
+              padding: const EdgeInsets.all(20),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Title
+                    const Text(
+                      'Which sports do you train for?',
+                      style: TextStyle(
+                        fontFamily: 'Sansita',
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.orange,
+                        height: 1.0,
                       ),
+                    ),
 
-                      const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                      // Subtitle
-                      const Text(
-                        'We\'ll customize your nutrition plans for each sport.',
-                        style: TextStyle(
-                          fontFamily: 'Apercu',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textDark,
-                          letterSpacing: 0.192,
-                          height: 1.0,
-                        ),
+                    // Subtitle
+                    const Text(
+                      'We\'ll customize your nutrition plans for each sport.',
+                      style: TextStyle(
+                        fontFamily: 'Apercu',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.textDark,
+                        letterSpacing: 0.192,
+                        height: 1.0,
                       ),
+                    ),
 
-                      const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                      // Sport selection cards
-                      FigmaCheckboxCard(
-                        label: 'Running',
-                        isSelected: _selectedSports.contains('running'),
-                        onTap: () => _toggleSport('running'),
-                      ),
+                    // Sport selection cards
+                    FigmaCheckboxCard(
+                      label: 'Running',
+                      isSelected: _selectedSports.contains('running'),
+                      onTap: () => _toggleSport('running'),
+                    ),
 
-                      const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                      FigmaCheckboxCard(
-                        label: 'Cycling',
-                        isSelected: _selectedSports.contains('cycling'),
-                        onTap: () => _toggleSport('cycling'),
-                      ),
+                    FigmaCheckboxCard(
+                      label: 'Cycling',
+                      isSelected: _selectedSports.contains('cycling'),
+                      onTap: () => _toggleSport('cycling'),
+                    ),
 
-                      const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                      FigmaCheckboxCard(
-                        label: 'Swimming',
-                        isSelected: _selectedSports.contains('swimming'),
-                        onTap: () => _toggleSport('swimming'),
-                      ),
-                    ],
-                  ),
+                    FigmaCheckboxCard(
+                      label: 'Swimming',
+                      isSelected: _selectedSports.contains('swimming'),
+                      onTap: () => _toggleSport('swimming'),
+                    ),
+                  ],
                 ),
               ),
             ),

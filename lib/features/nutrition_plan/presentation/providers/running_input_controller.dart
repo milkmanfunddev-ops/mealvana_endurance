@@ -8,6 +8,7 @@ import '../../domain/run_parameters.dart';
 import '../../domain/intensity_distribution.dart';
 import '../../domain/meal_type.dart';
 import '../../../../shared/domain/activity_type.dart';
+import '../../../activities/domain/activity_title_formatter.dart';
 import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
 import '../../../weather/domain/weather_forecast.dart';
@@ -20,6 +21,8 @@ part 'running_input_controller.g.dart';
 
 /// Running-specific form state that persists during tab switches
 class RunningFormState {
+  final String activityTitle;
+  final bool activityTitleManuallySet;
   final double distance;
   final double paceMinutes;
   final int preRunMinutes;
@@ -63,9 +66,12 @@ class RunningFormState {
   final LocationFailureReason? locationFailureReason;
 
   RunningFormState({
+    this.activityTitle = '12 mi Run',
+    this.activityTitleManuallySet = false,
     this.distance = 12.0,
     this.paceMinutes = 9.0,
-    this.preRunMinutes = 150, // V3: default from recommendedHoursBefore (2.5h for moderate running)
+    this.preRunMinutes =
+        150, // V3: default from recommendedHoursBefore (2.5h for moderate running)
     this.gutTraining = GutTraining.moderate,
     this.sweatRate = SweatRateCat.medium,
     this.temperatureC = 20.0,
@@ -91,6 +97,8 @@ class RunningFormState {
   }) : intensity = intensity ?? IntensityDistribution.defaultDistribution();
 
   RunningFormState copyWith({
+    String? activityTitle,
+    bool? activityTitleManuallySet,
     double? distance,
     double? paceMinutes,
     int? preRunMinutes,
@@ -118,6 +126,9 @@ class RunningFormState {
     LocationFailureReason? locationFailureReason,
   }) {
     return RunningFormState(
+      activityTitle: activityTitle ?? this.activityTitle,
+      activityTitleManuallySet:
+          activityTitleManuallySet ?? this.activityTitleManuallySet,
       distance: distance ?? this.distance,
       paceMinutes: paceMinutes ?? this.paceMinutes,
       preRunMinutes: preRunMinutes ?? this.preRunMinutes,
@@ -133,7 +144,8 @@ class RunningFormState {
       durationPaceMode: durationPaceMode ?? this.durationPaceMode,
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
       isFasted: isFasted ?? this.isFasted,
-      preRunMinutesManuallySet: preRunMinutesManuallySet ?? this.preRunMinutesManuallySet,
+      preRunMinutesManuallySet:
+          preRunMinutesManuallySet ?? this.preRunMinutesManuallySet,
       zonePaceApplied: zonePaceApplied ?? this.zonePaceApplied,
       zoneSuggestedPace: zoneSuggestedPace ?? this.zoneSuggestedPace,
       unitSystem: unitSystem ?? this.unitSystem,
@@ -141,8 +153,10 @@ class RunningFormState {
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
       isLoadingWeather: isLoadingWeather ?? this.isLoadingWeather,
-      hasAttemptedWeatherFetch: hasAttemptedWeatherFetch ?? this.hasAttemptedWeatherFetch,
-      locationFailureReason: locationFailureReason ?? this.locationFailureReason,
+      hasAttemptedWeatherFetch:
+          hasAttemptedWeatherFetch ?? this.hasAttemptedWeatherFetch,
+      locationFailureReason:
+          locationFailureReason ?? this.locationFailureReason,
     );
   }
 }
@@ -166,17 +180,26 @@ class RunningInputController extends _$RunningInputController {
     const defaultPace = 9.0;
     final initialDuration = Duration(
       minutes: (defaultDistance * defaultPace).floor(),
-      seconds: (((defaultDistance * defaultPace) - (defaultDistance * defaultPace).floor()) * 60).round(),
+      seconds:
+          (((defaultDistance * defaultPace) -
+                      (defaultDistance * defaultPace).floor()) *
+                  60)
+              .round(),
     );
 
     // V3: Pre-fill timing from recommendation based on default intensity
     final defaultIntensity = IntensityDistribution.defaultDistribution();
-    final recommendedMinutes = (recommendedHoursBefore(
-      ActivityType.running, defaultIntensity,
-      durationMinutes: initialDuration.inMinutes,
-    ) * 60).round();
+    final recommendedMinutes =
+        (recommendedHoursBefore(
+                  ActivityType.running,
+                  defaultIntensity,
+                  durationMinutes: initialDuration.inMinutes,
+                ) *
+                60)
+            .round();
 
     final initialState = RunningFormState(
+      activityTitle: ActivityTitleFormatter.formatRunningTitle(defaultDistance),
       selectedDate: now,
       selectedTime: const TimeOfDay(hour: 7, minute: 0),
       // Default values - will be updated when user profile loads
@@ -208,7 +231,9 @@ class RunningInputController extends _$RunningInputController {
     if (state.paceMinutes != 9.0) return;
 
     try {
-      final zone2Pace = await ref.read(zone2PaceMinPerMileProvider(userId).future);
+      final zone2Pace = await ref.read(
+        zone2PaceMinPerMileProvider(userId).future,
+      );
       if (zone2Pace != null && zone2Pace > 4.0 && zone2Pace < 20.0) {
         state = state.copyWith(
           paceMinutes: zone2Pace,
@@ -216,11 +241,16 @@ class RunningInputController extends _$RunningInputController {
           zoneSuggestedPace: zone2Pace,
           estimatedDuration: _estimateDuration(paceMinutes: zone2Pace),
         );
-        DebugLogger.info('🏃 RUNNING CONTROLLER: Applied zone-based pace: ${zone2Pace.toStringAsFixed(1)} min/mi');
+        DebugLogger.info(
+          '🏃 RUNNING CONTROLLER: Applied zone-based pace: ${zone2Pace.toStringAsFixed(1)} min/mi',
+        );
       }
     } catch (e) {
       // Non-blocking - keep default pace if zone fetch fails
-      DebugLogger.error('🏃 RUNNING CONTROLLER: Zone pace unavailable', error: e);
+      DebugLogger.error(
+        '🏃 RUNNING CONTROLLER: Zone pace unavailable',
+        error: e,
+      );
     }
   }
 
@@ -238,10 +268,15 @@ class RunningInputController extends _$RunningInputController {
           paceUnit: userProfile.preferredPaceUnit,
           unitSystem: userProfile.unitSystem,
         );
-        DebugLogger.info('🏃 RUNNING CONTROLLER: Loaded user preferences - gut training: ${userProfile.gutTraining.name}, sweat rate: ${userProfile.sweatRate.name}, unitSystem: ${userProfile.unitSystem.name}');
+        DebugLogger.info(
+          '🏃 RUNNING CONTROLLER: Loaded user preferences - gut training: ${userProfile.gutTraining.name}, sweat rate: ${userProfile.sweatRate.name}, unitSystem: ${userProfile.unitSystem.name}',
+        );
       }
     } catch (e) {
-      DebugLogger.error('🏃 RUNNING CONTROLLER: Failed to load user preferences', error: e);
+      DebugLogger.error(
+        '🏃 RUNNING CONTROLLER: Failed to load user preferences',
+        error: e,
+      );
       // Keep defaults on error
     }
   }
@@ -249,7 +284,9 @@ class RunningInputController extends _$RunningInputController {
   /// Fetch location if this controller needs it and doesn't already have it.
   /// Called when this sport tab becomes active or the screen initializes.
   Future<void> fetchLocationIfNeeded() async {
-    if (!state.isLoadingLocation && !state.isLoadingWeather && state.location == null) {
+    if (!state.isLoadingLocation &&
+        !state.isLoadingWeather &&
+        state.location == null) {
       await fetchCurrentLocation();
       if (state.location == null && state.weatherForecast == null) {
         await fetchWeatherForecast();
@@ -272,12 +309,20 @@ class RunningInputController extends _$RunningInputController {
 
   /// Update form field values
   void updateDistance(double distance) {
+    final resolvedTitle = state.activityTitleManuallySet
+        ? state.activityTitle
+        : ActivityTitleFormatter.formatRunningTitle(distance);
     final hasDuration =
-        state.estimatedDuration != null && state.estimatedDuration!.inSeconds > 0;
+        state.estimatedDuration != null &&
+        state.estimatedDuration!.inSeconds > 0;
 
     if (state.durationPaceMode == DurationPaceMode.byDuration && hasDuration) {
-      final newPace = _estimatePace(distance: distance, duration: state.estimatedDuration);
+      final newPace = _estimatePace(
+        distance: distance,
+        duration: state.estimatedDuration,
+      );
       state = state.copyWith(
+        activityTitle: resolvedTitle,
         distance: distance,
         paceMinutes: newPace ?? state.paceMinutes,
       );
@@ -286,6 +331,7 @@ class RunningInputController extends _$RunningInputController {
     }
 
     state = state.copyWith(
+      activityTitle: resolvedTitle,
       distance: distance,
       estimatedDuration: _estimateDuration(distance: distance),
     );
@@ -336,10 +382,7 @@ class RunningInputController extends _$RunningInputController {
   /// or fall back to current pace value.
   ///
   /// Formula: estimatedDuration = distance * paceMinutesPerMile
-  Duration _estimateDuration({
-    double? distance,
-    double? paceMinutes,
-  }) {
+  Duration _estimateDuration({double? distance, double? paceMinutes}) {
     final currentDistance = distance ?? state.distance;
     final currentPace = paceMinutes ?? state.paceMinutes;
 
@@ -354,10 +397,7 @@ class RunningInputController extends _$RunningInputController {
   }
 
   /// Calculate pace (minutes per unit) from duration and distance.
-  double? _estimatePace({
-    double? distance,
-    Duration? duration,
-  }) {
+  double? _estimatePace({double? distance, Duration? duration}) {
     final currentDistance = distance ?? state.distance;
     final currentDuration = duration ?? state.estimatedDuration;
 
@@ -380,12 +420,29 @@ class RunningInputController extends _$RunningInputController {
     );
   }
 
+  void updateActivityTitle(String title) {
+    state = state.copyWith(
+      activityTitle: title.trim(),
+      activityTitleManuallySet: true,
+    );
+  }
+
+  void seedActivityTitle(String title, {bool markManuallySet = true}) {
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) return;
+    state = state.copyWith(
+      activityTitle: trimmed,
+      activityTitleManuallySet: markManuallySet,
+    );
+  }
+
   /// Auto-update fueling window when duration or intensity changes,
   /// unless user has manually overridden it.
   void _autoUpdateFuelingWindow() {
     if (!state.preRunMinutesManuallySet) {
       final recommended = recommendedHoursBefore(
-        ActivityType.running, state.intensity,
+        ActivityType.running,
+        state.intensity,
         durationMinutes: state.estimatedDuration?.inMinutes ?? 90,
       );
       state = state.copyWith(preRunMinutes: (recommended * 60).round());
@@ -416,7 +473,8 @@ class RunningInputController extends _$RunningInputController {
   void updateDateTime(DateTime date, TimeOfDay time) {
     final currentDate = state.selectedDate;
     final currentTime = state.selectedTime;
-    final hasChanged = currentDate.year != date.year ||
+    final hasChanged =
+        currentDate.year != date.year ||
         currentDate.month != date.month ||
         currentDate.day != date.day ||
         currentTime.hour != time.hour ||
@@ -448,7 +506,9 @@ class RunningInputController extends _$RunningInputController {
       state = state.copyWith(
         location: location,
         isLoadingLocation: false,
-        locationFailureReason: location != null ? null : state.locationFailureReason,
+        locationFailureReason: location != null
+            ? null
+            : state.locationFailureReason,
       );
 
       // Auto-fetch weather after getting location
@@ -521,7 +581,9 @@ class RunningInputController extends _$RunningInputController {
       state = state.copyWith(locationFailureReason: null);
       await fetchCurrentLocation();
     } else {
-      state = state.copyWith(locationFailureReason: LocationFailureReason.permissionDenied);
+      state = state.copyWith(
+        locationFailureReason: LocationFailureReason.permissionDenied,
+      );
     }
   }
 
@@ -537,50 +599,62 @@ class RunningInputController extends _$RunningInputController {
 
   /// Clear location (allows manual entry)
   void clearLocation() {
-    state = state.copyWith(
-      location: null,
-      weatherForecast: null,
-    );
+    state = state.copyWith(location: null, weatherForecast: null);
   }
 
   /// Delegate to the main controller for macro generation
   Future<void> generateMacros({
     String? activityId,
     String? eventId,
-    String? forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
+    String?
+    forUserId, // NEW: If provided, create activity for this user (coach creating for athlete)
   }) async {
     final currentState = state;
 
     DebugLogger.info('🏃 RUNNING CONTROLLER: generateMacros called');
-    DebugLogger.info('📍 RUNNING CONTROLLER: Current state - distance: ${currentState.distance}, pace: ${currentState.paceMinutes}');
+    DebugLogger.info(
+      '📍 RUNNING CONTROLLER: Current state - distance: ${currentState.distance}, pace: ${currentState.paceMinutes}',
+    );
 
     // Convert pace to M:SS format
     final paceMinutePart = currentState.paceMinutes.floor();
-    final paceSecondPart = ((currentState.paceMinutes - paceMinutePart) * 60).round();
-    final paceText = '$paceMinutePart:${paceSecondPart.toString().padLeft(2, '0')}';
+    final paceSecondPart = ((currentState.paceMinutes - paceMinutePart) * 60)
+        .round();
+    final paceText =
+        '$paceMinutePart:${paceSecondPart.toString().padLeft(2, '0')}';
 
-    DebugLogger.info('⏩ RUNNING CONTROLLER: Delegating to distancePageGutEntryController.generateRunningMacros...');
-
-    // Delegate to the main controller
-    await ref.read(macroTargetsControllerProvider.notifier).generateRunningMacros(
-      distanceText: currentState.distance.toString(),
-      paceText: paceText,
-      timeBeforeRunMinutes: currentState.preRunMinutes,
-      gutTraining: currentState.gutTraining,
-      distanceUnit: currentState.distanceUnit,
-      paceUnit: currentState.paceUnit,
-      scheduledDate: currentState.selectedDate,
-      scheduledTime: currentState.selectedTime,
-      sweatRateCat: currentState.sweatRate,
-      temperatureC: currentState.temperatureC,
-      humidityPct: currentState.humidityPct,
-      isFasted: currentState.isFasted,
-      intensity: currentState.intensity,
-      activityId: activityId,
-      eventId: eventId,
-      forUserId: forUserId, // NEW: Pass through forUserId for coach-created activities
+    DebugLogger.info(
+      '⏩ RUNNING CONTROLLER: Delegating to distancePageGutEntryController.generateRunningMacros...',
     );
 
-    DebugLogger.info('✅ RUNNING CONTROLLER: generateRunningMacros completed successfully');
+    // Delegate to the main controller
+    await ref
+        .read(macroTargetsControllerProvider.notifier)
+        .generateRunningMacros(
+          distanceText: currentState.distance.toString(),
+          paceText: paceText,
+          timeBeforeRunMinutes: currentState.preRunMinutes,
+          gutTraining: currentState.gutTraining,
+          distanceUnit: currentState.distanceUnit,
+          paceUnit: currentState.paceUnit,
+          scheduledDate: currentState.selectedDate,
+          scheduledTime: currentState.selectedTime,
+          sweatRateCat: currentState.sweatRate,
+          temperatureC: currentState.temperatureC,
+          humidityPct: currentState.humidityPct,
+          isFasted: currentState.isFasted,
+          intensity: currentState.intensity,
+          activityTitle: currentState.activityTitleManuallySet
+              ? currentState.activityTitle
+              : null,
+          activityId: activityId,
+          eventId: eventId,
+          forUserId:
+              forUserId, // NEW: Pass through forUserId for coach-created activities
+        );
+
+    DebugLogger.info(
+      '✅ RUNNING CONTROLLER: generateRunningMacros completed successfully',
+    );
   }
 }

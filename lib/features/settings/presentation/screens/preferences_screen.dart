@@ -5,6 +5,7 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
 
@@ -34,6 +35,9 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   // Optional name fields for coach mode athlete identification
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
+
+  // Email field
+  final _emailController = TextEditingController();
 
   bool _hasChanges = false;
   bool _isSaving = false;
@@ -70,6 +74,10 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         if (settingsState.lastName != null) {
           _lastNameController.text = settingsState.lastName!;
         }
+        // Email field
+        if (settingsState.email != null) {
+          _emailController.text = settingsState.email!;
+        }
       }
     });
   }
@@ -81,6 +89,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     _weightController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -134,6 +143,9 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         lastName: _lastNameController.text.trim().isNotEmpty
             ? _lastNameController.text.trim()
             : null,
+        email: _emailController.text.trim().isNotEmpty
+            ? _emailController.text.trim()
+            : null,
       );
 
       if (mounted) {
@@ -166,32 +178,34 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: Column(
-        children: [
-          // Content area
-          Expanded(
-            child: SafeArea(
-              bottom: false,
-              child: settingsAsync.when(
-                data: (state) => _buildContent(context, state),
-                loading: () => _buildLoadingState(context),
-                error: (error, stack) => _buildErrorState(context, error),
+      body: ContentArea(
+        child: Column(
+          children: [
+            // Content area
+            Expanded(
+              child: SafeArea(
+                bottom: false,
+                child: settingsAsync.when(
+                  data: (state) => _buildContent(context, state),
+                  loading: () => _buildLoadingState(context),
+                  error: (error, stack) => _buildErrorState(context, error),
+                ),
               ),
             ),
-          ),
 
-          // Footer navigation (matching onboarding style)
-          SafeArea(
-            top: false,
-            child: FigmaOnboardingFooter(
-              onContinue: _hasChanges && !_isSaving ? _saveChanges : null,
-              onBack: () => Navigator.of(context).pop(),
-              canContinue: _hasChanges && !_isSaving,
-              isLoading: _isSaving,
-              buttonText: 'Save Changes',
+            // Footer navigation (matching onboarding style)
+            SafeArea(
+              top: false,
+              child: FigmaOnboardingFooter(
+                onContinue: _hasChanges && !_isSaving ? _saveChanges : null,
+                onBack: () => Navigator.of(context).pop(),
+                canContinue: _hasChanges && !_isSaving,
+                isLoading: _isSaving,
+                buttonText: 'Save Changes',
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -342,6 +356,18 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 ),
               ),
             ],
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Email field
+          _buildTextField(
+            context: context,
+            controller: _emailController,
+            label: 'Email',
+            hint: 'Email address',
+            icon: FontAwesomeIcons.envelope,
+            keyboardType: TextInputType.emailAddress,
           ),
 
           const SizedBox(height: AppSpacing.md),

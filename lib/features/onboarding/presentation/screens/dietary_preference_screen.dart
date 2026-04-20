@@ -11,6 +11,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../../shared/widgets/selection/figma_radio_option_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// Dietary Preference Screen - Unified for both onboarding and settings
 ///
@@ -211,8 +212,9 @@ class _DietaryPreferenceScreenState
         ? AppColors.orange
         : theme.colorScheme.onSurface;
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: backgroundColor,
+      contentWidth: AdaptiveContentWidth.narrow,
       body: Column(
         children: [
           // Progress bar for onboarding, back button for settings
@@ -259,44 +261,32 @@ class _DietaryPreferenceScreenState
 
           // Content - vertically centered
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Title
-                          const SizedBox(height: 24),
-                          Text(
-                            'What is your dietary preference?',
-                            style: const TextStyle(
-                              fontFamily: 'Sansita',
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
-                              height: 1.0,
-                            ).copyWith(color: titleColor),
-                          ),
-
-                          const SizedBox(height: 28),
-
-                          // Diet options
-                          _buildFigmaDietOptions(useDarkStyle: useDarkStyle),
-                        ],
-                      ),
-                    ),
+            child: AdaptiveScrollableBody(
+              safeAreaTop: false,
+              safeAreaBottom: false,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  const SizedBox(height: 24),
+                  Text(
+                    'What is your dietary preference?',
+                    style: const TextStyle(
+                      fontFamily: 'Sansita',
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      height: 1.0,
+                    ).copyWith(color: titleColor),
                   ),
-                );
-              },
+
+                  const SizedBox(height: 28),
+
+                  // Diet options
+                  _buildFigmaDietOptions(useDarkStyle: useDarkStyle),
+                ],
+              ),
             ),
           ),
 

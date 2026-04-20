@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/services/app_external_deps.dart';
 
 /// Carb Loading Screen - Kyle's Design System
@@ -35,11 +36,12 @@ class CarbLoadingScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref) {
-    return SingleChildScrollView(
-      padding: AppSpacing.screenPaddingHorizontal,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return ContentArea(
+      child: SingleChildScrollView(
+        padding: AppSpacing.screenPaddingHorizontal,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           const SizedBox(height: AppSpacing.lg),
 
           // Current protocol section
@@ -62,6 +64,7 @@ class CarbLoadingScreen extends ConsumerWidget {
 
           const SizedBox(height: AppSpacing.xxxl),
         ],
+        ),
       ),
     );
   }
@@ -221,7 +224,7 @@ class CarbLoadingScreen extends ConsumerWidget {
           children: [
             // Food icon
             KyleFoodIcon(
-              foodType: _mapFoodType(meal.name),
+              foodType: mapFoodType(name: meal.name),
             ),
             
             const SizedBox(width: AppSpacing.md),
@@ -539,23 +542,6 @@ class CarbLoadingScreen extends ConsumerWidget {
     context.push('/carb-loading-food-selection', extra: {'category': category});
   }
 
-  KyleFoodType _mapFoodType(String foodName) {
-    final name = foodName.toLowerCase();
-    
-    if (name.contains('pasta') || name.contains('rice') || name.contains('bread')) {
-      return KyleFoodType.pasta;
-    } else if (name.contains('banana') || name.contains('apple') || name.contains('orange')) {
-      return KyleFoodType.fruit;
-    } else if (name.contains('chicken') || name.contains('protein') || name.contains('beef')) {
-      return KyleFoodType.protein;
-    } else if (name.contains('bar') || name.contains('cookie') || name.contains('cracker')) {
-      return KyleFoodType.snack;
-    } else if (name.contains('drink') || name.contains('water') || name.contains('juice')) {
-      return KyleFoodType.drink;
-    } else {
-      return KyleFoodType.other;
-    }
-  }
 
   List<MockMeal> _getMockDay1Meals() {
     return [

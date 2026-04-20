@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../providers/activities_controller.dart';
 import '../providers/brick_creation_available_provider.dart';
 import '../providers/brick_selection_controller.dart';
@@ -78,44 +79,46 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      body: Column(
-        children: [
-          // Top padding to account for status bar
-          SizedBox(height: MediaQuery.of(context).padding.top + 12),
-          // Calendar view toggle
-          CalendarViewToggle(
-            selectedMode: calendarMode,
-            onModeChanged: (mode) {
-              ref.read(calendarViewProvider.notifier).setView(mode);
-            },
-          ),
-          const SizedBox(height: 8),
-          // Calendar (week or month view)
-          if (calendarMode == CalendarViewMode.week)
-            CalendarWeekViewKyle(
-              selectedDate: selectedDate,
-              onDateSelected: (date) {
-                ref.read(calendarSelectedDateProvider.notifier).setDate(date);
+      body: ContentArea.wide(
+        child: Column(
+          children: [
+            // Top padding to account for status bar
+            SizedBox(height: MediaQuery.of(context).padding.top + 12),
+            // Calendar view toggle + settings gear
+            CalendarViewToggle(
+              selectedMode: calendarMode,
+              onModeChanged: (mode) {
+                ref.read(calendarViewProvider.notifier).setView(mode);
               },
-              dayIndicators: dayIndicators,
-            )
-          else
-            CalendarMonthViewKyle(
-              selectedDate: selectedDate,
-              onDateSelected: (date) {
-                ref.read(calendarSelectedDateProvider.notifier).setDate(date);
-              },
-              dayIndicators: dayIndicators,
             ),
-          Expanded(
-            child: _buildContent(
-              activitiesState,
-              upcomingEvent,
-              carbLoadingState,
-              selectedDate,
+            const SizedBox(height: 8),
+            // Calendar (week or month view)
+            if (calendarMode == CalendarViewMode.week)
+              CalendarWeekViewKyle(
+                selectedDate: selectedDate,
+                onDateSelected: (date) {
+                  ref.read(calendarSelectedDateProvider.notifier).setDate(date);
+                },
+                dayIndicators: dayIndicators,
+              )
+            else
+              CalendarMonthViewKyle(
+                selectedDate: selectedDate,
+                onDateSelected: (date) {
+                  ref.read(calendarSelectedDateProvider.notifier).setDate(date);
+                },
+                dayIndicators: dayIndicators,
+              ),
+            Expanded(
+              child: _buildContent(
+                activitiesState,
+                upcomingEvent,
+                carbLoadingState,
+                selectedDate,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -665,6 +668,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
         extra: {
           'activityId': brick.id,
           'initialDate': brick.scheduledDateTime,
+          'initialTitle': brick.title,
           'activityType': 'brick',
           // Brick metadata will be loaded from the activity by the screen
         },

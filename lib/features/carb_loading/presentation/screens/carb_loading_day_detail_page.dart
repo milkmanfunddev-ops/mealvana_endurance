@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/content_area.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../widgets/carb_loading_food_pills.dart';
 import '../widgets/edit_carb_target_dialog.dart';
@@ -16,19 +17,20 @@ import '../../domain/carb_loading_day_meal.dart';
 class CarbLoadingDayDetailPage extends ConsumerStatefulWidget {
   final db.CarbLoadingDay carbLoadingDay;
 
-  const CarbLoadingDayDetailPage({
-    super.key,
-    required this.carbLoadingDay,
-  });
+  const CarbLoadingDayDetailPage({super.key, required this.carbLoadingDay});
 
   @override
-  ConsumerState<CarbLoadingDayDetailPage> createState() => _CarbLoadingDayDetailPageState();
+  ConsumerState<CarbLoadingDayDetailPage> createState() =>
+      _CarbLoadingDayDetailPageState();
 }
 
-class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailPage> {
+class _CarbLoadingDayDetailPageState
+    extends ConsumerState<CarbLoadingDayDetailPage> {
   @override
   Widget build(BuildContext context) {
-    final controllerState = ref.watch(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id));
+    final controllerState = ref.watch(
+      carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id),
+    );
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -49,7 +51,9 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
             Text(
               DateFormat('EEEE, MMM d').format(widget.carbLoadingDay.planDate),
               style: AppTextStyles.smallLabel.copyWith(
-                color: isDark ? AppColors.cream.withValues(alpha: 0.7) : AppColors.blackberry.withValues(alpha: 0.7),
+                color: isDark
+                    ? AppColors.cream.withValues(alpha: 0.7)
+                    : AppColors.blackberry.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -60,6 +64,15 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
           color: isDark ? AppColors.cream : AppColors.blackberry,
         ),
         actions: [
+          TextButton(
+            onPressed: () => context.go('/main?tab=events'),
+            child: Text(
+              'Done',
+              style: AppTextStyles.buttonTertiary.copyWith(
+                color: isDark ? AppColors.cream : AppColors.blackberry,
+              ),
+            ),
+          ),
           PopupMenuButton<String>(
             icon: Icon(
               Icons.more_vert,
@@ -107,40 +120,47 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
         ],
       ),
       body: controllerState.when(
-        data: (state) => SingleChildScrollView(
-          padding: AppSpacing.screenPaddingHorizontal,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: AppSpacing.lg),
+        data: (state) => ContentArea(
+          child: RefreshIndicator(
+            color: AppColors.electrolyte,
+            onRefresh: () => ref
+                .read(
+                  carbLoadingDayDetailControllerProvider(
+                    widget.carbLoadingDay.id,
+                  ).notifier,
+                )
+                .forceRefresh(),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: AppSpacing.screenPaddingHorizontal,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: AppSpacing.lg),
 
-              // Progress Card (Kyle's Design)
-              _buildProgressCard(context, state),
+                  // Progress Card (Kyle's Design)
+                  _buildProgressCard(context, state),
 
-              SizedBox(height: AppSpacing.lg),
+                  SizedBox(height: AppSpacing.lg),
 
-              // Meal sections
-              _buildMealSections(context, state),
+                  // Meal sections
+                  _buildMealSections(context, state),
 
-              // Bottom padding
-              SizedBox(height: AppSpacing.xxxl),
-            ],
+                  // Bottom padding
+                  SizedBox(height: AppSpacing.xxxl),
+                ],
+              ),
+            ),
           ),
         ),
         loading: () => Center(
-          child: CircularProgressIndicator(
-            color: AppColors.electrolyte,
-          ),
+          child: CircularProgressIndicator(color: AppColors.electrolyte),
         ),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: AppColors.dragonfruit,
-              ),
+              Icon(Icons.error_outline, size: 64, color: AppColors.dragonfruit),
               SizedBox(height: AppSpacing.md),
               Text(
                 'Error loading day: $error',
@@ -155,7 +175,11 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
               ElevatedButton(
                 onPressed: () {
                   ref
-                      .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
+                      .read(
+                        carbLoadingDayDetailControllerProvider(
+                          widget.carbLoadingDay.id,
+                        ).notifier,
+                      )
                       .refresh();
                 },
                 style: ElevatedButton.styleFrom(
@@ -174,7 +198,8 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
         ),
       ),
       floatingActionButton: controllerState.when(
-        data: (state) => state.totalConsumed >= state.carbLoadingDay.carbTargetGrams
+        data: (state) =>
+            state.totalConsumed >= state.carbLoadingDay.carbTargetGrams
             ? FloatingActionButton.extended(
                 onPressed: () => _markDayComplete(context),
                 backgroundColor: AppColors.electrolyte,
@@ -195,7 +220,10 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
   }
 
   /// Build progress card matching Kyle's design
-  Widget _buildProgressCard(BuildContext context, CarbLoadingDayDetailState state) {
+  Widget _buildProgressCard(
+    BuildContext context,
+    CarbLoadingDayDetailState state,
+  ) {
     final carbDay = state.carbLoadingDay;
     final consumed = state.totalConsumed;
     final target = carbDay.carbTargetGrams;
@@ -215,22 +243,14 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
             children: [
               Text(
                 'Total Daily Progress',
-                style: AppTextStyles.sectionTitle.copyWith(
-                  color: textColor,
-                ),
+                style: AppTextStyles.sectionTitle.copyWith(color: textColor),
               ),
               TextButton.icon(
                 onPressed: () => _showEditTargetDialog(context),
-                icon: Icon(
-                  Icons.edit,
-                  size: 16,
-                  color: textColor,
-                ),
+                icon: Icon(Icons.edit, size: 16, color: textColor),
                 label: Text(
                   'Edit Target',
-                  style: AppTextStyles.smallLabel.copyWith(
-                    color: textColor,
-                  ),
+                  style: AppTextStyles.smallLabel.copyWith(color: textColor),
                 ),
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.symmetric(
@@ -258,15 +278,11 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
               ),
               Text(
                 ' / ',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: textColor,
-                ),
+                style: AppTextStyles.bodyMedium.copyWith(color: textColor),
               ),
               Text(
                 '${target}g',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: textColor,
-                ),
+                style: AppTextStyles.bodyMedium.copyWith(color: textColor),
               ),
             ],
           ),
@@ -279,19 +295,12 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
               padding: EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
                 color: AppColors.orange.withValues(alpha: 0.1),
-                border: Border.all(
-                  color: AppColors.orange,
-                  width: 2,
-                ),
+                border: Border.all(color: AppColors.orange, width: 2),
                 borderRadius: AppRadius.cardRadius,
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.warning,
-                    color: AppColors.orange,
-                    size: 20,
-                  ),
+                  Icon(Icons.warning, color: AppColors.orange, size: 20),
                   SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
@@ -311,7 +320,10 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
     );
   }
 
-  Widget _buildMealSections(BuildContext context, CarbLoadingDayDetailState state) {
+  Widget _buildMealSections(
+    BuildContext context,
+    CarbLoadingDayDetailState state,
+  ) {
     final carbDay = state.carbLoadingDay;
 
     // Define meal types with proper display names
@@ -319,7 +331,11 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
       (MealType.breakfast, 'Breakfast', carbDay.breakfastPercent),
       (MealType.morningSnack, 'Morning Snack', carbDay.morningSnackPercent),
       (MealType.lunch, 'Lunch', carbDay.lunchPercent),
-      (MealType.afternoonSnack, 'Afternoon Snack', carbDay.afternoonSnackPercent),
+      (
+        MealType.afternoonSnack,
+        'Afternoon Snack',
+        carbDay.afternoonSnackPercent,
+      ),
       (MealType.dinner, 'Dinner', carbDay.dinnerPercent),
       (MealType.eveningSnack, 'Evening Snack', carbDay.eveningSnackPercent),
     ];
@@ -371,9 +387,7 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
                 Expanded(
                   child: Text(
                     displayName,
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: textColor,
-                    ),
+                    style: AppTextStyles.subtitle.copyWith(color: textColor),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -407,95 +421,142 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
               runSpacing: 8,
               children: [
                 // Default foods
-                ...state.defaultFoods.where((food) => food.isSuitableForMeal(mealType)).map((food) {
-                  // Check if this food is already added to this meal
-                  final meal = meals.cast<CarbLoadingDayMeal?>().firstWhere(
-                    (m) => m != null && m.carbLoadingFoodId == food.id && m.carbLoadingUserFoodId == null,
-                    orElse: () => null,
-                  );
-                  final isSelected = meal != null;
+                ...state.defaultFoods
+                    .where((food) => food.isSuitableForMeal(mealType))
+                    .map((food) {
+                      // Check if this food is already added to this meal
+                      final meal = meals.cast<CarbLoadingDayMeal?>().firstWhere(
+                        (m) =>
+                            m != null &&
+                            m.carbLoadingFoodId == food.id &&
+                            m.carbLoadingUserFoodId == null,
+                        orElse: () => null,
+                      );
+                      final isSelected = meal != null;
 
-                  if (isSelected) {
-                    // Show as blue pill with +/- controls
-                    return CarbLoadingFoodPill(
-                      foodName: food.displayName,
-                      quantity: meal.quantity,
-                      onIncrement: () {
-                        ref
-                            .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
-                            .incrementQuantity(meal.id);
-                      },
-                      onDecrement: () {
-                        if (meal.quantity > 1) {
-                          ref
-                              .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
-                              .decrementQuantity(meal.id);
-                        } else {
-                          ref
-                              .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
-                              .removeMeal(meal.id);
-                        }
-                      },
-                    );
-                  } else {
-                    // Show as gray button
-                    return _buildQuickAddFoodButton(
-                      context,
-                      food.displayName,
-                      food.carbsDisplay,
-                      () {
-                        ref
-                            .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
-                            .addDefaultFood(mealType, food);
-                      },
-                    );
-                  }
-                }),
+                      if (isSelected) {
+                        // Show as blue pill with +/- controls
+                        return CarbLoadingFoodPill(
+                          foodName: food.displayName,
+                          quantity: meal.quantity,
+                          carbsPerServing: food.carbsPerServing,
+                          onIncrement: () {
+                            ref
+                                .read(
+                                  carbLoadingDayDetailControllerProvider(
+                                    widget.carbLoadingDay.id,
+                                  ).notifier,
+                                )
+                                .incrementQuantity(meal.id);
+                          },
+                          onDecrement: () {
+                            if (meal.quantity > 1) {
+                              ref
+                                  .read(
+                                    carbLoadingDayDetailControllerProvider(
+                                      widget.carbLoadingDay.id,
+                                    ).notifier,
+                                  )
+                                  .decrementQuantity(meal.id);
+                            } else {
+                              ref
+                                  .read(
+                                    carbLoadingDayDetailControllerProvider(
+                                      widget.carbLoadingDay.id,
+                                    ).notifier,
+                                  )
+                                  .removeMeal(meal.id);
+                            }
+                          },
+                        );
+                      } else {
+                        // Show as gray button
+                        return _buildQuickAddFoodButton(
+                          context,
+                          food.displayName,
+                          food.carbsDisplay,
+                          () {
+                            ref
+                                .read(
+                                  carbLoadingDayDetailControllerProvider(
+                                    widget.carbLoadingDay.id,
+                                  ).notifier,
+                                )
+                                .addDefaultFood(mealType, food);
+                          },
+                        );
+                      }
+                    }),
                 // User foods
-                ...state.userFoods.where((food) => !food.isDeleted && food.isSuitableForMeal(mealType)).map((food) {
-                  // Check if this food is already added to this meal
-                  final meal = meals.cast<CarbLoadingDayMeal?>().firstWhere(
-                    (m) => m != null && m.carbLoadingUserFoodId == food.id && m.carbLoadingFoodId == null,
-                    orElse: () => null,
-                  );
-                  final isSelected = meal != null;
+                ...state.userFoods
+                    .where(
+                      (food) =>
+                          !food.isDeleted && food.isSuitableForMeal(mealType),
+                    )
+                    .map((food) {
+                      // Check if this food is already added to this meal
+                      final meal = meals.cast<CarbLoadingDayMeal?>().firstWhere(
+                        (m) =>
+                            m != null &&
+                            m.carbLoadingUserFoodId == food.id &&
+                            m.carbLoadingFoodId == null,
+                        orElse: () => null,
+                      );
+                      final isSelected = meal != null;
 
-                  if (isSelected) {
-                    // Show as blue pill with +/- controls
-                    return CarbLoadingFoodPill(
-                      foodName: food.displayName,
-                      quantity: meal.quantity,
-                      onIncrement: () {
-                        ref
-                            .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
-                            .incrementQuantity(meal.id);
-                      },
-                      onDecrement: () {
-                        if (meal.quantity > 1) {
-                          ref
-                              .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
-                              .decrementQuantity(meal.id);
-                        } else {
-                          ref
-                              .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
-                              .removeMeal(meal.id);
-                        }
-                      },
-                    );
-                  } else {
-                    // Show as gray button
-                    return _buildQuickAddFoodButton(
-                      context,
-                      food.displayName,
-                      food.carbsDisplay,
-                      () {
-                        ref
-                            .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
-                            .addUserFood(mealType, food);
-                      },
-                    );
-                  }
-                }),
+                      if (isSelected) {
+                        // Show as blue pill with +/- controls
+                        return CarbLoadingFoodPill(
+                          foodName: food.displayName,
+                          quantity: meal.quantity,
+                          carbsPerServing: food.carbsPerServing,
+                          onIncrement: () {
+                            ref
+                                .read(
+                                  carbLoadingDayDetailControllerProvider(
+                                    widget.carbLoadingDay.id,
+                                  ).notifier,
+                                )
+                                .incrementQuantity(meal.id);
+                          },
+                          onDecrement: () {
+                            if (meal.quantity > 1) {
+                              ref
+                                  .read(
+                                    carbLoadingDayDetailControllerProvider(
+                                      widget.carbLoadingDay.id,
+                                    ).notifier,
+                                  )
+                                  .decrementQuantity(meal.id);
+                            } else {
+                              ref
+                                  .read(
+                                    carbLoadingDayDetailControllerProvider(
+                                      widget.carbLoadingDay.id,
+                                    ).notifier,
+                                  )
+                                  .removeMeal(meal.id);
+                            }
+                          },
+                        );
+                      } else {
+                        // Show as gray button
+                        return _buildQuickAddFoodButton(
+                          context,
+                          food.displayName,
+                          food.carbsDisplay,
+                          () {
+                            ref
+                                .read(
+                                  carbLoadingDayDetailControllerProvider(
+                                    widget.carbLoadingDay.id,
+                                  ).notifier,
+                                )
+                                .addUserFood(mealType, food);
+                          },
+                        );
+                      }
+                    }),
               ],
             ),
 
@@ -512,7 +573,12 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
     );
   }
 
-  Widget _buildQuickAddFoodButton(BuildContext context, String name, String carbs, VoidCallback onTap) {
+  Widget _buildQuickAddFoodButton(
+    BuildContext context,
+    String name,
+    String carbs,
+    VoidCallback onTap,
+  ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -524,25 +590,32 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
+          // Semi-transparent purple background for unselected pills
           color: isDark
-              ? AppColors.blackberryLight.withValues(alpha: 0.5)
-              : AppColors.cream.withValues(alpha: 0.5),
+              ? AppColors.blackberryLight.withValues(alpha: 0.3)
+              : AppColors.cream.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
+            // Teal border
             color: isDark
-                ? AppColors.cream.withValues(alpha: 0.3)
-                : AppColors.blackberry.withValues(alpha: 0.2),
+                ? AppColors.electrolyte.withValues(alpha: 0.6)
+                : AppColors.blackberry.withValues(alpha: 0.3),
+            width: 1.5,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              name,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark
-                    ? AppColors.cream.withValues(alpha: 0.7)
-                    : AppColors.blackberry.withValues(alpha: 0.7),
+            Flexible(
+              child: Text(
+                name,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark
+                      ? AppColors.cream
+                      : AppColors.blackberry,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
             SizedBox(width: AppSpacing.xs),
@@ -550,8 +623,8 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
               carbs,
               style: AppTextStyles.smallLabel.copyWith(
                 color: isDark
-                    ? AppColors.cream.withValues(alpha: 0.5)
-                    : AppColors.blackberry.withValues(alpha: 0.5),
+                    ? AppColors.cream.withValues(alpha: 0.7)
+                    : AppColors.blackberry.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -564,30 +637,55 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
     return InkWell(
       onTap: () async {
         // Navigate to carb loading food selection screen
-        await context.push('/carb-loading-select-food', extra: {
-          'dayId': widget.carbLoadingDay.id,
-          'mealType': mealType,
-        });
+        await context.push(
+          '/carb-loading-select-food',
+          extra: {'dayId': widget.carbLoadingDay.id, 'mealType': mealType},
+        );
 
         // Refresh the page when returning to show newly added foods
         if (mounted) {
           ref
-              .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
+              .read(
+                carbLoadingDayDetailControllerProvider(
+                  widget.carbLoadingDay.id,
+                ).notifier,
+              )
               .refresh();
         }
       },
       borderRadius: BorderRadius.circular(24),
       child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8B4BC), // Light pink/rose from Kyle's design
-          shape: BoxShape.circle,
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
         ),
-        child: Icon(
-          Icons.add,
-          color: AppColors.blackberry,
-          size: 24,
+        decoration: BoxDecoration(
+          // Orange outlined button (matching branded design)
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.orange,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.add,
+              color: AppColors.orange,
+              size: 20,
+            ),
+            SizedBox(width: AppSpacing.xs),
+            Text(
+              'ADD FOOD',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.orange,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -605,7 +703,9 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
   }
 
   void _showEditTargetDialog(BuildContext context) {
-    final controllerState = ref.read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id));
+    final controllerState = ref.read(
+      carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id),
+    );
 
     controllerState.whenData((state) {
       final carbDay = state.carbLoadingDay;
@@ -624,7 +724,11 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
           bodyWeightKg: bodyWeightKg,
           onSave: (carbsPerKg, dailyTargetG) {
             ref
-                .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
+                .read(
+                  carbLoadingDayDetailControllerProvider(
+                    widget.carbLoadingDay.id,
+                  ).notifier,
+                )
                 .updateCarbTarget(
                   carbsPerKg: carbsPerKg,
                   dailyTargetG: dailyTargetG,
@@ -669,7 +773,11 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
             onPressed: () {
               Navigator.of(context).pop();
               ref
-                  .read(carbLoadingDayDetailControllerProvider(widget.carbLoadingDay.id).notifier)
+                  .read(
+                    carbLoadingDayDetailControllerProvider(
+                      widget.carbLoadingDay.id,
+                    ).notifier,
+                  )
                   .resetDay();
             },
             style: ElevatedButton.styleFrom(
@@ -694,4 +802,3 @@ class _CarbLoadingDayDetailPageState extends ConsumerState<CarbLoadingDayDetailP
     Navigator.of(context).pop();
   }
 }
-

@@ -7,8 +7,9 @@ import 'catalog_section_widget.dart';
 import '../../../../barcode_scanning/application/catalog_search_service.dart';
 import '../../../../../shared/widgets/buttons/search_openfoodfacts_button.dart';
 
-/// Widget for displaying all search results (foods, catalog, OpenFoodFacts)
-/// Handles empty states and organizes results by section
+/// @deprecated Use [UnifiedFoodSearchResults] instead.
+/// Kept only because [OpenFoodFactsResultsWidget] below is still in use.
+@Deprecated('Use UnifiedFoodSearchResults instead')
 class FoodSearchResultsWidget extends StatelessWidget {
   final List<Food> searchResults;
   final List<Food> userFoods;

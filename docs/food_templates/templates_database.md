@@ -167,30 +167,54 @@
 
 **Target**: 1.0-1.2 g/kg carbs + 20-40g protein within 0-30 min
 **Research Source**: `/docs/food_templates/research/post_workout_research.md`
+**Full Plan & Research**: `/docs/food_templates/research/post_workout_templates_plan.md`
+**DB Table**: `post_workout_templates` (20 templates)
+**New Foods Migration**: `20260408100000_post_workout_template_foods.sql`
+**Templates Migration**: `20260408200000_post_workout_templates.sql`
 
-### Immediate Recovery (0-30 Minutes)
+### Immediate Recovery (0-30 Minutes) — Templates 1-10
 
-| Template Name | Foods | Carbs | Protein | Ratio | Best For |
-|---------------|-------|-------|---------|-------|----------|
-| Classic Chocolate Milk | 16 oz low-fat chocolate milk | 52g | 16g | 3.25:1 | Budget, widely available |
-| Banana Berry Protein Smoothie | Banana + berries + whey + Greek yogurt | 60-65g | 35-40g | 1.7:1 | Home recovery, antioxidants |
-| Tart Cherry Juice + Protein | 8-16 oz tart cherry + whey or yogurt | 50-60g | 25-30g | 2:1 | Heavy training, inflammation |
-| Recovery Protein Shake | 2 scoops recovery powder + water/milk | 40-50g | 15-25g | 3:1 | Convenience, travel |
-| Greek Yogurt Parfait | Greek yogurt + granola + berries + honey | 55-60g | 20-25g | 2.5:1 | Solid food preference |
-| Bagel + Nut Butter + Protein | Whole bagel + PB + honey + milk | 65-70g | 20-25g | 3:1 | Athletes who prefer solid food |
+| # | Template Name | Formula | Ratio | Type | Allergens | Intensity | Notes |
+|---|---------------|---------|-------|------|-----------|-----------|-------|
+| 1 | Classic Chocolate Milk | 16 oz low-fat chocolate milk | 3:1 | Shake | Dairy | Easy/Mod/Hard | 20+ studies validated. Budget (~$1.50). Sam Long, Reddit #1. |
+| 2 | Banana Berry Protein Smoothie | Banana + berries + whey + Greek yogurt | 2:1 | Smoothie | Dairy | Mod/Hard | Antioxidant-rich. ~3g leucine. Frodeno, Lionel Sanders. |
+| 3 | Tart Cherry Recovery Shake | Tart cherry juice + whey protein | 2:1 | Shake | Dairy | Hard/Race | Anti-inflammatory. CRP reduction 49%. 7-10 day pre-load. |
+| 4 | Recovery Protein Shake (Commercial) | Recovery drink mix + water | 3:1 | Shake | Dairy | Easy/Mod/Hard | Skratch/Hammer/Tailwind. Precise macros. Travel-friendly. |
+| 5 | Greek Yogurt Parfait | Greek yogurt + granola + berries + honey | 2.5:1 | Snack | Dairy, Gluten | Easy/Mod | Make-ahead mason jar. Ryf (bircher), Iden (skyr). |
+| 6 | Bagel + Nut Butter + Banana | Bagel + PB + banana + milk | 3:1 | Snack | Gluten, Peanuts, Dairy | Mod/Hard | 60g+ carbs per bagel. Slowtwitch staple. |
+| 7 | Core Power Shake (Grab-and-Go) | Core Power Elite (14 oz bottle) | 1:1 | Shake | Dairy | Mod/Hard | Zero prep. 42g protein. Gas station available. Sanders. |
+| 8 | Oatmeal + Protein + Fruit | Oatmeal + whey + banana + honey | 3:1 | Snack | Gluten, Dairy | Mod/Hard | Dual carbs. Iden porridge staple. Kodiak cups option. |
+| 9 | Plant-Based Recovery Smoothie | Banana + berries + plant protein + oat milk | 2:1 | Smoothie | Gluten | Mod/Hard | Fully vegan. Beals uses Vega Sport. Pea+rice protein. |
+| 10 | PB&J + Milk (Classic) | Bread + PB + jam + low-fat milk | 3:1 | Snack | Gluten, Peanuts, Dairy | Easy/Mod/Hard | Budget ($2). Allen Lim favorite. Reddit #5. |
 
-### Full Recovery Meals (30-120 Minutes)
+### Recovery Meals (30-120 Minutes) — Templates 11-20
 
-| Template Name | Foods | Carbs | Protein | Best For |
-|---------------|-------|-------|---------|----------|
-| Chicken Sweet Potato Bowl | Chicken + sweet potato + broccoli + rice | 70-75g | 40-45g | Dinner recovery, meal prep |
-| Salmon Rice Bowl | Salmon + rice + avocado + vegetables | 60-65g | 35-40g | Anti-inflammatory focus |
-| Breakfast Burrito | Whole wheat tortilla + eggs + beans + cheese | 50-55g | 30-35g | Morning workout recovery |
-| Burrito Bowl (Chipotle-Style) | Rice + chicken/steak + beans + veggies | 65-70g | 35-40g | Eating out post-workout |
-| PB&J + Milk | 2 slices bread + PB + jelly + 12oz milk | 60-65g | 20-25g | Budget, classic |
-| Recovery Beef Jerky + Trail Mix | 3oz jerky + trail mix + sports drink | 50-55g | 30-35g | Ultra runners, portable |
-| Core Power Shake | 1 bottle Core Power Elite | 40g | 42g | Grab-and-go, no prep |
-| Kodiak Power Cup + Fruit | Kodiak cup + banana/berries + milk | 60-65g | 20-25g | Sweet tooth, quick |
+| # | Template Name | Formula | Ratio | Type | Allergens | Intensity | Notes |
+|---|---------------|---------|-------|------|-----------|-----------|-------|
+| 11 | Chicken Sweet Potato Bowl | Chicken + sweet potato + rice + broccoli | 2:1 | Bowl | — | Mod/Hard | Meal-prep. Lucy Charles variant. Allen Lim Feed Zone. |
+| 12 | Salmon Rice Bowl | Salmon + rice + avocado + vegetables | 2:1 | Bowl | Fish | Hard/Race | Omega-3 anti-inflammatory. Blumenfeld, Iden 3-4x/week. |
+| 13 | Breakfast Burrito | Tortilla + eggs + beans + cheese | 2:1 | Sandwich | Gluten, Eggs, Dairy | Mod/Hard | Morning recovery. Freezer-friendly batch 5-7. |
+| 14 | Burrito Bowl (Chipotle-Style) | Rice + chicken + beans + veggies + salsa | 2:1 | Bowl | — | Mod/Hard | Chipotle/Qdoba. No cooking. Post-race easy find. |
+| 15 | Pasta + Lean Protein | Pasta + marinara + chicken | 3:1 | Meal | Gluten | Hard/Race | Sanders post-long-ride. Dense carbs. Meal-prep. |
+| 16 | Recovery Jerky + Trail Mix | Jerky + trail mix + sports drink | 2:1 | Snack | Tree Nuts | Hard/Race | No refrigeration. Ultra runner portable. Salty. |
+| 17 | Eggs + Toast + Fruit | Scrambled eggs + toast + OJ | 3:1 | Meal | Eggs, Gluten | Easy/Mod | Morning workout. Simple 10 min prep. Reddit fave. |
+| 18 | Rice + Stir-Fry + Tofu (Vegan) | Rice + mixed veg + tofu + soy sauce | 2:1 | Bowl | Soy | Mod/Hard | Fully vegan. Beals post-6hr-ride. Meal-prep. |
+| 19 | Avocado Toast + Eggs | Whole grain toast + avocado + eggs | 2:1 | Meal | Gluten, Eggs | Easy/Mod | Avocado = fats + potassium. Lighter sessions. |
+| 20 | Overnight Oats + Protein | Overnight oats + protein + berries + nut butter | 3:1 | Snack | Gluten, Dairy, Tree Nuts | Easy/Mod/Hard | Zero post-workout prep. Make night before. |
+
+### Elite Athlete Recovery Practices (Summary)
+
+| Athlete | Known Recovery Foods | Key Insight |
+|---------|---------------------|-------------|
+| Lucy Charles-Barclay | Rice bowls, GF pasta, smoothies | Gluten-free (coeliac), anti-inflammatory focus |
+| Kristian Blumenfeld | Recovery shake → salmon/fish meals | Data-driven, whole foods for recovery |
+| Sam Laidlow | French-style meals, rice + protein | Culturally satisfying > clinical |
+| Sam Long | Chocolate milk, rice/pasta bowls | Aggressive caloric recovery |
+| Lionel Sanders | Smoothie bowls, pasta, Core Power | Convenience + consistency |
+| Jan Frodeno | Mediterranean bowls, fresh smoothies | Sustainable, enjoyable meals |
+| Daniela Ryf | Bircher muesli, Swiss dairy | Cultural foods as recovery |
+| Gustav Iden | Fish, porridge, skyr, open-face bread | Scandinavian: dairy + fish |
+| Cody Beals | Plant stir-fry, avocado toast, Vega | Plant-based can hit targets |
 
 ---
 

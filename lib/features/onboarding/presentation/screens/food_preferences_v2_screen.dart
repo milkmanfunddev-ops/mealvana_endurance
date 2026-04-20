@@ -11,6 +11,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/selection/figma_food_chip.dart';
 import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 
 /// Food Preferences V2 Screen - Step 4 of Onboarding (Redesigned)
@@ -45,10 +46,12 @@ class FoodPreferencesV2Screen extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
 
   @override
-  ConsumerState<FoodPreferencesV2Screen> createState() => _FoodPreferencesV2ScreenState();
+  ConsumerState<FoodPreferencesV2Screen> createState() =>
+      _FoodPreferencesV2ScreenState();
 }
 
-class _FoodPreferencesV2ScreenState extends ConsumerState<FoodPreferencesV2Screen> {
+class _FoodPreferencesV2ScreenState
+    extends ConsumerState<FoodPreferencesV2Screen> {
   final TextEditingController _searchController = TextEditingController();
   List<FoodItem> _allFoods = [];
   List<FoodItem> _filteredFoods = [];
@@ -59,11 +62,17 @@ class _FoodPreferencesV2ScreenState extends ConsumerState<FoodPreferencesV2Scree
   @override
   void initState() {
     super.initState();
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': 'Food Preferences V2 Onboarding',
-      'dietary_preference': widget.dietaryPreference?.name,
-      'allergies_count': widget.allergies.length,
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track(
+          'screen_viewed',
+          properties: {
+            'screen_name': 'Food Preferences V2 Onboarding',
+            'dietary_preference': widget.dietaryPreference?.name,
+            'allergies_count': widget.allergies.length,
+          },
+        );
     _loadFoods();
   }
 
@@ -83,7 +92,8 @@ class _FoodPreferencesV2ScreenState extends ConsumerState<FoodPreferencesV2Scree
       List<FoodItem> foods = primaryFoods;
       if (primaryFoods.length < 18) {
         // Need more foods to reach around 18
-        final additionalFoods = await foodRepository.getAdditionalFoodsForPreferences();
+        final additionalFoods = await foodRepository
+            .getAdditionalFoodsForPreferences();
         final needed = 18 - primaryFoods.length;
         foods = [...primaryFoods, ...additionalFoods.take(needed)];
       } else if (primaryFoods.length > 18) {
@@ -167,21 +177,12 @@ class _FoodPreferencesV2ScreenState extends ConsumerState<FoodPreferencesV2Scree
 
     // Convert foods to Figma chip items
     final chipItems = _filteredFoods
-        .map((food) => FigmaFoodChipItem(
-              id: food.id,
-              name: food.name,
-            ))
+        .map((food) => FigmaFoodChipItem(id: food.id, name: food.name))
         .toList();
 
-    final allChipItems = _allFoods
-        .map((food) => FigmaFoodChipItem(
-              id: food.id,
-              name: food.name,
-            ))
-        .toList();
-
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: AppColors.blackberry,
+      contentWidth: AdaptiveContentWidth.narrow,
       body: Column(
         children: [
           // Progress bar at the very top (no SafeArea padding)
@@ -198,89 +199,96 @@ class _FoodPreferencesV2ScreenState extends ConsumerState<FoodPreferencesV2Scree
             child: _isLoading
                 ? Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.orange),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.orange,
+                      ),
                     ),
                   )
-                : SingleChildScrollView(
+                : AdaptiveScrollableBody(
+                    safeAreaTop: false,
+                    safeAreaBottom: false,
                     padding: const EdgeInsets.fromLTRB(20, 30, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title
-                        const Text(
-                          'What foods fuel your training?',
-                          style: TextStyle(
-                            fontFamily: 'Sansita',
-                            fontSize: 26,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.orange,
-                            height: 1.0,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title
+                          const Text(
+                            'What foods fuel your training?',
+                            style: TextStyle(
+                              fontFamily: 'Sansita',
+                              fontSize: 26,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.orange,
+                              height: 1.0,
+                            ),
                           ),
-                        ),
 
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                        // Subtitle
-                        const Text(
-                          'You can add more later in settings.',
-                          style: TextStyle(
-                            fontFamily: 'Apercu',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.textDark,
-                            letterSpacing: 0.192,
-                            height: 1.0,
+                          // Subtitle
+                          const Text(
+                            'You can add more later in settings.',
+                            style: TextStyle(
+                              fontFamily: 'Apercu',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.textDark,
+                              letterSpacing: 0.192,
+                              height: 1.0,
+                            ),
                           ),
-                        ),
 
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
-                        // Search bar
-                        FigmaSearchBar(
-                          controller: _searchController,
-                          onChanged: _onSearchChanged,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Common foods section title
-                        const Text(
-                          'Common foods',
-                          style: TextStyle(
-                            fontFamily: 'Sansita',
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
-                            height: 1.0,
+                          // Search bar
+                          FigmaSearchBar(
+                            controller: _searchController,
+                            onChanged: _onSearchChanged,
                           ),
-                        ),
 
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 20),
 
-                        // Food chips grid
-                        _filteredFoods.isEmpty
-                            ? const Padding(
-                                padding: EdgeInsets.all(40),
-                                child: Center(
-                                  child: Text(
-                                    'No foods available',
-                                    style: TextStyle(
-                                      fontFamily: 'Apercu',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w400,
-                                      color: AppColors.textDark,
-                                      letterSpacing: 0.192,
+                          // Common foods section title
+                          const Text(
+                            'Common foods',
+                            style: TextStyle(
+                              fontFamily: 'Sansita',
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textDark,
+                              height: 1.0,
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Food chips grid
+                          _filteredFoods.isEmpty
+                              ? const Padding(
+                                  padding: EdgeInsets.all(40),
+                                  child: Center(
+                                    child: Text(
+                                      'No foods available',
+                                      style: TextStyle(
+                                        fontFamily: 'Apercu',
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w400,
+                                        color: AppColors.textDark,
+                                        letterSpacing: 0.192,
+                                      ),
+                                      textAlign: TextAlign.center,
                                     ),
-                                    textAlign: TextAlign.center,
                                   ),
+                                )
+                              : FigmaFoodChipGrid(
+                                  foods: chipItems,
+                                  selectedFoodIds: likedFoodIds,
+                                  onFoodToggled: _toggleFood,
                                 ),
-                              )
-                            : FigmaFoodChipGrid(
-                                foods: chipItems,
-                                selectedFoodIds: likedFoodIds,
-                                onFoodToggled: _toggleFood,
-                              ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
           ),

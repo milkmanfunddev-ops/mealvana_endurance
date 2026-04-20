@@ -40,11 +40,13 @@ class ByHourSyncService {
           .fold<double>(0, (sum, a) => sum + (a.adjustedQuantity ?? 0));
       final remaining = summaryQty - assignedQty;
       if (remaining > 0.01) {
-        result.add(UnassignedTrayItem(
-          foodId: food.id,
-          food: food,
-          remainingQuantity: _roundQuantity(remaining),
-        ));
+        result.add(
+          UnassignedTrayItem(
+            foodId: food.id,
+            food: food,
+            remainingQuantity: _roundQuantity(remaining),
+          ),
+        );
       }
     }
 
@@ -73,8 +75,9 @@ class ByHourSyncService {
     required double newQty,
     required bool isIndivisible,
   }) {
-    final foodAssignments =
-        existing.assignments.where((a) => a.foodItemId == foodId).toList();
+    final foodAssignments = existing.assignments
+        .where((a) => a.foodItemId == foodId)
+        .toList();
     final assignedTotal = foodAssignments.fold<double>(
       0,
       (sum, a) => sum + (a.adjustedQuantity ?? 0),
@@ -90,8 +93,7 @@ class ByHourSyncService {
     // Sort by hour descending, then slot descending (trim from end)
     final sorted = List<TimeSlotAssignment>.from(foodAssignments)
       ..sort((a, b) {
-        final hourCmp =
-            b.timeSlot.hourIndex.compareTo(a.timeSlot.hourIndex);
+        final hourCmp = b.timeSlot.hourIndex.compareTo(a.timeSlot.hourIndex);
         if (hourCmp != 0) return hourCmp;
         return b.timeSlot.slotIndex.compareTo(a.timeSlot.slotIndex);
       });
@@ -114,15 +116,18 @@ class ByHourSyncService {
       }
     }
 
-    final updatedAssignments = existing.assignments.where((a) {
-      if (a.foodItemId != foodId) return true;
-      return !toRemove.contains(a);
-    }).map((a) {
-      if (a.foodItemId == foodId && toUpdate.containsKey(a)) {
-        return a.copyWith(adjustedQuantity: toUpdate[a]);
-      }
-      return a;
-    }).toList();
+    final updatedAssignments = existing.assignments
+        .where((a) {
+          if (a.foodItemId != foodId) return true;
+          return !toRemove.contains(a);
+        })
+        .map((a) {
+          if (a.foodItemId == foodId && toUpdate.containsKey(a)) {
+            return a.copyWith(adjustedQuantity: toUpdate[a]);
+          }
+          return a;
+        })
+        .toList();
 
     return existing.copyWith(assignments: updatedAssignments);
   }
@@ -176,9 +181,7 @@ class ByHourSyncService {
     var removed = false;
     final updatedAssignments = <TimeSlotAssignment>[];
     for (final a in existing.assignments) {
-      if (!removed &&
-          a.foodItemId == foodId &&
-          a.timeSlot == sourceSlot) {
+      if (!removed && a.foodItemId == foodId && a.timeSlot == sourceSlot) {
         removed = true;
         continue; // skip this one
       }
@@ -218,19 +221,22 @@ class ByHourSyncService {
 
     for (final food in summaryFoods) {
       final timing = resolveTimingCategory(food);
-      final isSipType = timing == TimingCategory.sipThroughout ||
+      final isSipType =
+          timing == TimingCategory.sipThroughout ||
           timing == TimingCategory.fuelDrink ||
           timing == TimingCategory.electrolyte;
 
       if (isSipType) {
         final qty = parseQuantity(food);
-        assignments.add(TimeSlotAssignment(
-          foodItemId: food.id,
-          timeSlot: const TimeSlot(hourIndex: -1, slotIndex: 0),
-          adjustedQuantity: qty,
-          timingCategory: timing,
-          isSipThroughout: true,
-        ));
+        assignments.add(
+          TimeSlotAssignment(
+            foodItemId: food.id,
+            timeSlot: const TimeSlot(hourIndex: -1, slotIndex: 0),
+            adjustedQuantity: qty,
+            timingCategory: timing,
+            isSipThroughout: true,
+          ),
+        );
       }
       // Non-sip foods are left unassigned (they appear in the tray automatically)
     }
@@ -299,12 +305,14 @@ class ByHourSyncService {
         adjustedQuantity: newSlotQty,
       );
     } else {
-      updated.add(TimeSlotAssignment(
-        foodItemId: foodId,
-        timeSlot: slot,
-        adjustedQuantity: newSlotQty,
-        isSipThroughout: slot.hourIndex == -1,
-      ));
+      updated.add(
+        TimeSlotAssignment(
+          foodItemId: foodId,
+          timeSlot: slot,
+          adjustedQuantity: newSlotQty,
+          isSipThroughout: slot.hourIndex == -1,
+        ),
+      );
     }
 
     return (
@@ -327,12 +335,14 @@ class ByHourSyncService {
   }) {
     const sipSlot = TimeSlot(hourIndex: -1, slotIndex: 0);
     final updated = <TimeSlotAssignment>[];
+    double movedQuantity = 0;
 
     // 1. Decrease global sip assignment by quantity
     for (final a in existing.assignments) {
       if (a.foodItemId == foodId && a.timeSlot == sipSlot) {
         final currentQty = a.adjustedQuantity ?? 0;
-        final newQty = _roundQuantity(currentQty - quantity);
+        movedQuantity = quantity <= currentQty ? quantity : currentQty;
+        final newQty = _roundQuantity(currentQty - movedQuantity);
         if (newQty > 0.01) {
           updated.add(a.copyWith(adjustedQuantity: newQty));
         }
@@ -342,6 +352,10 @@ class ByHourSyncService {
       }
     }
 
+    if (movedQuantity <= 0.01) {
+      return existing;
+    }
+
     // 2. Add/increment assignment in target slot
     final existingIdx = updated.indexWhere(
       (a) => a.foodItemId == foodId && a.timeSlot == targetSlot,
@@ -349,17 +363,81 @@ class ByHourSyncService {
 
     if (existingIdx >= 0) {
       final current = updated[existingIdx];
-      final newQty =
-          _roundQuantity((current.adjustedQuantity ?? 0) + quantity);
+      final newQty = _roundQuantity(
+        (current.adjustedQuantity ?? 0) + movedQuantity,
+      );
       updated[existingIdx] = current.copyWith(adjustedQuantity: newQty);
     } else {
-      updated.add(TimeSlotAssignment(
-        foodItemId: foodId,
-        timeSlot: targetSlot,
-        adjustedQuantity: quantity,
-        timingCategory: timingCategory,
-        isSipThroughout: false,
-      ));
+      updated.add(
+        TimeSlotAssignment(
+          foodItemId: foodId,
+          timeSlot: targetSlot,
+          adjustedQuantity: movedQuantity,
+          timingCategory: timingCategory,
+          isSipThroughout: false,
+        ),
+      );
+    }
+
+    return existing.copyWith(assignments: updated);
+  }
+
+  /// Move a portion of a food from a specific hour slot back to global sip.
+  ///
+  /// Atomically decreases [sourceSlot] by [quantity] and increases/creates the
+  /// global sip assignment (hourIndex == -1).
+  static ByHourData moveSlotFoodToSip({
+    required ByHourData existing,
+    required String foodId,
+    required TimeSlot sourceSlot,
+    required double quantity,
+    TimingCategory? timingCategory,
+  }) {
+    if (sourceSlot.hourIndex == -1 || quantity <= 0.01) return existing;
+
+    const sipSlot = TimeSlot(hourIndex: -1, slotIndex: 0);
+    final updated = existing.assignments.toList();
+
+    final sourceIdx = updated.indexWhere(
+      (a) => a.foodItemId == foodId && a.timeSlot == sourceSlot,
+    );
+    if (sourceIdx < 0) return existing;
+
+    final sourceAssignment = updated[sourceIdx];
+    final sourceQty = sourceAssignment.adjustedQuantity ?? 0;
+    if (sourceQty <= 0.01) return existing;
+
+    final movedQuantity = quantity <= sourceQty ? quantity : sourceQty;
+    final sourceRemaining = _roundQuantity(sourceQty - movedQuantity);
+
+    if (sourceRemaining <= 0.01) {
+      updated.removeAt(sourceIdx);
+    } else {
+      updated[sourceIdx] = sourceAssignment.copyWith(
+        adjustedQuantity: sourceRemaining,
+      );
+    }
+
+    final sipIdx = updated.indexWhere(
+      (a) => a.foodItemId == foodId && a.timeSlot == sipSlot,
+    );
+    if (sipIdx >= 0) {
+      final sipAssignment = updated[sipIdx];
+      final sipQty = sipAssignment.adjustedQuantity ?? 0;
+      updated[sipIdx] = sipAssignment.copyWith(
+        adjustedQuantity: _roundQuantity(sipQty + movedQuantity),
+      );
+    } else {
+      final timing = timingCategory ?? sourceAssignment.timingCategory;
+      updated.add(
+        TimeSlotAssignment(
+          foodItemId: foodId,
+          timeSlot: sipSlot,
+          adjustedQuantity: movedQuantity,
+          timingCategory: timing,
+          isSipThroughout: true,
+        ),
+      );
     }
 
     return existing.copyWith(assignments: updated);

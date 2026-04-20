@@ -1085,6 +1085,84 @@ class CoachService {
   // COACH RECORD SYNC
   // ============================================================================
 
+  // ============================================================================
+  // COACH PAIRING CODES (Coach generates, athlete enters)
+  // ============================================================================
+
+  /// Generate a pairing code for the current coach.
+  /// Returns the 6-character code string.
+  Future<String> generateCoachPairingCode() async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) {
+        throw StateError('No user profile found');
+      }
+
+      final isCoach = await _repository.isUserApprovedCoach(profile.id);
+      if (!isCoach) {
+        throw StateError('User is not an approved coach');
+      }
+
+      return await _repository.generateCoachPairingCode(profile.id);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to generate coach pairing code',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Get the current coach's active pairing code, if any.
+  Future<({String code, DateTime expiresAt})?> getActiveCoachPairingCode() async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) return null;
+
+      return await _repository.getActiveCoachPairingCode(profile.id);
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get active coach pairing code',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Athlete connects to a coach using the coach's pairing code.
+  /// Returns a detailed result for precise user-facing error messaging.
+  Future<PairingCodeConnectResult> connectViaCoachCodeAsAthlete({
+    required String code,
+  }) async {
+    try {
+      final profile = await _getCurrentProfile();
+      if (profile == null) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.noUserProfile,
+        );
+      }
+
+      return await _repository.connectViaCoachCode(
+        code: code,
+        athleteUserId: profile.id,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to connect via coach code as athlete',
+        context: 'COACH_SERVICE',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return PairingCodeConnectResult.failure(
+        PairingCodeConnectFailureReason.unknown,
+      );
+    }
+  }
+
   /// Check if the current user has an approved coach record
   /// This is used by the data sync service to determine coach status
   /// Note: Coach record is synced during sync-all-data, so this is for manual checks

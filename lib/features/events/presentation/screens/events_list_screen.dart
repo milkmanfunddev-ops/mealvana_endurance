@@ -199,11 +199,11 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
           );
         },
         loading: () => const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.electrolyte,
+            child: CircularProgressIndicator(
+              color: AppColors.electrolyte,
+            ),
           ),
-        ),
-        error: (error, stack) => Center(
+          error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

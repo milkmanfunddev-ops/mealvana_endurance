@@ -156,6 +156,14 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
               await ref.read(trainingPeaksSyncServiceProvider.future);
           await service.syncAll(userId);
           break;
+        case 'garmin':
+          // Garmin is push-only — no client-side sync needed.
+          // Activities arrive via server-side push when the user syncs
+          // their Garmin device.
+          if (kDebugMode) {
+            print('🔄 Garmin is push-only - no sync needed');
+          }
+          break;
         default:
           _logger.warning(
             'Unknown integration provider: $provider',

@@ -1,0 +1,11 @@
+--- custom_app_bar_back_button.dart
++++ custom_app_bar_back_button.dart
+@@ -21,7 +21,7 @@
+ }
+ 
+ class _CustomAppBarBackButtonState extends State<CustomAppBarBackButton> {
+   bool _isProcessing = false;
+ 
+-  void _handleTap() {
++  void _handleTap() async {
+     if (!widget.enabled) return;

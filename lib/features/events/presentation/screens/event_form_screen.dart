@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import 'package:location_iq/location_iq.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/services/location_service.dart';
 import '../../../../shared/utils/location_formatter.dart';
 import '../../../../shared/domain/activity_type.dart';
@@ -586,26 +588,35 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: GestureDetector(
-          onTap: () {
-            FocusScope.of(context).unfocus();
-            setState(() {
-              _eventSearchResults = [];
-              _isSearchingEvents = false;
-              _locationSearchResults = [];
-              _isSearchingLocation = false;
-            });
-            _eventSearchDebounce?.cancel();
-            _locationSearchDebounce?.cancel();
-          },
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              padding: AppSpacing.screenPaddingHorizontal,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+      body: ContentArea(
+        child: SafeArea(
+          child: GestureDetector(
+            onTap: () {
+              FocusScope.of(context).unfocus();
+              setState(() {
+                _eventSearchResults = [];
+                _isSearchingEvents = false;
+                _locationSearchResults = [];
+                _isSearchingLocation = false;
+              });
+              _eventSearchDebounce?.cancel();
+              _locationSearchDebounce?.cancel();
+            },
+            child: Form(
+              key: _formKey,
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(context).copyWith(
+                  dragDevices: {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse,
+                    PointerDeviceKind.trackpad,
+                  },
+                ),
+                child: SingleChildScrollView(
+                padding: AppSpacing.screenPaddingHorizontal,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                   const SizedBox(height: AppSpacing.md),
 
                 // Sport Category Selection
@@ -1253,11 +1264,13 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
 
                 const SizedBox(height: AppSpacing.xl),
               ],
+                ),
+              ),
+              ),
             ),
           ),
         ),
       ),
-    ),
     );
   }
 }

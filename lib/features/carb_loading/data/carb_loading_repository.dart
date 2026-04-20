@@ -338,6 +338,7 @@ class CarbLoadingRepository with SyncableRepository {
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
+    bool requireRemoteAck = false,
   }) async {
     try {
       // OFFLINE-FIRST: Calculate and save to Drift IMMEDIATELY
@@ -408,8 +409,7 @@ class CarbLoadingRepository with SyncableRepository {
         throw Exception('Failed to retrieve created carb loading plan');
       }
 
-      // Attempt background upload (non-blocking)
-      unawaited(() async {
+      if (requireRemoteAck) {
         try {
           await _uploadCarbLoadingPlanToSupabase(planId: planId);
         } catch (e, stackTrace) {
@@ -426,8 +426,30 @@ class CarbLoadingRepository with SyncableRepository {
             method: 'UPSERT',
             stackTrace: stackTrace,
           );
+          rethrow;
         }
-      }());
+      } else {
+        // Attempt background upload (non-blocking)
+        unawaited(() async {
+          try {
+            await _uploadCarbLoadingPlanToSupabase(planId: planId);
+          } catch (e, stackTrace) {
+            _logger.warning(
+              'Immediate upload failed; record stays dirty for retry',
+              context: 'CARB_LOADING_REPOSITORY',
+              error: e,
+              stackTrace: stackTrace,
+              data: {'operation': 'create', 'recordId': planId},
+            );
+            _sentry.reportNetworkError(
+              e,
+              url: 'supabase:carb_loading_plans:create',
+              method: 'UPSERT',
+              stackTrace: stackTrace,
+            );
+          }
+        }());
+      }
 
       return createdPlan;
     } catch (e, stackTrace) {
@@ -446,6 +468,7 @@ class CarbLoadingRepository with SyncableRepository {
     required String deviceId,
     required String carbLoadingDayId,
     required Map<String, dynamic> updates,
+    bool requireRemoteAck = false,
   }) async {
     try {
       // OFFLINE-FIRST: Update locally IMMEDIATELY with dirty flag
@@ -496,8 +519,7 @@ class CarbLoadingRepository with SyncableRepository {
         throw Exception('Failed to retrieve updated carb loading day');
       }
 
-      // Attempt background upload (non-blocking)
-      unawaited(() async {
+      if (requireRemoteAck) {
         try {
           await _uploadCarbLoadingDayToSupabase(
             carbLoadingDayId: carbLoadingDayId,
@@ -516,8 +538,32 @@ class CarbLoadingRepository with SyncableRepository {
             method: 'UPSERT',
             stackTrace: stackTrace,
           );
+          rethrow;
         }
-      }());
+      } else {
+        // Attempt background upload (non-blocking)
+        unawaited(() async {
+          try {
+            await _uploadCarbLoadingDayToSupabase(
+              carbLoadingDayId: carbLoadingDayId,
+            );
+          } catch (e, stackTrace) {
+            _logger.warning(
+              'Immediate upload failed; record stays dirty for retry',
+              context: 'CARB_LOADING_REPOSITORY',
+              error: e,
+              stackTrace: stackTrace,
+              data: {'operation': 'update_day', 'recordId': carbLoadingDayId},
+            );
+            _sentry.reportNetworkError(
+              e,
+              url: 'supabase:carb_loading_days:update',
+              method: 'UPSERT',
+              stackTrace: stackTrace,
+            );
+          }
+        }());
+      }
 
       return updatedDay;
     } catch (e, stackTrace) {
@@ -534,8 +580,13 @@ class CarbLoadingRepository with SyncableRepository {
   Future<void> deleteCarbLoadingPlan({
     required String deviceId,
     required String planId,
+    bool requireRemoteAck = false,
   }) async {
     try {
+      if (requireRemoteAck) {
+        await _uploadCarbLoadingPlanDeletion(planId: planId);
+      }
+
       await _database.transaction(() async {
         final carbLoadingDays = await (_database.select(
           _database.carbLoadingDaysTable,
@@ -556,25 +607,27 @@ class CarbLoadingRepository with SyncableRepository {
         )..where((tbl) => tbl.id.equals(planId))).go();
       });
 
-      unawaited(() async {
-        try {
-          await _uploadCarbLoadingPlanDeletion(planId: planId);
-        } catch (e, stackTrace) {
-          _logger.warning(
-            'Immediate upload failed; record stays dirty for retry',
-            context: 'CARB_LOADING_REPOSITORY',
-            error: e,
-            stackTrace: stackTrace,
-            data: {'operation': 'delete', 'recordId': planId},
-          );
-          _sentry.reportNetworkError(
-            e,
-            url: 'supabase:carb_loading_plans:delete',
-            method: 'DELETE',
-            stackTrace: stackTrace,
-          );
-        }
-      }());
+      if (!requireRemoteAck) {
+        unawaited(() async {
+          try {
+            await _uploadCarbLoadingPlanDeletion(planId: planId);
+          } catch (e, stackTrace) {
+            _logger.warning(
+              'Immediate upload failed; record stays dirty for retry',
+              context: 'CARB_LOADING_REPOSITORY',
+              error: e,
+              stackTrace: stackTrace,
+              data: {'operation': 'delete', 'recordId': planId},
+            );
+            _sentry.reportNetworkError(
+              e,
+              url: 'supabase:carb_loading_plans:delete',
+              method: 'DELETE',
+              stackTrace: stackTrace,
+            );
+          }
+        }());
+      }
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete carb loading plan',
@@ -690,6 +743,32 @@ class CarbLoadingRepository with SyncableRepository {
         context: 'CARB_LOADING_REPOSITORY',
         error: e,
         stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Get owner user ID for a carb loading day by joining through its plan
+  Future<String?> getCarbLoadingDayOwnerUserId(String dayId) async {
+    try {
+      final query = _database.select(_database.carbLoadingDaysTable).join([
+        innerJoin(
+          _database.carbLoadingPlansTable,
+          _database.carbLoadingPlansTable.id.equalsExp(
+            _database.carbLoadingDaysTable.carbLoadingPlanId,
+          ),
+        ),
+      ])..where(_database.carbLoadingDaysTable.id.equals(dayId));
+
+      final row = await query.getSingleOrNull();
+      return row?.readTable(_database.carbLoadingPlansTable).userId;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get carb loading day owner user ID',
+        context: 'CARB_LOADING_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'dayId': dayId},
       );
       rethrow;
     }

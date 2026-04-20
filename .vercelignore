@@ -1,0 +1,29 @@
+# Native platform dirs (not needed for web build - Vercel clones Flutter itself)
+ios/
+android/
+macos/
+linux/
+windows/
+
+# Build artifacts
+build/
+.dart_tool/
+.pub-cache/
+
+# IDE
+.idea/
+.vscode/
+
+# Git
+.git/
+
+# Test files
+test/
+integration_test/
+
+# Scripts data
+scripts/data/
+
+# Node modules
+node_modules/
+test/local_edge_functions/node_modules/

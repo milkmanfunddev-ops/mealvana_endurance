@@ -1,14 +1,22 @@
 # RevenueCat Integration for Mealvana Endurance
 
-**Last Updated**: January 18, 2025
-**Status**: Planning Phase
-**Target Launch**: Phase 4 (6-8 weeks)
+**Last Updated**: March 17, 2026
+**Status**: Infrastructure Setup In Progress
+**Pricing**: $9.99/month or $69.99/year with 1-month free trial
 
 ---
 
 ## Overview
 
-RevenueCat is a subscription infrastructure platform that will power Mealvana Endurance's $19.99/month premium subscription. This document provides a comprehensive overview of RevenueCat, implementation strategy, and integration with our existing architecture.
+RevenueCat is a subscription infrastructure platform that powers Mealvana Endurance's "Pro" subscription tier. This document provides a comprehensive overview of RevenueCat, implementation strategy, and integration with our existing architecture.
+
+### Current Progress (March 2026)
+- RevenueCat project and test store fully configured (products, entitlements, offerings, packages)
+- In-App Purchase Key (.p8) generated and saved
+- App Store Connect subscription products: **not yet created**
+- Real iOS app in RevenueCat: **not yet added**
+- Flutter SDK: **not yet installed**
+- See `SETUP_GUIDE.md` for detailed progress tracker and next steps
 
 ## Table of Contents
 
@@ -72,55 +80,67 @@ RevenueCat provides a unified API for in-app subscriptions that abstracts away t
 
 ### Cost Projections for Mealvana
 
-At $19.99/month subscription price:
+At $9.99/month or $69.99/year (blended ~$8/mo annual):
 
-- **50 subscribers**: $999.50 MTR = **$0** (Free tier)
-- **150 subscribers**: $2,998.50 MTR = **$23.99/month** ($8 per $1K)
-- **500 subscribers**: $9,995 MTR = **$79.96/month** ($8 per $1K)
-- **1,000 subscribers**: $19,990 MTR = **$239.88/month** ($12 per $1K)
+- **100 subscribers (all monthly)**: $999 MTR = **$0** (Free tier)
+- **250 subscribers**: ~$2,500 MTR = **$20/month** ($8 per $1K)
+- **500 subscribers**: ~$5,000 MTR = **$40/month** ($8 per $1K)
+- **1,000 subscribers**: ~$10,000 MTR = **$120/month** ($12 per $1K)
 
 **Break-Even Analysis**:
-- Free tier covers first ~125 subscribers
-- At 150 subscribers: $2,999 monthly revenue - $24 RevenueCat = **$2,975 net**
+- Free tier covers first ~250 subscribers
 - ROI is excellent given weeks of development time saved
 
 ---
 
-## Premium Features Strategy
+## Pro Features Strategy
 
 ### Freemium Model
 
-Based on business requirements, premium subscription ($19.99/month with 7-day free trial) will unlock:
+Pro subscription ($9.99/month or $69.99/year with 1-month free trial) unlocks:
 
-**Premium Features** (Subscription Required):
-1. **Barcode Scanning** - Quick food entry via barcode scanning
-2. **Coach Integration** - Connect with coaches for guided plans
-3. **Pro Recipes** - Advanced nutrition recipes and meal plans
-4. **TrainingPeaks Integration** - Sync training plans and workouts
-5. **Final Surge Integration** - Connect training data
-6. **Canva Integration** - Visual nutrition plan exports
-7. **Strava Integration** - Connect activities and performance data
+**Pro Features** (Subscription Required):
+1. **Training Platform Integration** - TrainingPeaks & FinalSurge workout import
+2. **Write to TrainingPeaks** - Push nutrition data back to TrainingPeaks
+3. **Coach/Dietitian Dashboard** - Connect with coaches for guided plans
+4. **Brick Workout Nutrition Plan** - Multi-sport session planning
+5. **Personal Fueling Templates** - Save and reuse fueling setups
+6. **Mealvana 101** - Video fueling course led by Dr. Rachel Mitchel
+7. **By-Hour Race Day Nutrition** - Timed race-day fueling plan
+8. **Food Journaling** - Log and compare against targets
+9. **Barcode Scanning** - Quick food entry via barcode
+10. **Carb-Loading** - Structured carb-loading plans
+11. **Adaptive Macro Adjustment** - Dynamic macro tuning
+
+**Cookie-Gated Features** (NOT Pro, future):
+- Meal planning
+- Import recipes
+- Coach intelligence: fueling plan pattern detection
 
 **Free Features** (Available to All Users):
 - Basic nutrition plan generation (manual input)
-- Up to 3 saved nutrition plans
 - Food preferences management
 - Basic gut training guidance
 - Access to general nutrition content
 
 ### Paywall Strategy
 
-**Presentation Timing**: After onboarding completion
-- User completes profile setup
-- Shown value of premium features
-- Clear 7-day free trial offer
-- Easy "Skip for now" option to continue with free tier
+**Paywall Locations** (drawer variant):
+- Settings > "Connected apps"
+- Any pro feature card on home/dashboard
+- Any pro feature CTA inside "Create activity"
+
+**Gating Behavior**:
+1. Show lock icon or `<Pro>` badge on locked features
+2. On tap, open paywall drawer variant
+3. After purchase, return user to the exact feature they tried to use
 
 **Trial Configuration**:
-- **Duration**: 7 days
+- **Duration**: 1 month (closest to 4-week spec in Apple's tier system)
 - **Type**: Free trial (no charge during trial)
-- **Eligibility**: First-time subscribers only
+- **Eligibility**: First-time subscribers only (per subscription group, lifetime)
 - **Cancel Policy**: Can cancel anytime, no charge if cancelled during trial
+- **After trial**: Automatically charged $9.99/month or $69.99/year
 
 ---
 
@@ -200,7 +220,7 @@ class SubscriptionStatus extends _$SubscriptionStatus {
 
   void _handleUpdate(CustomerInfo info) {
     // Update state when subscription changes
-    state = AsyncData(info.entitlements.active.containsKey('premium'));
+    state = AsyncData(info.entitlements.active.containsKey('pro'));
   }
 }
 ```
@@ -257,25 +277,24 @@ class PaywallController extends AsyncNotifier<PaywallState> {
 }
 ```
 
-**Content Structure** (`content_defaults.json`):
+**Content Structure** (`content_defaults.json`) - to be updated during implementation:
 ```json
 {
   "ui_text": {
     "paywall": {
-      "title": "Upgrade to Premium",
-      "subtitle": "Unlock advanced nutrition features",
+      "title": "Unlock {Feature}",
       "features": {
-        "barcode_scanning": "Quick food entry with barcode scanning",
-        "coach_integration": "Connect with your coach",
-        "pro_recipes": "Access premium nutrition recipes",
-        "training_peaks": "TrainingPeaks integration",
-        "final_surge": "Final Surge integration",
-        "canva": "Export plans to Canva",
-        "strava": "Strava activity sync"
+        "training_integration": "TrainingPeaks & FinalSurge Integration",
+        "meal_logging": "Meal logging",
+        "brick_workouts": "Brick workout planning",
+        "personal_templates": "Personal fueling templates",
+        "race_day": "By-hour race day nutrition planning",
+        "mealvana_101": "Mealvana 101 (fueling course)"
       },
-      "trial_cta": "Start 7-Day Free Trial",
-      "subscribe_cta": "Subscribe Now",
-      "trial_terms": "Cancel anytime. $19.99/month after trial."
+      "trial_cta": "Start 4-week free trial",
+      "subscribe_cta": "Unlock Pro",
+      "trial_terms": "After the free trial, you will be charged $9.99/month or $69.99/year unless you cancel.",
+      "manage_note": "Manage your subscription in Settings anytime."
     }
   }
 }
@@ -285,16 +304,15 @@ class PaywallController extends AsyncNotifier<PaywallState> {
 
 ## Implementation Timeline
 
-### Phase Dependencies
+### Current Status (March 2026)
 
-**Prerequisites**:
-- ✅ Phase 0: Domain model auth fields (COMPLETED)
-- ✅ Phase 1: Anonymous auth (COMPLETED)
-- ⏳ Phase 2: Email/OAuth authentication (IN PROGRESS)
-- ⏳ Phase 3: Multi-device sync
-- 🔜 Phase 4: Monetization + RevenueCat (TARGET)
-
-**RevenueCat Integration**: Phase 4 (6-8 weeks, ~4-6 months from now based on roadmap)
+- ✅ RevenueCat project created and test store configured
+- ✅ In-App Purchase Key generated
+- ✅ Email/OAuth authentication complete
+- ⏳ App Store Connect subscription products (next step)
+- ⏳ Real iOS app in RevenueCat (next step)
+- 🔜 Flutter SDK integration
+- 🔜 Paywall UI and feature gating
 
 ### Estimated Time Investment
 

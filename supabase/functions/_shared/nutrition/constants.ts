@@ -33,7 +33,7 @@ export const DEFAULT_OPTIMIZATION_WEIGHTS: PhaseWeights = {
   },
   after: {
     carbs: 0.9,
-    protein: 0.7,
+    protein: 1.0,
     sodium: 0.3,
   },
 };

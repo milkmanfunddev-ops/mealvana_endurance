@@ -165,6 +165,12 @@ class SettingsController extends _$SettingsController {
       }
     }
 
+    final profileEmail = displayProfile?.email?.trim();
+    final authEmail = supabaseUser?.email.trim();
+    final effectiveEmail = (profileEmail != null && profileEmail.isNotEmpty)
+        ? profileEmail
+        : ((authEmail != null && authEmail.isNotEmpty) ? authEmail : null);
+
     return SettingsState(
       title: title,
       accountSectionTitle: accountSectionTitle,
@@ -214,7 +220,9 @@ class SettingsController extends _$SettingsController {
       isAnonymous: displayProfile?.isAnonymous ?? true,
       authProvider: displayProfile?.authProvider ?? 'anonymous',
       authUserId: displayProfile?.authUserId,
-      email: supabaseUser?.email,
+      // Prefer the user-editable profile email. Fall back to auth email only
+      // when profile email is missing.
+      email: effectiveEmail,
       // Coach mode - check coaches table for approved status
       isCoach: await _checkIsApprovedCoach(displayProfile?.id),
       // Optional name fields for coach mode athlete identification
@@ -296,14 +304,11 @@ class SettingsController extends _$SettingsController {
     if (currentState == null) return;
 
     state = AsyncData(
-      currentState.copyWith(
-        unitSystem: system,
-        isSaving: true,
-      ),
+      currentState.copyWith(unitSystem: system, isSaving: true),
     );
 
     await _saveProfile();
-    
+
     // Invalidate providers that rely on unit settings
     ref.invalidate(macroTargetsControllerProvider);
   }
@@ -346,6 +351,7 @@ class SettingsController extends _$SettingsController {
     SweatRateCat? sweatRate,
     String? firstName,
     String? lastName,
+    String? email,
   }) async {
     final currentState = state.value;
     if (currentState == null) return;
@@ -358,19 +364,21 @@ class SettingsController extends _$SettingsController {
         heightFeet: heightFeet ?? currentState.heightFeet,
         heightInches: heightInches ?? currentState.heightInches,
         weightPounds: weightPounds ?? currentState.weightPounds,
-        runsWithWaterBottle: runsWithWaterBottle ?? currentState.runsWithWaterBottle,
+        runsWithWaterBottle:
+            runsWithWaterBottle ?? currentState.runsWithWaterBottle,
         unitSystem: unitSystem ?? currentState.unitSystem,
         gutTrainingLevel: gutTrainingLevel ?? currentState.gutTrainingLevel,
         sweatRate: sweatRate ?? currentState.sweatRate,
         firstName: firstName,
         lastName: lastName,
+        email: email ?? currentState.email,
         isSaving: true,
       ),
     );
 
     // Single save and invalidation
     await _saveProfile();
-    
+
     // Invalidate providers if unit system changed
     if (unitSystem != null) {
       ref.invalidate(macroTargetsControllerProvider);
@@ -473,7 +481,9 @@ class SettingsController extends _$SettingsController {
   /// Save nutrition target overrides (null clears all overrides).
   /// Bypasses _saveProfile() to handle the null/clearing case directly,
   /// since copyWith with `??` would preserve existing values when null is passed.
-  Future<void> saveNutritionTargetOverrides(NutritionTargetOverrides? overrides) async {
+  Future<void> saveNutritionTargetOverrides(
+    NutritionTargetOverrides? overrides,
+  ) async {
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -515,14 +525,17 @@ class SettingsController extends _$SettingsController {
         cssPacePer100mSeconds: existingProfile.cssPacePer100mSeconds,
         typicalWetsuit: existingProfile.typicalWetsuit,
         typicalSwimCapType: existingProfile.typicalSwimCapType,
-        defaultRunningPaceMinPerMile: existingProfile.defaultRunningPaceMinPerMile,
+        defaultRunningPaceMinPerMile:
+            existingProfile.defaultRunningPaceMinPerMile,
         defaultCyclingSpeedMph: existingProfile.defaultCyclingSpeedMph,
-        defaultSwimmingPacePer100Sec: existingProfile.defaultSwimmingPacePer100Sec,
+        defaultSwimmingPacePer100Sec:
+            existingProfile.defaultSwimmingPacePer100Sec,
         dietaryPreference: existingProfile.dietaryPreference,
         allergies: existingProfile.allergies,
         senderName: existingProfile.senderName,
         firstName: existingProfile.firstName,
         lastName: existingProfile.lastName,
+        email: existingProfile.email,
         nutritionTargetOverrides: overrides, // Explicitly set (can be null)
       );
 
@@ -561,21 +574,37 @@ class SettingsController extends _$SettingsController {
         unitSystem: currentState.unitSystem,
         gutTraining: currentState.gutTrainingLevel,
         sweatRate: currentState.sweatRate,
-        giSensitivity: currentState.giSensitivity ?? existingProfile.giSensitivity,
+        giSensitivity:
+            currentState.giSensitivity ?? existingProfile.giSensitivity,
         ftpWatts: currentState.ftpWatts ?? existingProfile.ftpWatts,
-        typicalBikeBottles: currentState.typicalBikeBottles ?? existingProfile.typicalBikeBottles,
-        hasAeroBottle: currentState.hasAeroBottle ?? existingProfile.hasAeroBottle,
+        typicalBikeBottles:
+            currentState.typicalBikeBottles ??
+            existingProfile.typicalBikeBottles,
+        hasAeroBottle:
+            currentState.hasAeroBottle ?? existingProfile.hasAeroBottle,
         hasBentoBox: currentState.hasBentoBox ?? existingProfile.hasBentoBox,
-        cssPacePer100mSeconds: currentState.cssPacePer100mSeconds ?? existingProfile.cssPacePer100mSeconds,
-        typicalWetsuit: currentState.typicalWetsuit ?? existingProfile.typicalWetsuit,
-        typicalSwimCapType: currentState.typicalSwimCapType ?? existingProfile.typicalSwimCapType,
-        dietaryPreference: currentState.dietaryPreference ?? existingProfile.dietaryPreference,
-        allergies: currentState.allergies.isNotEmpty ? currentState.allergies : existingProfile.allergies,
+        cssPacePer100mSeconds:
+            currentState.cssPacePer100mSeconds ??
+            existingProfile.cssPacePer100mSeconds,
+        typicalWetsuit:
+            currentState.typicalWetsuit ?? existingProfile.typicalWetsuit,
+        typicalSwimCapType:
+            currentState.typicalSwimCapType ??
+            existingProfile.typicalSwimCapType,
+        dietaryPreference:
+            currentState.dietaryPreference ?? existingProfile.dietaryPreference,
+        allergies: currentState.allergies.isNotEmpty
+            ? currentState.allergies
+            : existingProfile.allergies,
         // Optional name fields for coach mode athlete identification
         firstName: currentState.firstName ?? existingProfile.firstName,
         lastName: currentState.lastName ?? existingProfile.lastName,
+        // Contact information
+        email: currentState.email ?? existingProfile.email,
         // Nutrition target overrides
-        nutritionTargetOverrides: currentState.nutritionTargetOverrides ?? existingProfile.nutritionTargetOverrides,
+        nutritionTargetOverrides:
+            currentState.nutritionTargetOverrides ??
+            existingProfile.nutritionTargetOverrides,
       );
 
       await userRepository.updateUserProfile(updatedProfile);
@@ -653,7 +682,9 @@ class SettingsController extends _$SettingsController {
     final eventsRepo = ref.read(eventsRepositoryProvider);
     final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
     final feedbackRepo = ref.read(feedbackRepositoryProvider);
-    final foodPrefsRepo = await ref.read(foodPreferencesRepositoryProvider.future);
+    final foodPrefsRepo = await ref.read(
+      foodPreferencesRepositoryProvider.future,
+    );
     final userRepo = await ref.read(userRepositoryProvider.future);
 
     await Future.wait([
@@ -707,7 +738,10 @@ class SettingsController extends _$SettingsController {
           );
           // Continue with local cleanup even if server deletion fails
         } else {
-          logger.info('User deleted from Supabase successfully', context: 'SETTINGS');
+          logger.info(
+            'User deleted from Supabase successfully',
+            context: 'SETTINGS',
+          );
         }
       } catch (e) {
         logger.error(

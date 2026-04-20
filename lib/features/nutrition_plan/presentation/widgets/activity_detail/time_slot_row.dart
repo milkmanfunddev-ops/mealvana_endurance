@@ -59,15 +59,21 @@ class TimeSlotRow extends StatelessWidget {
   final String? selectedFoodId;
 
   /// Called when a food is placed from tray (tap or drop).
-  final void Function(String foodId, TimeSlot slot, double qty,
-      TimingCategory? timingCategory, bool isSipThroughout)? onPlaceFromTray;
+  final void Function(
+    String foodId,
+    TimeSlot slot,
+    double qty,
+    TimingCategory? timingCategory,
+    bool isSipThroughout,
+  )?
+  onPlaceFromTray;
 
   /// Called when a food is removed from this slot (swipe-to-dismiss).
   final void Function(String foodId, TimeSlot slot)? onRemoveFromSlot;
 
   /// Called to adjust a placed food's slot quantity by delta.
   final void Function(String foodId, TimeSlot slot, double delta)?
-      onAdjustSlotQuantity;
+  onAdjustSlotQuantity;
 
   @override
   Widget build(BuildContext context) {
@@ -79,11 +85,14 @@ class TimeSlotRow extends StatelessWidget {
         ? sectionColor
         : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3);
 
-    final hasTapTarget = selectedFoodId != null && !hasItems;
+    // Allow tap-to-place on both empty and occupied slots so users can stack
+    // multiple foods in the same timestamp.
+    final hasTapTarget = selectedFoodId != null;
 
     return DragTarget<Object>(
       onWillAcceptWithDetails: (details) {
-        return details.data is TimeSlotAssignment || details.data is TrayDragData;
+        return details.data is TimeSlotAssignment ||
+            details.data is TrayDragData;
       },
       onAcceptWithDetails: (details) {
         final data = details.data;
@@ -128,7 +137,9 @@ class TimeSlotRow extends StatelessWidget {
           child: Container(
             decoration: isDropTarget || hasTapTarget
                 ? BoxDecoration(
-                    color: sectionColor.withValues(alpha: isDropTarget ? 0.08 : 0.04),
+                    color: sectionColor.withValues(
+                      alpha: isDropTarget ? 0.08 : 0.04,
+                    ),
                     borderRadius: AppRadius.smRadius,
                   )
                 : null,
@@ -192,7 +203,9 @@ class TimeSlotRow extends StatelessWidget {
                                     child: Text(
                                       'Tap to place',
                                       style: AppTextStyles.bodySmall.copyWith(
-                                        color: sectionColor.withValues(alpha: 0.5),
+                                        color: sectionColor.withValues(
+                                          alpha: 0.5,
+                                        ),
                                         fontSize: 11,
                                         fontStyle: FontStyle.italic,
                                       ),

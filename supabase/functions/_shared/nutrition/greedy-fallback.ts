@@ -4,8 +4,21 @@
  * Used when the LP solver fails to find a feasible solution
  */
 
-import { roundToIncrement } from '../utils.ts';
-import { type Food, type Phase, type MacroTargets, type PhaseSolution, deriveTimingCategory } from './types.ts';
+import { roundToIncrement } from "../utils.ts";
+import {
+  deriveTimingCategory,
+  type Food,
+  type MacroTargets,
+  type Phase,
+  type PhaseSolution,
+  shouldPrioritizeMacroTarget,
+} from "./types.ts";
+import { MACRO_CONSTRAINT_RANGES } from "./constants.ts";
+
+function floorToIncrement(value: number, increment = 0.5): number {
+  if (value <= 0) return 0;
+  return Math.floor(value / increment) * increment;
+}
 
 /**
  * Greedy algorithm that selects foods based on preference and macro efficiency
@@ -13,16 +26,18 @@ import { type Food, type Phase, type MacroTargets, type PhaseSolution, deriveTim
 export function greedyFallback(
   foods: Food[],
   targets: MacroTargets,
-  phase: Phase
+  phase: Phase,
 ): PhaseSolution {
   console.log(
     `[GREEDY-FALLBACK] Using greedy approach for ${phase} phase | ` +
-    `targets: carbs=${targets.carbs_g}g, protein=${targets.protein_g ?? 0}g, ` +
-    `sodium=${targets.sodium_mg}mg, water=${targets.water_ml}ml | ` +
-    `food pool: ${foods.length} foods`
+      `targets: carbs=${targets.carbs_g}g, protein=${
+        targets.protein_g ?? 0
+      }g, ` +
+      `sodium=${targets.sodium_mg}mg, water=${targets.water_ml}ml | ` +
+      `food pool: ${foods.length} foods`,
   );
 
-  const selectedFoods: PhaseSolution['foods'] = [];
+  const selectedFoods: PhaseSolution["foods"] = [];
   const totals = {
     carbs_g: 0,
     protein_g: 0,
@@ -43,7 +58,7 @@ export function greedyFallback(
     const carbsA = a.per_serving.carbs_g;
     const carbsB = b.per_serving.carbs_g;
 
-    if (phase === 'after') {
+    if (phase === "after") {
       // For after-run, also consider protein efficiency
       const proteinA = a.per_serving.protein_g;
       const proteinB = b.per_serving.protein_g;
@@ -56,64 +71,116 @@ export function greedyFallback(
   // Greedily select foods to meet targets
   // During phase needs more items for longer runs to meet macro targets
   // After phase needs more items to meet both macro and hydration targets
-  const maxFoods = phase === 'during' ? 5 : phase === 'after' ? 6 : 3;
+  const maxFoods = phase === "during" ? 5 : phase === "after" ? 6 : 3;
   const carbsTarget = targets.carbs_g;
   const proteinTarget = targets.protein_g || 0;
   const sodiumTarget = targets.sodium_mg || 0;
   const waterTarget = targets.water_ml || 0;
+  const prioritizeCarbTarget = shouldPrioritizeMacroTarget(targets, "carbs");
+  const defaultCarbHigh = carbsTarget > 0
+    ? carbsTarget * (MACRO_CONSTRAINT_RANGES.carbs[phase]?.max ?? 1.2)
+    : Number.POSITIVE_INFINITY;
+  const carbHigh = prioritizeCarbTarget
+    ? defaultCarbHigh
+    : (targets.carbs_high_g ?? defaultCarbHigh);
+  const proteinHigh = targets.protein_high_g ??
+    (proteinTarget > 0 ? proteinTarget * 1.2 : Number.POSITIVE_INFINITY);
+  const sodiumHigh = targets.sodium_high_mg ??
+    (sodiumTarget > 0 ? sodiumTarget * 1.25 : Number.POSITIVE_INFINITY);
+  const waterHigh = targets.water_high_ml ??
+    (waterTarget > 0 ? waterTarget * 1.2 : Number.POSITIVE_INFINITY);
 
   for (const food of sortedFoods) {
     if (selectedFoods.length >= maxFoods) break;
 
     // Check if adding this food would cause excessive overshoots
-    const wouldOvershootCarbs =
-      carbsTarget > 0 &&
-      totals.carbs_g + food.per_serving.carbs_g > carbsTarget * 1.2;
-    const wouldOvershootSodium =
-      sodiumTarget > 0 &&
-      totals.sodium_mg + food.per_serving.sodium_mg > sodiumTarget * 1.3;
-    const wouldOvershootWater =
-      waterTarget > 0 &&
-      totals.water_ml + food.per_serving.water_ml > waterTarget * 1.3;
-    const wouldOvershootProtein =
-      proteinTarget > 0 &&
-      totals.protein_g + food.per_serving.protein_g > proteinTarget * 1.3;
+    const wouldOvershootCarbs = carbsTarget > 0 &&
+      totals.carbs_g + food.per_serving.carbs_g > carbHigh;
+    const wouldOvershootSodium = sodiumTarget > 0 &&
+      totals.sodium_mg + food.per_serving.sodium_mg > sodiumHigh;
+    const wouldOvershootWater = waterTarget > 0 &&
+      totals.water_ml + food.per_serving.water_ml > waterHigh;
+    const wouldOvershootProtein = proteinTarget > 0 &&
+      totals.protein_g + food.per_serving.protein_g > proteinHigh;
 
     // Skip foods that would cause major overshoots
     // Carbs check is critical: prevents high-carb user foods from dominating
     // recovery plans (e.g. 80g carb drink mix in a 52-78g carb budget).
     // Exception: when protein is critically unmet in after phase, allow
     // low-carb protein foods through (e.g. Protein Shake with 5g carbs).
-    const proteinCriticallyUnmetSkip =
-      phase === 'after' && proteinTarget > 0 && totals.protein_g < proteinTarget * 0.7;
+    const proteinCriticallyUnmetSkip = phase === "after" && proteinTarget > 0 &&
+      totals.protein_g < proteinTarget * 0.7;
 
     console.log(
       `[GREEDY-FALLBACK] Considering: ${food.name} (pref=${food.preference_score}) | ` +
-      `per_serving: carbs=${food.per_serving.carbs_g}g, protein=${food.per_serving.protein_g}g, ` +
-      `sodium=${food.per_serving.sodium_mg}mg, water=${food.per_serving.water_ml}ml`
+        `per_serving: carbs=${food.per_serving.carbs_g}g, protein=${food.per_serving.protein_g}g, ` +
+        `sodium=${food.per_serving.sodium_mg}mg, water=${food.per_serving.water_ml}ml`,
     );
 
-    if (wouldOvershootCarbs && totals.carbs_g > carbsTarget * 0.7 && !proteinCriticallyUnmetSkip) {
-      console.log(`[GREEDY-FALLBACK] SKIP ${food.name}: carb overshoot (current=${totals.carbs_g.toFixed(0)}g, target=${carbsTarget}g)`);
+    // Guardrail: in before/after phases where protein is required, avoid taking
+    // low/no-protein foods that consume a large chunk of sodium/fluid budget
+    // before protein has been materially addressed.
+    const proteinCriticallyUnmet = (phase === "before" || phase === "after") &&
+      proteinTarget > 0 &&
+      totals.protein_g < proteinTarget * 0.7;
+    const isLowProteinFood = food.per_serving.protein_g < 0.5;
+    const sodiumLoadRatio = Number.isFinite(sodiumHigh) && sodiumHigh > 0
+      ? food.per_serving.sodium_mg / sodiumHigh
+      : 0;
+    const waterLoadRatio = Number.isFinite(waterHigh) && waterHigh > 0
+      ? food.per_serving.water_ml / waterHigh
+      : 0;
+    if (
+      proteinCriticallyUnmet &&
+      isLowProteinFood &&
+      (sodiumLoadRatio > 0.5 || waterLoadRatio > 0.6)
+    ) {
+      console.log(
+        `[GREEDY-FALLBACK] SKIP ${food.name}: low-protein high-load item while protein is still critically unmet`,
+      );
+      continue;
+    }
+
+    if (
+      wouldOvershootCarbs && totals.carbs_g > carbsTarget * 0.7 &&
+      !proteinCriticallyUnmetSkip
+    ) {
+      console.log(
+        `[GREEDY-FALLBACK] SKIP ${food.name}: carb overshoot (current=${
+          totals.carbs_g.toFixed(0)
+        }g, target=${carbsTarget}g)`,
+      );
       continue;
     }
     if (wouldOvershootSodium && totals.sodium_mg > sodiumTarget * 0.7) {
-      console.log(`[GREEDY-FALLBACK] SKIP ${food.name}: sodium overshoot (current=${totals.sodium_mg.toFixed(0)}mg, target=${sodiumTarget}mg)`);
+      console.log(
+        `[GREEDY-FALLBACK] SKIP ${food.name}: sodium overshoot (current=${
+          totals.sodium_mg.toFixed(0)
+        }mg, target=${sodiumTarget}mg)`,
+      );
       continue;
     }
     if (wouldOvershootWater && totals.water_ml > waterTarget * 0.7) {
-      console.log(`[GREEDY-FALLBACK] SKIP ${food.name}: water overshoot (current=${totals.water_ml.toFixed(0)}ml, target=${waterTarget}ml)`);
+      console.log(
+        `[GREEDY-FALLBACK] SKIP ${food.name}: water overshoot (current=${
+          totals.water_ml.toFixed(0)
+        }ml, target=${waterTarget}ml)`,
+      );
       continue;
     }
     if (wouldOvershootProtein && totals.protein_g > proteinTarget * 0.9) {
-      console.log(`[GREEDY-FALLBACK] SKIP ${food.name}: protein overshoot (current=${totals.protein_g.toFixed(0)}g, target=${proteinTarget}g)`);
+      console.log(
+        `[GREEDY-FALLBACK] SKIP ${food.name}: protein overshoot (current=${
+          totals.protein_g.toFixed(0)
+        }g, target=${proteinTarget}g)`,
+      );
       continue;
     }
 
     // Calculate needed servings based on primary targets
     let neededServings = 0;
 
-    if (phase === 'after' && proteinTarget > 0) {
+    if (phase === "after" && proteinTarget > 0) {
       // For after-run, prioritize protein then carbs
       const proteinDeficit = Math.max(0, proteinTarget - totals.protein_g);
       const carbsDeficit = Math.max(0, carbsTarget - totals.carbs_g);
@@ -146,50 +213,85 @@ export function greedyFallback(
       // to 1.5x so protein-rich foods like Protein Shake (5g carbs) can still
       // fit even after high-carb user foods consume most of the budget.
       if (carbsTarget > 0 && food.per_serving.carbs_g > 0) {
-        const proteinCriticallyUnmet =
-          phase === 'after' && proteinTarget > 0 && totals.protein_g < proteinTarget * 0.7;
+        const proteinCriticallyUnmet = phase === "after" && proteinTarget > 0 &&
+          totals.protein_g < proteinTarget * 0.7;
         const carbMaxMultiplier = proteinCriticallyUnmet ? 1.5 : 1.2;
-        const maxCarbServings = Math.floor(
-          (carbsTarget * carbMaxMultiplier - totals.carbs_g) / food.per_serving.carbs_g
-        );
-        if (maxCarbServings <= 0) {
+        const allowedCarbCap = Number.isFinite(carbHigh)
+          ? Math.min(carbHigh, carbsTarget * carbMaxMultiplier)
+          : carbsTarget * carbMaxMultiplier;
+        const maxCarbServingsRaw = (allowedCarbCap - totals.carbs_g) /
+          food.per_serving.carbs_g;
+        if (maxCarbServingsRaw <= 0) {
           neededServings = 0; // Skip entirely — carbs already met/exceeded
         } else {
-          neededServings = Math.min(neededServings, maxCarbServings);
+          const maxCarbServings = food.is_indivisible
+            ? Math.floor(maxCarbServingsRaw)
+            : floorToIncrement(maxCarbServingsRaw);
+          if (maxCarbServings <= 0) {
+            neededServings = 0;
+          } else {
+            neededServings = Math.min(neededServings, maxCarbServings);
+          }
         }
       }
 
       // Check sodium overshoot potential
       if (sodiumTarget > 0 && food.per_serving.sodium_mg > 0) {
-        const maxSodiumServings = Math.floor(
-          (sodiumTarget * 1.25 - totals.sodium_mg) / food.per_serving.sodium_mg
-        );
-        neededServings = Math.min(neededServings, Math.max(1, maxSodiumServings));
+        const maxSodiumServingsRaw = (sodiumHigh - totals.sodium_mg) /
+          food.per_serving.sodium_mg;
+        if (maxSodiumServingsRaw <= 0) {
+          neededServings = 0;
+        } else {
+          const maxSodiumServings = food.is_indivisible
+            ? Math.floor(maxSodiumServingsRaw)
+            : floorToIncrement(maxSodiumServingsRaw);
+          if (maxSodiumServings <= 0) {
+            neededServings = 0;
+          } else {
+            neededServings = Math.min(neededServings, maxSodiumServings);
+          }
+        }
       }
 
       // Check water overshoot potential
       if (waterTarget > 0 && food.per_serving.water_ml > 0) {
-        const maxWaterServings = Math.floor(
-          (waterTarget * 1.2 - totals.water_ml) / food.per_serving.water_ml
-        );
-        neededServings = Math.min(neededServings, Math.max(1, maxWaterServings));
+        const maxWaterServingsRaw = (waterHigh - totals.water_ml) /
+          food.per_serving.water_ml;
+        if (maxWaterServingsRaw <= 0) {
+          neededServings = 0;
+        } else {
+          const maxWaterServings = food.is_indivisible
+            ? Math.floor(maxWaterServingsRaw)
+            : floorToIncrement(maxWaterServingsRaw);
+          if (maxWaterServings <= 0) {
+            neededServings = 0;
+          } else {
+            neededServings = Math.min(neededServings, maxWaterServings);
+          }
+        }
       }
 
       // Check protein overshoot potential
       if (proteinTarget > 0 && food.per_serving.protein_g > 0) {
-        const maxProteinServings = Math.floor(
-          (proteinTarget * 1.2 - totals.protein_g) / food.per_serving.protein_g
-        );
-        if (maxProteinServings <= 0) {
+        const maxProteinServingsRaw = (proteinHigh - totals.protein_g) /
+          food.per_serving.protein_g;
+        if (maxProteinServingsRaw <= 0) {
           neededServings = 0; // Skip entirely — protein already met
         } else {
-          neededServings = Math.min(neededServings, maxProteinServings);
+          const maxProteinServings = food.is_indivisible
+            ? Math.floor(maxProteinServingsRaw)
+            : floorToIncrement(maxProteinServingsRaw);
+          if (maxProteinServings <= 0) {
+            neededServings = 0;
+          } else {
+            neededServings = Math.min(neededServings, maxProteinServings);
+          }
         }
       }
     }
 
     // Cap servings at reasonable amounts
-    const servingCap = phase === 'after' ? 6 : 3;
+    const servingCap = phase === "after" ? 6 : 3;
     neededServings = Math.min(neededServings, servingCap);
 
     // Indivisible items (tablets, gel packets) round to whole numbers;
@@ -201,10 +303,14 @@ export function greedyFallback(
     if (neededServings > 0) {
       console.log(
         `[GREEDY-FALLBACK] SELECT ${food.name} x${neededServings} → ` +
-        `carbs=${(food.per_serving.carbs_g * neededServings).toFixed(1)}g, ` +
-        `protein=${(food.per_serving.protein_g * neededServings).toFixed(1)}g, ` +
-        `sodium=${(food.per_serving.sodium_mg * neededServings).toFixed(0)}mg, ` +
-        `water=${(food.per_serving.water_ml * neededServings).toFixed(0)}ml`
+          `carbs=${(food.per_serving.carbs_g * neededServings).toFixed(1)}g, ` +
+          `protein=${
+            (food.per_serving.protein_g * neededServings).toFixed(1)
+          }g, ` +
+          `sodium=${
+            (food.per_serving.sodium_mg * neededServings).toFixed(0)
+          }mg, ` +
+          `water=${(food.per_serving.water_ml * neededServings).toFixed(0)}ml`,
       );
 
       selectedFoods.push({
@@ -236,24 +342,38 @@ export function greedyFallback(
 
       // Stop if we've met carb, protein, and water targets
       const carbsMet = totals.carbs_g >= carbsTarget * 0.9;
-      const proteinMet = proteinTarget <= 0 || totals.protein_g >= proteinTarget * 0.7;
-      const waterStopMultiplier = phase === 'after' ? 0.85 : 0.7;
-      const waterMet = waterTarget <= 0 || totals.water_ml >= waterTarget * waterStopMultiplier;
+      const proteinMet = proteinTarget <= 0 ||
+        totals.protein_g >= proteinTarget * 0.7;
+      const waterStopMultiplier = phase === "after" ? 0.85 : 0.7;
+      const waterMet = waterTarget <= 0 ||
+        totals.water_ml >= waterTarget * waterStopMultiplier;
       if (carbsMet && proteinMet && waterMet) break;
     }
   }
 
   // Log final summary
-  const carbPct = carbsTarget > 0 ? (totals.carbs_g / carbsTarget * 100).toFixed(0) : 'n/a';
-  const proteinPct = proteinTarget > 0 ? (totals.protein_g / proteinTarget * 100).toFixed(0) : 'n/a';
-  const sodiumPct = sodiumTarget > 0 ? (totals.sodium_mg / sodiumTarget * 100).toFixed(0) : 'n/a';
-  const waterPct = waterTarget > 0 ? (totals.water_ml / waterTarget * 100).toFixed(0) : 'n/a';
+  const carbPct = carbsTarget > 0
+    ? (totals.carbs_g / carbsTarget * 100).toFixed(0)
+    : "n/a";
+  const proteinPct = proteinTarget > 0
+    ? (totals.protein_g / proteinTarget * 100).toFixed(0)
+    : "n/a";
+  const sodiumPct = sodiumTarget > 0
+    ? (totals.sodium_mg / sodiumTarget * 100).toFixed(0)
+    : "n/a";
+  const waterPct = waterTarget > 0
+    ? (totals.water_ml / waterTarget * 100).toFixed(0)
+    : "n/a";
   console.log(
     `[GREEDY-FALLBACK] Final: ${selectedFoods.length} foods | ` +
-    `carbs=${totals.carbs_g.toFixed(0)}g/${carbsTarget}g(${carbPct}%) ` +
-    `protein=${totals.protein_g.toFixed(0)}g/${proteinTarget}g(${proteinPct}%) ` +
-    `sodium=${totals.sodium_mg.toFixed(0)}mg/${sodiumTarget}mg(${sodiumPct}%) ` +
-    `water=${totals.water_ml.toFixed(0)}ml/${waterTarget}ml(${waterPct}%)`
+      `carbs=${totals.carbs_g.toFixed(0)}g/${carbsTarget}g(${carbPct}%) ` +
+      `protein=${
+        totals.protein_g.toFixed(0)
+      }g/${proteinTarget}g(${proteinPct}%) ` +
+      `sodium=${
+        totals.sodium_mg.toFixed(0)
+      }mg/${sodiumTarget}mg(${sodiumPct}%) ` +
+      `water=${totals.water_ml.toFixed(0)}ml/${waterTarget}ml(${waterPct}%)`,
   );
 
   return {

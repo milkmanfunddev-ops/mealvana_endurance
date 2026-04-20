@@ -15,6 +15,10 @@ class PostWorkoutFeedbackDialog extends StatefulWidget {
     super.key,
     required this.onComplete,
     this.duringCarbRateGPerH,
+    this.initialRating,
+    this.initialNotes,
+    this.initialCarbAdjustment,
+    this.isEditMode = false,
   });
 
   /// Callback when user completes feedback.
@@ -22,11 +26,16 @@ class PostWorkoutFeedbackDialog extends StatefulWidget {
     int rating,
     String? notes,
     CarbAdjustmentLevel? carbAdjustment,
-  ) onComplete;
+  )
+  onComplete;
 
   /// The during-activity carb rate from the nutrition plan.
   /// When null, the carb feedback section is hidden (no nutrition plan).
   final double? duringCarbRateGPerH;
+  final int? initialRating;
+  final String? initialNotes;
+  final CarbAdjustmentLevel? initialCarbAdjustment;
+  final bool isEditMode;
 
   @override
   State<PostWorkoutFeedbackDialog> createState() =>
@@ -34,9 +43,17 @@ class PostWorkoutFeedbackDialog extends StatefulWidget {
 }
 
 class _PostWorkoutFeedbackDialogState extends State<PostWorkoutFeedbackDialog> {
-  int _rating = 3;
-  final _notesController = TextEditingController();
+  late int _rating;
+  late final TextEditingController _notesController;
   CarbAdjustmentLevel? _carbAdjustment;
+
+  @override
+  void initState() {
+    super.initState();
+    _rating = widget.initialRating ?? 3;
+    _notesController = TextEditingController(text: widget.initialNotes ?? '');
+    _carbAdjustment = widget.initialCarbAdjustment;
+  }
 
   @override
   void dispose() {
@@ -98,7 +115,7 @@ class _PostWorkoutFeedbackDialogState extends State<PostWorkoutFeedbackDialog> {
         ),
         const SizedBox(height: AppSpacing.md),
         Text(
-          'Workout Complete!',
+          widget.isEditMode ? 'Edit Workout Feedback' : 'Workout Complete!',
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontSize: 20,
@@ -144,9 +161,7 @@ class _PostWorkoutFeedbackDialogState extends State<PostWorkoutFeedbackDialog> {
       maxLines: 3,
       decoration: InputDecoration(
         hintText: 'Add notes (optional)',
-        border: OutlineInputBorder(
-          borderRadius: AppRadius.inputRadius,
-        ),
+        border: OutlineInputBorder(borderRadius: AppRadius.inputRadius),
       ),
     );
   }
@@ -186,7 +201,7 @@ class _PostWorkoutFeedbackDialogState extends State<PostWorkoutFeedbackDialog> {
     return Column(
       children: [
         KylePrimaryButton(
-          text: 'Complete',
+          text: widget.isEditMode ? 'Save Changes' : 'Complete',
           onPressed: () {
             widget.onComplete(
               _rating,
@@ -197,7 +212,7 @@ class _PostWorkoutFeedbackDialogState extends State<PostWorkoutFeedbackDialog> {
         ),
         const SizedBox(height: AppSpacing.sm),
         KyleTertiaryButton(
-          text: 'Skip',
+          text: widget.isEditMode ? 'Cancel' : 'Skip',
           onPressed: () => Navigator.of(context).pop(),
         ),
       ],

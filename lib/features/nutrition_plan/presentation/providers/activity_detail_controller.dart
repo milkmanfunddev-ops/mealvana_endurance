@@ -11,18 +11,17 @@ import '../../domain/time_slot_assignment.dart';
 import '../../application/proportional_scaling_service.dart';
 import '../../application/by_hour_sync_service.dart';
 import '../../../auth/application/auth_service.dart';
-import '../../../auth/data/user_repository.dart';
-import '../../../auth/domain/user_preferences.dart';
 import '../../../activities/domain/activity_reminder.dart';
+import '../../../activities/data/activities_repository.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../application/nutrition_plan_service.dart';
+import '../../application/resolved_during_target_resolver.dart';
 import '../../data/macro_repository.dart';
 import '../../data/nutrition_plan_repository.dart';
-import '../../data/nutrition_plan_mapper.dart';
 import '../../data/template_foods_repository.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../domain/carb_adjustment_level.dart';
+import '../../domain/fuel_log_data.dart';
 import '../../domain/nutrition_target_overrides.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
@@ -35,6 +34,7 @@ import 'activity_detail_state.dart';
 import '../../../../shared/utils/food_display_utils.dart' as food_utils;
 import '../../../../shared/utils/category_matcher.dart';
 import '../../application/food_operations_service.dart';
+import '../utils/activity_detail_helpers.dart';
 
 part 'activity_detail_controller.g.dart';
 
@@ -46,15 +46,14 @@ part 'activity_detail_controller.g.dart';
 /// mismatches that caused food swap/add operations to not persist.
 @riverpod
 class ActivityDetailController extends _$ActivityDetailController {
+  static const String _detailedMacroTargetsKey = 'detailedMacroTargets';
+
   AppLogger get _logger => ref.read(appLoggerProvider);
   ActivitiesService get _activitiesService =>
       ref.read(activitiesServiceProvider);
   AuthService get _authService => ref.read(authServiceProvider);
   FoodOperationsService get _foodOpsService =>
       ref.read(foodOperationsServiceProvider);
-
-  /// Cached gut training level from user profile, loaded in build().
-  GutTraining _cachedGutTraining = GutTraining.moderate;
 
   Future<NutritionPlanRepository> get _nutritionPlanRepository async =>
       await ref.read(nutritionPlanRepositoryProvider.future);
@@ -82,6 +81,20 @@ class ActivityDetailController extends _$ActivityDetailController {
       },
     );
 
+    // Sync this specific activity from Supabase before reading local Drift.
+    // This ensures coach-created nutrition plans are visible immediately.
+    try {
+      final repo = ref.read(activitiesRepositoryProvider);
+      await repo.refreshActivityFromRemote(activityId);
+    } catch (e) {
+      // Non-fatal: fall back to local data if network unavailable
+      _logger.warning(
+        'Could not sync activity from remote; using local data',
+        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        error: e,
+      );
+    }
+
     final activity = await _activitiesService.getActivityById(
       userId,
       activityId,
@@ -98,19 +111,6 @@ class ActivityDetailController extends _$ActivityDetailController {
         },
       );
       throw Exception('Activity not found');
-    }
-
-    // Cache gut training level from user profile
-    try {
-      final userRepo = await ref.read(userRepositoryProvider.future);
-      final profile = await userRepo.getUserProfile(userId);
-      if (profile != null) {
-        _cachedGutTraining = profile.gutTraining;
-      }
-    } catch (e) {
-      _logger.warning(
-        'Failed to load gut training, using default moderate: $e',
-      );
     }
 
     // Load nutrition plan from activity's nutritionPlanData field
@@ -161,20 +161,46 @@ class ActivityDetailController extends _$ActivityDetailController {
         userId: activity.userId,
         completedAt: activity.completedAt!,
         overallSatisfaction: activity.completionRating,
+        nutritionRating: activity.nutritionRating,
         textNotes: activity.completionNotes,
         actualDistanceMiles: activity.actualDistanceMiles,
         actualDurationMinutes: activity.actualDurationMinutes,
       );
     }
 
-    // Try to load cached MacroTargets for range display
+    // Resolve macro targets for this specific activity.
+    // Priority: activity-scoped cache -> embedded snapshot -> deterministic derivation.
     MacroTargets? macroTargets;
     try {
       final macroRepo = ref.read(macroRepositoryProvider);
-      macroTargets = await macroRepo.getCachedMacroTargets();
+      macroTargets = await macroRepo.getCachedMacroTargetsForActivity(
+        activityId,
+      );
     } catch (e) {
-      _logger.warning('Failed to load cached macro targets: $e');
+      _logger.warning('Failed to load activity-scoped macro targets: $e');
     }
+
+    macroTargets ??= _extractDetailedMacroTargetsFromPlanData(
+      activity.nutritionPlanData,
+    );
+    macroTargets ??= _deriveMacroTargetsFromActivityPlan(
+      activity: activity,
+      nutritionPlan: nutritionPlan,
+    );
+    if (macroTargets != null) {
+      try {
+        final macroRepo = ref.read(macroRepositoryProvider);
+        await macroRepo.saveMacroTargetsForActivity(activityId, macroTargets);
+      } catch (e) {
+        _logger.warning('Failed to persist activity-scoped macro targets: $e');
+      }
+    }
+    final staleDuringTarget = await _hasStaleDuringTarget(
+      activity: activity,
+      macroTargets: macroTargets,
+    );
+    const staleDuringTargetMessage =
+        'Nutrition settings changed. Regenerate plan to apply new targets.';
 
     return ActivityDetailState(
       activity: activity,
@@ -184,7 +210,61 @@ class ActivityDetailController extends _$ActivityDetailController {
       scheduledDateTime: activity.scheduledDateTime,
       isNewActivity: isNewActivity,
       eventName: eventName,
+      hasStaleDuringTarget: staleDuringTarget,
+      staleDuringTargetMessage: staleDuringTarget
+          ? staleDuringTargetMessage
+          : null,
     );
+  }
+
+  Future<bool> _hasStaleDuringTarget({
+    required Activity activity,
+    required MacroTargets? macroTargets,
+  }) async {
+    if (macroTargets == null) return false;
+    if (macroTargets.metrics.durationMin < 90) return false;
+
+    final user = await _authService.getCurrentUser();
+    final overrides = user?.nutritionTargetOverrides;
+    if (overrides == null || !overrides.hasAnyOverride) return false;
+
+    if (activity.activityType == ActivityType.brick) {
+      final segments = macroTargets.brickPhaseTargets?.duringSegments;
+      if (segments == null || segments.isEmpty) return false;
+
+      for (final segment in segments) {
+        final resolved = ResolvedDuringTargetResolver.resolveForBrickSegment(
+          macroTargets: macroTargets,
+          segment: segment,
+          settingsOverrides: overrides,
+        );
+        if (resolved.isStaleVsSettings) return true;
+      }
+      return false;
+    }
+
+    final resolved = ResolvedDuringTargetResolver.resolveForSingleSport(
+      macroTargets: macroTargets,
+      sport: activity.activityType,
+      settingsOverrides: overrides,
+    );
+    return resolved.isStaleVsSettings;
+  }
+
+  /// Force refresh activity data from Supabase (for pull-to-refresh).
+  Future<void> forceRefresh() async {
+    try {
+      final repo = ref.read(activitiesRepositoryProvider);
+      await repo.refreshActivityFromRemote(activityId);
+      ref.invalidateSelf();
+    } catch (e) {
+      _logger.warning(
+        'Force refresh failed',
+        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        error: e,
+      );
+      ref.invalidateSelf();
+    }
   }
 
   /// Save activity and any nutrition plan changes
@@ -209,7 +289,13 @@ class ActivityDetailController extends _$ActivityDetailController {
         // We must use the current nutritionPlan from state to avoid overwriting changes.
         final updatedActivity = activity.copyWith(
           scheduledDateTime: currentState.scheduledDateTime,
-          nutritionPlanData: currentState.nutritionPlan?.toJson(),
+          nutritionPlanData: currentState.nutritionPlan != null
+              ? _buildNutritionPlanData(
+                  plan: currentState.nutritionPlan!,
+                  existingPlanData: activity.nutritionPlanData,
+                  macroTargets: currentState.macroTargets,
+                )
+              : activity.nutritionPlanData,
         );
 
         await _activitiesService.updateActivity(
@@ -254,7 +340,11 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       // Update activity with nutrition plan JSON and clear stale flag
       final updatedActivity = activity.copyWith(
-        nutritionPlanData: plan.toJson(),
+        nutritionPlanData: _buildNutritionPlanData(
+          plan: plan,
+          existingPlanData: activity.nutritionPlanData,
+          macroTargets: state.value?.macroTargets,
+        ),
         needsNutritionRefresh: false,
         updatedAt: DateTime.now(),
       );
@@ -274,10 +364,283 @@ class ActivityDetailController extends _$ActivityDetailController {
     }
   }
 
+  Map<String, dynamic> _buildNutritionPlanData({
+    required NutritionPlan plan,
+    required Map<String, dynamic>? existingPlanData,
+    required MacroTargets? macroTargets,
+  }) {
+    final merged = <String, dynamic>{...plan.toJson()};
+    if (macroTargets != null) {
+      merged[_detailedMacroTargetsKey] = macroTargets.toJson();
+      return merged;
+    }
+
+    final existing = existingPlanData?[_detailedMacroTargetsKey];
+    if (existing is Map) {
+      merged[_detailedMacroTargetsKey] = Map<String, dynamic>.from(existing);
+    }
+    return merged;
+  }
+
+  MacroTargets? _extractDetailedMacroTargetsFromPlanData(
+    Map<String, dynamic>? planData,
+  ) {
+    if (planData == null) return null;
+
+    final candidates = <dynamic>[
+      planData[_detailedMacroTargetsKey],
+      // Backward-compatible alias if older records used a different key.
+      planData['macroTargetsDetailed'],
+    ];
+
+    for (final raw in candidates) {
+      if (raw is! Map) continue;
+      try {
+        return MacroTargets.fromJson(Map<String, dynamic>.from(raw));
+      } catch (_) {
+        // Ignore malformed payloads and continue trying other candidates.
+      }
+    }
+    return null;
+  }
+
+  MacroTargets? _deriveMacroTargetsFromActivityPlan({
+    required Activity activity,
+    required NutritionPlan? nutritionPlan,
+  }) {
+    if (nutritionPlan == null) return null;
+
+    final beforeSection = nutritionPlan.sections.firstWhere(
+      _isBeforeSection,
+      orElse: () => const PlanSection(id: '', title: '', foodItems: []),
+    );
+    final afterSection = nutritionPlan.sections.firstWhere(
+      _isAfterSection,
+      orElse: () => const PlanSection(id: '', title: '', foodItems: []),
+    );
+
+    final hasBefore = beforeSection.id.isNotEmpty;
+    final hasAfter = afterSection.id.isNotEmpty;
+    final duringTargetTotals = _aggregateDuringTargetsByMacro(nutritionPlan);
+
+    final durationMin = (activity.durationMinutes ?? 0).toDouble();
+    final safeDurationH = durationMin > 0 ? durationMin / 60.0 : 1.0;
+    final durationBand = _durationBandForMinutes(
+      durationMin.round(),
+      activity.activityType,
+    );
+
+    final beforeCarbs = hasBefore
+        ? _getSectionMacroTarget(beforeSection, 'carbs')
+        : 0.0;
+    final beforeProtein = hasBefore
+        ? _getSectionMacroTarget(beforeSection, 'protein')
+        : 0.0;
+    final beforeFat = hasBefore
+        ? _getSectionMacroTarget(beforeSection, 'fat')
+        : 0.0;
+    final beforeSodium = hasBefore
+        ? _getSectionMacroTarget(beforeSection, 'sodium')
+        : 0.0;
+    final beforeFluids = hasBefore
+        ? _getSectionMacroTarget(beforeSection, 'fluids')
+        : 0.0;
+
+    final afterCarbs = hasAfter
+        ? _getSectionMacroTarget(afterSection, 'carbs')
+        : 0.0;
+    final afterProtein = hasAfter
+        ? _getSectionMacroTarget(afterSection, 'protein')
+        : 0.0;
+    final afterSodium = hasAfter
+        ? _getSectionMacroTarget(afterSection, 'sodium')
+        : 0.0;
+    final afterFluids = hasAfter
+        ? _getSectionMacroTarget(afterSection, 'fluids')
+        : 0.0;
+
+    final duringCarbs = duringTargetTotals['carbs'] ?? 0.0;
+    final duringSodium = duringTargetTotals['sodium'] ?? 0.0;
+    final duringFluids = duringTargetTotals['fluids'] ?? 0.0;
+
+    final distanceMi = activity.distanceMiles ?? 0.0;
+    final distanceKm = distanceMi * 1.60934;
+    final speedMph =
+        activity.cyclingSpeedMph ??
+        ((safeDurationH > 0 && distanceMi > 0)
+            ? distanceMi / safeDurationH
+            : 0.0);
+
+    return MacroTargets(
+      id: 'activity-${activity.id}',
+      activityType: activity.activityType,
+      preRun: PreRunMacros(
+        carbsG: beforeCarbs,
+        proteinG: beforeProtein,
+        fatCapG: beforeFat,
+        fluidsMl: beforeFluids,
+        sodiumMg: beforeSodium,
+      ),
+      duringRun: DuringRunMacros(
+        carbRateGPerH: duringCarbs / safeDurationH,
+        carbTotalG: duringCarbs,
+        fluidRateMlPerH: duringFluids / safeDurationH,
+        fluidTotalMl: duringFluids,
+        sodiumRateMgPerH: duringSodium / safeDurationH,
+        sodiumTotalMg: duringSodium,
+        massNormRateGPerH: duringCarbs / safeDurationH,
+        absClampRangeGPerH: durationBand,
+        carbsLowG: durationBand[0] * safeDurationH,
+        carbsHighG: durationBand[1] * safeDurationH,
+      ),
+      postRun: PostRunMacros(
+        carbsG: afterCarbs,
+        proteinG: afterProtein,
+        fluidsMl: afterFluids,
+        sodiumMg: afterSodium,
+      ),
+      metrics: RunMetrics(
+        distanceMi: distanceMi,
+        distanceKm: distanceKm,
+        durationH: durationMin > 0 ? safeDurationH : 0.0,
+        durationMin: durationMin,
+        paceMinPerMile: activity.paceTargetMinutesPerMile,
+        speedMph: speedMph,
+        caloriesGrossKcal: 0,
+        caloriesNetKcal: 0,
+        met: 0,
+      ),
+      calculationRule: 'Derived from stored activity nutrition plan',
+      timestamp: activity.updatedAt,
+      isUserModified: false,
+      modifiedFields: const [],
+    );
+  }
+
+  bool _isBeforeSection(PlanSection section) {
+    final id = section.id.toLowerCase();
+    final title = section.title.toLowerCase();
+    return id.startsWith('before') || title.startsWith('before');
+  }
+
+  bool _isDuringSection(PlanSection section) {
+    final id = section.id.toLowerCase();
+    final title = section.title.toLowerCase();
+    return id.startsWith('during') || title.startsWith('during');
+  }
+
+  bool _isAfterSection(PlanSection section) {
+    final id = section.id.toLowerCase();
+    final title = section.title.toLowerCase();
+    return id.startsWith('after') || title.startsWith('after');
+  }
+
+  Map<String, double> _aggregateDuringTargetsByMacro(
+    NutritionPlan nutritionPlan,
+  ) {
+    double carbs = 0;
+    double sodium = 0;
+    double fluids = 0;
+    for (final section in nutritionPlan.sections.where(_isDuringSection)) {
+      carbs += section.carbsTarget ?? _sumFoodMacro(section.foodItems, 'carbs');
+      sodium +=
+          section.sodiumTarget ?? _sumFoodMacro(section.foodItems, 'sodium');
+      fluids +=
+          section.fluidsTarget ?? _sumFoodMacro(section.foodItems, 'fluids');
+    }
+    return {'carbs': carbs, 'sodium': sodium, 'fluids': fluids};
+  }
+
+  double _getSectionMacroTarget(PlanSection section, String macro) {
+    if (section.hasSubPhases) {
+      final total = section.subPhases!.fold<double>(
+        0.0,
+        (sum, subPhase) => sum + _getSubPhaseMacroTarget(subPhase, macro),
+      );
+      if (total > 0) return total;
+    }
+
+    final sectionTarget = _getSectionTargetValue(section, macro);
+    if (sectionTarget != null && sectionTarget > 0) return sectionTarget;
+    return _sumFoodMacro(section.foodItems, macro);
+  }
+
+  double _getSubPhaseMacroTarget(BeforeSubPhase subPhase, String macro) {
+    switch (macro) {
+      case 'carbs':
+        return subPhase.carbsTarget ?? 0.0;
+      case 'protein':
+        return subPhase.proteinTarget ?? 0.0;
+      case 'fat':
+        return subPhase.fatTarget ?? 0.0;
+      case 'sodium':
+        return subPhase.sodiumTarget ?? 0.0;
+      case 'fluids':
+        return subPhase.fluidsTarget ?? 0.0;
+      default:
+        return 0.0;
+    }
+  }
+
+  double? _getSectionTargetValue(PlanSection section, String macro) {
+    switch (macro) {
+      case 'carbs':
+        return section.carbsTarget;
+      case 'protein':
+        return section.proteinTarget;
+      case 'fat':
+        return section.fatTarget;
+      case 'sodium':
+        return section.sodiumTarget;
+      case 'fluids':
+        return section.fluidsTarget;
+      default:
+        return null;
+    }
+  }
+
+  double _sumFoodMacro(List<FoodItemData> foods, String key) {
+    double total = 0;
+    for (final food in foods) {
+      final info = food.nutritionalInfo;
+      if (info == null) continue;
+      switch (key) {
+        case 'carbs':
+          total += (info.carbs ?? 0).toDouble();
+          break;
+        case 'protein':
+          total += (info.protein ?? 0).toDouble();
+          break;
+        case 'sodium':
+          total += (info.sodium ?? 0).toDouble();
+          break;
+        case 'fluids':
+          total += info.fluids ?? 0;
+          break;
+      }
+    }
+    return total;
+  }
+
+  List<double> _durationBandForMinutes(
+    int durationMin,
+    ActivityType activityType,
+  ) {
+    if (activityType == ActivityType.swimming) {
+      return const [0, 0];
+    }
+    if (durationMin < 60) return const [0, 30];
+    if (durationMin < 90) return const [30, 60];
+    if (durationMin < 150) return const [45, 60];
+    if (durationMin < 240) return const [60, 90];
+    return const [80, 100];
+  }
+
   /// Complete activity with ratings and notes
   Future<void> completeActivity({
     required int overallSatisfaction,
     String? textNotes,
+    int? nutritionRating,
   }) async {
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
@@ -296,6 +659,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           status: ActivityStatus.completed,
           completedAt: DateTime.now(),
           completionRating: overallSatisfaction,
+          nutritionRating: nutritionRating,
           completionNotes: textNotes,
         );
 
@@ -305,12 +669,14 @@ class ActivityDetailController extends _$ActivityDetailController {
         );
 
         // Fire-and-forget: push feedback to TrainingPeaks
-        unawaited(_pushFeedbackToTrainingPeaks(
-          user.id,
-          completedActivity,
-          overallSatisfaction,
-          textNotes,
-        ));
+        unawaited(
+          _pushFeedbackToTrainingPeaks(
+            user.id,
+            completedActivity,
+            overallSatisfaction,
+            textNotes,
+          ),
+        );
 
         // Reload activity to get updated completion data
         ref.invalidateSelf();
@@ -325,20 +691,28 @@ class ActivityDetailController extends _$ActivityDetailController {
 
   /// Apply carb feedback adjustment to the user's nutrition target overrides.
   ///
-  /// This modifies the sport-specific during carb rate override by
-  /// multiplying the current rate by [level.adjustmentFactor].
-  /// "Just Right" is a no-op. Only applies to activities >= 90 minutes.
-  Future<void> applyCarbFeedbackAdjustment(CarbAdjustmentLevel level) async {
-    // "Just Right" means no change
-    if (level == CarbAdjustmentLevel.justRight) return;
+  /// This writes an absolute sport-specific override using "latest wins":
+  /// newRate = (workoutDuringRate * adjustmentFactor), with sport-aware clamping.
+  ///
+  /// During overrides only apply to eligible workouts (>= 90 minutes).
+  Future<void> applyCarbFeedbackAdjustment(
+    CarbAdjustmentLevel level, {
+    bool isEdit = false,
+  }) async {
+    // For first submit, "Just Right" keeps existing settings untouched.
+    // In edit mode we do apply factor=1.0 to revert prior adjustments.
+    if (level == CarbAdjustmentLevel.justRight && !isEdit) return;
 
     try {
-      // 90-minute gate
       final currentState = state.value;
-      final durationMinutes =
-          currentState?.activity?.durationMinutes?.toDouble();
-      if (durationMinutes == null || durationMinutes < 90) {
-        _logger.info('Skipping carb feedback: activity < 90 minutes');
+      final activity = currentState?.activity;
+      final plan = currentState?.nutritionPlan;
+      final baseRate = ActivityDetailHelpers.computeDuringCarbRateGPerH(
+        activity: activity,
+        nutritionPlan: plan,
+      );
+      if (baseRate == null) {
+        _logger.info('Skipping carb feedback: activity not eligible');
         return;
       }
 
@@ -348,55 +722,32 @@ class ActivityDetailController extends _$ActivityDetailController {
         return;
       }
 
-      // Determine the activity type for sport-specific override
-      final activityType =
-          currentState?.activity?.activityType ?? ActivityType.running;
+      // Determine which sport overrides should be updated.
+      final targetSports = _resolveFeedbackTargetSports(activity);
 
-      // Determine the base carb rate:
-      // 1. If user has an existing sport-specific during carb override, use that
-      // 2. Otherwise, derive from this activity's during section
-      double baseRate;
-      final existingOverride =
-          user.nutritionTargetOverrides?.getDuring(activityType)?.carbRateGPerH;
-
-      if (existingOverride != null) {
-        baseRate = existingOverride;
-      } else {
-        // Derive from the current activity's during section carbsTarget / duration
-        final plan = currentState?.nutritionPlan;
-
-        if (plan != null && durationMinutes > 0) {
-          final duringSection = plan.sections.firstWhere(
-            (s) => s.id.contains('during'),
-            orElse: () => plan.sections.first,
-          );
-          final totalCarbs = duringSection.carbsTarget ?? 0;
-          baseRate = totalCarbs / (durationMinutes / 60.0);
-        } else {
-          // No plan data available, skip adjustment
-          _logger.warning('Cannot apply carb feedback: no carb rate available');
-          return;
-        }
-      }
-
-      // Apply adjustment factor and clamp to guardrails (0-120 g/hr)
-      final newRate = (baseRate * level.adjustmentFactor).clamp(
-        NutritionTargetGuardrails.duringMinCarbRateGPerH,
-        NutritionTargetGuardrails.duringMaxCarbRateGPerH,
-      );
-
-      // Build updated overrides — write to sport-specific field only
+      // Build updated overrides — write to sport-specific fields only.
       final currentOverrides =
           user.nutritionTargetOverrides ?? const NutritionTargetOverrides();
-      final existingSportDuring = currentOverrides.getDuring(activityType);
-      final updatedOverrides = currentOverrides.setDuring(
-        activityType,
-        DuringActivityOverrides(
-          carbRateGPerH: newRate,
-          sodiumRateMgPerH: existingSportDuring?.sodiumRateMgPerH,
-          fluidRateMlPerH: existingSportDuring?.fluidRateMlPerH,
-        ),
-      );
+      var updatedOverrides = currentOverrides;
+      final updatedRates = <String, double>{};
+
+      for (final sport in targetSports) {
+        final sportMax = _maxDuringCarbRateForSport(sport);
+        final newRate = (baseRate * level.adjustmentFactor).clamp(
+          NutritionTargetGuardrails.duringMinCarbRateGPerH,
+          sportMax,
+        );
+        final existingSportDuring = currentOverrides.getDuring(sport);
+        updatedOverrides = updatedOverrides.setDuring(
+          sport,
+          DuringActivityOverrides(
+            carbRateGPerH: newRate,
+            sodiumRateMgPerH: existingSportDuring?.sodiumRateMgPerH,
+            fluidRateMlPerH: existingSportDuring?.fluidRateMlPerH,
+          ),
+        );
+        updatedRates[sport.name] = newRate;
+      }
 
       // Save via settings controller
       final settingsController = ref.read(settingsControllerProvider.notifier);
@@ -408,20 +759,38 @@ class ActivityDetailController extends _$ActivityDetailController {
         data: {
           'level': level.name,
           'baseRate': baseRate,
-          'newRate': newRate,
+          'newRates': updatedRates,
           'factor': level.adjustmentFactor,
-          'activityType': activityType.name,
+          'activityType':
+              activity?.activityType.name ?? ActivityType.running.name,
+          'targetSports': targetSports.map((sport) => sport.name).toList(),
         },
       );
 
       _trackAnalytics('carb_feedback_applied', {
         'activity_id': activityId,
+        'event_type': isEdit ? 'edited' : 'submitted',
         'level': level.name,
         'adjustment_factor': level.adjustmentFactor,
         'base_rate': baseRate,
-        'new_rate': newRate,
-        'activity_type': activityType.name,
+        'new_rates': updatedRates,
+        'activity_type':
+            activity?.activityType.name ?? ActivityType.running.name,
+        'target_sports': targetSports.map((sport) => sport.name).join(','),
       });
+      _trackAnalytics(
+        isEdit ? 'carb_feedback_edited' : 'carb_feedback_submitted',
+        {
+          'activity_id': activityId,
+          'level': level.name,
+          'adjustment_factor': level.adjustmentFactor,
+          'base_rate': baseRate,
+          'new_rates': updatedRates,
+          'activity_type':
+              activity?.activityType.name ?? ActivityType.running.name,
+          'target_sports': targetSports.map((sport) => sport.name).join(','),
+        },
+      );
     } catch (e, stackTrace) {
       _logger.error(
         'Error applying carb feedback',
@@ -431,13 +800,59 @@ class ActivityDetailController extends _$ActivityDetailController {
     }
   }
 
+  double _maxDuringCarbRateForSport(ActivityType activityType) {
+    switch (activityType) {
+      case ActivityType.running:
+        return NutritionTargetGuardrails.duringMaxCarbRateRunning;
+      case ActivityType.cycling:
+        return NutritionTargetGuardrails.duringMaxCarbRateCycling;
+      case ActivityType.swimming:
+        return NutritionTargetGuardrails.duringMaxCarbRateSwimming;
+      default:
+        return NutritionTargetGuardrails.duringMaxCarbRateGPerH;
+    }
+  }
+
+  List<ActivityType> _resolveFeedbackTargetSports(Activity? activity) {
+    final activityType = activity?.activityType;
+    if (activityType != ActivityType.brick) {
+      return [activityType ?? ActivityType.running];
+    }
+
+    final sports = <ActivityType>{};
+    for (final segment in activity?.brickMetadata?.segments ?? const []) {
+      switch (segment.sport.toLowerCase()) {
+        case 'running':
+          sports.add(ActivityType.running);
+          break;
+        case 'cycling':
+          sports.add(ActivityType.cycling);
+          break;
+        case 'swimming':
+          sports.add(ActivityType.swimming);
+          break;
+      }
+    }
+
+    if (sports.isEmpty) {
+      sports.addAll(const [
+        ActivityType.running,
+        ActivityType.cycling,
+        ActivityType.swimming,
+      ]);
+    }
+
+    return sports.toList(growable: false);
+  }
+
   /// Update workout notes for a completed activity
   Future<void> updateWorkoutNotes(String? notes) async {
     final currentState = state.value;
     if (currentState == null ||
         currentState.activity == null ||
-        currentState.completion == null)
+        currentState.completion == null) {
       return;
+    }
 
     state = await AsyncValue.guard(() async {
       try {
@@ -474,8 +889,9 @@ class ActivityDetailController extends _$ActivityDetailController {
     final currentState = state.value;
     if (currentState == null ||
         currentState.activity == null ||
-        currentState.completion == null)
+        currentState.completion == null) {
       return;
+    }
 
     state = await AsyncValue.guard(() async {
       try {
@@ -500,6 +916,48 @@ class ActivityDetailController extends _$ActivityDetailController {
         return currentState;
       } catch (error) {
         _logger.error('Error updating completion rating', error: error);
+        rethrow;
+      }
+    });
+  }
+
+  /// Update completion feedback for an already-completed activity.
+  Future<void> updateCompletionFeedback({
+    required int rating,
+    String? notes,
+    CarbAdjustmentLevel? carbAdjustment,
+  }) async {
+    final currentState = state.value;
+    if (currentState == null ||
+        currentState.activity == null ||
+        currentState.completion == null) {
+      return;
+    }
+
+    state = await AsyncValue.guard(() async {
+      try {
+        final user = await _authService.getCurrentUser();
+        if (user == null || user.id.isEmpty) {
+          throw Exception(
+            'Cannot update completion feedback: user not authenticated',
+          );
+        }
+
+        final updatedActivity = currentState.activity!.copyWith(
+          completionRating: rating,
+          completionNotes: notes,
+          nutritionRating: carbAdjustment?.ratingValue,
+        );
+
+        await _activitiesService.updateActivity(
+          deviceId: user.id,
+          activity: updatedActivity,
+        );
+
+        ref.invalidateSelf();
+        return currentState;
+      } catch (error) {
+        _logger.error('Error updating completion feedback', error: error);
         rethrow;
       }
     });
@@ -711,9 +1169,7 @@ class ActivityDetailController extends _$ActivityDetailController {
 
     // Quantity is bare — rebuild with unit + food name
     final qtyStr = food_utils.formatQuantity(numericQty);
-    final unit = numericQty != 1
-        ? _pluralizeUnit(resolvedUnit)
-        : resolvedUnit;
+    final unit = numericQty != 1 ? _pluralizeUnit(resolvedUnit) : resolvedUnit;
     return '$qtyStr $unit $foodName';
   }
 
@@ -731,12 +1187,42 @@ class ActivityDetailController extends _$ActivityDetailController {
     if (unit == null) return null;
 
     const knownUnits = {
-      'cup', 'cups', 'tbsp', 'tsp', 'oz', 'ml', 'g', 'mg', 'kg', 'l',
-      'slice', 'slices', 'piece', 'pieces', 'scoop', 'scoops',
-      'tablespoon', 'tablespoons', 'teaspoon', 'teaspoons',
-      'packet', 'packets', 'serving', 'servings',
-      'pouch', 'pouches', 'bottle', 'bottles', 'shot', 'shots',
-      'bar', 'bars', 'waffle', 'waffles', 'sheet', 'sheets',
+      'cup',
+      'cups',
+      'tbsp',
+      'tsp',
+      'oz',
+      'ml',
+      'g',
+      'mg',
+      'kg',
+      'l',
+      'slice',
+      'slices',
+      'piece',
+      'pieces',
+      'scoop',
+      'scoops',
+      'tablespoon',
+      'tablespoons',
+      'teaspoon',
+      'teaspoons',
+      'packet',
+      'packets',
+      'serving',
+      'servings',
+      'pouch',
+      'pouches',
+      'bottle',
+      'bottles',
+      'shot',
+      'shots',
+      'bar',
+      'bars',
+      'waffle',
+      'waffles',
+      'sheet',
+      'sheets',
     };
     if (!knownUnits.contains(unit.toLowerCase())) return null;
     return unit;
@@ -746,8 +1232,17 @@ class ActivityDetailController extends _$ActivityDetailController {
   static String _pluralizeUnit(String unit) {
     final lower = unit.toLowerCase().trim();
     // Abbreviations don't change
-    if (const {'tbsp', 'tsp', 'oz', 'ml', 'g', 'mg', 'kg', 'l', 'fl oz'}
-        .contains(lower)) {
+    if (const {
+      'tbsp',
+      'tsp',
+      'oz',
+      'ml',
+      'g',
+      'mg',
+      'kg',
+      'l',
+      'fl oz',
+    }.contains(lower)) {
       return unit;
     }
     if (lower.endsWith('s')) return unit;
@@ -810,12 +1305,17 @@ class ActivityDetailController extends _$ActivityDetailController {
 
       // Update sections, using copyWith to preserve all section properties (including targets)
       final updatedSections = currentPlan.sections.map((section) {
-        if (_categoryMatchesSection(sectionCategory, section.id, section.title)) {
+        if (_categoryMatchesSection(
+          sectionCategory,
+          section.id,
+          section.title,
+        )) {
           // If the section has sub-phases (V2 template plans), apply transform to targeted sub-phase only
           if (section.hasSubPhases) {
             final updatedSubPhases = section.subPhases!.map((subPhase) {
               // Only apply transform to the targeted sub-phase, or all if no target specified
-              if (targetSubPhaseType != null && subPhase.subPhaseType != targetSubPhaseType) {
+              if (targetSubPhaseType != null &&
+                  subPhase.subPhaseType != targetSubPhaseType) {
                 return subPhase;
               }
               final updatedItems = transform(subPhase.foodItems);
@@ -829,8 +1329,9 @@ class ActivityDetailController extends _$ActivityDetailController {
           ByHourData? updatedByHour = section.byHourData;
           if (updatedByHour != null) {
             final currentIds = updatedItems.map((f) => f.id).toSet();
-            final assignedIds =
-                updatedByHour.assignments.map((a) => a.foodItemId).toSet();
+            final assignedIds = updatedByHour.assignments
+                .map((a) => a.foodItemId)
+                .toSet();
 
             // Remove assignments for deleted foods
             for (final removedId in assignedIds.difference(currentIds)) {
@@ -846,11 +1347,11 @@ class ActivityDetailController extends _$ActivityDetailController {
                 final newQty = ByHourSyncService.parseQuantity(food);
                 updatedByHour =
                     ByHourSyncService.adjustAssignmentsForQuantityChange(
-                  existing: updatedByHour!,
-                  foodId: food.id,
-                  newQty: newQty,
-                  isIndivisible: food.isIndivisible,
-                );
+                      existing: updatedByHour!,
+                      foodId: food.id,
+                      newQty: newQty,
+                      isIndivisible: food.isIndivisible,
+                    );
               }
             }
           }
@@ -992,7 +1493,8 @@ class ActivityDetailController extends _$ActivityDetailController {
       operationName: 'updateFoodQuantity',
       transform: (items) => items.map((item) {
         if (item.id == foodId) {
-          final currentQuantity = food_utils.parseLeadingQuantity(item.quantity) ?? 1.0;
+          final currentQuantity =
+              food_utils.parseLeadingQuantity(item.quantity) ?? 1.0;
           final normalizedQty = _foodOpsService.roundFriendlyQuantity(
             newQuantity,
             isIndivisible: item.isIndivisible,
@@ -1000,7 +1502,10 @@ class ActivityDetailController extends _$ActivityDetailController {
           final scaleFactor = currentQuantity > 0
               ? normalizedQty / currentQuantity
               : 1.0;
-          final newQuantityDisplay = _foodOpsService.buildQuantityLabel(item, normalizedQty);
+          final newQuantityDisplay = _foodOpsService.buildQuantityLabel(
+            item,
+            normalizedQty,
+          );
 
           final currentNutrition = item.nutritionalInfo;
           final scaledNutrition = currentNutrition != null
@@ -1049,7 +1554,6 @@ class ActivityDetailController extends _$ActivityDetailController {
       }).toList(),
     );
   }
-
 
   /// Update a food quantity within a sub-phase, applying proportional scaling
   /// to all sibling items in the same sub-phase.
@@ -1328,9 +1832,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           foodId: foodId,
         )) {
           return section.copyWith(
-            foodItems: section.foodItems
-                .where((f) => f.id != foodId)
-                .toList(),
+            foodItems: section.foodItems.where((f) => f.id != foodId).toList(),
             byHourData: updatedByHour,
           );
         }
@@ -1419,12 +1921,56 @@ class ActivityDetailController extends _$ActivityDetailController {
           orElse: () => section.foodItems.first,
         );
         final summaryQty = ByHourSyncService.parseQuantity(food);
+        final isSipType =
+            food.isDrink ||
+            food.timingCategory == TimingCategory.sipThroughout ||
+            food.timingCategory == TimingCategory.fuelDrink ||
+            food.timingCategory == TimingCategory.electrolyte;
+
+        var adjustedByHour = section.byHourData!;
+        var effectiveDelta = delta;
+
+        // For sip-type foods placed in hour slots, +/- should rebalance against
+        // the global SIP THROUGHOUT bucket first (hourIndex == -1), not the tray.
+        if (isSipType && slot.hourIndex != -1) {
+          if (delta > 0) {
+            final sipQty = adjustedByHour.assignments
+                .where(
+                  (a) => a.foodItemId == foodId && a.timeSlot.hourIndex == -1,
+                )
+                .fold<double>(0, (sum, a) => sum + (a.adjustedQuantity ?? 0));
+            final transferQty = delta <= sipQty ? delta : sipQty;
+            if (transferQty > 0.01) {
+              adjustedByHour = ByHourSyncService.moveSipFoodToSlot(
+                existing: adjustedByHour,
+                foodId: foodId,
+                targetSlot: slot,
+                quantity: transferQty,
+                timingCategory: food.timingCategory,
+              );
+              effectiveDelta -= transferQty;
+            }
+          } else if (delta < 0) {
+            adjustedByHour = ByHourSyncService.moveSlotFoodToSip(
+              existing: adjustedByHour,
+              foodId: foodId,
+              sourceSlot: slot,
+              quantity: -delta,
+              timingCategory: food.timingCategory,
+            );
+            effectiveDelta = 0;
+          }
+        }
+
+        if (effectiveDelta.abs() <= 0.01) {
+          return section.copyWith(byHourData: adjustedByHour);
+        }
 
         final result = ByHourSyncService.adjustSlotQuantity(
-          existing: section.byHourData!,
+          existing: adjustedByHour,
           foodId: foodId,
           slot: slot,
-          delta: delta,
+          delta: effectiveDelta,
           summaryQty: summaryQty,
           isIndivisible: food.isIndivisible,
         );
@@ -1439,19 +1985,21 @@ class ActivityDetailController extends _$ActivityDetailController {
         } else if (slot.hourIndex == -1 && delta < 0) {
           // Sip item decrement: sync summary qty to new sip total
           final newSipQty = result.data.assignments
-              .where((a) =>
-                  a.foodItemId == foodId && a.timeSlot.hourIndex == -1)
-              .fold<double>(
-                  0, (sum, a) => sum + (a.adjustedQuantity ?? 0));
+              .where(
+                (a) => a.foodItemId == foodId && a.timeSlot.hourIndex == -1,
+              )
+              .fold<double>(0, (sum, a) => sum + (a.adjustedQuantity ?? 0));
           if (newSipQty < summaryQty - 0.01) {
             newSummaryQty = newSipQty;
           }
         }
 
         if (newSummaryQty != null) {
-          final newLabel = _foodOpsService.buildQuantityLabel(food, newSummaryQty);
-          final scaleFactor =
-              summaryQty > 0 ? newSummaryQty / summaryQty : 1.0;
+          final newLabel = _foodOpsService.buildQuantityLabel(
+            food,
+            newSummaryQty,
+          );
+          final scaleFactor = summaryQty > 0 ? newSummaryQty / summaryQty : 1.0;
           final ni = food.nutritionalInfo;
 
           final updatedFood = FoodItemData(
@@ -1488,9 +2036,7 @@ class ActivityDetailController extends _$ActivityDetailController {
                     sodium: ni.sodium != null
                         ? (ni.sodium! * scaleFactor).round()
                         : null,
-                    fluids: ni.fluids != null
-                        ? ni.fluids! * scaleFactor
-                        : null,
+                    fluids: ni.fluids != null ? ni.fluids! * scaleFactor : null,
                   )
                 : null,
           );
@@ -1524,53 +2070,6 @@ class ActivityDetailController extends _$ActivityDetailController {
   // ============================================================================
   // BUSINESS LOGIC METHODS (moved from ActivityDetailScreen for FOA compliance)
   // ============================================================================
-
-  /// Regenerate nutrition plan after schedule change
-  /// Returns true on success, false on failure
-  Future<bool> regenerateNutritionPlan() async {
-    final currentState = state.value;
-    if (currentState?.activity == null) return false;
-
-    final activity = currentState!.activity!;
-
-    try {
-      final nutritionService = ref.read(nutritionPlanServiceProvider);
-      final updatedActivity = await nutritionService
-          .regenerateForScheduleChange(activity);
-
-      // Refresh controller data from database
-      ref.invalidateSelf();
-
-      // Fire-and-forget write-back to TrainingPeaks (never blocks regeneration)
-      final planData = updatedActivity.nutritionPlanData;
-      if (planData != null) {
-        final user = await _authService.getCurrentUser();
-        if (user != null) {
-          final plan = NutritionPlanMapper.fromJson(planData);
-          unawaited(_pushToTrainingPeaks(user.id, updatedActivity, plan));
-        }
-      }
-
-      _trackAnalytics('nutrition_plan_regenerated_after_schedule_change', {
-        'activity_id': activity.id,
-        'activity_type': activity.activityType.name,
-        'provider': activity.syncedFromProvider ?? 'manual',
-        'distance_miles': activity.distanceMiles?.toString(),
-        'duration_minutes': activity.durationMinutes?.toString(),
-      });
-
-      return true;
-    } catch (e, stackTrace) {
-      _logger.error(
-        'Failed to regenerate nutrition plan',
-        context: 'ACTIVITY_DETAIL_CONTROLLER',
-        error: e,
-        stackTrace: stackTrace,
-        data: {'activityId': activity.id},
-      );
-      return false;
-    }
-  }
 
   /// Delete the current activity
   /// Returns true on success, false on failure
@@ -1615,6 +2114,272 @@ class ActivityDetailController extends _$ActivityDetailController {
   /// Track a user-facing analytics event (callable from UI)
   void trackEvent(String event, Map<String, dynamic> properties) {
     _trackAnalytics(event, properties);
+  }
+
+  // ============================================================================
+  // FUEL LOG METHODS
+  // ============================================================================
+
+  /// Enter fuel log mode: build FuelLogData from the current nutrition plan.
+  void enterFuelLogMode() {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final plan = currentState.nutritionPlan;
+    if (plan == null) return;
+
+    final fuelLogData = FuelLogData.fromNutritionPlan(plan);
+
+    state = AsyncData(
+      currentState.copyWith(isFuelLogMode: true, fuelLogData: fuelLogData),
+    );
+  }
+
+  /// Exit fuel log mode: discard in-memory fuel log data.
+  void exitFuelLogMode() {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    state = AsyncData(
+      currentState.copyWith(isFuelLogMode: false, clearFuelLogData: true),
+    );
+  }
+
+  /// Adjust a fuel log item's actual quantity by delta.
+  void updateFuelLogItemQuantity(
+    String foodId,
+    String sectionId,
+    double delta,
+  ) {
+    final currentState = state.value;
+    final fuelLog = currentState?.fuelLogData;
+    if (fuelLog == null) return;
+
+    final updatedItems = fuelLog.items.map((item) {
+      if (item.foodId == foodId && item.sectionId == sectionId) {
+        final step = item.isIndivisible ? 1.0 : 0.5;
+        // Use step-aligned delta so indivisible items move by whole units
+        final alignedDelta = delta < 0 ? -step : step;
+        final newQty = item.actualQuantity + alignedDelta;
+        // Snap to step and floor at 0
+        final snapped = (newQty / step).round() * step;
+        return item.copyWith(actualQuantity: snapped < 0 ? 0.0 : snapped);
+      }
+      return item;
+    }).toList();
+
+    state = AsyncData(
+      currentState!.copyWith(
+        fuelLogData: fuelLog.copyWith(items: updatedItems),
+      ),
+    );
+  }
+
+  /// Add a food item to the fuel log (e.g. from "Add Food" flow).
+  void addFoodToFuelLog(
+    FoodItemData food,
+    String sectionId, {
+    String? subPhaseType,
+  }) {
+    final currentState = state.value;
+    final fuelLog = currentState?.fuelLogData;
+    if (fuelLog == null) return;
+
+    final quantity = ByHourSyncService.parseQuantity(food);
+    final newItem = FuelLogItem(
+      foodId: food.id,
+      sectionId: sectionId,
+      subPhaseType: subPhaseType,
+      plannedQuantity: 0, // Not in original plan
+      actualQuantity: quantity,
+      name: food.name,
+      displayName: food.displayName,
+      displayNamePlural: food.displayNamePlural,
+      imageAddress: food.imageAddress,
+      isDrink: food.isDrink,
+      isIndivisible: food.isIndivisible,
+      isAdded: true,
+      nutritionalInfo: food.nutritionalInfo,
+      servingSize: food.servingSize,
+    );
+
+    state = AsyncData(
+      currentState!.copyWith(fuelLogData: fuelLog.addItem(newItem)),
+    );
+  }
+
+  /// Update feedback fields on the in-memory fuel log.
+  void updateFuelLogFeedback({
+    int? overallSatisfaction,
+    int? nutritionRating,
+    String? notes,
+  }) {
+    final currentState = state.value;
+    final fuelLog = currentState?.fuelLogData;
+    if (fuelLog == null) return;
+
+    state = AsyncData(
+      currentState!.copyWith(
+        fuelLogData: fuelLog.copyWith(
+          overallSatisfaction:
+              overallSatisfaction ?? fuelLog.overallSatisfaction,
+          nutritionRating: nutritionRating ?? fuelLog.nutritionRating,
+          notes: notes ?? fuelLog.notes,
+        ),
+      ),
+    );
+  }
+
+  /// Save fuel log data to activity and complete it.
+  Future<void> saveFuelLogAndComplete({
+    required int overallSatisfaction,
+    String? textNotes,
+    int? nutritionRating,
+  }) async {
+    final currentState = state.value;
+    if (currentState == null || currentState.activity == null) return;
+    if (currentState.fuelLogData == null) return;
+
+    state = AsyncData(currentState.copyWith(isCompleting: true));
+
+    state = await AsyncValue.guard(() async {
+      try {
+        final user = await _authService.getCurrentUser();
+        if (user == null || user.id.isEmpty) {
+          throw Exception('Cannot complete activity: user not authenticated');
+        }
+
+        // Finalize the fuel log
+        final finalFuelLog = currentState.fuelLogData!.copyWith(
+          loggedAt: DateTime.now(),
+          overallSatisfaction: overallSatisfaction,
+          nutritionRating: nutritionRating,
+          notes: textNotes,
+        );
+
+        // Update activity with fuel log data and completion data
+        final completedActivity = currentState.activity!.copyWith(
+          status: ActivityStatus.completed,
+          completedAt: DateTime.now(),
+          completionRating: overallSatisfaction,
+          nutritionRating: nutritionRating,
+          completionNotes: textNotes,
+          fuelLogData: finalFuelLog.toJson(),
+        );
+
+        await _activitiesService.updateActivity(
+          deviceId: user.id,
+          activity: completedActivity,
+        );
+
+        // Fire-and-forget: push feedback to TrainingPeaks
+        unawaited(
+          _pushFeedbackToTrainingPeaks(
+            user.id,
+            completedActivity,
+            overallSatisfaction,
+            textNotes,
+          ),
+        );
+
+        _trackAnalytics('fuel_log_completed', {
+          'activity_id': activityId,
+          'items_count': finalFuelLog.items.length,
+          'added_items': finalFuelLog.items.where((i) => i.isAdded).length,
+          'rating': overallSatisfaction,
+          'nutrition_rating': nutritionRating,
+          'has_notes': textNotes != null && textNotes.isNotEmpty,
+        });
+
+        // Reload activity to get updated data
+        ref.invalidateSelf();
+
+        return currentState.copyWith(
+          isCompleting: false,
+          isFuelLogMode: false,
+          clearFuelLogData: true,
+        );
+      } catch (error) {
+        _logger.error(
+          'Error saving fuel log and completing activity',
+          error: error,
+        );
+        rethrow;
+      }
+    });
+  }
+
+  /// Save edits to an already-completed activity's fuel log.
+  Future<void> updateExistingFuelLog() async {
+    final currentState = state.value;
+    if (currentState == null || currentState.activity == null) return;
+    if (currentState.fuelLogData == null) return;
+
+    state = AsyncData(currentState.copyWith(isSaving: true));
+
+    state = await AsyncValue.guard(() async {
+      try {
+        final user = await _authService.getCurrentUser();
+        if (user == null || user.id.isEmpty) {
+          throw Exception('Cannot update fuel log: user not authenticated');
+        }
+
+        final updatedActivity = currentState.activity!.copyWith(
+          fuelLogData: currentState.fuelLogData!.toJson(),
+        );
+
+        await _activitiesService.updateActivity(
+          deviceId: user.id,
+          activity: updatedActivity,
+        );
+
+        ref.invalidateSelf();
+        return currentState.copyWith(isSaving: false);
+      } catch (error) {
+        _logger.error('Error updating fuel log', error: error);
+        rethrow;
+      }
+    });
+  }
+
+  /// Toggle between planned and actual view modes for completed activities.
+  void toggleFuelLogViewMode() {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final newMode = currentState.fuelLogViewMode == FuelLogViewMode.planned
+        ? FuelLogViewMode.actual
+        : FuelLogViewMode.planned;
+
+    // When switching to actual, load existing fuel log if not already loaded
+    if (newMode == FuelLogViewMode.actual && currentState.fuelLogData == null) {
+      loadExistingFuelLog();
+    }
+
+    final latestState = state.value;
+    if (latestState != null) {
+      state = AsyncData(latestState.copyWith(fuelLogViewMode: newMode));
+    }
+  }
+
+  /// Parse activity.fuelLogData into state for editing.
+  void loadExistingFuelLog() {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final rawData = currentState.activity?.fuelLogData;
+    if (rawData == null) return;
+
+    try {
+      final fuelLog = FuelLogData.fromJson(rawData);
+      state = AsyncData(currentState.copyWith(fuelLogData: fuelLog));
+    } catch (e) {
+      _logger.warning(
+        'Failed to parse fuel log data',
+        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        error: e,
+      );
+    }
   }
 
   // ============================================================================

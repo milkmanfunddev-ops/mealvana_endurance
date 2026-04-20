@@ -11,6 +11,7 @@ import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// Swimming Details Screen - Unified for both onboarding and settings
 ///
@@ -44,7 +45,8 @@ class SwimmingDetailsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
 
   @override
-  ConsumerState<SwimmingDetailsScreen> createState() => _SwimmingDetailsScreenState();
+  ConsumerState<SwimmingDetailsScreen> createState() =>
+      _SwimmingDetailsScreenState();
 }
 
 class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
@@ -78,16 +80,18 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
     final screenName = _isOnboarding
         ? 'Swimming Details Onboarding'
         : 'Swimming Details Settings';
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': screenName,
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track('screen_viewed', properties: {'screen_name': screenName});
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {
       final controller = ref.read(onboardingControllerProvider.notifier);
       final cachedPrefs = controller.cachedSportPreferences;
       if (cachedPrefs != null) {
-        final cssPacePer100mSeconds = cachedPrefs['cssPacePer100mSeconds'] as int?;
+        final cssPacePer100mSeconds =
+            cachedPrefs['cssPacePer100mSeconds'] as int?;
         if (cssPacePer100mSeconds != null) {
           _cssMinutesController.text = (cssPacePer100mSeconds ~/ 60).toString();
           _cssSecondsController.text = (cssPacePer100mSeconds % 60).toString();
@@ -186,11 +190,16 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
           typicalSwimCapType: _swimCapType,
         );
 
-        unawaited(analytics.track('swimming_details_completed', properties: {
-          'css_seconds': cssSeconds,
-          'typical_wetsuit': _typicalWetsuit,
-          'swim_cap_type': _swimCapType,
-        }));
+        unawaited(
+          analytics.track(
+            'swimming_details_completed',
+            properties: {
+              'css_seconds': cssSeconds,
+              'typical_wetsuit': _typicalWetsuit,
+              'swim_cap_type': _swimCapType,
+            },
+          ),
+        );
 
         if (!mounted) return;
 
@@ -217,19 +226,27 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
         if (!mounted) return;
 
         if (success) {
-          unawaited(analytics.track('swimming_details_changed', properties: {
-            'css_seconds': cssSeconds,
-            'typical_wetsuit': _typicalWetsuit,
-            'swim_cap_type': _swimCapType,
-            'source': 'settings',
-          }));
+          unawaited(
+            analytics.track(
+              'swimming_details_changed',
+              properties: {
+                'css_seconds': cssSeconds,
+                'typical_wetsuit': _typicalWetsuit,
+                'swim_cap_type': _swimCapType,
+                'source': 'settings',
+              },
+            ),
+          );
 
           if (!mounted) return;
 
           MealvanaSnackbar.showSuccess(context, 'Swimming details updated');
           context.pop();
         } else {
-          MealvanaSnackbar.showError(context, 'Failed to save swimming details. Please try again.');
+          MealvanaSnackbar.showError(
+            context,
+            'Failed to save swimming details. Please try again.',
+          );
         }
       }
     } finally {
@@ -245,15 +262,14 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
       return Scaffold(
         backgroundColor: AppColors.blackberry,
         body: const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.orange,
-          ),
+          child: CircularProgressIndicator(color: AppColors.orange),
         ),
       );
     }
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: AppColors.blackberry,
+      contentWidth: AdaptiveContentWidth.narrow,
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Column(
@@ -303,11 +319,14 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
 
             // Scrollable content - vertically centered
             Expanded(
-              child: Center(
-                child: Form(
-                  key: _formKey,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: AdaptiveScrollableBody(
+                safeAreaTop: false,
+                safeAreaBottom: false,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Form(
+                    key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -339,7 +358,8 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
                         FigmaToggleCard(
                           label: 'I typically wear a wetsuit',
                           value: _typicalWetsuit,
-                          onChanged: (value) => setState(() => _typicalWetsuit = value),
+                          onChanged: (value) =>
+                              setState(() => _typicalWetsuit = value),
                         ),
 
                         const SizedBox(height: 28),
@@ -363,12 +383,22 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
                         FigmaRadioOptionList<String>(
                           items: const [
                             FigmaRadioOptionItem(value: 'none', label: 'None'),
-                            FigmaRadioOptionItem(value: 'latex', label: 'Latex'),
-                            FigmaRadioOptionItem(value: 'silicone', label: 'Silicone'),
-                            FigmaRadioOptionItem(value: 'neoprene', label: 'Neoprene'),
+                            FigmaRadioOptionItem(
+                              value: 'latex',
+                              label: 'Latex',
+                            ),
+                            FigmaRadioOptionItem(
+                              value: 'silicone',
+                              label: 'Silicone',
+                            ),
+                            FigmaRadioOptionItem(
+                              value: 'neoprene',
+                              label: 'Neoprene',
+                            ),
                           ],
                           selectedValue: _swimCapType,
-                          onSelected: (value) => setState(() => _swimCapType = value),
+                          onSelected: (value) =>
+                              setState(() => _swimCapType = value),
                         ),
                       ],
                     ),
@@ -448,7 +478,10 @@ class _CSSSection extends StatelessWidget {
             // Minutes field
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: figmaCream.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
@@ -513,7 +546,10 @@ class _CSSSection extends StatelessWidget {
             // Seconds field
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: figmaCream.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),

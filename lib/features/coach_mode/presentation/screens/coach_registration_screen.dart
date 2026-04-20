@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../providers/coach_registration_controller.dart';
 
 /// Coach Registration Screen
@@ -52,13 +53,14 @@ class _CoachRegistrationScreenState
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: AppSpacing.screenPaddingHorizontal,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+      body: ContentArea(
+        child: SingleChildScrollView(
+          padding: AppSpacing.screenPaddingHorizontal,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               const SizedBox(height: AppSpacing.xl),
 
               // Header icon
@@ -413,6 +415,7 @@ class _CoachRegistrationScreenState
 
               const SizedBox(height: AppSpacing.xxxl),
             ],
+            ),
           ),
         ),
       ),

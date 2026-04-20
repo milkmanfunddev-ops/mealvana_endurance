@@ -1,15 +1,15 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../coach_mode/application/coach_service.dart';
 import '../../../coach_mode/data/coach_repository.dart';
+import '../../../coach_mode/domain/pairing_code_connection_result.dart';
 
 /// Athlete-facing screen to generate pairing codes and manage coach connection.
 class CoachConnectionScreen extends ConsumerStatefulWidget {
@@ -22,12 +22,12 @@ class CoachConnectionScreen extends ConsumerStatefulWidget {
 
 class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
   bool _isLoading = true;
-  bool _isGenerating = false;
-  String? _activeCode;
-  DateTime? _codeExpiresAt;
+  bool _isConnecting = false;
   String? _coachName;
   String? _coachUserId;
-  Timer? _countdownTimer;
+  String? _relationshipId;
+  final _codeController = TextEditingController();
+  String? _codeError;
 
   @override
   void initState() {
@@ -37,7 +37,7 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
 
   @override
   void dispose() {
-    _countdownTimer?.cancel();
+    _codeController.dispose();
     super.dispose();
   }
 
@@ -49,63 +49,80 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
       // Check for active coach connection
       final coach = await repo.getMyCoach(userId);
 
-      // Check for active pairing code
-      final code = await repo.getActivePairingCode(userId);
-
       if (!mounted) return;
       setState(() {
         _isLoading = false;
+        _relationshipId = coach?.relationshipId;
         _coachUserId = coach?.coachUserId;
         _coachName = coach?.coachName;
-        _activeCode = code?.code;
-        _codeExpiresAt = code?.expiresAt;
       });
-
-      if (_codeExpiresAt != null) {
-        _startCountdown();
-      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
 
-  void _startCountdown() {
-    _countdownTimer?.cancel();
-    _countdownTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (!mounted) return;
-      if (_codeExpiresAt != null &&
-          _codeExpiresAt!.isBefore(DateTime.now().toUtc())) {
-        setState(() {
-          _activeCode = null;
-          _codeExpiresAt = null;
-        });
-        _countdownTimer?.cancel();
-      } else {
-        setState(() {}); // Refresh remaining time display
-      }
-    });
-  }
+  Future<void> _connectViaCode() async {
+    final code = _codeController.text.trim().toUpperCase();
+    if (code.length != 6) {
+      setState(() => _codeError = 'Code must be 6 characters');
+      return;
+    }
 
-  Future<void> _generateCode() async {
-    setState(() => _isGenerating = true);
+    setState(() {
+      _isConnecting = true;
+      _codeError = null;
+    });
 
     try {
-      final userId = await ref.read(userIdProvider.future);
-      final repo = ref.read(coachRepositoryProvider);
-      final code = await repo.generatePairingCode(userId);
+      final result = await ref
+          .read(coachServiceProvider)
+          .connectViaCoachCodeAsAthlete(code: code);
 
       if (!mounted) return;
-      setState(() {
-        _isGenerating = false;
-        _activeCode = code;
-        _codeExpiresAt = DateTime.now().toUtc().add(const Duration(hours: 24));
-      });
-      _startCountdown();
-    } catch (e) {
+
+      if (result.isSuccess) {
+        MealvanaSnackbar.showSuccess(context, 'Connected to coach!');
+        _codeController.clear();
+        // Reload to show connected state
+        setState(() => _isLoading = true);
+        await _loadState();
+      } else {
+        setState(() {
+          _isConnecting = false;
+          _codeError = _buildFailureMessage(result.failureReason);
+        });
+      }
+    } catch (_) {
       if (!mounted) return;
-      setState(() => _isGenerating = false);
-      MealvanaSnackbar.showError(context, 'Failed to generate code');
+      setState(() {
+        _isConnecting = false;
+        _codeError = 'Connection failed. Please try again.';
+      });
+    }
+  }
+
+  String _buildFailureMessage(PairingCodeConnectFailureReason? reason) {
+    switch (reason) {
+      case PairingCodeConnectFailureReason.noUserProfile:
+        return 'Could not determine your account. Please sign out and sign back in.';
+      case PairingCodeConnectFailureReason.invalidCodeFormat:
+        return 'Code must be 6 letters or numbers.';
+      case PairingCodeConnectFailureReason.codeNotFound:
+        return 'This pairing code was not found.';
+      case PairingCodeConnectFailureReason.codeAlreadyUsed:
+        return 'This pairing code has already been used.';
+      case PairingCodeConnectFailureReason.codeExpired:
+        return 'This pairing code has expired. Ask your coach for a new one.';
+      case PairingCodeConnectFailureReason.selfConnectionNotAllowed:
+        return 'You cannot connect to your own pairing code.';
+      case PairingCodeConnectFailureReason.relationshipAlreadyExists:
+        return 'You are already connected to this coach.';
+      case PairingCodeConnectFailureReason.notApprovedCoach:
+        return 'This code is not from an approved coach.';
+      case PairingCodeConnectFailureReason.unknown:
+      case null:
+        return 'Unable to connect right now. Please try again.';
     }
   }
 
@@ -158,16 +175,6 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
     }
   }
 
-  String _formatRemainingTime() {
-    if (_codeExpiresAt == null) return '';
-    final remaining = _codeExpiresAt!.difference(DateTime.now().toUtc());
-    if (remaining.isNegative) return 'Expired';
-    final hours = remaining.inHours;
-    final minutes = remaining.inMinutes % 60;
-    if (hours > 0) return 'Expires in ${hours}h ${minutes}m';
-    return 'Expires in ${minutes}m';
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -187,18 +194,20 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
           ),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_coachUserId != null) _buildConnectedSection(isDark),
-                  if (_coachUserId == null) _buildNotConnectedSection(isDark),
-                ],
+      body: ContentArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_coachUserId != null) _buildConnectedSection(isDark),
+                    if (_coachUserId == null) _buildNotConnectedSection(isDark),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
@@ -223,21 +232,13 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Connected to Coach',
+                      _coachName != null
+                          ? 'Connected to $_coachName'
+                          : 'Connected to Coach',
                       style: TextStyle(
                         color: isDark ? AppColors.cream : AppColors.blackberry,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _coachName ?? 'Your coach',
-                      style: TextStyle(
-                        color: isDark
-                            ? AppColors.textDarkSecondary
-                            : AppColors.textLightSecondary,
-                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -252,7 +253,9 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () => context.push('/coach-chat'),
+            onPressed: _relationshipId != null
+                ? () => context.push('/chat/$_relationshipId')
+                : null,
             icon: const Icon(Icons.chat_outlined),
             label: const Text('Message Coach'),
             style: OutlinedButton.styleFrom(
@@ -296,7 +299,7 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Generate a pairing code and share it with your coach. '
+          'Enter the pairing code your coach gave you. '
           'Once connected, your coach can view your activities and create nutrition plans for you.',
           style: TextStyle(
             color: isDark
@@ -307,129 +310,125 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
         ),
         const SizedBox(height: 24),
 
-        // Active code or generate button
-        if (_activeCode != null) _buildActiveCodeCard(isDark),
-        if (_activeCode == null) _buildGenerateButton(isDark),
-      ],
-    );
-  }
-
-  Widget _buildActiveCodeCard(bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.blackberryDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.blackberryLight : AppColors.blackberry.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Column(
-        children: [
-          Text(
-            'Your Pairing Code',
-            style: TextStyle(
+        // Code entry
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.blackberryDark : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
               color: isDark
-                  ? AppColors.textDarkSecondary
-                  : AppColors.textLightSecondary,
-              fontSize: 13,
+                  ? AppColors.blackberryLight
+                  : AppColors.blackberry.withValues(alpha: 0.1),
             ),
           ),
-          const SizedBox(height: 12),
-
-          // Code display with copy
-          GestureDetector(
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: _activeCode!));
-              MealvanaSnackbar.showSuccess(context, 'Code copied!');
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: BoxDecoration(
-                color: AppColors.electrolyte.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.electrolyte),
+          child: Column(
+            children: [
+              Text(
+                'Enter Coach Code',
+                style: TextStyle(
+                  color: isDark
+                      ? AppColors.textDarkSecondary
+                      : AppColors.textLightSecondary,
+                  fontSize: 13,
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _activeCode!,
-                    style: TextStyle(
-                      color: isDark ? AppColors.cream : AppColors.blackberry,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 32,
-                      letterSpacing: 6,
-                      fontFamily: 'monospace',
+              const SizedBox(height: 16),
+              TextField(
+                controller: _codeController,
+                textCapitalization: TextCapitalization.characters,
+                textAlign: TextAlign.center,
+                maxLength: 6,
+                style: TextStyle(
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 28,
+                  letterSpacing: 6,
+                  fontFamily: 'monospace',
+                ),
+                decoration: InputDecoration(
+                  hintText: 'ABC123',
+                  counterText: '',
+                  hintStyle: TextStyle(
+                    color: (isDark
+                            ? AppColors.textDarkSecondary
+                            : AppColors.textLightSecondary)
+                        .withValues(alpha: 0.5),
+                    letterSpacing: 6,
+                  ),
+                  filled: true,
+                  fillColor: isDark
+                      ? AppColors.blackberry
+                      : AppColors.blackberry.withValues(alpha: 0.05),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: isDark
+                          ? AppColors.blackberryLight
+                          : AppColors.blackberry.withValues(alpha: 0.2),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Icon(
-                    Icons.copy,
-                    color: AppColors.electrolyte,
-                    size: 20,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: isDark
+                          ? AppColors.blackberryLight
+                          : AppColors.blackberry.withValues(alpha: 0.2),
+                    ),
                   ),
-                ],
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: AppColors.electrolyte,
+                    ),
+                  ),
+                ),
+                onSubmitted: (_) => _connectViaCode(),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Expiry info
-          Text(
-            _formatRemainingTime(),
-            style: TextStyle(
-              color: isDark
-                  ? AppColors.textDarkSecondary
-                  : AppColors.textLightSecondary,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Share this code with your coach',
-            style: TextStyle(
-              color: isDark
-                  ? AppColors.textDarkSecondary
-                  : AppColors.textLightSecondary,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Generate new code
-          TextButton(
-            onPressed: _isGenerating ? null : _generateCode,
-            child: Text(_isGenerating ? 'Generating...' : 'Generate New Code'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGenerateButton(bool isDark) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _isGenerating ? null : _generateCode,
-        icon: _isGenerating
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.vpn_key_outlined),
-        label: Text(_isGenerating ? 'Generating...' : 'Generate Pairing Code'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.electrolyte,
-          foregroundColor: AppColors.blackberry,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+              if (_codeError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _codeError!,
+                    style: const TextStyle(
+                      color: AppColors.dragonfruit,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isConnecting ? null : _connectViaCode,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.electrolyte,
+                    foregroundColor: AppColors.blackberry,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isConnecting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Connect',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                ),
+              ),
+            ],
           ),
         ),
-      ),
+      ],
     );
   }
 }

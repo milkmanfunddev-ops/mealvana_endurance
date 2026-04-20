@@ -1,17 +1,15 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:wiredash/wiredash.dart';
 import '../../theme/kyle_design/app_theme.dart';
 import '../../theme/kyle_design/theme_provider.dart';
 import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
 import '../core/app_router.dart';
 import '../services/app_config.dart';
+import '../services/app_external_deps.dart';
 import '../services/auth/auth_listener_service.dart';
-import 'responsive_content_wrapper.dart'
-    show ResponsiveContentWrapper, coachPortalActiveNotifier;
+import '../services/notification_service.dart';
 
 /// Root app widget that handles app initialization and navigation
 /// Following Andrea Bizzotto's patterns for app startup with deep link support
@@ -22,11 +20,63 @@ import 'responsive_content_wrapper.dart'
 /// - MaterialApp.builder wraps the router child with AppStartupWidget
 /// - This allows deep links to be processed while app initializes
 /// - Critical for OAuth redirects (e.g., com.milkman.mealvanaendurance://auth-callback)
-class RootAppWidget extends ConsumerWidget {
+class RootAppWidget extends ConsumerStatefulWidget {
   const RootAppWidget({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RootAppWidget> createState() => _RootAppWidgetState();
+}
+
+class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
+  @override
+  void initState() {
+    super.initState();
+
+    NotificationService.setNavigationHandler(_handleNotificationNavigation);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final pendingActivityId =
+          NotificationService.getPendingNavigationActivityId();
+      final pendingType = NotificationService.getPendingNavigationType();
+      if (pendingActivityId != null && pendingActivityId.isNotEmpty) {
+        _handleNotificationNavigation(pendingActivityId, pendingType);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    NotificationService.setNavigationHandler(null);
+    super.dispose();
+  }
+
+  void _handleNotificationNavigation(String activityId, String? type) {
+    if (!mounted || activityId.isEmpty) return;
+
+    final router = ref.read(AppRouter.routerProvider);
+
+    // Activity-upload notifications (Garmin, etc.) route to the fuel log screen
+    // so the user can rate the workout and log what they actually ate vs
+    // what they planned. Seed the stack with /plan first, then push /fuel-log
+    // on top — that way the close/back buttons pop back to the activity
+    // detail screen instead of crashing with "nothing to pop".
+    if (type == 'activity') {
+      router.go('/plan', extra: {'activityId': activityId});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        router.push(
+          '/fuel-log',
+          extra: {'activityId': activityId, 'isNewActivity': false},
+        );
+      });
+      return;
+    }
+
+    router.go('/plan', extra: {'activityId': activityId});
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Initialize auth listener ONCE at app startup
     // This is a singleton that lives for the lifetime of the app
     // It listens for auth state changes, invalidates user-specific providers,
@@ -62,15 +112,38 @@ class RootAppWidget extends ConsumerWidget {
                 thirdPenColor: Colors.green,
                 fourthPenColor: Colors.yellow,
               ),
-              feedbackOptions: const WiredashFeedbackOptions(
+              feedbackOptions: WiredashFeedbackOptions(
                 email: EmailPrompt.optional,
                 screenshot: ScreenshotPrompt.optional,
                 labels: [
-                  Label(id: 'bug', title: '🐛 Bug Report'),
-                  Label(id: 'feature', title: '✨ Feature Request'),
-                  Label(id: 'nutrition', title: '🥗 Nutrition Feedback'),
-                  Label(id: 'ui', title: '🎨 UI/UX Feedback'),
+                  Label(id: 'label-lhkcef66w1', title: 'Bug Report'),
+                  Label(id: 'label-wt5prvrxpl', title: 'Feature Request'),
+                  Label(id: 'label-xs0i7er9vl', title: 'Praise'),
+                  Label(id: 'label-u1rpq6potz', title: 'Nutrition Feedback'),
+                  Label(id: 'label-ovo60gyfw6', title: 'UI/UX Feedback'),
+                  Label(id: 'label-1anu74e8gf', title: 'High Priority'),
                 ],
+                collectMetaData: (metaData) => metaData
+                  ..userEmail = ref
+                      .read(appExternalDepsProvider)
+                      .supabaseClient
+                      .auth
+                      .currentUser
+                      ?.email
+                  ..userId = ref
+                      .read(appExternalDepsProvider)
+                      .supabaseClient
+                      .auth
+                      .currentUser
+                      ?.id
+                  ..custom['auth_provider'] =
+                      ref
+                          .read(appExternalDepsProvider)
+                          .supabaseClient
+                          .auth
+                          .currentUser
+                          ?.appMetadata['provider'] ??
+                      'unknown',
               ),
               child: MaterialApp.router(
                 title: 'Mealvana Endurance',
@@ -84,11 +157,7 @@ class RootAppWidget extends ConsumerWidget {
                 builder: (context, child) {
                   return AppStartupWidget(
                     // Pass router child back when initialization is complete
-                    // Wrapped with ResponsiveContentWrapper for web/iPad support
-                    onLoaded: (_) => _RouteAwareWrapper(
-                      goRouter: goRouter,
-                      child: child!,
-                    ),
+                    onLoaded: (_) => child!,
                   );
                 },
               ),
@@ -112,12 +181,7 @@ class RootAppWidget extends ConsumerWidget {
                 themeMode: ThemeMode.dark,
                 routerConfig: goRouter,
                 builder: (context, child) {
-                  return AppStartupWidget(
-                    onLoaded: (_) => _RouteAwareWrapper(
-                      goRouter: goRouter,
-                      child: child!,
-                    ),
-                  );
+                  return AppStartupWidget(onLoaded: (_) => child!);
                 },
               ),
             );
@@ -139,63 +203,11 @@ class RootAppWidget extends ConsumerWidget {
                 themeMode: ThemeMode.dark,
                 routerConfig: goRouter,
                 builder: (context, child) {
-                  return AppStartupWidget(
-                    onLoaded: (_) => _RouteAwareWrapper(
-                      goRouter: goRouter,
-                      child: child!,
-                    ),
-                  );
+                  return AppStartupWidget(onLoaded: (_) => child!);
                 },
               ),
             );
           },
-        );
-      },
-    );
-  }
-}
-
-/// Listens to GoRouter route changes and wraps content with
-/// ResponsiveContentWrapper, passing isFullWidth for coach portal routes.
-///
-/// Checks only the **current** route path to decide if the coach portal
-/// should render full-width. Child screens pushed from the portal
-/// (e.g. /distancepacegut, /plan, /adjust-macros) get standard width so
-/// forms are not awkwardly stretched across the full viewport.
-class _RouteAwareWrapper extends StatelessWidget {
-  const _RouteAwareWrapper({
-    required this.goRouter,
-    required this.child,
-  });
-
-  final GoRouter goRouter;
-  final Widget child;
-
-  bool _isCoachSession() {
-    try {
-      final path = goRouter.routeInformationProvider.value.uri.path;
-      // Only /coach and /coach/* routes get full-width portal layout.
-      // Child screens like /distancepacegut, /plan, /adjust-macros get
-      // standard centered width.
-      return path == '/coach' || path.startsWith('/coach/');
-    } catch (_) {
-      return false;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: Listenable.merge([
-        goRouter.routeInformationProvider,
-        coachPortalActiveNotifier,
-      ]),
-      builder: (context, _) {
-        final isCoachPortal =
-            kIsWeb && (_isCoachSession() || coachPortalActiveNotifier.value);
-        return ResponsiveContentWrapper(
-          isFullWidth: isCoachPortal,
-          child: child,
         );
       },
     );

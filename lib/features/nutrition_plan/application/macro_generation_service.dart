@@ -65,7 +65,7 @@ class MacroGenerationService {
       overrides: overrides,
     );
 
-    await _cacheMacroTargets(macroTargets);
+    await _cacheMacroTargets(macroTargets, activityId: activityId);
 
     await analytics.trackPlanGenerated(
       deviceId: deviceId,
@@ -102,7 +102,9 @@ class MacroGenerationService {
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
   }) async {
-    DebugLogger.info('🚴 MACRO SERVICE: generateCyclingMacros called - distance: ${distanceMiles}mi, speed: ${speedMph}mph');
+    DebugLogger.info(
+      '🚴 MACRO SERVICE: generateCyclingMacros called - distance: ${distanceMiles}mi, speed: ${speedMph}mph',
+    );
 
     DebugLogger.info('🚴 MACRO SERVICE: Building request data...');
     final requestData = await _buildCyclingRequestData(
@@ -119,16 +121,20 @@ class MacroGenerationService {
       isFasted: isFasted,
       intensity: intensity,
     );
-    DebugLogger.info('🚴 MACRO SERVICE: Request data built, calling edge function...');
+    DebugLogger.info(
+      '🚴 MACRO SERVICE: Request data built, calling edge function...',
+    );
 
     final macroTargets = await _callGenerateMacrosEdgeFunction(
       requestData: requestData,
       expectedActivityType: ActivityType.cycling,
       overrides: overrides,
     );
-    DebugLogger.info('🚴 MACRO SERVICE: Edge function returned, caching targets...');
+    DebugLogger.info(
+      '🚴 MACRO SERVICE: Edge function returned, caching targets...',
+    );
 
-    await _cacheMacroTargets(macroTargets);
+    await _cacheMacroTargets(macroTargets, activityId: activityId);
     DebugLogger.info('🚴 MACRO SERVICE: Targets cached, tracking analytics...');
 
     await analytics.trackPlanGenerated(
@@ -144,7 +150,9 @@ class MacroGenerationService {
       afterRunItems: 1,
       isFirstPlan: true,
     );
-    DebugLogger.info('🚴 MACRO SERVICE: Analytics tracked, returning macro targets');
+    DebugLogger.info(
+      '🚴 MACRO SERVICE: Analytics tracked, returning macro targets',
+    );
 
     return macroTargets;
   }
@@ -163,7 +171,9 @@ class MacroGenerationService {
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
   }) async {
-    DebugLogger.info('🏊 MACRO SERVICE: generateSwimmingMacros called - distance: ${distanceMeters}m, pace: ${paceSecondsper100m}s/100m');
+    DebugLogger.info(
+      '🏊 MACRO SERVICE: generateSwimmingMacros called - distance: ${distanceMeters}m, pace: ${paceSecondsper100m}s/100m',
+    );
 
     DebugLogger.info('🏊 MACRO SERVICE: Building request data...');
     final requestData = await _buildSwimmingRequestData(
@@ -176,16 +186,20 @@ class MacroGenerationService {
       waterTempC: waterTempC,
       intensity: intensity,
     );
-    DebugLogger.info('🏊 MACRO SERVICE: Request data built, calling edge function...');
+    DebugLogger.info(
+      '🏊 MACRO SERVICE: Request data built, calling edge function...',
+    );
 
     final macroTargets = await _callGenerateMacrosEdgeFunction(
       requestData: requestData,
       expectedActivityType: ActivityType.swimming,
       overrides: overrides,
     );
-    DebugLogger.info('🏊 MACRO SERVICE: Edge function returned, caching targets...');
+    DebugLogger.info(
+      '🏊 MACRO SERVICE: Edge function returned, caching targets...',
+    );
 
-    await _cacheMacroTargets(macroTargets);
+    await _cacheMacroTargets(macroTargets, activityId: activityId);
     DebugLogger.info('🏊 MACRO SERVICE: Targets cached, tracking analytics...');
 
     await analytics.trackPlanGenerated(
@@ -201,7 +215,9 @@ class MacroGenerationService {
       afterRunItems: 1,
       isFirstPlan: true,
     );
-    DebugLogger.info('🏊 MACRO SERVICE: Analytics tracked, returning macro targets');
+    DebugLogger.info(
+      '🏊 MACRO SERVICE: Analytics tracked, returning macro targets',
+    );
 
     return macroTargets;
   }
@@ -223,6 +239,9 @@ class MacroGenerationService {
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
+    final preferencePayload = await _buildPreWorkoutPreferencePayload(
+      userProfile,
+    );
 
     // V3: Normalize intensity distribution to fractions (0-1)
     final zoneLow = (intensity?.conversationalPct ?? 70) / 100.0;
@@ -258,6 +277,7 @@ class MacroGenerationService {
       'sweat_rate_category': sweatRateCat?.name ?? 'medium',
       'temp_c': temperatureC,
       'humidity_pct': humidityPct,
+      ...preferencePayload,
     };
   }
 
@@ -277,6 +297,9 @@ class MacroGenerationService {
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
+    final preferencePayload = await _buildPreWorkoutPreferencePayload(
+      userProfile,
+    );
 
     // V3: Normalize intensity distribution to fractions (0-1)
     final zoneLow = (intensity?.conversationalPct ?? 70) / 100.0;
@@ -311,6 +334,7 @@ class MacroGenerationService {
       if (sessionGoal != null) 'session_goal': sessionGoal,
       if (temperatureC != null) 'temp_c': temperatureC,
       if (humidityPct != null) 'humidity_pct': humidityPct,
+      ...preferencePayload,
     };
   }
 
@@ -326,6 +350,9 @@ class MacroGenerationService {
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
+    final preferencePayload = await _buildPreWorkoutPreferencePayload(
+      userProfile,
+    );
 
     // V3: Normalize intensity distribution to fractions (0-1)
     final zoneLow = (intensity?.conversationalPct ?? 70) / 100.0;
@@ -356,7 +383,40 @@ class MacroGenerationService {
       if (intensityTarget != null) 'intensity_target': intensityTarget,
       if (sessionGoal != null) 'session_goal': sessionGoal,
       if (waterTempC != null) 'water_temp_c': waterTempC,
+      ...preferencePayload,
     };
+  }
+
+  Future<Map<String, dynamic>> _buildPreWorkoutPreferencePayload(
+    UserProfile? userProfile,
+  ) async {
+    if (userProfile == null) return {};
+
+    final payload = <String, dynamic>{};
+    final diet = userProfile.dietaryPreference?.dbValue;
+    if (diet != null && diet.isNotEmpty && diet != 'none') {
+      payload['diet'] = diet;
+    }
+
+    final allergies = userProfile.allergies
+        .map((a) => a.dbValue)
+        .where((a) => a.isNotEmpty && a != 'none')
+        .toList();
+    if (allergies.isNotEmpty) {
+      payload['allergies'] = allergies;
+    }
+
+    final likedFoods = await authService.getLikedFoods(userProfile.id);
+    if (likedFoods.isNotEmpty) {
+      payload['liked_foods'] = likedFoods;
+    }
+
+    final dislikedFoods = await authService.getDislikedFoods(userProfile.id);
+    if (dislikedFoods.isNotEmpty) {
+      payload['disliked_foods'] = dislikedFoods;
+    }
+
+    return payload;
   }
 
   Map<String, dynamic> _getUserMetrics(UserProfile? userProfile) {
@@ -385,11 +445,17 @@ class MacroGenerationService {
     // Include overrides in request payload if provided
     if (overrides != null && overrides.hasAnyOverride) {
       final clamped = NutritionTargetGuardrails.clampAll(overrides);
-      requestData['overrides'] = clamped.toEdgeFunctionPayload(sport: expectedActivityType);
+      requestData['overrides'] = clamped.toEdgeFunctionPayload(
+        sport: expectedActivityType,
+      );
     }
 
-    DebugLogger.info('🌐 EDGE FUNCTION: Calling generate-macros-v4 for ${expectedActivityType.name}...');
-    DebugLogger.info('📤 EDGE FUNCTION: Request payload: ${requestData.toString().substring(0, 200)}...');
+    DebugLogger.info(
+      '🌐 EDGE FUNCTION: Calling generate-macros-v4 for ${expectedActivityType.name}...',
+    );
+    DebugLogger.info(
+      '📤 EDGE FUNCTION: Request payload: ${requestData.toString().substring(0, 200)}...',
+    );
 
     final response = await supabaseClient.functions.invoke(
       'generate-macros-v4',
@@ -400,48 +466,69 @@ class MacroGenerationService {
 
     if (response.status >= 400) {
       final data = response.data as Map<String, dynamic>?;
-      final errorMessage = data?['message'] ?? 'Failed to generate macro targets';
-      DebugLogger.error('❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage');
+      final errorMessage =
+          data?['message'] ?? 'Failed to generate macro targets';
+      DebugLogger.error(
+        '❌ EDGE FUNCTION: HTTP error ${response.status}: $errorMessage',
+      );
       throw Exception(errorMessage);
     }
 
     final data = response.data as Map<String, dynamic>;
-    DebugLogger.info('📊 EDGE FUNCTION: Response data keys: ${data.keys.toList()}');
+    DebugLogger.info(
+      '📊 EDGE FUNCTION: Response data keys: ${data.keys.toList()}',
+    );
 
     if (data['success'] != true) {
-      final errorMessage = data['message'] ?? 'Failed to generate macro targets';
+      final errorMessage =
+          data['message'] ?? 'Failed to generate macro targets';
       DebugLogger.error('❌ EDGE FUNCTION: Success=false: $errorMessage');
       throw Exception(errorMessage);
     }
 
     final macrosData = data['macros'] as Map<String, dynamic>;
-    final activityTypeString = data['activity_type'] as String? ?? expectedActivityType.name;
-    DebugLogger.info('✅ EDGE FUNCTION: Got macros data with ${macrosData.keys.length} keys');
+    final activityTypeString =
+        data['activity_type'] as String? ?? expectedActivityType.name;
+    DebugLogger.info(
+      '✅ EDGE FUNCTION: Got macros data with ${macrosData.keys.length} keys',
+    );
 
     ActivityType activityType = expectedActivityType;
     try {
       activityType = ActivityType.values.byName(activityTypeString);
     } catch (e) {
-      DebugLogger.warning('⚠️ EDGE FUNCTION: Could not parse activity type "$activityTypeString", using $expectedActivityType');
+      DebugLogger.warning(
+        '⚠️ EDGE FUNCTION: Could not parse activity type "$activityTypeString", using $expectedActivityType',
+      );
     }
 
     final macroTargets = _parseMacroTargets(macrosData, activityType);
-    DebugLogger.info('✅ EDGE FUNCTION: Successfully parsed macro targets - preRun carbs: ${macroTargets.preRun.carbsG}g, total burn: ${macroTargets.metrics.caloriesNetKcal}kcal');
+    DebugLogger.info(
+      '✅ EDGE FUNCTION: Successfully parsed macro targets - preRun carbs: ${macroTargets.preRun.carbsG}g, total burn: ${macroTargets.metrics.caloriesNetKcal}kcal',
+    );
 
     return macroTargets;
   }
 
-  MacroTargets _parseMacroTargets(Map<String, dynamic> macrosData, ActivityType activityType) {
-
+  MacroTargets _parseMacroTargets(
+    Map<String, dynamic> macrosData,
+    ActivityType activityType,
+  ) {
     return MacroTargets(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       activityType: activityType,
       preRun: PreRunMacros(
         carbsG: _toDouble(macrosData['pre_run_carbs_g'], 'pre_run_carbs_g'),
-        proteinG: _toDouble(macrosData['pre_run_protein_g'], 'pre_run_protein_g'),
+        proteinG: _toDouble(
+          macrosData['pre_run_protein_g'],
+          'pre_run_protein_g',
+        ),
         fatCapG: _toDouble(macrosData['pre_run_fat_g'], 'pre_run_fat_g'),
         fluidsMl: _toDouble(macrosData['pre_run_water_ml'], 'pre_run_water_ml'),
-        sodiumMg: _toDouble(macrosData['pre_run_sodium_mg'], 'pre_run_sodium_mg'),
+        sodiumMg: _toDouble(
+          macrosData['pre_run_sodium_mg'],
+          'pre_run_sodium_mg',
+        ),
         carbsLowG: _toDoubleOrNull(macrosData['pre_run_carbs_low_g']),
         carbsHighG: _toDoubleOrNull(macrosData['pre_run_carbs_high_g']),
         proteinLowG: _toDoubleOrNull(macrosData['pre_run_protein_low_g']),
@@ -451,32 +538,74 @@ class MacroGenerationService {
         fluidsLowMl: _toDoubleOrNull(macrosData['pre_run_water_low_ml']),
         fluidsHighMl: _toDoubleOrNull(macrosData['pre_run_water_high_ml']),
       ),
+      preRunSelections: _toMapListOrNull(macrosData['pre_run_selections']),
       duringRun: () {
         final durationH = _toDouble(macrosData['duration_h'], 'duration_h');
         final bandLow = _toDoubleOrNull(macrosData['during_band_low_g_per_h']);
-        final bandHigh = _toDoubleOrNull(macrosData['during_band_high_g_per_h']);
+        final bandHigh = _toDoubleOrNull(
+          macrosData['during_band_high_g_per_h'],
+        );
         return DuringRunMacros(
-          carbRateGPerH: _toDouble(macrosData['during_rate_g_per_h'], 'during_rate_g_per_h'),
+          carbRateGPerH: _toDouble(
+            macrosData['during_rate_g_per_h'],
+            'during_rate_g_per_h',
+          ),
           carbTotalG: _toDouble(macrosData['during_total_g'], 'during_total_g'),
-          fluidRateMlPerH: _toDouble(macrosData['during_water_rate_ml_per_h'], 'during_water_rate_ml_per_h'),
-          fluidTotalMl: _toDouble(macrosData['during_water_total_ml'], 'during_water_total_ml'),
-          sodiumRateMgPerH: _toDouble(macrosData['during_sodium_rate_mg_per_h'], 'during_sodium_rate_mg_per_h'),
-          sodiumTotalMg: _toDouble(macrosData['during_sodium_total_mg'], 'during_sodium_total_mg'),
-          massNormRateGPerH: _toDouble(macrosData['during_mass_norm_rate_g_per_h'], 'during_mass_norm_rate_g_per_h'),
-          absClampRangeGPerH: _toDoubleList(macrosData['during_abs_clamp_range_g_per_h']),
+          fluidRateMlPerH: _toDouble(
+            macrosData['during_water_rate_ml_per_h'],
+            'during_water_rate_ml_per_h',
+          ),
+          fluidTotalMl: _toDouble(
+            macrosData['during_water_total_ml'],
+            'during_water_total_ml',
+          ),
+          sodiumRateMgPerH: _toDouble(
+            macrosData['during_sodium_rate_mg_per_h'],
+            'during_sodium_rate_mg_per_h',
+          ),
+          sodiumTotalMg: _toDouble(
+            macrosData['during_sodium_total_mg'],
+            'during_sodium_total_mg',
+          ),
+          massNormRateGPerH: _toDouble(
+            macrosData['during_mass_norm_rate_g_per_h'],
+            'during_mass_norm_rate_g_per_h',
+          ),
+          absClampRangeGPerH: _toDoubleList(
+            macrosData['during_abs_clamp_range_g_per_h'],
+          ),
           carbsLowG: bandLow != null ? bandLow * durationH : null,
           carbsHighG: bandHigh != null ? bandHigh * durationH : null,
           sodiumLowMg: _toDoubleOrNull(macrosData['during_sodium_low_mg']),
           sodiumHighMg: _toDoubleOrNull(macrosData['during_sodium_high_mg']),
           fluidsLowMl: _toDoubleOrNull(macrosData['during_water_low_ml']),
           fluidsHighMl: _toDoubleOrNull(macrosData['during_water_high_ml']),
+          gutMultiplier: _toDoubleOrNull(macrosData['during_gut_multiplier']),
+          sportCeilingGPerH: _toDoubleOrNull(
+            macrosData['during_sport_ceiling_g_per_h'],
+          ),
+          rawBandLowGPerH: _toDoubleOrNull(
+            macrosData['during_raw_band_low_g_per_h'],
+          ),
+          rawBandHighGPerH: _toDoubleOrNull(
+            macrosData['during_raw_band_high_g_per_h'],
+          ),
         );
       }(),
       postRun: PostRunMacros(
         carbsG: _toDouble(macrosData['post_run_carbs_g'], 'post_run_carbs_g'),
-        proteinG: _toDouble(macrosData['post_run_protein_g'], 'post_run_protein_g'),
-        fluidsMl: _toDouble(macrosData['post_run_water_ml'], 'post_run_water_ml'),
-        sodiumMg: _toDouble(macrosData['post_run_sodium_mg'], 'post_run_sodium_mg'),
+        proteinG: _toDouble(
+          macrosData['post_run_protein_g'],
+          'post_run_protein_g',
+        ),
+        fluidsMl: _toDouble(
+          macrosData['post_run_water_ml'],
+          'post_run_water_ml',
+        ),
+        sodiumMg: _toDouble(
+          macrosData['post_run_sodium_mg'],
+          'post_run_sodium_mg',
+        ),
         carbsLowG: _toDoubleOrNull(macrosData['post_run_carbs_low_g']),
         carbsHighG: _toDoubleOrNull(macrosData['post_run_carbs_high_g']),
         proteinLowG: _toDoubleOrNull(macrosData['post_run_protein_low_g']),
@@ -491,10 +620,17 @@ class MacroGenerationService {
         // only returns distance_km, duration_h, and duration_min
         final distanceKm = _toDouble(macrosData['distance_km'], 'distance_km');
         final durationH = _toDouble(macrosData['duration_h'], 'duration_h');
-        final durationMin = _toDouble(macrosData['duration_min'], 'duration_min');
+        final durationMin = _toDouble(
+          macrosData['duration_min'],
+          'duration_min',
+        );
         final distanceMi = distanceKm > 0 ? distanceKm / 1.60934 : 0.0;
-        final speedMph = (distanceMi > 0 && durationH > 0) ? distanceMi / durationH : 0.0;
-        final paceMinPerMile = (distanceMi > 0 && durationMin > 0) ? durationMin / distanceMi : null;
+        final speedMph = (distanceMi > 0 && durationH > 0)
+            ? distanceMi / durationH
+            : 0.0;
+        final paceMinPerMile = (distanceMi > 0 && durationMin > 0)
+            ? durationMin / distanceMi
+            : null;
 
         return RunMetrics(
           distanceMi: distanceMi,
@@ -503,12 +639,19 @@ class MacroGenerationService {
           durationMin: durationMin,
           paceMinPerMile: paceMinPerMile,
           speedMph: speedMph,
-          caloriesNetKcal: _toDouble(macrosData['calories_net_kcal'], 'calories_net_kcal'),
-          caloriesGrossKcal: _toDouble(macrosData['calories_gross_kcal'], 'calories_gross_kcal'),
+          caloriesNetKcal: _toDouble(
+            macrosData['calories_net_kcal'],
+            'calories_net_kcal',
+          ),
+          caloriesGrossKcal: _toDouble(
+            macrosData['calories_gross_kcal'],
+            'calories_gross_kcal',
+          ),
           met: _toDouble(macrosData['MET'], 'MET'),
         );
       }(),
-      calculationRule: macrosData['pre_run_carbs_rule'] ?? 'Generated from edge function',
+      calculationRule:
+          macrosData['pre_run_carbs_rule'] ?? 'Generated from edge function',
       timestamp: DateTime.now(),
       isUserModified: false,
     );
@@ -542,7 +685,10 @@ class MacroGenerationService {
     }
   }
 
-  List<double> _toDoubleList(dynamic value, [List<double> defaultValue = const [30, 60]]) {
+  List<double> _toDoubleList(
+    dynamic value, [
+    List<double> defaultValue = const [30, 60],
+  ]) {
     if (value == null) return defaultValue;
     if (value is List) {
       return value.map((e) => _toDouble(e)).toList();
@@ -550,8 +696,29 @@ class MacroGenerationService {
     return defaultValue;
   }
 
-  Future<void> _cacheMacroTargets(MacroTargets macroTargets) async {
+  List<Map<String, dynamic>>? _toMapListOrNull(dynamic value) {
+    if (value is! List) return null;
+
+    final results = <Map<String, dynamic>>[];
+    for (final item in value) {
+      if (item is Map) {
+        results.add(Map<String, dynamic>.from(item));
+      }
+    }
+    return results;
+  }
+
+  Future<void> _cacheMacroTargets(
+    MacroTargets macroTargets, {
+    String? activityId,
+  }) async {
     await macroRepository.saveMacroTargets(macroTargets);
+    if (activityId != null && activityId.trim().isNotEmpty) {
+      await macroRepository.saveMacroTargetsForActivity(
+        activityId,
+        macroTargets,
+      );
+    }
   }
 
   int _calculateTotalCarbs(MacroTargets macroTargets) {

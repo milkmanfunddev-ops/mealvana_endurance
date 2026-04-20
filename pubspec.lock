@@ -449,6 +449,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
+  fl_chart:
+    dependency: "direct main"
+    description:
+      name: fl_chart
+      sha256: b938f77d042cbcd822936a7a359a7235bad8bd72070de1f827efc2cc297ac888
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -1068,6 +1076,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  onesignal_flutter:
+    dependency: "direct main"
+    description:
+      name: onesignal_flutter
+      sha256: "5f778073b850c4931fafe23404ac3ce38bff9bf2cc701bc969e9c8e77e7cadf2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.5.0"
   package_config:
     dependency: transitive
     description:

@@ -42,6 +42,13 @@ class EducationContent {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Normalized display title for user-facing UI labels.
+  /// Converts legacy variants like "ME101" or "ME 101" to "Mealvana 101".
+  String get displayTitle => title.replaceAll(
+    RegExp(r'\bME\s*101\b', caseSensitive: false),
+    'Mealvana 101',
+  );
+
   /// Format duration as "M:SS" (e.g., "5:30")
   String get formattedDuration {
     if (durationSeconds == null) return '';
@@ -63,9 +70,8 @@ class EducationContent {
       durationSeconds: json['duration_seconds'] as int?,
       sortOrder: json['sort_order'] as int? ?? 0,
       isPublished: json['is_published'] as bool? ?? false,
-      tags: (json['tags'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
+      tags:
+          (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
           const [],
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),

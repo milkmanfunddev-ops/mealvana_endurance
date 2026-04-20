@@ -10,6 +10,7 @@ import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/selection/figma_radio_option_card.dart';
 import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Consolidated Food Settings Screen
 ///
@@ -155,43 +156,45 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
 
     return Scaffold(
       backgroundColor: AppColors.blackberry,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header with back button and title
-            _buildHeader(),
+      body: ContentArea(
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header with back button and title
+              _buildHeader(),
 
-            // Scrollable content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 24),
+              // Scrollable content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 24),
 
-                    // Section 1: Dietary Preference
-                    _buildDietaryPreferenceSection(),
+                      // Section 1: Dietary Preference
+                      _buildDietaryPreferenceSection(),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Section 2: Allergies
-                    _buildAllergiesSection(),
+                      // Section 2: Allergies
+                      _buildAllergiesSection(),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Section 3: Food Preferences (link to existing screen)
-                    _buildFoodPreferencesSection(),
+                      // Section 3: Food Preferences (link to existing screen)
+                      _buildFoodPreferencesSection(),
 
-                    const SizedBox(height: 32),
-                  ],
+                      const SizedBox(height: 32),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // Save button at bottom
-            _buildSaveButton(),
-          ],
+              // Save button at bottom
+              _buildSaveButton(),
+            ],
+          ),
         ),
       ),
     );

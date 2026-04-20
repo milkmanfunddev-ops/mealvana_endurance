@@ -40,7 +40,7 @@ final class CarbLoadingControllerProvider
 }
 
 String _$carbLoadingControllerHash() =>
-    r'99ae8f467dbca4a776ba95b6cd8ecacecad10368';
+    r'bb3c4a382398d4118877f6078fb21e0a8e8ce734';
 
 /// Controller for managing carb loading plans
 /// Handles carb loading protocol creation, updates, and queries
@@ -148,13 +148,13 @@ final class CarbLoadingPlanFamily extends $Family
 }
 
 /// Provider for getting carb loading days for a plan
-/// Returns List<CarbLoadingDay> from the database
+/// Returns `List<CarbLoadingDay>` from the database.
 
 @ProviderFor(carbLoadingDaysForPlan)
 const carbLoadingDaysForPlanProvider = CarbLoadingDaysForPlanFamily._();
 
 /// Provider for getting carb loading days for a plan
-/// Returns List<CarbLoadingDay> from the database
+/// Returns `List<CarbLoadingDay>` from the database.
 
 final class CarbLoadingDaysForPlanProvider
     extends
@@ -165,7 +165,7 @@ final class CarbLoadingDaysForPlanProvider
         >
     with $FutureModifier<List<dynamic>>, $FutureProvider<List<dynamic>> {
   /// Provider for getting carb loading days for a plan
-  /// Returns List<CarbLoadingDay> from the database
+  /// Returns `List<CarbLoadingDay>` from the database.
   const CarbLoadingDaysForPlanProvider._({
     required CarbLoadingDaysForPlanFamily super.from,
     required String super.argument,
@@ -215,7 +215,7 @@ String _$carbLoadingDaysForPlanHash() =>
     r'e147a6366a5e86db491ed8275064c546c4af4fbd';
 
 /// Provider for getting carb loading days for a plan
-/// Returns List<CarbLoadingDay> from the database
+/// Returns `List<CarbLoadingDay>` from the database.
 
 final class CarbLoadingDaysForPlanFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<dynamic>>, String> {
@@ -229,7 +229,7 @@ final class CarbLoadingDaysForPlanFamily extends $Family
       );
 
   /// Provider for getting carb loading days for a plan
-  /// Returns List<CarbLoadingDay> from the database
+  /// Returns `List<CarbLoadingDay>` from the database.
 
   CarbLoadingDaysForPlanProvider call(String planId) =>
       CarbLoadingDaysForPlanProvider._(argument: planId, from: this);
@@ -239,14 +239,14 @@ final class CarbLoadingDaysForPlanFamily extends $Family
 }
 
 /// Provider for getting carb loading days in a date range
-/// Returns List<CarbLoadingDay> from the database
+/// Returns `List<CarbLoadingDay>` from the database.
 /// IMPORTANT: Scopes query to current user to prevent cross-user data leakage
 
 @ProviderFor(carbLoadingDaysForRange)
 const carbLoadingDaysForRangeProvider = CarbLoadingDaysForRangeFamily._();
 
 /// Provider for getting carb loading days in a date range
-/// Returns List<CarbLoadingDay> from the database
+/// Returns `List<CarbLoadingDay>` from the database.
 /// IMPORTANT: Scopes query to current user to prevent cross-user data leakage
 
 final class CarbLoadingDaysForRangeProvider
@@ -258,7 +258,7 @@ final class CarbLoadingDaysForRangeProvider
         >
     with $FutureModifier<List<dynamic>>, $FutureProvider<List<dynamic>> {
   /// Provider for getting carb loading days in a date range
-  /// Returns List<CarbLoadingDay> from the database
+  /// Returns `List<CarbLoadingDay>` from the database.
   /// IMPORTANT: Scopes query to current user to prevent cross-user data leakage
   const CarbLoadingDaysForRangeProvider._({
     required CarbLoadingDaysForRangeFamily super.from,
@@ -309,7 +309,7 @@ String _$carbLoadingDaysForRangeHash() =>
     r'0b341f8f7f2fbdc434ef530d13203efe574b1f6c';
 
 /// Provider for getting carb loading days in a date range
-/// Returns List<CarbLoadingDay> from the database
+/// Returns `List<CarbLoadingDay>` from the database.
 /// IMPORTANT: Scopes query to current user to prevent cross-user data leakage
 
 final class CarbLoadingDaysForRangeFamily extends $Family
@@ -328,7 +328,7 @@ final class CarbLoadingDaysForRangeFamily extends $Family
       );
 
   /// Provider for getting carb loading days in a date range
-  /// Returns List<CarbLoadingDay> from the database
+  /// Returns `List<CarbLoadingDay>` from the database.
   /// IMPORTANT: Scopes query to current user to prevent cross-user data leakage
 
   CarbLoadingDaysForRangeProvider call(DateTime startDate, DateTime endDate) =>

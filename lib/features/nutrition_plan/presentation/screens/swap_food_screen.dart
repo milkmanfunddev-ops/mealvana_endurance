@@ -6,6 +6,8 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/inputs/figma_search_bar.dart';
 import '../../../../shared/screens/food_detail_screen.dart';
+import '../../../../shared/controllers/food_search_controller.dart';
+import '../../../../shared/widgets/food_search/unified_food_search_results.dart';
 import '../providers/swap_food_controller.dart';
 import '../../domain/food.dart';
 import '../../domain/food_item.dart';
@@ -16,7 +18,8 @@ import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/catalog_search_service.dart';
 import '../widgets/swap_food/food_card_widget.dart';
 import '../widgets/swap_food/selected_food_display_widget.dart';
-import '../widgets/swap_food/food_search_results_widget.dart';
+import '../widgets/swap_food/catalog_section_widget.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Swap/Add Food Screen - Kyle's Design System
 /// Allows users to swap existing food or add new food to nutrition plan
@@ -46,10 +49,13 @@ class SwapFoodScreen extends ConsumerStatefulWidget {
 }
 
 class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
+  static const _searchControllerKey = 'swap_food';
+
   final TextEditingController _searchController = TextEditingController();
   double _selectedQuantity = 1.0;
   bool _isProcessing = false;
-  bool _isSavingScannedFood = false; // Track when saving barcode/OpenFoodFacts result
+  bool _isSavingScannedFood =
+      false; // Track when saving barcode/OpenFoodFacts result
 
   late final SwapFoodParams _params;
 
@@ -68,10 +74,13 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     // Track screen viewed
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final analytics = ref.read(appExternalDepsProvider);
-      analytics.analytics.track('swap_food_screen_viewed', properties: {
-        'is_swapping': widget.foodToSwapId != null,
-        'category': widget.category,
-      });
+      analytics.analytics.track(
+        'swap_food_screen_viewed',
+        properties: {
+          'is_swapping': widget.foodToSwapId != null,
+          'category': widget.category,
+        },
+      );
     });
   }
 
@@ -83,25 +92,39 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
   bool get _isSwapping => widget.foodToSwapId != null;
 
-  String get _screenTitle => _isSwapping
-      ? 'Swap ${widget.foodToSwapName ?? 'Food'}'
-      : 'Add Food';
+  String get _screenTitle =>
+      _isSwapping ? 'Swap ${widget.foodToSwapName ?? 'Food'}' : 'Add Food';
+
+  /// Seed the shared search controller with the food pool from swap controller
+  void _seedSearchController(SwapFoodState state) {
+    final searchNotifier = ref.read(
+      foodSearchControllerProvider(_searchControllerKey).notifier,
+    );
+    searchNotifier.updateFoodPool(
+      allFoods: state.allFoodsForSearch ?? [],
+      userFoods: state.allUserFoods,
+    );
+  }
 
   void _onSearchChanged(String query) {
-    ref.read(swapFoodControllerProvider(_params).notifier).updateSearch(query);
+    ref
+        .read(foodSearchControllerProvider(_searchControllerKey).notifier)
+        .updateSearch(query);
   }
 
   Future<void> _onSearchButtonPressed(String query) async {
     if (query.trim().isNotEmpty) {
-      await ref.read(swapFoodControllerProvider(_params).notifier)
-        .searchOpenFoodFacts(query.trim());
+      await ref
+          .read(foodSearchControllerProvider(_searchControllerKey).notifier)
+          .searchOpenFoodFacts(query.trim());
     }
   }
 
   void _onClearSearch() {
     _searchController.clear();
-    ref.read(swapFoodControllerProvider(_params).notifier).updateSearch('');
-    ref.read(swapFoodControllerProvider(_params).notifier).clearOpenFoodFactsResults();
+    ref
+        .read(foodSearchControllerProvider(_searchControllerKey).notifier)
+        .clearSearch();
   }
 
   /// Open create food screen with empty form
@@ -113,7 +136,13 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       if (baseCategory.startsWith('before')) 1,
       if (baseCategory.startsWith('during')) 2,
       if (baseCategory.startsWith('after')) 3,
-      if (!baseCategory.startsWith('before') && !baseCategory.startsWith('during') && !baseCategory.startsWith('after')) ...[1, 2, 3],
+      if (!baseCategory.startsWith('before') &&
+          !baseCategory.startsWith('during') &&
+          !baseCategory.startsWith('after')) ...[
+        1,
+        2,
+        3,
+      ],
     ];
 
     final result = await Navigator.push<dynamic>(
@@ -135,15 +164,21 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     );
 
     if (result != null && result is FoodDetailResult && mounted) {
-      setState(() { _isSavingScannedFood = true; });
+      setState(() {
+        _isSavingScannedFood = true;
+      });
 
       try {
         final categoryStrings = result.categoryIds.map((id) {
           switch (id) {
-            case 1: return 'before_run';
-            case 2: return 'during_run';
-            case 3: return 'after_run';
-            default: return 'before_run'; // DB categories remain *_run
+            case 1:
+              return 'before_run';
+            case 2:
+              return 'during_run';
+            case 3:
+              return 'after_run';
+            default:
+              return 'before_run'; // DB categories remain *_run
           }
         }).toList();
 
@@ -170,7 +205,8 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         await userFoodCrudService.saveUserFood(food, result.categoryIds);
 
         // Refresh foods and auto-expand My Foods section
-        await ref.read(swapFoodControllerProvider(_params).notifier)
+        await ref
+            .read(swapFoodControllerProvider(_params).notifier)
             .refreshFoods(expandMyFoods: true);
 
         if (mounted) {
@@ -182,7 +218,9 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         }
       } finally {
         if (mounted) {
-          setState(() { _isSavingScannedFood = false; });
+          setState(() {
+            _isSavingScannedFood = false;
+          });
         }
       }
     }
@@ -223,11 +261,12 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
         // Refresh controller state and auto-select the food after refresh completes
         // This prevents race condition where food disappears after being selected
-        await ref.read(swapFoodControllerProvider(_params).notifier)
+        await ref
+            .read(swapFoodControllerProvider(_params).notifier)
             .refreshFoods(selectAfterRefresh: food, expandMyFoods: true);
 
         _searchController.clear();
-        _onSearchChanged('');
+        _onClearSearch();
       } finally {
         if (mounted) {
           setState(() {
@@ -241,31 +280,22 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   void _selectFood(Food food) {
     ref.read(swapFoodControllerProvider(_params).notifier).selectFood(food);
     _searchController.clear();
-    _onSearchChanged('');
+    _onClearSearch();
     setState(() {
       _selectedQuantity = 1.0;
     });
   }
 
   Future<void> _handleConfirm() async {
-    debugPrint('🔵 _handleConfirm START');
-
     // Prevent double-tap
-    if (_isProcessing) {
-      debugPrint('🔴 _handleConfirm: already processing, ignoring');
-      return;
-    }
+    if (_isProcessing) return;
 
     final controllerState = ref.read(swapFoodControllerProvider(_params));
     final state = controllerState.value;
 
-    if (state?.selectedFood == null) {
-      debugPrint('🔴 _handleConfirm: selectedFood is null, returning early');
-      return;
-    }
+    if (state?.selectedFood == null) return;
 
     final food = state!.selectedFood!;
-    debugPrint('🔵 _handleConfirm: food selected = ${food.name}, isSwapping = $_isSwapping');
 
     // IMPORTANT: Capture references BEFORE async operation to avoid context issues
     // Capture the navigator with rootNavigator to ensure we pop from correct level
@@ -277,41 +307,47 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
     try {
       if (_isSwapping) {
-        debugPrint('🔵 _handleConfirm: calling swapFood...');
-        await ref.read(swapFoodControllerProvider(_params).notifier)
-          .swapFood(_params, widget.foodToSwapId!, food, widget.category, customAmount: _selectedQuantity);
-        debugPrint('🔵 _handleConfirm: swapFood returned');
+        await ref
+            .read(swapFoodControllerProvider(_params).notifier)
+            .swapFood(
+              _params,
+              widget.foodToSwapId!,
+              food,
+              widget.category,
+              customAmount: _selectedQuantity,
+            );
       } else {
-        debugPrint('🔵 _handleConfirm: calling addFood...');
-        await ref.read(swapFoodControllerProvider(_params).notifier)
-          .addFood(_params, food, widget.category, customAmount: _selectedQuantity);
-        debugPrint('🔵 _handleConfirm: addFood returned');
+        await ref
+            .read(swapFoodControllerProvider(_params).notifier)
+            .addFood(
+              _params,
+              food,
+              widget.category,
+              customAmount: _selectedQuantity,
+            );
       }
 
-      debugPrint('🔵 _handleConfirm: operation complete, mounted = $mounted');
       if (mounted) {
-        debugPrint('🔵 _handleConfirm: showing snackbar');
-        MealvanaSnackbar.showSuccess(context, _isSwapping ? 'Food swapped successfully!' : 'Food added successfully!');
-
-        // Use Navigator.pop with rootNavigator to bypass go_router and pop directly
-        debugPrint('🔵 _handleConfirm: navigator.canPop() = ${navigator.canPop()}');
-        debugPrint('🔵 _handleConfirm: calling navigator.pop() with rootNavigator');
+        MealvanaSnackbar.showSuccess(
+          context,
+          _isSwapping
+              ? 'Food swapped successfully!'
+              : 'Food added successfully!',
+        );
         navigator.pop();
-        debugPrint('🔵 _handleConfirm: navigator.pop() completed');
-      } else {
-        debugPrint('🔴 _handleConfirm: NOT mounted, cannot pop');
       }
     } catch (e, stackTrace) {
-      debugPrint('🔴 _handleConfirm: EXCEPTION caught: $e');
-      debugPrint('🔴 Stack trace: $stackTrace');
+      debugPrint('SwapFoodScreen: confirm failed: $e\n$stackTrace');
       if (mounted) {
         setState(() {
           _isProcessing = false;
         });
-        MealvanaSnackbar.showError(context, 'Failed to ${_isSwapping ? 'swap' : 'add'} food: $e');
+        MealvanaSnackbar.showError(
+          context,
+          'Failed to ${_isSwapping ? 'swap' : 'add'} food: $e',
+        );
       }
     }
-    debugPrint('🔵 _handleConfirm END');
   }
 
   Future<void> _handleCatalogSelection(CatalogSearchResult result) async {
@@ -332,10 +368,12 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
             sodiumMg: result.sodiumMg,
             caloriesPerServing: result.caloriesPerServing,
             servingSize: result.servingSize,
-            productType: result.productType,
+            productType: result.productTypeId,
           ),
           mode: FoodDetailMode.addFromSearch,
-          screenContext: _isSwapping ? FoodDetailContext.swapFood : FoodDetailContext.addFood,
+          screenContext: _isSwapping
+              ? FoodDetailContext.swapFood
+              : FoodDetailContext.addFood,
           preSelectedCategories: preCheckedCategories,
           showCategories: true,
           showProductType: true,
@@ -344,14 +382,20 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     );
 
     if (detailResult is FoodDetailResult && mounted) {
-      setState(() { _isSavingScannedFood = true; });
+      setState(() {
+        _isSavingScannedFood = true;
+      });
       try {
         final categoryStrings = detailResult.categoryIds.map((id) {
           switch (id) {
-            case 1: return 'before_run';
-            case 2: return 'during_run';
-            case 3: return 'after_run';
-            default: return 'before_run';
+            case 1:
+              return 'before_run';
+            case 2:
+              return 'during_run';
+            case 3:
+              return 'after_run';
+            default:
+              return 'before_run';
           }
         }).toList();
 
@@ -376,10 +420,12 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
         final userFoodCrudService = ref.read(userFoodCrudServiceProvider);
         await userFoodCrudService.saveUserFood(food, detailResult.categoryIds);
-        await ref.read(swapFoodControllerProvider(_params).notifier)
+        await ref
+            .read(swapFoodControllerProvider(_params).notifier)
             .refreshFoods(selectAfterRefresh: food, expandMyFoods: true);
 
         _searchController.clear();
+        _onClearSearch();
         if (mounted) {
           MealvanaSnackbar.showSuccess(context, '${result.title} added!');
         }
@@ -389,7 +435,9 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         }
       } finally {
         if (mounted) {
-          setState(() { _isSavingScannedFood = false; });
+          setState(() {
+            _isSavingScannedFood = false;
+          });
         }
       }
     }
@@ -402,13 +450,16 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(child: CircularProgressIndicator()),
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
         );
       }
 
       // Fetch product details
       final productDetailService = ref.read(productDetailServiceProvider);
-      final apiProduct = await productDetailService.getProductDetails(openFoodFactsId: result.id);
+      final apiProduct = await productDetailService.getProductDetails(
+        openFoodFactsId: result.id,
+      );
 
       if (mounted) Navigator.of(context).pop(); // Close loading dialog
 
@@ -434,7 +485,9 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
           extra: {
             'foodData': FoodDetailData.fromFoodItem(foodItem),
             'mode': FoodDetailMode.addFromSearch,
-            'screenContext': _isSwapping ? FoodDetailContext.swapFood : FoodDetailContext.addFood,
+            'screenContext': _isSwapping
+                ? FoodDetailContext.swapFood
+                : FoodDetailContext.addFood,
             'preSelectedCategories': preCheckedCategories,
             'showCategories': true,
             'showProductType': true,
@@ -559,7 +612,6 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       }).toList();
 
       // Create Food object for the crud service
-      // Use user-selected product type if provided, otherwise fall back to 'import'
       final food = Food(
         id: foodItem.id,
         name: foodItem.name,
@@ -584,14 +636,18 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       await userFoodCrudService.saveUserFood(food, categoryIds);
 
       // Refresh controller state and auto-select the food after refresh completes
-      // This prevents race condition where food disappears after being selected
-      await ref.read(swapFoodControllerProvider(_params).notifier)
+      await ref
+          .read(swapFoodControllerProvider(_params).notifier)
           .refreshFoods(selectAfterRefresh: food, expandMyFoods: true);
 
       // Reset quantity after selection
       setState(() {
         _selectedQuantity = 1.0;
       });
+
+      // Clear search
+      _searchController.clear();
+      _onClearSearch();
 
       if (mounted) {
         MealvanaSnackbar.showSuccess(context, '${foodItem.name} added!');
@@ -605,8 +661,10 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🏗️ SwapFoodScreen build() called - isProcessing: $_isProcessing');
     final controllerState = ref.watch(swapFoodControllerProvider(_params));
+    final searchState = ref.watch(
+      foodSearchControllerProvider(_searchControllerKey),
+    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -614,9 +672,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: CustomAppBarBackButton(
-          onPressed: () => context.pop(),
-        ),
+        leading: CustomAppBarBackButton(onPressed: () => context.pop()),
         title: Text(
           _screenTitle,
           style: AppTextStyles.sectionTitle.copyWith(
@@ -625,10 +681,20 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         ),
         centerTitle: true,
       ),
-      body: controllerState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _buildErrorState(error),
-        data: (state) => _buildContent(state),
+      body: ContentArea(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.translucent,
+          child: controllerState.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => _buildErrorState(error),
+            data: (state) {
+              // Seed search controller whenever data loads/reloads
+              _seedSearchController(state);
+              return _buildContent(state, searchState);
+            },
+          ),
+        ),
       ),
     );
   }
@@ -663,7 +729,8 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
             const SizedBox(height: AppSpacing.lg),
             KylePrimaryButton(
               text: 'Retry',
-              onPressed: () => ref.invalidate(swapFoodControllerProvider(_params)),
+              onPressed: () =>
+                  ref.invalidate(swapFoodControllerProvider(_params)),
             ),
           ],
         ),
@@ -671,11 +738,11 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     );
   }
 
-  Widget _buildContent(SwapFoodState state) {
-    final hasSelectedFood = state.selectedFood != null &&
-        state.searchQuery.isEmpty &&
-        state.openFoodFactsResults.isEmpty &&
-        state.catalogResults.isEmpty;
+  Widget _buildContent(SwapFoodState state, FoodSearchState searchState) {
+    final hasSelectedFood =
+        state.selectedFood != null &&
+        searchState.searchQuery.isEmpty &&
+        searchState.openFoodFactsResults.isEmpty;
 
     return SafeArea(
       child: Column(
@@ -690,12 +757,15 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                   onChanged: _onSearchChanged,
                   onBarcodeScan: _onBarcodeScan,
                   onSearchSubmit: _onSearchButtonPressed,
-                  enableAutoSearch: false, // Disabled - now handled in controller based on results
+                  triggerSearchOnKeyboardSubmit: false,
+                  enableAutoSearch: false,
                   hintText: 'Search for food...',
+                  useDarkStyle:
+                      Theme.of(context).brightness == Brightness.dark,
                 ),
 
                 // Clear search button (when showing OpenFoodFacts results)
-                if (state.openFoodFactsResults.isNotEmpty) ...[
+                if (searchState.openFoodFactsResults.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Center(
                     child: TextButton.icon(
@@ -748,8 +818,38 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
             child: _isSavingScannedFood
                 ? _buildSavingIndicator()
                 : (hasSelectedFood
-                    ? _buildSelectedFoodContent(state.selectedFood!)
-                    : _buildContentArea(state)),
+                      ? _buildSelectedFoodContent(state.selectedFood!)
+                      : UnifiedFoodSearchResults(
+                          controllerKey: _searchControllerKey,
+                          userFoodItemBuilder: (food) => FoodCardWidget(
+                            food: food,
+                            isUserFood: _isUserFood(food, state),
+                            onTap: () => _selectFood(food),
+                            onLongPress: () => _showUserFoodEditSheet(food),
+                            onEdit: () => _showUserFoodEditSheet(food),
+                          ),
+                          templateFoodItemBuilder: (food) => FoodCardWidget(
+                            food: food,
+                            isUserFood: false,
+                            onTap: () => _selectFood(food),
+                          ),
+                          catalogItemBuilder: (result) => CatalogCard(
+                            result: result,
+                            onTap: () => _handleCatalogSelection(result),
+                          ),
+                          onSearchOpenFoodFacts: () =>
+                              _onSearchButtonPressed(searchState.searchQuery),
+                          onOpenFoodFactsResultTap:
+                              _handleOpenFoodFactsSelection,
+                          isMyFoodsExpanded: state.isMyFoodsExpanded,
+                          onMyFoodsSectionToggle: () {
+                            ref
+                                .read(swapFoodControllerProvider(_params)
+                                    .notifier)
+                                .toggleMyFoodsExpanded();
+                          },
+                          emptyQueryContent: _buildDefaultView(state),
+                        )),
           ),
 
           // Confirm button (only when food is selected and no active search)
@@ -759,10 +859,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
               child: KylePrimaryButton(
                 text: _isSwapping ? 'SWAP FOOD' : 'ADD FOOD',
                 isLoading: _isProcessing,
-                onPressed: () {
-                  debugPrint('🟢 SWAP/ADD BUTTON PRESSED - about to call _handleConfirm');
-                  _handleConfirm();
-                },
+                onPressed: _handleConfirm,
                 isFullWidth: true,
               ),
             ),
@@ -773,7 +870,6 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
   }
 
   /// Build scrollable content when a food is selected
-  /// This prevents keyboard overflow by making the selected food card scrollable
   Widget _buildSelectedFoodContent(Food selectedFood) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -786,54 +882,12 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
           });
         },
         onClear: () {
-          ref.read(swapFoodControllerProvider(_params).notifier).clearSelection();
+          ref
+              .read(swapFoodControllerProvider(_params).notifier)
+              .clearSelection();
         },
       ),
     );
-  }
-
-  Widget _buildContentArea(SwapFoodState state) {
-    // Show searching indicator when searching Open Food Facts
-    if (state.isSearchingOpenFoodFacts) {
-      return _buildSearchingIndicator();
-    }
-
-    // OpenFoodFacts results take priority
-    if (state.openFoodFactsResults.isNotEmpty) {
-      return OpenFoodFactsResultsWidget(
-        results: state.openFoodFactsResults,
-        onResultTap: _handleOpenFoodFactsSelection,
-      );
-    }
-
-    // Show recommendations or search results
-    if (state.searchQuery.isEmpty) {
-      return _buildDefaultView(state);
-    } else {
-      // Show search results
-      return FoodSearchResultsWidget(
-        searchResults: state.searchResults,
-        userFoods: state.userFoods,
-        catalogResults: state.catalogResults,
-        openFoodFactsResults: state.openFoodFactsResults,
-        isSearchingCatalog: state.isSearchingCatalog,
-        isMyFoodsExpanded: state.isMyFoodsExpanded,
-        searchQuery: state.searchQuery,
-        onFoodTap: _selectFood,
-        onFoodLongPress: (food) => _showUserFoodEditSheet(food),
-        onFoodEdit: (food) => _showUserFoodEditSheet(food),
-        onCatalogResultTap: _handleCatalogSelection,
-        onOpenFoodFactsResultTap: _handleOpenFoodFactsSelection,
-        onMyFoodsSectionToggle: () {
-          ref.read(swapFoodControllerProvider(_params).notifier).toggleMyFoodsExpanded();
-        },
-        isUserFood: _isUserFood,
-        showOpenFoodFactsButton: state.searchQuery.isNotEmpty &&
-            state.openFoodFactsResults.isEmpty &&
-            !state.isSearchingOpenFoodFacts,
-        onSearchOpenFoodFacts: () => _onSearchButtonPressed(state.searchQuery),
-      );
-    }
   }
 
   Widget _buildDefaultView(SwapFoodState state) {
@@ -844,16 +898,18 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         if (state.userFoods.isNotEmpty) ...[
           _buildMyFoodsSectionHeader(state),
           if (state.isMyFoodsExpanded)
-            ...state.userFoods.map((food) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: FoodCardWidget(
-                food: food,
-                isUserFood: _isUserFood(food),
-                onTap: () => _selectFood(food),
-                onLongPress: () => _showUserFoodEditSheet(food),
-                onEdit: () => _showUserFoodEditSheet(food),
+            ...state.userFoods.map(
+              (food) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: FoodCardWidget(
+                  food: food,
+                  isUserFood: _isUserFood(food, state),
+                  onTap: () => _selectFood(food),
+                  onLongPress: () => _showUserFoodEditSheet(food),
+                  onEdit: () => _showUserFoodEditSheet(food),
+                ),
               ),
-            )),
+            ),
           const SizedBox(height: AppSpacing.md),
         ],
         // Recommended Foods header
@@ -867,23 +923,27 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
           ),
         ),
         // Recommended food items
-        ...state.recommendations.map((food) => Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: FoodCardWidget(
-            food: food,
-            isUserFood: _isUserFood(food),
-            onTap: () => _selectFood(food),
-            onLongPress: () => _showUserFoodEditSheet(food),
-            onEdit: () => _showUserFoodEditSheet(food),
+        ...state.recommendations.map(
+          (food) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: FoodCardWidget(
+              food: food,
+              isUserFood: _isUserFood(food, state),
+              onTap: () => _selectFood(food),
+              onLongPress: () => _showUserFoodEditSheet(food),
+              onEdit: () => _showUserFoodEditSheet(food),
+            ),
           ),
-        )),
+        ),
       ],
     );
   }
 
   Widget _buildMyFoodsSectionHeader(SwapFoodState state) {
     return InkWell(
-      onTap: () => ref.read(swapFoodControllerProvider(_params).notifier).toggleMyFoodsExpanded(),
+      onTap: () => ref
+          .read(swapFoodControllerProvider(_params).notifier)
+          .toggleMyFoodsExpanded(),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -927,28 +987,6 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     );
   }
 
-  Widget _buildSearchingIndicator() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Searching food database...',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildSavingIndicator() {
     return Center(
       child: Padding(
@@ -971,29 +1009,12 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     );
   }
 
-
   /// Check if a food is a user-imported food (not a system food)
-  /// Uses the userFoodIds set from the controller state for accurate detection
-  bool _isUserFood(Food food) {
-    // First try to use the userFoodIds from state for accurate detection
-    final controllerState = ref.read(swapFoodControllerProvider(_params));
-    if (controllerState.hasValue && controllerState.value!.userFoodIds.isNotEmpty) {
-      return controllerState.value!.userFoodIds.contains(food.id);
+  bool _isUserFood(Food food, SwapFoodState state) {
+    if (state.userFoodIds.isNotEmpty) {
+      return state.userFoodIds.contains(food.id);
     }
-
-    // Fallback to name-based heuristic if state not available
-    final name = food.name.toLowerCase();
-    final knownGenericFoods = [
-      'apple', 'applesauce', 'purée', 'bagel', 'banana', 'berr',
-      'chocolate milk', 'coconut water', 'coffee', 'date',
-      'electrolyte drink', 'electrolyte tablet', 'energy bar',
-      'energy chew', 'energy waffle', 'stroopwafel', 'fig bar',
-      'gel', 'oatmeal', 'orange juice', 'peanut butter',
-      'pickle juice', 'pretzel', 'protein bar', 'protein powder',
-      'protein shake', 'salt packet', 'sports drink', 'toast',
-      'trail mix', 'water', 'yogurt',
-    ];
-    return !knownGenericFoods.any((keyword) => name.contains(keyword));
+    return false;
   }
 
   /// Show the edit screen for a user food
@@ -1019,7 +1040,9 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       final foodId = result.substring(7);
       try {
         await userFoodCrudService.deleteUserFood(foodId);
-        await ref.read(swapFoodControllerProvider(_params).notifier).refreshFoods();
+        await ref
+            .read(swapFoodControllerProvider(_params).notifier)
+            .refreshFoods();
 
         if (mounted) {
           MealvanaSnackbar.showSuccess(context, '${food.name} deleted');
@@ -1027,7 +1050,10 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       } catch (e) {
         debugPrint('Error deleting user food: $e');
         if (mounted) {
-          MealvanaSnackbar.showError(context, 'Failed to delete food. Please try again.');
+          MealvanaSnackbar.showError(
+            context,
+            'Failed to delete food. Please try again.',
+          );
         }
       }
     }
@@ -1051,7 +1077,9 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         );
 
         // Refresh foods to reflect changes
-        await ref.read(swapFoodControllerProvider(_params).notifier).refreshFoods();
+        await ref
+            .read(swapFoodControllerProvider(_params).notifier)
+            .refreshFoods();
 
         if (mounted) {
           MealvanaSnackbar.showSuccess(context, '${result.name} updated!');
@@ -1059,11 +1087,12 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
       } catch (e) {
         debugPrint('Error updating user food: $e');
         if (mounted) {
-          MealvanaSnackbar.showError(context, 'Failed to update food. Please try again.');
+          MealvanaSnackbar.showError(
+            context,
+            'Failed to update food. Please try again.',
+          );
         }
       }
     }
   }
-
-
 }

@@ -1,0 +1,38 @@
+--- lib/shared/widgets/custom_app_bar_back_button.dart
++++ lib/shared/widgets/custom_app_bar_back_button.dart
+@@ -21,7 +21,7 @@
+ }
+ 
+ class _CustomAppBarBackButtonState extends State<CustomAppBarBackButton> {
+   bool _isProcessing = false;
+ 
+-  void _handleTap() {
++  void _handleTap() async {
+     if (!widget.enabled) return;
+ 
+@@ -34,11 +34,14 @@
+       widget.onPressed!();
+     } else {
+       final navigator = Navigator.of(context);
+       if (navigator.canPop()) {
+         navigator.pop();
+       }
+     }
+ 
+-    // Note: We don't reset _isProcessing because the widget will be
+-    // disposed after navigation. If navigation doesn't dispose the widget,
+-    // the button will remain disabled which is safer than allowing
+-    // repeated taps.
++    // Reset _isProcessing after a short delay to allow for state updates
++    // without permanently locking the button if the widget isn't disposed.
++    if (mounted) {
++      await Future.delayed(const Duration(milliseconds: 500));
++      if (mounted) {
++        setState(() {
++          _isProcessing = false;
++        });
++      }
++    }
+   }
+ 
+   @override

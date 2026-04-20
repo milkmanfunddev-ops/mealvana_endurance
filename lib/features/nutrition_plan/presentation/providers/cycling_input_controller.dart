@@ -5,6 +5,7 @@ import '../../domain/run_parameters.dart';
 import '../../domain/intensity_distribution.dart';
 import '../../domain/meal_type.dart';
 import '../../../../shared/domain/activity_type.dart';
+import '../../../activities/domain/activity_title_formatter.dart';
 import '../../../auth/data/user_repository.dart';
 import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
@@ -18,6 +19,8 @@ part 'cycling_input_controller.g.dart';
 
 /// Cycling-specific form state that persists during tab switches
 class CyclingFormState {
+  final String activityTitle;
+  final bool activityTitleManuallySet;
   final double distance;
   final double speedMph;
   final int preRideMinutes;
@@ -57,6 +60,8 @@ class CyclingFormState {
   final LocationFailureReason? locationFailureReason;
 
   CyclingFormState({
+    this.activityTitle = '25 mi Ride',
+    this.activityTitleManuallySet = false,
     this.distance = 25.0,
     this.speedMph = 15.0,
     this.preRideMinutes =
@@ -95,6 +100,8 @@ class CyclingFormState {
            );
 
   CyclingFormState copyWith({
+    String? activityTitle,
+    bool? activityTitleManuallySet,
     double? distance,
     double? speedMph,
     int? preRideMinutes,
@@ -124,6 +131,9 @@ class CyclingFormState {
     LocationFailureReason? locationFailureReason,
   }) {
     return CyclingFormState(
+      activityTitle: activityTitle ?? this.activityTitle,
+      activityTitleManuallySet:
+          activityTitleManuallySet ?? this.activityTitleManuallySet,
       distance: distance ?? this.distance,
       speedMph: speedMph ?? this.speedMph,
       preRideMinutes: preRideMinutes ?? this.preRideMinutes,
@@ -194,6 +204,7 @@ class CyclingInputController extends _$CyclingInputController {
             .round();
 
     final initialState = CyclingFormState(
+      activityTitle: ActivityTitleFormatter.formatCyclingTitle(25.0),
       selectedDate: now,
       selectedTime: const TimeOfDay(hour: 7, minute: 0),
       preRideMinutes: recommendedMinutes,
@@ -303,6 +314,11 @@ class CyclingInputController extends _$CyclingInputController {
 
   /// Update form field values
   void updateDistance(double distance) {
+    final resolvedTitle = state.activityTitleManuallySet
+        ? state.activityTitle
+        : ActivityTitleFormatter.formatCyclingTitle(
+            _distanceToMilesForTitle(distance),
+          );
     final hasDuration =
         state.estimatedDuration != null &&
         state.estimatedDuration!.inSeconds > 0;
@@ -313,6 +329,7 @@ class CyclingInputController extends _$CyclingInputController {
         duration: state.estimatedDuration,
       );
       state = state.copyWith(
+        activityTitle: resolvedTitle,
         distance: distance,
         speedMph: newSpeed ?? state.speedMph,
       );
@@ -320,7 +337,7 @@ class CyclingInputController extends _$CyclingInputController {
       return;
     }
 
-    state = state.copyWith(distance: distance);
+    state = state.copyWith(activityTitle: resolvedTitle, distance: distance);
     _estimateDuration(distance: distance, speedMph: state.speedMph);
     _autoUpdateFuelingWindow();
   }
@@ -416,6 +433,29 @@ class CyclingInputController extends _$CyclingInputController {
 
   void updateSunExposure(String sunExposure) {
     state = state.copyWith(sunExposure: sunExposure);
+  }
+
+  void updateActivityTitle(String title) {
+    state = state.copyWith(
+      activityTitle: title.trim(),
+      activityTitleManuallySet: true,
+    );
+  }
+
+  void seedActivityTitle(String title, {bool markManuallySet = true}) {
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) return;
+    state = state.copyWith(
+      activityTitle: trimmed,
+      activityTitleManuallySet: markManuallySet,
+    );
+  }
+
+  double _distanceToMilesForTitle(double distance) {
+    if (state.distanceUnit == DistanceUnit.kilometers) {
+      return distance * 0.621371;
+    }
+    return distance;
   }
 
   void updateDateTime(DateTime date, TimeOfDay time) {
@@ -673,6 +713,9 @@ class CyclingInputController extends _$CyclingInputController {
           humidityPct: currentState.humidityPct,
           isFasted: currentState.isFasted,
           intensity: currentState.intensity,
+          activityTitle: currentState.activityTitleManuallySet
+              ? currentState.activityTitle
+              : null,
           activityId: activityId,
           eventId: eventId,
           forUserId:

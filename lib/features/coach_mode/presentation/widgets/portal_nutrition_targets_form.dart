@@ -8,8 +8,11 @@ import '../../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../providers/athlete_detail_controller.dart';
 
-/// Simplified nutrition target overrides form for coaches.
-/// Lets coaches set pre/during/post targets for an athlete.
+/// Nutrition target overrides form for coaches.
+/// Matches the settings NutritionTargetsScreen structure with:
+/// - Pre: carbs, protein, fat, sodium, fluid
+/// - During: 3 sport-specific sections (Run, Bike, Swim)
+/// - Post: carbs, protein, sodium, fluid
 class PortalNutritionTargetsForm extends ConsumerStatefulWidget {
   final String relationshipId;
   final UserProfile? athleteProfile;
@@ -33,13 +36,23 @@ class _PortalNutritionTargetsFormState
   // Pre controllers
   final _preCarbsCtl = TextEditingController();
   final _preProteinCtl = TextEditingController();
+  final _preFatCtl = TextEditingController();
   final _preSodiumCtl = TextEditingController();
   final _preFluidCtl = TextEditingController();
 
-  // During (single sport for simplicity — applies to running)
-  final _duringCarbRateCtl = TextEditingController();
-  final _duringSodiumRateCtl = TextEditingController();
-  final _duringFluidRateCtl = TextEditingController();
+  // During Run controllers
+  final _duringRunCarbRateCtl = TextEditingController();
+  final _duringRunSodiumRateCtl = TextEditingController();
+  final _duringRunFluidRateCtl = TextEditingController();
+
+  // During Bike controllers
+  final _duringBikeCarbRateCtl = TextEditingController();
+  final _duringBikeSodiumRateCtl = TextEditingController();
+  final _duringBikeFluidRateCtl = TextEditingController();
+
+  // During Swim controllers (no carb rate — can't eat while swimming)
+  final _duringSwimSodiumRateCtl = TextEditingController();
+  final _duringSwimFluidRateCtl = TextEditingController();
 
   // Post controllers
   final _postCarbsCtl = TextEditingController();
@@ -57,11 +70,17 @@ class _PortalNutritionTargetsFormState
   void dispose() {
     _preCarbsCtl.dispose();
     _preProteinCtl.dispose();
+    _preFatCtl.dispose();
     _preSodiumCtl.dispose();
     _preFluidCtl.dispose();
-    _duringCarbRateCtl.dispose();
-    _duringSodiumRateCtl.dispose();
-    _duringFluidRateCtl.dispose();
+    _duringRunCarbRateCtl.dispose();
+    _duringRunSodiumRateCtl.dispose();
+    _duringRunFluidRateCtl.dispose();
+    _duringBikeCarbRateCtl.dispose();
+    _duringBikeSodiumRateCtl.dispose();
+    _duringBikeFluidRateCtl.dispose();
+    _duringSwimSodiumRateCtl.dispose();
+    _duringSwimFluidRateCtl.dispose();
     _postCarbsCtl.dispose();
     _postProteinCtl.dispose();
     _postSodiumCtl.dispose();
@@ -73,28 +92,56 @@ class _PortalNutritionTargetsFormState
     final overrides = widget.athleteProfile?.nutritionTargetOverrides;
     if (overrides == null) return;
 
+    // Pre
     final pre = overrides.pre;
     if (pre != null) {
       if (pre.carbsG != null) _preCarbsCtl.text = pre.carbsG!.toStringAsFixed(0);
       if (pre.proteinG != null) _preProteinCtl.text = pre.proteinG!.toStringAsFixed(0);
+      if (pre.fatG != null) _preFatCtl.text = pre.fatG!.toStringAsFixed(0);
       if (pre.sodiumMg != null) _preSodiumCtl.text = pre.sodiumMg!.toStringAsFixed(0);
       if (pre.fluidMl != null) _preFluidCtl.text = pre.fluidMl!.toStringAsFixed(0);
     }
 
-    // Use running during values as the default display
-    final during = overrides.during ?? overrides.duringRun;
-    if (during != null) {
-      if (during.carbRateGPerH != null) {
-        _duringCarbRateCtl.text = during.carbRateGPerH!.toStringAsFixed(0);
+    // During Run (fallback to legacy during)
+    final duringRun = overrides.duringRun ?? overrides.during;
+    if (duringRun != null) {
+      if (duringRun.carbRateGPerH != null) {
+        _duringRunCarbRateCtl.text = duringRun.carbRateGPerH!.toStringAsFixed(0);
       }
-      if (during.sodiumRateMgPerH != null) {
-        _duringSodiumRateCtl.text = during.sodiumRateMgPerH!.toStringAsFixed(0);
+      if (duringRun.sodiumRateMgPerH != null) {
+        _duringRunSodiumRateCtl.text = duringRun.sodiumRateMgPerH!.toStringAsFixed(0);
       }
-      if (during.fluidRateMlPerH != null) {
-        _duringFluidRateCtl.text = during.fluidRateMlPerH!.toStringAsFixed(0);
+      if (duringRun.fluidRateMlPerH != null) {
+        _duringRunFluidRateCtl.text = duringRun.fluidRateMlPerH!.toStringAsFixed(0);
       }
     }
 
+    // During Bike (fallback to legacy during)
+    final duringBike = overrides.duringCycling ?? overrides.during;
+    if (duringBike != null) {
+      if (duringBike.carbRateGPerH != null) {
+        _duringBikeCarbRateCtl.text = duringBike.carbRateGPerH!.toStringAsFixed(0);
+      }
+      if (duringBike.sodiumRateMgPerH != null) {
+        _duringBikeSodiumRateCtl.text = duringBike.sodiumRateMgPerH!.toStringAsFixed(0);
+      }
+      if (duringBike.fluidRateMlPerH != null) {
+        _duringBikeFluidRateCtl.text = duringBike.fluidRateMlPerH!.toStringAsFixed(0);
+      }
+    }
+
+    // During Swim (fallback to legacy during; no carb rate for swimming)
+    final duringSwim = overrides.duringSwimming ?? overrides.during;
+    if (duringSwim != null) {
+      if (duringSwim.sodiumRateMgPerH != null) {
+        _duringSwimSodiumRateCtl.text = duringSwim.sodiumRateMgPerH!.toStringAsFixed(0);
+      }
+      if (duringSwim.fluidRateMlPerH != null) {
+        _duringSwimFluidRateCtl.text = duringSwim.fluidRateMlPerH!.toStringAsFixed(0);
+      }
+    }
+
+    // Post
     final post = overrides.post;
     if (post != null) {
       if (post.carbsG != null) _postCarbsCtl.text = post.carbsG!.toStringAsFixed(0);
@@ -114,13 +161,23 @@ class _PortalNutritionTargetsFormState
       pre: PreActivityOverrides(
         carbsG: dbl(_preCarbsCtl),
         proteinG: dbl(_preProteinCtl),
+        fatG: dbl(_preFatCtl),
         sodiumMg: dbl(_preSodiumCtl),
         fluidMl: dbl(_preFluidCtl),
       ),
-      during: DuringActivityOverrides(
-        carbRateGPerH: dbl(_duringCarbRateCtl),
-        sodiumRateMgPerH: dbl(_duringSodiumRateCtl),
-        fluidRateMlPerH: dbl(_duringFluidRateCtl),
+      duringRun: DuringActivityOverrides(
+        carbRateGPerH: dbl(_duringRunCarbRateCtl),
+        sodiumRateMgPerH: dbl(_duringRunSodiumRateCtl),
+        fluidRateMlPerH: dbl(_duringRunFluidRateCtl),
+      ),
+      duringCycling: DuringActivityOverrides(
+        carbRateGPerH: dbl(_duringBikeCarbRateCtl),
+        sodiumRateMgPerH: dbl(_duringBikeSodiumRateCtl),
+        fluidRateMlPerH: dbl(_duringBikeFluidRateCtl),
+      ),
+      duringSwimming: DuringActivityOverrides(
+        sodiumRateMgPerH: dbl(_duringSwimSodiumRateCtl),
+        fluidRateMlPerH: dbl(_duringSwimFluidRateCtl),
       ),
       post: PostActivityOverrides(
         carbsG: dbl(_postCarbsCtl),
@@ -136,9 +193,10 @@ class _PortalNutritionTargetsFormState
 
     try {
       final overrides = _buildOverrides();
+      final clamped = NutritionTargetGuardrails.clampAll(overrides);
       await ref
           .read(athleteDetailControllerProvider(widget.relationshipId).notifier)
-          .saveNutritionTargets(overrides);
+          .saveNutritionTargets(clamped);
 
       if (!mounted) return;
       setState(() {
@@ -165,8 +223,10 @@ class _PortalNutritionTargetsFormState
 
       // Clear all controllers
       for (final c in [
-        _preCarbsCtl, _preProteinCtl, _preSodiumCtl, _preFluidCtl,
-        _duringCarbRateCtl, _duringSodiumRateCtl, _duringFluidRateCtl,
+        _preCarbsCtl, _preProteinCtl, _preFatCtl, _preSodiumCtl, _preFluidCtl,
+        _duringRunCarbRateCtl, _duringRunSodiumRateCtl, _duringRunFluidRateCtl,
+        _duringBikeCarbRateCtl, _duringBikeSodiumRateCtl, _duringBikeFluidRateCtl,
+        _duringSwimSodiumRateCtl, _duringSwimFluidRateCtl,
         _postCarbsCtl, _postProteinCtl, _postSodiumCtl, _postFluidCtl,
       ]) {
         c.clear();
@@ -215,6 +275,8 @@ class _PortalNutritionTargetsFormState
               _buildField('Carbs (g)', _preCarbsCtl),
               const SizedBox(width: 8),
               _buildField('Protein (g)', _preProteinCtl),
+              const SizedBox(width: 8),
+              _buildField('Fat (g)', _preFatCtl),
             ],
           ),
           const SizedBox(height: 8),
@@ -223,31 +285,57 @@ class _PortalNutritionTargetsFormState
               _buildField('Sodium (mg)', _preSodiumCtl),
               const SizedBox(width: 8),
               _buildField('Fluid (fl oz)', _preFluidCtl),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // During Section
-          _buildSectionHeader('During Activity (per hour)'),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _buildField('Carbs (g/hr)', _duringCarbRateCtl),
-              const SizedBox(width: 8),
-              _buildField('Sodium (mg/hr)', _duringSodiumRateCtl),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _buildField('Fluid (fl oz/hr)', _duringFluidRateCtl),
               const SizedBox(width: 8),
               const Expanded(child: SizedBox()), // spacer
             ],
           ),
 
           const SizedBox(height: 20),
+
+          // During Run Section
+          _buildSportSectionHeader('During Run', Icons.directions_run),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _buildField('Carbs (g/hr)', _duringRunCarbRateCtl),
+              const SizedBox(width: 8),
+              _buildField('Sodium (mg/hr)', _duringRunSodiumRateCtl),
+              const SizedBox(width: 8),
+              _buildField('Fluid (fl oz/hr)', _duringRunFluidRateCtl),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // During Bike Section
+          _buildSportSectionHeader('During Bike', Icons.directions_bike),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _buildField('Carbs (g/hr)', _duringBikeCarbRateCtl),
+              const SizedBox(width: 8),
+              _buildField('Sodium (mg/hr)', _duringBikeSodiumRateCtl),
+              const SizedBox(width: 8),
+              _buildField('Fluid (fl oz/hr)', _duringBikeFluidRateCtl),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // During Swim Section
+          _buildSportSectionHeader('During Swim', Icons.pool),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _buildField('Sodium (mg/hr)', _duringSwimSodiumRateCtl),
+              const SizedBox(width: 8),
+              _buildField('Fluid (fl oz/hr)', _duringSwimFluidRateCtl),
+              const SizedBox(width: 8),
+              const Expanded(child: SizedBox()), // spacer
+            ],
+          ),
+
+          const SizedBox(height: 16),
 
           // Post-Activity Section
           _buildSectionHeader('Post-Activity'),
@@ -317,6 +405,23 @@ class _PortalNutritionTargetsFormState
         fontSize: 14,
         fontWeight: FontWeight.w600,
       ),
+    );
+  }
+
+  Widget _buildSportSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.electrolyte, size: 16),
+        const SizedBox(width: 6),
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.electrolyte,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 

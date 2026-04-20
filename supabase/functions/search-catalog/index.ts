@@ -1,10 +1,14 @@
 /**
  * Search Catalog Edge Function
  *
- * Text search against catalog_items using pg_trgm trigram indexes.
- * Returns available products with inline nutrition data.
+ * Text search against catalog_products + catalog_variants using pg_trgm
+ * trigram indexes. Returns available variants with inline nutrition data
+ * and product classification fields.
  *
- * Request:  { query: string, limit?: number, product_type?: string }
+ * Queries the backward-compatible catalog_items view which JOINs
+ * catalog_products and catalog_variants.
+ *
+ * Request:  { query: string, limit?: number, product_type?: string, product_type_id?: string }
  * Response: { success: true, results: [...], total: number }
  */
 
@@ -19,7 +23,7 @@ serve(async (req) => {
   if (corsResponse) return corsResponse;
 
   try {
-    const { query, limit = 20, product_type } = await req.json();
+    const { query, limit = 20, product_type, product_type_id } = await req.json();
 
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       return errorResponse('query is required and must be a non-empty string');
@@ -28,7 +32,6 @@ serve(async (req) => {
     const trimmedQuery = query.trim();
     const maxLimit = Math.min(Math.max(1, limit), 50);
 
-    // Use service role to bypass RLS for catalog reads (public catalog)
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -44,20 +47,36 @@ serve(async (req) => {
     // Build search using ilike with wildcards (leverages pg_trgm GIN indexes)
     const pattern = `%${trimmedQuery}%`;
 
+    // Select only needed columns (excludes raw_payload, tags, ingredients, etc.)
+    const columns = `
+      id, title, variant_title, brand, product_type, barcode,
+      image_url, product_url, price_cents, currency_code, available_for_sale,
+      calories_per_serving, carbs_g, protein_g, fat_g, sodium_mg,
+      serving_size, serving_grams, caffeine_mg,
+      nutrition_source, nutrition_confidence,
+      product_type_id, categories, is_electrolyte, is_liquid,
+      allergens, excluded_diets
+    `;
+
     let queryBuilder = supabase
       .from('catalog_items')
-      .select('*', { count: 'exact' })
+      .select(columns)
       .eq('available_for_sale', true)
       .or(`title.ilike.${pattern},brand.ilike.${pattern},variant_title.ilike.${pattern}`)
       .limit(maxLimit)
       .order('nutrition_confidence', { ascending: false, nullsFirst: false });
 
-    // Optional product_type filter
+    // Filter by Shopify product_type (legacy)
     if (product_type && typeof product_type === 'string') {
       queryBuilder = queryBuilder.eq('product_type', product_type);
     }
 
-    const { data, error, count } = await queryBuilder;
+    // Filter by our classified product_type_id (new)
+    if (product_type_id && typeof product_type_id === 'string') {
+      queryBuilder = queryBuilder.eq('product_type_id', product_type_id);
+    }
+
+    const { data, error } = await queryBuilder;
 
     if (error) {
       console.error('Catalog search error:', error);
@@ -88,12 +107,19 @@ serve(async (req) => {
       nutrition_source: item.nutrition_source,
       nutrition_confidence: item.nutrition_confidence,
       has_nutrition: !!(item.calories_per_serving || item.carbs_g),
+      // Classification fields (new)
+      product_type_id: item.product_type_id,
+      categories: item.categories,
+      is_electrolyte: item.is_electrolyte,
+      is_liquid: item.is_liquid,
+      allergens: item.allergens,
+      excluded_diets: item.excluded_diets,
     }));
 
     return jsonResponse({
       success: true,
       results,
-      total: count ?? results.length,
+      total: results.length,
       query: trimmedQuery,
     });
   } catch (e) {

@@ -1,0 +1,145 @@
+--- lib/features/nutrition_plan/presentation/widgets/activity_detail/activity_completed_badge.dart
++++ lib/features/nutrition_plan/presentation/widgets/activity_detail/activity_completed_badge.dart
+@@ -100,18 +100,6 @@
+               color: Theme.of(context).colorScheme.onSurfaceVariant,
+             ),
+           ),
+-        if (widget.onEditFeedback != null) ...[
+-          const SizedBox(width: AppSpacing.xs),
+-          IconButton(
+-            onPressed: widget.onEditFeedback,
+-            tooltip: 'Edit feedback',
+-            icon: Icon(
+-              FontAwesomeIcons.penToSquare,
+-              size: 14,
+-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+-            ),
+-          ),
+-        ],
+       ],
+     );
+   }
+@@ -166,75 +154,23 @@
+   }
+ 
+   Widget _buildNotesSection(BuildContext context) {
+-    if (_isEditingNotes) {
+-      return _buildNotesEditor(context);
+-    }
+-
+     final hasNotes = widget.notes != null && widget.notes!.trim().isNotEmpty;
++    if (!hasNotes) return const SizedBox.shrink();
+ 
+-    return InkWell(
+-      onTap: () => setState(() => _isEditingNotes = true),
+-      borderRadius: BorderRadius.circular(8),
+-      child: Padding(
+-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+-        child: Row(
+-          crossAxisAlignment: CrossAxisAlignment.start,
+-          children: [
+-            Icon(
+-              FontAwesomeIcons.noteSticky,
+-              size: 14,
+-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+-            ),
+-            const SizedBox(width: AppSpacing.sm),
+-            Expanded(
+-              child: Text(
+-                hasNotes ? widget.notes! : 'Tap to add notes...',
+-                style: AppTextStyles.bodyMedium.copyWith(
+-                  color: hasNotes
+-                      ? Theme.of(context).colorScheme.onSurface
+-                      : Theme.of(
+-                          context,
+-                        ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+-                  fontStyle: hasNotes ? FontStyle.normal : FontStyle.italic,
+-                ),
+-              ),
+-            ),
+-            Icon(
+-              FontAwesomeIcons.penToSquare,
+-              size: 14,
+-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+-            ),
+-          ],
+-        ),
++    return Padding(
++      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
++      child: Row(
++        crossAxisAlignment: CrossAxisAlignment.start,
++        children: [
++          Icon(
++            FontAwesomeIcons.noteSticky,
++            size: 14,
++            color: Theme.of(context).colorScheme.onSurfaceVariant,
++          ),
++          const SizedBox(width: AppSpacing.sm),
++          Expanded(
++            child: Text(
++              widget.notes!,
++              style: AppTextStyles.bodyMedium.copyWith(
++                color: Theme.of(context).colorScheme.onSurface,
++              ),
++            ),
++          ),
++        ],
+       ),
+     );
+   }
+-
+-  Widget _buildNotesEditor(BuildContext context) {
+-    return Column(
+-      crossAxisAlignment: CrossAxisAlignment.start,
+-      children: [
+-        TextField(
+-          controller: _notesController,
+-          autofocus: true,
+-          maxLines: 3,
+-          minLines: 2,
+-          decoration: InputDecoration(
+-            hintText: 'Add your workout notes...',
+-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+-            contentPadding: const EdgeInsets.all(AppSpacing.sm),
+-          ),
+-          style: AppTextStyles.bodyMedium.copyWith(
+-            color: Theme.of(context).colorScheme.onSurface,
+-          ),
+-        ),
+-        const SizedBox(height: AppSpacing.sm),
+-        Row(
+-          mainAxisAlignment: MainAxisAlignment.end,
+-          children: [
+-            TextButton(
+-              onPressed: () {
+-                _notesController.text = widget.notes ?? '';
+-                setState(() => _isEditingNotes = false);
+-              },
+-              child: Text(
+-                'Cancel',
+-                style: AppTextStyles.bodyMedium.copyWith(
+-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+-                ),
+-              ),
+-            ),
+-            const SizedBox(width: AppSpacing.sm),
+-            TextButton(
+-              onPressed: () {
+-                final text = _notesController.text.trim();
+-                widget.onNotesChanged(text.isEmpty ? null : text);
+-                setState(() => _isEditingNotes = false);
+-              },
+-              child: Text(
+-                'Save',
+-                style: AppTextStyles.bodyMedium.copyWith(
+-                  color: AppColors.electrolyte,
+-                  fontWeight: FontWeight.w600,
+-                ),
+-              ),
+-            ),
+-          ],
+-        ),
+-      ],
+-    );
+-  }
+ }

@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../providers/settings_controller.dart';
 
 /// Sport Preferences Hub Screen - 2nd tier navigation
@@ -20,9 +21,10 @@ class SportPreferencesHubScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(settingsControllerProvider);
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
+      contentWidth: AdaptiveContentWidth.standard,
       body: settingsAsync.when(
         data: (state) => _buildContent(context, ref, state),
         loading: () => _buildLoadingState(context),
@@ -75,7 +77,7 @@ class SportPreferencesHubScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref, dynamic state) {
-    return SingleChildScrollView(
+    return AdaptiveScrollableBody(
       padding: AppSpacing.screenPaddingHorizontal,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

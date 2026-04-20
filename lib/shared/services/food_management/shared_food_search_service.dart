@@ -176,8 +176,10 @@ class SharedFoodSearchService {
         fatPerServing: result.fatG,
         sodiumMg: result.sodiumMg,
         caffeineMg: result.caffeineMg,
-        productTypeId: _mapCatalogProductType(result.productType),
-        categories: const ['before_run', 'during_run', 'after_run'],
+        productTypeId: result.productTypeId ?? _mapCatalogProductType(result.productType),
+        categories: result.categories?.isNotEmpty == true
+            ? result.categories!
+            : const ['before_run', 'during_run', 'after_run'],
       );
 
       // Save to user foods with all categories

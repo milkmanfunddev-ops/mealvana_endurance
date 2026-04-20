@@ -82,9 +82,15 @@ class ActivitiesTable extends Table {
   // Embedded nutrition plan data (JSONB in Supabase, stored as TEXT in SQLite)
   TextColumn get nutritionPlanData => text().nullable().named('nutrition_plan_data')();
 
+  // Fuel log data (actual consumption logged on completion, JSONB in Supabase, TEXT in SQLite)
+  TextColumn get fuelLogData => text().nullable().named('fuel_log_data')();
+
   // Brick workout support (for multi-sport training like swim-to-bike or bike-to-run)
   TextColumn get brickMetadata => text().nullable().named('brick_metadata')(); // JSONB in Supabase, TEXT in SQLite
   TextColumn get brickId => text().nullable().named('brick_id')(); // UUID reference to parent brick activity
+
+  // Training Stress Score (from external providers or calculated)
+  RealColumn get tss => real().nullable()();
 
   // Metadata
   TextColumn get notes => text().nullable()();

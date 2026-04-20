@@ -12,6 +12,7 @@ import '../../../../weather/domain/weather_forecast.dart';
 import '../../../../../shared/services/location_service.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import 'shared/workout_details_widget.dart';
+import 'shared/activity_name_field.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
 import 'shared/fasted_toggle.dart';
 
@@ -80,6 +81,13 @@ class RunningTabContent extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        ActivityNameField(
+          value: formState.activityTitle,
+          onChanged: controller.updateActivityTitle,
+          hint: 'e.g., Long Run',
+        ),
+        const SizedBox(height: AppSpacing.xl),
+
         // WORKOUT DETAILS - Distance + Duration/Pace Toggle + Estimated Field
         WorkoutDetailsWidget(
           sport: ActivityType.running,

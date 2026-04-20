@@ -104,6 +104,13 @@ class UserSyncHandler {
         'prefers_swimming_pace': false,
         'first_name': localUser.firstName,
         'last_name': localUser.lastName,
+        'email': localUser.email,
+        // Daily macro calculation fields
+        'body_fat_pct': localUser.bodyFatPct,
+        'lifestyle': localUser.lifestyle.dbValue,
+        'typical_weekly_hours': localUser.typicalWeeklyHours,
+        'carb_cycle_opt_in': localUser.carbCycleOptIn,
+        'training_phase': localUser.trainingPhase.dbValue,
       };
 
       // Upsert user profile to Supabase
@@ -154,6 +161,13 @@ class UserSyncHandler {
             DateTime.now()),
         firstName: Value(remoteUser['first_name'] as String?),
         lastName: Value(remoteUser['last_name'] as String?),
+        email: Value(remoteUser['email'] as String?),
+        // Daily macro calculation fields
+        bodyFatPct: Value((remoteUser['body_fat_pct'] as num?)?.toDouble()),
+        lifestyle: Value(remoteUser['lifestyle'] as String? ?? 'mixed'),
+        typicalWeeklyHours: Value((remoteUser['typical_weekly_hours'] as num?)?.toDouble()),
+        carbCycleOptIn: Value(remoteUser['carb_cycle_opt_in'] as bool? ?? false),
+        trainingPhase: Value(remoteUser['training_phase'] as String? ?? 'base'),
       );
 
       await _database
@@ -194,6 +208,13 @@ class UserSyncHandler {
         'dietary_preference':
             profile.dietaryPreference == 'none' ? null : profile.dietaryPreference,
         'allergies': profile.allergies,
+        'email': profile.email,
+        // Daily macro calculation fields
+        'body_fat_pct': profile.bodyFatPct,
+        'lifestyle': profile.lifestyle,
+        'typical_weekly_hours': profile.typicalWeeklyHours,
+        'carb_cycle_opt_in': profile.carbCycleOptIn,
+        'training_phase': profile.trainingPhase,
         'created_at': profile.createdAt.toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       };

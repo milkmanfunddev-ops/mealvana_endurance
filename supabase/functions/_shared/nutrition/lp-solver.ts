@@ -6,9 +6,10 @@
 
 import solver from 'https://esm.sh/javascript-lp-solver@0.4.24?target=deno';
 import { roundToIncrement } from '../utils.ts';
-import { type Food, type Phase, type MacroTargets, type PhaseSolution, type LPModel, type LPSolution, deriveTimingCategory } from './types.ts';
+import { type Food, type Phase, type MacroTargets, type PhaseSolution, type LPModel, type LPSolution, deriveTimingCategory, shouldPrioritizeMacroTarget } from './types.ts';
 import { MACRO_CONSTRAINT_RANGES, PHASE_TIMING_LABELS } from './constants.ts';
 import type { MacroWeights } from './constants.ts';
+import { correctRoundingDrift } from './lp-solver-rounding.ts';
 
 /**
  * Build a Linear Programming model for food optimization
@@ -52,13 +53,26 @@ export function buildLPModel(
     binaries: {},
   };
 
-  // Phase-specific carb constraints
-  const carbBounds = MACRO_CONSTRAINT_RANGES.carbs[phase];
-  if (carbBounds) {
-    // Handle zero carb targets (e.g., swimming during phase)
-    if (targets.carbs_g === 0) {
-      model.constraints.carbs = { min: 0, max: 5 };
-    } else {
+  const prioritizeCarbTarget = shouldPrioritizeMacroTarget(targets, 'carbs');
+
+  // Phase-specific carb constraints — use V4-provided ranges when available,
+  // but prioritize explicit out-of-band/overridden targets.
+  if (targets.carbs_g === 0) {
+    model.constraints.carbs = { min: 0, max: 5 };
+  } else if (prioritizeCarbTarget) {
+    const carbBounds = MACRO_CONSTRAINT_RANGES.carbs[phase] ?? { min: 0.9, max: 1.1 };
+    model.constraints.carbs = {
+      min: targets.carbs_g * carbBounds.min,
+      max: targets.carbs_g * carbBounds.max,
+    };
+    console.log(
+      `[LP-SOLVER] Prioritizing carb target (${targets.carbs_g}g) over provided band`,
+    );
+  } else if (targets.carbs_low_g != null && targets.carbs_high_g != null) {
+    model.constraints.carbs = { min: targets.carbs_low_g, max: targets.carbs_high_g };
+  } else {
+    const carbBounds = MACRO_CONSTRAINT_RANGES.carbs[phase];
+    if (carbBounds) {
       model.constraints.carbs = {
         min: targets.carbs_g * carbBounds.min,
         max: targets.carbs_g * carbBounds.max,
@@ -66,21 +80,26 @@ export function buildLPModel(
     }
   }
 
-  // Add protein constraints for before and after phases
+  // Protein constraints — use V4-provided ranges when available
   if ((phase === 'before' || phase === 'after') && targets.protein_g) {
-    const proteinBounds = MACRO_CONSTRAINT_RANGES.protein[phase];
-    if (proteinBounds) {
-      model.constraints.protein = {
-        min: targets.protein_g * proteinBounds.min,
-        max: targets.protein_g * proteinBounds.max,
-      };
+    if (targets.protein_low_g != null && targets.protein_high_g != null) {
+      model.constraints.protein = { min: targets.protein_low_g, max: targets.protein_high_g };
+    } else {
+      const proteinBounds = MACRO_CONSTRAINT_RANGES.protein[phase];
+      if (proteinBounds) {
+        model.constraints.protein = {
+          min: targets.protein_g * proteinBounds.min,
+          max: targets.protein_g * proteinBounds.max,
+        };
+      }
     }
   }
 
-  // Balanced sodium constraints
+  // Sodium constraints — use V4-provided ranges when available
   if (targets.sodium_mg > 0) {
-    if (constraintOverrides?.sodium) {
-      // Use overridden sodium constraints (e.g., relaxed for two-pass during phase)
+    if (targets.sodium_low_mg != null && targets.sodium_high_mg != null) {
+      model.constraints.sodium = { min: targets.sodium_low_mg, max: targets.sodium_high_mg };
+    } else if (constraintOverrides?.sodium) {
       model.constraints.sodium = {
         min: targets.sodium_mg * constraintOverrides.sodium.min,
         max: targets.sodium_mg * constraintOverrides.sodium.max,
@@ -89,35 +108,33 @@ export function buildLPModel(
       const sodiumBounds = MACRO_CONSTRAINT_RANGES.sodium[phase];
       if (sodiumBounds) {
         model.constraints.sodium = {
-          min: targets.sodium_mg * Math.min(sodiumBounds.min, 0.80),
+          min: targets.sodium_mg * Math.min(sodiumBounds.min, 0.75),
           max: targets.sodium_mg * sodiumBounds.max,
         };
       }
     }
   }
 
-  // Phase-specific water constraints
+  // Water constraints — use V4-provided ranges when available
   if (targets.water_ml > 0) {
-    const waterBounds = MACRO_CONSTRAINT_RANGES.water[phase];
-    if (waterBounds) {
-      // Enforce water minimum for during (when explicitly requested) and after phases.
-      // After-phase hydration targets are important for recovery and were previously
-      // under-delivered because only a max constraint was set.
-      // After phase uses a gentler water floor (70% of target) to keep the LP feasible
-      // when water targets are very high (marathon/ultra). A strict 85% floor forces
-      // the solver infeasible → greedy fallback → protein overshoot.
-      if ((phase === 'during' && enforceWaterMin) || phase === 'after') {
-        const waterMin = phase === 'after'
-          ? targets.water_ml * 0.7
-          : targets.water_ml * waterBounds.min;
-        model.constraints.water = {
-          min: waterMin,
-          max: targets.water_ml * waterBounds.max,
-        };
-      } else {
-        model.constraints.water = {
-          max: targets.water_ml * waterBounds.max,
-        };
+    if (targets.water_low_ml != null && targets.water_high_ml != null) {
+      model.constraints.water = { min: targets.water_low_ml, max: targets.water_high_ml };
+    } else {
+      const waterBounds = MACRO_CONSTRAINT_RANGES.water[phase];
+      if (waterBounds) {
+        if ((phase === 'during' && enforceWaterMin) || phase === 'after') {
+          const waterMin = phase === 'after'
+            ? targets.water_ml * 0.7
+            : targets.water_ml * waterBounds.min;
+          model.constraints.water = {
+            min: waterMin,
+            max: targets.water_ml * waterBounds.max,
+          };
+        } else {
+          model.constraints.water = {
+            max: targets.water_ml * waterBounds.max,
+          };
+        }
       }
     }
   }
@@ -172,8 +189,15 @@ export function buildLPModel(
       score -= 3;
     }
 
-    // Add random jitter for variety — non-liked foods get ±15% score perturbation
-    if (options?.randomVariance && food.preference_score < 200) {
+    // Imported user foods are kept available but de-emphasized unless they are
+    // explicitly a better contract fit under constraints.
+    if (food.is_user_food && (!food.product_type || food.product_type === 'import')) {
+      score -= 40;
+    }
+
+    // Add random jitter for variety — only for non-user foods so personalization
+    // doesn't become unstable between equivalent runs.
+    if (options?.randomVariance && food.preference_score < 200 && !food.is_user_food) {
       const jitter = (Math.random() - 0.5) * 0.3 * Math.abs(score);
       score += jitter;
     }
@@ -299,33 +323,17 @@ export function solveLPModel(
       `fat=${totals.fat_g.toFixed(1)}g, sodium=${totals.sodium_mg.toFixed(0)}mg, water=${totals.water_ml.toFixed(0)}ml`
     );
 
-    // Post-rounding validation: check if rounded totals still satisfy LP constraints (5% tolerance)
-    const ROUNDING_TOLERANCE = 0.05;
-    const roundingIssues: string[] = [];
-    for (const [constraintName, bounds] of Object.entries(model.constraints)) {
-      // Skip binary/selection/total_food_items constraints
-      if (constraintName.startsWith('select_') || constraintName === 'total_food_items' || constraintName === 'electrolyte_supplements') continue;
-      const actualValue = constraintName === 'carbs' ? totals.carbs_g
-        : constraintName === 'protein' ? totals.protein_g
-        : constraintName === 'sodium' ? totals.sodium_mg
-        : constraintName === 'water' ? totals.water_ml
-        : null;
-      if (actualValue == null) continue;
-
-      if (bounds.min != null && actualValue < bounds.min * (1 - ROUNDING_TOLERANCE)) {
-        roundingIssues.push(`${constraintName} below min: ${actualValue.toFixed(1)} < ${bounds.min.toFixed(1)} (tolerance: ${(ROUNDING_TOLERANCE * 100).toFixed(0)}%)`);
-      }
-      if (bounds.max != null && actualValue > bounds.max * (1 + ROUNDING_TOLERANCE)) {
-        roundingIssues.push(`${constraintName} above max: ${actualValue.toFixed(1)} > ${bounds.max.toFixed(1)} (tolerance: ${(ROUNDING_TOLERANCE * 100).toFixed(0)}%)`);
-      }
-    }
-    if (roundingIssues.length > 0) {
-      console.warn(`[LP-SOLVER] POST-ROUNDING: ${roundingIssues.length} constraint violation(s): ${roundingIssues.join('; ')}`);
-    }
+    // Post-rounding correction: adjust servings to bring totals back within constraints
+    const { foods: finalFoods, totals: correctedTotals } = correctRoundingDrift(
+      selectedFoods,
+      foods,
+      model,
+      totals
+    );
 
     return {
-      foods: selectedFoods,
-      totals,
+      foods: finalFoods,
+      totals: correctedTotals,
       needsElectrolyte: false,
       needsWater: false,
     };

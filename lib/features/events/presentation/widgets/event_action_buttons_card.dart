@@ -20,16 +20,21 @@ class EventActionButtonsCard extends ConsumerWidget {
   final Activity? activity;
   final Event event;
   final String eventId;
+  final String? forUserId;
 
   const EventActionButtonsCard({
     super.key,
     required this.activity,
     required this.event,
     required this.eventId,
+    this.forUserId,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final hasLinkedNutritionPlan =
+        activity != null && activity!.nutritionPlanData != null;
+
     return BaseCard(
       margin: AppSpacing.screenPaddingHorizontal,
       child: Column(
@@ -46,54 +51,67 @@ class EventActionButtonsCard extends ConsumerWidget {
           // Nutrition Plan Button (Create or View)
           KylePrimaryButton(
             onPressed: () async {
-              if (event.activityId != null && activity != null) {
+              if (hasLinkedNutritionPlan) {
                 // Event is linked to activity - navigate to view/edit existing nutrition plan
                 context.push(
                   '/plan',
-                  extra: {
-                    'mode': 'view',
-                    'activityId': activity!.id,
-                  },
+                  extra: {'mode': 'view', 'activityId': activity!.id},
                 );
               } else {
                 // No activity linked yet - navigate to create new plan
                 // We pass BOTH activityId (if exists) and eventId
 
-                final scheduledDateTime = activity?.scheduledDateTime ??
-                    (event.startTime != null ? DateTime.parse(event.startTime!) : DateTime.now());
+                final scheduledDateTime =
+                    activity?.scheduledDateTime ??
+                    (event.startTime != null
+                        ? DateTime.parse(event.startTime!)
+                        : DateTime.now());
 
                 final activityType = _getActivityTypeForNavigation(event);
-                final distanceMiles = activity?.distanceMiles ?? _getEventDistanceMiles(event);
+                final distanceMiles =
+                    activity?.distanceMiles ?? _getEventDistanceMiles(event);
                 final eventSubtype = _getEventSubtype(event);
 
                 final extras = <String, dynamic>{
                   'initialDate': scheduledDateTime,
                   'distance': distanceMiles,
                   'goalPace': event.goalPaceMinutesPerMile,
-                  'activityId': activity?.id, // Pass existing activity ID if any
-                  'eventId': event.id, // Pass event ID to link back after creation
+                  'activityId':
+                      activity?.id, // Pass existing activity ID if any
+                  'eventId':
+                      event.id, // Pass event ID to link back after creation
                   'activityType': activityType,
-                  'eventName': event.eventName, // Pass event name for activity title
+                  'initialTitle': event.eventName,
+                  'eventName':
+                      event.eventName, // Pass event name for activity title
+                  if (forUserId != null) 'forUserId': forUserId,
                 };
 
                 // For brick events, pass individual leg distances from EventSubtype
                 if (activityType == 'brick' && eventSubtype != null) {
                   if (eventSubtype.swimDistanceMeters != null) {
-                    extras['brickSwimDistanceMeters'] = eventSubtype.swimDistanceMeters;
+                    extras['brickSwimDistanceMeters'] =
+                        eventSubtype.swimDistanceMeters;
                   }
                   if (eventSubtype.bikeDistanceMiles != null) {
-                    extras['brickBikeDistanceMiles'] = eventSubtype.bikeDistanceMiles;
+                    extras['brickBikeDistanceMiles'] =
+                        eventSubtype.bikeDistanceMiles;
                   }
                   if (eventSubtype.runDistanceMiles != null) {
-                    extras['brickRunDistanceMiles'] = eventSubtype.runDistanceMiles;
+                    extras['brickRunDistanceMiles'] =
+                        eventSubtype.runDistanceMiles;
                   }
                 }
 
                 context.push('/distance-pace-gut-entry', extra: extras);
               }
             },
-            text: event.activityId != null ? 'View Nutrition Plan' : 'Create Nutrition Plan',
-            icon: event.activityId != null ? FontAwesomeIcons.eye : FontAwesomeIcons.plus,
+            text: hasLinkedNutritionPlan
+                ? 'View Nutrition Plan'
+                : 'Create Nutrition Plan',
+            icon: hasLinkedNutritionPlan
+                ? FontAwesomeIcons.eye
+                : FontAwesomeIcons.plus,
           ),
 
           const SizedBox(height: AppSpacing.sm),
@@ -107,8 +125,23 @@ class EventActionButtonsCard extends ConsumerWidget {
               event,
               eventId,
             ),
-            text: event.hasCarbLoading ? 'Edit Carb Loading Plan' : 'Create Carb Loading Plan',
-            icon: event.hasCarbLoading ? FontAwesomeIcons.pen : FontAwesomeIcons.plus,
+            text: event.hasCarbLoading
+                ? 'Edit Carb Loading Plan'
+                : 'Create Carb Loading Plan',
+            icon: event.hasCarbLoading
+                ? FontAwesomeIcons.pen
+                : FontAwesomeIcons.plus,
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // Race Day Checklist Button
+          KyleSecondaryButton(
+            onPressed: () {
+              context.push('/events/$eventId/checklist');
+            },
+            text: 'Race Day Checklist',
+            icon: FontAwesomeIcons.listCheck,
           ),
 
           // const SizedBox(height: AppSpacing.md),
@@ -194,15 +227,25 @@ class EventActionButtonsCard extends ConsumerWidget {
     try {
       // Read fresh provider references AFTER navigation
       // This ensures we don't use disposed providers
-      final carbLoadingController = ref.read(carbLoadingControllerProvider.notifier);
+      final carbLoadingController = ref.read(
+        carbLoadingControllerProvider.notifier,
+      );
       final userRepository = await ref.read(userRepositoryProvider.future);
 
       // Get user profile for body weight
-      final userProfile = await userRepository.getUserProfile();
+      // When coach is creating for an athlete, get the athlete's profile
+      final userProfile = forUserId != null
+          ? await userRepository.getUserProfileById(forUserId!)
+          : await userRepository.getUserProfile();
 
       if (userProfile == null) {
         if (context.mounted) {
-          MealvanaSnackbar.showWarning(context, 'Please complete your profile first');
+          MealvanaSnackbar.showWarning(
+            context,
+            forUserId != null
+                ? 'Athlete profile not found'
+                : 'Please complete your profile first',
+          );
         }
         return;
       }
@@ -227,7 +270,10 @@ class EventActionButtonsCard extends ConsumerWidget {
         );
 
         if (context.mounted) {
-          MealvanaSnackbar.showSuccess(context, 'Updated to $selectedProtocol-day carb loading plan!');
+          MealvanaSnackbar.showSuccess(
+            context,
+            'Updated to $selectedProtocol-day carb loading plan!',
+          );
           // Refresh the event detail to show updated info
           ref.invalidate(eventDetailProvider(eventId));
         }
@@ -239,21 +285,29 @@ class EventActionButtonsCard extends ConsumerWidget {
           protocolDays: selectedProtocol,
           raceDate: raceDate,
           bodyWeightPounds: userProfile.weightPounds,
+          forUserId: forUserId,
         );
 
         if (context.mounted) {
-          MealvanaSnackbar.showSuccess(context, 'Created $selectedProtocol-day carb loading plan!');
+          MealvanaSnackbar.showSuccess(
+            context,
+            'Created $selectedProtocol-day carb loading plan!',
+          );
           // Refresh the event detail to show updated info
           ref.invalidate(eventDetailProvider(eventId));
 
           // Navigate to the first day of the carb loading plan
           try {
             // Fetch the carb loading plan to get plan ID
-            final carbLoadingPlan = await ref.read(carbLoadingPlanProvider(event.id).future);
+            final carbLoadingPlan = await ref.read(
+              carbLoadingPlanProvider(event.id).future,
+            );
 
             if (carbLoadingPlan != null) {
               // Fetch all carb loading days for this plan
-              final carbLoadingDays = await ref.read(carbLoadingDaysForPlanProvider(carbLoadingPlan.id).future);
+              final carbLoadingDays = await ref.read(
+                carbLoadingDaysForPlanProvider(carbLoadingPlan.id).future,
+              );
 
               // Cast to the correct type
               final days = carbLoadingDays.cast<db.CarbLoadingDay>();
@@ -266,19 +320,20 @@ class EventActionButtonsCard extends ConsumerWidget {
 
                 final firstDay = sortedDays.first;
 
-                // Navigate to the carb loading day detail page
-                await Navigator.push(
-                  context,
+                // Replace event detail with carb loading day so back returns
+                // directly to the previous screen (e.g. Events list).
+                await Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
-                    builder: (context) => CarbLoadingDayDetailPage(
-                      carbLoadingDay: firstDay,
-                    ),
+                    builder: (context) =>
+                        CarbLoadingDayDetailPage(carbLoadingDay: firstDay),
                   ),
                 );
               }
             }
           } catch (e) {
-            ref.read(appLoggerProvider).error('Error navigating to carb loading day', error: e);
+            ref
+                .read(appLoggerProvider)
+                .error('Error navigating to carb loading day', error: e);
             // Don't show error to user - plan was created successfully
           }
         }
@@ -289,4 +344,5 @@ class EventActionButtonsCard extends ConsumerWidget {
       }
     }
   }
+
 }

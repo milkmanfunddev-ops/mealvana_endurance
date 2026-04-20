@@ -20,41 +20,47 @@ class SportSelector extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _SportButton(
-          icon: FontAwesomeIcons.personRunning,
-          label: 'RUNNING',
-          isSelected: coordinatorState.selectedTab == SportTab.running,
-          onTap: () => coordinator.selectTab(SportTab.running),
-          isDark: isDark,
+    return SizedBox(
+      height: 80,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(),
+        child: Row(
+          children: [
+            _SportButton(
+              icon: FontAwesomeIcons.personRunning,
+              label: 'RUNNING',
+              isSelected: coordinatorState.selectedTab == SportTab.running,
+              onTap: () => coordinator.selectTab(SportTab.running),
+              isDark: isDark,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            _SportButton(
+              icon: FontAwesomeIcons.personBiking,
+              label: 'BIKING',
+              isSelected: coordinatorState.selectedTab == SportTab.cycling,
+              onTap: () => coordinator.selectTab(SportTab.cycling),
+              isDark: isDark,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            _SportButton(
+              icon: FontAwesomeIcons.personSwimming,
+              label: 'SWIMMING',
+              isSelected: coordinatorState.selectedTab == SportTab.swimming,
+              onTap: () => coordinator.selectTab(SportTab.swimming),
+              isDark: isDark,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            _SportButton(
+              icon: FontAwesomeIcons.link,
+              label: 'BRICK',
+              isSelected: coordinatorState.selectedTab == SportTab.brick,
+              onTap: () => coordinator.selectTab(SportTab.brick),
+              isDark: isDark,
+            ),
+          ],
         ),
-        const SizedBox(width: AppSpacing.sm),
-        _SportButton(
-          icon: FontAwesomeIcons.personBiking,
-          label: 'BIKING',
-          isSelected: coordinatorState.selectedTab == SportTab.cycling,
-          onTap: () => coordinator.selectTab(SportTab.cycling),
-          isDark: isDark,
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        _SportButton(
-          icon: FontAwesomeIcons.personSwimming,
-          label: 'SWIMMING',
-          isSelected: coordinatorState.selectedTab == SportTab.swimming,
-          onTap: () => coordinator.selectTab(SportTab.swimming),
-          isDark: isDark,
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        _SportButton(
-          icon: FontAwesomeIcons.link,
-          label: 'BRICK',
-          isSelected: coordinatorState.selectedTab == SportTab.brick,
-          onTap: () => coordinator.selectTab(SportTab.brick),
-          isDark: isDark,
-        ),
-      ],
+      ),
     );
   }
 }
@@ -99,7 +105,9 @@ class _SportButton extends StatelessWidget {
               size: 28,
               color: isSelected
                   ? (isDark ? AppColors.blackberry : AppColors.cream)
-                  : (isDark ? AppColors.cream.withValues(alpha: 0.5) : AppColors.blackberry.withValues(alpha: 0.5)),
+                  : (isDark
+                        ? AppColors.cream.withValues(alpha: 0.5)
+                        : AppColors.blackberry.withValues(alpha: 0.5)),
             ),
             const SizedBox(height: 4),
             Text(
@@ -109,7 +117,9 @@ class _SportButton extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 color: isSelected
                     ? (isDark ? AppColors.blackberry : AppColors.cream)
-                    : (isDark ? AppColors.cream.withValues(alpha: 0.5) : AppColors.blackberry.withValues(alpha: 0.5)),
+                    : (isDark
+                          ? AppColors.cream.withValues(alpha: 0.5)
+                          : AppColors.blackberry.withValues(alpha: 0.5)),
               ),
             ),
           ],

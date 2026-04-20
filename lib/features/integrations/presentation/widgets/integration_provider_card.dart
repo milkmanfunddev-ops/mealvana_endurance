@@ -250,7 +250,7 @@ class IntegrationProviderCard extends StatelessWidget {
           hasSynced: hasSynced,
         );
       } else {
-        return _ConnectedBadge();
+        return _ConnectedBadge(onDisconnect: onDisconnect);
       }
     }
 
@@ -452,13 +452,16 @@ class _ConnectButton extends StatelessWidget {
   }
 }
 
-/// Connected badge shown when sync button is disabled (e.g., in onboarding)
+/// Connected badge shown when sync button is disabled (e.g., Garmin push-only).
+/// Supports long-press to disconnect, same as _SyncButton.
 class _ConnectedBadge extends StatelessWidget {
-  const _ConnectedBadge();
+  const _ConnectedBadge({this.onDisconnect});
+
+  final VoidCallback? onDisconnect;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final badge = Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
         vertical: AppSpacing.xs,
@@ -476,6 +479,39 @@ class _ConnectedBadge extends StatelessWidget {
             'Connected',
             style: AppTextStyles.buttonPrimary.copyWith(
               color: AppColors.textDark,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (onDisconnect == null) return badge;
+
+    return GestureDetector(
+      onLongPress: () => _showDisconnectDialog(context),
+      child: badge,
+    );
+  }
+
+  void _showDisconnectDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Disconnect'),
+        content: const Text('Are you sure you want to disconnect?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              onDisconnect?.call();
+            },
+            child: Text(
+              'Disconnect',
+              style: TextStyle(color: AppColors.dragonfruit),
             ),
           ),
         ],

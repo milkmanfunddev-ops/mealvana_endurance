@@ -18,7 +18,6 @@ class UserFoodItemWidget extends ConsumerWidget {
   final int sliderLevel;
   final ValueChanged<int> onLevelChanged;
   final VoidCallback onEditTap;
-  final KyleFoodType Function(String) mapFoodType;
 
   const UserFoodItemWidget({
     super.key,
@@ -26,7 +25,6 @@ class UserFoodItemWidget extends ConsumerWidget {
     required this.sliderLevel,
     required this.onLevelChanged,
     required this.onEditTap,
-    required this.mapFoodType,
   });
 
   String _categoryToLabel(String category) {
@@ -113,7 +111,7 @@ class UserFoodItemWidget extends ConsumerWidget {
               children: [
                 // Food icon
                 KyleFoodIcon(
-                  foodType: mapFoodType(food.name),
+                  foodType: mapFoodType(productTypeId: food.productTypeId, name: food.name),
                 ),
 
                 const SizedBox(width: AppSpacing.md),

@@ -1552,9 +1552,6 @@ create index idx_templates_meal_type
 create index idx_templates_slug
     on templates (slug);
 
-create index idx_templates_food_names
-    on templates using gin (food_names);
-
 grant delete, insert, references, select, trigger, truncate, update on templates to anon;
 
 grant delete, insert, references, select, trigger, truncate, update on templates to authenticated;
@@ -1624,6 +1621,8 @@ create table pre_workout_templates
         constraint pre_workout_templates_template_type_check
             check (template_type = ANY (ARRAY ['food'::text, 'drink'::text, 'electrolyte'::text])),
     component_food_names text[]                   default '{}'::text[],
+    component_quantities jsonb                    default '{}'::jsonb,
+    excluded_diets       text[]                   default '{}'::text[],
     constraint pre_workout_formulas_check
         check (max_servings >= min_servings)
 );
@@ -1639,6 +1638,10 @@ comment on column pre_workout_templates.fat_per_serving is 'Fat in grams per 1x 
 comment on column pre_workout_templates.sodium_mg is 'Sodium in milligrams per 1x serving';
 
 comment on column pre_workout_templates.component_food_names is 'Array of template_foods.name values that compose this template meal/drink';
+
+comment on column pre_workout_templates.component_quantities is 'Per-component serving proportions. Key = template_foods.name, Value = servings of that component food per 1 serving of this template.';
+
+comment on column pre_workout_templates.excluded_diets is 'Diets to exclude this template for, derived from component foods. E.g. {vegan,paleo}';
 
 alter table pre_workout_templates
     owner to postgres;
@@ -1659,79 +1662,6 @@ grant delete, insert, references, select, trigger, truncate, update on pre_worko
 grant delete, insert, references, select, trigger, truncate, update on pre_workout_templates to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on pre_workout_templates to service_role;
-
-create table catalog_items
-(
-    id                     uuid                     default gen_random_uuid() not null
-        primary key,
-    shopify_product_id     text                                               not null,
-    shopify_variant_id     text,
-    handle                 text                                               not null,
-    title                  text                                               not null,
-    variant_title          text,
-    brand                  text,
-    product_type           text,
-    tags                   text[],
-    barcode                text,
-    sku                    text,
-    price_cents            integer,
-    currency_code          text                     default 'USD'::text,
-    available_for_sale     boolean                  default true,
-    image_url              text,
-    product_url            text,
-    calories_per_serving   integer,
-    carbs_g                double precision,
-    protein_g              double precision,
-    fat_g                  double precision,
-    sodium_mg              integer,
-    serving_size           text,
-    serving_grams          double precision,
-    caffeine_mg            integer,
-    nutrition_source       text,
-    nutrition_confidence   double precision,
-    raw_payload            jsonb,
-    shopify_updated_at     timestamp with time zone,
-    nutrition_enriched_at  timestamp with time zone,
-    created_at             timestamp with time zone default now()             not null,
-    updated_at             timestamp with time zone default now()             not null,
-    sugar_g                double precision,
-    fiber_g                double precision,
-    ingredients            text,
-    servings_per_container double precision
-);
-
-alter table catalog_items
-    owner to postgres;
-
-create unique index idx_catalog_items_shopify_variant_id
-    on catalog_items (shopify_variant_id)
-    where (shopify_variant_id IS NOT NULL);
-
-create unique index idx_catalog_items_barcode
-    on catalog_items (barcode)
-    where (barcode IS NOT NULL);
-
-create index idx_catalog_items_title_trgm
-    on catalog_items using gin (title gin_trgm_ops);
-
-create index idx_catalog_items_brand_trgm
-    on catalog_items using gin (brand gin_trgm_ops);
-
-create index idx_catalog_items_variant_title_trgm
-    on catalog_items using gin (variant_title gin_trgm_ops);
-
-create index idx_catalog_items_product_type
-    on catalog_items (product_type);
-
-create index idx_catalog_items_available
-    on catalog_items (available_for_sale)
-    where (available_for_sale = true);
-
-grant delete, insert, references, select, trigger, truncate, update on catalog_items to anon;
-
-grant delete, insert, references, select, trigger, truncate, update on catalog_items to authenticated;
-
-grant delete, insert, references, select, trigger, truncate, update on catalog_items to service_role;
 
 create table catalog_sync_runs
 (
@@ -1797,6 +1727,153 @@ grant delete, insert, references, select, trigger, truncate, update on personal_
 
 grant delete, insert, references, select, trigger, truncate, update on personal_templates to service_role;
 
+create table athlete_pairing_codes
+(
+    id               uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id          uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    code             varchar(6)                                         not null
+        unique,
+    created_at       timestamp with time zone default now()             not null,
+    expires_at       timestamp with time zone                           not null,
+    used_by_coach_id uuid
+        references ??? (),
+    used_at          timestamp with time zone
+);
+
+alter table athlete_pairing_codes
+    owner to postgres;
+
+create index idx_pairing_codes_code
+    on athlete_pairing_codes (code);
+
+create index idx_pairing_codes_user
+    on athlete_pairing_codes (user_id, expires_at);
+
+grant delete, insert, references, select, trigger, truncate, update on athlete_pairing_codes to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on athlete_pairing_codes to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on athlete_pairing_codes to service_role;
+
+create table catalog_products
+(
+    id                        uuid                     default gen_random_uuid() not null
+        primary key,
+    shopify_product_id        text                                               not null
+        unique,
+    handle                    text                                               not null,
+    title                     text                                               not null,
+    brand                     text,
+    product_type_id           text,
+    categories                text[]                   default '{}'::text[],
+    allergens                 text[]                   default '{}'::text[],
+    excluded_diets            text[]                   default '{}'::text[],
+    is_electrolyte            boolean                  default false             not null,
+    is_liquid                 boolean                  default false             not null,
+    activity_types            text[]                   default '{running,cycling,swimming}'::text[],
+    shopify_product_type      text,
+    tags                      text[]                   default '{}'::text[],
+    image_url                 text,
+    product_url               text,
+    ingredients               text,
+    classification_source     text,
+    classification_confidence double precision,
+    classified_at             timestamp with time zone,
+    shopify_updated_at        timestamp with time zone,
+    created_at                timestamp with time zone default now()             not null,
+    updated_at                timestamp with time zone default now()             not null
+);
+
+alter table catalog_products
+    owner to postgres;
+
+create index idx_catalog_products_handle
+    on catalog_products (handle);
+
+create index idx_catalog_products_title_trgm
+    on catalog_products using gin (title gin_trgm_ops);
+
+create index idx_catalog_products_brand_trgm
+    on catalog_products using gin (brand gin_trgm_ops);
+
+create index idx_catalog_products_product_type_id
+    on catalog_products (product_type_id);
+
+create index idx_catalog_products_categories
+    on catalog_products using gin (categories);
+
+create index idx_catalog_products_is_electrolyte
+    on catalog_products (is_electrolyte)
+    where (is_electrolyte = true);
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_products to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_products to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_products to service_role;
+
+create table catalog_variants
+(
+    id                     uuid                     default gen_random_uuid() not null
+        primary key,
+    catalog_product_id     uuid                                               not null
+        references catalog_products
+            on delete cascade,
+    shopify_variant_id     text
+        unique,
+    variant_title          text,
+    barcode                text,
+    sku                    text,
+    price_cents            integer,
+    currency_code          text                     default 'USD'::text       not null,
+    available_for_sale     boolean                  default true              not null,
+    image_url              text,
+    calories_per_serving   integer,
+    carbs_g                double precision,
+    protein_g              double precision,
+    fat_g                  double precision,
+    sodium_mg              integer,
+    serving_size           text,
+    serving_grams          double precision,
+    caffeine_mg            integer,
+    sugar_g                double precision,
+    fiber_g                double precision,
+    servings_per_container double precision,
+    nutrition_source       text,
+    nutrition_confidence   double precision,
+    nutrition_enriched_at  timestamp with time zone,
+    raw_payload            jsonb,
+    shopify_updated_at     timestamp with time zone,
+    created_at             timestamp with time zone default now()             not null,
+    updated_at             timestamp with time zone default now()             not null
+);
+
+alter table catalog_variants
+    owner to postgres;
+
+create index idx_catalog_variants_product_id
+    on catalog_variants (catalog_product_id);
+
+create index idx_catalog_variants_barcode
+    on catalog_variants (barcode)
+    where (barcode IS NOT NULL);
+
+create index idx_catalog_variants_available
+    on catalog_variants (available_for_sale)
+    where (available_for_sale = true);
+
+create index idx_catalog_variants_variant_title_trgm
+    on catalog_variants using gin (variant_title gin_trgm_ops);
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_variants to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_variants to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_variants to service_role;
+
 create view v_food_sport_phase_settings
             (food_id, food_name, display_name, product_type, sport, phase, effective_max_servings, is_suitable, notes,
              legacy_max_before, legacy_max_during, legacy_max_after)
@@ -1830,6 +1907,71 @@ grant delete, insert, references, select, trigger, truncate, update on v_food_sp
 grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on v_food_sport_phase_settings to service_role;
+
+create view catalog_items
+            (id, shopify_product_id, shopify_variant_id, handle, title, variant_title, brand, product_type, tags,
+             barcode, sku, price_cents, currency_code, available_for_sale, image_url, product_url, calories_per_serving,
+             carbs_g, protein_g, fat_g, sodium_mg, serving_size, serving_grams, caffeine_mg, sugar_g, fiber_g,
+             ingredients, servings_per_container, nutrition_source, nutrition_confidence, nutrition_enriched_at,
+             raw_payload, shopify_updated_at, created_at, updated_at, product_type_id, categories, allergens,
+             excluded_diets, is_electrolyte, is_liquid, activity_types, classification_source,
+             classification_confidence)
+as
+SELECT v.id,
+       p.shopify_product_id,
+       v.shopify_variant_id,
+       p.handle,
+       p.title,
+       v.variant_title,
+       p.brand,
+       p.shopify_product_type                               AS product_type,
+       p.tags,
+       v.barcode,
+       v.sku,
+       v.price_cents,
+       v.currency_code,
+       v.available_for_sale,
+       COALESCE(v.image_url, p.image_url)                   AS image_url,
+       p.product_url,
+       v.calories_per_serving,
+       v.carbs_g,
+       v.protein_g,
+       v.fat_g,
+       v.sodium_mg,
+       v.serving_size,
+       v.serving_grams,
+       v.caffeine_mg,
+       v.sugar_g,
+       v.fiber_g,
+       p.ingredients,
+       v.servings_per_container,
+       v.nutrition_source,
+       v.nutrition_confidence,
+       v.nutrition_enriched_at,
+       v.raw_payload,
+       COALESCE(v.shopify_updated_at, p.shopify_updated_at) AS shopify_updated_at,
+       v.created_at,
+       v.updated_at,
+       p.product_type_id,
+       p.categories,
+       p.allergens,
+       p.excluded_diets,
+       p.is_electrolyte,
+       p.is_liquid,
+       p.activity_types,
+       p.classification_source,
+       p.classification_confidence
+FROM catalog_variants v
+         JOIN catalog_products p ON p.id = v.catalog_product_id;
+
+alter table catalog_items
+    owner to postgres;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_items to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_items to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on catalog_items to service_role;
 
 create function set_limit(real) returns real
     strict
@@ -2522,7 +2664,7 @@ create function update_updated_at_column() returns trigger
 as
 $$
 BEGIN
-  NEW.updated_at = now();
+  NEW.updated_at = NOW();
   RETURN NEW;
 END;
 $$;
@@ -2765,6 +2907,29 @@ grant execute on function update_catalog_items_updated_at() to anon;
 grant execute on function update_catalog_items_updated_at() to authenticated;
 
 grant execute on function update_catalog_items_updated_at() to service_role;
+
+create function is_approved_coach(_uid uuid) returns boolean
+    stable
+    security definer
+    SET search_path = public
+    language sql
+as
+$$
+  select exists (
+    select 1
+    from public.coaches c
+    where c.user_id = _uid
+      and c.application_status = 'approved'
+  );
+$$;
+
+alter function is_approved_coach(uuid) owner to postgres;
+
+grant execute on function is_approved_coach(uuid) to anon;
+
+grant execute on function is_approved_coach(uuid) to authenticated;
+
+grant execute on function is_approved_coach(uuid) to service_role;
 
 create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
 

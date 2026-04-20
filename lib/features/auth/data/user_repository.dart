@@ -173,6 +173,8 @@ class UserRepository with SyncableRepository {
       // Optional name fields for coach mode athlete identification
       firstName: dbUser.firstName,
       lastName: dbUser.lastName,
+      // Contact information
+      email: dbUser.email,
     );
   }
 
@@ -944,6 +946,11 @@ class UserRepository with SyncableRepository {
               userData['nutrition_target_overrides'] as Map<String, dynamic>,
             )
           : null,
+      // User identity
+      firstName: userData['first_name'] as String?,
+      lastName: userData['last_name'] as String?,
+      // Contact information
+      email: userData['email'] as String?,
     );
   }
 

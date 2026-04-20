@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import 'package:url_launcher/url_launcher.dart';
 import 'package:wiredash/wiredash.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// Help & Feedback Screen - Kyle's Design System
 /// Support and feedback collection screen with Wiredash integration
@@ -14,9 +15,10 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
+      contentWidth: AdaptiveContentWidth.standard,
       body: _buildContent(context, ref),
     );
   }
@@ -37,7 +39,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref) {
-    return SingleChildScrollView(
+    return AdaptiveScrollableBody(
       padding: AppSpacing.screenPaddingHorizontal,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,7 +226,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.dragonfruit.withOpacity(0.2),
+                color: AppColors.dragonfruit.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -291,7 +293,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.electrolyte.withOpacity(0.2),
+                color: AppColors.electrolyte.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -358,7 +360,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.electrolyte.withOpacity(0.2),
+                color: AppColors.electrolyte.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -425,7 +427,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.electrolyte.withOpacity(0.2),
+                color: AppColors.electrolyte.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -477,6 +479,15 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
     debugPrint('[Ratings] Opening Wiredash Promoter Score survey...');
 
+    // Prefill user properties for Wiredash survey
+    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+    final currentUser = supabaseClient.auth.currentUser;
+    if (currentUser != null) {
+      Wiredash.of(
+        context,
+      ).setUserProperties(userEmail: currentUser.email, userId: currentUser.id);
+    }
+
     // Always show the NPS survey when user explicitly requests it
     Wiredash.of(context).showPromoterSurvey(
       inheritMaterialTheme: true,
@@ -502,6 +513,15 @@ class HelpFeedbackScreen extends ConsumerWidget {
     if (!context.mounted) return;
 
     debugPrint('[BugReport] Opening Wiredash feedback widget...');
+
+    // Prefill user properties for Wiredash feedback
+    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+    final currentUser = supabaseClient.auth.currentUser;
+    if (currentUser != null) {
+      Wiredash.of(
+        context,
+      ).setUserProperties(userEmail: currentUser.email, userId: currentUser.id);
+    }
 
     // Open Wiredash with bug report flow
     // Labels are configured in RootAppWidget

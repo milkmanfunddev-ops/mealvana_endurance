@@ -594,6 +594,7 @@ class ActivitiesRepository with SyncableRepository {
   Future<domain.Activity> createActivity({
     required String deviceId,
     required domain.Activity activity,
+    bool requireRemoteAck = false,
   }) async {
     try {
       // STEP 1: Save to Drift IMMEDIATELY with dirty flag
@@ -619,7 +620,11 @@ class ActivitiesRepository with SyncableRepository {
       );
 
       try {
-        await _uploadActivityToSupabase(activityWithId, operation: 'create');
+        await _uploadActivityToSupabase(
+          activityWithId,
+          operation: 'create',
+          requireRemoteAck: requireRemoteAck,
+        );
       } catch (e, stackTrace) {
         _logger.warning(
           'Immediate upload failed; record stays dirty for retry',
@@ -634,6 +639,9 @@ class ActivitiesRepository with SyncableRepository {
           method: 'INSERT',
           stackTrace: stackTrace,
         );
+        if (requireRemoteAck) {
+          rethrow;
+        }
       }
 
       return activityWithId;
@@ -652,6 +660,7 @@ class ActivitiesRepository with SyncableRepository {
   Future<domain.Activity> updateActivity({
     required String deviceId,
     required domain.Activity activity,
+    bool requireRemoteAck = false,
   }) async {
     try {
       // OFFLINE-FIRST: Save to Drift IMMEDIATELY with dirty flag
@@ -663,12 +672,12 @@ class ActivitiesRepository with SyncableRepository {
 
       await _saveToDrift(activityWithDirtyFlag);
 
-      // Attempt background upload (non-blocking)
-      unawaited(() async {
+      if (requireRemoteAck) {
         try {
           await _uploadActivityToSupabase(
             activityWithDirtyFlag,
             operation: 'update',
+            requireRemoteAck: true,
           );
         } catch (e, stackTrace) {
           _logger.warning(
@@ -684,8 +693,36 @@ class ActivitiesRepository with SyncableRepository {
             method: 'UPSERT',
             stackTrace: stackTrace,
           );
+          rethrow;
         }
-      }());
+      } else {
+        // Attempt background upload (non-blocking)
+        unawaited(() async {
+          try {
+            await _uploadActivityToSupabase(
+              activityWithDirtyFlag,
+              operation: 'update',
+            );
+          } catch (e, stackTrace) {
+            _logger.warning(
+              'Immediate upload failed; record stays dirty for retry',
+              context: 'ACTIVITIES_REPOSITORY',
+              error: e,
+              stackTrace: stackTrace,
+              data: {
+                'operation': 'update',
+                'recordId': activityWithDirtyFlag.id,
+              },
+            );
+            _sentry.reportNetworkError(
+              e,
+              url: 'supabase:activities:update',
+              method: 'UPSERT',
+              stackTrace: stackTrace,
+            );
+          }
+        }());
+      }
 
       return activityWithDirtyFlag;
     } catch (e, stackTrace) {
@@ -703,23 +740,53 @@ class ActivitiesRepository with SyncableRepository {
   Future<void> deleteActivity({
     required String deviceId,
     required String activityId,
+    bool requireRemoteAck = false,
+    String? remoteUserId,
   }) async {
     try {
+      final now = DateTime.now();
+      final userIdForRemoteDelete = remoteUserId ?? deviceId;
+
       // OFFLINE-FIRST: Mark as deleted in Drift IMMEDIATELY with dirty flag
       await (_database.update(
         _database.activitiesTable,
       )..where((tbl) => tbl.id.equals(activityId))).write(
         ActivitiesTableCompanion(
-          deletedAt: Value(DateTime.now()),
+          deletedAt: Value(now),
           needsUpload: const Value(true),
-          localUpdatedAt: Value(DateTime.now()),
+          localUpdatedAt: Value(now),
         ),
       );
 
-      // Attempt background upload (non-blocking)
-      unawaited(() async {
+      // Unlink any events that pointed to this activity so event detail
+      // can correctly show "Create Nutrition Plan" after deletion.
+      final unlinkedEventsCount =
+          await (_database.update(
+            _database.eventsTable,
+          )..where((tbl) => tbl.activityId.equals(activityId))).write(
+            EventsTableCompanion(
+              activityId: const Value(null),
+              hasNutritionPlan: const Value(false),
+              needsUpload: const Value(true),
+              localUpdatedAt: Value(now),
+              updatedAt: Value(now),
+            ),
+          );
+
+      if (unlinkedEventsCount > 0) {
+        _logger.info(
+          'Unlinked events from deleted activity',
+          context: 'ACTIVITIES_REPOSITORY',
+          data: {
+            'activityId': activityId,
+            'unlinkedEventsCount': unlinkedEventsCount,
+          },
+        );
+      }
+
+      if (requireRemoteAck) {
         try {
-          await _uploadActivityDeletion(deviceId, activityId);
+          await _uploadActivityDeletion(userIdForRemoteDelete, activityId);
         } catch (e, stackTrace) {
           _logger.warning(
             'Immediate upload failed; record stays dirty for retry',
@@ -734,8 +801,30 @@ class ActivitiesRepository with SyncableRepository {
             method: 'DELETE',
             stackTrace: stackTrace,
           );
+          rethrow;
         }
-      }());
+      } else {
+        // Attempt background upload (non-blocking)
+        unawaited(() async {
+          try {
+            await _uploadActivityDeletion(userIdForRemoteDelete, activityId);
+          } catch (e, stackTrace) {
+            _logger.warning(
+              'Immediate upload failed; record stays dirty for retry',
+              context: 'ACTIVITIES_REPOSITORY',
+              error: e,
+              stackTrace: stackTrace,
+              data: {'operation': 'delete', 'recordId': activityId},
+            );
+            _sentry.reportNetworkError(
+              e,
+              url: 'supabase:activities:delete',
+              method: 'DELETE',
+              stackTrace: stackTrace,
+            );
+          }
+        }());
+      }
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to delete activity',
@@ -770,6 +859,21 @@ class ActivitiesRepository with SyncableRepository {
       );
       rethrow;
     }
+  }
+
+  /// Fetch a single activity from Supabase and upsert it locally,
+  /// preserving any dirty local changes. Used to pick up coach-made
+  /// updates (e.g. nutrition plans) without a full sync.
+  Future<void> refreshActivityFromRemote(String activityId) async {
+    final response = await _supabase
+        .from('activities')
+        .select()
+        .eq('id', activityId)
+        .maybeSingle();
+
+    if (response == null) return;
+
+    await _upsertRemoteActivitiesPreservingDirty([response]);
   }
 
   /// Get a specific activity by ID (REMOTE/SUPABASE)
@@ -1007,6 +1111,7 @@ class ActivitiesRepository with SyncableRepository {
       // preserve local completion and nutrition data
       completedAt: existing.completedAt,
       completionRating: existing.completionRating,
+      nutritionRating: existing.nutritionRating,
       completionNotes: existing.completionNotes,
       actualDistanceMiles: existing.actualDistanceMiles,
       actualDurationMinutes: existing.actualDurationMinutes,
@@ -1101,6 +1206,7 @@ class ActivitiesRepository with SyncableRepository {
   Future<void> _uploadActivityToSupabase(
     domain.Activity activity, {
     required String operation,
+    bool requireRemoteAck = false,
   }) async {
     final payload = _mapper.buildSupabasePayload(
       activity,
@@ -1108,20 +1214,49 @@ class ActivitiesRepository with SyncableRepository {
     );
 
     if (operation == 'create') {
-      await _supabase.from('activities').insert(payload);
+      if (requireRemoteAck) {
+        final response = await _supabase
+            .from('activities')
+            .insert(payload)
+            .select('id,user_id,nutrition_plan_data')
+            .maybeSingle();
+        _verifyRemoteAckResult(
+          activity: activity,
+          operation: operation,
+          response: response,
+        );
+      } else {
+        await _supabase.from('activities').insert(payload);
+      }
     } else {
-      final hasProviderKey = _hasProviderConflictKey(
-        syncedFromProvider: activity.syncedFromProvider,
-        providerWorkoutId: activity.providerWorkoutId,
-      );
+      if (requireRemoteAck) {
+        // For coach-critical flows, require deterministic update on the exact row.
+        // Upsert can silently "succeed" while missing the intended row.
+        final response = await _supabase
+            .from('activities')
+            .update(payload)
+            .eq('id', activity.id)
+            .select('id,user_id,nutrition_plan_data')
+            .maybeSingle();
+        _verifyRemoteAckResult(
+          activity: activity,
+          operation: operation,
+          response: response,
+        );
+      } else {
+        final hasProviderKey = _hasProviderConflictKey(
+          syncedFromProvider: activity.syncedFromProvider,
+          providerWorkoutId: activity.providerWorkoutId,
+        );
 
-      await _upsertWithConflictFallback(
-        payload,
-        onConflict: hasProviderKey
-            ? 'user_id,synced_from_provider,provider_workout_id'
-            : 'id',
-        fallbackOnConflict: hasProviderKey ? 'id' : null,
-      );
+        await _upsertWithConflictFallback(
+          payload,
+          onConflict: hasProviderKey
+              ? 'user_id,synced_from_provider,provider_workout_id'
+              : 'id',
+          fallbackOnConflict: hasProviderKey ? 'id' : null,
+        );
+      }
     }
 
     _logger.info(
@@ -1133,13 +1268,42 @@ class ActivitiesRepository with SyncableRepository {
     await _clearDirtyFlag(activity.id);
   }
 
-  /// Upload activity deletion to Supabase in background (non-blocking)
-  Future<void> _uploadActivityDeletion(
-    String deviceId,
-    String activityId,
-  ) async {
-    final userId = deviceId;
+  void _verifyRemoteAckResult({
+    required domain.Activity activity,
+    required String operation,
+    required dynamic response,
+  }) {
+    if (response is! Map<String, dynamic>) {
+      throw StateError(
+        'Remote ack failed for activity ${activity.id}: no row returned after $operation',
+      );
+    }
 
+    final remoteId = response['id']?.toString();
+    if (remoteId == null || remoteId != activity.id) {
+      throw StateError(
+        'Remote ack failed for activity ${activity.id}: unexpected row returned ($remoteId) after $operation',
+      );
+    }
+
+    final remoteUserId = response['user_id']?.toString();
+    if (remoteUserId == null || remoteUserId != activity.userId) {
+      throw StateError(
+        'Remote ack failed for activity ${activity.id}: unexpected owner ($remoteUserId) after $operation',
+      );
+    }
+
+    final expectsNutritionPlan = activity.nutritionPlanData != null;
+    final hasRemoteNutritionPlan = response['nutrition_plan_data'] != null;
+    if (expectsNutritionPlan && !hasRemoteNutritionPlan) {
+      throw StateError(
+        'Remote ack failed for activity ${activity.id}: nutrition plan missing after $operation',
+      );
+    }
+  }
+
+  /// Upload activity deletion to Supabase in background (non-blocking)
+  Future<void> _uploadActivityDeletion(String userId, String activityId) async {
     await _supabase
         .from('activities')
         .delete()

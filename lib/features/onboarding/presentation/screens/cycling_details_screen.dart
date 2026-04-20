@@ -11,6 +11,7 @@ import '../../../../shared/widgets/selection/figma_toggle_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/constants/bottle_constants.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// Cycling Details Screen - Unified for both onboarding and settings
 ///
@@ -45,7 +46,8 @@ class CyclingDetailsScreen extends ConsumerStatefulWidget {
   final VoidCallback? onBack;
 
   @override
-  ConsumerState<CyclingDetailsScreen> createState() => _CyclingDetailsScreenState();
+  ConsumerState<CyclingDetailsScreen> createState() =>
+      _CyclingDetailsScreenState();
 }
 
 class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
@@ -77,9 +79,10 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
     final screenName = _isOnboarding
         ? 'Cycling Details Onboarding'
         : 'Cycling Details Settings';
-    ref.read(appExternalDepsProvider).analytics.track('screen_viewed', properties: {
-      'screen_name': screenName,
-    });
+    ref
+        .read(appExternalDepsProvider)
+        .analytics
+        .track('screen_viewed', properties: {'screen_name': screenName});
 
     // In onboarding mode, initialize from cache
     if (_isOnboarding) {
@@ -176,12 +179,17 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
           hasBentoBox: _hasBentoBox,
         );
 
-        unawaited(analytics.track('cycling_details_completed', properties: {
-          'ftp_watts': ftpWatts,
-          'bike_bottles': _bikeBottles,
-          'has_aero_bottle': _hasAeroBottle,
-          'has_bento_box': _hasBentoBox,
-        }));
+        unawaited(
+          analytics.track(
+            'cycling_details_completed',
+            properties: {
+              'ftp_watts': ftpWatts,
+              'bike_bottles': _bikeBottles,
+              'has_aero_bottle': _hasAeroBottle,
+              'has_bento_box': _hasBentoBox,
+            },
+          ),
+        );
 
         if (!mounted) return;
 
@@ -191,7 +199,10 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
         } else {
           // Navigate to next screen
           if (widget.selectedSports.contains('swimming')) {
-            context.push('/onboarding/swimming-details', extra: widget.selectedSports);
+            context.push(
+              '/onboarding/swimming-details',
+              extra: widget.selectedSports,
+            );
           } else {
             context.push('/onboarding/dietary-preference');
           }
@@ -212,20 +223,28 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
         if (!mounted) return;
 
         if (success) {
-          unawaited(analytics.track('cycling_details_changed', properties: {
-            'ftp_watts': ftpWatts,
-            'bike_bottles': _bikeBottles,
-            'has_aero_bottle': _hasAeroBottle,
-            'has_bento_box': _hasBentoBox,
-            'source': 'settings',
-          }));
+          unawaited(
+            analytics.track(
+              'cycling_details_changed',
+              properties: {
+                'ftp_watts': ftpWatts,
+                'bike_bottles': _bikeBottles,
+                'has_aero_bottle': _hasAeroBottle,
+                'has_bento_box': _hasBentoBox,
+                'source': 'settings',
+              },
+            ),
+          );
 
           if (!mounted) return;
 
           MealvanaSnackbar.showSuccess(context, 'Cycling details updated');
           context.pop();
         } else {
-          MealvanaSnackbar.showError(context, 'Failed to save cycling details. Please try again.');
+          MealvanaSnackbar.showError(
+            context,
+            'Failed to save cycling details. Please try again.',
+          );
         }
       }
     } finally {
@@ -241,15 +260,14 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
       return Scaffold(
         backgroundColor: AppColors.blackberry,
         body: const Center(
-          child: CircularProgressIndicator(
-            color: AppColors.orange,
-          ),
+          child: CircularProgressIndicator(color: AppColors.orange),
         ),
       );
     }
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: AppColors.blackberry,
+      contentWidth: AdaptiveContentWidth.narrow,
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Column(
@@ -299,13 +317,14 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
 
             // Scrollable content
             Expanded(
-              child: SafeArea(
-                top: false,
-                child: Center(
+              child: AdaptiveScrollableBody(
+                safeAreaTop: false,
+                safeAreaBottom: false,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Align(
+                  alignment: Alignment.topCenter,
                   child: Form(
                     key: _formKey,
-                    child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -342,7 +361,8 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
                           child: KylePlusMinusControl(
                             label: 'What is your bike\'s bottle capacity?',
                             value: _bikeBottles,
-                            onChanged: (value) => setState(() => _bikeBottles = value),
+                            onChanged: (value) =>
+                                setState(() => _bikeBottles = value),
                             min: 0,
                             max: 6,
                             unit: 'bottles',
@@ -366,7 +386,8 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
                         FigmaToggleCard(
                           label: 'I use Aero Bottles',
                           value: _hasAeroBottle,
-                          onChanged: (value) => setState(() => _hasAeroBottle = value),
+                          onChanged: (value) =>
+                              setState(() => _hasAeroBottle = value),
                         ),
 
                         const SizedBox(height: 16),
@@ -375,10 +396,10 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
                         FigmaToggleCard(
                           label: 'I use a Bento Box for food',
                           value: _hasBentoBox,
-                          onChanged: (value) => setState(() => _hasBentoBox = value),
+                          onChanged: (value) =>
+                              setState(() => _hasBentoBox = value),
                         ),
                       ],
-                      ),
                     ),
                   ),
                 ),
@@ -405,10 +426,7 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
 
 /// FTP input section matching Figma design
 class _FTPSection extends StatelessWidget {
-  const _FTPSection({
-    required this.controller,
-    required this.figmaCream,
-  });
+  const _FTPSection({required this.controller, required this.figmaCream});
 
   final TextEditingController controller;
   final Color figmaCream;
@@ -514,4 +532,3 @@ class _FTPSection extends StatelessWidget {
     );
   }
 }
-

@@ -288,15 +288,15 @@ extension GutTrainingDisplayExtension on GutTraining {
     }
   }
 
-  /// Get the g/kg/h carbohydrate intake value for each gut training level
+  /// Get the band multiplier value for each gut training level
   String get gkgValue {
     switch (this) {
       case GutTraining.low:
-        return '0.7 g/kg/h';
+        return '0.7\u00d7';
       case GutTraining.moderate:
-        return '0.8 g/kg/h';
+        return '1.0\u00d7';
       case GutTraining.high:
-        return '1.0 g/kg/h';
+        return '1.2\u00d7';
     }
   }
 }

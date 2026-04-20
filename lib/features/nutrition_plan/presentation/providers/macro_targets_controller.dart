@@ -7,6 +7,7 @@ import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../activities/domain/activity.dart' as domain;
 import '../../../activities/domain/activity_title_formatter.dart';
 import '../../../activities/application/activities_service.dart';
+import '../../../activities/data/activities_repository.dart';
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/intensity_distribution.dart';
@@ -21,14 +22,18 @@ import '../../domain/nutrition_plan.dart';
 import '../../../activities/domain/brick_metadata.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../../shared/domain/activity_type.dart';
+import '../../../../shared/domain/write_consistency.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
+import '../../../../shared/services/logging_service.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../events/presentation/providers/events_controller.dart';
+import '../../../events/application/events_service.dart';
 import '../../../events/data/events_repository.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import '../../../integrations/presentation/providers/tp_writeback_providers.dart';
+import '../../../coach_mode/presentation/providers/coach_activity_detail_controller.dart';
 
 part 'macro_targets_controller.g.dart';
 
@@ -219,9 +224,7 @@ class MacroTargetsState {
           ? activityId
           : activityId ?? this.activityId,
       eventId: overrideEventId ? eventId : eventId ?? this.eventId,
-      forUserId: overrideForUserId
-          ? forUserId
-          : forUserId ?? this.forUserId,
+      forUserId: overrideForUserId ? forUserId : forUserId ?? this.forUserId,
       unitSystem: unitSystem ?? this.unitSystem,
     );
   }
@@ -239,6 +242,44 @@ class MacroTargetsController extends _$MacroTargetsController {
   /// Tracks the current activityId outside of state so onDispose can access it
   /// without reading `state` (which is forbidden inside Riverpod lifecycle callbacks).
   String? _lastKnownActivityId;
+
+  String _resolveActivityOwnerId({
+    required String currentUserId,
+    String? forUserId,
+  }) {
+    if (forUserId != null && forUserId.isNotEmpty) {
+      return forUserId;
+    }
+    return currentUserId;
+  }
+
+  String? _normalizeTitle(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
+  }
+
+  String _resolveNewActivityTitle({
+    required String fallbackTitle,
+    String? requestedTitle,
+    String? eventName,
+  }) {
+    return _normalizeTitle(requestedTitle) ??
+        _normalizeTitle(eventName) ??
+        fallbackTitle;
+  }
+
+  String _resolveExistingActivityTitle({
+    required domain.Activity existingActivity,
+    required String fallbackTitle,
+    String? requestedTitle,
+  }) {
+    return _normalizeTitle(requestedTitle) ??
+        _normalizeTitle(existingActivity.title) ??
+        fallbackTitle;
+  }
 
   @override
   FutureOr<MacroTargetsState> build() async {
@@ -466,6 +507,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     double? humidityPct,
     bool isFasted = false,
     IntensityDistribution? intensity,
+    String? activityTitle,
     String? activityId, // Link to calendar activity/event
     String? eventId, // Link to calendar event (for provider invalidation)
     String?
@@ -495,6 +537,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         humidityPct: humidityPct,
         isFasted: isFasted,
         intensity: intensity,
+        activityTitle: activityTitle,
         activityId: activityId,
         eventId: eventId,
         forUserId: forUserId,
@@ -544,20 +587,34 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         String finalActivityId = activityId ?? '';
         final activitiesService = ref.read(activitiesServiceProvider);
+        final activityOwnerId = _resolveActivityOwnerId(
+          currentUserId: deviceId,
+          forUserId: forUserId,
+        );
 
         // Look up event name when eventId is provided
         String? eventName;
         if (eventId != null) {
           try {
             final eventsRepo = ref.read(eventsRepositoryProvider);
-            final event = await eventsRepo.getEventById(deviceId, eventId);
+            final event = await eventsRepo.getEventById(
+              activityOwnerId,
+              eventId,
+            );
             eventName = event?.eventName;
           } catch (e) {
             DebugLogger.warning('Failed to look up event name: $e');
           }
         }
 
-        final activityTitle = eventName ?? ActivityTitleFormatter.formatRunningTitle(distance);
+        final fallbackTitle = ActivityTitleFormatter.formatRunningTitle(
+          distance,
+        );
+        final resolvedTitle = _resolveNewActivityTitle(
+          fallbackTitle: fallbackTitle,
+          requestedTitle: activityTitle,
+          eventName: eventName,
+        );
 
         if (finalActivityId.isEmpty) {
           final createdActivity = await activitiesService.createActivity(
@@ -565,7 +622,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             userId: deviceId,
             forUserId: forUserId,
             activityType: ActivityType.running,
-            title: activityTitle,
+            title: resolvedTitle,
             scheduledDateTime: scheduledDateTime,
             distanceMiles: distance,
             durationMinutes: estimatedDurationMinutes,
@@ -577,14 +634,20 @@ class MacroTargetsController extends _$MacroTargetsController {
           finalActivityId = createdActivity.id;
         } else {
           final existingActivity = await activitiesService.getActivityById(
-            deviceId,
+            activityOwnerId,
             finalActivityId,
           );
           if (existingActivity != null) {
+            final existingTitle = _resolveExistingActivityTitle(
+              existingActivity: existingActivity,
+              fallbackTitle: resolvedTitle,
+              requestedTitle: activityTitle,
+            );
             await activitiesService.updateActivity(
               deviceId: deviceId,
+              currentUserId: deviceId,
               activity: existingActivity.copyWith(
-                title: activityTitle,
+                title: existingTitle,
                 activityType: ActivityType.running,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distance,
@@ -633,6 +696,12 @@ class MacroTargetsController extends _$MacroTargetsController {
         }
         final repository = ref.read(macroRepositoryProvider);
         await repository.saveMacroTargets(macroTargets);
+        if (finalActivityId.isNotEmpty) {
+          await repository.saveMacroTargetsForActivity(
+            finalActivityId,
+            macroTargets,
+          );
+        }
 
         // Update state to not generating and include macro targets with finalActivityId
         return currentState.copyWith(
@@ -692,6 +761,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     required double humidityPct,
     bool isFasted = false,
     IntensityDistribution? intensity,
+    String? activityTitle,
     String? activityId,
     String? eventId,
     String? forUserId,
@@ -732,20 +802,34 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         String finalActivityId = activityId ?? '';
         final activitiesService = ref.read(activitiesServiceProvider);
+        final activityOwnerId = _resolveActivityOwnerId(
+          currentUserId: deviceId,
+          forUserId: forUserId,
+        );
 
         // Look up event name when eventId is provided
         String? eventName;
         if (eventId != null) {
           try {
             final eventsRepo = ref.read(eventsRepositoryProvider);
-            final event = await eventsRepo.getEventById(deviceId, eventId);
+            final event = await eventsRepo.getEventById(
+              activityOwnerId,
+              eventId,
+            );
             eventName = event?.eventName;
           } catch (e) {
             DebugLogger.warning('Failed to look up event name: $e');
           }
         }
 
-        final activityTitle = eventName ?? ActivityTitleFormatter.formatCyclingTitle(distanceMiles);
+        final fallbackTitle = ActivityTitleFormatter.formatCyclingTitle(
+          distanceMiles,
+        );
+        final resolvedTitle = _resolveNewActivityTitle(
+          fallbackTitle: fallbackTitle,
+          requestedTitle: activityTitle,
+          eventName: eventName,
+        );
 
         if (finalActivityId.isEmpty) {
           final createdActivity = await activitiesService.createActivity(
@@ -753,7 +837,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             userId: deviceId,
             forUserId: forUserId,
             activityType: ActivityType.cycling,
-            title: activityTitle,
+            title: resolvedTitle,
             scheduledDateTime: scheduledDateTime,
             distanceMiles: distanceMiles,
             cyclingSpeedMph: speedMph,
@@ -769,14 +853,20 @@ class MacroTargetsController extends _$MacroTargetsController {
           finalActivityId = createdActivity.id;
         } else {
           final existingActivity = await activitiesService.getActivityById(
-            deviceId,
+            activityOwnerId,
             finalActivityId,
           );
           if (existingActivity != null) {
+            final existingTitle = _resolveExistingActivityTitle(
+              existingActivity: existingActivity,
+              fallbackTitle: resolvedTitle,
+              requestedTitle: activityTitle,
+            );
             await activitiesService.updateActivity(
               deviceId: deviceId,
+              currentUserId: deviceId,
               activity: existingActivity.copyWith(
-                title: activityTitle,
+                title: existingTitle,
                 activityType: ActivityType.cycling,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,
@@ -833,6 +923,15 @@ class MacroTargetsController extends _$MacroTargetsController {
         // Mark as user-modified if overrides were applied
         if (overrides != null && overrides.hasAnyOverride) {
           macroTargets = macroTargets.copyWith(isUserModified: true);
+        }
+
+        final repository = ref.read(macroRepositoryProvider);
+        await repository.saveMacroTargets(macroTargets);
+        if (finalActivityId.isNotEmpty) {
+          await repository.saveMacroTargetsForActivity(
+            finalActivityId,
+            macroTargets,
+          );
         }
 
         return currentState.copyWith(
@@ -892,6 +991,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     double? humidityPct,
     bool isFasted = false,
     IntensityDistribution? intensity,
+    String? activityTitle,
     String? activityId,
     String? eventId,
     String?
@@ -912,6 +1012,7 @@ class MacroTargetsController extends _$MacroTargetsController {
       humidityPct: humidityPct,
       isFasted: isFasted,
       intensity: intensity,
+      activityTitle: activityTitle,
       activityId: activityId,
       eventId: eventId,
       forUserId: forUserId, // NEW: Pass through forUserId
@@ -930,6 +1031,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     IntensityDistribution? intensity,
     required DateTime scheduledDate,
     required TimeOfDay scheduledTime,
+    String? activityTitle,
     String? activityId,
     String? eventId,
     String? forUserId,
@@ -975,20 +1077,34 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         String finalActivityId = activityId ?? '';
         final activitiesService = ref.read(activitiesServiceProvider);
+        final activityOwnerId = _resolveActivityOwnerId(
+          currentUserId: deviceId,
+          forUserId: forUserId,
+        );
 
         // Look up event name when eventId is provided
         String? eventName;
         if (eventId != null) {
           try {
             final eventsRepo = ref.read(eventsRepositoryProvider);
-            final event = await eventsRepo.getEventById(deviceId, eventId);
+            final event = await eventsRepo.getEventById(
+              activityOwnerId,
+              eventId,
+            );
             eventName = event?.eventName;
           } catch (e) {
             DebugLogger.warning('Failed to look up event name: $e');
           }
         }
 
-        final activityTitle = eventName ?? ActivityTitleFormatter.formatSwimmingTitle(distanceMeters);
+        final fallbackTitle = ActivityTitleFormatter.formatSwimmingTitle(
+          distanceMeters,
+        );
+        final resolvedTitle = _resolveNewActivityTitle(
+          fallbackTitle: fallbackTitle,
+          requestedTitle: activityTitle,
+          eventName: eventName,
+        );
 
         if (finalActivityId.isEmpty) {
           final createdActivity = await activitiesService.createActivity(
@@ -996,7 +1112,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             userId: deviceId,
             forUserId: forUserId,
             activityType: ActivityType.swimming,
-            title: activityTitle,
+            title: resolvedTitle,
             scheduledDateTime: scheduledDateTime,
             distanceMiles: distanceMiles,
             swimmingPacePer100mSeconds: paceSecondsper100m,
@@ -1010,14 +1126,20 @@ class MacroTargetsController extends _$MacroTargetsController {
           finalActivityId = createdActivity.id;
         } else {
           final existingActivity = await activitiesService.getActivityById(
-            deviceId,
+            activityOwnerId,
             finalActivityId,
           );
           if (existingActivity != null) {
+            final existingTitle = _resolveExistingActivityTitle(
+              existingActivity: existingActivity,
+              fallbackTitle: resolvedTitle,
+              requestedTitle: activityTitle,
+            );
             await activitiesService.updateActivity(
               deviceId: deviceId,
+              currentUserId: deviceId,
               activity: existingActivity.copyWith(
-                title: activityTitle,
+                title: existingTitle,
                 activityType: ActivityType.swimming,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,
@@ -1065,6 +1187,15 @@ class MacroTargetsController extends _$MacroTargetsController {
         // Mark as user-modified if overrides were applied
         if (overrides != null && overrides.hasAnyOverride) {
           macroTargets = macroTargets.copyWith(isUserModified: true);
+        }
+
+        final repository = ref.read(macroRepositoryProvider);
+        await repository.saveMacroTargets(macroTargets);
+        if (finalActivityId.isNotEmpty) {
+          await repository.saveMacroTargetsForActivity(
+            finalActivityId,
+            macroTargets,
+          );
         }
 
         return currentState.copyWith(
@@ -1120,6 +1251,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     required TimeOfDay scheduledTime,
     required bool isFasted,
     required int preActivityMinutes,
+    String? activityTitle,
     String? activityId,
     String? eventId,
     String?
@@ -1181,13 +1313,20 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         String finalActivityId = activityId ?? '';
         final activitiesService = ref.read(activitiesServiceProvider);
+        final activityOwnerId = _resolveActivityOwnerId(
+          currentUserId: deviceId,
+          forUserId: forUserId,
+        );
 
         // Look up event name when eventId is provided
         String? eventName;
         if (eventId != null) {
           try {
             final eventsRepo = ref.read(eventsRepositoryProvider);
-            final event = await eventsRepo.getEventById(deviceId, eventId);
+            final event = await eventsRepo.getEventById(
+              activityOwnerId,
+              eventId,
+            );
             eventName = event?.eventName;
           } catch (e) {
             DebugLogger.warning('Failed to look up event name: $e');
@@ -1197,7 +1336,12 @@ class MacroTargetsController extends _$MacroTargetsController {
         if (finalActivityId.isEmpty) {
           // Build brick title (e.g., "SWIM/RUN BRICK") or use event name
           final sportNames = segmentOrder.map((s) => s.toUpperCase()).join('/');
-          final brickTitle = eventName ?? '$sportNames BRICK';
+          final fallbackTitle = '$sportNames BRICK';
+          final brickTitle = _resolveNewActivityTitle(
+            fallbackTitle: fallbackTitle,
+            requestedTitle: activityTitle,
+            eventName: eventName,
+          );
 
           DebugLogger.info('🧱 DEBUG: Creating draft brick activity');
           DebugLogger.info(
@@ -1220,7 +1364,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           finalActivityId = createdActivity.id;
         } else {
           final existingActivity = await activitiesService.getActivityById(
-            deviceId,
+            activityOwnerId,
             finalActivityId,
           );
           if (existingActivity != null) {
@@ -1235,9 +1379,15 @@ class MacroTargetsController extends _$MacroTargetsController {
             final sportNames = segmentOrder
                 .map((s) => s.toUpperCase())
                 .join('/');
-            final brickTitle = '$sportNames BRICK';
+            final fallbackTitle = '$sportNames BRICK';
+            final brickTitle = _resolveExistingActivityTitle(
+              existingActivity: existingActivity,
+              fallbackTitle: fallbackTitle,
+              requestedTitle: activityTitle ?? eventName,
+            );
             await activitiesService.updateActivity(
               deviceId: deviceId,
+              currentUserId: deviceId,
               activity: existingActivity.copyWith(
                 title: brickTitle,
                 activityType: ActivityType.brick,
@@ -1259,15 +1409,18 @@ class MacroTargetsController extends _$MacroTargetsController {
           analytics: _analytics,
         );
 
-        // Load sport-specific overrides with 90-min gate
+        final brickSports = _extractBrickSports(segments);
+
+        // Load sport-specific overrides with 90-min gate.
+        // For bricks, this checks run/bike/swim overrides (not a brick-specific one).
         final overrides = await _loadOverridesForEdgeFunction(
           ActivityType.brick,
           totalDurationMinutes.toDouble(),
+          brickSports: brickSports,
         );
 
-        // Call the service
-        // Note: BrickMacroService does not yet accept overrides directly.
-        // Overrides are applied by the per-segment edge function calls.
+        // Call the service (passes brick-aware sport overrides so segment
+        // targets can be overridden by swim/bike/run values).
         var macroTargets = await brickMacroService.generateBrickMacros(
           activityId: finalActivityId,
           deviceId: deviceId,
@@ -1275,11 +1428,21 @@ class MacroTargetsController extends _$MacroTargetsController {
           segmentOrder: segmentOrder,
           isFasted: isFasted,
           preActivityMinutes: preActivityMinutes,
+          overrides: overrides,
         );
 
         // Mark as user-modified if overrides were applied
         if (overrides != null && overrides.hasAnyOverride) {
           macroTargets = macroTargets.copyWith(isUserModified: true);
+        }
+
+        final repository = ref.read(macroRepositoryProvider);
+        await repository.saveMacroTargets(macroTargets);
+        if (finalActivityId.isNotEmpty) {
+          await repository.saveMacroTargetsForActivity(
+            finalActivityId,
+            macroTargets,
+          );
         }
 
         return currentState.copyWith(
@@ -1330,11 +1493,13 @@ class MacroTargetsController extends _$MacroTargetsController {
     required double newValue,
   }) async {
     final repository = ref.read(macroRepositoryProvider);
-    final cachedTargets = await repository.getCachedMacroTargets();
-
-    if (cachedTargets == null) return;
     final currentStateSnapshot = state.value;
     final activityId = currentStateSnapshot?.activityId;
+    final cachedTargets = activityId != null && activityId.isNotEmpty
+        ? await repository.getCachedMacroTargetsForActivity(activityId)
+        : await repository.getCachedMacroTargets();
+
+    if (cachedTargets == null) return;
 
     // Track macro adjustment using documented macros_changed event
     final oldValue = _getFieldCurrentValue(cachedTargets, field);
@@ -1357,6 +1522,12 @@ class MacroTargetsController extends _$MacroTargetsController {
         field,
         newValue,
       );
+      if (activityId != null && activityId.isNotEmpty) {
+        await repository.saveMacroTargetsForActivity(
+          activityId,
+          updatedTargets,
+        );
+      }
 
       // Track successful update
       await _analytics.track(
@@ -1394,7 +1565,10 @@ class MacroTargetsController extends _$MacroTargetsController {
   /// Reset all values to the original recommended values
   Future<void> resetToRecommended() async {
     final repository = ref.read(macroRepositoryProvider);
-    final cachedTargets = await repository.getCachedMacroTargets();
+    final activityId = state.value?.activityId;
+    final cachedTargets = activityId != null && activityId.isNotEmpty
+        ? await repository.getCachedMacroTargetsForActivity(activityId)
+        : await repository.getCachedMacroTargets();
 
     if (cachedTargets == null) return;
 
@@ -1410,7 +1584,9 @@ class MacroTargetsController extends _$MacroTargetsController {
 
     try {
       // Get the original macro targets that were stored when first generated
-      final originalTargets = await repository.getOriginalMacroTargets();
+      final originalTargets = activityId != null && activityId.isNotEmpty
+          ? await repository.getOriginalMacroTargetsForActivity(activityId)
+          : await repository.getOriginalMacroTargets();
 
       if (originalTargets != null) {
         // Use the original targets with updated ID and timestamp to replace current
@@ -1423,6 +1599,12 @@ class MacroTargetsController extends _$MacroTargetsController {
 
         // Save the restored targets back to cache
         await repository.saveMacroTargets(restoredTargets);
+        if (activityId != null && activityId.isNotEmpty) {
+          await repository.saveMacroTargetsForActivity(
+            activityId,
+            restoredTargets,
+          );
+        }
 
         // Track successful reset
         await _analytics.track('macro_values_reset_successfully');
@@ -1442,6 +1624,12 @@ class MacroTargetsController extends _$MacroTargetsController {
         );
 
         await repository.saveMacroTargets(fallbackTargets);
+        if (activityId != null && activityId.isNotEmpty) {
+          await repository.saveMacroTargetsForActivity(
+            activityId,
+            fallbackTargets,
+          );
+        }
 
         final currentState = state.value;
         if (currentState != null) {
@@ -1564,22 +1752,43 @@ class MacroTargetsController extends _$MacroTargetsController {
   /// Create nutrition plan with adjusted values
   /// Returns the activityId of the created/updated activity
   Future<String?> createNutritionPlan() async {
+    final appLogger = ref.read(appExternalDepsProvider).logger;
     final repository = ref.read(macroRepositoryProvider);
-    final macroTargets = await repository.getCachedMacroTargets();
+    final currentState = state.value;
+    MacroTargets? macroTargets;
+    final activityId = currentState?.activityId;
+    if (activityId != null && activityId.isNotEmpty) {
+      macroTargets = await repository.getCachedMacroTargetsForActivity(
+        activityId,
+      );
+    }
+    macroTargets ??= await repository.getCachedMacroTargets();
+    macroTargets ??= currentState?.macroTargets;
 
     if (macroTargets == null) {
-      DebugLogger.error('❌ [CREATE-PLAN] No cached macro targets found in SharedPreferences!');
+      DebugLogger.error(
+        '❌ [CREATE-PLAN] No cached macro targets found in SharedPreferences!',
+      );
       return null;
     }
+    final resolvedMacroTargets = macroTargets;
 
-    final currentState = state.value;
     if (currentState == null) return null;
+    appLogger.warning(
+      'Create nutrition plan started',
+      context: 'MACRO_TARGETS_CONTROLLER',
+      data: {
+        'activityId': currentState.activityId,
+        'eventId': currentState.eventId,
+        'forUserId': currentState.forUserId,
+      },
+    );
 
     // Log what we're reading from cache vs state for debugging same-plan issues
     final stateMacros = currentState.macroTargets;
     DebugLogger.info(
       '📋 [CREATE-PLAN] Cache vs State comparison:\n'
-      '  Cache: pre_carbs=${macroTargets.preRun.carbsG}, during_carbs=${macroTargets.duringRun.carbTotalG}, post_carbs=${macroTargets.postRun.carbsG}, distance=${macroTargets.metrics.distanceMi}, duration=${macroTargets.metrics.durationH}h\n'
+      '  Cache: pre_carbs=${resolvedMacroTargets.preRun.carbsG}, during_carbs=${resolvedMacroTargets.duringRun.carbTotalG}, post_carbs=${resolvedMacroTargets.postRun.carbsG}, distance=${resolvedMacroTargets.metrics.distanceMi}, duration=${resolvedMacroTargets.metrics.durationH}h\n'
       '  State: pre_carbs=${stateMacros?.preRun.carbsG}, during_carbs=${stateMacros?.duringRun.carbTotalG}, post_carbs=${stateMacros?.postRun.carbsG}, distance=${stateMacros?.metrics.distanceMi}, duration=${stateMacros?.metrics.durationH}h\n'
       '  ActivityId: state=${currentState.activityId}',
     );
@@ -1587,25 +1796,29 @@ class MacroTargetsController extends _$MacroTargetsController {
     // Set creating plan state
     state = AsyncData(currentState.copyWith(isCreatingPlan: true));
 
-    final modifiedFieldsCount = _countModifiedFields(macroTargets);
+    final modifiedFieldsCount = _countModifiedFields(resolvedMacroTargets);
 
     // Track plan creation start
     await _analytics.timeEvent('nutrition_plan_created_from_adjusted_macros');
     await _analytics.track(
       'nutrition_plan_creation_started_from_adjusted_macros',
       properties: {
-        'distance_miles': macroTargets.metrics.distanceMi,
-        'duration_hours': macroTargets.metrics.durationH,
+        'distance_miles': resolvedMacroTargets.metrics.distanceMi,
+        'duration_hours': resolvedMacroTargets.metrics.durationH,
         'modified_fields_count': modifiedFieldsCount,
       },
     );
 
-    state = await AsyncValue.guard(() async {
+    final createPlanResult = await AsyncValue.guard(() async {
       try {
         // Use the service method that handles fallback automatically
         final nutritionPlanService = ref.read(nutritionPlanServiceProvider);
         final currentStateValue = state.value;
         final userId = await ref.read(userIdProvider.future);
+        final activityOwnerUserId = _resolveActivityOwnerId(
+          currentUserId: userId,
+          forUserId: currentStateValue?.forUserId,
+        );
 
         // Gather V2 parameters: hoursBefore, weightKg, dietary preferences
         final userProfile = await _authService.getCurrentUser();
@@ -1619,7 +1832,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         if (currentStateValue?.activityId != null) {
           final activitiesService = ref.read(activitiesServiceProvider);
           draftActivity = await activitiesService.getActivityById(
-            userId,
+            activityOwnerUserId,
             currentStateValue!.activityId!,
           );
           if (draftActivity?.timeBeforeMinutes != null) {
@@ -1627,8 +1840,8 @@ class MacroTargetsController extends _$MacroTargetsController {
           }
         }
         final draftDurationMinutes = draftActivity?.durationMinutes;
-        final macroDurationMinutes = (macroTargets.metrics.durationH * 60)
-            .round();
+        final macroDurationMinutes =
+            (resolvedMacroTargets.metrics.durationH * 60).round();
         final resolvedDurationMinutes =
             (draftDurationMinutes != null && draftDurationMinutes > 0)
             ? draftDurationMinutes
@@ -1648,40 +1861,40 @@ class MacroTargetsController extends _$MacroTargetsController {
         // Get dietary preferences and food preferences
         final dietaryPreference = userProfile?.dietaryPreference?.dbValue;
         final allergies = userProfile?.allergies.map((a) => a.dbValue).toList();
-        final likedFoods = userId.isNotEmpty
-            ? await _authService.getLikedFoods(userId)
+        final likedFoods = activityOwnerUserId.isNotEmpty
+            ? await _authService.getLikedFoods(activityOwnerUserId)
             : <String>[];
-        final dislikedFoods = userId.isNotEmpty
-            ? await _authService.getDislikedFoods(userId)
+        final dislikedFoods = activityOwnerUserId.isNotEmpty
+            ? await _authService.getDislikedFoods(activityOwnerUserId)
             : <String>[];
 
         // Try V2 template-based generation, falls back to V1 internally
         final nutritionPlan = await nutritionPlanService
             .generatePlanFromMacrosV2(
-              macroTargets: macroTargets,
+              macroTargets: resolvedMacroTargets,
               hoursBefore: hoursBefore,
               weightKg: weightKg,
               activityId: currentStateValue?.activityId,
-              userId: userId,
+              userId: activityOwnerUserId,
               dietaryPreference: dietaryPreference,
               allergies: allergies,
               likedFoods: likedFoods,
               dislikedFoods: dislikedFoods,
               durationMinutes: resolvedDurationMinutes,
               gutTrainingLevel: userProfile?.gutTraining.name,
-              brickMetadata: draftActivity?.brickMetadata,
             );
 
         // Track successful plan creation (the service handles whether it's LLM or algorithmic)
         await _analytics.track(
           'nutrition_plan_created_from_adjusted_macros',
           properties: {
-            'distance_miles': macroTargets.metrics.distanceMi,
-            'duration_hours': macroTargets.metrics.durationH,
-            'total_calories': macroTargets.metrics.caloriesNetKcal.round(),
-            'pre_run_carbs_g': macroTargets.preRun.carbsG,
-            'during_run_carbs_g': macroTargets.duringRun.carbTotalG,
-            'post_run_carbs_g': macroTargets.postRun.carbsG,
+            'distance_miles': resolvedMacroTargets.metrics.distanceMi,
+            'duration_hours': resolvedMacroTargets.metrics.durationH,
+            'total_calories': resolvedMacroTargets.metrics.caloriesNetKcal
+                .round(),
+            'pre_run_carbs_g': resolvedMacroTargets.preRun.carbsG,
+            'during_run_carbs_g': resolvedMacroTargets.duringRun.carbTotalG,
+            'post_run_carbs_g': resolvedMacroTargets.postRun.carbsG,
             'modified_fields_count': modifiedFieldsCount,
             'plan_type': 'v2_template', // Template-based with LP fallback
           },
@@ -1702,7 +1915,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           final userId = await ref.read(userIdProvider.future);
           final activitiesService = ref.read(activitiesServiceProvider);
           final existingActivity = await activitiesService.getActivityById(
-            userId,
+            activityOwnerUserId,
             finalActivityId,
           );
 
@@ -1714,23 +1927,45 @@ class MacroTargetsController extends _$MacroTargetsController {
           }
 
           // Update the DRAFT activity to PLANNED status with nutrition plan
+          final nutritionPlanData = <String, dynamic>{
+            ...nutritionPlan.toJson(),
+            'detailedMacroTargets': resolvedMacroTargets.toJson(),
+          };
           final updatedActivity = existingActivity.copyWith(
             status:
                 domain.ActivityStatus.planned, // Promote from draft to planned
-            nutritionPlanData: nutritionPlan.toJson(),
+            nutritionPlanData: nutritionPlanData,
             durationMinutes: resolvedDurationMinutes,
             paceTargetMinutesPerMile:
-                macroTargets.metrics.paceMinPerMile ??
+                resolvedMacroTargets.metrics.paceMinPerMile ??
                 existingActivity.paceTargetMinutesPerMile,
             notes: existingActivity.notes,
             updatedAt: DateTime.now(),
-            needsNutritionRefresh: false, // Clear stale flag - plan is now current
+            needsNutritionRefresh:
+                false, // Clear stale flag - plan is now current
           );
 
           await activitiesService.updateActivity(
             deviceId: userId,
+            currentUserId: userId,
             activity: updatedActivity,
+            consistency:
+                currentStateValue?.forUserId != null &&
+                    currentStateValue!.forUserId!.isNotEmpty
+                ? WriteConsistency.remoteAckRequired
+                : WriteConsistency.offlineFirst,
           );
+
+          final isCoachFlow =
+              currentStateValue?.forUserId != null &&
+              currentStateValue!.forUserId!.isNotEmpty;
+          if (isCoachFlow) {
+            await _verifyCoachRemotePlanVisibility(
+              activityId: finalActivityId,
+              expectedOwnerUserId: activityOwnerUserId,
+              appLogger: appLogger,
+            );
+          }
 
           // Fire-and-forget write-back to TrainingPeaks (never blocks plan creation)
           unawaited(
@@ -1742,16 +1977,23 @@ class MacroTargetsController extends _$MacroTargetsController {
             // Get the events repository directly to avoid provider lifecycle issues
             final eventsRepository = ref.read(eventsRepositoryProvider);
             final event = await eventsRepository.getEventById(
-              userId,
+              activityOwnerUserId,
               currentStateValue!.eventId!,
             );
 
             if (event != null) {
-              await eventsRepository.updateEvent(
-                deviceId:
-                    event.userId, // Using userId as deviceId for event updates
-                event: event.copyWith(activityId: finalActivityId),
-              );
+              await ref
+                  .read(eventsServiceProvider)
+                  .updateEvent(
+                    deviceId: userId,
+                    currentUserId: userId,
+                    event: event.copyWith(activityId: finalActivityId),
+                    consistency:
+                        currentStateValue.forUserId != null &&
+                            currentStateValue.forUserId!.isNotEmpty
+                        ? WriteConsistency.remoteAckRequired
+                        : WriteConsistency.offlineFirst,
+                  );
             }
           }
         } catch (e) {
@@ -1767,6 +2009,15 @@ class MacroTargetsController extends _$MacroTargetsController {
         // Invalidate activities provider to refresh the list with the newly created activity
         ref.invalidate(activitiesControllerProvider);
 
+        // Invalidate coach activity detail provider so it re-fetches from Supabase
+        // with the new nutrition plan data instead of returning cached stale state.
+        if (currentStateValue?.forUserId != null &&
+            currentStateValue!.forUserId!.isNotEmpty) {
+          ref.invalidate(
+            coachActivityDetailControllerProvider(finalActivityId),
+          );
+        }
+
         // Return the updated state with the activity ID
         return currentState.copyWith(
           isCreatingPlan: false,
@@ -1781,7 +2032,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             'error_type': 'Plan Creation Error',
             'error_message': error.toString(),
             'screen_name': 'Adjust Macros',
-            'distance_miles': macroTargets.metrics.distanceMi,
+            'distance_miles': resolvedMacroTargets.metrics.distanceMi,
             'modified_fields_count': modifiedFieldsCount,
           },
         );
@@ -1790,8 +2041,101 @@ class MacroTargetsController extends _$MacroTargetsController {
       }
     });
 
-    // Return the activityId from the updated state
-    return state.value?.activityId;
+    state = createPlanResult;
+    if (createPlanResult.hasError) {
+      appLogger.error(
+        'Create nutrition plan failed',
+        context: 'MACRO_TARGETS_CONTROLLER',
+        data: {
+          'activityId': currentState.activityId,
+          'eventId': currentState.eventId,
+          'forUserId': currentState.forUserId,
+        },
+        error: createPlanResult.error,
+        stackTrace: createPlanResult.stackTrace,
+      );
+      DebugLogger.error(
+        '❌ [CREATE-PLAN] createNutritionPlan failed - blocking navigation. error=${createPlanResult.error}',
+      );
+      return null;
+    }
+
+    // Return the activityId from the successful updated state
+    return createPlanResult.value?.activityId;
+  }
+
+  Future<void> _verifyCoachRemotePlanVisibility({
+    required String activityId,
+    required String expectedOwnerUserId,
+    required AppLogger appLogger,
+  }) async {
+    final repository = ref.read(activitiesRepositoryProvider);
+    final delays = <Duration>[
+      Duration.zero,
+      const Duration(milliseconds: 250),
+      const Duration(milliseconds: 500),
+      const Duration(seconds: 1),
+      const Duration(seconds: 2),
+    ];
+
+    Object? lastError;
+
+    for (var attempt = 0; attempt < delays.length; attempt++) {
+      final delay = delays[attempt];
+      if (delay > Duration.zero) {
+        await Future.delayed(delay);
+      }
+
+      try {
+        final remoteActivity = await repository.getRemoteActivityById(
+          activityId,
+        );
+        final hasPlan = remoteActivity?.nutritionPlanData != null;
+        final ownerMatches = remoteActivity?.userId == expectedOwnerUserId;
+
+        if (remoteActivity != null && ownerMatches && hasPlan) {
+          appLogger.warning(
+            'Coach remote activity plan visibility confirmed',
+            context: 'MACRO_TARGETS_CONTROLLER',
+            data: {
+              'activityId': activityId,
+              'ownerUserId': remoteActivity.userId,
+              'attempt': attempt + 1,
+              'hasNutritionPlanData': true,
+            },
+          );
+          return;
+        }
+
+        appLogger.warning(
+          'Coach remote activity plan visibility pending',
+          context: 'MACRO_TARGETS_CONTROLLER',
+          data: {
+            'activityId': activityId,
+            'attempt': attempt + 1,
+            'hasRemoteActivity': remoteActivity != null,
+            'ownerMatches': ownerMatches,
+            'hasNutritionPlanData': hasPlan,
+            'expectedOwnerUserId': expectedOwnerUserId,
+            'actualOwnerUserId': remoteActivity?.userId,
+          },
+        );
+      } catch (e) {
+        lastError = e;
+        appLogger.warning(
+          'Coach remote activity visibility check failed',
+          context: 'MACRO_TARGETS_CONTROLLER',
+          error: e,
+          data: {'activityId': activityId, 'attempt': attempt + 1},
+        );
+      }
+    }
+
+    throw Exception(
+      'Nutrition plan was generated but is not visible in coach mode yet. '
+      'Please retry in a few seconds.'
+      '${lastError != null ? ' Last error: $lastError' : ''}',
+    );
   }
 
   /// Schedule cleanup of draft activity if provider is being disposed
@@ -1824,8 +2168,9 @@ class MacroTargetsController extends _$MacroTargetsController {
   /// Returns null if the user has no overrides.
   Future<NutritionTargetOverrides?> _loadOverridesForEdgeFunction(
     ActivityType sport,
-    double durationMin,
-  ) async {
+    double durationMin, {
+    Set<ActivityType>? brickSports,
+  }) async {
     final user = await _authService.getCurrentUser();
     final overrides = user?.nutritionTargetOverrides;
     if (overrides == null || !overrides.hasAnyOverride) return null;
@@ -1840,6 +2185,44 @@ class MacroTargetsController extends _$MacroTargetsController {
       return prePostOnly.hasAnyOverride ? prePostOnly : null;
     }
 
+    if (sport == ActivityType.brick) {
+      final sports = brickSports == null || brickSports.isEmpty
+          ? const {
+              ActivityType.running,
+              ActivityType.cycling,
+              ActivityType.swimming,
+            }
+          : brickSports;
+
+      final duringRun = sports.contains(ActivityType.running)
+          ? (overrides.duringRun ?? overrides.during)
+          : null;
+      final duringCycling = sports.contains(ActivityType.cycling)
+          ? (overrides.duringCycling ?? overrides.during)
+          : null;
+      final duringSwimming = sports.contains(ActivityType.swimming)
+          ? (overrides.duringSwimming ?? overrides.during)
+          : null;
+
+      // Legacy flat payload fallback: pick one during override when needed.
+      final legacyDuring =
+          duringCycling ??
+          duringRun ??
+          duringSwimming ??
+          overrides.duringBrick ??
+          overrides.during;
+
+      final brickOverrides = NutritionTargetOverrides(
+        pre: overrides.pre,
+        during: legacyDuring,
+        post: overrides.post,
+        duringRun: duringRun,
+        duringCycling: duringCycling,
+        duringSwimming: duringSwimming,
+      );
+      return brickOverrides.hasAnyOverride ? brickOverrides : null;
+    }
+
     // Build overrides with the correct sport's during values in the `during`
     // field, since the edge function reads from the flat `during_*` keys.
     final sportDuring = overrides.getDuring(sport);
@@ -1848,6 +2231,24 @@ class MacroTargetsController extends _$MacroTargetsController {
       during: sportDuring,
       post: overrides.post,
     );
+  }
+
+  Set<ActivityType> _extractBrickSports(List<BrickSegment> segments) {
+    final sports = <ActivityType>{};
+    for (final segment in segments) {
+      switch (segment.sport.toLowerCase()) {
+        case 'running':
+          sports.add(ActivityType.running);
+          break;
+        case 'cycling':
+          sports.add(ActivityType.cycling);
+          break;
+        case 'swimming':
+          sports.add(ActivityType.swimming);
+          break;
+      }
+    }
+    return sports;
   }
 
   /// Helper method to get current value of a field

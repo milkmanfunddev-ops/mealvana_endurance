@@ -11,6 +11,7 @@ import '../../application/product_detail_service.dart';
 import '../../application/food_mapping_service.dart';
 import '../../../../shared/database/database_provider.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Full-screen modal for adding foods via search or barcode scan
@@ -380,15 +381,17 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: ContentArea(
+        maxWidth: 600,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               // Search section with search button
               Row(
                 children: [
@@ -550,7 +553,8 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildSearchResultItem(FoodSearchResult result) {

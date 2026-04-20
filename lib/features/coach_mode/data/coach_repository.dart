@@ -2130,13 +2130,13 @@ class CoachRepository with SyncableRepository {
 
   /// Get the athlete's connected coach info.
   /// Returns null if the athlete has no active coach connection.
-  Future<({String coachUserId, String? coachName})?> getMyCoach(
+  Future<({String relationshipId, String coachUserId, String? coachName})?> getMyCoach(
     String athleteUserId,
   ) async {
     try {
       final response = await _supabase
           .from('coach_athlete_relationships')
-          .select('coach_user_id')
+          .select('id, coach_user_id')
           .eq('athlete_user_id', athleteUserId)
           .eq('status', 'active')
           .limit(1)
@@ -2144,32 +2144,48 @@ class CoachRepository with SyncableRepository {
 
       if (response == null) return null;
 
+      final relationshipId = response['id'] as String;
       final coachUserId = response['coach_user_id'] as String;
 
-      // Look up coach name
+      // Look up coach name — check coaches table first, then users table
       String? coachName;
       try {
-        final coachRow = await _supabase
-            .from('users')
-            .select('first_name, last_name, sender_name')
-            .eq('id', coachUserId)
+        // Priority 1: coaches table (where coaches register with their name)
+        final coachesRow = await _supabase
+            .from('coaches')
+            .select('first_name, last_name')
+            .eq('user_id', coachUserId)
             .maybeSingle();
 
-        if (coachRow != null) {
-          final first = coachRow['first_name'] as String?;
-          final last = coachRow['last_name'] as String?;
-          final sender = coachRow['sender_name'] as String?;
-          coachName = [
-            first,
-            last,
-          ].where((s) => s?.isNotEmpty ?? false).join(' ');
-          if (coachName.isEmpty) coachName = sender;
+        if (coachesRow != null) {
+          final first = (coachesRow['first_name'] as String?)?.trim() ?? '';
+          final last = (coachesRow['last_name'] as String?)?.trim() ?? '';
+          if (first.isNotEmpty || last.isNotEmpty) {
+            coachName = [first, last].where((s) => s.isNotEmpty).join(' ');
+          }
+        }
+
+        // Priority 2: users table
+        if (coachName == null || coachName.isEmpty) {
+          final userRow = await _supabase
+              .from('users')
+              .select('first_name, last_name, sender_name')
+              .eq('id', coachUserId)
+              .maybeSingle();
+
+          if (userRow != null) {
+            final first = (userRow['first_name'] as String?)?.trim() ?? '';
+            final last = (userRow['last_name'] as String?)?.trim() ?? '';
+            final sender = userRow['sender_name'] as String?;
+            final fullName = [first, last].where((s) => s.isNotEmpty).join(' ');
+            coachName = fullName.isNotEmpty ? fullName : sender;
+          }
         }
       } catch (_) {
         // Name lookup is best-effort
       }
 
-      return (coachUserId: coachUserId, coachName: coachName);
+      return (relationshipId: relationshipId, coachUserId: coachUserId, coachName: coachName);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to get athlete coach',
@@ -2220,6 +2236,233 @@ class CoachRepository with SyncableRepository {
         stackTrace: stackTrace,
       );
       return false;
+    }
+  }
+
+  // ─── Coach Pairing Codes (Reversed Flow) ──────────────────────────
+
+  /// Generate a 6-character pairing code for a coach.
+  /// Invalidates any existing active code for this coach first.
+  /// Returns the generated code string.
+  Future<String> generateCoachPairingCode(String coachUserId) async {
+    try {
+      final now = DateTime.now().toUtc();
+      final expiresAt = now.add(const Duration(hours: 24));
+      final code = _generateRandomCode(6);
+      final id = const Uuid().v4();
+
+      // Expire any existing unused codes for this coach
+      await _supabase
+          .from('coach_pairing_codes')
+          .update({'expires_at': now.toIso8601String()})
+          .eq('coach_user_id', coachUserId)
+          .isFilter('used_at', null);
+
+      // Insert new code
+      await _supabase.from('coach_pairing_codes').insert({
+        'id': id,
+        'coach_user_id': coachUserId,
+        'code': code,
+        'created_at': now.toIso8601String(),
+        'expires_at': expiresAt.toIso8601String(),
+      });
+
+      // Also save locally
+      await _database
+          .into(_database.coachPairingCodesTable)
+          .insertOnConflictUpdate(
+            CoachPairingCodesTableCompanion.insert(
+              id: id,
+              coachUserId: coachUserId,
+              code: code,
+              expiresAt: expiresAt,
+              createdAt: Value(now),
+            ),
+          );
+
+      _logger.info(
+        'Generated coach pairing code',
+        context: 'COACH_REPOSITORY',
+        data: {
+          'coachUserId': coachUserId,
+          'code': code,
+          'expiresAt': expiresAt.toIso8601String(),
+        },
+      );
+
+      return code;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to generate coach pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  /// Get the active (unexpired, unused) coach pairing code, if any.
+  Future<({String code, DateTime expiresAt})?> getActiveCoachPairingCode(
+    String coachUserId,
+  ) async {
+    try {
+      final now = DateTime.now().toUtc();
+      final response = await _supabase
+          .from('coach_pairing_codes')
+          .select('code, expires_at')
+          .eq('coach_user_id', coachUserId)
+          .isFilter('used_at', null)
+          .gte('expires_at', now.toIso8601String())
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      return (
+        code: response['code'] as String,
+        expiresAt: DateTime.parse(response['expires_at'] as String),
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to get active coach pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Athlete connects to a coach using the coach's pairing code.
+  /// Validates the code, marks it as used, and creates an active relationship.
+  Future<PairingCodeConnectResult> connectViaCoachCode({
+    required String code,
+    required String athleteUserId,
+  }) async {
+    try {
+      final normalizedCode = code.trim().toUpperCase();
+
+      if (!_isPairingCodeFormatValid(normalizedCode)) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.invalidCodeFormat,
+        );
+      }
+
+      // Look up the code
+      final now = DateTime.now().toUtc();
+      final response = await _supabase
+          .from('coach_pairing_codes')
+          .select('coach_user_id, expires_at, used_at')
+          .eq('code', normalizedCode)
+          .maybeSingle();
+
+      if (response == null) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.codeNotFound,
+        );
+      }
+
+      if (response['used_at'] != null) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.codeAlreadyUsed,
+        );
+      }
+
+      final expiresAt = DateTime.parse(response['expires_at'] as String);
+      if (expiresAt.isBefore(now)) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.codeExpired,
+        );
+      }
+
+      final coachUserId = response['coach_user_id'] as String;
+
+      // Prevent self-connection
+      if (coachUserId == athleteUserId) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.selfConnectionNotAllowed,
+        );
+      }
+
+      // Check for existing relationship
+      final existingRelationship = await _supabase
+          .from('coach_athlete_relationships')
+          .select('id')
+          .eq('coach_user_id', coachUserId)
+          .eq('athlete_user_id', athleteUserId)
+          .maybeSingle();
+      if (existingRelationship != null) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.relationshipAlreadyExists,
+        );
+      }
+
+      // Mark code as used
+      final updatedRows = await _supabase
+          .from('coach_pairing_codes')
+          .update({
+            'used_by_athlete_id': athleteUserId,
+            'used_at': now.toIso8601String(),
+          })
+          .eq('code', normalizedCode)
+          .isFilter('used_at', null)
+          .gte('expires_at', now.toIso8601String())
+          .select('id');
+
+      if ((updatedRows as List).isEmpty) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.codeExpired,
+        );
+      }
+
+      // Create active relationship (coach-initiated = immediately active)
+      final relationship = await createRelationship(
+        coachUserId: coachUserId,
+        athleteUserId: athleteUserId,
+        requestedBy: 'coach',
+      );
+
+      _logger.info(
+        'Athlete connected via coach pairing code',
+        context: 'COACH_REPOSITORY',
+        data: {
+          'code': normalizedCode,
+          'coachUserId': coachUserId,
+          'athleteUserId': athleteUserId,
+        },
+      );
+
+      return PairingCodeConnectResult.success(relationship);
+    } on PostgrestException catch (e, stackTrace) {
+      final message = e.message.toLowerCase();
+      final isDuplicate = e.code == '23505' || message.contains('duplicate');
+      if (isDuplicate) {
+        return PairingCodeConnectResult.failure(
+          PairingCodeConnectFailureReason.relationshipAlreadyExists,
+        );
+      }
+
+      _logger.error(
+        'Postgrest error while connecting via coach pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return PairingCodeConnectResult.failure(
+        PairingCodeConnectFailureReason.unknown,
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to connect via coach pairing code',
+        context: 'COACH_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return PairingCodeConnectResult.failure(
+        PairingCodeConnectFailureReason.unknown,
+      );
     }
   }
 

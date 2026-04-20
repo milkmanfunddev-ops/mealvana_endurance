@@ -186,6 +186,8 @@ class ActivityCard extends ConsumerWidget {
   }
 
   Widget _buildActivityDetails(BuildContext context, bool isDark) {
+    final isFromGarmin = activity.syncedFromProvider == 'garmin';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -215,6 +217,35 @@ class ActivityCard extends ConsumerWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+        // Garmin brand attribution (required by Garmin API Brand Guidelines)
+        // Tag logo + wordmark identifies data origin for primary displays.
+        if (isFromGarmin) ...[
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                isDark
+                    ? 'assets/images/integrations/garmin_tag_white.png'
+                    : 'assets/images/integrations/garmin_tag_black.png',
+                height: 10,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'GARMIN',
+                style: TextStyle(
+                  fontFamily: 'Apercu',
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: (isDark ? AppColors.cream : AppColors.blackberry)
+                      .withValues(alpha: 0.7),
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -289,6 +320,7 @@ class ActivityCard extends ConsumerWidget {
           'distance': activity.distanceMiles,
           'initialDurationMinutes': activity.durationMinutes,
           'goalPace': activity.paceTargetMinutesPerMile,
+          'initialTitle': activity.title,
           'activityType': activity.activityType.name,
           // Cycling-specific parameters
           'cyclingSpeedMph': activity.cyclingSpeedMph,

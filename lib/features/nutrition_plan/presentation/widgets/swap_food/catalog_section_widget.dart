@@ -44,7 +44,7 @@ class CatalogSectionWidget extends StatelessWidget {
           // Catalog result cards (no header)
           ...catalogResults.map((result) => Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: _CatalogCard(
+            child: CatalogCard(
               result: result,
               onTap: () => onCatalogResultTap(result),
             ),
@@ -56,11 +56,12 @@ class CatalogSectionWidget extends StatelessWidget {
 }
 
 /// Individual catalog result card
-class _CatalogCard extends StatelessWidget {
+class CatalogCard extends StatelessWidget {
   final CatalogSearchResult result;
   final VoidCallback onTap;
 
-  const _CatalogCard({
+  const CatalogCard({
+    super.key,
     required this.result,
     required this.onTap,
   });

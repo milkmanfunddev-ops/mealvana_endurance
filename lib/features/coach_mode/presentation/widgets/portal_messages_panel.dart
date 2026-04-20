@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/widgets/content_area.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
+import '../../domain/coach_message.dart';
 import '../providers/coach_dashboard_controller.dart';
 import '../providers/coach_portal_controller.dart';
 
@@ -14,19 +17,21 @@ class PortalMessagesPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardAsync = ref.watch(coachDashboardControllerProvider);
 
-    return Container(
-      color: AppColors.blackberryDark,
-      child: dashboardAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.electrolyte),
-        ),
-        error: (error, _) => Center(
-          child: Text(
-            'Failed to load messages',
-            style: const TextStyle(color: AppColors.textDarkSecondary),
+    return ContentArea(
+      child: Container(
+        color: AppColors.blackberryDark,
+        child: dashboardAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.electrolyte),
           ),
+          error: (error, _) => const Center(
+            child: Text(
+              'Failed to load messages',
+              style: TextStyle(color: AppColors.textDarkSecondary),
+            ),
+          ),
+          data: (state) => _buildMessagesList(context, ref, state),
         ),
-        data: (state) => _buildMessagesList(context, ref, state),
       ),
     );
   }
@@ -46,7 +51,7 @@ class PortalMessagesPanel extends ConsumerWidget {
               Icon(
                 Icons.chat_outlined,
                 size: 64,
-                color: AppColors.inactive.withOpacity(0.5),
+                color: AppColors.inactive.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -97,7 +102,7 @@ class PortalMessagesPanel extends ConsumerWidget {
                 onTap: () {
                   ref
                       .read(coachPortalControllerProvider.notifier)
-                      .selectAthlete(athlete.id);
+                      .selectAthlete(athlete.id, initialTabIndex: 5);
                 },
               );
             },
@@ -108,7 +113,7 @@ class PortalMessagesPanel extends ConsumerWidget {
   }
 }
 
-class _ConversationTile extends StatelessWidget {
+class _ConversationTile extends ConsumerWidget {
   final CoachAthleteRelationship relationship;
   final VoidCallback onTap;
 
@@ -118,70 +123,114 @@ class _ConversationTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final name = relationship.athleteDisplayName ??
         'Athlete ${relationship.athleteUserId.substring(0, 8)}';
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: AppColors.blackberry,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          hoverColor: AppColors.blackberryLight,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: AppColors.electrolyte,
-                  child: Text(
-                    _getInitials(name),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.blackberryDark,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
+    return FutureBuilder<List<CoachMessage>>(
+      future: ref.read(coachServiceProvider).getConversation(
+            coachUserId: relationship.coachUserId,
+            athleteUserId: relationship.athleteUserId,
+            limit: 1,
+          ),
+      builder: (context, snapshot) {
+        final lastMessage = snapshot.data?.firstOrNull;
+        final preview = lastMessage?.messageText ?? 'No messages yet';
+        final timestamp = lastMessage != null
+            ? _formatTimestamp(lastMessage.createdAt)
+            : null;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Material(
+            color: AppColors.blackberry,
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(8),
+              hoverColor: AppColors.blackberryLight,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: AppColors.electrolyte,
+                      child: Text(
+                        _getInitials(name),
                         style: const TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.cream,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.blackberryDark,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Tap to open conversation',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textDarkSecondary,
-                        ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.cream,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (timestamp != null)
+                                Text(
+                                  timestamp,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textDarkSecondary,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            preview,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textDarkSecondary,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.chat_bubble_outline,
+                      size: 18,
+                      color: AppColors.textDarkSecondary,
+                    ),
+                  ],
                 ),
-                const Icon(
-                  Icons.chat_bubble_outline,
-                  size: 18,
-                  color: AppColors.textDarkSecondary,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
+  }
+
+  String _formatTimestamp(DateTime dateTime) {
+    final now = DateTime.now();
+    final diff = now.difference(dateTime);
+
+    if (diff.inMinutes < 1) return 'now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m';
+    if (diff.inDays < 1) return '${diff.inHours}h';
+    if (diff.inDays < 7) return '${diff.inDays}d';
+    return '${dateTime.month}/${dateTime.day}';
   }
 
   String _getInitials(String name) {

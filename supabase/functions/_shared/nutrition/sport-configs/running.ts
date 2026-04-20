@@ -42,6 +42,6 @@ export const runningConfig: SportConfig = {
   optimizationWeights: {
     before: { carbs: 1.0, protein: 0.6, sodium: 0.2 },
     during: { carbs: 1.0, sodium: 0.8 },
-    after: { carbs: 0.9, protein: 0.7, sodium: 0.3 },
+    after: { carbs: 0.9, protein: 1.0, sodium: 0.3 },
   },
 };

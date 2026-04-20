@@ -7,6 +7,7 @@ import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../utils/sync_type_converters.dart';
 import '../../logging_service.dart';
+import '../../notification_service.dart';
 
 part 'activity_sync_handler.g.dart';
 
@@ -28,9 +29,15 @@ class ActivitySyncHandler {
 
   final AppDatabase _database;
   final AppLogger _logger;
+  static const Duration _garminNotificationFreshnessWindow = Duration(
+    minutes: 30,
+  );
 
   /// Upsert an activity from remote data.
-  Future<void> upsertActivity(Map<String, dynamic> data) async {
+  Future<void> upsertActivity(
+    Map<String, dynamic> data, {
+    bool enableNotifications = true,
+  }) async {
     try {
       final activityId = SyncTypeConverters.toRequiredStringId(
         data['id'],
@@ -46,10 +53,88 @@ class ActivitySyncHandler {
       )..where((tbl) => tbl.id.equals(activityId))).getSingleOrNull();
 
       final supabaseUpdatedAt = DateTime.parse(data['updated_at'] as String);
+      final incomingStatus = (data['status'] as String? ?? 'planned').trim();
+      final incomingProvider = (data['synced_from_provider'] as String?)
+          ?.toLowerCase()
+          .trim();
+      final incomingGarminSummaryId = (data['garmin_summary_id'] as String?)
+          ?.trim();
+      final incomingCompletedAt = data['completed_at'] != null
+          ? DateTime.parse(data['completed_at'] as String)
+          : null;
 
       // CRITICAL: Preserve local data if it has pending changes (needsUpload = true)
-      // Phone data is the source of truth - never overwrite local changes
+      // Phone data is the source of truth - never overwrite local changes.
+      // Exception: a remote Garmin completion should still merge onto the local
+      // record so completed workouts show up even when a nutrition plan edit
+      // is still pending upload.
       if (existingActivity != null && (existingActivity.needsUpload ?? false)) {
+        if (_shouldMergeGarminCompletionIntoDirtyLocal(
+          existingActivity: existingActivity,
+          incomingProvider: incomingProvider,
+          incomingGarminSummaryId: incomingGarminSummaryId,
+          incomingStatus: incomingStatus,
+        )) {
+          await (_database.update(
+            _database.activitiesTable,
+          )..where((tbl) => tbl.id.equals(activityId))).write(
+            ActivitiesTableCompanion(
+              status: Value(incomingStatus),
+              completedAt: Value(
+                incomingCompletedAt ??
+                    existingActivity.completedAt ??
+                    supabaseUpdatedAt,
+              ),
+              distanceMiles: Value(
+                (data['distance_miles'] as num?)?.toDouble() ??
+                    existingActivity.distanceMiles,
+              ),
+              distanceMeters: Value(
+                (data['distance_meters'] as num?)?.toDouble() ??
+                    existingActivity.distanceMeters,
+              ),
+              durationMinutes: Value(
+                data['duration_minutes'] as int? ??
+                    existingActivity.durationMinutes,
+              ),
+              actualDistanceMiles: Value(
+                (data['actual_distance_miles'] as num?)?.toDouble() ??
+                    (data['distance_miles'] as num?)?.toDouble() ??
+                    existingActivity.actualDistanceMiles,
+              ),
+              actualDurationMinutes: Value(
+                data['actual_duration_minutes'] as int? ??
+                    data['duration_minutes'] as int? ??
+                    existingActivity.actualDurationMinutes,
+              ),
+              updatedAt: Value(supabaseUpdatedAt),
+            ),
+          );
+
+          if (enableNotifications &&
+              _shouldNotifyGarminCompletion(
+                existingActivity: existingActivity,
+                incomingProvider: incomingProvider,
+                incomingGarminSummaryId: incomingGarminSummaryId,
+                incomingStatus: incomingStatus,
+                supabaseUpdatedAt: supabaseUpdatedAt,
+              ) &&
+              !NotificationService.isRemotePushConfigured) {
+            final title = (data['title'] as String?)?.trim();
+            final scheduledAt = DateTime.parse(
+              data['scheduled_date_time'] as String,
+            );
+
+            await NotificationService.showActivityUploadedNotification(
+              activityId: activityId,
+              title: title == null || title.isEmpty
+                  ? 'Workout uploaded'
+                  : title,
+              activityDate: scheduledAt,
+              provider: 'Garmin',
+            );
+          }
+        }
         return; // Keep local version with pending changes
       }
 
@@ -66,6 +151,7 @@ class ActivitySyncHandler {
           status: Value(data['status'] as String? ?? 'planned'),
           distanceMiles: Value((data['distance_miles'] as num?)?.toDouble()),
           durationMinutes: Value(data['duration_minutes'] as int?),
+          distanceMeters: Value((data['distance_meters'] as num?)?.toDouble()),
           paceTargetMinutesPerMile: Value(
             (data['pace_target_minutes_per_mile'] as num?)?.toDouble(),
           ),
@@ -92,11 +178,7 @@ class ActivitySyncHandler {
           ),
           intensityTarget: Value(data['intensity_target'] as String?),
           timeBeforeMinutes: Value(data['time_before_minutes'] as int?),
-          completedAt: Value(
-            data['completed_at'] != null
-                ? DateTime.parse(data['completed_at'] as String)
-                : null,
-          ),
+          completedAt: Value(incomingCompletedAt),
           completionRating: Value(data['completion_rating'] as int?),
           completionNotes: Value(data['completion_notes'] as String?),
           actualDistanceMiles: Value(
@@ -106,9 +188,36 @@ class ActivitySyncHandler {
           nutritionPlanData: Value(
             _encodeJsonIfNeeded(data['nutrition_plan_data']),
           ),
+          fuelLogData: Value(_encodeJsonIfNeeded(data['fuel_log_data'])),
           brickMetadata: Value(_encodeJsonIfNeeded(data['brick_metadata'])),
           brickId: Value(data['brick_id'] as String?),
           notes: Value(data['notes'] as String?),
+          syncedFromProvider: Value(data['synced_from_provider'] as String?),
+          providerWorkoutId: Value(data['provider_workout_id'] as String?),
+          providerWorkoutUrl: Value(data['provider_workout_url'] as String?),
+          lastSyncedAt: Value(
+            data['last_synced_at'] != null
+                ? DateTime.parse(data['last_synced_at'] as String)
+                : null,
+          ),
+          needsNutritionRefresh: Value(
+            SyncTypeConverters.toBool(data['needs_nutrition_refresh']),
+          ),
+          providerDeletedAt: Value(
+            data['provider_deleted_at'] != null
+                ? DateTime.parse(data['provider_deleted_at'] as String)
+                : null,
+          ),
+          providerScheduledAt: Value(
+            data['provider_scheduled_at'] != null
+                ? DateTime.parse(data['provider_scheduled_at'] as String)
+                : null,
+          ),
+          scheduleChangedAt: Value(
+            data['schedule_changed_at'] != null
+                ? DateTime.parse(data['schedule_changed_at'] as String)
+                : null,
+          ),
           createdAt: DateTime.parse(data['created_at'] as String),
           updatedAt: supabaseUpdatedAt,
         );
@@ -116,6 +225,31 @@ class ActivitySyncHandler {
         await _database
             .into(_database.activitiesTable)
             .insert(companion, mode: InsertMode.insertOrReplace);
+
+        // Notify when Garmin push marks an activity as newly completed.
+        // We intentionally only notify for fresh server updates to avoid
+        // spamming users on historical backfills or first-time full syncs.
+        if (enableNotifications &&
+            _shouldNotifyGarminCompletion(
+              existingActivity: existingActivity,
+              incomingProvider: incomingProvider,
+              incomingGarminSummaryId: incomingGarminSummaryId,
+              incomingStatus: incomingStatus,
+              supabaseUpdatedAt: supabaseUpdatedAt,
+            ) &&
+            !NotificationService.isRemotePushConfigured) {
+          final title = (data['title'] as String?)?.trim();
+          final scheduledAt = DateTime.parse(
+            data['scheduled_date_time'] as String,
+          );
+
+          await NotificationService.showActivityUploadedNotification(
+            activityId: activityId,
+            title: title == null || title.isEmpty ? 'Workout uploaded' : title,
+            activityDate: scheduledAt,
+            provider: 'Garmin',
+          );
+        }
       }
     } catch (e, stackTrace) {
       _logger.error(
@@ -128,11 +262,68 @@ class ActivitySyncHandler {
     }
   }
 
+  bool _shouldNotifyGarminCompletion({
+    required Activity? existingActivity,
+    required String? incomingProvider,
+    required String? incomingGarminSummaryId,
+    required String incomingStatus,
+    required DateTime supabaseUpdatedAt,
+  }) {
+    final isGarminCompletion =
+        incomingStatus == 'completed' &&
+        ((incomingProvider == 'garmin') ||
+            (incomingGarminSummaryId != null &&
+                incomingGarminSummaryId.isNotEmpty));
+
+    if (!isGarminCompletion) {
+      return false;
+    }
+
+    final wasAlreadyGarminCompleted =
+        existingActivity != null &&
+        existingActivity.completedAt != null &&
+        existingActivity.status == 'completed';
+    if (wasAlreadyGarminCompleted) {
+      return false;
+    }
+
+    // Freshness gate to avoid noisy notifications from historical sync data.
+    final nowUtc = DateTime.now().toUtc();
+    final updatedAtUtc = supabaseUpdatedAt.toUtc();
+    final age = nowUtc.difference(updatedAtUtc);
+    if (age.isNegative) {
+      return age.abs() <= _garminNotificationFreshnessWindow;
+    }
+    return age <= _garminNotificationFreshnessWindow;
+  }
+
+  bool _shouldMergeGarminCompletionIntoDirtyLocal({
+    required Activity existingActivity,
+    required String? incomingProvider,
+    required String? incomingGarminSummaryId,
+    required String incomingStatus,
+  }) {
+    final isGarminCompletion =
+        incomingStatus == 'completed' &&
+        ((incomingProvider == 'garmin') ||
+            (incomingGarminSummaryId != null &&
+                incomingGarminSummaryId.isNotEmpty));
+
+    if (!isGarminCompletion) {
+      return false;
+    }
+
+    return existingActivity.status != 'completed';
+  }
+
   /// Sync multiple athlete activities (for coach view).
   Future<void> syncAthleteActivities(List<dynamic> activities) async {
     try {
       for (final activityData in activities) {
-        await upsertActivity(activityData as Map<String, dynamic>);
+        await upsertActivity(
+          activityData as Map<String, dynamic>,
+          enableNotifications: false,
+        );
       }
 
       _logger.info(
@@ -183,6 +374,7 @@ class ActivitySyncHandler {
       'completion_rating': activity.completionRating,
       'completion_notes': activity.completionNotes,
       'nutrition_plan_data': _decodeJsonIfNeeded(activity.nutritionPlanData),
+      'fuel_log_data': _decodeJsonIfNeeded(activity.fuelLogData),
       'synced_from_provider': activity.syncedFromProvider,
       'provider_workout_id': activity.providerWorkoutId,
       'provider_workout_url': activity.providerWorkoutUrl,

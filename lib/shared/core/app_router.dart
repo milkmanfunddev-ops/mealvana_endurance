@@ -26,6 +26,7 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/verify_reset_code_screen.dart';
 import '../../features/auth/presentation/screens/set_new_password_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/activity_detail_screen.dart';
+import '../../features/nutrition_plan/presentation/screens/fuel_log_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/adjust_macros_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/swap_food_screen.dart';
@@ -41,6 +42,7 @@ import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/personal_templates/presentation/screens/personal_templates_screen.dart';
 import '../../features/settings/presentation/screens/connected_apps_screen.dart';
 import '../../features/settings/presentation/screens/nutrition_targets_screen.dart';
+import '../../features/settings/presentation/screens/nutrition_profile_screen.dart';
 import '../../features/settings/presentation/screens/coach_connection_screen.dart';
 import '../core/screen_mode.dart';
 import '../../features/barcode_scanning/presentation/screens/add_food_screen.dart';
@@ -50,6 +52,7 @@ import '../../features/carb_loading/domain/meal_type.dart';
 import '../widgets/tabs_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/events/presentation/screens/event_form_screen.dart';
+import '../../features/race_checklist/presentation/screens/race_checklist_screen.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/education/presentation/screens/video_player_screen.dart';
 import '../../features/pro_version/presentation/screens/pro_version_screen.dart';
@@ -60,6 +63,7 @@ import '../../features/coach_mode/presentation/screens/athlete_feedback_screen.d
 import '../../features/coach_mode/presentation/screens/coach_registration_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_directory_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
+import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/coach_mode/application/coach_service.dart';
 
 /// Notifier that triggers GoRouter redirect re-evaluation on auth state changes.
@@ -255,6 +259,9 @@ class AppRouter {
               initialDistance: extra?['distance'] as double?,
               initialDurationMinutes: extra?['initialDurationMinutes'] as int?,
               initialPace: extra?['goalPace'] as double?,
+              initialTitle:
+                  extra?['initialTitle'] as String? ??
+                  extra?['eventName'] as String?,
               activityId: extra?['activityId'] as String?,
               eventId: extra?['eventId'] as String?,
               forUserId:
@@ -299,6 +306,9 @@ class AppRouter {
               initialDistance: extra?['distance'] as double?,
               initialDurationMinutes: extra?['initialDurationMinutes'] as int?,
               initialPace: extra?['goalPace'] as double?,
+              initialTitle:
+                  extra?['initialTitle'] as String? ??
+                  extra?['eventName'] as String?,
               activityId: extra?['activityId'] as String?,
               eventId: extra?['eventId'] as String?,
               forUserId:
@@ -339,23 +349,22 @@ class AppRouter {
             final tabParam = state.uri.queryParameters['tab'];
             int initialTab = 0;
 
-            // On web, coach tab shifts indices: 0=activities, 1=coach, 2=events, 3=learn, 4=settings
-            // On mobile: 0=activities, 1=events, 2=learn, 3=settings
+            // Tab indices:
+            // Mobile: 0=activities, 1=nutrition, 2=events, 3=learn
+            // Web:    0=activities, 1=nutrition, 2=coach, 3=events, 4=learn
             final hasCoachTab = kIsWeb;
 
             switch (tabParam) {
-              case 'coach':
-                initialTab = hasCoachTab ? 1 : 0;
+              case 'nutrition':
+                initialTab = 1;
                 break;
               case 'notes':
               case 'workout-notes':
-                initialTab = hasCoachTab ? 2 : 1;
+              case 'events':
+                initialTab = hasCoachTab ? 3 : 2;
                 break;
               case 'survey':
               case 'learn':
-                initialTab = hasCoachTab ? 3 : 2;
-                break;
-              case 'settings':
                 initialTab = hasCoachTab ? 4 : 3;
                 break;
               default:
@@ -363,6 +372,17 @@ class AppRouter {
             }
 
             return TabsScreen(initialTabIndex: initialTab);
+          },
+        ),
+
+        // Coach Portal — dedicated route for coach users (web only)
+        GoRoute(
+          path: '/coach-portal',
+          name: 'coach-portal',
+          builder: (context, state) {
+            return CoachPortalScreen(
+              onBackToApp: () => GoRouter.of(context).go('/main'),
+            );
           },
         ),
 
@@ -409,6 +429,25 @@ class AppRouter {
           },
         ),
 
+        // Fuel Log Screen - dedicated logging flow with hero transition
+        GoRoute(
+          path: '/fuel-log',
+          name: 'fuel-log',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            final activityId = extra?['activityId'] as String?;
+            if (activityId == null) {
+              return const Scaffold(
+                body: Center(child: Text('Missing activity ID')),
+              );
+            }
+            return FuelLogScreen(
+              activityId: activityId,
+              isNewActivity: extra?['isNewActivity'] as bool? ?? false,
+            );
+          },
+        ),
+
         // Adjust Macros Screen - Fine-tune macro targets before generating plan
         GoRoute(
           path: '/adjust-macros',
@@ -450,6 +489,16 @@ class AppRouter {
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             return EventFormScreen(forUserId: extra?['forUserId'] as String?);
+          },
+        ),
+
+        // Race Day Checklist - Gear checklist for an event
+        GoRoute(
+          path: '/events/:eventId/checklist',
+          name: 'race-checklist',
+          builder: (context, state) {
+            final eventId = state.pathParameters['eventId']!;
+            return RaceChecklistScreen(eventId: eventId);
           },
         ),
 
@@ -507,6 +556,13 @@ class AppRouter {
           path: '/settings/nutrition-targets',
           name: 'settings-nutrition-targets',
           builder: (context, state) => const NutritionTargetsScreen(),
+        ),
+
+        // Nutrition Profile Screen - Body composition, training phase, lifestyle
+        GoRoute(
+          path: '/settings/nutrition-profile',
+          name: 'settings-nutrition-profile',
+          builder: (context, state) => const NutritionProfileScreen(),
         ),
 
         // Personal Templates Screen - Manage saved nutrition plan templates
@@ -678,7 +734,7 @@ class AppRouter {
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             return CreateCustomCarbLoadingFoodScreen(
-              dayId: extra?['dayId'] as int,
+              dayId: extra?['dayId'] as String,
               mealType: extra?['mealType'] as MealType,
             );
           },
@@ -706,7 +762,8 @@ class AppRouter {
 
             return isApprovedCoach ? '/main?tab=coach' : '/settings';
           },
-          builder: (context, state) => const SizedBox(), // Never reached due to redirect
+          builder: (context, state) =>
+              const SizedBox(), // Never reached due to redirect
         ),
 
         // Athlete Detail - Redirect to portal (handled within portal now)

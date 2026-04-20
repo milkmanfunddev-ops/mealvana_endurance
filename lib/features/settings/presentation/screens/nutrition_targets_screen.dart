@@ -3,14 +3,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_target_overrides.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
+import '../../../../shared/widgets/content_area.dart';
 import '../providers/settings_controller.dart';
 import '../widgets/during_sport_override_section.dart';
+import '../widgets/nutrition_targets_help_bottom_sheet.dart';
 
 /// Screen for configuring default nutrition target overrides.
 /// Empty fields = use algorithm defaults (null).
 ///
-/// During-workout overrides are split by sport (Run, Bike, Swim, Brick).
+/// During-workout overrides are split by sport (Run, Bike, Swim).
 /// During overrides only apply to activities >= 90 minutes.
 class NutritionTargetsScreen extends ConsumerStatefulWidget {
   const NutritionTargetsScreen({super.key});
@@ -22,6 +25,17 @@ class NutritionTargetsScreen extends ConsumerStatefulWidget {
 
 class _NutritionTargetsScreenState
     extends ConsumerState<NutritionTargetsScreen> {
+  static const double _highCarbWarningThresholdGPerH = 120;
+  static final Uri _iocConsensusSourceUri = Uri.parse(
+    'https://doi.org/10.1080/02640414.2011.585473',
+  );
+  static final Uri _highCarbTrialSourceUri = Uri.parse(
+    'https://pubmed.ncbi.nlm.nih.gov/32403259/',
+  );
+  static final Uri _veryHighCarbStudySourceUri = Uri.parse(
+    'https://pubmed.ncbi.nlm.nih.gov/35565896/',
+  );
+
   final _formKey = GlobalKey<FormState>();
   bool _hasChanges = false;
   bool _isSaving = false;
@@ -47,11 +61,6 @@ class _NutritionTargetsScreenState
   final _duringSwimCarbRateController = TextEditingController();
   final _duringSwimSodiumRateController = TextEditingController();
   final _duringSwimFluidRateController = TextEditingController();
-
-  // During Brick controllers
-  final _duringBrickCarbRateController = TextEditingController();
-  final _duringBrickSodiumRateController = TextEditingController();
-  final _duringBrickFluidRateController = TextEditingController();
 
   // Post-activity controllers
   final _postCarbsController = TextEditingController();
@@ -88,20 +97,30 @@ class _NutritionTargetsScreenState
         if (duringRun != null) {
           _setController(_duringRunCarbRateController, duringRun.carbRateGPerH);
           _setController(
-              _duringRunSodiumRateController, duringRun.sodiumRateMgPerH);
+            _duringRunSodiumRateController,
+            duringRun.sodiumRateMgPerH,
+          );
           _setController(
-              _duringRunFluidRateController, duringRun.fluidRateMlPerH);
+            _duringRunFluidRateController,
+            duringRun.fluidRateMlPerH,
+          );
         }
 
         // During Bike (sport-specific, with legacy fallback)
         final duringBike = overrides.duringCycling ?? overrides.during;
         if (duringBike != null) {
           _setController(
-              _duringBikeCarbRateController, duringBike.carbRateGPerH);
+            _duringBikeCarbRateController,
+            duringBike.carbRateGPerH,
+          );
           _setController(
-              _duringBikeSodiumRateController, duringBike.sodiumRateMgPerH);
+            _duringBikeSodiumRateController,
+            duringBike.sodiumRateMgPerH,
+          );
           _setController(
-              _duringBikeFluidRateController, duringBike.fluidRateMlPerH);
+            _duringBikeFluidRateController,
+            duringBike.fluidRateMlPerH,
+          );
         }
 
         // During Swim (sport-specific, with legacy fallback)
@@ -109,20 +128,13 @@ class _NutritionTargetsScreenState
         if (duringSwim != null) {
           // Don't load carbs for swimming (carbs N/A while swimming)
           _setController(
-              _duringSwimSodiumRateController, duringSwim.sodiumRateMgPerH);
+            _duringSwimSodiumRateController,
+            duringSwim.sodiumRateMgPerH,
+          );
           _setController(
-              _duringSwimFluidRateController, duringSwim.fluidRateMlPerH);
-        }
-
-        // During Brick (sport-specific, with legacy fallback)
-        final duringBrick = overrides.duringBrick ?? overrides.during;
-        if (duringBrick != null) {
-          _setController(
-              _duringBrickCarbRateController, duringBrick.carbRateGPerH);
-          _setController(
-              _duringBrickSodiumRateController, duringBrick.sodiumRateMgPerH);
-          _setController(
-              _duringBrickFluidRateController, duringBrick.fluidRateMlPerH);
+            _duringSwimFluidRateController,
+            duringSwim.fluidRateMlPerH,
+          );
         }
 
         // Post-activity
@@ -161,9 +173,6 @@ class _NutritionTargetsScreenState
     _duringSwimCarbRateController.dispose();
     _duringSwimSodiumRateController.dispose();
     _duringSwimFluidRateController.dispose();
-    _duringBrickCarbRateController.dispose();
-    _duringBrickSodiumRateController.dispose();
-    _duringBrickFluidRateController.dispose();
     _postCarbsController.dispose();
     _postProteinController.dispose();
     _postSodiumController.dispose();
@@ -172,15 +181,130 @@ class _NutritionTargetsScreenState
   }
 
   void _markChanged() {
-    if (!_hasChanges) {
-      setState(() => _hasChanges = true);
-    }
+    setState(() => _hasChanges = true);
   }
 
   double? _parseField(TextEditingController controller) {
     final text = controller.text.trim();
     if (text.isEmpty) return null;
     return double.tryParse(text);
+  }
+
+  bool _isHighCarbRate(TextEditingController controller) {
+    final value = _parseField(controller);
+    return value != null && value >= _highCarbWarningThresholdGPerH;
+  }
+
+  Future<void> _openSourceLink(Uri uri) async {
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      MealvanaSnackbar.showWarning(context, 'Unable to open source link');
+    }
+  }
+
+  Future<void> _showHighCarbRateWarningInfoSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Scrollbar(
+              controller: scrollController,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Why we warn above 120 g/hr',
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Most consensus guidance supports ~30-60 g/hr during endurance work, '
+                      'with up to ~90 g/hr for longer events. We flag values above 120 g/hr '
+                      'because this is an advanced strategy that usually needs gut training.',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Evidence for 120 g/hr exists in small elite cohorts, but it is not a '
+                      'universal default. Intakes like 180 g/hr are experimental and may '
+                      'increase GI distress risk for many athletes.',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Sources',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    TextButton(
+                      onPressed: () => _openSourceLink(_iocConsensusSourceUri),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        alignment: Alignment.centerLeft,
+                      ),
+                      child: const Text(
+                        'IOC consensus: Carbohydrates for training and competition (2011)',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _openSourceLink(_highCarbTrialSourceUri),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        alignment: Alignment.centerLeft,
+                      ),
+                      child: const Text(
+                        '120 g/hr trial in elite runners (Viribay et al., 2020)',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          _openSourceLink(_veryHighCarbStudySourceUri),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        alignment: Alignment.centerLeft,
+                      ),
+                      child: const Text(
+                        'Very high-carb + gut training study (King et al., 2022)',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showDefaultsHelpSheet() {
+    final settingsState = ref.read(settingsControllerProvider).value;
+    NutritionTargetsHelpBottomSheet.show(context, settingsState);
   }
 
   DuringActivityOverrides? _parseDuringOverride({
@@ -198,7 +322,6 @@ class _NutritionTargetsScreenState
 
   Future<void> _saveChanges() async {
     FocusScope.of(context).unfocus();
-    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);
 
@@ -236,11 +359,6 @@ class _NutritionTargetsScreenState
         sodiumController: _duringSwimSodiumRateController,
         fluidController: _duringSwimFluidRateController,
       ),
-      duringBrick: _parseDuringOverride(
-        carbController: _duringBrickCarbRateController,
-        sodiumController: _duringBrickSodiumRateController,
-        fluidController: _duringBrickFluidRateController,
-      ),
     );
 
     // Clamp to guardrails
@@ -255,13 +373,20 @@ class _NutritionTargetsScreenState
             overrides.hasAnyOverride ? overrides : null,
           );
 
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-          _hasChanges = false;
-        });
-        MealvanaSnackbar.showSuccess(context, 'Nutrition targets saved');
+      if (!mounted) return;
+
+      final saveState = ref.read(settingsControllerProvider);
+      if (saveState.hasError) {
+        setState(() => _isSaving = false);
+        MealvanaSnackbar.showError(context, 'Failed to save nutrition targets');
+        return;
       }
+
+      setState(() {
+        _isSaving = false;
+        _hasChanges = false;
+      });
+      MealvanaSnackbar.showSuccess(context, 'Nutrition targets saved');
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -286,9 +411,6 @@ class _NutritionTargetsScreenState
       _duringSwimCarbRateController.clear();
       _duringSwimSodiumRateController.clear();
       _duringSwimFluidRateController.clear();
-      _duringBrickCarbRateController.clear();
-      _duringBrickSodiumRateController.clear();
-      _duringBrickFluidRateController.clear();
       _postCarbsController.clear();
       _postProteinController.clear();
       _postSodiumController.clear();
@@ -299,6 +421,13 @@ class _NutritionTargetsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final showRunHighCarbWarning = _isHighCarbRate(
+      _duringRunCarbRateController,
+    );
+    final showBikeHighCarbWarning = _isHighCarbRate(
+      _duringBikeCarbRateController,
+    );
+
     return Scaffold(
       appBar: AppBar(
         leading: const CustomAppBarBackButton(),
@@ -308,184 +437,169 @@ class _NutritionTargetsScreenState
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: _showDefaultsHelpSheet,
+            icon: Icon(
+              Icons.help_outline_rounded,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            tooltip: 'How Auto defaults are calculated',
+          ),
+        ],
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          children: [
-            // Info banner
-            BaseCard(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: AppColors.electrolyte,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      'Set your preferred macro targets. Empty fields use algorithm defaults.',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.7),
+      body: ContentArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            children: [
+              // Info banner
+              BaseCard(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppColors.electrolyte,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'Set your preferred macro targets. Empty fields use algorithm defaults.',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
                       ),
                     ),
-                  ),
+                    IconButton(
+                      onPressed: _showDefaultsHelpSheet,
+                      icon: Icon(
+                        Icons.help_outline_rounded,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                      tooltip: 'How Auto defaults are calculated',
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.md),
+
+              // Pre-Activity section
+              _buildSectionCard(
+                title: 'Pre-Activity',
+                children: [
+                  _buildField('Carbs (g)', _preCarbsController),
+                  _buildField('Protein (g)', _preProteinController),
+                  _buildField('Fat (g)', _preFatController),
+                  _buildField('Sodium (mg)', _preSodiumController),
+                  _buildField('Fluids (ml)', _preFluidController),
                 ],
               ),
-            ),
 
-            const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.lg),
 
-            // Pre-Activity section
-            _buildSectionCard(
-              title: 'Pre-Activity',
-              children: [
-                _buildField('Carbs (g)', _preCarbsController, 0, 500),
-                _buildField('Protein (g)', _preProteinController, 0, 100),
-                _buildField('Fat (g)', _preFatController, 0, 100),
-                _buildField('Sodium (mg)', _preSodiumController, 0, 3000),
-                _buildField('Fluids (ml)', _preFluidController, 0, 2000),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // 90-minute note
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-              child: Text(
-                'During-workout targets only apply to activities 90 minutes or longer.',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.5),
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.sm),
-
-            // During Run section
-            DuringSportOverrideSection(
-              sportLabel: 'Run',
-              sportIcon: Icons.directions_run,
-              carbController: _duringRunCarbRateController,
-              sodiumController: _duringRunSodiumRateController,
-              fluidController: _duringRunFluidRateController,
-              maxCarbRate: NutritionTargetGuardrails.duringMaxCarbRateRunning,
-              onChanged: _markChanged,
-            ),
-
-            const SizedBox(height: AppSpacing.sm),
-
-            // During Bike section
-            DuringSportOverrideSection(
-              sportLabel: 'Bike',
-              sportIcon: Icons.directions_bike,
-              carbController: _duringBikeCarbRateController,
-              sodiumController: _duringBikeSodiumRateController,
-              fluidController: _duringBikeFluidRateController,
-              maxCarbRate: NutritionTargetGuardrails.duringMaxCarbRateCycling,
-              onChanged: _markChanged,
-            ),
-
-            const SizedBox(height: AppSpacing.sm),
-
-            // During Swim section
-            DuringSportOverrideSection(
-              sportLabel: 'Swim',
-              sportIcon: Icons.pool,
-              carbController: _duringSwimCarbRateController,
-              sodiumController: _duringSwimSodiumRateController,
-              fluidController: _duringSwimFluidRateController,
-              maxCarbRate: NutritionTargetGuardrails.duringMaxCarbRateSwimming,
-              carbsDisabled: true,
-              onChanged: _markChanged,
-            ),
-
-            const SizedBox(height: AppSpacing.sm),
-
-            // During Brick section
-            DuringSportOverrideSection(
-              sportLabel: 'Brick',
-              sportIcon: Icons.link,
-              carbController: _duringBrickCarbRateController,
-              sodiumController: _duringBrickSodiumRateController,
-              fluidController: _duringBrickFluidRateController,
-              maxCarbRate: NutritionTargetGuardrails.duringMaxCarbRateBrick,
-              onChanged: _markChanged,
-            ),
-
-            const SizedBox(height: AppSpacing.md),
-
-            // Post-Activity section
-            _buildSectionCard(
-              title: 'Post-Activity',
-              children: [
-                _buildField('Carbs (g)', _postCarbsController, 0, 500),
-                _buildField('Protein (g)', _postProteinController, 0, 100),
-                _buildField('Sodium (mg)', _postSodiumController, 0, 2000),
-                _buildField('Fluids (ml)', _postFluidController, 0, 3000),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // Reset button
-            TextButton(
-              onPressed: _resetAll,
-              child: Text(
-                'Reset All to Defaults',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.electrolyte,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.sm),
-
-            // Save button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: (_hasChanges && !_isSaving) ? _saveChanges : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.electrolyte,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              // 90-minute note
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                child: Text(
+                  'During-workout targets only apply to activities 90 minutes or longer.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
-                child: _isSaving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        'Save Changes',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
               ),
-            ),
 
-            const SizedBox(height: AppSpacing.xl),
-          ],
+              const SizedBox(height: AppSpacing.sm),
+
+              // During Run section
+              DuringSportOverrideSection(
+                sportLabel: 'Run',
+                sportIcon: Icons.directions_run,
+                carbController: _duringRunCarbRateController,
+                sodiumController: _duringRunSodiumRateController,
+                fluidController: _duringRunFluidRateController,
+                showHighCarbRateWarning: showRunHighCarbWarning,
+                highCarbRateWarningThreshold: _highCarbWarningThresholdGPerH,
+                onHighCarbRateWarningInfoTap: _showHighCarbRateWarningInfoSheet,
+                onChanged: _markChanged,
+              ),
+
+              const SizedBox(height: AppSpacing.sm),
+
+              // During Bike section
+              DuringSportOverrideSection(
+                sportLabel: 'Bike',
+                sportIcon: Icons.directions_bike,
+                carbController: _duringBikeCarbRateController,
+                sodiumController: _duringBikeSodiumRateController,
+                fluidController: _duringBikeFluidRateController,
+                showHighCarbRateWarning: showBikeHighCarbWarning,
+                highCarbRateWarningThreshold: _highCarbWarningThresholdGPerH,
+                onHighCarbRateWarningInfoTap: _showHighCarbRateWarningInfoSheet,
+                onChanged: _markChanged,
+              ),
+
+              const SizedBox(height: AppSpacing.sm),
+
+              // During Swim section
+              DuringSportOverrideSection(
+                sportLabel: 'Swim',
+                sportIcon: Icons.pool,
+                carbController: _duringSwimCarbRateController,
+                sodiumController: _duringSwimSodiumRateController,
+                fluidController: _duringSwimFluidRateController,
+                carbsDisabled: true,
+                onChanged: _markChanged,
+              ),
+
+              const SizedBox(height: AppSpacing.sm),
+
+              // Post-Activity section
+              _buildSectionCard(
+                title: 'Post-Activity',
+                children: [
+                  _buildField('Carbs (g)', _postCarbsController),
+                  _buildField('Protein (g)', _postProteinController),
+                  _buildField('Sodium (mg)', _postSodiumController),
+                  _buildField('Fluids (ml)', _postFluidController),
+                ],
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // Reset button
+              TextButton(
+                onPressed: _resetAll,
+                child: Text(
+                  'Reset All to Defaults',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.electrolyte,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.sm),
+
+              // Save button
+              KylePrimaryButton(
+                text: 'Save Changes',
+                isLoading: _isSaving,
+                onPressed: (_hasChanges && !_isSaving) ? _saveChanges : null,
+              ),
+
+              const SizedBox(height: AppSpacing.xl),
+            ],
+          ),
         ),
       ),
     );
@@ -512,12 +626,7 @@ class _NutritionTargetsScreenState
     );
   }
 
-  Widget _buildField(
-    String label,
-    TextEditingController controller,
-    double min,
-    double max,
-  ) {
+  Widget _buildField(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
@@ -575,15 +684,6 @@ class _NutritionTargetsScreenState
                   ),
                 ),
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) return null;
-                final parsed = double.tryParse(value.trim());
-                if (parsed == null) return 'Invalid';
-                if (parsed < min || parsed > max) {
-                  return '${min.toInt()}-${max.toInt()}';
-                }
-                return null;
-              },
               onChanged: (_) => _markChanged(),
             ),
           ),

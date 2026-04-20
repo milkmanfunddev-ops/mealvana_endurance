@@ -3,23 +3,24 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../utils/responsive_breakpoints.dart';
 import '../buttons/circular_action_button.dart';
 
 /// Floating action buttons bar for bottom navigation
 ///
 /// A pill-shaped container with circular action buttons:
 /// - Calendar (left): Toggle calendar view
+/// - Nutrition: Navigate to nutrition diary
 /// - Coach (optional): Navigate to coach dashboard or my coaches
 /// - Events: Navigate to events list
-/// - Learn: Navigate to education/learn tab
-/// - Menu (right): Navigate to settings
+/// - Learn (right): Navigate to education/learn tab
 ///
 /// The `activeButton` parameter indicates which button should be highlighted:
 /// - 0: Calendar button (Activities screen)
-/// - 1: Coach button (Coach/My Coaches screen, if visible)
-/// - 1 or 2: Events button (Events screen)
-/// - 2 or 3: Learn button (Education screen)
-/// - 3 or 4: Menu button (Settings screen)
+/// - 1: Nutrition button (Nutrition Diary screen)
+/// - 2: Coach button (Coach/My Coaches screen, if visible, web only)
+/// - 2 or 3: Events button (Events screen)
+/// - 3 or 4: Learn button (Education screen)
 ///
 /// Example:
 /// ```dart
@@ -28,33 +29,38 @@ import '../buttons/circular_action_button.dart';
 ///   onCalendarTap: () => toggleCalendarView(),
 ///   onCoachTap: () => navigateToCoach(),
 ///   onEventsTap: () => navigateToEvents(),
-///   onMenuTap: () => navigateToSettings(),
+///   onLearnTap: () => navigateToLearn(),
 /// )
 /// ```
 class FloatingActionButtonsBar extends StatelessWidget {
   const FloatingActionButtonsBar({
     super.key,
     required this.onCalendarTap,
+    required this.onNutritionTap,
     required this.onCoachTap,
     required this.onEventsTap,
     required this.onLearnTap,
-    required this.onMenuTap,
     required this.onPlusTap,
     this.activeButton,
     this.showCoachTab = false,
   });
 
   final VoidCallback onCalendarTap;
+  final VoidCallback onNutritionTap;
   final VoidCallback onCoachTap;
   final VoidCallback onEventsTap;
   final VoidCallback onLearnTap;
-  final VoidCallback onMenuTap;
   final VoidCallback onPlusTap;
   final int? activeButton;
   final bool showCoachTab;
 
   @override
   Widget build(BuildContext context) {
+    // On wide screens the NavigationRail in TabsScreen replaces this widget.
+    if (context.useNavigationRail) {
+      return const SizedBox.shrink();
+    }
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final inactiveBackground = Colors.transparent;
@@ -100,14 +106,25 @@ class FloatingActionButtonsBar extends StatelessWidget {
                             : (isDark ? AppColors.cream : AppColors.blackberry),
                       ),
                       const SizedBox(width: 8),
+                      CircularActionButton(
+                        icon: FontAwesomeIcons.utensils,
+                        onPressed: onNutritionTap,
+                        backgroundColor: activeButton == 1
+                            ? activeBackground
+                            : inactiveBackground,
+                        iconColor: activeButton == 1
+                            ? AppColors.blackberry
+                            : (isDark ? AppColors.cream : AppColors.blackberry),
+                      ),
+                      const SizedBox(width: 8),
                       if (showCoachTab) ...[
                         CircularActionButton(
                           icon: FontAwesomeIcons.userTie,
                           onPressed: onCoachTap,
-                          backgroundColor: activeButton == 1
+                          backgroundColor: activeButton == 2
                               ? activeBackground
                               : inactiveBackground,
-                          iconColor: activeButton == 1
+                          iconColor: activeButton == 2
                               ? AppColors.blackberry
                               : (isDark
                                     ? AppColors.cream
@@ -118,17 +135,6 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       CircularActionButton(
                         icon: FontAwesomeIcons.calendarCheck,
                         onPressed: onEventsTap,
-                        backgroundColor: activeButton == (showCoachTab ? 2 : 1)
-                            ? activeBackground
-                            : inactiveBackground,
-                        iconColor: activeButton == (showCoachTab ? 2 : 1)
-                            ? AppColors.blackberry
-                            : (isDark ? AppColors.cream : AppColors.blackberry),
-                      ),
-                      const SizedBox(width: 8),
-                      CircularActionButton(
-                        icon: FontAwesomeIcons.graduationCap,
-                        onPressed: onLearnTap,
                         backgroundColor: activeButton == (showCoachTab ? 3 : 2)
                             ? activeBackground
                             : inactiveBackground,
@@ -138,8 +144,8 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       CircularActionButton(
-                        icon: FontAwesomeIcons.ellipsis,
-                        onPressed: onMenuTap,
+                        icon: FontAwesomeIcons.graduationCap,
+                        onPressed: onLearnTap,
                         backgroundColor: activeButton == (showCoachTab ? 4 : 3)
                             ? activeBackground
                             : inactiveBackground,

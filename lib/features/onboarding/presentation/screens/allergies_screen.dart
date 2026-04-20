@@ -11,6 +11,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/core/screen_mode.dart';
 import '../../../../shared/widgets/selection/figma_checkbox_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
+import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// Allergies Screen - Unified for both onboarding and settings
 ///
@@ -243,8 +244,9 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
         ? AppColors.orange
         : theme.colorScheme.onSurface;
 
-    return Scaffold(
+    return AdaptivePageScaffold(
       backgroundColor: backgroundColor,
+      contentWidth: AdaptiveContentWidth.narrow,
       body: Column(
         children: [
           // Progress bar for onboarding, back button for settings
@@ -291,44 +293,32 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
 
           // Scrollable content - vertically centered
           Expanded(
-            child: SafeArea(
-              top: false,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Title
-                            const SizedBox(height: 22),
+            child: AdaptiveScrollableBody(
+              safeAreaTop: false,
+              safeAreaBottom: false,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  const SizedBox(height: 22),
 
-                            Text(
-                              'Do you have any allergies?',
-                              style: const TextStyle(
-                                fontFamily: 'Sansita',
-                                fontSize: 26,
-                                fontWeight: FontWeight.w700,
-                                height: 1.0,
-                              ).copyWith(color: titleColor),
-                            ),
+                  Text(
+                    'Do you have any allergies?',
+                    style: const TextStyle(
+                      fontFamily: 'Sansita',
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      height: 1.0,
+                    ).copyWith(color: titleColor),
+                  ),
 
-                            const SizedBox(height: 22),
+                  const SizedBox(height: 22),
 
-                            // Allergy options
-                            _buildAllergyOptions(useDarkStyle: useDarkStyle),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                  // Allergy options
+                  _buildAllergyOptions(useDarkStyle: useDarkStyle),
+                ],
               ),
             ),
           ),

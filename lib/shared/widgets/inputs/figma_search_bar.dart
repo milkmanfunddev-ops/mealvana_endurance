@@ -22,6 +22,7 @@ class FigmaSearchBar extends StatefulWidget {
     this.enableAutoSearch = false,
     this.autoSearchDebounceMs = 1000,
     this.useDarkStyle = true,
+    this.triggerSearchOnKeyboardSubmit = true,
   });
 
   /// Text controller for the search field
@@ -47,6 +48,10 @@ class FigmaSearchBar extends StatefulWidget {
 
   /// Uses onboarding dark style when true, or theme-aware light style when false.
   final bool useDarkStyle;
+
+  /// Whether keyboard submit (e.g. checkmark/done/search) should trigger
+  /// [onSearchSubmit]. Set false to prevent accidental external searches.
+  final bool triggerSearchOnKeyboardSubmit;
 
   @override
   State<FigmaSearchBar> createState() => _FigmaSearchBarState();
@@ -121,9 +126,15 @@ class _FigmaSearchBarState extends State<FigmaSearchBar> {
       child: TextField(
         controller: widget.controller,
         onChanged: _handleTextChanged,
-        onSubmitted: widget.onSearchSubmit != null
-            ? (_) => _handleSearchSubmit()
-            : null,
+        onSubmitted: widget.onSearchSubmit == null
+            ? null
+            : (_) {
+                if (widget.triggerSearchOnKeyboardSubmit) {
+                  _handleSearchSubmit();
+                } else {
+                  FocusScope.of(context).unfocus();
+                }
+              },
         style: TextStyle(
           fontFamily: 'Apercu',
           fontSize: 16,

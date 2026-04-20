@@ -48,11 +48,13 @@ class CarbLoadingController extends _$CarbLoadingController {
   }
 
   /// Create a carb loading plan for an event
+  /// If [forUserId] is provided, creates the plan for that user (coach creating for athlete)
   Future<void> createCarbLoadingPlan({
     required String eventId,
     required int protocolDays,
     required DateTime raceDate,
     required double bodyWeightPounds,
+    String? forUserId,
   }) async {
     try {
       final deviceIdValue = await ref.read(userIdProvider.future);
@@ -61,6 +63,7 @@ class CarbLoadingController extends _$CarbLoadingController {
       await _service.createCarbLoadingPlan(
         deviceId: deviceIdValue,
         userId: userId,
+        forUserId: forUserId,
         eventId: eventId,
         protocolDays: protocolDays,
         raceDate: raceDate,

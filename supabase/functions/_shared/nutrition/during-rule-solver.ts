@@ -13,189 +13,26 @@
  * 6. Add electrolytes to meet sodium target
  */
 
-import { roundToIncrement } from '../utils.ts';
 import {
   type Food,
   type FoodResult,
   type MacroTargets,
   type ActivityType,
-  type TimingCategory,
-  deriveTimingCategory,
+  shouldPrioritizeMacroTarget,
 } from './types.ts';
 import { calculateTotals } from './food-utils.ts';
-import { PREFERENCE_SCORE_MAP, MACRO_CONSTRAINT_RANGES } from './constants.ts';
-
-// ============================================================================
-// Types
-// ============================================================================
-
-type ProductCategory =
-  | 'primary_carb'    // gel, chew, drink_mix
-  | 'sports_drink'    // sports_drink (liquid with carbs)
-  | 'bike_solid'      // bar, waffle (cycling solids)
-  | 'hydration'       // water/beverage
-  | 'electrolyte';    // supplement, electrolyte tablet
-
-interface CategorizedFoods {
-  primary_carb: Food[];
-  sports_drink: Food[];
-  bike_solid: Food[];
-  hydration: Food[];
-  electrolyte: Food[];
-}
+import { MACRO_CONSTRAINT_RANGES } from './constants.ts';
+import {
+  categorizeFoods,
+  pickWeighted,
+  capServingsByUpperBounds,
+  buildFoodResult,
+  fillElectrolytes,
+  type ElectrolyteBounds,
+} from './during-utils.ts';
 
 interface RuleSolverResult {
   foods: FoodResult[];
-}
-
-// ============================================================================
-// Food Categorization
-// ============================================================================
-
-function categorizeFood(food: Food): ProductCategory {
-  const pt = food.product_type;
-
-  // Explicit product_type mapping
-  if (pt === 'gel' || pt === 'chew' || pt === 'drink_mix') return 'primary_carb';
-  if (pt === 'sports_drink') return 'sports_drink';
-  if (pt === 'bar') return 'bike_solid';
-  if (pt === 'beverage') return 'hydration';
-  if (pt === 'supplement') return 'electrolyte';
-
-  // Derived: if liquid with significant carbs → sports_drink
-  if (food.is_liquid && food.per_serving.carbs_g > 5) return 'sports_drink';
-
-  // Derived: if liquid with no/low carbs → hydration
-  if (food.is_liquid) return 'hydration';
-
-  // Derived: if electrolyte → electrolyte
-  if (food.is_electrolyte) return 'electrolyte';
-
-  // Solid food (waffle, real food) → bike_solid
-  return 'bike_solid';
-}
-
-function categorizeFoods(foods: Food[]): CategorizedFoods {
-  const result: CategorizedFoods = {
-    primary_carb: [],
-    sports_drink: [],
-    bike_solid: [],
-    hydration: [],
-    electrolyte: [],
-  };
-
-  for (const food of foods) {
-    const category = categorizeFood(food);
-    result[category].push(food);
-  }
-
-  return result;
-}
-
-// ============================================================================
-// Selection Helpers
-// ============================================================================
-
-/** Cryptographically secure random integer in [0, max).
- *  Uses crypto.getRandomValues() instead of Math.random() because
- *  Deno/Supabase edge functions may seed Math.random() deterministically. */
-function secureRandomInt(max: number): number {
-  if (max <= 1) return 0;
-  const array = new Uint32Array(1);
-  crypto.getRandomValues(array);
-  return array[0] % max;
-}
-
-/** Sort foods by preference score (liked > willing > neutral).
- *  No secondary tiebreaker — foods with equal preference are shuffled
- *  randomly so that gels, chews, and drink_mix get equal selection chance. */
-function sortByPreference(foods: Food[]): Food[] {
-  return [...foods].sort((a, b) => {
-    return b.preference_score - a.preference_score;
-  });
-}
-
-/** Pick a food using random selection among equally-preferred items.
- *  Preserves preference ordering (liked > willing > neutral) but randomizes
- *  among foods with the same preference score for variety.
- *  Uses crypto.getRandomValues() for true randomness in edge functions. */
-function pickWeighted(foods: Food[], label?: string): Food | null {
-  if (foods.length === 0) return null;
-  if (foods.length === 1) return foods[0];
-  const sorted = sortByPreference(foods);
-  const bestScore = sorted[0].preference_score;
-  const topTier = sorted.filter(f => f.preference_score === bestScore);
-  if (topTier.length > 1) {
-    const idx = secureRandomInt(topTier.length);
-    const picked = topTier[idx];
-    if (label) {
-      console.log(
-        `[DURING-RULES] ${label}: picked ${picked.name} (${idx + 1}/${topTier.length} candidates: ${topTier.map(f => f.name).join(', ')})`
-      );
-    }
-    return picked;
-  }
-  return sorted[0];
-}
-
-/** Clamp servings to [min, max], respecting indivisibility */
-function clampServings(servings: number, food: Food): number {
-  const min = food.min_servings;
-  const max = food.max_servings;
-
-  let clamped = Math.max(min, Math.min(max, servings));
-
-  if (food.is_indivisible) {
-    clamped = Math.max(1, Math.round(clamped));
-  } else {
-    clamped = roundToIncrement(clamped);
-  }
-
-  return clamped;
-}
-
-/** Enumerate feasible serving candidates for a food.
- *  Indivisible foods use whole servings; divisible foods use 0.5 increments. */
-function getServingCandidates(food: Food): number[] {
-  const candidates: number[] = [];
-  const max = Math.max(food.min_servings, food.max_servings);
-  const start = food.is_indivisible ? Math.max(1, Math.ceil(food.min_servings)) : Math.max(0.5, roundToIncrement(food.min_servings));
-  const step = food.is_indivisible ? 1 : 0.5;
-
-  for (let s = start; s <= max + 1e-6; s += step) {
-    candidates.push(food.is_indivisible ? Math.round(s) : roundToIncrement(s));
-  }
-
-  return candidates;
-}
-
-/** Build a FoodResult from a Food and quantity */
-function buildFoodResult(food: Food, quantity: number): FoodResult {
-  const tc = deriveTimingCategory(food);
-  return {
-    food_id: food.id,
-    quantity,
-    carbs_grams: Math.round(food.per_serving.carbs_g * quantity * 10) / 10,
-    protein_grams: Math.round(food.per_serving.protein_g * quantity * 10) / 10,
-    fat_grams: Math.round(food.per_serving.fat_g * quantity * 10) / 10,
-    sodium_mg: Math.round(food.per_serving.sodium_mg * quantity),
-    fluids_ml: Math.round(food.per_serving.water_ml * quantity),
-    calories: Math.round(food.per_serving.calories * quantity),
-    timing: 'Throughout activity',
-    display_name: food.display_name ?? undefined,
-    display_name_plural: food.display_name_plural ?? undefined,
-    description: food.description ?? undefined,
-    image_address: food.image_address ?? undefined,
-    serving_size: food.serving_size ?? undefined,
-    serving_unit: food.serving_unit ?? undefined,
-    serving_qualifier: food.serving_qualifier ?? undefined,
-    is_liquid: food.is_liquid,
-    is_electrolyte: food.is_electrolyte,
-    is_drink: food.is_liquid,
-    is_indivisible: food.is_indivisible,
-    timing_category: tc,
-    product_type: food.product_type,
-  };
 }
 
 // ============================================================================
@@ -223,15 +60,27 @@ export function generateDuringPhaseRuleBased(
   const carbTarget = targets.carbs_g;
   const sodiumTarget = targets.sodium_mg;
   const fluidTarget = targets.water_ml;
-  const carbUpper = carbTarget > 0 ? carbTarget * 1.15 : Number.POSITIVE_INFINITY;
-  const sodiumUpper = sodiumTarget > 0 ? sodiumTarget * 1.1 : Number.POSITIVE_INFINITY;
-  const fluidUpper = fluidTarget > 0 ? fluidTarget * 1.1 : Number.POSITIVE_INFINITY;
+  const prioritizeCarbTarget = shouldPrioritizeMacroTarget(targets, 'carbs');
+  const defaultCarbUpper = carbTarget > 0
+    ? carbTarget * (MACRO_CONSTRAINT_RANGES.carbs.during?.max ?? 1.1)
+    : Number.POSITIVE_INFINITY;
+  const carbUpper = prioritizeCarbTarget
+    ? defaultCarbUpper
+    : (targets.carbs_high_g ?? defaultCarbUpper);
+  const sodiumLower = targets.sodium_low_mg ?? (sodiumTarget > 0 ? sodiumTarget * 0.9 : 0);
+  const sodiumUpper = targets.sodium_high_mg ?? (sodiumTarget > 0 ? sodiumTarget * 1.1 : Number.POSITIVE_INFINITY);
+  const fluidUpper = targets.water_high_ml ?? (fluidTarget > 0 ? fluidTarget * 1.1 : Number.POSITIVE_INFINITY);
   const isRunning = activityType === 'running';
   const isCycling = activityType === 'cycling';
 
   console.log(
     `[DURING-RULES] Targets: carbs=${carbTarget}g, sodium=${sodiumTarget}mg, fluid=${fluidTarget}ml, sport=${activityType}`
   );
+  if (prioritizeCarbTarget) {
+    console.log(
+      `[DURING-RULES] Prioritizing carb target (${carbTarget}g) with cap=${carbUpper.toFixed(1)}g`,
+    );
+  }
 
   const categorized = categorizeFoods(foods);
   console.log(
@@ -270,17 +119,30 @@ export function generateDuringPhaseRuleBased(
 
     const primaryCarbTarget = carbTarget * primaryShare;
     let primaryServings = primaryCarbTarget / primaryCarb.per_serving.carbs_g;
-    primaryServings = clampServings(primaryServings, primaryCarb);
+    primaryServings = capServingsByUpperBounds(
+      primaryCarb,
+      primaryServings,
+      carbsAssigned,
+      sodiumAssigned,
+      fluidAssigned,
+      carbUpper,
+      sodiumUpper,
+      fluidUpper,
+    );
 
     const primaryResult = buildFoodResult(primaryCarb, primaryServings);
-    resultFoods.push(primaryResult);
-    carbsAssigned += primaryResult.carbs_grams;
-    sodiumAssigned += primaryResult.sodium_mg;
-    fluidAssigned += primaryResult.fluids_ml;
+    if (primaryServings > 0) {
+      resultFoods.push(primaryResult);
+      carbsAssigned += primaryResult.carbs_grams;
+      sodiumAssigned += primaryResult.sodium_mg;
+      fluidAssigned += primaryResult.fluids_ml;
+    }
 
-    console.log(
-      `[DURING-RULES] Primary carb: ${primaryCarb.name} x${primaryServings} = ${primaryResult.carbs_grams}g carbs`
-    );
+    if (primaryServings > 0) {
+      console.log(
+        `[DURING-RULES] Primary carb: ${primaryCarb.name} x${primaryServings} = ${primaryResult.carbs_grams}g carbs`
+      );
+    }
   }
 
   // ---- STEP 2: Sports drink (remaining carb share + fluid) ----
@@ -290,27 +152,16 @@ export function generateDuringPhaseRuleBased(
 
     if (remainingCarbs > 0 && sportsDrink.per_serving.carbs_g > 0) {
       let sdServings = remainingCarbs / sportsDrink.per_serving.carbs_g;
-      sdServings = clampServings(sdServings, sportsDrink);
-
-      // Guard rails: don't let sports drink alone push us well above phase ceilings.
-      if (sportsDrink.per_serving.water_ml > 0) {
-        const maxByFluid = (fluidUpper - fluidAssigned) / sportsDrink.per_serving.water_ml;
-        if (Number.isFinite(maxByFluid) && maxByFluid > 0) {
-          sdServings = Math.min(sdServings, clampServings(maxByFluid, sportsDrink));
-        }
-      }
-      if (sportsDrink.per_serving.sodium_mg > 0) {
-        const maxBySodium = (sodiumUpper - sodiumAssigned) / sportsDrink.per_serving.sodium_mg;
-        if (Number.isFinite(maxBySodium) && maxBySodium > 0) {
-          sdServings = Math.min(sdServings, clampServings(maxBySodium, sportsDrink));
-        }
-      }
-      if (sportsDrink.per_serving.carbs_g > 0) {
-        const maxByCarbs = (carbUpper - carbsAssigned) / sportsDrink.per_serving.carbs_g;
-        if (Number.isFinite(maxByCarbs) && maxByCarbs > 0) {
-          sdServings = Math.min(sdServings, clampServings(maxByCarbs, sportsDrink));
-        }
-      }
+      sdServings = capServingsByUpperBounds(
+        sportsDrink,
+        sdServings,
+        carbsAssigned,
+        sodiumAssigned,
+        fluidAssigned,
+        carbUpper,
+        sodiumUpper,
+        fluidUpper,
+      );
 
       if (sdServings > 0) {
         const sdResult = buildFoodResult(sportsDrink, sdServings);
@@ -338,7 +189,16 @@ export function generateDuringPhaseRuleBased(
       const secondaryCarb = pickWeighted(alternates, 'Secondary carb (deficit recovery)');
       if (secondaryCarb) {
         let secServings = carbDeficit / secondaryCarb.per_serving.carbs_g;
-        secServings = clampServings(secServings, secondaryCarb);
+        secServings = capServingsByUpperBounds(
+          secondaryCarb,
+          secServings,
+          carbsAssigned,
+          sodiumAssigned,
+          fluidAssigned,
+          carbUpper,
+          sodiumUpper,
+          fluidUpper,
+        );
         if (secServings > 0) {
           const secResult = buildFoodResult(secondaryCarb, secServings);
           resultFoods.push(secResult);
@@ -360,7 +220,16 @@ export function generateDuringPhaseRuleBased(
       if (anySportsDrink && !sportsDrink && anySportsDrink.per_serving.carbs_g > 0) {
         const deficit = carbTarget - carbsAssigned;
         let recoveryServings = deficit / anySportsDrink.per_serving.carbs_g;
-        recoveryServings = clampServings(recoveryServings, anySportsDrink);
+        recoveryServings = capServingsByUpperBounds(
+          anySportsDrink,
+          recoveryServings,
+          carbsAssigned,
+          sodiumAssigned,
+          fluidAssigned,
+          carbUpper,
+          sodiumUpper,
+          fluidUpper,
+        );
         if (recoveryServings > 0) {
           const recoveryResult = buildFoodResult(anySportsDrink, recoveryServings);
           resultFoods.push(recoveryResult);
@@ -384,17 +253,28 @@ export function generateDuringPhaseRuleBased(
       const bikeSolid = pickWeighted(categorized.bike_solid, 'Bike solid selection');
       if (bikeSolid && bikeSolid.per_serving.carbs_g > 0) {
         let bsServings = remainingCarbs / bikeSolid.per_serving.carbs_g;
-        bsServings = clampServings(bsServings, bikeSolid);
-
-        const bsResult = buildFoodResult(bikeSolid, bsServings);
-        resultFoods.push(bsResult);
-        carbsAssigned += bsResult.carbs_grams;
-        sodiumAssigned += bsResult.sodium_mg;
-        fluidAssigned += bsResult.fluids_ml;
-
-        console.log(
-          `[DURING-RULES] Bike solid: ${bikeSolid.name} x${bsServings} = ${bsResult.carbs_grams}g carbs`
+        bsServings = capServingsByUpperBounds(
+          bikeSolid,
+          bsServings,
+          carbsAssigned,
+          sodiumAssigned,
+          fluidAssigned,
+          carbUpper,
+          sodiumUpper,
+          fluidUpper,
         );
+
+        if (bsServings > 0) {
+          const bsResult = buildFoodResult(bikeSolid, bsServings);
+          resultFoods.push(bsResult);
+          carbsAssigned += bsResult.carbs_grams;
+          sodiumAssigned += bsResult.sodium_mg;
+          fluidAssigned += bsResult.fluids_ml;
+
+          console.log(
+            `[DURING-RULES] Bike solid: ${bikeSolid.name} x${bsServings} = ${bsResult.carbs_grams}g carbs`
+          );
+        }
       }
     }
   }
@@ -404,11 +284,16 @@ export function generateDuringPhaseRuleBased(
   if (remainingFluid > 0) {
     const waterFood = pickWeighted(categorized.hydration, 'Hydration selection');
     if (waterFood && waterFood.per_serving.water_ml > 0) {
-      let waterServings = Math.min(
+      let waterServings = capServingsByUpperBounds(
+        waterFood,
         remainingFluid / waterFood.per_serving.water_ml,
-        Math.max(0, (fluidUpper - fluidAssigned) / waterFood.per_serving.water_ml),
+        carbsAssigned,
+        sodiumAssigned,
+        fluidAssigned,
+        carbUpper,
+        sodiumUpper,
+        fluidUpper,
       );
-      waterServings = clampServings(waterServings, waterFood);
 
       if (waterServings > 0) {
         const waterResult = buildFoodResult(waterFood, waterServings);
@@ -426,112 +311,28 @@ export function generateDuringPhaseRuleBased(
   // ---- STEP 5: Electrolytes (fill sodium gap) ----
   // Uses a two-pass approach: first pick the best single electrolyte source,
   // then if sodium gap remains > 10%, try adding a second source.
-  const remainingSodium = Math.max(0, sodiumTarget - sodiumAssigned);
-  if (remainingSodium > 0) {
-    const MAX_SUPPLEMENT_SERVINGS = 4;
-
-    const pickBestElectrolyte = (
-      pool: Food[],
-      currentSodium: number,
-      currentFluid: number,
-      currentCarbs: number,
-    ): { food: Food; servings: number; score: number; sodium: number; fluid: number; carbs: number } | null => {
-      const sodiumMin = sodiumTarget > 0 ? sodiumTarget * 0.9 : 0;
-      const baselineSodiumScore = sodiumTarget > 0
-        ? (Math.max(0, sodiumMin - currentSodium) + Math.max(0, currentSodium - sodiumUpper)) / sodiumTarget
-        : 0;
-      const baselineFluidPenalty = fluidTarget > 0 && currentFluid > fluidUpper
-        ? ((currentFluid - fluidUpper) / fluidTarget) * 3
-        : 0;
-      const baselineScore = baselineSodiumScore + baselineFluidPenalty;
-
-      let best: { food: Food; servings: number; score: number; sodium: number; fluid: number; carbs: number } | null = null;
-
-      for (const electrolyte of pool) {
-        if (electrolyte.per_serving.sodium_mg <= 0) continue;
-
-        const candidates = getServingCandidates(electrolyte);
-        // Cap supplement (non-liquid) servings to prevent excessive capsule counts
-        const cappedCandidates = electrolyte.product_type === 'supplement' && !electrolyte.is_liquid
-          ? candidates.filter(s => s <= MAX_SUPPLEMENT_SERVINGS)
-          : candidates;
-
-        for (const servings of cappedCandidates) {
-          const sodium = currentSodium + (electrolyte.per_serving.sodium_mg * servings);
-          const fluid = currentFluid + (electrolyte.per_serving.water_ml * servings);
-          const carbs = currentCarbs + (electrolyte.per_serving.carbs_g * servings);
-
-          const sodiumPenalty = sodiumTarget > 0
-            ? (Math.max(0, sodiumMin - sodium) + Math.max(0, sodium - sodiumUpper) * 2) / sodiumTarget
-            : 0;
-          const fluidPenalty = fluidTarget > 0 && fluid > fluidUpper
-            ? ((fluid - fluidUpper) / fluidTarget) * 3
-            : 0;
-          const carbPenalty = carbTarget > 0 && carbs > carbUpper
-            ? ((carbs - carbUpper) / carbTarget) * 1.5
-            : 0;
-          // Progressive penalty for dry capsules/supplements > 2 servings
-          const capsulePenalty = electrolyte.product_type === 'supplement' && !electrolyte.is_liquid && servings > 2
-            ? 0.05 * (servings - 2)
-            : 0;
-          const preferenceBonus = electrolyte.preference_score >= PREFERENCE_SCORE_MAP.liked ? -0.02 : 0;
-          const score = sodiumPenalty + fluidPenalty + carbPenalty + capsulePenalty + preferenceBonus;
-
-          if (!best || score < best.score || (Math.abs(score - best.score) < 1e-6 && Math.abs(sodiumTarget - sodium) < Math.abs(sodiumTarget - best.sodium))) {
-            best = { food: electrolyte, servings, score, sodium, fluid, carbs };
-          }
-        }
-      }
-
-      return best && best.score < baselineScore ? best : null;
+  {
+    const elecBounds: ElectrolyteBounds = {
+      sodiumTarget,
+      sodiumLower,
+      sodiumUpper,
+      fluidTarget,
+      fluidUpper,
+      carbTarget: carbTarget,
+      carbUpper,
     };
-
-    // First pass: pick the best electrolyte from the full pool
-    const firstPick = pickBestElectrolyte(
+    const elecResult = fillElectrolytes(
       categorized.electrolyte,
+      resultFoods,
       sodiumAssigned,
       fluidAssigned,
       carbsAssigned,
+      elecBounds,
+      '[DURING-RULES]',
     );
-
-    if (firstPick) {
-      const elecResult = buildFoodResult(firstPick.food, firstPick.servings);
-      resultFoods.push(elecResult);
-      sodiumAssigned += elecResult.sodium_mg;
-      fluidAssigned += elecResult.fluids_ml;
-      carbsAssigned += elecResult.carbs_grams;
-
-      console.log(
-        `[DURING-RULES] Electrolyte: ${firstPick.food.name} x${firstPick.servings} = ` +
-        `${elecResult.sodium_mg}mg sodium, ${elecResult.fluids_ml}ml fluid`
-      );
-
-      // Second pass: if sodium gap still > 10%, try adding a different electrolyte source
-      const sodiumGapPct = sodiumTarget > 0 ? (sodiumTarget - sodiumAssigned) / sodiumTarget : 0;
-      if (sodiumGapPct > 0.10) {
-        const secondPool = categorized.electrolyte.filter(e => e.id !== firstPick.food.id);
-        const secondPick = pickBestElectrolyte(
-          secondPool,
-          sodiumAssigned,
-          fluidAssigned,
-          carbsAssigned,
-        );
-        if (secondPick) {
-          const elecResult2 = buildFoodResult(secondPick.food, secondPick.servings);
-          resultFoods.push(elecResult2);
-          sodiumAssigned += elecResult2.sodium_mg;
-          fluidAssigned += elecResult2.fluids_ml;
-          carbsAssigned += elecResult2.carbs_grams;
-
-          console.log(
-            `[DURING-RULES] Electrolyte (2nd source): ${secondPick.food.name} x${secondPick.servings} = ` +
-            `${elecResult2.sodium_mg}mg sodium, ${elecResult2.fluids_ml}ml fluid`
-          );
-        }
-      }
-    } else {
-      console.log('[DURING-RULES] Skipping electrolyte — best option does not improve score');
-    }
+    sodiumAssigned = elecResult.sodiumAssigned;
+    fluidAssigned = elecResult.fluidAssigned;
+    carbsAssigned = elecResult.carbsAssigned;
   }
 
   // ---- Summary ----

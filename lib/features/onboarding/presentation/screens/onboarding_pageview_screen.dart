@@ -9,6 +9,7 @@ import 'dietary_preference_screen.dart';
 import 'allergies_screen.dart';
 import 'food_preferences_v2_screen.dart';
 import '../../../settings/presentation/screens/connected_apps_screen.dart';
+import '../../../../shared/widgets/content_area.dart';
 
 /// Onboarding PageView Screen - Wrapper for all onboarding steps
 ///
@@ -202,6 +203,7 @@ class _OnboardingPageViewScreenState extends ConsumerState<OnboardingPageViewScr
     final pages = _buildPages(selectedSports);
 
     // Each screen has its own Scaffold and progress bar, so we just use PageView
+    // Note: ContentArea.narrow is applied within each individual screen's Scaffold
     return PageView(
       controller: _pageController,
       physics: const ClampingScrollPhysics(), // Enable swipe navigation

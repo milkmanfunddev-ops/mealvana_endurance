@@ -251,6 +251,81 @@ enum KylePreferenceLevel {
   love,     // 4 - Electrolyte full
 }
 
+/// Maps a product_type_id (from database) and/or food name to a [KyleFoodType].
+///
+/// Prefers [productTypeId] when available (exact match from catalog/DB).
+/// Falls back to name-based heuristic matching.
+KyleFoodType mapFoodType({String? productTypeId, String name = ''}) {
+  // 1. Try exact match on product_type_id (database enum values)
+  if (productTypeId != null && productTypeId.isNotEmpty) {
+    final mapped = _productTypeIdToFoodType[productTypeId];
+    if (mapped != null) return mapped;
+  }
+
+  // 2. Fall back to name-based heuristic
+  final lowerName = name.toLowerCase();
+  if (lowerName.contains('banana') || lowerName.contains('fruit')) {
+    return KyleFoodType.fruit;
+  } else if (lowerName.contains('bread') || lowerName.contains('sandwich')) {
+    return KyleFoodType.sandwich;
+  } else if (lowerName.contains('pasta')) {
+    return KyleFoodType.pasta;
+  } else if (lowerName.contains('rice')) {
+    return KyleFoodType.rice;
+  } else if (lowerName.contains('gel') || lowerName.contains('gummy')) {
+    return KyleFoodType.gel;
+  } else if (lowerName.contains('bar') || lowerName.contains('energy')) {
+    return KyleFoodType.energyBar;
+  } else if (lowerName.contains('drink') ||
+      lowerName.contains('water') ||
+      lowerName.contains('fluid')) {
+    return KyleFoodType.drink;
+  } else if (lowerName.contains('protein') ||
+      lowerName.contains('meat') ||
+      lowerName.contains('chicken')) {
+    return KyleFoodType.protein;
+  } else if (lowerName.contains('vegetable') ||
+      lowerName.contains('carrot') ||
+      lowerName.contains('salad')) {
+    return KyleFoodType.vegetable;
+  } else if (lowerName.contains('snack') ||
+      lowerName.contains('cookie') ||
+      lowerName.contains('cracker')) {
+    return KyleFoodType.snack;
+  } else if (lowerName.contains('supplement') ||
+      lowerName.contains('pill') ||
+      lowerName.contains('vitamin')) {
+    return KyleFoodType.supplement;
+  } else if (lowerName.contains('waffle') || lowerName.contains('stroopwafel')) {
+    return KyleFoodType.snack;
+  } else if (lowerName.contains('chew')) {
+    return KyleFoodType.gel;
+  } else {
+    return KyleFoodType.other;
+  }
+}
+
+/// Maps product_type_enum values (from database) to KyleFoodType.
+const _productTypeIdToFoodType = <String, KyleFoodType>{
+  'gel': KyleFoodType.gel,
+  'bar': KyleFoodType.energyBar,
+  'chew': KyleFoodType.gel,
+  'drink_mix': KyleFoodType.drink,
+  'sports_drink': KyleFoodType.drink,
+  'electrolyte_only': KyleFoodType.drink,
+  'electrolytes_fluids': KyleFoodType.drink,
+  'hydration_with_carbs': KyleFoodType.drink,
+  'waffle': KyleFoodType.snack,
+  'real_food': KyleFoodType.fruit,
+  'real_food_carbs': KyleFoodType.fruit,
+  'solid_carb_snacks': KyleFoodType.snack,
+  'quick_carbs': KyleFoodType.snack,
+  'recovery_shake': KyleFoodType.drink,
+  'protein_recovery': KyleFoodType.protein,
+  'capsule': KyleFoodType.supplement,
+  'import': KyleFoodType.other,
+};
+
 /// Extension to get display name for food types
 extension KyleFoodTypeExtension on KyleFoodType {
   String get displayName {

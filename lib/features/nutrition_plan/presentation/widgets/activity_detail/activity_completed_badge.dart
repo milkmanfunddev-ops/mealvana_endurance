@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../activities/domain/activity_completion.dart';
+import '../../../domain/carb_adjustment_level.dart';
 import '../../utils/activity_detail_helpers.dart';
 
 /// Rich card displayed when an activity has been completed.
@@ -11,6 +12,7 @@ class ActivityCompletedCard extends StatefulWidget {
     super.key,
     this.completion,
     this.rating,
+    this.carbAdjustment,
     this.notes,
     required this.onRatingChanged,
     required this.onNotesChanged,
@@ -18,6 +20,7 @@ class ActivityCompletedCard extends StatefulWidget {
 
   final ActivityCompletion? completion;
   final int? rating;
+  final CarbAdjustmentLevel? carbAdjustment;
   final String? notes;
   final ValueChanged<int> onRatingChanged;
   final ValueChanged<String?> onNotesChanged;
@@ -27,27 +30,9 @@ class ActivityCompletedCard extends StatefulWidget {
 }
 
 class _ActivityCompletedCardState extends State<ActivityCompletedCard> {
-  bool _isEditingNotes = false;
-  late TextEditingController _notesController;
-
   @override
   void initState() {
     super.initState();
-    _notesController = TextEditingController(text: widget.notes ?? '');
-  }
-
-  @override
-  void didUpdateWidget(ActivityCompletedCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.notes != oldWidget.notes && !_isEditingNotes) {
-      _notesController.text = widget.notes ?? '';
-    }
-  }
-
-  @override
-  void dispose() {
-    _notesController.dispose();
-    super.dispose();
   }
 
   @override
@@ -60,6 +45,10 @@ class _ActivityCompletedCardState extends State<ActivityCompletedCard> {
           _buildHeader(context),
           const SizedBox(height: AppSpacing.md),
           _buildRatingRow(context),
+          if (widget.carbAdjustment != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _buildCarbFeedbackRow(context),
+          ],
           const SizedBox(height: AppSpacing.md),
           _buildNotesSection(context),
         ],
@@ -86,8 +75,7 @@ class _ActivityCompletedCardState extends State<ActivityCompletedCard> {
         ),
         if (widget.completion?.completedAt != null)
           Text(
-            ActivityDetailHelpers.formatDate(
-                widget.completion!.completedAt),
+            ActivityDetailHelpers.formatDate(widget.completion!.completedAt),
             style: AppTextStyles.bodySmall.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -111,22 +99,16 @@ class _ActivityCompletedCardState extends State<ActivityCompletedCard> {
         ...List.generate(5, (index) {
           final starIndex = index + 1;
           final isFilled = starIndex <= currentRating;
-          return GestureDetector(
-            onTap: () => widget.onRatingChanged(starIndex),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3.0),
-              child: Icon(
-                isFilled
-                    ? FontAwesomeIcons.solidStar
-                    : FontAwesomeIcons.star,
-                size: 22,
-                color: isFilled
-                    ? AppColors.electrolyte
-                    : Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant
-                        .withValues(alpha: 0.4),
-              ),
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3.0),
+            child: Icon(
+              isFilled ? FontAwesomeIcons.solidStar : FontAwesomeIcons.star,
+              size: 22,
+              color: isFilled
+                  ? AppColors.electrolyte
+                  : Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
             ),
           );
         }),
@@ -134,108 +116,52 @@ class _ActivityCompletedCardState extends State<ActivityCompletedCard> {
     );
   }
 
-  Widget _buildNotesSection(BuildContext context) {
-    if (_isEditingNotes) {
-      return _buildNotesEditor(context);
-    }
-
-    final hasNotes =
-        widget.notes != null && widget.notes!.trim().isNotEmpty;
-
-    return InkWell(
-      onTap: () => setState(() => _isEditingNotes = true),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              FontAwesomeIcons.noteSticky,
-              size: 14,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                hasNotes ? widget.notes! : 'Tap to add notes...',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: hasNotes
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Theme.of(context)
-                          .colorScheme
-                          .onSurfaceVariant
-                          .withValues(alpha: 0.6),
-                  fontStyle:
-                      hasNotes ? FontStyle.normal : FontStyle.italic,
-                ),
-              ),
-            ),
-            Icon(
-              FontAwesomeIcons.penToSquare,
-              size: 14,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotesEditor(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildCarbFeedbackRow(BuildContext context) {
+    final adjustment = widget.carbAdjustment!;
+    return Row(
       children: [
-        TextField(
-          controller: _notesController,
-          autofocus: true,
-          maxLines: 3,
-          minLines: 2,
-          decoration: InputDecoration(
-            hintText: 'Add your workout notes...',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.all(AppSpacing.sm),
+        Text(
+          'Carbs',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Text(
+          '${adjustment.emoji} ${adjustment.label}',
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            TextButton(
-              onPressed: () {
-                _notesController.text = widget.notes ?? '';
-                setState(() => _isEditingNotes = false);
-              },
-              child: Text(
-                'Cancel',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            TextButton(
-              onPressed: () {
-                final text = _notesController.text.trim();
-                widget.onNotesChanged(text.isEmpty ? null : text);
-                setState(() => _isEditingNotes = false);
-              },
-              child: Text(
-                'Save',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.electrolyte,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
       ],
+    );
+  }
+
+  Widget _buildNotesSection(BuildContext context) {
+    final hasNotes = widget.notes != null && widget.notes!.trim().isNotEmpty;
+    if (!hasNotes) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            FontAwesomeIcons.noteSticky,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              widget.notes!,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
