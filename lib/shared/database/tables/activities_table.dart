@@ -92,6 +92,15 @@ class ActivitiesTable extends Table {
   // Training Stress Score (from external providers or calculated)
   RealColumn get tss => real().nullable()();
 
+  // Garmin completion linkage — set when a Garmin push provides the activity's
+  // completion data (distance, duration, HR, etc.). Authoritative signal that
+  // this activity displays Garmin-sourced data, regardless of which provider
+  // (TP, Final Surge) originally planned it. Drives brand-compliant attribution.
+  TextColumn get garminSummaryId => text().nullable().named('garmin_summary_id')();
+
+  // Garmin device model (e.g., "Forerunner 955") for brand-compliant attribution
+  TextColumn get garminDeviceName => text().nullable().named('garmin_device_name')();
+
   // Metadata
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().named('created_at')();

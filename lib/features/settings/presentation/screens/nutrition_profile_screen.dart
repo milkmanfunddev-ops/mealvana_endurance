@@ -10,6 +10,7 @@ import '../../../daily_macros/domain/enums.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 
 class NutritionProfileScreen extends ConsumerStatefulWidget {
   const NutritionProfileScreen({super.key});
@@ -168,16 +169,13 @@ class _NutritionProfileScreenState
 
               // Body Fat %
               _buildSectionLabel(context, 'Body Fat % (optional)'),
-              // Garmin brand attribution (required by Garmin API Brand Guidelines)
+              // Garmin brand attribution (required by Garmin API Brand Guidelines).
+              // Body composition originates from a connected scale / Garmin
+              // Connect and isn't tied to a specific wearable device model, so
+              // we use the "Garmin Connect" fallback form.
               if (_bodyFatFromGarmin) ...[
                 const SizedBox(height: 2),
-                Text(
-                  'Data from Garmin',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 11,
-                  ),
-                ),
+                const GarminAttribution(),
               ],
               const SizedBox(height: AppSpacing.sm),
               _buildBodyFatInput(context),

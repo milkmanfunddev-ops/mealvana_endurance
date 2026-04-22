@@ -405,6 +405,21 @@ class BrickMacroService {
       };
     }).toList();
 
+    // Sweat profile: read from UserProfile.
+    final sweatSodiumValue =
+        (userProfile?.sweatSodium ?? SweatSodiumCat.average).value;
+    final knownSweatRateMlHr = userProfile?.knownSweatRateMlPerHour;
+    final knownSodiumConcMgL =
+        userProfile?.knownSodiumConcentrationMgPerLiter;
+
+    // Derive is_indoor from any cycling segment that specifies indoor_outdoor.
+    // If any segment is explicitly 'indoor', treat the whole brick as indoor for
+    // the sweat calculation. Falls back to false when no segment sets this.
+    // TODO: wire isIndoor from a top-level brick form field if added in future.
+    final isIndoor = segments.any(
+      (s) => s.indoorOutdoor?.toLowerCase() == 'indoor',
+    );
+
     final requestData = {
       'activity_type': 'brick',
       'age': userMetrics['age'],
@@ -417,9 +432,13 @@ class BrickMacroService {
       'segment_order': segmentOrder,
       'gut_training': userProfile?.gutTraining.name ?? 'moderate',
       'sweat_rate_category': userProfile?.sweatRate.name ?? 'medium',
-      'sweat_sodium': 'medium',
-      'drink_sodium_mg_per_l': 500,
-      'optional_sweat_rate_lph': null,
+      // Sweat profile (Phase 6: read from UserProfile instead of hardcoding)
+      'sweat_sodium': sweatSodiumValue,
+      'is_indoor': isIndoor,
+      if (knownSweatRateMlHr != null)
+        'known_sweat_rate_ml_hr': knownSweatRateMlHr,
+      if (knownSodiumConcMgL != null)
+        'known_sodium_concentration_mg_l': knownSodiumConcMgL,
       'hours_before': preActivityMinutes / 60.0,
       'is_fasted': isFasted,
       'intensity_distribution': {
@@ -695,6 +714,24 @@ class BrickMacroService {
             cumulativeDurationMin: _toDoubleOrNull(
               segmentData['cumulative_duration_min'],
             ),
+            // Hydration/sodium derivation fields (Phase 6 — read from edge fn)
+            effectiveSweatRateLPerH: _toDoubleOrNull(
+              segmentData['effective_sweat_rate_lph'],
+            ),
+            sodiumConcMgPerL: segmentData['sodium_conc_mg_per_l'] != null
+                ? _toDouble(segmentData['sodium_conc_mg_per_l']).round()
+                : null,
+            replacementPercent: _toDoubleOrNull(
+              segmentData['replacement_pct'],
+            ),
+            floorMlPerH: segmentData['floor_ml_hr'] != null
+                ? _toDouble(segmentData['floor_ml_hr']).round()
+                : null,
+            ceilingMlPerH: segmentData['ceiling_ml_hr'] != null
+                ? _toDouble(segmentData['ceiling_ml_hr']).round()
+                : null,
+            safetyFlags: _toStringList(segmentData['safety_flags']),
+            isTested: segmentData['is_tested'] as bool? ?? false,
           ),
         );
       }
@@ -747,6 +784,24 @@ class BrickMacroService {
             ),
             waterLowMl: trFluidsLow,
             waterHighMl: trFluidsHigh,
+            // Hydration/sodium derivation fields (Phase 6 — read from edge fn)
+            effectiveSweatRateLPerH: _toDoubleOrNull(
+              transitionData['effective_sweat_rate_lph'],
+            ),
+            sodiumConcMgPerL: transitionData['sodium_conc_mg_per_l'] != null
+                ? _toDouble(transitionData['sodium_conc_mg_per_l']).round()
+                : null,
+            replacementPercent: _toDoubleOrNull(
+              transitionData['replacement_pct'],
+            ),
+            floorMlPerH: transitionData['floor_ml_hr'] != null
+                ? _toDouble(transitionData['floor_ml_hr']).round()
+                : null,
+            ceilingMlPerH: transitionData['ceiling_ml_hr'] != null
+                ? _toDouble(transitionData['ceiling_ml_hr']).round()
+                : null,
+            safetyFlags: _toStringList(transitionData['safety_flags']),
+            isTested: transitionData['is_tested'] as bool? ?? false,
           ),
         );
       }
@@ -901,6 +956,12 @@ class BrickMacroService {
       }
     }
     return results;
+  }
+
+  /// Safely convert a JSON list to a list of strings.
+  List<String> _toStringList(dynamic value) {
+    if (value is! List) return const [];
+    return value.map((e) => e.toString()).toList();
   }
 
   /// Safely convert to double

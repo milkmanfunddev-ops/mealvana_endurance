@@ -46,99 +46,35 @@ import { buildPreferenceSet } from "../_shared/nutrition/food-utils.ts";
 // ============================================================================
 
 /**
- * Get distance-based transition nutrition targets.
- * Research-backed values vary by total brick duration:
- * - Sprint (<90 min): 0/0/0 (quick transition, no nutrition needed)
- * - Olympic (90-180 min): 0/0/50ml (sip of water only)
- * - Half Ironman (180-420 min): T1=25g/150mg/150ml, T2=10g/100mg/100ml
- * - Ironman (420+ min): T1=30g/200mg/200ml, T2=25g/150mg/150ml
+ * Zero-default transition targets fallback.
+ *
+ * NOTE: getTransitionTargets with hardcoded duration tiers has been deleted.
+ * The plan function is now a pure consumer of transition targets from the
+ * macros payload (generate-macros-v4 now computes 300 ml fixed transitions
+ * per the spec). This fallback fires only if the macros payload is missing
+ * transition fields — which should not happen in production after Phase 1.
  */
 function getTransitionTargets(
-  segments: Array<
+  _segments: Array<
     { sport: string; duration_minutes: number; macro_targets: MacroTargets }
   >,
-  transitionIndex: number,
+  _transitionIndex: number,
 ): MacroTargets {
-  const totalDurationMinutes = segments.reduce(
-    (sum, s) => sum + s.duration_minutes,
-    0,
+  console.warn(
+    '[brick-handler] getTransitionTargets fallback fired — macros payload is missing transition fields. ' +
+    'This indicates generate-macros-v4 did not provide transition data. Returning zero defaults.',
   );
-
-  if (totalDurationMinutes < 90) {
-    return {
-      carbs_g: 0,
-      carbs_low_g: 0,
-      carbs_high_g: 0,
-      sodium_mg: 0,
-      sodium_low_mg: 0,
-      sodium_high_mg: 0,
-      water_ml: 0,
-      water_low_ml: 0,
-      water_high_ml: 0,
-    };
-  }
-  if (totalDurationMinutes < 180) {
-    return {
-      carbs_g: 0,
-      carbs_low_g: 0,
-      carbs_high_g: 0,
-      sodium_mg: 0,
-      sodium_low_mg: 0,
-      sodium_high_mg: 0,
-      water_ml: 50,
-      water_low_ml: 45,
-      water_high_ml: 55,
-    };
-  }
-  if (totalDurationMinutes < 420) {
-    return transitionIndex === 0
-      ? {
-        carbs_g: 25,
-        carbs_low_g: 23,
-        carbs_high_g: 28,
-        sodium_mg: 150,
-        sodium_low_mg: 135,
-        sodium_high_mg: 165,
-        water_ml: 150,
-        water_low_ml: 128,
-        water_high_ml: 173,
-      }
-      : {
-        carbs_g: 10,
-        carbs_low_g: 9,
-        carbs_high_g: 11,
-        sodium_mg: 100,
-        sodium_low_mg: 90,
-        sodium_high_mg: 110,
-        water_ml: 100,
-        water_low_ml: 85,
-        water_high_ml: 115,
-      };
-  }
-  // Ironman (420+ min)
-  return transitionIndex === 0
-    ? {
-      carbs_g: 30,
-      carbs_low_g: 27,
-      carbs_high_g: 33,
-      sodium_mg: 200,
-      sodium_low_mg: 180,
-      sodium_high_mg: 220,
-      water_ml: 200,
-      water_low_ml: 170,
-      water_high_ml: 230,
-    }
-    : {
-      carbs_g: 25,
-      carbs_low_g: 23,
-      carbs_high_g: 28,
-      sodium_mg: 150,
-      sodium_low_mg: 135,
-      sodium_high_mg: 165,
-      water_ml: 150,
-      water_low_ml: 128,
-      water_high_ml: 173,
-    };
+  return {
+    carbs_g: 0,
+    carbs_low_g: 0,
+    carbs_high_g: 0,
+    sodium_mg: 0,
+    sodium_low_mg: 0,
+    sodium_high_mg: 0,
+    water_ml: 0,
+    water_low_ml: 0,
+    water_high_ml: 0,
+  };
 }
 
 function normalizeTransitionName(name?: string | null): string | null {

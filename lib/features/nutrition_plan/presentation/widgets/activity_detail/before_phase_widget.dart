@@ -45,6 +45,7 @@ class BeforePhaseWidget extends StatefulWidget {
     this.proteinOverrideLabel,
     this.sodiumOverrideLabel,
     this.fluidsOverrideLabel,
+    this.onRegenerate,
   });
 
   final PlanSection section;
@@ -82,6 +83,10 @@ class BeforePhaseWidget extends StatefulWidget {
   final String? proteinOverrideLabel;
   final String? sodiumOverrideLabel;
   final String? fluidsOverrideLabel;
+
+  /// Called after an inline sweat-profile edit is saved so the parent can
+  /// trigger a plan regen (e.g. via ActivityDetailController.forceRefresh).
+  final VoidCallback? onRegenerate;
 
   @override
   State<BeforePhaseWidget> createState() => _BeforePhaseWidgetState();
@@ -150,6 +155,7 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                                 ?.expand((sp) => sp.foodItems)
                                 .toList() ??
                             widget.section.foodItems,
+                        onRegenerate: widget.onRegenerate,
                       );
                     },
                   ),

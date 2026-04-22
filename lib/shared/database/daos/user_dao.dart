@@ -138,6 +138,12 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         typicalWeeklyHours: Value(profile.typicalWeeklyHours),
         carbCycleOptIn: Value(profile.carbCycleOptIn),
         trainingPhase: Value(profile.trainingPhase.dbValue),
+        // Sweat profile fields
+        sweatSodium: Value(profile.sweatSodium?.value),
+        knownSweatRateMlPerHour: Value(profile.knownSweatRateMlPerHour),
+        knownSodiumConcentrationMgPerLiter: Value(profile.knownSodiumConcentrationMgPerLiter),
+        sweatTestDate: Value(profile.sweatTestDate),
+        sweatTestSource: Value(profile.sweatTestSource),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -199,6 +205,12 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         typicalWeeklyHours: Value(profile.typicalWeeklyHours),
         carbCycleOptIn: Value(profile.carbCycleOptIn),
         trainingPhase: Value(profile.trainingPhase.dbValue),
+        // Sweat profile fields
+        sweatSodium: Value(profile.sweatSodium?.value),
+        knownSweatRateMlPerHour: Value(profile.knownSweatRateMlPerHour),
+        knownSodiumConcentrationMgPerLiter: Value(profile.knownSodiumConcentrationMgPerLiter),
+        sweatTestDate: Value(profile.sweatTestDate),
+        sweatTestSource: Value(profile.sweatTestSource),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -329,6 +341,12 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       typicalWeeklyHours: dbUser.typicalWeeklyHours,
       carbCycleOptIn: dbUser.carbCycleOptIn,
       trainingPhase: TrainingPhase.fromDbValue(dbUser.trainingPhase),
+      // Sweat profile fields
+      sweatSodium: domain.SweatSodiumCat.fromDbValue(dbUser.sweatSodium),
+      knownSweatRateMlPerHour: dbUser.knownSweatRateMlPerHour,
+      knownSodiumConcentrationMgPerLiter: dbUser.knownSodiumConcentrationMgPerLiter,
+      sweatTestDate: dbUser.sweatTestDate,
+      sweatTestSource: dbUser.sweatTestSource,
     );
   }
 }

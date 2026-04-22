@@ -13,6 +13,22 @@ import {
 } from './types.ts';
 
 /**
+ * Normalize Garmin's deviceName field. Garmin uses the literal string
+ * "unknown" when the device model isn't identified — persisting that
+ * would violate the brand guidelines and produce "Garmin unknown"
+ * attribution strings. Drop it so the client falls back to
+ * "Garmin Connect".
+ */
+export function normalizeGarminDeviceName(
+  deviceName?: string | null,
+): string | null {
+  const trimmed = deviceName?.trim();
+  if (!trimmed) return null;
+  if (trimmed.toLowerCase() === 'unknown') return null;
+  return trimmed;
+}
+
+/**
  * Map a Garmin activity type string to our sport type.
  * Falls back to 'other' for unknown types.
  */
@@ -80,6 +96,12 @@ export function mapGarminActivityToActivity(
     average_heart_rate: garminActivity.averageHeartRateInBeatsPerMinute ?? null,
     max_heart_rate: garminActivity.maxHeartRateInBeatsPerMinute ?? null,
     calories_burned: garminActivity.activeKilocalories ?? null,
+    // Persist the Garmin device model so the app can render the
+    // "Garmin [device model]" attribution required by Garmin's
+    // Developer API Brand Guidelines. Garmin sends "unknown" when
+    // the device model isn't identified — drop it so the client
+    // falls back to "Garmin Connect" cleanly.
+    garmin_device_name: normalizeGarminDeviceName(garminActivity.deviceName),
   };
 
   // Add sport-specific fields (using actual column names)

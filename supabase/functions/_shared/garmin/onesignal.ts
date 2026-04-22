@@ -14,10 +14,37 @@ function toMmDdYyyy(dateString: string): string {
   return `${month}/${day}/${year}`;
 }
 
+/**
+ * Build the brand-compliant Garmin attribution string for a push body.
+ *
+ * Garmin's Developer API Brand Guidelines require:
+ *   - No abbreviations — never a bare "Garmin" token on its own
+ *   - Prefer the "Garmin [device model]" form when the model is known
+ *     (e.g. "Garmin Forerunner 955")
+ *   - Fall back to "Garmin Connect" when no device model is present
+ */
+export function buildGarminProviderLabel(deviceName?: string | null): string {
+  const trimmed = deviceName?.trim();
+  if (!trimmed) return "Garmin Connect";
+  const lower = trimmed.toLowerCase();
+  // Garmin sends "unknown" when the device model isn't identified.
+  // Bare "Garmin" alone also violates brand guidelines.
+  // In both cases, fall back to the full brand name.
+  if (lower === "unknown" || lower === "garmin") return "Garmin Connect";
+  if (lower.startsWith("garmin")) return trimmed;
+  return `Garmin ${trimmed}`;
+}
+
 export async function sendActivityUploadedPush(params: {
   userId: string;
   activityId: string;
   scheduledDate: string; // YYYY-MM-DD
+  /**
+   * Human-readable attribution string used in the push body (e.g.
+   * "Garmin Forerunner 955" or "Garmin Connect"). Must comply with Garmin's
+   * Developer API Brand Guidelines — never abbreviate "Garmin", and prefer
+   * the "Garmin [device model]" form when the device model is known.
+   */
   provider?: string;
   logPrefix?: string;
 }): Promise<void> {
@@ -30,7 +57,7 @@ export async function sendActivityUploadedPush(params: {
     return;
   }
 
-  const provider = params.provider ?? "Garmin";
+  const provider = params.provider ?? "Garmin Connect";
   const activityDateText = toMmDdYyyy(params.scheduledDate);
 
   const notificationPayload = {

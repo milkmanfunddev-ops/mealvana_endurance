@@ -146,6 +146,22 @@ class UserProfilesTable extends Table {
   /// Training phase: base, build, peak, taper, race_week, off_season
   TextColumn get trainingPhase => text().withDefault(const Constant('base')).named('training_phase')();
 
+  // Sweat profile fields (Phase 2 — hydration/sodium transparency)
+  /// Sweat sodium concentration category: 'low', 'average', 'high'
+  TextColumn get sweatSodium => text().nullable().named('sweat_sodium')();
+
+  /// Known sweat rate from a personal sweat test (ml/hr), overrides algorithmic estimate
+  IntColumn get knownSweatRateMlPerHour => integer().nullable().named('known_sweat_rate_ml_per_hour')();
+
+  /// Known sodium concentration from a personal sweat test (mg/L), overrides algorithmic estimate
+  IntColumn get knownSodiumConcentrationMgPerLiter => integer().nullable().named('known_sodium_concentration_mg_per_liter')();
+
+  /// Date the sweat test was performed
+  DateTimeColumn get sweatTestDate => dateTime().nullable().named('sweat_test_date')();
+
+  /// Source of the sweat test data: 'self_calculated', 'commercial_test', 'gatorade_gx', 'estimated', 'other'
+  TextColumn get sweatTestSource => text().nullable().named('sweat_test_source')();
+
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
   BoolColumn get needsUpload => boolean().withDefault(const Constant(false)).named('needs_upload')();
@@ -175,6 +191,8 @@ class UserProfilesTable extends Table {
     "CHECK (unit_system IN ('imperial', 'metric'))",
     "CHECK (lifestyle IN ('desk', 'mixed', 'active', 'very_active'))",
     "CHECK (training_phase IN ('base', 'build', 'peak', 'taper', 'race_week', 'off_season'))",
+    "CHECK (sweat_sodium IN ('low', 'average', 'high') OR sweat_sodium IS NULL)",
+    "CHECK (sweat_test_source IN ('self_calculated', 'commercial_test', 'gatorade_gx', 'estimated', 'other') OR sweat_test_source IS NULL)",
   ];
 }
 

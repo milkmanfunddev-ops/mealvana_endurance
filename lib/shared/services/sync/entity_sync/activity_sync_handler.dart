@@ -107,6 +107,13 @@ class ActivitySyncHandler {
                     data['duration_minutes'] as int? ??
                     existingActivity.actualDurationMinutes,
               ),
+              garminSummaryId: Value(
+                incomingGarminSummaryId ?? existingActivity.garminSummaryId,
+              ),
+              garminDeviceName: Value(
+                (data['garmin_device_name'] as String?)?.trim() ??
+                    existingActivity.garminDeviceName,
+              ),
               updatedAt: Value(supabaseUpdatedAt),
             ),
           );
@@ -131,7 +138,7 @@ class ActivitySyncHandler {
                   ? 'Workout uploaded'
                   : title,
               activityDate: scheduledAt,
-              provider: 'Garmin',
+              provider: 'Garmin Connect',
             );
           }
         }
@@ -218,6 +225,10 @@ class ActivitySyncHandler {
                 ? DateTime.parse(data['schedule_changed_at'] as String)
                 : null,
           ),
+          garminSummaryId: Value(incomingGarminSummaryId),
+          garminDeviceName: Value(
+            (data['garmin_device_name'] as String?)?.trim(),
+          ),
           createdAt: DateTime.parse(data['created_at'] as String),
           updatedAt: supabaseUpdatedAt,
         );
@@ -247,7 +258,7 @@ class ActivitySyncHandler {
             activityId: activityId,
             title: title == null || title.isEmpty ? 'Workout uploaded' : title,
             activityDate: scheduledAt,
-            provider: 'Garmin',
+            provider: 'Garmin Connect',
           );
         }
       }

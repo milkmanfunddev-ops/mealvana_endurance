@@ -96,6 +96,23 @@ class UserProfile {
   final bool carbCycleOptIn;
   final TrainingPhase trainingPhase;
 
+  // Sweat profile fields (Phase 2 — hydration/sodium transparency)
+  /// Sodium concentration category for sweat; null means use algorithmic default ('average').
+  final SweatSodiumCat? sweatSodium;
+
+  /// Known sweat rate (ml/hr) from a personal sweat test; null = algorithmic estimate.
+  final int? knownSweatRateMlPerHour;
+
+  /// Known sodium concentration (mg/L) from a personal sweat test; null = algorithmic estimate.
+  final int? knownSodiumConcentrationMgPerLiter;
+
+  /// Date the sweat test was performed.
+  final DateTime? sweatTestDate;
+
+  /// Source of the sweat test data.
+  /// Values: 'self_calculated', 'commercial_test', 'gatorade_gx', 'estimated', 'other'
+  final String? sweatTestSource;
+
   UserProfile({
     required this.id,
     required this.deviceId,
@@ -148,6 +165,12 @@ class UserProfile {
     this.typicalWeeklyHours,
     this.carbCycleOptIn = false,
     this.trainingPhase = TrainingPhase.base,
+    // Sweat profile fields
+    this.sweatSodium,
+    this.knownSweatRateMlPerHour,
+    this.knownSodiumConcentrationMgPerLiter,
+    this.sweatTestDate,
+    this.sweatTestSource,
   });
 
   /// Returns the best available display name for the user.
@@ -319,6 +342,14 @@ class UserProfile {
       typicalWeeklyHours: (json['typical_weekly_hours'] as num?)?.toDouble(),
       carbCycleOptIn: json['carb_cycle_opt_in'] as bool? ?? false,
       trainingPhase: TrainingPhase.fromDbValue(json['training_phase'] as String?),
+      // Sweat profile fields
+      sweatSodium: SweatSodiumCat.fromDbValue(json['sweat_sodium'] as String?),
+      knownSweatRateMlPerHour: json['known_sweat_rate_ml_per_hour'] as int?,
+      knownSodiumConcentrationMgPerLiter: json['known_sodium_concentration_mg_per_liter'] as int?,
+      sweatTestDate: json['sweat_test_date'] != null
+          ? DateTime.tryParse(json['sweat_test_date'] as String)
+          : null,
+      sweatTestSource: json['sweat_test_source'] as String?,
     );
   }
 
@@ -365,6 +396,12 @@ class UserProfile {
       'typical_weekly_hours': typicalWeeklyHours,
       'carb_cycle_opt_in': carbCycleOptIn,
       'training_phase': trainingPhase.dbValue,
+      // Sweat profile fields
+      'sweat_sodium': sweatSodium?.value,
+      'known_sweat_rate_ml_per_hour': knownSweatRateMlPerHour,
+      'known_sodium_concentration_mg_per_liter': knownSodiumConcentrationMgPerLiter,
+      'sweat_test_date': sweatTestDate?.toIso8601String(),
+      'sweat_test_source': sweatTestSource,
       // Note: is_coach is NOT synced to Supabase - coach status lives in coaches table
       // Note: swipe_hint_shown, gi_sensitivity, typical_bike_bottles, has_aero_bottle,
       // has_bento_box, typical_wetsuit, typical_swim_cap_type are Drift-only fields
@@ -420,6 +457,12 @@ class UserProfile {
     double? typicalWeeklyHours,
     bool? carbCycleOptIn,
     TrainingPhase? trainingPhase,
+    // Sweat profile fields
+    SweatSodiumCat? sweatSodium,
+    int? knownSweatRateMlPerHour,
+    int? knownSodiumConcentrationMgPerLiter,
+    DateTime? sweatTestDate,
+    String? sweatTestSource,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -469,6 +512,12 @@ class UserProfile {
       typicalWeeklyHours: typicalWeeklyHours ?? this.typicalWeeklyHours,
       carbCycleOptIn: carbCycleOptIn ?? this.carbCycleOptIn,
       trainingPhase: trainingPhase ?? this.trainingPhase,
+      // Sweat profile fields
+      sweatSodium: sweatSodium ?? this.sweatSodium,
+      knownSweatRateMlPerHour: knownSweatRateMlPerHour ?? this.knownSweatRateMlPerHour,
+      knownSodiumConcentrationMgPerLiter: knownSodiumConcentrationMgPerLiter ?? this.knownSodiumConcentrationMgPerLiter,
+      sweatTestDate: sweatTestDate ?? this.sweatTestDate,
+      sweatTestSource: sweatTestSource ?? this.sweatTestSource,
     );
   }
 }
@@ -570,6 +619,40 @@ enum GutTraining {
 
   /// Get string value for API calls
   String get value => name;
+}
+
+/// Sweat sodium concentration category (Baker 2016).
+/// Used by generate-macros-v4 to derive per-litre sodium targets.
+/// 'medium' is accepted as a legacy alias for 'average' when reading from storage.
+enum SweatSodiumCat {
+  low,
+  average,
+  high;
+
+  /// DB/API string value
+  String get value => name;
+
+  /// Display name for UI
+  String get displayName {
+    switch (this) {
+      case SweatSodiumCat.low:
+        return 'Low';
+      case SweatSodiumCat.average:
+        return 'Average';
+      case SweatSodiumCat.high:
+        return 'High';
+    }
+  }
+
+  /// Parse from a DB string, treating 'medium' as an alias for 'average'.
+  static SweatSodiumCat fromDbValue(String? value) {
+    if (value == null) return SweatSodiumCat.average;
+    final normalised = value == 'medium' ? 'average' : value;
+    return SweatSodiumCat.values.firstWhere(
+      (e) => e.name == normalised,
+      orElse: () => SweatSodiumCat.average,
+    );
+  }
 }
 
 enum SweatRateCat {

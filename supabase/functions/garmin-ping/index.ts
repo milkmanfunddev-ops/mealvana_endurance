@@ -30,7 +30,10 @@ import {
   findMatchingPlannedActivity,
   getGarminScheduledDate,
 } from "../_shared/garmin/activity_completion.ts";
-import { sendActivityUploadedPush } from "../_shared/garmin/onesignal.ts";
+import {
+  buildGarminProviderLabel,
+  sendActivityUploadedPush,
+} from "../_shared/garmin/onesignal.ts";
 import type {
   GarminActivityDetail,
   GarminActivitySummary,
@@ -44,8 +47,12 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
   "";
 
+declare const EdgeRuntime: {
+  waitUntil(promise: Promise<unknown>): void;
+} | undefined;
+
 serve(async (req: Request) => {
-  // Validate the request is from Garmin
+  // Validate the request is from Garmin (header-only, synchronous)
   const validationError = validateGarminRequest(req, GARMIN_CLIENT_ID);
   if (validationError) {
     console.error(`[garmin-ping] Validation failed: ${validationError}`);
@@ -55,8 +62,36 @@ serve(async (req: Request) => {
     });
   }
 
+  // Parse body before returning — the request stream is closed after the
+  // response, so any deferred `req.json()` fails with "Interrupted".
+  let body: GarminPingNotification;
   try {
-    const body: GarminPingNotification = await req.json();
+    body = await req.json();
+  } catch (err) {
+    console.error("[garmin-ping] Failed to parse request body:", err);
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Ack 200 immediately; fetch callbacks + DB writes happen in background.
+  const processing = processPingBody(body).catch((err) => {
+    console.error("[garmin-ping] Background processing error:", err);
+  });
+
+  if (typeof EdgeRuntime !== "undefined") {
+    EdgeRuntime.waitUntil(processing);
+  }
+
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+});
+
+async function processPingBody(body: GarminPingNotification): Promise<void> {
+  try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const results: Record<string, { processed: number; errors: number }> = {};
@@ -154,7 +189,7 @@ serve(async (req: Request) => {
                 userId: mapping.user_id,
                 activityId: String(matchedActivity.id),
                 scheduledDate,
-                provider: "Garmin",
+                provider: buildGarminProviderLabel(activity.deviceName),
                 logPrefix: "[garmin-ping]",
               });
               stats.matched++;
@@ -254,7 +289,7 @@ serve(async (req: Request) => {
                 userId: mapping.user_id,
                 activityId: String(matchedActivity.id),
                 scheduledDate,
-                provider: "Garmin",
+                provider: buildGarminProviderLabel(summary.deviceName),
                 logPrefix: "[garmin-ping]",
               });
               stats.matched++;
@@ -364,16 +399,7 @@ serve(async (req: Request) => {
     }
 
     console.log("[garmin-ping] Processing complete:", JSON.stringify(results));
-
-    return new Response(JSON.stringify({ success: true, results }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
   } catch (err) {
     console.error("[garmin-ping] Fatal error:", err);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
   }
-});
+}

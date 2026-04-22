@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../../activities/domain/activity.dart';
+import '../../../../integrations/presentation/widgets/garmin_attribution.dart';
 
 /// Displays coach notes / TrainingPeaks description for an activity.
 /// Only shown when the activity has notes and was synced from a provider.
@@ -22,9 +23,7 @@ class ActivityCoachNotesWidget extends StatelessWidget {
         ? 'TrainingPeaks'
         : isFromFS
             ? 'Final Surge'
-            : isFromGarmin
-                ? 'Garmin'
-                : null;
+            : null;
 
     // Extract the coach description (before metadata line)
     // The notes format from TP transformer: "description\nElevation: ... | Calories: ... | Tags: ..."
@@ -47,15 +46,29 @@ class ActivityCoachNotesWidget extends StatelessWidget {
               const Icon(Icons.notes, size: 16, color: AppColors.electrolyte),
               const SizedBox(width: 6),
               Text(
-                providerName != null
-                    ? 'Coach Notes (from $providerName)'
-                    : 'Notes',
+                isFromGarmin
+                    ? 'Coach Notes (from'
+                    : providerName != null
+                        ? 'Coach Notes (from $providerName)'
+                        : 'Notes',
                 style: const TextStyle(
                   color: AppColors.electrolyte,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              if (isFromGarmin) ...[
+                const SizedBox(width: 4),
+                GarminAttribution(deviceName: activity.garminDeviceName),
+                const Text(
+                  ')',
+                  style: TextStyle(
+                    color: AppColors.electrolyte,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 8),

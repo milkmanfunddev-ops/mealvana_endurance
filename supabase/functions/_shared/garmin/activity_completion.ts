@@ -198,5 +198,9 @@ export function buildGarminCompletionUpdate(
       mappedActivity.swimming_pace_per_100m_seconds;
   }
 
+  if (typeof mappedActivity.garmin_device_name === "string") {
+    updateFields.garmin_device_name = mappedActivity.garmin_device_name;
+  }
+
   return updateFields;
 }

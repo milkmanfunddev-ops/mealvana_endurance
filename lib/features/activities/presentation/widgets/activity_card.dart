@@ -9,6 +9,7 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 import '../providers/activities_controller.dart';
 
 /// Reusable activity card widget matching Kyle's design.
@@ -186,7 +187,9 @@ class ActivityCard extends ConsumerWidget {
   }
 
   Widget _buildActivityDetails(BuildContext context, bool isDark) {
-    final isFromGarmin = activity.syncedFromProvider == 'garmin';
+    // Attribution is required whenever the card shows Garmin-sourced data,
+    // including TP/FS-planned activities completed by a Garmin push.
+    final hasGarminData = activity.hasGarminData;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,34 +220,12 @@ class ActivityCard extends ConsumerWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        // Garmin brand attribution (required by Garmin API Brand Guidelines)
-        // Tag logo + wordmark identifies data origin for primary displays.
-        if (isFromGarmin) ...[
+        // Garmin brand attribution (required by Garmin API Brand Guidelines).
+        // Renders `[tag logo] Garmin [device model]` — or `Garmin Connect`
+        // when no device model was carried on the push.
+        if (hasGarminData) ...[
           const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                isDark
-                    ? 'assets/images/integrations/garmin_tag_white.png'
-                    : 'assets/images/integrations/garmin_tag_black.png',
-                height: 10,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'GARMIN',
-                style: TextStyle(
-                  fontFamily: 'Apercu',
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                  color: (isDark ? AppColors.cream : AppColors.blackberry)
-                      .withValues(alpha: 0.7),
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
+          GarminAttribution(deviceName: activity.garminDeviceName),
         ],
       ],
     );

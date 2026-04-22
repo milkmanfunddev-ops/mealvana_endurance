@@ -175,6 +175,12 @@ class UserRepository with SyncableRepository {
       lastName: dbUser.lastName,
       // Contact information
       email: dbUser.email,
+      // Sweat profile fields
+      sweatSodium: SweatSodiumCat.fromDbValue(dbUser.sweatSodium),
+      knownSweatRateMlPerHour: dbUser.knownSweatRateMlPerHour,
+      knownSodiumConcentrationMgPerLiter: dbUser.knownSodiumConcentrationMgPerLiter,
+      sweatTestDate: dbUser.sweatTestDate,
+      sweatTestSource: dbUser.sweatTestSource,
     );
   }
 

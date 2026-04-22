@@ -39,7 +39,10 @@ import {
   buildGarminCompletionUpdate,
   findMatchingPlannedActivity,
 } from "../_shared/garmin/activity_completion.ts";
-import { sendActivityUploadedPush } from "../_shared/garmin/onesignal.ts";
+import {
+  buildGarminProviderLabel,
+  sendActivityUploadedPush,
+} from "../_shared/garmin/onesignal.ts";
 import type { GarminPushNotification } from "../_shared/garmin/types.ts";
 
 const GARMIN_CLIENT_ID = Deno.env.get("GARMIN_CLIENT_ID") ?? "";
@@ -47,8 +50,14 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
   "";
 
+// Supabase edge runtime global for background task lifetime.
+// See: https://supabase.com/docs/guides/functions/background-tasks
+declare const EdgeRuntime: {
+  waitUntil(promise: Promise<unknown>): void;
+} | undefined;
+
 serve(async (req: Request) => {
-  // Validate the request is from Garmin
+  // Validate the request is from Garmin (header-only, synchronous)
   const validationError = validateGarminRequest(req, GARMIN_CLIENT_ID);
   if (validationError) {
     console.error(`[garmin-push] Validation failed: ${validationError}`);
@@ -58,11 +67,40 @@ serve(async (req: Request) => {
     });
   }
 
-  // Respond 200 immediately - Garmin requires response within 30 seconds
-  // We process asynchronously below, but for Deno serve we need to
-  // complete processing before returning the response.
+  // Parse the body BEFORE returning the response. The request body stream
+  // is closed once we return, so any deferred `req.json()` call fails with
+  // "Interrupted: operation canceled". JSON parsing is fast (< a few ms
+  // even for 100MB payloads) — only the DB writes + outbound fetches get
+  // moved to the background task below.
+  let body: GarminPushNotification;
   try {
-    const body: GarminPushNotification = await req.json();
+    body = await req.json();
+  } catch (err) {
+    console.error("[garmin-push] Failed to parse request body:", err);
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Garmin requires HTTP 200 returned asynchronously within 30 seconds.
+  // Ack immediately and process the parsed payload in the background.
+  const processing = processPushBody(body).catch((err) => {
+    console.error("[garmin-push] Background processing error:", err);
+  });
+
+  if (typeof EdgeRuntime !== "undefined") {
+    EdgeRuntime.waitUntil(processing);
+  }
+
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+});
+
+async function processPushBody(body: GarminPushNotification): Promise<void> {
+  try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const results: Record<string, { processed: number; errors: number }> = {};
@@ -154,7 +192,7 @@ serve(async (req: Request) => {
                 userId: mapping.user_id,
                 activityId: String(matchedActivity.id),
                 scheduledDate,
-                provider: "Garmin",
+                provider: buildGarminProviderLabel(activity.deviceName),
                 logPrefix: "[garmin-push]",
               });
               stats.matched++;
@@ -527,7 +565,7 @@ serve(async (req: Request) => {
                 userId: mapping.user_id,
                 activityId: String(matchedActivity.id),
                 scheduledDate,
-                provider: "Garmin",
+                provider: buildGarminProviderLabel(summary.deviceName),
                 logPrefix: "[garmin-push]",
               });
               stats.matched++;
@@ -667,16 +705,7 @@ serve(async (req: Request) => {
     }
 
     console.log("[garmin-push] Processing complete:", JSON.stringify(results));
-
-    return new Response(JSON.stringify({ success: true, results }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
   } catch (err) {
     console.error("[garmin-push] Fatal error:", err);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
   }
-});
+}

@@ -4,7 +4,7 @@ import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
-import '../../../../features/auth/domain/user_preferences.dart' show GutTraining, SweatRateCat, Gender;
+import '../../../../features/auth/domain/user_preferences.dart' show GutTraining, SweatRateCat, SweatSodiumCat, Gender;
 import '../../../../features/nutrition_plan/domain/run_parameters.dart' show DistanceUnit, PaceUnit;
 
 /// Segmented control for Kyle's design system
@@ -100,6 +100,8 @@ class _SegmentButton<T extends Enum> extends StatelessWidget {
     // Handle common enum types
     if (segment is GutTraining) {
       return (segment as GutTraining).displayName;
+    } else if (segment is SweatSodiumCat) {
+      return (segment as SweatSodiumCat).displayName.toUpperCase();
     } else if (segment is SweatRateCat) {
       return (segment as SweatRateCat).displayName;
     } else if (segment is IntensityLevel) {
@@ -240,6 +242,27 @@ class KyleSweatRateSegmentedControl extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return KyleSegmentedControl<SweatRateCat>(
       segments: SweatRateCat.values,
+      selected: selected,
+      onChanged: onChanged,
+    );
+  }
+}
+
+/// Sweat sodium category segmented control (Low / Average / High)
+class KyleSweatSodiumSegmentedControl extends ConsumerWidget {
+  const KyleSweatSodiumSegmentedControl({
+    super.key,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final SweatSodiumCat selected;
+  final ValueChanged<SweatSodiumCat> onChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return KyleSegmentedControl<SweatSodiumCat>(
+      segments: SweatSodiumCat.values,
       selected: selected,
       onChanged: onChanged,
     );

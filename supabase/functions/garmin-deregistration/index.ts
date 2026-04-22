@@ -23,8 +23,12 @@ const GARMIN_CLIENT_ID = Deno.env.get('GARMIN_CLIENT_ID') ?? '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
+declare const EdgeRuntime: {
+  waitUntil(promise: Promise<unknown>): void;
+} | undefined;
+
 serve(async (req: Request) => {
-  // Validate the request is from Garmin
+  // Validate the request is from Garmin (header-only, synchronous)
   const validationError = validateGarminRequest(req, GARMIN_CLIENT_ID);
   if (validationError) {
     console.error(`[garmin-deregistration] Validation failed: ${validationError}`);
@@ -34,15 +38,42 @@ serve(async (req: Request) => {
     });
   }
 
+  // Parse body before returning — deferred `req.json()` after the response
+  // returns fails with "Interrupted" because the request stream is closed.
+  let body: GarminDeregistrationNotification;
   try {
-    const body: GarminDeregistrationNotification = await req.json();
+    body = await req.json();
+  } catch (err) {
+    console.error('[garmin-deregistration] Failed to parse request body:', err);
+    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Ack 200 immediately; delete mappings in background so Garmin never waits.
+  const processing = processDeregistrationBody(body).catch((err) => {
+    console.error('[garmin-deregistration] Background processing error:', err);
+  });
+
+  if (typeof EdgeRuntime !== 'undefined') {
+    EdgeRuntime.waitUntil(processing);
+  }
+
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+});
+
+async function processDeregistrationBody(
+  body: GarminDeregistrationNotification,
+): Promise<void> {
+  try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     if (!body.deregistrations || body.deregistrations.length === 0) {
-      return new Response(JSON.stringify({ success: true, processed: 0 }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return;
     }
 
     let processed = 0;
@@ -70,19 +101,7 @@ serve(async (req: Request) => {
     }
 
     console.log(`[garmin-deregistration] Complete: ${processed} processed, ${errors} errors`);
-
-    return new Response(
-      JSON.stringify({ success: true, processed, errors }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
   } catch (err) {
     console.error('[garmin-deregistration] Fatal error:', err);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
   }
-});
+}

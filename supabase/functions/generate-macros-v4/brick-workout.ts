@@ -9,15 +9,14 @@ import {
   MI_TO_KM,
   toKg,
   classifyEnvironment,
-  calculateActualSweatRate,
   sodiumConcentrationFromCategory,
+  replacementPctForDuration,
   runningMETFromPace,
   cyclingMETFromSpeed,
   swimmingMETFromPace,
   calculateGrossCalories,
   calculateNetCalories,
   calculateDuringWorkoutCarbRate,
-  calculateDuringWorkoutHydration,
   calculatePostWorkoutCarbs,
   calculatePostWorkoutProtein,
   calculatePostWorkoutHydration,
@@ -25,6 +24,11 @@ import {
   type MacroInputV4,
   type NutritionOverrides,
 } from "./single-sport.ts";
+import {
+  SWIMMING_SWEAT_MODIFIER,
+  calculateSweatRateBreakdown,
+  replacementBandLabel,
+} from "../_shared/nutrition/sweat-hydration.ts";
 import { calculatePreWorkoutTargets } from "./pre-workout.ts";
 
 // ============================================================================
@@ -148,6 +152,330 @@ function resolveBrickSegmentCarbRateOverride(
 // MAIN BRICK CALCULATION
 // ============================================================================
 
+// ============================================================================
+// Brick Hydration (new spec algorithm)
+// ============================================================================
+
+export interface BrickHydrationSegmentInput {
+  sport: string;
+  durationMin: number;
+  order: number;
+}
+
+export interface BrickHydrationInput {
+  weightKg: number;
+  segments: BrickHydrationSegmentInput[];
+  sweatRateCategory: string;
+  sweatSodiumCat: string;
+  tempC: number | null;
+  humidityPct: number | null;
+  isIndoor: boolean;
+  knownSweatRateMlPerHour: number | null;
+  knownSodiumConcMgPerL: number | null;
+}
+
+interface BrickHydrationSegmentResult {
+  sport: string;
+  order: number;
+  duration_min: number;
+  hydration_rate_mlph: number;
+  sodium_rate_mgph: number;
+  ceiling_ml_hr: number;
+  floor_ml_hr: number;
+  effective_sweat_rate_lph: number;
+}
+
+interface BrickHydrationTransitionResult {
+  transition_name: string;
+  after_sport: string;
+  before_sport: string;
+  water_ml: number;
+  sodium_mg: number;
+}
+
+export interface BrickHydrationResult {
+  segments: BrickHydrationSegmentResult[];
+  transitions: BrickHydrationTransitionResult[];
+  safety_flags: string[];
+  effective_sweat_rate_lph: number;
+  sodium_conc_mg_per_l: number;
+  replacement_pct: number;
+  is_tested: boolean;
+  // Transparency breakdown
+  base_sweat_rate_lph: number;
+  temp_mult: number;
+  humidity_mult: number;
+  indoor_mult: number;
+  replacement_band: string;
+}
+
+const GI_CEILING_ML_HR: Record<string, number> = {
+  running: 800,
+  cycling: 1200,
+  swimming: 0,
+};
+
+const TRANSITION_FLUID_ML = 300;
+
+/**
+ * Calculate multi-segment (brick) hydration targets per spec.
+ *
+ * Algorithm:
+ * 1. Compute effective sweat rate (with known-rate override, temp/humidity/indoor mults)
+ * 2. Total duration → replacement %
+ * 3. Per-segment sweat losses (swim uses 0.4× modifier)
+ * 4. Detect transitions: swim→bike = T1, bike→run = T2, each gets 300 ml fixed
+ * 5. Subtract transition intake from required_total and floor_total
+ * 6. Distribute remaining across drinkable hours (non-swim segments)
+ * 7. Apply per-segment ceilings (min(sport GI, 100% sweat rate))
+ * 8. Run→bike redistribution if run ceiling hit
+ * 9. Safety flags for >2% deficit
+ */
+export function calculateBrickHydration(
+  input: BrickHydrationInput,
+): BrickHydrationResult {
+  const {
+    weightKg,
+    segments,
+    sweatRateCategory,
+    sweatSodiumCat,
+    tempC,
+    humidityPct,
+    isIndoor,
+    knownSweatRateMlPerHour,
+    knownSodiumConcMgPerL,
+  } = input;
+
+  const safety_flags: string[] = [];
+
+  // Effective sweat rate (with breakdown for transparency)
+  const breakdown = calculateSweatRateBreakdown(
+    sweatRateCategory, tempC, humidityPct, isIndoor, knownSweatRateMlPerHour,
+  );
+  const effectiveSweatRateLph = breakdown.effective_lph;
+  const effectiveSweatRateMlph = effectiveSweatRateLph * 1000;
+
+  // Sodium concentration
+  const sodiumConcMgPerL = knownSodiumConcMgPerL ?? sodiumConcentrationFromCategory(sweatSodiumCat);
+
+  // Total duration → replacement %
+  const totalDurationMin = segments.reduce((s, seg) => s + seg.durationMin, 0);
+  const replacementPct = replacementPctForDuration(totalDurationMin);
+
+  // Per-segment sweat losses (swim uses 0.4× modifier)
+  let totalLossMl = 0;
+  for (const seg of segments) {
+    const durationH = seg.durationMin / 60;
+    if (seg.sport.toLowerCase() === 'swimming') {
+      totalLossMl += effectiveSweatRateMlph * SWIMMING_SWEAT_MODIFIER * durationH;
+    } else {
+      totalLossMl += effectiveSweatRateMlph * durationH;
+    }
+  }
+
+  // Detect transitions (ordered by segment)
+  // Transition occurs between each adjacent pair of segments
+  // swim→bike = T1, bike→run = T2
+  const transitionsRaw: Array<{ index: number; afterSport: string; beforeSport: string }> = [];
+  for (let i = 0; i < segments.length - 1; i++) {
+    const afterSport = segments[i].sport.toLowerCase();
+    const beforeSport = segments[i + 1].sport.toLowerCase();
+
+    // Naming convention: swim→bike = T1, bike→run = T2, otherwise index-based
+    let transitionName: string;
+    if (afterSport === 'swimming' && beforeSport === 'cycling') {
+      transitionName = 'T1';
+    } else if (afterSport === 'cycling' && beforeSport === 'running') {
+      transitionName = 'T2';
+    } else {
+      transitionName = `T${i + 1}`;
+    }
+    transitionsRaw.push({ index: i, afterSport, beforeSport });
+    // Store with the name for output
+    transitionsRaw[transitionsRaw.length - 1] = {
+      index: i,
+      afterSport,
+      beforeSport,
+      // deno-lint-ignore no-explicit-any
+      ...(transitionName ? { name: transitionName } as any : {}),
+    };
+  }
+
+  const transitionCount = transitionsRaw.length;
+  const totalTransitionFluidMl = transitionCount * TRANSITION_FLUID_ML;
+
+  // Required total based on replacement %
+  const requiredTotalMl = totalLossMl * replacementPct;
+  // Floor: covers deficit down to 2% BW
+  const maxDeficitMl = weightKg * 1000 * 0.02;
+  const rawFloorTotalMl = totalLossMl - maxDeficitMl;
+  const floorTotalMl = Math.max(0, rawFloorTotalMl);
+
+  // Subtract transition intake
+  const remainingRequired = Math.max(0, requiredTotalMl - totalTransitionFluidMl);
+  const remainingFloor = Math.max(0, floorTotalMl - totalTransitionFluidMl);
+
+  // Drinkable hours: non-swim segments only
+  const drinkableMinutes = segments
+    .filter(s => s.sport.toLowerCase() !== 'swimming')
+    .reduce((s, seg) => s + seg.durationMin, 0);
+  const drinkableHours = drinkableMinutes / 60;
+
+  // Recommended ml/hr across drinkable segments
+  let recommendedMlHr = drinkableHours > 0 ? Math.round(remainingRequired / drinkableHours) : 0;
+  const floorMlHr = drinkableHours > 0 ? Math.round(remainingFloor / drinkableHours) : 0;
+
+  // Apply floor (raises target if needed)
+  recommendedMlHr = Math.max(recommendedMlHr, floorMlHr);
+
+  // Per-segment ceiling = min(sport GI, 100% sweat rate)
+  const segmentCeilings: Record<string, number> = {
+    cycling: Math.round(Math.min(GI_CEILING_ML_HR['cycling'], effectiveSweatRateMlph)),
+    running: Math.round(Math.min(GI_CEILING_ML_HR['running'], effectiveSweatRateMlph)),
+    swimming: 0,
+  };
+
+  // Apply per-segment ceilings — initially all drinkable segments get recommendedMlHr
+  // Then do run→bike redistribution
+  const segmentRates: Record<number, number> = {};
+  for (const seg of segments) {
+    const sport = seg.sport.toLowerCase();
+    if (sport === 'swimming') {
+      segmentRates[seg.order] = 0;
+    } else {
+      const ceiling = segmentCeilings[sport] ?? GI_CEILING_ML_HR['running'];
+      segmentRates[seg.order] = Math.min(recommendedMlHr, ceiling);
+    }
+  }
+
+  // Run→bike redistribution
+  // If run floor_ml_hr > run ceiling, shortfall must move to bike
+  const nonSwimSegs = segments.filter(s => s.sport.toLowerCase() !== 'swimming');
+
+  let redistributionFailed = false;
+  for (const seg of nonSwimSegs) {
+    if (seg.sport.toLowerCase() !== 'running') continue;
+
+    const runCeiling = segmentCeilings['running'];
+    if (floorMlHr > runCeiling) {
+      // Shortfall from run
+      const runDurationH = seg.durationMin / 60;
+      const shortfallTotal = (floorMlHr - runCeiling) * runDurationH;
+
+      // Distribute to bike segments
+      const bikeSegs = nonSwimSegs.filter(s => s.sport.toLowerCase() === 'cycling');
+      const totalBikeHours = bikeSegs.reduce((s, b) => s + b.durationMin / 60, 0);
+
+      if (totalBikeHours > 0) {
+        const addPerHr = shortfallTotal / totalBikeHours;
+        const bikeCeiling = segmentCeilings['cycling'];
+        for (const bikeSeg of bikeSegs) {
+          const current = segmentRates[bikeSeg.order];
+          const newRate = Math.min(current + addPerHr, bikeCeiling);
+          segmentRates[bikeSeg.order] = Math.round(newRate);
+        }
+      }
+
+      // Cap run at ceiling
+      segmentRates[seg.order] = runCeiling;
+
+      // Check if shortfall remains
+      const actualBikeIntake = nonSwimSegs
+        .filter(s => s.sport.toLowerCase() === 'cycling')
+        .reduce((s, b) => s + segmentRates[b.order] * b.durationMin / 60, 0);
+      const actualRunIntake = segmentRates[seg.order] * runDurationH;
+      const totalActualIntake = actualBikeIntake + actualRunIntake + totalTransitionFluidMl;
+      const netDeficit = totalLossMl - totalActualIntake;
+
+      if (netDeficit > maxDeficitMl) {
+        redistributionFailed = true;
+      }
+    }
+  }
+
+  if (redistributionFailed) {
+    safety_flags.push('Even at maximum intake on all segments, you will exceed 2% BW loss.');
+  }
+
+  // Calculate total intake for safety check
+  let totalIntakeMl = totalTransitionFluidMl;
+  for (const seg of segments) {
+    const rate = segmentRates[seg.order] ?? 0;
+    totalIntakeMl += rate * seg.durationMin / 60;
+  }
+  const netDeficitMl = totalLossMl - totalIntakeMl;
+  if (weightKg > 0 && netDeficitMl > 0) {
+    const deficitPct = netDeficitMl / (weightKg * 1000);
+    if (deficitPct > 0.03 && !redistributionFailed) {
+      // Only add this flag if redistribution didn't already flag it
+      const deficitPctStr = (deficitPct * 100).toFixed(1);
+      safety_flags.push(`Significant dehydration expected (>${deficitPctStr}% BW).`);
+    } else if (deficitPct > 0.03) {
+      const deficitPctStr = (deficitPct * 100).toFixed(1);
+      safety_flags.push(`Significant dehydration expected (>${deficitPctStr}% BW).`);
+    }
+  }
+
+  // Build output segments
+  const resultSegments: BrickHydrationSegmentResult[] = segments.map(seg => {
+    const rate = segmentRates[seg.order] ?? 0;
+    const sport = seg.sport.toLowerCase();
+    const ceiling = segmentCeilings[sport] ?? 0;
+    const sodiumRate = Math.round((rate / 1000) * sodiumConcMgPerL);
+    // Per-segment effective sweat rate: swim uses 0.4× modifier
+    const segEffectiveLph = sport === 'swimming'
+      ? effectiveSweatRateLph * SWIMMING_SWEAT_MODIFIER
+      : effectiveSweatRateLph;
+    return {
+      sport: seg.sport,
+      order: seg.order,
+      duration_min: seg.durationMin,
+      hydration_rate_mlph: rate,
+      sodium_rate_mgph: sodiumRate,
+      ceiling_ml_hr: ceiling,
+      floor_ml_hr: sport === 'swimming' ? 0 : floorMlHr,
+      effective_sweat_rate_lph: Math.round(segEffectiveLph * 1000) / 1000,
+    };
+  });
+
+  // Build output transitions
+  const resultTransitions: BrickHydrationTransitionResult[] = transitionsRaw.map((t, idx) => {
+    const afterSport = t.afterSport;
+    const beforeSport = t.beforeSport;
+    let transitionName: string;
+    if (afterSport === 'swimming' && beforeSport === 'cycling') {
+      transitionName = 'T1';
+    } else if (afterSport === 'cycling' && beforeSport === 'running') {
+      transitionName = 'T2';
+    } else {
+      transitionName = `T${idx + 1}`;
+    }
+    const sodiumMg = Math.round((TRANSITION_FLUID_ML / 1000) * sodiumConcMgPerL);
+    return {
+      transition_name: transitionName,
+      after_sport: t.afterSport,
+      before_sport: t.beforeSport,
+      water_ml: TRANSITION_FLUID_ML,
+      sodium_mg: sodiumMg,
+    };
+  });
+
+  return {
+    segments: resultSegments,
+    transitions: resultTransitions,
+    safety_flags,
+    effective_sweat_rate_lph: effectiveSweatRateLph,
+    sodium_conc_mg_per_l: sodiumConcMgPerL,
+    replacement_pct: replacementPct,
+    is_tested: knownSweatRateMlPerHour !== null,
+    base_sweat_rate_lph: breakdown.base_lph,
+    temp_mult: breakdown.temp_mult,
+    humidity_mult: breakdown.humidity_mult,
+    indoor_mult: breakdown.indoor_mult,
+    replacement_band: replacementBandLabel(totalDurationMin),
+  };
+}
+
 export function calculateBrickMacrosV4(
   input: MacroInputV4,
   preTargets: ReturnType<typeof calculatePreWorkoutTargets>,
@@ -169,6 +497,30 @@ export function calculateBrickMacrosV4(
     0,
   );
   const totalDurationH = totalDurationMin / 60;
+
+  // --- Brick hydration (new spec algorithm) ---
+  // Run once for the whole brick; all per-segment hydration values come from here.
+  const brickHydration = calculateBrickHydration({
+    weightKg,
+    segments: segments.map(s => ({
+      sport: s.sport,
+      durationMin: s.duration_minutes,
+      order: s.order,
+    })),
+    sweatRateCategory,
+    sweatSodiumCat,
+    tempC: input.temp_c ?? null,
+    humidityPct: input.humidity_pct ?? null,
+    isIndoor: input.is_indoor ?? false,
+    knownSweatRateMlPerHour: input.known_sweat_rate_ml_hr ?? null,
+    knownSodiumConcMgPerL: input.known_sodium_concentration_mg_l ?? null,
+  });
+
+  // Build a lookup from segment order → hydration result
+  const hydrationByOrder: Record<number, BrickHydrationSegmentResult> = {};
+  for (const seg of brickHydration.segments) {
+    hydrationByOrder[seg.order] = seg;
+  }
 
   // During: per-segment calculations (same as V3 brick)
   const duringSegments: Array<{
@@ -197,6 +549,20 @@ export function calculateBrickMacrosV4(
     sport_ceiling_g_per_h: number;
     brick_penalty: number;
     cumulative_duration_min: number;
+    // Hydration transparency (from calculateBrickHydration)
+    hydration_rate_ml_per_h: number;
+    sodium_rate_mg_per_h: number;
+    effective_sweat_rate_lph: number;
+    floor_ml_hr: number;
+    ceiling_ml_hr: number;
+    safety_flags: string[];
+    replacement_pct: number;
+    replacement_band: string;
+    is_tested: boolean;
+    base_sweat_rate_lph: number;
+    temp_mult: number;
+    humidity_mult: number;
+    indoor_mult: number;
   }> = [];
 
   let totalGrossCalories = 0;
@@ -236,6 +602,17 @@ export function calculateBrickMacrosV4(
     totalDistanceKm += segDistKm;
     totalDistanceMi += segDistMi;
 
+    // Hydration comes from calculateBrickHydration (total-duration-based)
+    const segHydration = hydrationByOrder[segment.order];
+    const hydRateMlph = segHydration?.hydration_rate_mlph ?? 0;
+    const sodiumRateMgph = segHydration?.sodium_rate_mgph ?? 0;
+    const ceilingMlHr = segHydration?.ceiling_ml_hr ?? 0;
+    const floorMlHr = segHydration?.floor_ml_hr ?? 0;
+    const effectiveSweatRateLph = segHydration?.effective_sweat_rate_lph ?? 0;
+    // Total water and sodium for this segment from rate × duration
+    const segWaterMl = Math.round(hydRateMlph * durationH);
+    const segSodiumMg = Math.round(sodiumRateMgph * durationH);
+
     if (sport === "swimming") {
       duringSegments.push({
         segment_order: segment.order,
@@ -263,6 +640,20 @@ export function calculateBrickMacrosV4(
         sport_ceiling_g_per_h: 0,
         brick_penalty: 1.0,
         cumulative_duration_min: cumulativeDurationMin,
+        // Hydration transparency
+        hydration_rate_ml_per_h: 0,
+        sodium_rate_mg_per_h: 0,
+        effective_sweat_rate_lph: effectiveSweatRateLph,
+        floor_ml_hr: 0,
+        ceiling_ml_hr: 0,
+        safety_flags: brickHydration.safety_flags,
+        replacement_pct: brickHydration.replacement_pct,
+        replacement_band: brickHydration.replacement_band,
+        is_tested: brickHydration.is_tested,
+        base_sweat_rate_lph: brickHydration.base_sweat_rate_lph,
+        temp_mult: brickHydration.temp_mult,
+        humidity_mult: brickHydration.humidity_mult,
+        indoor_mult: brickHydration.indoor_mult,
       });
     } else {
       // Use total brick duration for carb band lookup so each segment's
@@ -272,13 +663,6 @@ export function calculateBrickMacrosV4(
         sport,
         gutTraining,
         intensityDist,
-      );
-      const hydrationResult = calculateDuringWorkoutHydration(
-        durationH,
-        sweatRateCategory,
-        sweatSodiumCat,
-        input.temp_c ?? null,
-        input.humidity_pct ?? null,
       );
       const segmentCarbRateOverride = resolveBrickSegmentCarbRateOverride(
         segment,
@@ -302,12 +686,12 @@ export function calculateBrickMacrosV4(
         carbs_rate_g_per_h: Math.round(adjustedCarbRate * 10) / 10,
         protein_g: 0,
         fat_g: 0,
-        sodium_mg: hydrationResult.sodium_total_mg,
-        sodium_low_mg: Math.round(hydrationResult.sodium_total_mg * 0.8),
-        sodium_high_mg: Math.round(hydrationResult.sodium_total_mg * 1.2),
-        water_ml: hydrationResult.hydration_total_ml,
-        water_low_ml: Math.round(hydrationResult.hydration_total_ml * 0.85),
-        water_high_ml: Math.round(hydrationResult.hydration_total_ml * 1.15),
+        sodium_mg: segSodiumMg,
+        sodium_low_mg: Math.round(segSodiumMg * 0.8),
+        sodium_high_mg: Math.round(segSodiumMg * 1.2),
+        water_ml: segWaterMl,
+        water_low_ml: Math.round(segWaterMl * 0.85),
+        water_high_ml: Math.round(segWaterMl * 1.15),
         food_categories: [`during_${sport}`],
         // Transparency fields
         raw_band_low_g_per_h: carbResult.raw_band_low,
@@ -318,11 +702,32 @@ export function calculateBrickMacrosV4(
         sport_ceiling_g_per_h: carbResult.sport_ceiling,
         brick_penalty: brickPenalty,
         cumulative_duration_min: cumulativeDurationMin,
+        // Hydration transparency (from calculateBrickHydration)
+        hydration_rate_ml_per_h: hydRateMlph,
+        sodium_rate_mg_per_h: sodiumRateMgph,
+        effective_sweat_rate_lph: effectiveSweatRateLph,
+        floor_ml_hr: floorMlHr,
+        ceiling_ml_hr: ceilingMlHr,
+        safety_flags: brickHydration.safety_flags,
+        replacement_pct: brickHydration.replacement_pct,
+        replacement_band: brickHydration.replacement_band,
+        is_tested: brickHydration.is_tested,
+        base_sweat_rate_lph: brickHydration.base_sweat_rate_lph,
+        temp_mult: brickHydration.temp_mult,
+        humidity_mult: brickHydration.humidity_mult,
+        indoor_mult: brickHydration.indoor_mult,
       });
     }
   }
 
-  // Transitions (same as V3)
+  // Transitions — water_ml and sodium_mg come from calculateBrickHydration.
+  // Carb logic is unchanged (based on total duration).
+  // Build a lookup from transition_name → hydration result.
+  const hydrationTransitionByName: Record<string, typeof brickHydration.transitions[0]> = {};
+  for (const ht of brickHydration.transitions) {
+    hydrationTransitionByName[ht.transition_name] = ht;
+  }
+
   const transitions: Array<{
     transition_name: string;
     after_sport: string;
@@ -337,39 +742,32 @@ export function calculateBrickMacrosV4(
   }> = [];
 
   for (let i = 0; i < segments.length - 1; i++) {
-    const transitionName = i === 0 ? "T1" : "T2";
-    let transitionCarbs: number,
-      transitionSodium: number,
-      transitionWater: number;
+    const afterSport = segments[i].sport.toLowerCase();
+    const beforeSport = segments[i + 1].sport.toLowerCase();
+    let transitionName: string;
+    if (afterSport === 'swimming' && beforeSport === 'cycling') {
+      transitionName = 'T1';
+    } else if (afterSport === 'cycling' && beforeSport === 'running') {
+      transitionName = 'T2';
+    } else {
+      transitionName = `T${i + 1}`;
+    }
+
+    // Carbs: preserve existing carb logic based on total duration (unchanged)
+    let transitionCarbs: number;
     if (totalDurationMin < 90) {
       transitionCarbs = 0;
-      transitionSodium = 0;
-      transitionWater = 0;
     } else if (totalDurationMin < 180) {
       transitionCarbs = 0;
-      transitionSodium = 0;
-      transitionWater = 50;
     } else {
       const carbsPerKg = i === 0 ? 0.3 : 0.35;
       transitionCarbs = Math.round(weightKg * carbsPerKg);
-      if (totalDurationMin < 420) {
-        if (i === 0) {
-          transitionSodium = 150;
-          transitionWater = 150;
-        } else {
-          transitionSodium = 100;
-          transitionWater = 100;
-        }
-      } else {
-        if (i === 0) {
-          transitionSodium = 200;
-          transitionWater = 200;
-        } else {
-          transitionSodium = 150;
-          transitionWater = 150;
-        }
-      }
     }
+
+    // Water and sodium from calculateBrickHydration (fixed 300 ml + 0.3×sodiumConc mg)
+    const ht = hydrationTransitionByName[transitionName];
+    const transitionWaterMl = ht?.water_ml ?? 300;
+    const transitionSodiumMg = ht?.sodium_mg ?? 0;
 
     transitions.push({
       transition_name: transitionName,
@@ -378,8 +776,8 @@ export function calculateBrickMacrosV4(
       carbs_g: transitionCarbs,
       protein_g: 0,
       fat_g: 0,
-      sodium_mg: transitionSodium,
-      water_ml: transitionWater,
+      sodium_mg: transitionSodiumMg,
+      water_ml: transitionWaterMl,
       timing_note: transitionName === "T1"
         ? "Within first 5-10 minutes after first segment"
         : "Final 5-10 minutes of second segment",
@@ -398,12 +796,10 @@ export function calculateBrickMacrosV4(
     totalDurationH,
     isFasted,
   );
-  const actualSweatRateLph = calculateActualSweatRate(
-    sweatRateCategory,
-    input.temp_c ?? null,
-    input.humidity_pct ?? null,
-  );
-  const sodiumConcMgPerL = sodiumConcentrationFromCategory(sweatSodiumCat);
+  // Use effective sweat rate and sodium concentration from calculateBrickHydration
+  // (already accounts for indoor flag, known sweat rate, temp/humidity).
+  const actualSweatRateLph = brickHydration.effective_sweat_rate_lph;
+  const sodiumConcMgPerL = brickHydration.sodium_conc_mg_per_l;
   const totalDuringHydrationMl =
     duringSegments.reduce((sum, s) => sum + s.water_ml, 0) +
     transitions.reduce((sum, t) => sum + t.water_ml, 0);

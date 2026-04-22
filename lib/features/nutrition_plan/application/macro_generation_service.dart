@@ -248,6 +248,22 @@ class MacroGenerationService {
     final zoneMid = (intensity?.tempoPct ?? 20) / 100.0;
     final zoneHigh = (intensity?.allOutPct ?? 10) / 100.0;
 
+    // Sweat profile: read from UserProfile; map SweatSodiumCat → edge fn enum.
+    // 'medium' is accepted as an alias on the edge function side but we always
+    // send the canonical value ('low'|'average'|'high').
+    final sweatSodiumValue =
+        (userProfile?.sweatSodium ?? SweatSodiumCat.average).value;
+
+    // Known sweat-test overrides (null = use algorithmic estimate)
+    final knownSweatRateMlHr = userProfile?.knownSweatRateMlPerHour;
+    final knownSodiumConcMgL =
+        userProfile?.knownSodiumConcentrationMgPerLiter;
+
+    // Running is always outdoor; no indoor-override field exists on the form.
+    // TODO: wire isIndoor from activity form if outdoor/indoor option is added
+    //       to running in a future iteration.
+    const isIndoor = false;
+
     return {
       'age': userMetrics['age'],
       'gender': userMetrics['gender'],
@@ -271,10 +287,14 @@ class MacroGenerationService {
       'time_before_run_min': timeBeforeRunMinutes,
       'gut_training': gutTraining.name,
       'carb_source': 'dual',
-      'sweat_sodium': 'medium',
-      'drink_sodium_mg_per_l': 500,
-      'optional_sweat_rate_lph': null,
-      'sweat_rate_category': sweatRateCat?.name ?? 'medium',
+      // Sweat profile (Phase 6: read from UserProfile instead of hardcoding)
+      'sweat_sodium': sweatSodiumValue,
+      'sweat_rate_category': sweatRateCat?.name ?? userProfile?.sweatRate.name ?? 'medium',
+      'is_indoor': isIndoor,
+      if (knownSweatRateMlHr != null)
+        'known_sweat_rate_ml_hr': knownSweatRateMlHr,
+      if (knownSodiumConcMgL != null)
+        'known_sodium_concentration_mg_l': knownSodiumConcMgL,
       'temp_c': temperatureC,
       'humidity_pct': humidityPct,
       ...preferencePayload,
@@ -306,6 +326,16 @@ class MacroGenerationService {
     final zoneMid = (intensity?.tempoPct ?? 20) / 100.0;
     final zoneHigh = (intensity?.allOutPct ?? 10) / 100.0;
 
+    // Derive is_indoor from the indoorOutdoor form field.
+    final isIndoor = indoorOutdoor.toLowerCase() == 'indoor';
+
+    // Sweat profile: read from UserProfile.
+    final sweatSodiumValue =
+        (userProfile?.sweatSodium ?? SweatSodiumCat.average).value;
+    final knownSweatRateMlHr = userProfile?.knownSweatRateMlPerHour;
+    final knownSodiumConcMgL =
+        userProfile?.knownSodiumConcentrationMgPerLiter;
+
     return {
       'activity_type': 'cycling',
       'age': userMetrics['age'],
@@ -329,6 +359,14 @@ class MacroGenerationService {
       // Legacy param
       'time_before_min': timeBeforeMinutes,
       'gut_training': userProfile?.gutTraining.name ?? 'moderate',
+      // Sweat profile (Phase 6: read from UserProfile instead of hardcoding)
+      'sweat_sodium': sweatSodiumValue,
+      'sweat_rate_category': userProfile?.sweatRate.name ?? 'medium',
+      'is_indoor': isIndoor,
+      if (knownSweatRateMlHr != null)
+        'known_sweat_rate_ml_hr': knownSweatRateMlHr,
+      if (knownSodiumConcMgL != null)
+        'known_sodium_concentration_mg_l': knownSodiumConcMgL,
       if (elevationGainFt != null) 'elevation_gain_ft': elevationGainFt,
       if (intensityTarget != null) 'intensity_target': intensityTarget,
       if (sessionGoal != null) 'session_goal': sessionGoal,
@@ -590,6 +628,26 @@ class MacroGenerationService {
           rawBandHighGPerH: _toDoubleOrNull(
             macrosData['during_raw_band_high_g_per_h'],
           ),
+          // Hydration/sodium derivation fields (Phase 6 — read from edge fn response)
+          effectiveSweatRateLPerH: _toDoubleOrNull(
+            macrosData['effective_sweat_rate_lph'],
+          ),
+          sodiumConcMgPerL: macrosData['sodium_conc_mg_per_l'] != null
+              ? _toDouble(macrosData['sodium_conc_mg_per_l']).round()
+              : null,
+          replacementPercent: _toDoubleOrNull(macrosData['replacement_pct']),
+          floorMlPerH: macrosData['floor_ml_hr'] != null
+              ? _toDouble(macrosData['floor_ml_hr']).round()
+              : null,
+          ceilingMlPerH: macrosData['ceiling_ml_hr'] != null
+              ? _toDouble(macrosData['ceiling_ml_hr']).round()
+              : null,
+          safetyFlags: _toStringList(macrosData['safety_flags']),
+          isTested: macrosData['is_tested'] as bool? ?? false,
+          // Environment echo fields
+          tempC: _toDoubleOrNull(macrosData['temp_c']),
+          humidityPct: _toDoubleOrNull(macrosData['humidity_pct']),
+          isIndoor: macrosData['is_indoor'] as bool?,
         );
       }(),
       postRun: PostRunMacros(
@@ -706,6 +764,11 @@ class MacroGenerationService {
       }
     }
     return results;
+  }
+
+  List<String> _toStringList(dynamic value) {
+    if (value is! List) return const [];
+    return value.map((e) => e.toString()).toList();
   }
 
   Future<void> _cacheMacroTargets(
