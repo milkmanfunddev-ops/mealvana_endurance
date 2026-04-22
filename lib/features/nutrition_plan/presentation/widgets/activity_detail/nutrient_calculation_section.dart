@@ -1,0 +1,201 @@
+import 'package:flutter/material.dart';
+
+import '../../../../../theme/kyle_design/app_colors.dart';
+import '../../../domain/nutrient_transparency_data.dart';
+import 'transparency_accordion.dart';
+
+/// Renders the "Calculation" accordion — the step-numbered breakdown
+/// that shows how the effective sweat rate, replacement %, floor, and
+/// ceiling combine to produce the final recommendation.
+///
+/// Matches the Notion/Figma screenshots:
+///
+///   Calculation ⌄
+///     CALCULATE EFFECTIVE SWEAT RATE
+///       ① medium sweater → 1.28 L/hr (50th pct)
+///       ② 22°C → × 1.0 = 1.28 L/hr
+///       ③ 55% humidity → × 1.01 = 1.29 L/hr
+///       ④ outdoor → × 1.0 = 1.29 L/hr effective
+///     ─────
+///     REPLACEMENT STRATEGY
+///       ⑤ 90 min → 50% → 1.29 × 1000 × 0.50 = 645 ml/hr
+///       ↓ floor = (1935 - 1300) ÷ 1.5 = 423 ml/hr (2% of 65 kg)
+///       ↑ ceiling = min(800, 1290) = 800 ml/hr (running GI limit)
+///       ✓ 645 ml/hr × 1.5 hr = 968 ml (33 oz)
+///   (optional amber warning box)
+class NutrientCalculationSection extends StatelessWidget {
+  const NutrientCalculationSection({super.key, required this.data});
+
+  final NutrientTransparencyData data;
+
+  @override
+  Widget build(BuildContext context) {
+    if (data.calculationSections.isEmpty) return const SizedBox.shrink();
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryText = isDark ? AppColors.textDark : AppColors.textLight;
+    final secondaryText =
+        isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
+    final dimColor = isDark
+        ? Colors.white.withValues(alpha: 0.4)
+        : Colors.black.withValues(alpha: 0.4);
+    final accentColor = data.nutrientColor;
+
+    return TransparencyAccordion(
+      title: 'Calculation',
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
+              color: accentColor.withValues(alpha: 0.22),
+              width: 2,
+            ),
+          ),
+        ),
+        padding: const EdgeInsets.only(left: 12, top: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < data.calculationSections.length; i++) ...[
+              if (i > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Container(
+                    height: 1,
+                    color: accentColor.withValues(alpha: 0.22),
+                  ),
+                ),
+              _buildSection(
+                data.calculationSections[i],
+                primaryText,
+                secondaryText,
+                dimColor,
+                accentColor,
+              ),
+            ],
+            if (data.calculationWarning != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.orange.withValues(alpha: 0.10),
+                  border: Border.all(
+                    color: AppColors.orange.withValues(alpha: 0.4),
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  data.calculationWarning!,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.orange,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSection(
+    CalculationSection section,
+    Color primaryText,
+    Color secondaryText,
+    Color dimColor,
+    Color accentColor,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            section.header,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+              color: secondaryText,
+            ),
+          ),
+        ),
+        for (final line in section.lines)
+          _buildLine(line, primaryText, secondaryText, dimColor, accentColor),
+      ],
+    );
+  }
+
+  Widget _buildLine(
+    FormulaLine line,
+    Color primaryText,
+    Color secondaryText,
+    Color dimColor,
+    Color accentColor,
+  ) {
+    final spans = line.segments.map((seg) {
+      Color color;
+      FontWeight weight;
+      switch (seg.style) {
+        case SegmentStyle.accent:
+          color = accentColor;
+          weight = FontWeight.w600;
+          break;
+        case SegmentStyle.op:
+          color = dimColor;
+          weight = FontWeight.w400;
+          break;
+        case SegmentStyle.dim:
+          color = secondaryText;
+          weight = FontWeight.w400;
+          break;
+        case SegmentStyle.result:
+          color = primaryText;
+          weight = FontWeight.w700;
+          break;
+      }
+      return TextSpan(
+        text: seg.text,
+        style: TextStyle(
+          color: color,
+          fontWeight: weight,
+          fontFamily: 'monospace',
+          fontSize: 13,
+          height: 1.6,
+        ),
+      );
+    }).toList();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (line.stepNumber != null)
+            SizedBox(
+              width: 20,
+              child: Text(
+                line.stepNumber!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: dimColor,
+                  fontFamily: 'monospace',
+                  height: 1.6,
+                ),
+              ),
+            )
+          else
+            const SizedBox(width: 20),
+          Expanded(
+            child: RichText(
+              text: TextSpan(children: spans),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

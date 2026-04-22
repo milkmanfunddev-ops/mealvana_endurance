@@ -512,7 +512,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           _buildTextField(
             context: context,
             controller: _weightController,
-            label: _weightFromGarmin ? 'Weight (from Garmin)' : 'Weight',
+            label: _weightFromGarmin ? 'Weight (from Garmin Connect)' : 'Weight',
             hint: 'Enter your weight',
             icon: FontAwesomeIcons.weightScale,
             keyboardType: TextInputType.number,

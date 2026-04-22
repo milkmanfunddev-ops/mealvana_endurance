@@ -83,6 +83,10 @@ class Activity {
     // Brick workout fields
     this.brickMetadata,
     this.brickId,
+
+    // Garmin completion linkage + device attribution (brand-compliant UI)
+    this.garminSummaryId,
+    this.garminDeviceName,
   });
 
   final String id;
@@ -169,8 +173,25 @@ class Activity {
   final BrickMetadata? brickMetadata; // Brick segment information (JSON)
   final String? brickId; // Parent brick ID if this is an archived segment
 
+  // Garmin completion summary id — present whenever this activity's completion
+  // data came from a Garmin push (including when TP/FS planned the workout).
+  // Authoritative signal for whether Garmin brand attribution is required.
+  final String? garminSummaryId;
+
+  // Garmin device model (e.g., "Forerunner 955") — used for attribution
+  // where we surface Garmin-derived data per brand guidelines.
+  final String? garminDeviceName;
+
   /// Convenience getter to check if this is a brick activity
   bool get isBrick => activityType == ActivityType.brick;
+
+  /// True when the activity displays Garmin-sourced data and therefore
+  /// requires Garmin brand attribution per the Developer API Brand Guidelines.
+  ///
+  /// Covers both paths: activities originally synced from Garmin AND
+  /// TP/FS-planned activities completed by a Garmin push (the common case).
+  bool get hasGarminData =>
+      garminSummaryId != null || syncedFromProvider == 'garmin';
 
   /// Serialize activity to JSON for edge function payload
   Map<String, dynamic> toJson() {
@@ -225,6 +246,8 @@ class Activity {
       'scheduleChangedAt': scheduleChangedAt?.toIso8601String(),
       'brickMetadata': brickMetadata?.toJson(),
       'brickId': brickId,
+      'garminSummaryId': garminSummaryId,
+      'garminDeviceName': garminDeviceName,
     };
   }
 
@@ -281,6 +304,8 @@ class Activity {
     DateTime? scheduleChangedAt,
     BrickMetadata? brickMetadata,
     String? brickId,
+    String? garminSummaryId,
+    String? garminDeviceName,
   }) {
     return Activity(
       id: id ?? this.id,
@@ -344,6 +369,8 @@ class Activity {
       scheduleChangedAt: scheduleChangedAt ?? this.scheduleChangedAt,
       brickMetadata: brickMetadata ?? this.brickMetadata,
       brickId: brickId ?? this.brickId,
+      garminSummaryId: garminSummaryId ?? this.garminSummaryId,
+      garminDeviceName: garminDeviceName ?? this.garminDeviceName,
     );
   }
 
@@ -396,7 +423,9 @@ class Activity {
         other.paceMinMinutesPerMile == paceMinMinutesPerMile &&
         other.paceMaxMinutesPerMile == paceMaxMinutesPerMile &&
         other.brickMetadata == brickMetadata &&
-        other.brickId == brickId;
+        other.brickId == brickId &&
+        other.garminSummaryId == garminSummaryId &&
+        other.garminDeviceName == garminDeviceName;
   }
 
   @override
@@ -452,6 +481,8 @@ class Activity {
           paceMaxMinutesPerMile,
           brickMetadata,
           brickId,
+          garminSummaryId,
+          garminDeviceName,
         );
   }
 

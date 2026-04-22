@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 import '../../domain/carb_adjustment_level.dart';
 import '../../domain/fuel_log_data.dart';
 import '../providers/activity_detail_controller.dart';
@@ -185,12 +186,25 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    // Show Garmin attribution when the activity displays Garmin-sourced data,
+    // including TP/FS-planned workouts completed by a Garmin push.
+    final hasGarminData = state.activity?.hasGarminData ?? false;
+
     return SingleChildScrollView(
       padding: AppSpacing.screenPaddingHorizontal,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppSpacing.lg),
+          if (hasGarminData) ...[
+            // Required by Garmin Developer API Brand Guidelines whenever
+            // screens display data derived from a Garmin Connect upload.
+            GarminAttribution(
+              deviceName: state.activity?.garminDeviceName,
+              style: GarminAttributionStyle.standard,
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           _buildFuelLogSections(context, state, fuelLog),
           const SizedBox(height: AppSpacing.md),
           FuelLogFeedbackSection(

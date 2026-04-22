@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
@@ -887,6 +888,55 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
               setState(() => _sweatRate = value);
               _markChanged();
             },
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Navigation row to the dedicated Sweat Profile screen
+          InkWell(
+            onTap: () => context.push('/settings/sweat-profile'),
+            borderRadius: AppRadius.cardRadius,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Row(
+                children: [
+                  const Icon(
+                    FontAwesomeIcons.droplet,
+                    size: 16,
+                    color: AppColors.orange,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sweat Profile',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          'Sodium category, sweat-test values',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    FontAwesomeIcons.chevronRight,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),

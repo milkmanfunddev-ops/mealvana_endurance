@@ -10,11 +10,14 @@ import '../../domain/food_item_data.dart';
 import '../../domain/time_slot_assignment.dart';
 import '../../application/proportional_scaling_service.dart';
 import '../../application/by_hour_sync_service.dart';
+import '../../application/macro_generation_service.dart';
+import '../../application/brick_macro_service.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../activities/domain/activity_reminder.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../application/resolved_during_target_resolver.dart';
 import '../../data/macro_repository.dart';
 import '../../data/nutrition_plan_repository.dart';
@@ -265,6 +268,130 @@ class ActivityDetailController extends _$ActivityDetailController {
       );
       ref.invalidateSelf();
     }
+  }
+
+  /// Re-run macro generation for this activity using the latest UserProfile.
+  ///
+  /// Called after an inline sweat-profile edit so that the new
+  /// `knownSweatRateMlPerHour` / `knownSodiumConcentrationMgPerLiter` /
+  /// `sweatSodium` values from UserProfile are forwarded to the edge function
+  /// and the returned derivation fields (`effectiveSweatRateLPerH`,
+  /// `sodiumConcMgPerL`, etc.) are stored in the cached `MacroTargets`.
+  ///
+  /// Environment inputs (`tempC`, `humidityPct`, `isIndoor`) are recovered
+  /// from the echo fields already stored on `DuringRunMacros` in the current
+  /// `MacroTargets`. If not present (legacy plan), they default to null / false.
+  Future<void> regeneratePlan() async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final activity = currentState.activity;
+    if (activity == null) return;
+
+    final user = await _authService.getCurrentUser();
+    if (user == null) return;
+    final deviceId = user.id;
+
+    // Recover environment echo from existing stored MacroTargets.
+    final storedDuring = currentState.macroTargets?.duringRun;
+    final tempC = storedDuring?.tempC;
+    final humidityPct = storedDuring?.humidityPct;
+    final isIndoor = storedDuring?.isIndoor ?? false;
+
+    final analytics = ref.read(analyticsTrackerProvider);
+    final macroRepo = ref.read(macroRepositoryProvider);
+    final supabaseClient =
+        ref.read(appExternalDepsProvider).supabaseClient;
+
+    try {
+      MacroTargets? freshTargets;
+
+      if (activity.activityType == ActivityType.brick) {
+        final brickService = BrickMacroService(
+          supabaseClient: supabaseClient,
+          macroRepository: macroRepo,
+          authService: _authService,
+          analytics: analytics,
+        );
+        final segments = currentState.macroTargets?.brickSegments;
+        final segmentOrder = segments
+                ?.map((s) => s.sport)
+                .toList() ??
+            const [];
+        if (segments != null && segments.isNotEmpty) {
+          freshTargets = await brickService.generateBrickMacros(
+            activityId: activityId,
+            deviceId: deviceId,
+            segments: segments,
+            segmentOrder: segmentOrder,
+            isFasted: false,
+            preActivityMinutes: activity.timeBeforeMinutes ?? 60,
+          );
+        }
+      } else if (activity.activityType == ActivityType.running) {
+        final macroService = MacroGenerationService(
+          supabaseClient: supabaseClient,
+          macroRepository: macroRepo,
+          authService: _authService,
+          analytics: analytics,
+        );
+        final distanceMiles = activity.distanceMiles ?? 5.0;
+        final paceMinPerMile = activity.paceTargetMinutesPerMile ?? 9.0;
+        freshTargets = await macroService.generateRunningMacros(
+          activityId: activityId,
+          deviceId: deviceId,
+          distanceMiles: distanceMiles,
+          paceMinutesPerMile: paceMinPerMile,
+          timeBeforeRunMinutes: activity.timeBeforeMinutes ?? 60,
+          gutTraining: user.gutTraining,
+          sweatRateCat: user.sweatRate,
+          temperatureC: tempC,
+          humidityPct: humidityPct,
+        );
+      } else if (activity.activityType == ActivityType.cycling) {
+        final macroService = MacroGenerationService(
+          supabaseClient: supabaseClient,
+          macroRepository: macroRepo,
+          authService: _authService,
+          analytics: analytics,
+        );
+        final distanceMiles = activity.distanceMiles ?? 20.0;
+        final speedMph = activity.cyclingSpeedMph ?? 15.0;
+        final indoorOutdoor = isIndoor
+            ? 'indoor'
+            : (activity.cyclingIndoorOutdoor ?? 'outdoor');
+        freshTargets = await macroService.generateCyclingMacros(
+          activityId: activityId,
+          deviceId: deviceId,
+          distanceMiles: distanceMiles,
+          speedMph: speedMph,
+          terrain: activity.cyclingTerrain ?? 'flat',
+          indoorOutdoor: indoorOutdoor,
+          timeBeforeMinutes: activity.timeBeforeMinutes ?? 60,
+          elevationGainFt: activity.cyclingElevationGainFt,
+          temperatureC: tempC,
+          humidityPct: humidityPct,
+        );
+      }
+
+      if (freshTargets != null) {
+        await macroRepo.saveMacroTargetsForActivity(activityId, freshTargets);
+        _logger.info(
+          'regeneratePlan: fresh MacroTargets saved for activity',
+          context: 'ACTIVITY_DETAIL_CONTROLLER',
+          data: {'activityId': activityId, 'activityType': activity.activityType.name},
+        );
+      }
+    } catch (e) {
+      _logger.warning(
+        'regeneratePlan failed; falling back to forceRefresh',
+        context: 'ACTIVITY_DETAIL_CONTROLLER',
+        error: e,
+      );
+    }
+
+    // Always invalidate so UI picks up the updated MacroTargets.
+    ref.invalidateSelf();
   }
 
   /// Save activity and any nutrition plan changes

@@ -598,6 +598,62 @@ class $UserProfilesTableTable extends UserProfilesTable
     requiredDuringInsert: false,
     defaultValue: const Constant('base'),
   );
+  static const VerificationMeta _sweatSodiumMeta = const VerificationMeta(
+    'sweatSodium',
+  );
+  @override
+  late final GeneratedColumn<String> sweatSodium = GeneratedColumn<String>(
+    'sweat_sodium',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _knownSweatRateMlPerHourMeta =
+      const VerificationMeta('knownSweatRateMlPerHour');
+  @override
+  late final GeneratedColumn<int> knownSweatRateMlPerHour =
+      GeneratedColumn<int>(
+        'known_sweat_rate_ml_per_hour',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _knownSodiumConcentrationMgPerLiterMeta =
+      const VerificationMeta('knownSodiumConcentrationMgPerLiter');
+  @override
+  late final GeneratedColumn<int> knownSodiumConcentrationMgPerLiter =
+      GeneratedColumn<int>(
+        'known_sodium_concentration_mg_per_liter',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sweatTestDateMeta = const VerificationMeta(
+    'sweatTestDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> sweatTestDate =
+      GeneratedColumn<DateTime>(
+        'sweat_test_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sweatTestSourceMeta = const VerificationMeta(
+    'sweatTestSource',
+  );
+  @override
+  late final GeneratedColumn<String> sweatTestSource = GeneratedColumn<String>(
+    'sweat_test_source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _needsUploadMeta = const VerificationMeta(
     'needsUpload',
   );
@@ -664,6 +720,11 @@ class $UserProfilesTableTable extends UserProfilesTable
     typicalWeeklyHours,
     carbCycleOptIn,
     trainingPhase,
+    sweatSodium,
+    knownSweatRateMlPerHour,
+    knownSodiumConcentrationMgPerLiter,
+    sweatTestDate,
+    sweatTestSource,
     needsUpload,
   ];
   @override
@@ -1063,6 +1124,51 @@ class $UserProfilesTableTable extends UserProfilesTable
         ),
       );
     }
+    if (data.containsKey('sweat_sodium')) {
+      context.handle(
+        _sweatSodiumMeta,
+        sweatSodium.isAcceptableOrUnknown(
+          data['sweat_sodium']!,
+          _sweatSodiumMeta,
+        ),
+      );
+    }
+    if (data.containsKey('known_sweat_rate_ml_per_hour')) {
+      context.handle(
+        _knownSweatRateMlPerHourMeta,
+        knownSweatRateMlPerHour.isAcceptableOrUnknown(
+          data['known_sweat_rate_ml_per_hour']!,
+          _knownSweatRateMlPerHourMeta,
+        ),
+      );
+    }
+    if (data.containsKey('known_sodium_concentration_mg_per_liter')) {
+      context.handle(
+        _knownSodiumConcentrationMgPerLiterMeta,
+        knownSodiumConcentrationMgPerLiter.isAcceptableOrUnknown(
+          data['known_sodium_concentration_mg_per_liter']!,
+          _knownSodiumConcentrationMgPerLiterMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sweat_test_date')) {
+      context.handle(
+        _sweatTestDateMeta,
+        sweatTestDate.isAcceptableOrUnknown(
+          data['sweat_test_date']!,
+          _sweatTestDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sweat_test_source')) {
+      context.handle(
+        _sweatTestSourceMeta,
+        sweatTestSource.isAcceptableOrUnknown(
+          data['sweat_test_source']!,
+          _sweatTestSourceMeta,
+        ),
+      );
+    }
     if (data.containsKey('needs_upload')) {
       context.handle(
         _needsUploadMeta,
@@ -1280,6 +1386,26 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.string,
         data['${effectivePrefix}training_phase'],
       )!,
+      sweatSodium: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sweat_sodium'],
+      ),
+      knownSweatRateMlPerHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}known_sweat_rate_ml_per_hour'],
+      ),
+      knownSodiumConcentrationMgPerLiter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}known_sodium_concentration_mg_per_liter'],
+      ),
+      sweatTestDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}sweat_test_date'],
+      ),
+      sweatTestSource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sweat_test_source'],
+      ),
       needsUpload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}needs_upload'],
@@ -1429,6 +1555,21 @@ class UserProfileEntry extends DataClass
   /// Training phase: base, build, peak, taper, race_week, off_season
   final String trainingPhase;
 
+  /// Sweat sodium concentration category: 'low', 'average', 'high'
+  final String? sweatSodium;
+
+  /// Known sweat rate from a personal sweat test (ml/hr), overrides algorithmic estimate
+  final int? knownSweatRateMlPerHour;
+
+  /// Known sodium concentration from a personal sweat test (mg/L), overrides algorithmic estimate
+  final int? knownSodiumConcentrationMgPerLiter;
+
+  /// Date the sweat test was performed
+  final DateTime? sweatTestDate;
+
+  /// Source of the sweat test data: 'self_calculated', 'commercial_test', 'gatorade_gx', 'estimated', 'other'
+  final String? sweatTestSource;
+
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
   final bool needsUpload;
@@ -1482,6 +1623,11 @@ class UserProfileEntry extends DataClass
     this.typicalWeeklyHours,
     required this.carbCycleOptIn,
     required this.trainingPhase,
+    this.sweatSodium,
+    this.knownSweatRateMlPerHour,
+    this.knownSodiumConcentrationMgPerLiter,
+    this.sweatTestDate,
+    this.sweatTestSource,
     required this.needsUpload,
   });
   @override
@@ -1590,6 +1736,25 @@ class UserProfileEntry extends DataClass
     }
     map['carb_cycle_opt_in'] = Variable<bool>(carbCycleOptIn);
     map['training_phase'] = Variable<String>(trainingPhase);
+    if (!nullToAbsent || sweatSodium != null) {
+      map['sweat_sodium'] = Variable<String>(sweatSodium);
+    }
+    if (!nullToAbsent || knownSweatRateMlPerHour != null) {
+      map['known_sweat_rate_ml_per_hour'] = Variable<int>(
+        knownSweatRateMlPerHour,
+      );
+    }
+    if (!nullToAbsent || knownSodiumConcentrationMgPerLiter != null) {
+      map['known_sodium_concentration_mg_per_liter'] = Variable<int>(
+        knownSodiumConcentrationMgPerLiter,
+      );
+    }
+    if (!nullToAbsent || sweatTestDate != null) {
+      map['sweat_test_date'] = Variable<DateTime>(sweatTestDate);
+    }
+    if (!nullToAbsent || sweatTestSource != null) {
+      map['sweat_test_source'] = Variable<String>(sweatTestSource);
+    }
     map['needs_upload'] = Variable<bool>(needsUpload);
     return map;
   }
@@ -1685,6 +1850,22 @@ class UserProfileEntry extends DataClass
           : Value(typicalWeeklyHours),
       carbCycleOptIn: Value(carbCycleOptIn),
       trainingPhase: Value(trainingPhase),
+      sweatSodium: sweatSodium == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sweatSodium),
+      knownSweatRateMlPerHour: knownSweatRateMlPerHour == null && nullToAbsent
+          ? const Value.absent()
+          : Value(knownSweatRateMlPerHour),
+      knownSodiumConcentrationMgPerLiter:
+          knownSodiumConcentrationMgPerLiter == null && nullToAbsent
+          ? const Value.absent()
+          : Value(knownSodiumConcentrationMgPerLiter),
+      sweatTestDate: sweatTestDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sweatTestDate),
+      sweatTestSource: sweatTestSource == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sweatTestSource),
       needsUpload: Value(needsUpload),
     );
   }
@@ -1780,6 +1961,15 @@ class UserProfileEntry extends DataClass
       ),
       carbCycleOptIn: serializer.fromJson<bool>(json['carbCycleOptIn']),
       trainingPhase: serializer.fromJson<String>(json['trainingPhase']),
+      sweatSodium: serializer.fromJson<String?>(json['sweatSodium']),
+      knownSweatRateMlPerHour: serializer.fromJson<int?>(
+        json['knownSweatRateMlPerHour'],
+      ),
+      knownSodiumConcentrationMgPerLiter: serializer.fromJson<int?>(
+        json['knownSodiumConcentrationMgPerLiter'],
+      ),
+      sweatTestDate: serializer.fromJson<DateTime?>(json['sweatTestDate']),
+      sweatTestSource: serializer.fromJson<String?>(json['sweatTestSource']),
       needsUpload: serializer.fromJson<bool>(json['needsUpload']),
     );
   }
@@ -1848,6 +2038,15 @@ class UserProfileEntry extends DataClass
       'typicalWeeklyHours': serializer.toJson<double?>(typicalWeeklyHours),
       'carbCycleOptIn': serializer.toJson<bool>(carbCycleOptIn),
       'trainingPhase': serializer.toJson<String>(trainingPhase),
+      'sweatSodium': serializer.toJson<String?>(sweatSodium),
+      'knownSweatRateMlPerHour': serializer.toJson<int?>(
+        knownSweatRateMlPerHour,
+      ),
+      'knownSodiumConcentrationMgPerLiter': serializer.toJson<int?>(
+        knownSodiumConcentrationMgPerLiter,
+      ),
+      'sweatTestDate': serializer.toJson<DateTime?>(sweatTestDate),
+      'sweatTestSource': serializer.toJson<String?>(sweatTestSource),
       'needsUpload': serializer.toJson<bool>(needsUpload),
     };
   }
@@ -1902,6 +2101,11 @@ class UserProfileEntry extends DataClass
     Value<double?> typicalWeeklyHours = const Value.absent(),
     bool? carbCycleOptIn,
     String? trainingPhase,
+    Value<String?> sweatSodium = const Value.absent(),
+    Value<int?> knownSweatRateMlPerHour = const Value.absent(),
+    Value<int?> knownSodiumConcentrationMgPerLiter = const Value.absent(),
+    Value<DateTime?> sweatTestDate = const Value.absent(),
+    Value<String?> sweatTestSource = const Value.absent(),
     bool? needsUpload,
   }) => UserProfileEntry(
     id: id ?? this.id,
@@ -1966,6 +2170,20 @@ class UserProfileEntry extends DataClass
         : this.typicalWeeklyHours,
     carbCycleOptIn: carbCycleOptIn ?? this.carbCycleOptIn,
     trainingPhase: trainingPhase ?? this.trainingPhase,
+    sweatSodium: sweatSodium.present ? sweatSodium.value : this.sweatSodium,
+    knownSweatRateMlPerHour: knownSweatRateMlPerHour.present
+        ? knownSweatRateMlPerHour.value
+        : this.knownSweatRateMlPerHour,
+    knownSodiumConcentrationMgPerLiter:
+        knownSodiumConcentrationMgPerLiter.present
+        ? knownSodiumConcentrationMgPerLiter.value
+        : this.knownSodiumConcentrationMgPerLiter,
+    sweatTestDate: sweatTestDate.present
+        ? sweatTestDate.value
+        : this.sweatTestDate,
+    sweatTestSource: sweatTestSource.present
+        ? sweatTestSource.value
+        : this.sweatTestSource,
     needsUpload: needsUpload ?? this.needsUpload,
   );
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
@@ -2093,6 +2311,22 @@ class UserProfileEntry extends DataClass
       trainingPhase: data.trainingPhase.present
           ? data.trainingPhase.value
           : this.trainingPhase,
+      sweatSodium: data.sweatSodium.present
+          ? data.sweatSodium.value
+          : this.sweatSodium,
+      knownSweatRateMlPerHour: data.knownSweatRateMlPerHour.present
+          ? data.knownSweatRateMlPerHour.value
+          : this.knownSweatRateMlPerHour,
+      knownSodiumConcentrationMgPerLiter:
+          data.knownSodiumConcentrationMgPerLiter.present
+          ? data.knownSodiumConcentrationMgPerLiter.value
+          : this.knownSodiumConcentrationMgPerLiter,
+      sweatTestDate: data.sweatTestDate.present
+          ? data.sweatTestDate.value
+          : this.sweatTestDate,
+      sweatTestSource: data.sweatTestSource.present
+          ? data.sweatTestSource.value
+          : this.sweatTestSource,
       needsUpload: data.needsUpload.present
           ? data.needsUpload.value
           : this.needsUpload,
@@ -2155,6 +2389,13 @@ class UserProfileEntry extends DataClass
           ..write('typicalWeeklyHours: $typicalWeeklyHours, ')
           ..write('carbCycleOptIn: $carbCycleOptIn, ')
           ..write('trainingPhase: $trainingPhase, ')
+          ..write('sweatSodium: $sweatSodium, ')
+          ..write('knownSweatRateMlPerHour: $knownSweatRateMlPerHour, ')
+          ..write(
+            'knownSodiumConcentrationMgPerLiter: $knownSodiumConcentrationMgPerLiter, ',
+          )
+          ..write('sweatTestDate: $sweatTestDate, ')
+          ..write('sweatTestSource: $sweatTestSource, ')
           ..write('needsUpload: $needsUpload')
           ..write(')'))
         .toString();
@@ -2211,6 +2452,11 @@ class UserProfileEntry extends DataClass
     typicalWeeklyHours,
     carbCycleOptIn,
     trainingPhase,
+    sweatSodium,
+    knownSweatRateMlPerHour,
+    knownSodiumConcentrationMgPerLiter,
+    sweatTestDate,
+    sweatTestSource,
     needsUpload,
   ]);
   @override
@@ -2268,6 +2514,12 @@ class UserProfileEntry extends DataClass
           other.typicalWeeklyHours == this.typicalWeeklyHours &&
           other.carbCycleOptIn == this.carbCycleOptIn &&
           other.trainingPhase == this.trainingPhase &&
+          other.sweatSodium == this.sweatSodium &&
+          other.knownSweatRateMlPerHour == this.knownSweatRateMlPerHour &&
+          other.knownSodiumConcentrationMgPerLiter ==
+              this.knownSodiumConcentrationMgPerLiter &&
+          other.sweatTestDate == this.sweatTestDate &&
+          other.sweatTestSource == this.sweatTestSource &&
           other.needsUpload == this.needsUpload);
 }
 
@@ -2321,6 +2573,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<double?> typicalWeeklyHours;
   final Value<bool> carbCycleOptIn;
   final Value<String> trainingPhase;
+  final Value<String?> sweatSodium;
+  final Value<int?> knownSweatRateMlPerHour;
+  final Value<int?> knownSodiumConcentrationMgPerLiter;
+  final Value<DateTime?> sweatTestDate;
+  final Value<String?> sweatTestSource;
   final Value<bool> needsUpload;
   final Value<int> rowid;
   const UserProfilesTableCompanion({
@@ -2373,6 +2630,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.typicalWeeklyHours = const Value.absent(),
     this.carbCycleOptIn = const Value.absent(),
     this.trainingPhase = const Value.absent(),
+    this.sweatSodium = const Value.absent(),
+    this.knownSweatRateMlPerHour = const Value.absent(),
+    this.knownSodiumConcentrationMgPerLiter = const Value.absent(),
+    this.sweatTestDate = const Value.absent(),
+    this.sweatTestSource = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2426,6 +2688,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.typicalWeeklyHours = const Value.absent(),
     this.carbCycleOptIn = const Value.absent(),
     this.trainingPhase = const Value.absent(),
+    this.sweatSodium = const Value.absent(),
+    this.knownSweatRateMlPerHour = const Value.absent(),
+    this.knownSodiumConcentrationMgPerLiter = const Value.absent(),
+    this.sweatTestDate = const Value.absent(),
+    this.sweatTestSource = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2480,6 +2747,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<double>? typicalWeeklyHours,
     Expression<bool>? carbCycleOptIn,
     Expression<String>? trainingPhase,
+    Expression<String>? sweatSodium,
+    Expression<int>? knownSweatRateMlPerHour,
+    Expression<int>? knownSodiumConcentrationMgPerLiter,
+    Expression<DateTime>? sweatTestDate,
+    Expression<String>? sweatTestSource,
     Expression<bool>? needsUpload,
     Expression<int>? rowid,
   }) {
@@ -2550,6 +2822,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
         'typical_weekly_hours': typicalWeeklyHours,
       if (carbCycleOptIn != null) 'carb_cycle_opt_in': carbCycleOptIn,
       if (trainingPhase != null) 'training_phase': trainingPhase,
+      if (sweatSodium != null) 'sweat_sodium': sweatSodium,
+      if (knownSweatRateMlPerHour != null)
+        'known_sweat_rate_ml_per_hour': knownSweatRateMlPerHour,
+      if (knownSodiumConcentrationMgPerLiter != null)
+        'known_sodium_concentration_mg_per_liter':
+            knownSodiumConcentrationMgPerLiter,
+      if (sweatTestDate != null) 'sweat_test_date': sweatTestDate,
+      if (sweatTestSource != null) 'sweat_test_source': sweatTestSource,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2605,6 +2885,11 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Value<double?>? typicalWeeklyHours,
     Value<bool>? carbCycleOptIn,
     Value<String>? trainingPhase,
+    Value<String?>? sweatSodium,
+    Value<int?>? knownSweatRateMlPerHour,
+    Value<int?>? knownSodiumConcentrationMgPerLiter,
+    Value<DateTime?>? sweatTestDate,
+    Value<String?>? sweatTestSource,
     Value<bool>? needsUpload,
     Value<int>? rowid,
   }) {
@@ -2666,6 +2951,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       typicalWeeklyHours: typicalWeeklyHours ?? this.typicalWeeklyHours,
       carbCycleOptIn: carbCycleOptIn ?? this.carbCycleOptIn,
       trainingPhase: trainingPhase ?? this.trainingPhase,
+      sweatSodium: sweatSodium ?? this.sweatSodium,
+      knownSweatRateMlPerHour:
+          knownSweatRateMlPerHour ?? this.knownSweatRateMlPerHour,
+      knownSodiumConcentrationMgPerLiter:
+          knownSodiumConcentrationMgPerLiter ??
+          this.knownSodiumConcentrationMgPerLiter,
+      sweatTestDate: sweatTestDate ?? this.sweatTestDate,
+      sweatTestSource: sweatTestSource ?? this.sweatTestSource,
       needsUpload: needsUpload ?? this.needsUpload,
       rowid: rowid ?? this.rowid,
     );
@@ -2843,6 +3136,25 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     if (trainingPhase.present) {
       map['training_phase'] = Variable<String>(trainingPhase.value);
     }
+    if (sweatSodium.present) {
+      map['sweat_sodium'] = Variable<String>(sweatSodium.value);
+    }
+    if (knownSweatRateMlPerHour.present) {
+      map['known_sweat_rate_ml_per_hour'] = Variable<int>(
+        knownSweatRateMlPerHour.value,
+      );
+    }
+    if (knownSodiumConcentrationMgPerLiter.present) {
+      map['known_sodium_concentration_mg_per_liter'] = Variable<int>(
+        knownSodiumConcentrationMgPerLiter.value,
+      );
+    }
+    if (sweatTestDate.present) {
+      map['sweat_test_date'] = Variable<DateTime>(sweatTestDate.value);
+    }
+    if (sweatTestSource.present) {
+      map['sweat_test_source'] = Variable<String>(sweatTestSource.value);
+    }
     if (needsUpload.present) {
       map['needs_upload'] = Variable<bool>(needsUpload.value);
     }
@@ -2908,6 +3220,13 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           ..write('typicalWeeklyHours: $typicalWeeklyHours, ')
           ..write('carbCycleOptIn: $carbCycleOptIn, ')
           ..write('trainingPhase: $trainingPhase, ')
+          ..write('sweatSodium: $sweatSodium, ')
+          ..write('knownSweatRateMlPerHour: $knownSweatRateMlPerHour, ')
+          ..write(
+            'knownSodiumConcentrationMgPerLiter: $knownSodiumConcentrationMgPerLiter, ',
+          )
+          ..write('sweatTestDate: $sweatTestDate, ')
+          ..write('sweatTestSource: $sweatTestSource, ')
           ..write('needsUpload: $needsUpload, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -10428,6 +10747,28 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _garminSummaryIdMeta = const VerificationMeta(
+    'garminSummaryId',
+  );
+  @override
+  late final GeneratedColumn<String> garminSummaryId = GeneratedColumn<String>(
+    'garmin_summary_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _garminDeviceNameMeta = const VerificationMeta(
+    'garminDeviceName',
+  );
+  @override
+  late final GeneratedColumn<String> garminDeviceName = GeneratedColumn<String>(
+    'garmin_device_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -10523,6 +10864,8 @@ class $ActivitiesTableTable extends ActivitiesTable
     brickMetadata,
     brickId,
     tss,
+    garminSummaryId,
+    garminDeviceName,
     notes,
     createdAt,
     updatedAt,
@@ -10986,6 +11329,24 @@ class $ActivitiesTableTable extends ActivitiesTable
         tss.isAcceptableOrUnknown(data['tss']!, _tssMeta),
       );
     }
+    if (data.containsKey('garmin_summary_id')) {
+      context.handle(
+        _garminSummaryIdMeta,
+        garminSummaryId.isAcceptableOrUnknown(
+          data['garmin_summary_id']!,
+          _garminSummaryIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('garmin_device_name')) {
+      context.handle(
+        _garminDeviceNameMeta,
+        garminDeviceName.isAcceptableOrUnknown(
+          data['garmin_device_name']!,
+          _garminDeviceNameMeta,
+        ),
+      );
+    }
     if (data.containsKey('notes')) {
       context.handle(
         _notesMeta,
@@ -11227,6 +11588,14 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.double,
         data['${effectivePrefix}tss'],
       ),
+      garminSummaryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}garmin_summary_id'],
+      ),
+      garminDeviceName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}garmin_device_name'],
+      ),
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -11304,6 +11673,8 @@ class Activity extends DataClass implements Insertable<Activity> {
   final String? brickMetadata;
   final String? brickId;
   final double? tss;
+  final String? garminSummaryId;
+  final String? garminDeviceName;
   final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -11360,6 +11731,8 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.brickMetadata,
     this.brickId,
     this.tss,
+    this.garminSummaryId,
+    this.garminDeviceName,
     this.notes,
     required this.createdAt,
     required this.updatedAt,
@@ -11513,6 +11886,12 @@ class Activity extends DataClass implements Insertable<Activity> {
     if (!nullToAbsent || tss != null) {
       map['tss'] = Variable<double>(tss);
     }
+    if (!nullToAbsent || garminSummaryId != null) {
+      map['garmin_summary_id'] = Variable<String>(garminSummaryId);
+    }
+    if (!nullToAbsent || garminDeviceName != null) {
+      map['garmin_device_name'] = Variable<String>(garminDeviceName);
+    }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
@@ -11660,6 +12039,12 @@ class Activity extends DataClass implements Insertable<Activity> {
           ? const Value.absent()
           : Value(brickId),
       tss: tss == null && nullToAbsent ? const Value.absent() : Value(tss),
+      garminSummaryId: garminSummaryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(garminSummaryId),
+      garminDeviceName: garminDeviceName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(garminDeviceName),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
@@ -11770,6 +12155,8 @@ class Activity extends DataClass implements Insertable<Activity> {
       brickMetadata: serializer.fromJson<String?>(json['brickMetadata']),
       brickId: serializer.fromJson<String?>(json['brickId']),
       tss: serializer.fromJson<double?>(json['tss']),
+      garminSummaryId: serializer.fromJson<String?>(json['garminSummaryId']),
+      garminDeviceName: serializer.fromJson<String?>(json['garminDeviceName']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -11841,6 +12228,8 @@ class Activity extends DataClass implements Insertable<Activity> {
       'brickMetadata': serializer.toJson<String?>(brickMetadata),
       'brickId': serializer.toJson<String?>(brickId),
       'tss': serializer.toJson<double?>(tss),
+      'garminSummaryId': serializer.toJson<String?>(garminSummaryId),
+      'garminDeviceName': serializer.toJson<String?>(garminDeviceName),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -11900,6 +12289,8 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<String?> brickMetadata = const Value.absent(),
     Value<String?> brickId = const Value.absent(),
     Value<double?> tss = const Value.absent(),
+    Value<String?> garminSummaryId = const Value.absent(),
+    Value<String?> garminDeviceName = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -12028,6 +12419,12 @@ class Activity extends DataClass implements Insertable<Activity> {
         : this.brickMetadata,
     brickId: brickId.present ? brickId.value : this.brickId,
     tss: tss.present ? tss.value : this.tss,
+    garminSummaryId: garminSummaryId.present
+        ? garminSummaryId.value
+        : this.garminSummaryId,
+    garminDeviceName: garminDeviceName.present
+        ? garminDeviceName.value
+        : this.garminDeviceName,
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -12176,6 +12573,12 @@ class Activity extends DataClass implements Insertable<Activity> {
           : this.brickMetadata,
       brickId: data.brickId.present ? data.brickId.value : this.brickId,
       tss: data.tss.present ? data.tss.value : this.tss,
+      garminSummaryId: data.garminSummaryId.present
+          ? data.garminSummaryId.value
+          : this.garminSummaryId,
+      garminDeviceName: data.garminDeviceName.present
+          ? data.garminDeviceName.value
+          : this.garminDeviceName,
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -12237,6 +12640,8 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('brickMetadata: $brickMetadata, ')
           ..write('brickId: $brickId, ')
           ..write('tss: $tss, ')
+          ..write('garminSummaryId: $garminSummaryId, ')
+          ..write('garminDeviceName: $garminDeviceName, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -12298,6 +12703,8 @@ class Activity extends DataClass implements Insertable<Activity> {
     brickMetadata,
     brickId,
     tss,
+    garminSummaryId,
+    garminDeviceName,
     notes,
     createdAt,
     updatedAt,
@@ -12358,6 +12765,8 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.brickMetadata == this.brickMetadata &&
           other.brickId == this.brickId &&
           other.tss == this.tss &&
+          other.garminSummaryId == this.garminSummaryId &&
+          other.garminDeviceName == this.garminDeviceName &&
           other.notes == this.notes &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -12416,6 +12825,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<String?> brickMetadata;
   final Value<String?> brickId;
   final Value<double?> tss;
+  final Value<String?> garminSummaryId;
+  final Value<String?> garminDeviceName;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -12473,6 +12884,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.brickMetadata = const Value.absent(),
     this.brickId = const Value.absent(),
     this.tss = const Value.absent(),
+    this.garminSummaryId = const Value.absent(),
+    this.garminDeviceName = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -12531,6 +12944,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.brickMetadata = const Value.absent(),
     this.brickId = const Value.absent(),
     this.tss = const Value.absent(),
+    this.garminSummaryId = const Value.absent(),
+    this.garminDeviceName = const Value.absent(),
     this.notes = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -12594,6 +13009,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<String>? brickMetadata,
     Expression<String>? brickId,
     Expression<double>? tss,
+    Expression<String>? garminSummaryId,
+    Expression<String>? garminDeviceName,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -12668,6 +13085,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (brickMetadata != null) 'brick_metadata': brickMetadata,
       if (brickId != null) 'brick_id': brickId,
       if (tss != null) 'tss': tss,
+      if (garminSummaryId != null) 'garmin_summary_id': garminSummaryId,
+      if (garminDeviceName != null) 'garmin_device_name': garminDeviceName,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -12728,6 +13147,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<String?>? brickMetadata,
     Value<String?>? brickId,
     Value<double?>? tss,
+    Value<String?>? garminSummaryId,
+    Value<String?>? garminDeviceName,
     Value<String?>? notes,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -12794,6 +13215,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       brickMetadata: brickMetadata ?? this.brickMetadata,
       brickId: brickId ?? this.brickId,
       tss: tss ?? this.tss,
+      garminSummaryId: garminSummaryId ?? this.garminSummaryId,
+      garminDeviceName: garminDeviceName ?? this.garminDeviceName,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -12980,6 +13403,12 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     if (tss.present) {
       map['tss'] = Variable<double>(tss.value);
     }
+    if (garminSummaryId.present) {
+      map['garmin_summary_id'] = Variable<String>(garminSummaryId.value);
+    }
+    if (garminDeviceName.present) {
+      map['garmin_device_name'] = Variable<String>(garminDeviceName.value);
+    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
@@ -13052,6 +13481,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('brickMetadata: $brickMetadata, ')
           ..write('brickId: $brickId, ')
           ..write('tss: $tss, ')
+          ..write('garminSummaryId: $garminSummaryId, ')
+          ..write('garminDeviceName: $garminDeviceName, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -31079,6 +31510,11 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
       Value<double?> typicalWeeklyHours,
       Value<bool> carbCycleOptIn,
       Value<String> trainingPhase,
+      Value<String?> sweatSodium,
+      Value<int?> knownSweatRateMlPerHour,
+      Value<int?> knownSodiumConcentrationMgPerLiter,
+      Value<DateTime?> sweatTestDate,
+      Value<String?> sweatTestSource,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -31133,6 +31569,11 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
       Value<double?> typicalWeeklyHours,
       Value<bool> carbCycleOptIn,
       Value<String> trainingPhase,
+      Value<String?> sweatSodium,
+      Value<int?> knownSweatRateMlPerHour,
+      Value<int?> knownSodiumConcentrationMgPerLiter,
+      Value<DateTime?> sweatTestDate,
+      Value<String?> sweatTestSource,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -31393,6 +31834,32 @@ class $$UserProfilesTableTableFilterComposer
 
   ColumnFilters<String> get trainingPhase => $composableBuilder(
     column: $table.trainingPhase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sweatSodium => $composableBuilder(
+    column: $table.sweatSodium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get knownSweatRateMlPerHour => $composableBuilder(
+    column: $table.knownSweatRateMlPerHour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get knownSodiumConcentrationMgPerLiter =>
+      $composableBuilder(
+        column: $table.knownSodiumConcentrationMgPerLiter,
+        builder: (column) => ColumnFilters(column),
+      );
+
+  ColumnFilters<DateTime> get sweatTestDate => $composableBuilder(
+    column: $table.sweatTestDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sweatTestSource => $composableBuilder(
+    column: $table.sweatTestSource,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -31657,6 +32124,32 @@ class $$UserProfilesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sweatSodium => $composableBuilder(
+    column: $table.sweatSodium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get knownSweatRateMlPerHour => $composableBuilder(
+    column: $table.knownSweatRateMlPerHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get knownSodiumConcentrationMgPerLiter =>
+      $composableBuilder(
+        column: $table.knownSodiumConcentrationMgPerLiter,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<DateTime> get sweatTestDate => $composableBuilder(
+    column: $table.sweatTestDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sweatTestSource => $composableBuilder(
+    column: $table.sweatTestSource,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => ColumnOrderings(column),
@@ -31895,6 +32388,32 @@ class $$UserProfilesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get sweatSodium => $composableBuilder(
+    column: $table.sweatSodium,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get knownSweatRateMlPerHour => $composableBuilder(
+    column: $table.knownSweatRateMlPerHour,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get knownSodiumConcentrationMgPerLiter =>
+      $composableBuilder(
+        column: $table.knownSodiumConcentrationMgPerLiter,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<DateTime> get sweatTestDate => $composableBuilder(
+    column: $table.sweatTestDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sweatTestSource => $composableBuilder(
+    column: $table.sweatTestSource,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => column,
@@ -31992,6 +32511,12 @@ class $$UserProfilesTableTableTableManager
                 Value<double?> typicalWeeklyHours = const Value.absent(),
                 Value<bool> carbCycleOptIn = const Value.absent(),
                 Value<String> trainingPhase = const Value.absent(),
+                Value<String?> sweatSodium = const Value.absent(),
+                Value<int?> knownSweatRateMlPerHour = const Value.absent(),
+                Value<int?> knownSodiumConcentrationMgPerLiter =
+                    const Value.absent(),
+                Value<DateTime?> sweatTestDate = const Value.absent(),
+                Value<String?> sweatTestSource = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion(
@@ -32044,6 +32569,12 @@ class $$UserProfilesTableTableTableManager
                 typicalWeeklyHours: typicalWeeklyHours,
                 carbCycleOptIn: carbCycleOptIn,
                 trainingPhase: trainingPhase,
+                sweatSodium: sweatSodium,
+                knownSweatRateMlPerHour: knownSweatRateMlPerHour,
+                knownSodiumConcentrationMgPerLiter:
+                    knownSodiumConcentrationMgPerLiter,
+                sweatTestDate: sweatTestDate,
+                sweatTestSource: sweatTestSource,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),
@@ -32100,6 +32631,12 @@ class $$UserProfilesTableTableTableManager
                 Value<double?> typicalWeeklyHours = const Value.absent(),
                 Value<bool> carbCycleOptIn = const Value.absent(),
                 Value<String> trainingPhase = const Value.absent(),
+                Value<String?> sweatSodium = const Value.absent(),
+                Value<int?> knownSweatRateMlPerHour = const Value.absent(),
+                Value<int?> knownSodiumConcentrationMgPerLiter =
+                    const Value.absent(),
+                Value<DateTime?> sweatTestDate = const Value.absent(),
+                Value<String?> sweatTestSource = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion.insert(
@@ -32152,6 +32689,12 @@ class $$UserProfilesTableTableTableManager
                 typicalWeeklyHours: typicalWeeklyHours,
                 carbCycleOptIn: carbCycleOptIn,
                 trainingPhase: trainingPhase,
+                sweatSodium: sweatSodium,
+                knownSweatRateMlPerHour: knownSweatRateMlPerHour,
+                knownSodiumConcentrationMgPerLiter:
+                    knownSodiumConcentrationMgPerLiter,
+                sweatTestDate: sweatTestDate,
+                sweatTestSource: sweatTestSource,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),
@@ -35254,6 +35797,8 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<String?> brickMetadata,
       Value<String?> brickId,
       Value<double?> tss,
+      Value<String?> garminSummaryId,
+      Value<String?> garminDeviceName,
       Value<String?> notes,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -35313,6 +35858,8 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<String?> brickMetadata,
       Value<String?> brickId,
       Value<double?> tss,
+      Value<String?> garminSummaryId,
+      Value<String?> garminDeviceName,
       Value<String?> notes,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -35581,6 +36128,16 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<double> get tss => $composableBuilder(
     column: $table.tss,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get garminSummaryId => $composableBuilder(
+    column: $table.garminSummaryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get garminDeviceName => $composableBuilder(
+    column: $table.garminDeviceName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -35869,6 +36426,16 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get garminSummaryId => $composableBuilder(
+    column: $table.garminSummaryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get garminDeviceName => $composableBuilder(
+    column: $table.garminDeviceName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
@@ -36142,6 +36709,16 @@ class $$ActivitiesTableTableAnnotationComposer
   GeneratedColumn<double> get tss =>
       $composableBuilder(column: $table.tss, builder: (column) => column);
 
+  GeneratedColumn<String> get garminSummaryId => $composableBuilder(
+    column: $table.garminSummaryId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get garminDeviceName => $composableBuilder(
+    column: $table.garminDeviceName,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
@@ -36239,6 +36816,8 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> brickMetadata = const Value.absent(),
                 Value<String?> brickId = const Value.absent(),
                 Value<double?> tss = const Value.absent(),
+                Value<String?> garminSummaryId = const Value.absent(),
+                Value<String?> garminDeviceName = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -36296,6 +36875,8 @@ class $$ActivitiesTableTableTableManager
                 brickMetadata: brickMetadata,
                 brickId: brickId,
                 tss: tss,
+                garminSummaryId: garminSummaryId,
+                garminDeviceName: garminDeviceName,
                 notes: notes,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -36355,6 +36936,8 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> brickMetadata = const Value.absent(),
                 Value<String?> brickId = const Value.absent(),
                 Value<double?> tss = const Value.absent(),
+                Value<String?> garminSummaryId = const Value.absent(),
+                Value<String?> garminDeviceName = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -36412,6 +36995,8 @@ class $$ActivitiesTableTableTableManager
                 brickMetadata: brickMetadata,
                 brickId: brickId,
                 tss: tss,
+                garminSummaryId: garminSummaryId,
+                garminDeviceName: garminDeviceName,
                 notes: notes,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

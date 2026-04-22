@@ -41,6 +41,7 @@ import '../../features/settings/presentation/screens/sport_preferences_hub_scree
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/personal_templates/presentation/screens/personal_templates_screen.dart';
 import '../../features/settings/presentation/screens/connected_apps_screen.dart';
+import '../../features/settings/presentation/screens/sweat_profile_screen.dart';
 import '../../features/settings/presentation/screens/nutrition_targets_screen.dart';
 import '../../features/settings/presentation/screens/nutrition_profile_screen.dart';
 import '../../features/settings/presentation/screens/coach_connection_screen.dart';
@@ -528,6 +529,13 @@ class AppRouter {
           path: '/settings/preferences',
           name: 'settings-preferences',
           builder: (context, state) => const PreferencesScreen(),
+        ),
+
+        // Sweat Profile Screen - Detailed sweat rate, sodium, and sweat-test data
+        GoRoute(
+          path: '/settings/sweat-profile',
+          name: 'settings-sweat-profile',
+          builder: (context, state) => const SweatProfileScreen(),
         ),
 
         // Sport Settings Screen - Cycling, swimming, and sport-specific preferences

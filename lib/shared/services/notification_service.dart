@@ -451,12 +451,16 @@ class NotificationService {
   }
 
   /// Shows an immediate local notification when a completed activity
-  /// is uploaded from Garmin (or another push-based provider).
+  /// is uploaded from Garmin Connect (or another push-based provider).
+  ///
+  /// [provider] should be the human-readable provider label used in the
+  /// notification body (e.g. "Garmin Connect"). The default matches
+  /// Garmin's brand-compliant full name — never use an abbreviation.
   static Future<void> showActivityUploadedNotification({
     required String activityId,
     required String title,
     required DateTime activityDate,
-    String provider = 'Garmin',
+    String provider = 'Garmin Connect',
   }) async {
     if (!_isInitialized) {
       await initialize();

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
@@ -151,11 +150,16 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 6: Adds athlete_pairing_codes table for coach-athlete connections.
+  /// Schema version 8: Adds sweat profile fields to user_profiles table for
+  /// hydration/sodium transparency — sweat_sodium, known_sweat_rate_ml_per_hour,
+  /// known_sodium_concentration_mg_per_liter, sweat_test_date, sweat_test_source.
+  /// v7 formalizes previously-runtime column/table additions and adds
+  /// activities.garmin_device_name for Garmin brand-compliant attribution.
+  /// v6 added athlete_pairing_codes table for coach-athlete connections.
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 6;
+  int get schemaVersion => 8;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -181,9 +185,29 @@ class AppDatabase extends _$AppDatabase {
       // via VersionCheckService before the database is even opened.
       // If we somehow get here with a version mismatch, recreate all tables.
       onUpgrade: (Migrator m, int from, int to) async {
-        // This should rarely run since VersionCheckService handles mismatches.
-        // If it does run, just recreate the database.
-        await m.createAll();
+        // v8: Add sweat profile fields to user_profiles (users) table.
+        if (from < 8) {
+          await customStatement(
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS sweat_sodium TEXT',
+          );
+          await customStatement(
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS known_sweat_rate_ml_per_hour INTEGER',
+          );
+          await customStatement(
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS known_sodium_concentration_mg_per_liter INTEGER',
+          );
+          await customStatement(
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS sweat_test_date INTEGER',
+          );
+          await customStatement(
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS sweat_test_source TEXT',
+          );
+        }
+
+        // Fallback for any future version mismatch not handled above.
+        if (from < to && from >= 8) {
+          await m.createAll();
+        }
       },
 
       // Called when database is first created (version 0 -> current)
@@ -230,82 +254,6 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('PRAGMA cache_size = 10000');
         }
 
-        // Runtime column additions (OTA-safe, no schema version bump needed).
-        // SQLite ALTER TABLE ADD COLUMN is safe for nullable columns.
-        // Catches "duplicate column" error for idempotency on subsequent launches.
-        await _addColumnIfNotExists('users', 'email', 'TEXT');
-        await _addColumnIfNotExists('activities', 'fuel_log_data', 'TEXT');
-
-        // Daily macro calculation fields
-        await _addColumnIfNotExists('users', 'body_fat_pct', 'REAL');
-        await _addColumnIfNotExists('users', 'lifestyle', "TEXT DEFAULT 'mixed'");
-        await _addColumnIfNotExists('users', 'typical_weekly_hours', 'REAL');
-        await _addColumnIfNotExists('users', 'carb_cycle_opt_in', 'INTEGER DEFAULT 0');
-        await _addColumnIfNotExists('users', 'training_phase', "TEXT DEFAULT 'base'");
-        await _addColumnIfNotExists('activities', 'tss', 'REAL');
-
-        // Garmin body composition pull
-        await _addColumnIfNotExists(
-            'integrations', 'provider_athlete_body_fat_pct', 'REAL');
-
-        // Create daily_macro_targets table if not exists
-        await customStatement('''
-          CREATE TABLE IF NOT EXISTS daily_macro_targets (
-            id TEXT NOT NULL PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            target_date INTEGER NOT NULL,
-            carb_g REAL NOT NULL,
-            prot_g REAL NOT NULL,
-            fat_g REAL NOT NULL,
-            tdee REAL NOT NULL,
-            rmr REAL NOT NULL,
-            session_kcal REAL NOT NULL DEFAULT 0,
-            neat_kcal REAL,
-            tef_kcal REAL,
-            mode TEXT NOT NULL DEFAULT 'prospective',
-            ea REAL,
-            ea_status TEXT,
-            calculation_input TEXT,
-            algorithm_version TEXT NOT NULL DEFAULT 'v4',
-            needs_upload INTEGER NOT NULL DEFAULT 0,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
-            updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
-            UNIQUE(user_id, target_date)
-          )
-        ''');
-
-        // Create coach_pairing_codes table if not exists
-        await customStatement('''
-          CREATE TABLE IF NOT EXISTS coach_pairing_codes (
-            id TEXT NOT NULL PRIMARY KEY,
-            coach_user_id TEXT NOT NULL,
-            code TEXT NOT NULL UNIQUE,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
-            expires_at INTEGER NOT NULL,
-            used_by_athlete_id TEXT,
-            used_at INTEGER
-          )
-        ''');
-
-        // Create race_checklist_items table if not exists (local-only feature)
-        await customStatement('''
-          CREATE TABLE IF NOT EXISTS race_checklist_items (
-            id TEXT NOT NULL PRIMARY KEY,
-            event_id TEXT NOT NULL,
-            user_id TEXT NOT NULL,
-            category TEXT NOT NULL,
-            item_name TEXT NOT NULL,
-            sort_order INTEGER NOT NULL DEFAULT 0,
-            is_checked INTEGER NOT NULL DEFAULT 0,
-            checked_at INTEGER,
-            notes TEXT,
-            is_template_item INTEGER NOT NULL DEFAULT 1,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
-            updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now') * 1000),
-            CHECK (category IN ('gear', 'nutrition', 'logistics', 'pre_race', 'race_morning'))
-          )
-        ''');
-
         // Schema integrity validation - fail fast if schema is corrupted
         if (!details.wasCreated) {
           await _validateSchemaIntegrity();
@@ -315,24 +263,6 @@ class AppDatabase extends _$AppDatabase {
         await foodsDao.normalizeUserFoodTimestamps();
       },
     );
-  }
-
-  /// Add a column to a table if it doesn't already exist.
-  /// SQLite doesn't support IF NOT EXISTS for ALTER TABLE ADD COLUMN,
-  /// so we catch the "duplicate column name" error for idempotency.
-  Future<void> _addColumnIfNotExists(
-    String table,
-    String column,
-    String type,
-  ) async {
-    try {
-      await customStatement('ALTER TABLE $table ADD COLUMN $column $type');
-    } catch (e) {
-      // SQLite throws "duplicate column name" if column already exists - safe to ignore
-      if (!e.toString().contains('duplicate column name')) {
-        rethrow;
-      }
-    }
   }
 
   /// Populate default data for fresh installations

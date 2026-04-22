@@ -62,6 +62,7 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
     this.sportLabel,
     this.brickSegment,
     this.isBrick = false,
+    this.onRegenerate,
   });
 
   final PlanSection section;
@@ -129,6 +130,10 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
   /// Brick segment data for brick workout transparency
   final BrickSegmentMacroTarget? brickSegment;
   final bool isBrick;
+
+  /// Called after an inline sweat-profile edit is saved, so the parent can
+  /// trigger a plan regen (e.g. via ActivityDetailController.forceRefresh).
+  final VoidCallback? onRegenerate;
 
   @override
   ConsumerState<DuringPhaseSectionWidget> createState() =>
@@ -248,6 +253,7 @@ class _DuringPhaseSectionWidgetState
                   foods: widget.section.foodItems,
                   brickSegment: widget.brickSegment,
                   isBrick: widget.isBrick,
+                  onRegenerate: widget.onRegenerate,
                 );
               },
             ),

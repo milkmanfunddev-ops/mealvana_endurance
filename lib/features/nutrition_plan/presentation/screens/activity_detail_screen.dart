@@ -28,6 +28,7 @@ import '../widgets/fuel_log/fuel_log_feedback_section.dart';
 import '../widgets/fuel_log/fuel_log_success_overlay.dart';
 import '../utils/activity_detail_helpers.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 
 /// Activity Detail Screen - Refactored with extracted widgets
 /// Shows activity details with nutrition sections and food items
@@ -443,6 +444,20 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
                 ),
               ),
             ],
+            // Derived-data attribution required by Garmin Developer API
+            // Brand Guidelines: when Garmin-reported activity data is used
+            // as an input to our nutrition/insight calculations, we credit
+            // the specific device (or fall back to "Garmin Connect").
+            if (activity.hasGarminData &&
+                _extrasFadeOut.value > 0.01) ...[
+              const SizedBox(height: AppSpacing.md),
+              FadeTransition(
+                opacity: _extrasFadeOut,
+                child: _GarminDerivedDataFooter(
+                  deviceName: activity.garminDeviceName,
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.xxxl),
           ],
         ),
@@ -757,7 +772,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     }
 
     // Standard single-sport header
-    final isFromGarmin = activity?.syncedFromProvider == 'garmin';
+    final hasGarminData = activity?.hasGarminData ?? false;
 
     return Column(
       children: [
@@ -776,28 +791,17 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
               ? null
               : () => _showTimePicker(context, state),
         ),
-        // Garmin brand attribution (required by Garmin API Brand Guidelines)
-        if (isFromGarmin) ...[
+        // Garmin brand attribution (required by Garmin API Brand Guidelines).
+        // Shown on detail screens whenever the activity originated from a
+        // Garmin Connect upload — uses "Garmin [device model]" form when
+        // we know the specific device, else "Garmin Connect".
+        if (hasGarminData) ...[
           const SizedBox(height: AppSpacing.xs),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                Theme.of(context).brightness == Brightness.dark
-                    ? 'assets/images/integrations/garmin_tag_white.png'
-                    : 'assets/images/integrations/garmin_tag_black.png',
-                height: 12,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Activity data from Garmin',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 11,
-                ),
-              ),
-            ],
+          Center(
+            child: GarminAttribution(
+              deviceName: activity?.garminDeviceName,
+              style: GarminAttributionStyle.standard,
+            ),
           ),
         ],
         const SizedBox(height: AppSpacing.sm),
@@ -1310,6 +1314,46 @@ class _ToggleChip extends StatelessWidget {
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GarminDerivedDataFooter extends StatelessWidget {
+  const _GarminDerivedDataFooter({required this.deviceName});
+
+  final String? deviceName;
+
+  @override
+  Widget build(BuildContext context) {
+    final trimmed = deviceName?.trim();
+    final attributionTarget =
+        (trimmed == null || trimmed.isEmpty) ? 'Garmin Connect' : 'Garmin $trimmed';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          GarminAttribution(
+            deviceName: deviceName,
+            style: GarminAttributionStyle.compact,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Insights derived in part from $attributionTarget data.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 11,
+              height: 1.3,
+            ),
+          ),
+        ],
       ),
     );
   }

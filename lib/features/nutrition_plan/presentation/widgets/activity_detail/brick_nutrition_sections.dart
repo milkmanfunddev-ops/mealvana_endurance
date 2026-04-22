@@ -43,6 +43,7 @@ class BrickNutritionSections extends StatelessWidget {
     this.bodyWeightKg = 70.0,
     this.enableSectionHeroes = false,
     this.heroTagSeed,
+    this.onRegenerate,
   });
 
   final Activity brick;
@@ -94,6 +95,10 @@ class BrickNutritionSections extends StatelessWidget {
   final double bodyWeightKg;
   final bool enableSectionHeroes;
   final String? heroTagSeed;
+
+  /// Called after an inline sweat-profile edit is saved so the parent can
+  /// trigger a plan regen (e.g. via ActivityDetailController.forceRefresh).
+  final VoidCallback? onRegenerate;
 
   @override
   Widget build(BuildContext context) {
@@ -240,6 +245,7 @@ class BrickNutritionSections extends StatelessWidget {
         macroTargets: macroTargets,
         bodyWeightKg: bodyWeightKg,
         sportLabel: 'Brick',
+        onRegenerate: onRegenerate,
       );
     }
 
@@ -291,6 +297,7 @@ class BrickNutritionSections extends StatelessWidget {
           fluidsHigh: _getFluidsHigh(section, category),
           brickSegment: brickSeg,
           isBrick: true, // Always true — we're in BrickNutritionSections
+          onRegenerate: onRegenerate,
         );
       }
     }
@@ -450,6 +457,7 @@ class BrickNutritionSections extends StatelessWidget {
                   // Always true for during/transition — we're in BrickNutritionSections
                   isBrick: phase != ExplanationPhase.before &&
                       phase != ExplanationPhase.after,
+                  onRegenerate: onRegenerate,
                 );
               },
             ),

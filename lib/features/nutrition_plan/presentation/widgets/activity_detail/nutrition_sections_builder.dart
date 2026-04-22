@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import '../../../../../shared/utils/food_display_utils.dart' as food_utils;
+import '../../providers/activity_detail_controller.dart';
 import '../../providers/activity_detail_state.dart';
 import '../../../../settings/presentation/providers/settings_controller.dart';
 import '../../../application/macro_explanation_service.dart';
@@ -139,6 +140,7 @@ class _NutritionSectionsBuilderState
         showSwipeHint: widget.consumeSwipeHint(),
         enableSectionHeroes: widget.enableSectionHeroes,
         heroTagSeed: widget.heroTagSeed,
+        onRegenerate: _buildRegenCallback(),
       );
     }
 
@@ -232,6 +234,7 @@ class _NutritionSectionsBuilderState
                 proteinOverrideLabel: null,
                 sodiumOverrideLabel: null,
                 fluidsOverrideLabel: null,
+                onRegenerate: _buildRegenCallback(),
               ),
             ),
           );
@@ -287,6 +290,7 @@ class _NutritionSectionsBuilderState
                 carbsOverrideLabel: duringOverrideLabel,
                 sodiumOverrideLabel: null,
                 fluidsOverrideLabel: null,
+                onRegenerate: _buildRegenCallback(),
               ),
             ),
           );
@@ -588,12 +592,33 @@ class _NutritionSectionsBuilderState
                   sportLabel: activityType.displayName,
                   useImperial: useImperial,
                   foods: section.foodItems,
+                  onRegenerate: _buildRegenCallback(),
                 );
               },
             ),
           ),
       ],
     );
+  }
+
+  /// Builds a callback that triggers a plan regen for the current activity.
+  ///
+  /// Passed to [PhaseExplanationSheet] so that inline sweat-profile edits can
+  /// immediately refresh the plan without the user dismissing and re-opening.
+  ///
+  /// Uses [ActivityDetailController.regeneratePlan] which re-calls the edge
+  /// function with the latest UserProfile values (including newly-saved
+  /// `knownSweatRateMlPerHour` / `knownSodiumConcentrationMgPerLiter`),
+  /// unlike [ActivityDetailController.forceRefresh] which only reloads the
+  /// already-stored plan from the database.
+  VoidCallback? _buildRegenCallback() {
+    final activityId = widget.state.activity?.id;
+    if (activityId == null) return null;
+    return () {
+      ref
+          .read(activityDetailControllerProvider(activityId: activityId).notifier)
+          .regeneratePlan();
+    };
   }
 
   double _getBodyWeightKg(double? weightPounds) {

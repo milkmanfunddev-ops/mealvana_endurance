@@ -227,6 +227,131 @@ export function calculatePreWorkoutTargets(
 }
 
 // ============================================================================
+// Pre-Workout Hydration (new spec — time-based tiers)
+// ============================================================================
+
+export interface PreWorkoutHydrationInput {
+  bodyWeightKg: number;
+  workoutDurationMin: number;
+  timeBeforeWorkoutMin: number;
+  tempC: number | null;
+}
+
+export interface PreWorkoutHydrationResult {
+  tier: 1 | 2 | 3;
+  gate_triggered: boolean;
+  fluid_ml: number;
+  fluid_low_ml: number;
+  fluid_high_ml: number;
+  sodium_mg: number;
+  sodium_low_mg: number;
+  sodium_high_mg: number;
+  message: string | null;
+}
+
+/**
+ * Pre-workout hydration targets per spec tiers.
+ *
+ * Gate: workoutDurationMin < 60 AND tempC < 30 → no structured plan.
+ * Gate is bypassed when tempC >= 30 regardless of duration.
+ *
+ * Tier 1 (timeBeforeWorkoutMin >= 120):
+ *   fluid = BW * 6 ml [BW*5 .. BW*7]; sodium = 450 mg [300 .. 600]
+ * Tier 2 (10 <= timeBeforeWorkoutMin < 120):
+ *   fluid = 250 ml [200 .. 300]; sodium = 150 mg [100 .. 200]
+ * Tier 3 (timeBeforeWorkoutMin < 10):
+ *   fluid = 0; sodium = 0; informational message
+ */
+export function calculatePreWorkoutHydration(
+  input: PreWorkoutHydrationInput,
+): PreWorkoutHydrationResult {
+  const { bodyWeightKg, workoutDurationMin, timeBeforeWorkoutMin, tempC } = input;
+  const temp = tempC ?? 22;
+
+  // Gate: duration < 60 AND temp < 30
+  const gateTriggered = workoutDurationMin < 60 && temp < 30;
+  if (gateTriggered) {
+    return {
+      tier: 1, // tier is irrelevant when gated, but set to what it would have been
+      gate_triggered: true,
+      fluid_ml: 0,
+      fluid_low_ml: 0,
+      fluid_high_ml: 0,
+      sodium_mg: 0,
+      sodium_low_mg: 0,
+      sodium_high_mg: 0,
+      message: 'No structured pre-hydration needed for short workouts in mild conditions.',
+    };
+  }
+
+  // Tier selection
+  if (timeBeforeWorkoutMin >= 120) {
+    const fluid = Math.round(bodyWeightKg * 6);
+    return {
+      tier: 1,
+      gate_triggered: false,
+      fluid_ml: fluid,
+      fluid_low_ml: Math.round(bodyWeightKg * 5),
+      fluid_high_ml: Math.round(bodyWeightKg * 7),
+      sodium_mg: 450,
+      sodium_low_mg: 300,
+      sodium_high_mg: 600,
+      message: null,
+    };
+  }
+
+  if (timeBeforeWorkoutMin >= 10) {
+    return {
+      tier: 2,
+      gate_triggered: false,
+      fluid_ml: 250,
+      fluid_low_ml: 200,
+      fluid_high_ml: 300,
+      sodium_mg: 150,
+      sodium_low_mg: 100,
+      sodium_high_mg: 200,
+      message: 'Not enough time for full protocol. Sip 250 ml steadily. consider hydrating well the evening before.',
+    };
+  }
+
+  // Tier 3: too late
+  return {
+    tier: 3,
+    gate_triggered: false,
+    fluid_ml: 0,
+    fluid_low_ml: 0,
+    fluid_high_ml: 0,
+    sodium_mg: 0,
+    sodium_low_mg: 0,
+    sodium_high_mg: 0,
+    message: 'Too late for structured pre-hydration. Focus on your during-workout plan.',
+  };
+}
+
+/**
+ * Overlay spec-compliant pre-workout hydration values onto the legacy
+ * carb/protein/fat targets produced by calculatePreWorkoutTargets.
+ *
+ * Carbs/protein/fat/meal_type come from the legacy time-window path (still
+ * drives food selection). Fluid and sodium are replaced with the time-tier
+ * algorithm values from calculatePreWorkoutHydration.
+ */
+export function applyPreWorkoutHydrationOverlay(
+  targets: PreWorkoutTargets,
+  hydration: PreWorkoutHydrationResult,
+): PreWorkoutTargets {
+  return {
+    ...targets,
+    sodium_mg: hydration.sodium_mg,
+    sodium_low_mg: hydration.sodium_low_mg,
+    sodium_high_mg: hydration.sodium_high_mg,
+    water_ml: hydration.fluid_ml,
+    water_low_ml: hydration.fluid_low_ml,
+    water_high_ml: hydration.fluid_high_ml,
+  };
+}
+
+// ============================================================================
 // Phase Schedule & Target Splitting
 // ============================================================================
 

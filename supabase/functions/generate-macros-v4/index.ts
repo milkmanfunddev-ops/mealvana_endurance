@@ -30,7 +30,12 @@ import {
   type MacroInputV4,
 } from "./single-sport.ts";
 import { calculateBrickMacrosV4 } from "./brick-workout.ts";
-import { calculatePreWorkoutTargets, selectPreWorkoutFoods } from "./pre-workout.ts";
+import {
+  applyPreWorkoutHydrationOverlay,
+  calculatePreWorkoutHydration,
+  calculatePreWorkoutTargets,
+  selectPreWorkoutFoods,
+} from "./pre-workout.ts";
 import { classifyEnvironment } from "../_shared/nutrition/sweat-hydration.ts";
 
 // ============================================================================
@@ -120,13 +125,30 @@ serve(async (req: Request) => {
         input.humidity_pct ?? null,
       );
 
-      const preTargets = calculatePreWorkoutTargets(
+      const preTargetsLegacy = calculatePreWorkoutTargets(
         weightKg,
         input.hours_before,
         input.is_fasted,
         input.sweat_sodium,
         envLabel,
       );
+
+      // Spec-compliant pre-workout hydration overlay. Total workout duration
+      // is the sum of brick segment durations (drives the <60 min gate).
+      const totalDurationMin = (input.brick_segments ?? []).reduce(
+        (sum, s) => sum + (s.duration_minutes ?? 0),
+        0,
+      );
+      const preHydration = calculatePreWorkoutHydration({
+        bodyWeightKg: weightKg,
+        workoutDurationMin: totalDurationMin,
+        timeBeforeWorkoutMin: input.hours_before * 60,
+        tempC: input.temp_c ?? null,
+      });
+      const preTargets = input.is_fasted
+        ? preTargetsLegacy
+        : applyPreWorkoutHydrationOverlay(preTargetsLegacy, preHydration);
+
       const diet = input.diet || "none";
       const preSelections = selectPreWorkoutFoods(
         preTargets,
@@ -144,6 +166,9 @@ serve(async (req: Request) => {
       const brickMacrosWithSelections = {
         ...brickMacros,
         pre_run_selections: preSelections,
+        pre_run_hydration_tier: preHydration.tier,
+        pre_run_hydration_gate_triggered: preHydration.gate_triggered,
+        pre_run_hydration_message: preHydration.message,
       };
 
       console.log("✅ V4 brick macros calculated successfully:", {

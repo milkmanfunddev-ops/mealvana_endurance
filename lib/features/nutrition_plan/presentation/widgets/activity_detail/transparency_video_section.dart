@@ -4,19 +4,29 @@ import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../../education/presentation/screens/video_player_screen.dart';
 import 'transparency_accordion.dart';
 
-/// Accordion section that opens the video player for carb transparency.
+/// Accordion section that opens the video player for nutrient transparency.
 ///
 /// Navigates to [VideoPlayerScreen] when tapped.
-/// Shows "Coming soon" when no video URL is available.
+/// Shows "Coming soon" when no video URL is available or when [comingSoon]
+/// is explicitly set to true.
+///
+/// The [comingSoon] flag is a declarative alias for the `videoUrl == null`
+/// branch — useful when callers know at construction time that no video
+/// exists yet, without having to pass a nullable URL.
 class TransparencyVideoSection extends StatelessWidget {
   const TransparencyVideoSection({
     super.key,
     required this.title,
     this.videoUrl,
+    this.comingSoon = false,
   });
 
   final String title;
   final String? videoUrl;
+
+  /// When true, always renders the "Coming soon" placeholder regardless of
+  /// whether [videoUrl] is provided.
+  final bool comingSoon;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +41,7 @@ class TransparencyVideoSection extends StatelessWidget {
     final dimText =
         isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
 
-    if (videoUrl == null || videoUrl!.isEmpty) {
+    if (comingSoon || videoUrl == null || videoUrl!.isEmpty) {
       // Coming soon placeholder
       return Container(
         width: double.infinity,
