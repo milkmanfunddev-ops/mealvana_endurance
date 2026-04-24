@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../../auth/domain/user_preferences.dart';
 import '../../../../settings/presentation/providers/settings_controller.dart';
@@ -171,14 +172,25 @@ class _NutrientFullStorySectionState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Question
-        Text(
-          section.question,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: primaryText,
-          ),
+        // Question + optional confidence pill, side-by-side
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                section.question,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: primaryText,
+                ),
+              ),
+            ),
+            if (section.confidence != null) ...[
+              const SizedBox(width: 8),
+              _buildConfidencePill(context, section.confidence!),
+            ],
+          ],
         ),
         const SizedBox(height: 4),
 
@@ -246,7 +258,100 @@ class _NutrientFullStorySectionState
         if (section.inlineEditType == InlineEditType.knownSodiumConcentration &&
             widget.onEditKnownSodiumConcentration != null)
           _buildKnownSodiumConcentrationEdit(context),
+
+        // Helpful? feedback footer (fires Mixpanel) — only shown when
+        // the Q has real content (skip for pure transparency-note rows
+        // that fall into the isEmpty branch earlier).
+        const SizedBox(height: 8),
+        _buildHelpfulFooter(context, section),
       ],
+    );
+  }
+
+  /// Confidence pill — HIGH / MEDIUM / LOW CONFIDENCE per
+  /// `research_notes_updated.md` §1.6.
+  Widget _buildConfidencePill(
+    BuildContext context,
+    ConfidenceLevel confidence,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final (label, color) = switch (confidence) {
+      ConfidenceLevel.high => (
+        'HIGH CONFIDENCE',
+        isDark ? const Color(0xFF7BC67E) : const Color(0xFF2E7D32),
+      ),
+      ConfidenceLevel.medium => (
+        'MEDIUM CONFIDENCE',
+        isDark ? const Color(0xFFF0C87E) : const Color(0xFFD4A84E),
+      ),
+      ConfidenceLevel.low => (
+        'LOW CONFIDENCE',
+        isDark ? const Color(0xFFE08B8B) : const Color(0xFFC03030),
+      ),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 0.5),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: color,
+          letterSpacing: 0.6,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHelpfulFooter(BuildContext context, StorySection section) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dim = isDark
+        ? Colors.white.withValues(alpha: 0.45)
+        : Colors.black.withValues(alpha: 0.45);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Text(
+          'Helpful?',
+          style: TextStyle(
+            fontSize: 11,
+            color: dim,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        const SizedBox(width: 6),
+        _HelpfulVoteButton(
+          isUp: true,
+          onTap: () => _recordQaFeedback(section, vote: 'up'),
+        ),
+        const SizedBox(width: 4),
+        _HelpfulVoteButton(
+          isUp: false,
+          onTap: () => _recordQaFeedback(section, vote: 'down'),
+        ),
+      ],
+    );
+  }
+
+  void _recordQaFeedback(StorySection section, {required String vote}) {
+    // Fire Mixpanel event via AnalyticsTracker (ref provider).
+    // Event name matches plan spec: transparency_qa_feedback.
+    // Properties: nutrient, scenario, question, vote.
+    // Note: we don't block on the future — fire-and-forget.
+    final tracker = ref.read(analyticsTrackerProvider);
+    tracker.track(
+      'transparency_qa_feedback',
+      properties: {
+        'nutrient': widget.data.nutrientLabel,
+        'phase': widget.data.phase,
+        'question': section.question,
+        'vote': vote,
+      },
     );
   }
 
@@ -1111,5 +1216,33 @@ class _NutrientFullStorySectionState
               ));
     }
     return base;
+  }
+}
+
+/// Tiny thumb button used in the per-answer "Helpful?" feedback footer.
+class _HelpfulVoteButton extends StatelessWidget {
+  const _HelpfulVoteButton({required this.isUp, required this.onTap});
+
+  final bool isUp;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDark
+        ? Colors.white.withValues(alpha: 0.55)
+        : Colors.black.withValues(alpha: 0.55);
+    return InkWell(
+      borderRadius: BorderRadius.circular(4),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Icon(
+          isUp ? Icons.thumb_up_outlined : Icons.thumb_down_outlined,
+          size: 14,
+          color: color,
+        ),
+      ),
+    );
   }
 }
