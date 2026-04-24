@@ -143,32 +143,16 @@ class NutrientCalculationSection extends ConsumerWidget {
         ),
         for (final line in section.lines)
           _buildLine(line, primaryText, secondaryText, dimColor, accentColor),
-        // Blue info callout for cross-section references (e.g. sodium
-        // inherits fluid floor/ceiling). Only renders when `footerNote`
-        // is set.
+        // Narrative callout for cross-section references (e.g. sodium
+        // inherits fluid floor/ceiling) or scenario-specific explanations
+        // (redistribution / race deficit). Color variant picked from
+        // `footerNoteVariant`.
         if (section.footerNote != null) ...[
           const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF4A9EFF).withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
-              border: Border(
-                left: BorderSide(
-                  color: const Color(0xFF4A9EFF).withValues(alpha: 0.5),
-                  width: 3,
-                ),
-              ),
-            ),
-            child: Text(
-              section.footerNote!,
-              style: TextStyle(
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
-                color: primaryText.withValues(alpha: 0.85),
-                height: 1.4,
-              ),
-            ),
+          _buildFooterNote(
+            section.footerNote!,
+            section.footerNoteVariant,
+            primaryText,
           ),
         ],
       ],
@@ -241,6 +225,40 @@ class NutrientCalculationSection extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFooterNote(
+    String note,
+    CalcNoteVariant variant,
+    Color primaryText,
+  ) {
+    // Color palette matches the Figma narrative-callout treatments:
+    // blue info, purple redistribution, green success, amber warning.
+    final Color accent = switch (variant) {
+      CalcNoteVariant.info => const Color(0xFF4A9EFF),
+      CalcNoteVariant.redistribution => const Color(0xFFB380FF),
+      CalcNoteVariant.success => const Color(0xFF7BC67E),
+      CalcNoteVariant.warning => const Color(0xFFF0C87E),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(
+          left: BorderSide(color: accent.withValues(alpha: 0.5), width: 3),
+        ),
+      ),
+      child: Text(
+        note,
+        style: TextStyle(
+          fontSize: 12,
+          fontStyle: FontStyle.italic,
+          color: primaryText.withValues(alpha: 0.85),
+          height: 1.4,
+        ),
       ),
     );
   }

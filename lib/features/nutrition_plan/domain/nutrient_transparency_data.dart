@@ -102,11 +102,30 @@ class FormulaLine {
 ///   REPLACEMENT STRATEGY
 ///     ⑤ 90 min → 50% → 1.29 × 1000 × 0.50 = 645 ml/hr
 ///     …
+/// Color variant for a `CalculationSection.footerNote`, matching the
+/// Figma narrative-callout treatments below the calc pipeline.
+enum CalcNoteVariant {
+  /// Blue — cross-section inheritance note (e.g. sodium inherits from
+  /// fluid floor/ceiling).
+  info,
+
+  /// Purple — redistribution narrative (run-leg shortfall shifted to
+  /// bike leg).
+  redistribution,
+
+  /// Green — race deficit under threshold, success confirmation.
+  success,
+
+  /// Amber — race deficit at threshold, needs attention.
+  warning,
+}
+
 class CalculationSection {
   const CalculationSection({
     required this.header,
     required this.lines,
     this.footerNote,
+    this.footerNoteVariant = CalcNoteVariant.info,
   });
 
   /// Small-caps uppercase header (e.g. "CALCULATE EFFECTIVE SWEAT RATE").
@@ -118,6 +137,9 @@ class CalculationSection {
   /// Optional blue info note rendered below the lines — used for
   /// cross-section references like "sodium inherits from fluid section".
   final String? footerNote;
+
+  /// Color variant for [footerNote] rendering (defaults to info/blue).
+  final CalcNoteVariant footerNoteVariant;
 }
 
 /// What kind of inline edit a Full Story section supports.

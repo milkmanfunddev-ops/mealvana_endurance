@@ -482,6 +482,16 @@ extension _$CalculationsExt on MacroExplanationService {
       CalculationSection(
         header: 'REPLACEMENT STRATEGY',
         lines: replacementLines,
+        // Purple narrative callout explaining why this bike leg is
+        // carrying the run leg's shortfall. Only emitted on the
+        // Redistribution scenario (showRedistributionNote=true).
+        footerNote: showRedistributionNote
+            ? 'The run leg can only absorb 800 ml/hr — the overflow has '
+                  'been shifted to this bike leg so the total race stays '
+                  'within 2% body weight loss. Transitions already absorbed '
+                  '600 ml; the heavy sweat rate still required redistribution.'
+            : null,
+        footerNoteVariant: CalcNoteVariant.redistribution,
       ),
     ];
   }
