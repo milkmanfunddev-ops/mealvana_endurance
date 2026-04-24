@@ -149,6 +149,7 @@ export interface DuringWorkoutHydrationResult {
   ceiling_ml_hr: number;
   safety_flags: string[];
   is_tested: boolean;
+  is_tested_sodium: boolean;
   // Transparency breakdown (for step-numbered calc UI)
   base_sweat_rate_lph: number;
   temp_mult: number;
@@ -216,6 +217,7 @@ export function calculateDuringWorkoutHydration(
       ceiling_ml_hr: 0,
       safety_flags: [],
       is_tested: knownSweatRateMlPerHour !== null,
+      is_tested_sodium: knownSodiumConcMgPerL !== null,
       base_sweat_rate_lph: breakdown.base_lph,
       temp_mult: breakdown.temp_mult,
       humidity_mult: breakdown.humidity_mult,
@@ -248,7 +250,9 @@ export function calculateDuringWorkoutHydration(
   if (gateTriggered) {
     // Conservative: still compute 30%-based recommended, floor = 0
     const recommended = Math.round(effectiveSweatRateMlph * replacementPct);
-    safety_flags.push('No structured hydration plan needed.');
+    safety_flags.push(
+      'No structured hydration plan needed. Drink to thirst and hydrate before and immediately after.',
+    );
     const sodiumRate = Math.round((recommended / 1000) * sodiumConcMgPerL);
     return {
       sodium_rate_mgph: sodiumRate,
@@ -263,6 +267,7 @@ export function calculateDuringWorkoutHydration(
       ceiling_ml_hr: ceilingMlHr,
       safety_flags,
       is_tested: knownSweatRateMlPerHour !== null,
+      is_tested_sodium: knownSodiumConcMgPerL !== null,
       base_sweat_rate_lph: breakdown.base_lph,
       temp_mult: breakdown.temp_mult,
       humidity_mult: breakdown.humidity_mult,
@@ -320,6 +325,7 @@ export function calculateDuringWorkoutHydration(
     ceiling_ml_hr: ceilingMlHr,
     safety_flags,
     is_tested: knownSweatRateMlPerHour !== null,
+    is_tested_sodium: knownSodiumConcMgPerL !== null,
     base_sweat_rate_lph: breakdown.base_lph,
     temp_mult: breakdown.temp_mult,
     humidity_mult: breakdown.humidity_mult,
@@ -975,8 +981,9 @@ export async function calculateMacrosV4(
     temp_mult: duringHydration.temp_mult,
     humidity_mult: duringHydration.humidity_mult,
     indoor_mult: duringHydration.indoor_mult,
-    during_safety_flags: duringHydration.safety_flags,
+    safety_flags: duringHydration.safety_flags,
     is_tested: duringHydration.is_tested,
+    is_tested_sodium: duringHydration.is_tested_sodium,
     temp_c: input.temp_c ?? null,
     humidity_pct: input.humidity_pct ?? null,
     is_indoor: input.is_indoor ?? false,

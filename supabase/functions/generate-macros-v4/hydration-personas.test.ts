@@ -172,7 +172,7 @@ function checkExpectations(
       `${label}: ceiling mismatch`);
   }
   if (exp.gate !== undefined) {
-    const gateFired = result.safety_flags.includes('No structured hydration plan needed.');
+    const gateFired = result.safety_flags.includes('No structured hydration plan needed. Drink to thirst and hydrate before and immediately after.');
     assertEquals(gateFired, exp.gate, `${label}: gate expected=${exp.gate}`);
   }
   if (exp.hasFlag) {

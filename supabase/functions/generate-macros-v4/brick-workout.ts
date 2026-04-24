@@ -201,6 +201,7 @@ export interface BrickHydrationResult {
   sodium_conc_mg_per_l: number;
   replacement_pct: number;
   is_tested: boolean;
+  is_tested_sodium: boolean;
   // Transparency breakdown
   base_sweat_rate_lph: number;
   temp_mult: number;
@@ -468,6 +469,7 @@ export function calculateBrickHydration(
     sodium_conc_mg_per_l: sodiumConcMgPerL,
     replacement_pct: replacementPct,
     is_tested: knownSweatRateMlPerHour !== null,
+    is_tested_sodium: knownSodiumConcMgPerL !== null,
     base_sweat_rate_lph: breakdown.base_lph,
     temp_mult: breakdown.temp_mult,
     humidity_mult: breakdown.humidity_mult,
@@ -553,12 +555,14 @@ export function calculateBrickMacrosV4(
     hydration_rate_ml_per_h: number;
     sodium_rate_mg_per_h: number;
     effective_sweat_rate_lph: number;
+    sodium_conc_mg_per_l: number;
     floor_ml_hr: number;
     ceiling_ml_hr: number;
     safety_flags: string[];
     replacement_pct: number;
     replacement_band: string;
     is_tested: boolean;
+    is_tested_sodium: boolean;
     base_sweat_rate_lph: number;
     temp_mult: number;
     humidity_mult: number;
@@ -644,12 +648,14 @@ export function calculateBrickMacrosV4(
         hydration_rate_ml_per_h: 0,
         sodium_rate_mg_per_h: 0,
         effective_sweat_rate_lph: effectiveSweatRateLph,
+        sodium_conc_mg_per_l: brickHydration.sodium_conc_mg_per_l,
         floor_ml_hr: 0,
         ceiling_ml_hr: 0,
         safety_flags: brickHydration.safety_flags,
         replacement_pct: brickHydration.replacement_pct,
         replacement_band: brickHydration.replacement_band,
         is_tested: brickHydration.is_tested,
+        is_tested_sodium: brickHydration.is_tested_sodium,
         base_sweat_rate_lph: brickHydration.base_sweat_rate_lph,
         temp_mult: brickHydration.temp_mult,
         humidity_mult: brickHydration.humidity_mult,
@@ -706,12 +712,14 @@ export function calculateBrickMacrosV4(
         hydration_rate_ml_per_h: hydRateMlph,
         sodium_rate_mg_per_h: sodiumRateMgph,
         effective_sweat_rate_lph: effectiveSweatRateLph,
+        sodium_conc_mg_per_l: brickHydration.sodium_conc_mg_per_l,
         floor_ml_hr: floorMlHr,
         ceiling_ml_hr: ceilingMlHr,
         safety_flags: brickHydration.safety_flags,
         replacement_pct: brickHydration.replacement_pct,
         replacement_band: brickHydration.replacement_band,
         is_tested: brickHydration.is_tested,
+        is_tested_sodium: brickHydration.is_tested_sodium,
         base_sweat_rate_lph: brickHydration.base_sweat_rate_lph,
         temp_mult: brickHydration.temp_mult,
         humidity_mult: brickHydration.humidity_mult,
@@ -739,6 +747,11 @@ export function calculateBrickMacrosV4(
     water_ml: number;
     timing_note: string;
     food_categories: string[];
+    // Hydration transparency (propagated from brickHydration so the UI can
+    // render the inherited sodium formula + known-rate badges on T1/T2 cards)
+    sodium_conc_mg_per_l: number;
+    is_tested: boolean;
+    is_tested_sodium: boolean;
   }> = [];
 
   for (let i = 0; i < segments.length - 1; i++) {
@@ -782,6 +795,9 @@ export function calculateBrickMacrosV4(
         ? "Within first 5-10 minutes after first segment"
         : "Final 5-10 minutes of second segment",
       food_categories: ["transition"],
+      sodium_conc_mg_per_l: brickHydration.sodium_conc_mg_per_l,
+      is_tested: brickHydration.is_tested,
+      is_tested_sodium: brickHydration.is_tested_sodium,
     });
   }
 

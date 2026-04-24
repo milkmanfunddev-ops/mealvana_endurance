@@ -42,7 +42,7 @@ describe('Short-Workout Gate', () => {
       knownSweatRateMlPerHour: null,
       knownSodiumConcMgPerL: null,
     });
-    assert(!result.safety_flags.includes('No structured hydration plan needed.'),
+    assert(!result.safety_flags.includes('No structured hydration plan needed. Drink to thirst and hydrate before and immediately after.'),
       'Gate should not trigger when temp >= 30');
   });
 
@@ -59,7 +59,7 @@ describe('Short-Workout Gate', () => {
       knownSweatRateMlPerHour: null,
       knownSodiumConcMgPerL: null,
     });
-    assert(result.safety_flags.includes('No structured hydration plan needed.'),
+    assert(result.safety_flags.includes('No structured hydration plan needed. Drink to thirst and hydrate before and immediately after.'),
       'Gate should trigger at 59 min, 29°C');
   });
 });
@@ -131,7 +131,7 @@ describe('Example 1: 45-min speedwork, gate triggered', () => {
     assertEquals(result.floor_ml_hr, 0, 'floor should be 0');
     assertEquals(result.ceiling_ml_hr, 800, 'ceiling should be 800');
     assert(
-      result.safety_flags.includes('No structured hydration plan needed.'),
+      result.safety_flags.includes('No structured hydration plan needed. Drink to thirst and hydrate before and immediately after.'),
       'gate flag present',
     );
   });
@@ -286,7 +286,7 @@ describe('Indoor + short + mild — gate still fires', () => {
       knownSweatRateMlPerHour: null,
       knownSodiumConcMgPerL: null,
     });
-    assert(result.safety_flags.includes('No structured hydration plan needed.'),
+    assert(result.safety_flags.includes('No structured hydration plan needed. Drink to thirst and hydrate before and immediately after.'),
       'gate should still trigger indoors when short and mild');
     // Effective rate with indoor multiplier: 1.28 × 1.30 = 1.664
     assert(Math.abs(result.effective_sweat_rate_lph - 1.664) < 0.02,

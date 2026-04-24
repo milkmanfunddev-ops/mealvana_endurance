@@ -149,7 +149,7 @@ describe('Edge: gate boundary at exactly 30°C', () => {
       knownSodiumConcMgPerL: null,
     });
     assert(
-      !result.safety_flags.includes('No structured hydration plan needed.'),
+      !result.safety_flags.includes('No structured hydration plan needed. Drink to thirst and hydrate before and immediately after.'),
       'gate should NOT trigger at exactly 30°C',
     );
   });
@@ -168,7 +168,7 @@ describe('Edge: gate boundary at exactly 30°C', () => {
       knownSodiumConcMgPerL: null,
     });
     assert(
-      result.safety_flags.includes('No structured hydration plan needed.'),
+      result.safety_flags.includes('No structured hydration plan needed. Drink to thirst and hydrate before and immediately after.'),
       'gate should trigger at 29.9°C',
     );
   });
