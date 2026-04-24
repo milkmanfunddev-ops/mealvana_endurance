@@ -352,6 +352,13 @@ extension _$CalculationsExt on MacroExplanationService {
     required int totalEventMin,
     required double bodyWeightKg,
     bool showRedistributionNote = false,
+    // When true and the workout has T1/T2 transitions, emit a blue info
+    // callout below the calc pipeline explaining how the transitions
+    // absorbed 600 ml of the total-event requirement. Only relevant on
+    // the Multi-Segment scenario (not Redistribution, which has its own
+    // purple callout).
+    bool showTransitionAbsorptionNote = false,
+    int? transitionCount,
   }) {
     final effective = segment.effectiveSweatRateLPerH;
     final replacementPct = segment.replacementPercent;
@@ -474,6 +481,36 @@ extension _$CalculationsExt on MacroExplanationService {
       showDividerBefore: true,
     ));
 
+    // Priority: Redistribution (purple) takes precedence over the
+    // Multi-Segment transition-absorption note (blue) since the two would
+    // never both apply to the same leg — redistribution already implies
+    // the transitions weren't enough.
+    String? footerNote;
+    CalcNoteVariant footerVariant = CalcNoteVariant.info;
+    if (showRedistributionNote) {
+      footerNote =
+          'The run leg can only absorb 800 ml/hr — the overflow has '
+          'been shifted to this bike leg so the total race stays '
+          'within 2% body weight loss. Transitions already absorbed '
+          '600 ml; the heavy sweat rate still required redistribution.';
+      footerVariant = CalcNoteVariant.redistribution;
+    } else if (showTransitionAbsorptionNote &&
+        transitionCount != null &&
+        transitionCount > 0) {
+      // Spec `transparency_during_hydration.md` §Multi-Segment — blue
+      // info callout explaining how T1/T2 each absorb 300 ml of the
+      // total-event fluid requirement, keeping per-leg rates within
+      // segment ceilings and avoiding the need for redistribution.
+      final totalAbsorbedMl = transitionCount * 300;
+      final transitionsLabel = transitionCount == 1 ? 'T2' : 'T1 and T2';
+      footerNote =
+          '$transitionsLabel ${transitionCount == 1 ? "provides" : "each provide"} 300 ml. '
+          'These transition windows absorb $totalAbsorbedMl ml of the '
+          'race fluid requirement, keeping the per-leg rate within '
+          'segment GI ceilings (no redistribution needed).';
+      footerVariant = CalcNoteVariant.info;
+    }
+
     return [
       CalculationSection(
         header: 'CALCULATE EFFECTIVE SWEAT RATE',
@@ -482,16 +519,8 @@ extension _$CalculationsExt on MacroExplanationService {
       CalculationSection(
         header: 'REPLACEMENT STRATEGY',
         lines: replacementLines,
-        // Purple narrative callout explaining why this bike leg is
-        // carrying the run leg's shortfall. Only emitted on the
-        // Redistribution scenario (showRedistributionNote=true).
-        footerNote: showRedistributionNote
-            ? 'The run leg can only absorb 800 ml/hr — the overflow has '
-                  'been shifted to this bike leg so the total race stays '
-                  'within 2% body weight loss. Transitions already absorbed '
-                  '600 ml; the heavy sweat rate still required redistribution.'
-            : null,
-        footerNoteVariant: CalcNoteVariant.redistribution,
+        footerNote: footerNote,
+        footerNoteVariant: footerVariant,
       ),
     ];
   }

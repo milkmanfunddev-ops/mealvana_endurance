@@ -62,8 +62,13 @@ extension _$FluidExt on MacroExplanationService {
     } else {
       // Tier 1 — full ACSM protocol. Spec uses 6 ml/kg midpoint, 5 ml/kg
       // floor, 7 ml/kg ceiling.
+      // C1: spec wants "With 3 hours available"; the actual
+      // timeBeforeWorkoutMin isn't currently plumbed through the
+      // transparency stack (would touch ~6 files). Tier 1 implies
+      // timeBeforeWorkoutMin >= 120 by construction, so we use the honest
+      // lower-bound phrase "2+ hours available" until the full plumb lands.
       blurb = 'The goal before a workout is to start **euhydrated** — at your '
-          'normal baseline, not loaded or depleted. With enough time available, '
+          'normal baseline, not loaded or depleted. With 2+ hours available, '
           'you have time for the full protocol: sip ${fluidsMl}mL gradually, let '
           'it absorb, and aim for pale yellow urine before you head out.';
       // Bucket the derived ml/kg to the spec-exact integer (5/6/7) when it's
@@ -1138,6 +1143,14 @@ extension _$FluidExt on MacroExplanationService {
         segment: segment,
         totalEventMin: totalEventMin,
         bodyWeightKg: bodyWeightKg,
+        // G5 spec `transparency_during_hydration.md` §Multi-Segment —
+        // show the blue info callout explaining how T1/T2 absorb
+        // 300 ml each. Transition count is inferred from the brick
+        // phase targets; if unknown, default to 0 which suppresses
+        // the callout.
+        showTransitionAbsorptionNote: true,
+        transitionCount:
+            macroTargets.brickPhaseTargets?.transitions.length ?? 0,
       ),
       calculationWarning: segment.safetyFlags.isNotEmpty
           ? segment.safetyFlags.first
