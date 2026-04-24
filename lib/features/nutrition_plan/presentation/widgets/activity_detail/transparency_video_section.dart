@@ -42,12 +42,26 @@ class TransparencyVideoSection extends StatelessWidget {
         isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
 
     if (comingSoon || videoUrl == null || videoUrl!.isEmpty) {
-      // Coming soon placeholder
+      // Spec-style thumbnail placeholder: shows the Watch title and
+      // "~2 min · Mealvana Education" subtitle next to a disabled play
+      // icon, so the Figma layout still reads correctly when no video
+      // URL is wired up yet. Renders as disabled (non-tappable).
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 24),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.03),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              isDark
+                  ? Colors.white.withValues(alpha: 0.04)
+                  : Colors.black.withValues(alpha: 0.03),
+              isDark
+                  ? Colors.white.withValues(alpha: 0.02)
+                  : Colors.black.withValues(alpha: 0.015),
+            ],
+          ),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isDark
@@ -59,16 +73,40 @@ class TransparencyVideoSection extends StatelessWidget {
           children: [
             Icon(
               Icons.play_circle_outline_rounded,
-              size: 40,
-              color: AppColors.electrolyte.withValues(alpha: 0.4),
+              size: 44,
+              color: AppColors.electrolyte.withValues(alpha: 0.55),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
-              'Coming soon',
+              title.replaceFirst('Watch: ', ''),
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: dimText,
+                color: isDark ? AppColors.textDark : AppColors.textLight,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '~2 min · Mealvana Education',
+              style: TextStyle(fontSize: 11, color: dimText),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: dimText.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'Coming soon',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: dimText,
+                  letterSpacing: 0.4,
+                ),
               ),
             ),
           ],
