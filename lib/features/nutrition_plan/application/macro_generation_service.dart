@@ -644,6 +644,7 @@ class MacroGenerationService {
               : null,
           safetyFlags: _toStringList(macrosData['safety_flags']),
           isTested: macrosData['is_tested'] as bool? ?? false,
+          isTestedSodium: macrosData['is_tested_sodium'] as bool? ?? false,
           // Environment echo fields
           tempC: _toDoubleOrNull(macrosData['temp_c']),
           humidityPct: _toDoubleOrNull(macrosData['humidity_pct']),

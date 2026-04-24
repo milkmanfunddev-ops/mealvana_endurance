@@ -247,6 +247,7 @@ class BrickSegmentMacroTarget {
     this.ceilingMlPerH,
     this.safetyFlags = const [],
     this.isTested = false,
+    this.isTestedSodium = false,
   });
 
   final int segmentOrder;
@@ -293,6 +294,9 @@ class BrickSegmentMacroTarget {
   /// Whether the sweat rate was sourced from a personal sweat test.
   final bool isTested;
 
+  /// Whether sweat sodium concentration was sourced from a personal test.
+  final bool isTestedSodium;
+
   Map<String, dynamic> toJson() {
     return {
       'segmentOrder': segmentOrder,
@@ -328,6 +332,7 @@ class BrickSegmentMacroTarget {
       if (ceilingMlPerH != null) 'ceilingMlPerH': ceilingMlPerH,
       if (safetyFlags.isNotEmpty) 'safetyFlags': safetyFlags,
       if (isTested) 'isTested': isTested,
+      if (isTestedSodium) 'isTestedSodium': isTestedSodium,
     };
   }
 
@@ -364,6 +369,7 @@ class BrickSegmentMacroTarget {
       ceilingMlPerH: (json['ceilingMlPerH'] as num?)?.toInt(),
       safetyFlags: List<String>.from(json['safetyFlags'] as List? ?? const []),
       isTested: json['isTested'] as bool? ?? false,
+      isTestedSodium: json['isTestedSodium'] as bool? ?? false,
     );
   }
 
@@ -398,7 +404,8 @@ class BrickSegmentMacroTarget {
         other.floorMlPerH == floorMlPerH &&
         other.ceilingMlPerH == ceilingMlPerH &&
         _listEquals(other.safetyFlags, safetyFlags) &&
-        other.isTested == isTested;
+        other.isTested == isTested &&
+        other.isTestedSodium == isTestedSodium;
   }
 
   @override
@@ -430,7 +437,7 @@ class BrickSegmentMacroTarget {
       replacementPercent,
       floorMlPerH,
       ceilingMlPerH,
-      Object.hash(Object.hashAll(safetyFlags), isTested),
+      Object.hash(Object.hashAll(safetyFlags), isTested, isTestedSodium),
     ),
   );
 }
@@ -456,6 +463,7 @@ class BrickTransitionMacroTarget {
     this.ceilingMlPerH,
     this.safetyFlags = const [],
     this.isTested = false,
+    this.isTestedSodium = false,
   });
 
   final String transitionName;
@@ -491,6 +499,9 @@ class BrickTransitionMacroTarget {
   /// Whether the sweat rate was sourced from a personal sweat test.
   final bool isTested;
 
+  /// Whether sweat sodium concentration was sourced from a personal test.
+  final bool isTestedSodium;
+
   Map<String, dynamic> toJson() {
     return {
       'transitionName': transitionName,
@@ -512,6 +523,7 @@ class BrickTransitionMacroTarget {
       if (ceilingMlPerH != null) 'ceilingMlPerH': ceilingMlPerH,
       if (safetyFlags.isNotEmpty) 'safetyFlags': safetyFlags,
       if (isTested) 'isTested': isTested,
+      if (isTestedSodium) 'isTestedSodium': isTestedSodium,
     };
   }
 
@@ -536,6 +548,7 @@ class BrickTransitionMacroTarget {
       ceilingMlPerH: (json['ceilingMlPerH'] as num?)?.toInt(),
       safetyFlags: List<String>.from(json['safetyFlags'] as List? ?? const []),
       isTested: json['isTested'] as bool? ?? false,
+      isTestedSodium: json['isTestedSodium'] as bool? ?? false,
     );
   }
 
@@ -559,7 +572,8 @@ class BrickTransitionMacroTarget {
         other.floorMlPerH == floorMlPerH &&
         other.ceilingMlPerH == ceilingMlPerH &&
         _listEquals(other.safetyFlags, safetyFlags) &&
-        other.isTested == isTested;
+        other.isTested == isTested &&
+        other.isTestedSodium == isTestedSodium;
   }
 
   @override
@@ -582,6 +596,7 @@ class BrickTransitionMacroTarget {
       ceilingMlPerH,
       Object.hashAll(safetyFlags),
       isTested,
+      isTestedSodium,
     ),
   );
 }
@@ -762,6 +777,7 @@ class DuringRunMacros {
     this.ceilingMlPerH,
     this.safetyFlags = const [],
     this.isTested = false,
+    this.isTestedSodium = false,
     // Environment echo fields
     this.tempC,
     this.humidityPct,
@@ -808,6 +824,9 @@ class DuringRunMacros {
 
   /// Whether the sweat rate was sourced from a personal sweat test.
   final bool isTested;
+
+  /// Whether sweat sodium concentration was sourced from a personal test.
+  final bool isTestedSodium;
 
   // Environment echo fields
   /// Temperature used in derivation (°C).
@@ -874,6 +893,7 @@ class DuringRunMacros {
     int? ceilingMlPerH,
     List<String>? safetyFlags,
     bool? isTested,
+    bool? isTestedSodium,
     // Environment echo fields
     double? tempC,
     double? humidityPct,
@@ -906,6 +926,7 @@ class DuringRunMacros {
       ceilingMlPerH: ceilingMlPerH ?? this.ceilingMlPerH,
       safetyFlags: safetyFlags ?? this.safetyFlags,
       isTested: isTested ?? this.isTested,
+      isTestedSodium: isTestedSodium ?? this.isTestedSodium,
       // Environment echo fields
       tempC: tempC ?? this.tempC,
       humidityPct: humidityPct ?? this.humidityPct,
@@ -942,6 +963,7 @@ class DuringRunMacros {
       if (ceilingMlPerH != null) 'ceilingMlPerH': ceilingMlPerH,
       if (safetyFlags.isNotEmpty) 'safetyFlags': safetyFlags,
       if (isTested) 'isTested': isTested,
+      if (isTestedSodium) 'isTestedSodium': isTestedSodium,
       // Environment echo fields
       if (tempC != null) 'tempC': tempC,
       if (humidityPct != null) 'humidityPct': humidityPct,
@@ -980,6 +1002,7 @@ class DuringRunMacros {
       ceilingMlPerH: (json['ceilingMlPerH'] as num?)?.toInt(),
       safetyFlags: List<String>.from(json['safetyFlags'] as List? ?? const []),
       isTested: json['isTested'] as bool? ?? false,
+      isTestedSodium: json['isTestedSodium'] as bool? ?? false,
       // Environment echo fields
       tempC: (json['tempC'] as num?)?.toDouble(),
       humidityPct: (json['humidityPct'] as num?)?.toDouble(),
@@ -1016,6 +1039,7 @@ class DuringRunMacros {
         other.ceilingMlPerH == ceilingMlPerH &&
         _listEquals(other.safetyFlags, safetyFlags) &&
         other.isTested == isTested &&
+        other.isTestedSodium == isTestedSodium &&
         other.tempC == tempC &&
         other.humidityPct == humidityPct &&
         other.isIndoor == isIndoor;
@@ -1050,6 +1074,7 @@ class DuringRunMacros {
         ceilingMlPerH,
         Object.hashAll(safetyFlags),
         isTested,
+        isTestedSodium,
         tempC,
         humidityPct,
         isIndoor,

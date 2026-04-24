@@ -732,6 +732,8 @@ class BrickMacroService {
                 : null,
             safetyFlags: _toStringList(segmentData['safety_flags']),
             isTested: segmentData['is_tested'] as bool? ?? false,
+            isTestedSodium:
+                segmentData['is_tested_sodium'] as bool? ?? false,
           ),
         );
       }
@@ -802,6 +804,8 @@ class BrickMacroService {
                 : null,
             safetyFlags: _toStringList(transitionData['safety_flags']),
             isTested: transitionData['is_tested'] as bool? ?? false,
+            isTestedSodium:
+                transitionData['is_tested_sodium'] as bool? ?? false,
           ),
         );
       }

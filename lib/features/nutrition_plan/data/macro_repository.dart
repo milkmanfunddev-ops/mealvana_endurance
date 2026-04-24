@@ -69,13 +69,20 @@ class MacroRepositoryImpl implements MacroRepository {
 
   final SharedPreferences _prefs;
 
-  static const _cachedKey = 'macro_targets.cached';
-  static const _originalKey = 'macro_targets.original';
-  static const _cachedByActivityKeyPrefix = 'macro_targets.cached.activity.';
+  // Cache key version — bump when hydration/sodium algorithm constants or
+  // derivation fields change. v2 (2026-04-24): new sodium percentiles
+  // (650/825/1000 mg/L), known-sodium override ingress, is_tested_sodium
+  // flag, and sodium_conc_mg_per_l on brick transitions. Previous cached
+  // plans under the v1 keys are orphaned and will be regenerated next time
+  // the activity is opened.
+  static const _cachedKey = 'macro_targets.cached.v2';
+  static const _originalKey = 'macro_targets.original.v2';
+  static const _cachedByActivityKeyPrefix =
+      'macro_targets.cached.v2.activity.';
   static const _originalByActivityKeyPrefix =
-      'macro_targets.original.activity.';
+      'macro_targets.original.v2.activity.';
   static const _activityMigrationFlagPrefix =
-      'macro_targets.migrated.activity.';
+      'macro_targets.migrated.v2.activity.';
 
   @override
   Future<MacroTargets> generateMacroTargets({
