@@ -68,7 +68,7 @@ extension _$CalculationsExt on MacroExplanationService {
               fAccent('${_sweaterLabel(baseRate)} sweater '),
               fOp('→ '),
               fDim('${baseRate.toStringAsFixed(2)} L/hr '),
-              fOp('(50th pct)'),
+              fOp(_sweaterPercentile(baseRate)),
             ],
             stepNumber: '①',
           );
@@ -228,6 +228,22 @@ extension _$CalculationsExt on MacroExplanationService {
     return 'heavy';
   }
 
+  /// Baker 2016 percentile annotation for a sweat-rate tier.
+  /// Maps light → 25th, medium → 50th, heavy → 75th.
+  String _sweaterPercentile(double baseLph) {
+    if (baseLph <= 1.05) return '(25th pct)';
+    if (baseLph <= 1.45) return '(50th pct)';
+    return '(75th pct)';
+  }
+
+  /// Baker 2016 percentile annotation for a sweat-sodium tier.
+  /// Maps low (≤700) → 25th, average (≤900) → 50th, high → 75th.
+  String _saltPercentile(int concMgPerL) {
+    if (concMgPerL <= 700) return '(25th pct)';
+    if (concMgPerL <= 900) return '(50th pct)';
+    return '(75th pct)';
+  }
+
   /// Builds the calculation sections for the during-workout Sodium card.
   /// Shows: conc = category → mg/L, then sodium_mg/hr = fluid × (conc/1000).
   List<CalculationSection> _buildDuringSodiumCalculationSections({
@@ -250,7 +266,7 @@ extension _$CalculationsExt on MacroExplanationService {
             fAccent('${_sodiumSaltLabel(conc)} salt '),
             fOp('→ '),
             fDim('$conc mg/L '),
-            fOp('(50th pct)'),
+            fOp(_saltPercentile(conc)),
           ],
           stepNumber: '①',
         ),
@@ -367,7 +383,7 @@ extension _$CalculationsExt on MacroExplanationService {
                 fAccent('${_sweaterLabel(baseRate)} sweater '),
                 fOp('→ '),
                 fDim('${baseRate.toStringAsFixed(2)} L/hr '),
-                fOp('(50th pct)'),
+                fOp(_sweaterPercentile(baseRate)),
               ],
               stepNumber: '①',
             ),
@@ -484,7 +500,7 @@ extension _$CalculationsExt on MacroExplanationService {
             fAccent('${_sodiumSaltLabel(concMgPerL)} salt '),
             fOp('→ '),
             fDim('$concMgPerL mg/L '),
-            fOp('(50th pct)'),
+            fOp(_saltPercentile(concMgPerL)),
           ], stepNumber: '①'),
           FormulaLine([
             fAccent('$fluidRateMlH ml/hr '),
