@@ -884,6 +884,95 @@ extension _$FluidExt on MacroExplanationService {
                 'Medium \u00b7 1.28 L/hr \u00b7 50th pct',
                 'Heavy \u00b7 1.66 L/hr \u00b7 75th pct',
               ],
+        confidence: ConfidenceLevel.high,
+      ),
+      // C15 \u2014 Temperature Q
+      const StorySection(
+        question: 'Why does temperature change the target?',
+        answer:
+            'Heat stress increases sweat rate roughly 4% per degree Celsius '
+            'above a neutral 22\u00b0C baseline. We apply the multiplier on top '
+            'of your base rate and clamp it to a 0.50\u00d7\u20131.80\u00d7 '
+            'safety band so a single extreme data point can\'t produce absurd '
+            'targets.',
+        citation: 'Jenkins et al. (2023) \u2014 Temperature and sweat rate',
+        dataChips: [
+          '10\u00b0C \u00b7 0.52\u00d7',
+          '22\u00b0C \u00b7 1.0\u00d7 neutral',
+          '30\u00b0C \u00b7 1.32\u00d7',
+          '>40\u00b0C \u00b7 1.80\u00d7 capped',
+        ],
+        confidence: ConfidenceLevel.medium,
+      ),
+      // C16 \u2014 Humidity Q with transparency note
+      const StorySection(
+        question: 'Does humidity matter?',
+        answer:
+            'Humidity reduces how efficiently sweat evaporates, so more fluid '
+            'drips off without contributing to cooling. We apply a small '
+            'multiplier (max +10%) when humidity rises above 50%, as a '
+            'conservative practical adjustment.',
+        citation: 'Che Muhamed et al. (2016); Jenkins et al. (2023)',
+        transparencyNote:
+            'Jenkins et al. (2023) found humidity did not significantly '
+            'increase sweat rate on its own. The small multiplier (max '
+            '1.10\u00d7) is Mealvana\'s conservative practical estimate \u2014 '
+            'not directly validated by the research.',
+        dataChips: [
+          '50% RH \u00b7 1.00\u00d7 baseline',
+          '80% RH \u00b7 1.06\u00d7',
+          '100% RH \u00b7 1.10\u00d7 capped',
+        ],
+        confidence: ConfidenceLevel.medium,
+      ),
+      // C17 \u2014 Indoor Q with transparency note
+      const StorySection(
+        question: 'Why do you sweat more indoors?',
+        answer:
+            'Indoor workouts remove wind-driven evaporative cooling. Without '
+            'airflow, your body has to sweat more to move heat out. We apply '
+            'a 1.30\u00d7 multiplier for indoor sessions on top of temperature '
+            'and humidity adjustments.',
+        citation: 'Practical adjustment based on trainer / treadmill data',
+        transparencyNote:
+            'The 1.30\u00d7 indoor multiplier is conceptually well-supported '
+            'but not directly quantified in published research. This is our '
+            'lowest-confidence adjustment \u2014 we plan to refine it with user '
+            'data over time.',
+        dataChips: ['Indoor \u00b7 1.30\u00d7', 'Outdoor \u00b7 1.00\u00d7'],
+        confidence: ConfidenceLevel.low,
+      ),
+      // C18 \u2014 EAH / overhydration Q (SAFETY-CRITICAL)
+      const StorySection(
+        question: 'Why is drinking too much water also dangerous?',
+        answer:
+            '**Exercise-associated hyponatremia (EAH)** happens when athletes '
+            'drink more fluid than they sweat, diluting blood sodium to '
+            'dangerously low levels. Symptoms include nausea, headache, '
+            'confusion; severe cases can be fatal. The ceiling on your plan '
+            'caps intake at 100% of your sweat rate (and never above the '
+            'sport\'s GI absorption limit) to prevent this.',
+        citation:
+            'Hew-Butler et al. (2015) \u2014 Clinical Journal of Sport Medicine; '
+            'Sawka et al. (2007) ACSM',
+        dataChips: [
+          'Ceiling \u00b7 100% of sweat rate',
+          'GI cap \u00b7 run 800, bike 1200 mL/hr',
+        ],
+        confidence: ConfidenceLevel.high,
+      ),
+      // C19 \u2014 Warning-flag-meaning Q
+      const StorySection(
+        question: 'What does the warning flag mean?',
+        answer:
+            'When we can\'t keep your estimated deficit under 2% body weight '
+            'even at the recommended intake, we flag it. Pre-hydrate well and '
+            'rehydrate immediately after. A >3% deficit is the threshold for '
+            'significant dehydration \u2014 treat hot long efforts with extra '
+            'caution and plan rest stops.',
+        citation: 'Sawka et al. (2007) \u2014 2% BW threshold',
+        dataChips: ['Flag \u2265 2% BW', 'Significant \u2265 3% BW'],
+        confidence: ConfidenceLevel.high,
       ),
     ];
   }
