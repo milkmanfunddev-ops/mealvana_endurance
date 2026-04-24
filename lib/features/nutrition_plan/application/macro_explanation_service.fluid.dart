@@ -110,6 +110,15 @@ extension _$FluidExt on MacroExplanationService {
       ];
     }
 
+    // Spec `transparency_pre_hydration.md`: Tier 1 card shows the
+    // "pale yellow urine" tip as a callout below the formula. Tier 2 and
+    // Tier 3 get no tip (no time for urine colour to respond).
+    final String? tldrTip = (!isTier3 && !isTier2)
+        ? 'If your urine is still dark at 2 hours before your workout, '
+            'the ACSM recommends an additional **3–5 ml/kg**. Aim for pale '
+            'yellow — straw coloured — before you start.'
+        : null;
+
     return NutrientTransparencyData(
       nutrientLabel: 'Fluids',
       nutrientColor: const Color(0xFF4A9EFF), // blue
@@ -117,6 +126,7 @@ extension _$FluidExt on MacroExplanationService {
       phase: 'before',
       tldrBody: blurb,
       tldrLines: tldrLines,
+      tldrTip: tldrTip,
       storySections: _preWorkoutFluidStorySections(isTier3: isTier3),
       calculationSections: _buildPreWorkoutFluidCalculationSections(
         bodyWeightKg: bodyWeightKg,
@@ -137,33 +147,71 @@ extension _$FluidExt on MacroExplanationService {
   }) {
     return [
       const StorySection(
-        question: 'What does "euhydrated" mean?',
+        question: 'What is euhydration and why does it matter?',
         answer:
             'Euhydration is your normal, well-hydrated baseline \u2014 neither '
-            'dehydrated nor over-hydrated. The goal before a workout is to arrive '
-            'at that baseline, not to "water load" beyond it. Excess fluid without '
-            'sodium is excreted quickly and doesn\'t help performance.',
-        citation: 'Sawka et al. (2007) \u2014 ACSM Position Stand on Exercise and Fluid Replacement',
+            'dehydrated nor over-hydrated. Even 1\u20132% body weight deficit '
+            'measurably impairs performance and accelerates cardiovascular '
+            'strain. Starting euhydrated means your sweat losses during exercise '
+            'are recoverable, not compounding a pre-existing deficit.',
+        citation:
+            'Cheuvront & Kenefick (2014) \u2014 Comprehensive Physiology; '
+            'Sawka et al. (2007) \u2014 ACSM Position Stand',
         dataChips: ['Pre-hydration goal \u00b7 euhydration, not loading'],
-      ),
-      const StorySection(
-        question: 'Why does sodium matter before a workout?',
-        answer:
-            'Pre-workout sodium keeps the fluid you drink in your body rather than '
-            'sending it straight to your bladder. Without sodium, much of what you '
-            'consume before exercise is excreted before you even start.',
-        citation: 'Maughan & Shirreffs (2008) \u2014 European Journal of Sport Science',
+        confidence: ConfidenceLevel.high,
       ),
       if (!isTier3)
         const StorySection(
-          question: 'What\'s the range based on?',
+          question: 'Where does 5\u20137 mL/kg come from?',
           answer:
-              'The ACSM recommends **5\u20137 mL/kg** of body weight as a pre-workout '
-              'fluid protocol for the 2\u20134 hour window. The specific amount within '
-              'that range adjusts for your weight and the timing of your meal.',
-          citation: 'Sawka et al. (2007) \u2014 ACSM Position Stand; range: 5\u20137 mL/kg',
-          dataChips: ['5 mL/kg \u00b7 lower bound', '6 mL/kg \u00b7 target', '7 mL/kg \u00b7 upper bound'],
+              'The ACSM recommends **5\u20137 mL/kg** of body weight as a '
+              'pre-workout fluid protocol for the 2\u20134 hour window. This '
+              'is enough to achieve euhydration without pushing excess fluid '
+              'that would be excreted before exercise begins.',
+          citation:
+              'Sawka et al. (2007) \u2014 ACSM Position Stand; '
+              'Thomas et al. (2016) \u2014 Academy of Nutrition & Dietetics',
+          dataChips: [
+            '5 mL/kg \u00b7 lower bound',
+            '6 mL/kg \u00b7 target',
+            '7 mL/kg \u00b7 upper bound',
+          ],
+          confidence: ConfidenceLevel.high,
         ),
+      // C5 \u2014 time-availability tiering
+      const StorySection(
+        question: 'Why does the recommendation change with time available?',
+        answer:
+            'Fluid absorption takes time. With \u2265 2 hours, you can drink '
+            'body-weight-scaled volume and have it absorb fully before exercise. '
+            'With 10\u2013120 minutes, only a small top-up will absorb in time. '
+            'Under 10 minutes, most of what you drink won\'t absorb before you '
+            'start \u2014 it just sits in your stomach.',
+        citation: 'NATA position stand \u2014 fluid replacement for athletes',
+        dataChips: [
+          '\u2265 2 hours \u00b7 BW \u00d7 5\u20137 mL/kg',
+          '10\u2013120 min \u00b7 200\u2013300 mL fixed',
+          '< 10 min \u00b7 sips only',
+        ],
+        confidence: ConfidenceLevel.medium,
+      ),
+      // C6 \u2014 early-morning / evening-before tip
+      const StorySection(
+        question: 'What about early morning workouts?',
+        answer:
+            'For 5\u20136 AM workouts, you often don\'t have a full 2-hour '
+            'window to pre-hydrate. The practical workaround is to hydrate well '
+            'the evening before \u2014 an extra 300\u2013500 mL of fluid with '
+            'dinner, plus a normal-sized breakfast-time top-up. You wake up '
+            'closer to baseline and don\'t need to chug water at the start.',
+        citation: 'ACSM general 24-hour pre-exercise hydration guidance',
+        transparencyNote:
+            'The evening-before recommendation is based on ACSM\'s general '
+            'guidance to maintain adequate hydration during the 24-hour period '
+            'before exercise. It is a practical tip, not a separately '
+            'calculated protocol.',
+        confidence: ConfidenceLevel.medium,
+      ),
     ];
   }
 
