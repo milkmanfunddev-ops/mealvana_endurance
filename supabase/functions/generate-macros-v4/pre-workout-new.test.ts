@@ -334,3 +334,78 @@ describe('Tier 1 + Tier 2 combined top-up (informational)', () => {
     assertEquals(tier1.sodium_mg + tier2.sodium_mg, 450 + 150);
   });
 });
+
+// ============================================================================
+// Pre-workout edge cases (G8 — 2026-04-24)
+// ============================================================================
+
+describe('Pre-workout edge: timeBeforeWorkoutMin < 0', () => {
+  it('negative time is treated as Tier 3 (too late)', () => {
+    // Spec §Pre-Workout Edge Cases calls for REJECT. Current impl
+    // silently falls through both tier gates (>= 120 is false, >= 10 is
+    // false) and returns Tier 3 with 0 ml / 0 mg. Locked in here so we
+    // notice if the behavior flips.
+    const result = calculatePreWorkoutHydration({
+      bodyWeightKg: 70,
+      workoutDurationMin: 90,
+      timeBeforeWorkoutMin: -15,
+      tempC: 22,
+    });
+    assertEquals(result.tier, 3);
+    assertEquals(result.fluid_ml, 0);
+    assertEquals(result.sodium_mg, 0);
+    assertEquals(
+      result.message?.includes('Too late for structured pre-hydration'),
+      true,
+    );
+  });
+});
+
+describe('Pre-workout edge: bodyWeightKg = 0', () => {
+  it('Tier 1 with BW=0 → fluid=0 (body weight × 6 = 0)', () => {
+    // Current impl: Tier 1 formula `BW × 6` produces 0 when BW=0.
+    // Sodium stays at the fixed 450 mg (not BW-scaled per spec).
+    const result = calculatePreWorkoutHydration({
+      bodyWeightKg: 0,
+      workoutDurationMin: 90,
+      timeBeforeWorkoutMin: 180,
+      tempC: 22,
+    });
+    assertEquals(result.tier, 1);
+    assertEquals(result.fluid_ml, 0, 'BW=0 → 0 fluid');
+    assertEquals(result.fluid_low_ml, 0);
+    assertEquals(result.fluid_high_ml, 0);
+    assertEquals(result.sodium_mg, 450, 'sodium not BW-scaled');
+  });
+
+  it('Tier 2 with BW=0 → fluid=250 (fixed, not BW-scaled)', () => {
+    // Tier 2 uses a fixed 250 ml / 150 mg regardless of body weight.
+    final: {
+      const result = calculatePreWorkoutHydration({
+        bodyWeightKg: 0,
+        workoutDurationMin: 90,
+        timeBeforeWorkoutMin: 60,
+        tempC: 22,
+      });
+      assertEquals(result.tier, 2);
+      assertEquals(result.fluid_ml, 250);
+      assertEquals(result.sodium_mg, 150);
+    }
+  });
+});
+
+describe('Pre-workout gate edge: temp=30 exact boundary', () => {
+  it('45 min at exactly 30°C → gate bypassed (temp >= 30)', () => {
+    // Spec: gate is duration < 60 AND temp < 30 (strict inequalities).
+    // At temp=30 the condition is false → full protocol runs.
+    const result = calculatePreWorkoutHydration({
+      bodyWeightKg: 70,
+      workoutDurationMin: 45,
+      timeBeforeWorkoutMin: 180,
+      tempC: 30,
+    });
+    assertEquals(result.gate_triggered, false);
+    assertEquals(result.tier, 1);
+    assertEquals(result.fluid_ml, 70 * 6);
+  });
+});

@@ -576,4 +576,99 @@ void main() {
       expect(macros['post_run_protein_g'], isA<num>());
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // G8 — Flutter parity for spec Examples 3 & 5 (previously Deno-only)
+  // ---------------------------------------------------------------------------
+
+  group('Example 3: 3-h hot bike — floor exceeds ceiling', () {
+    test(
+      '80 kg HEAVY, 31°C 65% outdoor, bike 180 min → rec=1200, floor>ceiling',
+      () {
+        final result = OfflineMacroCalculator.calculateDuringWorkoutHydration(
+          durationMin: 180,
+          weightKg: 80,
+          sweatRateCategory: 'heavy',
+          sweatSodiumCat: 'high',
+          tempC: 31,
+          humidityPct: 65,
+          isIndoor: false,
+          sport: 'cycling',
+        );
+        // Effective sweat rate: 1.66 × 1.36 × 1.03 ≈ 2.33 L/hr (per spec).
+        // Total loss: 2.33 × 3 hr ≈ 6990 ml; max deficit 1600 ml →
+        // floor = (6990 - 1600) / 3 ≈ 1797 ml/hr. Cycling GI ceiling
+        // = min(1200, 2325) = 1200 ml/hr. floor > ceiling → ceiling wins.
+        expectWithinPct(result.hydrationRateMlph, 1200,
+            reason: 'capped at cycling GI ceiling');
+        expect(result.ceilingMlHr, 1200);
+        expect(
+          result.floorMlHr,
+          greaterThan(result.ceilingMlHr),
+          reason: 'floor exceeds ceiling in hot 3-h bike',
+        );
+        expect(
+          result.safetyFlags.any(
+            (f) => f.contains('Even at maximum intake'),
+          ),
+          isTrue,
+          reason: 'ceiling < floor flag emitted',
+        );
+        expect(
+          result.safetyFlags.any(
+            (f) => f.contains('Significant dehydration'),
+          ),
+          isTrue,
+          reason: '>3% BW deficit flag emitted',
+        );
+      },
+    );
+  });
+
+  group('Example 5: Olympic triathlon with known sweat rate', () {
+    test(
+      '68 kg, known 1300 ml/hr, swim 25 / bike 65 / run 50 at 26°C → '
+      'swim=0, T1=300, bike≈679, T2=300, run≈679',
+      () {
+        final result = OfflineMacroCalculator.calculateBrickHydration(
+          weightKg: 68,
+          segments: const [
+            BrickSegmentInput(sport: 'swimming', order: 0, durationMin: 25),
+            BrickSegmentInput(sport: 'cycling', order: 1, durationMin: 65),
+            BrickSegmentInput(sport: 'running', order: 2, durationMin: 50),
+          ],
+          sweatRateCategory: 'medium',
+          sweatSodiumCat: 'average',
+          tempC: 26,
+          humidityPct: 55,
+          isIndoor: false,
+          knownSweatRateMlPerHour: 1300,
+        );
+
+        final swim = result.segments
+            .firstWhere((s) => s.sport.toLowerCase() == 'swimming');
+        final bike = result.segments
+            .firstWhere((s) => s.sport.toLowerCase() == 'cycling');
+        final run = result.segments
+            .firstWhere((s) => s.sport.toLowerCase() == 'running');
+
+        expect(swim.hydrationRateMlph, 0, reason: 'no drinking during swim');
+        expectWithinPct(bike.hydrationRateMlph, 679,
+            reason: 'bike rate per spec');
+        expectWithinPct(run.hydrationRateMlph, 679,
+            reason: 'run rate per spec');
+
+        // Two transitions with fixed 300 ml bolus each.
+        expect(result.transitions.length, 2);
+        for (final t in result.transitions) {
+          expect(t.waterMl, 300,
+              reason: 'T1 / T2 fixed 300 ml bolus per spec');
+          // Sodium = 300 ml × 825 mg/L / 1000 = 247 mg (round).
+          expectWithinPct(t.sodiumMg, 248, reason: 't sodium');
+        }
+        expect(result.isTested, isTrue,
+            reason: 'known sweat rate sets isTested');
+      },
+    );
+  });
 }

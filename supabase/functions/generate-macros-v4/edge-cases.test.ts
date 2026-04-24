@@ -82,24 +82,35 @@ describe('Edge: single swimming segment (swim-only)', () => {
 // ============================================================================
 
 describe('Edge: duration_min = 0', () => {
-  it('returns zero recommendation or throws', () => {
-    try {
-      const result = calculateDuringWorkoutHydration({
-        durationMin: 0,
-        weightKg: 70,
-        sweatRateCategory: 'medium',
-        sweatSodiumCat: 'average',
-        tempC: 22,
-        humidityPct: 50,
-        isIndoor: false,
-        sport: 'running',
-        knownSweatRateMlPerHour: null,
-        knownSodiumConcMgPerL: null,
-      });
-      assertEquals(result.hydration_rate_mlph, 0);
-    } catch {
-      // Throwing is also acceptable
-    }
+  it('gate fires (duration<60 AND temp<30) and rate defaults to 30% cap', () => {
+    // Tightened 2026-04-24: the prior try/catch accepted any behavior.
+    // Current implementation: duration=0 triggers the short-workout gate
+    // (duration < 60 AND temp < 30 at 22°C), which returns the 30% of
+    // sweat rate conservative cap (~384 ml/hr for medium sweater). Any
+    // hour-total math downstream naturally becomes zero because
+    // durationH=0. This locks in the current behavior — if the algo
+    // ever changes to throw on duration=0, adjust to `assertThrows`.
+    const result = calculateDuringWorkoutHydration({
+      durationMin: 0,
+      weightKg: 70,
+      sweatRateCategory: 'medium',
+      sweatSodiumCat: 'average',
+      tempC: 22,
+      humidityPct: 50,
+      isIndoor: false,
+      sport: 'running',
+      knownSweatRateMlPerHour: null,
+      knownSodiumConcMgPerL: null,
+    });
+    assertEquals(result.hydration_total_ml, 0, 'total is 0 since durationH=0');
+    assertEquals(result.sodium_total_mg, 0, 'total is 0 since durationH=0');
+    assertEquals(result.floor_ml_hr, 0, 'gate path → floor = 0');
+    // Gate-triggered flag must be present.
+    assertEquals(
+      result.safety_flags.some((f) => f.includes('No structured hydration plan')),
+      true,
+      'gate safety flag emitted',
+    );
   });
 });
 
@@ -108,25 +119,39 @@ describe('Edge: duration_min = 0', () => {
 // ============================================================================
 
 describe('Edge: body_weight_kg = 0', () => {
-  it('throws or returns zero safely', () => {
-    try {
-      const result = calculateDuringWorkoutHydration({
-        durationMin: 60,
-        weightKg: 0,
-        sweatRateCategory: 'medium',
-        sweatSodiumCat: 'average',
-        tempC: 22,
-        humidityPct: 50,
-        isIndoor: false,
-        sport: 'running',
-        knownSweatRateMlPerHour: null,
-        knownSodiumConcMgPerL: null,
-      });
-      // If it doesn't throw, floor should be 0 (no BW to compute deficit from)
-      assertEquals(result.floor_ml_hr, 0);
-    } catch {
-      // Throwing is acceptable
-    }
+  it('returns floor=0 safely (no deficit to clamp against)', () => {
+    // Tightened 2026-04-24: the prior try/catch accepted any behavior.
+    // Current implementation: weightKg=0 produces maxDeficitMl=0 so the
+    // floor formula (totalLossMl - 0) / durationH yields floor =
+    // effective_sweat_rate_mlph (entire loss must be replaced). The
+    // ceiling=min(GI, sweat_rate) then caps the rate. Deficit safety
+    // check skips when weightKg<=0. Locks in current behavior.
+    const result = calculateDuringWorkoutHydration({
+      durationMin: 60,
+      weightKg: 0,
+      sweatRateCategory: 'medium',
+      sweatSodiumCat: 'average',
+      tempC: 22,
+      humidityPct: 50,
+      isIndoor: false,
+      sport: 'running',
+      knownSweatRateMlPerHour: null,
+      knownSodiumConcMgPerL: null,
+    });
+    // At 60 min + 22°C the gate is off (duration not <60). Full path runs.
+    // With BW=0, maxDeficitMl=0 → floor = full sweat rate (1280 ml/hr).
+    // Ceiling = min(800 run GI, 1280) = 800.
+    assertEquals(result.ceiling_ml_hr, 800, 'run GI ceiling');
+    // Since floor > ceiling, the algorithm emits the "Even at maximum
+    // intake" flag and uses the ceiling.
+    assertEquals(result.hydration_rate_mlph, 800, 'capped at run GI');
+    assertEquals(
+      result.safety_flags.some((f) =>
+        f.includes('Even at maximum intake'),
+      ),
+      true,
+      'ceiling<floor flag emitted',
+    );
   });
 });
 
