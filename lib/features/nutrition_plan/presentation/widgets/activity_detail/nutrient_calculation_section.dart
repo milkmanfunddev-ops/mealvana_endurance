@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../domain/nutrient_transparency_data.dart';
 import 'transparency_accordion.dart';
@@ -23,13 +25,13 @@ import 'transparency_accordion.dart';
 ///       ↑ ceiling = min(800, 1290) = 800 ml/hr (running GI limit)
 ///       ✓ 645 ml/hr × 1.5 hr = 968 ml (33 oz)
 ///   (optional amber warning box)
-class NutrientCalculationSection extends StatelessWidget {
+class NutrientCalculationSection extends ConsumerWidget {
   const NutrientCalculationSection({super.key, required this.data});
 
   final NutrientTransparencyData data;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (data.calculationSections.isEmpty) return const SizedBox.shrink();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -95,6 +97,22 @@ class NutrientCalculationSection extends StatelessWidget {
                 ),
               ),
             ],
+            // "Does this make sense?" feedback footer — fires Mixpanel.
+            const SizedBox(height: 14),
+            _CalcFeedbackFooter(
+              nutrient: data.nutrientLabel,
+              phase: data.phase,
+              onVote: (vote) {
+                ref.read(analyticsTrackerProvider).track(
+                  'transparency_calc_feedback',
+                  properties: {
+                    'nutrient': data.nutrientLabel,
+                    'phase': data.phase,
+                    'vote': vote,
+                  },
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -223,6 +241,111 @@ class NutrientCalculationSection extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "Does this make sense?" footer shown at the bottom of the Calculation
+/// accordion. Tapping either thumb fires a Mixpanel event and swaps to a
+/// small "Thanks!" confirmation.
+class _CalcFeedbackFooter extends StatefulWidget {
+  const _CalcFeedbackFooter({
+    required this.nutrient,
+    required this.phase,
+    required this.onVote,
+  });
+
+  final String nutrient;
+  final String phase;
+  final ValueChanged<String> onVote;
+
+  @override
+  State<_CalcFeedbackFooter> createState() => _CalcFeedbackFooterState();
+}
+
+class _CalcFeedbackFooterState extends State<_CalcFeedbackFooter> {
+  bool _voted = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dim = isDark
+        ? Colors.white.withValues(alpha: 0.55)
+        : Colors.black.withValues(alpha: 0.55);
+
+    if (_voted) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Icon(Icons.check_circle_outline, size: 13, color: dim),
+          const SizedBox(width: 4),
+          Text(
+            'Thanks for the feedback',
+            style: TextStyle(
+              fontSize: 11,
+              color: dim,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Text(
+          'Does this make sense?',
+          style: TextStyle(
+            fontSize: 12,
+            color: dim,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        const SizedBox(width: 8),
+        _CalcVoteButton(
+          isUp: true,
+          onTap: () {
+            widget.onVote('up');
+            setState(() => _voted = true);
+          },
+        ),
+        const SizedBox(width: 4),
+        _CalcVoteButton(
+          isUp: false,
+          onTap: () {
+            widget.onVote('down');
+            setState(() => _voted = true);
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _CalcVoteButton extends StatelessWidget {
+  const _CalcVoteButton({required this.isUp, required this.onTap});
+
+  final bool isUp;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDark
+        ? Colors.white.withValues(alpha: 0.6)
+        : Colors.black.withValues(alpha: 0.6);
+    return InkWell(
+      borderRadius: BorderRadius.circular(4),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(3),
+        child: Icon(
+          isUp ? Icons.thumb_up_outlined : Icons.thumb_down_outlined,
+          size: 15,
+          color: color,
+        ),
       ),
     );
   }

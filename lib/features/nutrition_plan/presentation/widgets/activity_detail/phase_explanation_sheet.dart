@@ -383,7 +383,7 @@ class _PhaseExplanationSheetState
       brickSegment: widget.brickSegment,
     );
 
-    final showTabBar = scenarios.length > 1;
+    // showTabBar removed per 2026-04-22 audit decision — no tab selector.
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -428,17 +428,16 @@ class _PhaseExplanationSheetState
             ),
             const SizedBox(height: AppSpacing.md),
 
-            // Scenario tab bar (during-workout with >1 scenario)
-            if (showTabBar) ...[
-              _ScenarioTabBar(
-                scenarios: scenarios,
-                active: effectiveActiveScenario ?? scenarios.first,
-                onTap: (s) => setState(() => _activeScenario = s),
+            // Per the 2026-04-22 audit decision, we do NOT show a tab
+            // selector. The scenario is auto-detected from the workout
+            // shape and rendered directly. We keep a compact static label
+            // so users can see which scenario applies.
+            if (scenarios.isNotEmpty) ...[
+              _ScenarioStaticLabel(
+                label: _scenarioLabel(
+                  effectiveActiveScenario ?? scenarios.first,
+                ),
               ),
-              const SizedBox(height: AppSpacing.md),
-            ] else if (scenarios.length == 1) ...[
-              // Single scenario — render as static label
-              _ScenarioStaticLabel(label: _scenarioLabel(scenarios.first)),
               const SizedBox(height: AppSpacing.sm),
             ],
 
@@ -602,89 +601,6 @@ class _PhaseExplanationSheetState
 // Private widgets
 // ---------------------------------------------------------------------------
 
-/// Scenario tab bar shown when multiple scenarios apply.
-class _ScenarioTabBar extends StatelessWidget {
-  const _ScenarioTabBar({
-    required this.scenarios,
-    required this.active,
-    required this.onTap,
-  });
-
-  final List<Scenario> scenarios;
-  final Scenario active;
-  final ValueChanged<Scenario> onTap;
-
-  String _label(Scenario s) {
-    switch (s) {
-      case Scenario.singleSport:
-        return 'Single Sport';
-      case Scenario.knownRate:
-        return 'Known Rate';
-      case Scenario.shortWorkout:
-        return 'Short Workout';
-      case Scenario.multiSegment:
-        return 'Multi-Segment';
-      case Scenario.redistribution:
-        return 'Redistribution';
-      case Scenario.t1t2:
-        return 'T1 / T2';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: scenarios.map((s) {
-          final isActive = s == active;
-          return Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: GestureDetector(
-              onTap: () => onTap(s),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? AppColors.electrolyte.withValues(alpha: 0.12)
-                      : (isDark
-                          ? Colors.white.withValues(alpha: 0.04)
-                          : Colors.black.withValues(alpha: 0.04)),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isActive
-                        ? AppColors.electrolyte.withValues(alpha: 0.35)
-                        : (isDark
-                            ? Colors.white.withValues(alpha: 0.08)
-                            : Colors.black.withValues(alpha: 0.08)),
-                  ),
-                ),
-                child: Text(
-                  _label(s),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isActive
-                        ? FontWeight.w600
-                        : FontWeight.w400,
-                    color: isActive
-                        ? AppColors.electrolyte
-                        : (isDark
-                            ? Colors.white.withValues(alpha: 0.55)
-                            : Colors.black.withValues(alpha: 0.55)),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
 
 /// Static scenario label when only one scenario applies.
 class _ScenarioStaticLabel extends StatelessWidget {
