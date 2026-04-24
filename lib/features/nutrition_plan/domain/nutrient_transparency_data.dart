@@ -106,6 +106,7 @@ class CalculationSection {
   const CalculationSection({
     required this.header,
     required this.lines,
+    this.footerNote,
   });
 
   /// Small-caps uppercase header (e.g. "CALCULATE EFFECTIVE SWEAT RATE").
@@ -113,6 +114,10 @@ class CalculationSection {
 
   /// The numbered formula lines that live under this header.
   final List<FormulaLine> lines;
+
+  /// Optional blue info note rendered below the lines — used for
+  /// cross-section references like "sodium inherits from fluid section".
+  final String? footerNote;
 }
 
 /// What kind of inline edit a Full Story section supports.

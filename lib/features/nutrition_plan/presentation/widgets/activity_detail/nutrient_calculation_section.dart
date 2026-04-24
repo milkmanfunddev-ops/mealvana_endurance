@@ -125,6 +125,34 @@ class NutrientCalculationSection extends StatelessWidget {
         ),
         for (final line in section.lines)
           _buildLine(line, primaryText, secondaryText, dimColor, accentColor),
+        // Blue info callout for cross-section references (e.g. sodium
+        // inherits fluid floor/ceiling). Only renders when `footerNote`
+        // is set.
+        if (section.footerNote != null) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4A9EFF).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+              border: Border(
+                left: BorderSide(
+                  color: const Color(0xFF4A9EFF).withValues(alpha: 0.5),
+                  width: 3,
+                ),
+              ),
+            ),
+            child: Text(
+              section.footerNote!,
+              style: TextStyle(
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+                color: primaryText.withValues(alpha: 0.85),
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

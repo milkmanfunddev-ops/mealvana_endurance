@@ -321,7 +321,15 @@ extension _$CalculationsExt on MacroExplanationService {
 
     return [
       sweatSection,
-      CalculationSection(header: 'FLOOR & CEILING', lines: floorCeilLines),
+      CalculationSection(
+        header: 'FLOOR & CEILING',
+        lines: floorCeilLines,
+        // C21 — inherited-note callout per `transparency_during_sodium.md`.
+        footerNote:
+            'The $fluidRateMlH ml/hr fluid rate, floor, and ceiling all come '
+            'from the Fluids section. Sodium automatically adjusts when '
+            'fluid adjusts.',
+      ),
     ];
   }
 
