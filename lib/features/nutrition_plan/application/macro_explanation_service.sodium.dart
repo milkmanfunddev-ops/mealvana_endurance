@@ -506,25 +506,48 @@ extension _$SodiumExt on MacroExplanationService {
   }) {
     return [
       const StorySection(
-        question: 'Why is sodium tied to fluid intake?',
+        question: 'Why does sweat sodium concentration matter?',
         answer:
-            'Sweat contains both water and dissolved sodium. To maintain blood '
-            'sodium concentration, you need to replace sodium in proportion to '
-            'the fluid you drink. If you drink without sodium, your blood sodium '
-            'drops \u2014 a risk factor for **hyponatremia** in longer events.',
-        citation: 'Baker (2017) \u2014 JISSN; Hew-Butler et al. (2015) \u2014 Clinical Journal of Sport Medicine',
+            'Sweat sodium concentration varies roughly 10\u00d7 across athletes '
+            '(200\u20132000 mg/L), largely driven by genetics and heat adaptation. '
+            'Replacing sodium in proportion to your actual losses is the core of '
+            'preventing both hyponatremia and cramping.',
+        citation: 'Baker (2016) \u2014 Sports Medicine, n=506; mean 826 \u00b1 239 mg/L',
+        dataChips: [
+          'Low \u00b7 650 mg/L \u00b7 25th pct',
+          'Average \u00b7 825 mg/L \u00b7 50th pct',
+          'High \u00b7 1000 mg/L \u00b7 75th pct',
+        ],
+        confidence: ConfidenceLevel.high,
+      ),
+      // C24 \u2014 salt-type self-classification indicators
+      const StorySection(
+        question: 'How do I know which type I am?',
+        answer:
+            'Without a lab test, look for these qualitative indicators:\n\n'
+            '\u2022 **White salt residue** on your skin or clothes after exercise\n'
+            '\u2022 **Eyes sting** from sweat running into them\n'
+            '\u2022 **Strong craving for salty food** after long efforts\n'
+            '\u2022 **Sweat tastes noticeably salty**\n\n'
+            'None of the above \u2192 you\'re likely Low or Average. Multiple '
+            'indicators \u2192 likely High. A lab patch test (PF&H, Gatorade Gx, '
+            'LEVELEN) gives a precise number.',
+        citation: 'Baker (2017) \u2014 JISSN qualitative indicators',
+        confidence: ConfidenceLevel.medium,
       ),
       StorySection(
         question: 'What\'s my sweat sodium concentration?',
         answer: isTested
             ? 'Your sodium target uses your **personal tested concentration** '
                 '\u2014 the most accurate input. Individual sodium concentration '
-                'varies widely (200\u20132000 mg/L). White salt stains on clothing '
-                'and salty-tasting sweat are qualitative signals of higher losses.'
+                'varies widely (200\u20132000 mg/L). White salt stains on '
+                'clothing and salty-tasting sweat are qualitative signals of '
+                'higher losses.'
             : 'Sodium concentration is estimated from your sweat sodium category. '
-                'For a precise number, consider a lab patch test (Gatorade Gx, LEVELEN, '
-                'or PF&H sweat test). You can enter your result below.',
-        citation: 'Baker (2016) \u2014 Sports Medicine, n=506; mean 826 \u00b1 239 mg/L',
+                'For a precise number, consider a lab patch test (Gatorade Gx, '
+                'LEVELEN, or PF&H sweat test). You can enter your result below.',
+        citation:
+            'Baker (2016) \u2014 Sports Medicine, n=506; mean 826 \u00b1 239 mg/L',
         inlineEditType: InlineEditType.knownSodiumConcentration,
         dataChips: isTested
             ? ['TESTED \u2713 \u00b7 personal concentration']
@@ -533,17 +556,47 @@ extension _$SodiumExt on MacroExplanationService {
                 'Average \u00b7 825 mg/L \u00b7 50th pct',
                 'High \u00b7 1000 mg/L \u00b7 75th pct',
               ],
+        confidence: ConfidenceLevel.high,
       ),
+      // C25 \u2014 standard sports drink comparison (spec's most actionable Q)
       const StorySection(
-        question: 'Why not replace 100% of sodium losses?',
+        question: 'Why isn\'t a standard sports drink enough?',
         answer:
-            'The body has significant sodium reserves and regulatory mechanisms '
-            'that don\'t require precise replacement during exercise. The goal is '
-            'to maintain blood sodium in a safe range, not to perfectly match '
-            'sweat losses. 100% replacement also risks hypertonic intake '
-            'in some athletes.',
-        citation: 'Shirreffs & Sawka (2011) \u2014 Journal of Sports Sciences',
-        dataChips: ['Typical replacement \u00b7 derived from fluid \u00d7 conc'],
+            'A standard sports drink delivers roughly 450 mg/L sodium \u2014 '
+            'about half the 825 mg/L average sweat concentration. At a '
+            'typical during-workout rate of 645 mL/hr, that\'s only ~290 mg/hr '
+            'of sodium, covering roughly **54% of the target** for an '
+            'average-salt athlete. High-sodium drink mixes (\u2248825 mg/L) or '
+            'supplementing with an electrolyte tablet or salt capsule closes '
+            'the gap.',
+        citation: 'Commercial product comparison at 645 mL/hr reference rate',
+        dataChips: [
+          'Standard drink \u00b7 ~450 mg/L \u00b7 ~54% target',
+          'High-sodium mix \u00b7 ~825 mg/L \u00b7 100% target',
+          'Electrolyte tablet \u00b7 +300\u2013400 mg',
+          'Salt capsule \u00b7 +215 mg each',
+        ],
+      ),
+      // C26 \u2014 range-derivation Q with MEDIUM transparency note
+      const StorySection(
+        question: 'Where does the mg/hr range come from?',
+        answer:
+            'Your sodium range is inherited from the Fluids section. The floor '
+            'comes from the 2% BW floor \u00d7 your sodium concentration; the '
+            'ceiling comes from the GI cap \u00d7 your sodium concentration. '
+            'Sodium automatically follows whatever fluid rate the plan uses.',
+        citation: 'Tiller et al. (2019) \u2014 ISSN ultra guidelines; Mosler (2020) \u2014 DGE',
+        dataChips: [
+          'Floor \u00b7 fluid floor \u00d7 Na conc',
+          'Ceiling \u00b7 fluid ceiling \u00d7 Na conc',
+        ],
+        transparencyNote:
+            'The principle of replacing 100% of sodium in consumed fluid is '
+            'supported by ISSN ultra guidelines (Tiller 2019) and DGE position '
+            'stand (Mosler 2020), but rated Medium confidence \u2014 the '
+            'evidence is stronger for the direction than for the exact '
+            'percentage.',
+        confidence: ConfidenceLevel.medium,
       ),
     ];
   }
