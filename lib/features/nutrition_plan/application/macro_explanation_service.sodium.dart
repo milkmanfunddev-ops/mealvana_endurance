@@ -708,6 +708,7 @@ extension _$SodiumExt on MacroExplanationService {
               'The T1 transition provides the sodium bolus to bridge the gap '
               'before the bike leg.',
           dataChips: ['Swim sodium modifier \u00b7 0.4\u00d7 land sports'],
+          confidence: ConfidenceLevel.medium,
         ),
       ],
       isSwimZero: true,

@@ -1185,14 +1185,6 @@ extension _$FluidExt on MacroExplanationService {
           citation: 'Maughan & Shirreffs (2004) \u2014 swimming thermoregulation',
           dataChips: ['Swim sweat modifier \u00b7 0.4\u00d7 land sports'],
         ),
-        StorySection(
-          question: 'What covers the swim deficit?',
-          answer:
-              'T1 transition provides a fixed 300 mL bolus timed for what you can '
-              'comfortably take in during a 2\u20135 minute transition stop. The bike '
-              'leg then carries the remainder of the total-event fluid budget.',
-          dataChips: ['T1 bolus \u00b7 300 mL fixed'],
-        ),
       ],
       isSwimZero: true,
       swimCallout: 'Fluid deficit covered by: T1 transition \u00b7 Bike segment',
@@ -1244,8 +1236,10 @@ extension _$FluidExt on MacroExplanationService {
           fResult('${waterMl}mL'),
         ]),
       ],
-      calculationSections:
-          _buildTransitionFluidCalculationSections(waterMl: waterMl),
+      calculationSections: _buildTransitionFluidCalculationSections(
+        waterMl: waterMl,
+        isT1: isT1,
+      ),
       storySections: [
         StorySection(
           question: 'Why is the transition fluid fixed at 300 mL?',

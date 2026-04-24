@@ -537,21 +537,46 @@ extension _$CalculationsExt on MacroExplanationService {
   /// and the sodium derivation side-by-side for the sodium variant.
   List<CalculationSection> _buildTransitionFluidCalculationSections({
     required int waterMl,
+    bool isT1 = true,
   }) {
+    // Spec `transparency_during_hydration.md` §T1 / T2 — show fixed bolus,
+    // range band, and T1 vs T2 differentiation lines. Not body-weight
+    // scaled (noted explicitly).
+    final rangeLow = (waterMl * 0.80).round();
+    final rangeHigh = (waterMl * 1.20).round();
+    final transitionLabel = isT1 ? 'T1' : 'T2';
     return [
       CalculationSection(
         header: 'TRANSITION BOLUS',
         lines: [
+          FormulaLine(
+            [
+              fAccent('$transitionLabel '),
+              fOp('→ '),
+              fResult('$waterMl ml fixed'),
+              fDim(' (sip, then go)'),
+            ],
+            stepNumber: '①',
+          ),
           FormulaLine([
-            fAccent('fixed transition '),
+            fOp('range '),
             fOp('→ '),
-            fResult('$waterMl ml'),
-            fDim(' (sip, then go)'),
-          ], stepNumber: '①'),
+            fDim('$rangeLow–$rangeHigh ml'),
+          ]),
+          FormulaLine([
+            fOp(isT1 ? 'T1: ' : 'T2: '),
+            fDim(
+              isT1
+                  ? 'bridges swim hydration gap + wetsuit heat'
+                  : 'last easy window before run GI tolerance drops',
+            ),
+          ]),
           const FormulaLine([
             FormulaSegment('# ', style: SegmentStyle.op),
-            FormulaSegment('practitioner consensus — brief settle window',
-                style: SegmentStyle.dim),
+            FormulaSegment(
+              'not body-weight scaled (conservative fixed bolus)',
+              style: SegmentStyle.dim,
+            ),
           ]),
         ],
       ),
