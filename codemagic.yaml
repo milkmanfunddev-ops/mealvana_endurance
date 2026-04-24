@@ -103,13 +103,49 @@ definitions:
       name: Shutdown iOS Simulator
       script: xcrun simctl shutdown all || true
 
+    - &setup_android_signing
+      name: Decode Android keystore and write key.properties
+      # android/app/build.gradle.kts reads android/key.properties for release signing.
+      # Both files are gitignored, so we recreate them from the android_signing_credentials
+      # variable group: CM_KEYSTORE_B64 (base64 of .jks) + password/alias vars.
+      script: |
+        set -euo pipefail
+        if [ -z "${CM_KEYSTORE_B64:-}" ]; then
+          echo "⚠️  CM_KEYSTORE_B64 not set — skipping Android signing setup"
+          exit 0
+        fi
+        mkdir -p android/app
+        printf '%s' "$CM_KEYSTORE_B64" | base64 -d > android/app/keystore.jks
+        cat > android/key.properties <<EOF
+        storePassword=${CM_KEYSTORE_PASSWORD}
+        keyPassword=${CM_KEYSTORE_KEY_PASSWORD}
+        keyAlias=${CM_KEYSTORE_KEY_ALIAS}
+        storeFile=keystore.jks
+        EOF
+        echo "wrote android/app/keystore.jks ($(wc -c < android/app/keystore.jks) bytes) + android/key.properties"
+
+    - &write_dotenv_files
+      name: Write .env files from Codemagic secrets
+      # The app bundles .env / .env.dev.local / .env.prod.local as Flutter assets
+      # (pubspec.yaml). They're gitignored, so Codemagic has to recreate them from
+      # secure vars uploaded to the mealvana_dev / mealvana_prod variable groups.
+      # Any file whose source var isn't in the current workflow's groups is written
+      # as an empty stub — enough to satisfy the asset bundler without leaking the
+      # other flavor's secrets into this build.
+      script: |
+        set -euo pipefail
+        printf '%s' "${DOTENV_ROOT:-}" > .env
+        printf '%s' "${DOTENV_DEV_LOCAL:-}" > .env.dev.local
+        printf '%s' "${DOTENV_PROD_LOCAL:-}" > .env.prod.local
+        echo "wrote .env ($(wc -c < .env) bytes), .env.dev.local ($(wc -c < .env.dev.local) bytes), .env.prod.local ($(wc -c < .env.prod.local) bytes)"
+
 workflows:
   # ============================================================
-  # DEV WORKFLOWS (Manual Only)
+  # DEV WORKFLOWS — auto-triggered on push to `develop`
   # ============================================================
 
   dev-ios:
-    name: Dev - iOS TestFlight
+    name: Develop - iOS TestFlight (dev flavor)
     instance_type: mac_mini_m2
     max_build_duration: 120
 
@@ -129,11 +165,16 @@ workflows:
         FLUTTER_ENV: dev
         APP_ENVIRONMENT: dev
 
-    # Manual trigger only - no automatic builds for dev
     triggering:
-      events: []
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'develop'
+          include: true
+      cancel_previous_builds: true
 
     scripts:
+      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *install_cocoapods
@@ -166,7 +207,7 @@ workflows:
           failure: true
 
   dev-android:
-    name: Dev - Android Internal Testing
+    name: Develop - Android Play Internal Testing (dev flavor)
     instance_type: mac_mini_m2
     max_build_duration: 120
 
@@ -177,18 +218,25 @@ workflows:
         - mealvana_dev
         - google_play_credentials
         - firebase_config
+        - android_signing_credentials
       vars:
         FLUTTER_ENV: dev
         APP_ENVIRONMENT: dev
 
-    # Manual trigger only
     triggering:
-      events: []
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'develop'
+          include: true
+      cancel_previous_builds: true
 
     scripts:
+      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
+      - *setup_android_signing
 
       - name: Build dev Android
         script: |
@@ -213,11 +261,12 @@ workflows:
           failure: true
 
   # ============================================================
-  # PRODUCTION WORKFLOWS (Automated on release/*)
+  # RELEASE WORKFLOWS — auto-triggered on push to `release/*`
+  # Prod flavor, Shorebird release. iOS → TestFlight; Android → Play Closed (alpha).
   # ============================================================
 
   prod-ios:
-    name: Prod - iOS Shorebird Release
+    name: Release - iOS TestFlight (Shorebird, prod flavor)
     instance_type: mac_mini_m2
     max_build_duration: 120
 
@@ -244,8 +293,10 @@ workflows:
       branch_patterns:
         - pattern: 'release/*'
           include: true
+      cancel_previous_builds: true
 
     scripts:
+      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *install_shorebird
@@ -285,7 +336,7 @@ workflows:
           failure: true
 
   prod-android:
-    name: Prod - Android Open Testing
+    name: Release - Android Play Closed Testing (Shorebird, prod flavor)
     instance_type: mac_mini_m2
     max_build_duration: 120
 
@@ -297,6 +348,7 @@ workflows:
         - shorebird_credentials
         - google_play_credentials
         - firebase_config
+        - android_signing_credentials
       vars:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
@@ -307,11 +359,14 @@ workflows:
       branch_patterns:
         - pattern: 'release/*'
           include: true
+      cancel_previous_builds: true
 
     scripts:
+      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
+      - *setup_android_signing
       - *install_shorebird
 
       - name: Create Shorebird Android Release
@@ -337,8 +392,210 @@ workflows:
     publishing:
       google_play:
         credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-        track: beta  # Open testing track
+        track: alpha  # Closed testing track
         submit_as_draft: false
+      slack:
+        channel: '#builds'
+        notify:
+          success: true
+          failure: true
+
+  # ============================================================
+  # MAIN WORKFLOWS — auto-triggered on push to `main`
+  # Prod flavor, Shorebird release. iOS → App Store submission;
+  # Android → Play Open Testing (beta track).
+  #
+  # ⚠️  Shorebird version collision: both release/* and main flows call
+  #     `shorebird release` with --flavor prod. Shorebird keys releases by
+  #     (flavor, Flutter version, pubspec version). If main and release/*
+  #     ever share a version, the second one errors. Standard practice:
+  #     bump pubspec version between the release/* merge-back and the
+  #     main merge, OR only run one of these flows per version.
+  # ============================================================
+
+  main-ios:
+    name: Main - iOS App Store (Shorebird, prod flavor)
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    integrations:
+      app_store_connect: Mealvana
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.mealvana.endurance
+      groups:
+        - mealvana_prod
+        - shorebird_credentials
+      vars:
+        FLUTTER_ENV: prod
+        APP_ENVIRONMENT: prod
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+      cancel_previous_builds: true
+
+    scripts:
+      - *write_dotenv_files
+      - *flutter_pub_get
+      - *run_build_runner
+      - *install_shorebird
+      - *install_cocoapods
+      - *setup_ios_signing_shorebird
+
+      - name: Create Shorebird iOS Release (App Store)
+        script: |
+          shorebird release ios \
+            --flavor prod \
+            --target lib/main_prod.dart \
+            --flutter-version=stable \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: true
+        # Leave manual release control in App Store Connect; don't auto-release to users.
+        release_type: MANUAL
+      slack:
+        channel: '#builds'
+        notify:
+          success: true
+          failure: true
+
+  main-android:
+    name: Main - Android Play Open Testing (Shorebird, prod flavor)
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    environment:
+      flutter: stable
+      java: 17
+      groups:
+        - mealvana_prod
+        - shorebird_credentials
+        - google_play_credentials
+        - firebase_config
+        - android_signing_credentials
+      vars:
+        FLUTTER_ENV: prod
+        APP_ENVIRONMENT: prod
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+      cancel_previous_builds: true
+
+    scripts:
+      - *write_dotenv_files
+      - *flutter_pub_get
+      - *run_build_runner
+      - *load_firebase_config
+      - *setup_android_signing
+      - *install_shorebird
+
+      - name: Create Shorebird Android Release (Play Open/Beta)
+        script: |
+          shorebird release android \
+            --flavor prod \
+            --target lib/main_prod.dart \
+            --flutter-version=stable \
+            --artifact=aab
+
+    artifacts:
+      - build/**/outputs/**/*.aab
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/mapping.txt
+      - flutter_drive.log
+
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: beta  # Open testing track (app not yet released to production)
+        submit_as_draft: false
+      slack:
+        channel: '#builds'
+        notify:
+          success: true
+          failure: true
+
+  # ============================================================
+  # PROD-CI WORKFLOW — manual. Prod flavor built against real prod
+  # endpoints, uploaded to the DEV TestFlight app
+  # (bundle com.mealvana.endurance.dev) for dogfooding without
+  # going through release/*. No Shorebird (dev TestFlight = scratch).
+  #
+  # Uses --flavor dev (→ Xcode gives us the .dev bundle ID and signing)
+  # with --target lib/main_prod.dart (→ app loads .env.prod.local).
+  # ============================================================
+
+  prod-ci-ios:
+    name: Prod-CI - iOS dev TestFlight with prod flavor (manual)
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    integrations:
+      app_store_connect: Mealvana
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.mealvana.endurance.dev
+      groups:
+        - mealvana_prod  # prod env vars via DOTENV_PROD_LOCAL
+      vars:
+        FLUTTER_ENV: prod
+        APP_ENVIRONMENT: prod
+
+    triggering:
+      events: []
+
+    scripts:
+      - *write_dotenv_files
+      - *flutter_pub_get
+      - *run_build_runner
+      - *install_cocoapods
+      - *setup_ios_signing
+
+      - name: Build prod-flavor-code with dev bundle (iOS)
+        script: |
+          flutter build ipa --release \
+            --flavor dev \
+            --target lib/main_prod.dart \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
+        beta_groups:
+          - Internal Testers
       slack:
         channel: '#builds'
         notify:
@@ -371,6 +628,7 @@ workflows:
       events: []
 
     scripts:
+      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *install_shorebird
@@ -404,6 +662,7 @@ workflows:
         - mealvana_prod
         - shorebird_credentials
         - firebase_config
+        - android_signing_credentials
       vars:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
@@ -413,9 +672,11 @@ workflows:
       events: []
 
     scripts:
+      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
+      - *setup_android_signing
       - *install_shorebird
 
       - name: Create Shorebird Android Patch
@@ -465,6 +726,7 @@ workflows:
       cancel_previous_builds: true
 
     scripts:
+      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *run_unit_tests
@@ -507,6 +769,7 @@ workflows:
       events: []
 
     scripts:
+      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *boot_ios_simulator
@@ -533,6 +796,8 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
+      groups:
+        - mealvana_dev  # needed for DOTENV_* secrets so asset-bundled .env files exist
 
     triggering:
       events:
@@ -540,6 +805,7 @@ workflows:
       cancel_previous_builds: true
 
     scripts:
+      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *run_flutter_analyze
@@ -578,6 +844,7 @@ workflows:
       events: []
 
     scripts:
+      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *install_cocoapods
@@ -618,6 +885,7 @@ workflows:
         - mealvana_prod
         - google_play_credentials
         - firebase_config
+        - android_signing_credentials
       vars:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
@@ -626,9 +894,11 @@ workflows:
       events: []
 
     scripts:
+      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
+      - *setup_android_signing
 
       - name: Build Android App Bundle (Standard)
         script: |

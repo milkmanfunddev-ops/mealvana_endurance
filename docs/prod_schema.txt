@@ -563,7 +563,10 @@ create table activities
     provider_scheduled_at          timestamp with time zone,
     schedule_changed_at            timestamp with time zone,
     fuel_log_data                  jsonb,
-    tss                            real
+    tss                            real,
+    garmin_summary_id              text,
+    garmin_last_synced_at          timestamp with time zone,
+    garmin_device_name             text
 );
 
 comment on table activities is 'User activities including single-sport (run/bike/swim) and multi-sport (brick/triathlon/duathlon). Brick activities store segment details in brick_metadata and link to archived originals via brick_id.';
@@ -660,6 +663,10 @@ comment on index idx_activities_provider_deleted_at is 'Partial index for activi
 
 create unique index uq_activities_provider_workout
     on activities (user_id, synced_from_provider, provider_workout_id);
+
+create index idx_activities_user_garmin_summary
+    on activities (user_id, garmin_summary_id)
+    where (garmin_summary_id IS NOT NULL);
 
 grant delete, insert, references, select, trigger, truncate, update on activities to anon;
 
@@ -1455,7 +1462,12 @@ create table template_foods
     serving_qualifier      text,
     is_indivisible         boolean                  default false,
     default_during         boolean                  default false             not null,
-    min_servings_during    numeric(4, 1)            default 1.0
+    min_servings_during    numeric(4, 1)            default 1.0,
+    max_per_hr_low         numeric(4, 2),
+    max_per_hr_moderate    numeric(4, 2),
+    max_per_hr_high        numeric(4, 2),
+    min_increment          numeric(3, 2)            default 0.5,
+    sodium_top_up_eligible boolean                  default false             not null
 );
 
 comment on table template_foods is 'Food ingredient catalog for nutrition templates. Nutrition data from USDA FoodData Central.';
@@ -1469,6 +1481,16 @@ comment on column template_foods.digestion_speed is 'How quickly food digests: f
 comment on column template_foods.is_indivisible is 'Whether this food comes in discrete, sealed units that cannot be fractionally consumed (e.g., tablets, gel packets)';
 
 comment on column template_foods.default_during is 'Whether this food is part of the default during-activity recommendation set.';
+
+comment on column template_foods.max_per_hr_low is 'Max servings per hour for low gut training level. NULL = unconstrained.';
+
+comment on column template_foods.max_per_hr_moderate is 'Max servings per hour for moderate gut training level. NULL = unconstrained.';
+
+comment on column template_foods.max_per_hr_high is 'Max servings per hour for high gut training level. NULL = unconstrained.';
+
+comment on column template_foods.min_increment is 'Minimum serving increment for rounding (e.g. 1 for gels = whole units only, 0.5 for bars = half bars allowed).';
+
+comment on column template_foods.sodium_top_up_eligible is 'Whether this food may be used as a generic sodium top-up in during-workout template solving. Carb-delivery drinks should remain false and only be used when explicitly present in a template.';
 
 alter table template_foods
     owner to postgres;
@@ -2014,6 +2036,59 @@ grant delete, insert, references, select, trigger, truncate, update on coach_pai
 grant delete, insert, references, select, trigger, truncate, update on coach_pairing_codes to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on coach_pairing_codes to service_role;
+
+create table during_workout_templates
+(
+    id                         uuid                     default gen_random_uuid() not null
+        primary key,
+    template_number            integer                                            not null
+        unique,
+    name                       text                                               not null,
+    formula                    text                                               not null,
+    food_form                  text                                               not null,
+    activity_types             text[]                   default '{}'::text[]      not null,
+    duration_brackets          text[]                   default '{}'::text[]      not null,
+    gut_training_levels        text[]                   default '{}'::text[]      not null,
+    component_food_names       text[]                   default '{}'::text[]      not null,
+    component_carb_ratios      jsonb,
+    primary_to_secondary_ratio text,
+    allergens                  text[]                   default '{}'::text[]      not null,
+    excluded_diets             text[]                   default '{}'::text[]      not null,
+    notes                      text,
+    is_active                  boolean                  default true              not null,
+    created_at                 timestamp with time zone default now()             not null,
+    updated_at                 timestamp with time zone default now()             not null,
+    selection_priority         integer                  default 0                 not null
+);
+
+comment on table during_workout_templates is 'Formula templates for during-workout nutrition. Each template defines a food combination for a specific activity/duration/gut-training context.';
+
+comment on column during_workout_templates.component_food_names is 'Array of template_foods.name values that compose this template formula.';
+
+comment on column during_workout_templates.component_carb_ratios is 'JSONB mapping food names to their target share of total carb allocation. e.g. {"energy_gel": 0.7, "sports_drink": 0.3}. Water and electrolytes are excluded (they fill fluid/sodium gaps).';
+
+comment on column during_workout_templates.primary_to_secondary_ratio is 'Unit ratio for triple-source templates. "1:1" means solid and gel must have equal unit counts. NULL for single/dual-source templates.';
+
+comment on column during_workout_templates.selection_priority is 'Catalog-driven tie breaker for template selection. Higher values are tried before lower values after activity, duration, gut, diet, allergy, and preference filtering.';
+
+alter table during_workout_templates
+    owner to postgres;
+
+create index idx_dwt_active
+    on during_workout_templates (is_active)
+    where (is_active = true);
+
+create index idx_dwt_activity_types
+    on during_workout_templates using gin (activity_types);
+
+create index idx_dwt_template_number
+    on during_workout_templates (template_number);
+
+grant delete, insert, references, select, trigger, truncate, update on during_workout_templates to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on during_workout_templates to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on during_workout_templates to service_role;
 
 create materialized view catalog_items as
 SELECT v.id,
