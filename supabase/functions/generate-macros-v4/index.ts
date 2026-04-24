@@ -145,9 +145,13 @@ serve(async (req: Request) => {
         timeBeforeWorkoutMin: input.hours_before * 60,
         tempC: input.temp_c ?? null,
       });
-      const preTargets = input.is_fasted
-        ? preTargetsLegacy
-        : applyPreWorkoutHydrationOverlay(preTargetsLegacy, preHydration);
+      // Apply hydration overlay regardless of is_fasted — fasted only affects
+      // carbs/protein/fat, not fluid/sodium. Spec's pre-workout gate is
+      // duration-/temp-based, not fasted status.
+      const preTargets = applyPreWorkoutHydrationOverlay(
+        preTargetsLegacy,
+        preHydration,
+      );
 
       const diet = input.diet || "none";
       const preSelections = selectPreWorkoutFoods(

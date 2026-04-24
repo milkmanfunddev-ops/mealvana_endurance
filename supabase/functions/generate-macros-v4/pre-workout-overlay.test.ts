@@ -131,16 +131,23 @@ describe('Pre-workout hydration overlay — Tier 3 too-late', () => {
   });
 });
 
-describe('Pre-workout hydration overlay — fasted skips overlay', () => {
-  it('fasted → overlay not applied, legacy zeros preserved', async () => {
+describe('Pre-workout hydration overlay — fasted still applies overlay (2026-04-24 spec)', () => {
+  it('fasted → carbs/protein/fat remain 0, fluid/sodium come from time-tier algorithm', async () => {
+    // Previously fasted short-circuited the hydration overlay. Per the new
+    // spec (pre-workout gate is duration/temp only, not fasted status), a
+    // fasted athlete still needs pre-hydration and pre-sodium. Only carbs/
+    // protein/fat should be zeroed.
     const result = await calculateMacrosV4(
       baseRunningInput({ hours_before: 3, is_fasted: true, run_distance: 10 }),
       EMPTY_TEMPLATES,
     );
-    // Fasted legacy path returns 0 for all macros including water/sodium.
-    assertEquals(result.pre_run_water_ml, 0);
-    assertEquals(result.pre_run_sodium_mg, 0);
+    // Tier 1 (3h available) → 70 kg × 6 = 420 ml, 450 mg sodium fixed.
+    assertEquals(result.pre_run_water_ml, 420);
+    assertEquals(result.pre_run_sodium_mg, 450);
     assertEquals(result.pre_run_meal_type, 'fasted');
+    // Carbs/protein/fat still zero per fasted legacy.
+    assertEquals(result.pre_run_carbs_g, 0);
+    assertEquals(result.pre_run_protein_g, 0);
   });
 });
 

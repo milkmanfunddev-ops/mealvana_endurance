@@ -347,6 +347,7 @@ class ActivityDetailController extends _$ActivityDetailController {
           sweatRateCat: user.sweatRate,
           temperatureC: tempC,
           humidityPct: humidityPct,
+          indoorOutdoor: isIndoor ? 'indoor' : 'outdoor',
         );
       } else if (activity.activityType == ActivityType.cycling) {
         final macroService = MacroGenerationService(

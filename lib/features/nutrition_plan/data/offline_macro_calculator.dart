@@ -530,7 +530,9 @@ class OfflineMacroCalculator {
     return DuringWorkoutHydrationResult(
       hydrationRateMlph: recommendedMlHr,
       sodiumRateMgph: sodiumRateMgph,
-      hydrationTotalMl: (sodiumRateMgph * durationH).round(),
+      // Spec: hydrationTotalMl = fluid rate × duration (was incorrectly
+      // using sodiumRateMgph, producing mg-in-ml unit confusion).
+      hydrationTotalMl: (recommendedMlHr * durationH).round(),
       sodiumTotalMg: (sodiumRateMgph * durationH).round(),
       sweatRateLph: effectiveSweatRateLph,
       sodiumConcMgPerL: sodiumConcMgPerL,
@@ -851,10 +853,12 @@ class OfflineMacroCalculator {
       );
     }).toList();
 
-    // Build result transitions
+    // Build result transitions — spec §6.4: sodium_mg = (fluid_ml / 1000) ×
+    // sodium_conc_mg_per_l. The phantom 0.3 factor was a ~3.3× under-estimate
+    // and has been removed to match the edge function.
     final resultTransitions = transitions.map((t) {
       final sodiumMg =
-          ((_transitionFluidMl / 1000.0) * sodiumConcMgPerL * 0.3).round();
+          ((_transitionFluidMl / 1000.0) * sodiumConcMgPerL).round();
       return BrickHydrationTransitionResult(
         transitionName: t.name,
         afterSport: t.afterSport,

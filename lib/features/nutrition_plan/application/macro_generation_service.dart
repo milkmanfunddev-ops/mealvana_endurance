@@ -46,6 +46,9 @@ class MacroGenerationService {
     bool isFasted = false,
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
+    // Optional treadmill/indoor-run flag. Default 'outdoor' preserves existing
+    // behavior for callers that don't yet surface the toggle.
+    String indoorOutdoor = 'outdoor',
   }) async {
     final requestData = await _buildRunningRequestData(
       distanceMiles: distanceMiles,
@@ -57,6 +60,7 @@ class MacroGenerationService {
       humidityPct: humidityPct,
       isFasted: isFasted,
       intensity: intensity,
+      indoorOutdoor: indoorOutdoor,
     );
 
     final macroTargets = await _callGenerateMacrosEdgeFunction(
@@ -236,6 +240,7 @@ class MacroGenerationService {
     double? humidityPct,
     bool isFasted = false,
     IntensityDistribution? intensity,
+    String indoorOutdoor = 'outdoor',
   }) async {
     final userProfile = await authService.getCurrentUser();
     final userMetrics = _getUserMetrics(userProfile);
@@ -259,10 +264,9 @@ class MacroGenerationService {
     final knownSodiumConcMgL =
         userProfile?.knownSodiumConcentrationMgPerLiter;
 
-    // Running is always outdoor; no indoor-override field exists on the form.
-    // TODO: wire isIndoor from activity form if outdoor/indoor option is added
-    //       to running in a future iteration.
-    const isIndoor = false;
+    // Treadmill runs: callers pass indoorOutdoor='indoor'. The edge function
+    // applies the 1.30× sweat rate multiplier per spec when is_indoor=true.
+    final isIndoor = indoorOutdoor.toLowerCase() == 'indoor';
 
     return {
       'age': userMetrics['age'],

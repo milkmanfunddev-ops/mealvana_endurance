@@ -350,7 +350,11 @@ export function calculateBrickHydration(
   }
 
   // Run→bike redistribution
-  // If run floor_ml_hr > run ceiling, shortfall must move to bike
+  // Per spec §6.3: redistribute when the run leg's *recommended rate* exceeds
+  // its ceiling, not just when the floor does. Mid-duration hot bricks
+  // (replacement % around 50–60) can have `recommended > run_ceiling` even
+  // when the floor stays below — those used to silently miss redistribution.
+  // The shift amount is driven by whichever is larger (floor or recommended).
   const nonSwimSegs = segments.filter(s => s.sport.toLowerCase() !== 'swimming');
 
   let redistributionFailed = false;
@@ -358,10 +362,11 @@ export function calculateBrickHydration(
     if (seg.sport.toLowerCase() !== 'running') continue;
 
     const runCeiling = segmentCeilings['running'];
-    if (floorMlHr > runCeiling) {
+    const runTrigger = Math.max(floorMlHr, recommendedMlHr);
+    if (runTrigger > runCeiling) {
       // Shortfall from run
       const runDurationH = seg.durationMin / 60;
-      const shortfallTotal = (floorMlHr - runCeiling) * runDurationH;
+      const shortfallTotal = (runTrigger - runCeiling) * runDurationH;
 
       // Distribute to bike segments
       const bikeSegs = nonSwimSegs.filter(s => s.sport.toLowerCase() === 'cycling');
@@ -407,11 +412,10 @@ export function calculateBrickHydration(
   const netDeficitMl = totalLossMl - totalIntakeMl;
   if (weightKg > 0 && netDeficitMl > 0) {
     const deficitPct = netDeficitMl / (weightKg * 1000);
-    if (deficitPct > 0.03 && !redistributionFailed) {
-      // Only add this flag if redistribution didn't already flag it
-      const deficitPctStr = (deficitPct * 100).toFixed(1);
-      safety_flags.push(`Significant dehydration expected (>${deficitPctStr}% BW).`);
-    } else if (deficitPct > 0.03) {
+    if (deficitPct > 0.03) {
+      // Spec §6.5 — emit the >3% flag once. When redistribution also failed,
+      // the redistribution flag has already landed above, and the spec
+      // intends both to stack (Example in §7 shows them consecutively).
       const deficitPctStr = (deficitPct * 100).toFixed(1);
       safety_flags.push(`Significant dehydration expected (>${deficitPctStr}% BW).`);
     }

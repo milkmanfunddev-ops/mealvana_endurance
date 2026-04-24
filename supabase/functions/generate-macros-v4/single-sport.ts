@@ -727,15 +727,19 @@ export async function calculateMacrosV4(
 
   // Spec-compliant pre-workout hydration (time-tier algorithm). Overlaid on
   // top of the legacy targets so carbs/protein/fat still drive food selection.
+  // NOTE: applied regardless of is_fasted — fasted only affects carbs/protein/
+  // fat, not fluid/sodium. The spec's pre-workout gate is duration < 60 AND
+  // temp < 30, not fasted status.
   const preHydration = calculatePreWorkoutHydration({
     bodyWeightKg: weightKg,
     workoutDurationMin: durationMin,
     timeBeforeWorkoutMin: input.hours_before * 60,
     tempC: input.temp_c ?? null,
   });
-  const preTargets = input.is_fasted
-    ? preTargetsLegacy
-    : applyPreWorkoutHydrationOverlay(preTargetsLegacy, preHydration);
+  const preTargets = applyPreWorkoutHydrationOverlay(
+    preTargetsLegacy,
+    preHydration,
+  );
 
   const preSelections = selectPreWorkoutFoods(
     preTargets,

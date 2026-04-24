@@ -310,7 +310,10 @@ export function calculatePreWorkoutHydration(
       sodium_mg: 150,
       sodium_low_mg: 100,
       sodium_high_mg: 200,
-      message: 'Not enough time for full protocol. Sip 250 ml steadily. consider hydrating well the evening before.',
+      // Spec verbatim (`transparency_pre_hydration.md:49`) + evening-before
+      // append for early-morning case (`transparency_pre_hydration.md:57`).
+      message:
+        'Small top-up only — not enough time for full pre-hydration. Rely on during-workout hydration to cover the gap. For early morning workouts with limited time, consider hydrating well the evening before (extra 300–500 ml with dinner).',
     };
   }
 
