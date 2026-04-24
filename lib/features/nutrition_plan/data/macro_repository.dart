@@ -129,6 +129,16 @@ class MacroRepositoryImpl implements MacroRepository {
     required String gutTraining,
     required int age,
     required String gender,
+    // Optional sweat profile — defaults mirror edge function behavior so
+    // existing callers that don't pass a profile still get reasonable
+    // output. Callers with a UserProfile should pass all five.
+    String sweatRateCategory = 'medium',
+    String sweatSodiumCat = 'average',
+    double? tempC,
+    double? humidityPct,
+    bool isIndoor = false,
+    double? knownSweatRateMlPerHour,
+    double? knownSodiumConcMgPerL,
   }) async {
     final offlineResult = OfflineMacroCalculator.calculateMacros(
       weight: weight,
@@ -145,7 +155,69 @@ class MacroRepositoryImpl implements MacroRepository {
       gender: gender,
     );
 
-    final targets = _mapApiResponseToMacroTargets(offlineResult['macros']);
+    var targets = _mapApiResponseToMacroTargets(offlineResult['macros']);
+
+    // Overlay spec-compliant hydration/sodium from the new offline methods.
+    // The legacy calculateMacros still drives carbs/protein/metrics; we
+    // replace only the hydration/sodium fields it produced from the
+    // pre-spec formulas.
+    final weightKg = weightUnit.toLowerCase() == 'kg'
+        ? weight
+        : weight * 0.45359237;
+    final durationMin = (targets.metrics.durationMin).toDouble();
+
+    final preHydration = OfflineMacroCalculator.calculatePreWorkoutHydration(
+      bodyWeightKg: weightKg,
+      workoutDurationMin: durationMin,
+      timeBeforeWorkoutMin: timeBeforeRunMin,
+      tempC: tempC,
+    );
+
+    final duringHydration =
+        OfflineMacroCalculator.calculateDuringWorkoutHydration(
+          durationMin: durationMin,
+          weightKg: weightKg,
+          sweatRateCategory: sweatRateCategory,
+          sweatSodiumCat: sweatSodiumCat,
+          tempC: tempC,
+          humidityPct: humidityPct,
+          isIndoor: isIndoor,
+          sport: 'running',
+          knownSweatRateMlPerHour: knownSweatRateMlPerHour,
+          knownSodiumConcMgPerL: knownSodiumConcMgPerL,
+        );
+
+    targets = targets.copyWith(
+      preRun: PreRunMacros(
+        carbsG: targets.preRun.carbsG,
+        proteinG: targets.preRun.proteinG,
+        fatCapG: targets.preRun.fatCapG,
+        fluidsMl: preHydration.fluidMl.toDouble(),
+        sodiumMg: preHydration.sodiumMg.toDouble(),
+        fluidsLowMl: preHydration.fluidLowMl.toDouble(),
+        fluidsHighMl: preHydration.fluidHighMl.toDouble(),
+        sodiumLowMg: preHydration.sodiumLowMg.toDouble(),
+        sodiumHighMg: preHydration.sodiumHighMg.toDouble(),
+      ),
+      duringRun: targets.duringRun.copyWith(
+        fluidRateMlPerH: duringHydration.hydrationRateMlph.toDouble(),
+        fluidTotalMl: duringHydration.hydrationTotalMl.toDouble(),
+        sodiumRateMgPerH: duringHydration.sodiumRateMgph.toDouble(),
+        sodiumTotalMg: duringHydration.sodiumTotalMg.toDouble(),
+        effectiveSweatRateLPerH: duringHydration.effectiveSweatRateLph,
+        sodiumConcMgPerL: duringHydration.sodiumConcMgPerL,
+        replacementPercent: duringHydration.replacementPct,
+        floorMlPerH: duringHydration.floorMlHr,
+        ceilingMlPerH: duringHydration.ceilingMlHr,
+        safetyFlags: duringHydration.safetyFlags,
+        isTested: duringHydration.isTested,
+        isTestedSodium: knownSodiumConcMgPerL != null,
+        tempC: tempC,
+        humidityPct: humidityPct,
+        isIndoor: isIndoor,
+      ),
+    );
+
     await saveMacroTargets(targets);
     return targets;
   }
