@@ -158,7 +158,7 @@ extension _$SodiumExt on MacroExplanationService {
           dataChips: ['TESTED \u2713 \u00b7 overrides category'],
         ),
       ],
-      videoTitle: 'Watch: Sodium & Electrolytes',
+      videoTitle: 'Watch: Sodium & Endurance',
       targetGrams: sodiumTotalMg.toDouble(),
       rangeLow: sodiumLow,
       rangeHigh: sodiumHigh,
@@ -218,7 +218,7 @@ extension _$SodiumExt on MacroExplanationService {
           dataChips: ['Short gate \u00b7 < 60 min + temp < 30\u00b0C'],
         ),
       ],
-      videoTitle: 'Watch: Sodium & Electrolytes',
+      videoTitle: 'Watch: Sodium & Endurance',
       targetGrams: sodiumTotalMg.toDouble(),
       rangeLow: during.sodiumLowMg,
       rangeHigh: during.sodiumHighMg,
@@ -294,7 +294,7 @@ extension _$SodiumExt on MacroExplanationService {
         sodiumConc: sodiumConc,
         isTested: segment.isTested,
       ),
-      videoTitle: 'Watch: Sodium & Electrolytes',
+      videoTitle: 'Watch: Sodium & Endurance',
       targetGrams: sodiumMg.toDouble(),
       rangeLow: segment.sodiumLowMg,
       rangeHigh: segment.sodiumHighMg,
@@ -324,11 +324,31 @@ extension _$SodiumExt on MacroExplanationService {
           'Pre-workout sodium keeps the fluid you drink in your body rather '
           'than sending it straight to your bladder. Without sodium, much of '
           'what you consume before exercise is excreted before you even start.',
+      // Spec transparency_pre_sodium.md §Formula — multi-line TL;DR with
+      // tier midpoint, floor/ceiling, and range label.
       tldrLines: [
+        FormulaLine(
+          [
+            fAccent('tier window '),
+            fOp('→ '),
+            fResult('${sodiumMg} mg'),
+            fOp(' (midpoint)'),
+          ],
+          stepNumber: '①',
+        ),
         FormulaLine([
-          fAccent('tier target '),
-          fOp('= '),
-          fResult('${sodiumMg}mg'),
+          fOp('↓ floor = '),
+          fDim('${rangeLowMg} mg'),
+        ]),
+        FormulaLine([
+          fOp('↑ ceiling = '),
+          fDim('${rangeHighMg} mg'),
+        ]),
+        FormulaLine([
+          fOp('range '),
+          fOp('→ '),
+          fDim('${rangeLowMg}–${rangeHighMg} mg'),
+          fOp(' sipped with fluid'),
         ]),
       ],
       calculationSections: _buildPreWorkoutSodiumCalculationSections(
@@ -338,26 +358,57 @@ extension _$SodiumExt on MacroExplanationService {
       ),
       storySections: const [
         StorySection(
-          question: 'Why sodium before a workout?',
+          question: 'How does sodium help retain fluid?',
           answer:
-              'Sodium is the primary solute in the fluid compartments outside your '
-              'cells. When you consume sodium before exercise, it draws fluid into '
-              'your blood vessels and extracellular space \u2014 expanding plasma volume '
-              'and improving your cardiovascular efficiency from the first minute.',
-          citation:
-              'Maughan & Shirreffs (2008) \u2014 European Journal of Sport Science',
-          dataChips: ['Tier 1 (\u2265120 min) \u00b7 450 mg', 'Tier 2 (10\u2013120 min) \u00b7 150 mg', 'Tier 3 (<10 min) \u00b7 0 mg'],
+              'When you drink plain fluid before exercise, your kidneys detect the '
+              'dilution of plasma sodium and respond by excreting the excess fluid '
+              'as urine within 30–60 minutes. Adding sodium keeps plasma osmolality '
+              'near baseline, so the fluid stays in circulation — ready to support '
+              'sweat and blood volume once exercise starts.',
+          citation: 'Sawka et al. (2007) — ACSM Position Stand on Exercise and Fluid Replacement',
+          confidence: ConfidenceLevel.high,
         ),
         StorySection(
-          question: 'Why doesn\'t it vary with sweat sodium level?',
+          question: 'Where does 300–600 mg come from?',
           answer:
-              'Pre-workout sodium targets are fixed by timing tier, not sweat '
-              'profile. The goal is fluid retention, and the research gives clean '
-              'targets: **300\u2013600 mg** for 2+ hours out (ACSM), and a '
-              'top-up amount for closer windows.',
-          citation:
-              'Sawka et al. (2007) \u2014 ACSM Position Stand on Fluid Replacement; '
-              'NATA 10\u2013120 min guidance',
+              'ACSM recommends 20–50 mEq of sodium per litre of pre-exercise fluid '
+              '(about 460–1150 mg/L). For a typical pre-workout drink of roughly 500 ml, '
+              'that translates to 300–600 mg sodium. A standard electrolyte drink, a '
+              'salty meal, or an electrolyte tablet all get you into this range.',
+          citation: 'Sawka et al. (2007) — ACSM 20–50 mEq/L guidance',
+          dataChips: [
+            '≥ 2 hr · 300–600 mg',
+            '10–120 min · 100–200 mg',
+            '< 10 min · none',
+          ],
+          confidence: ConfidenceLevel.high,
+        ),
+        StorySection(
+          question: 'Why isn\'t sodium scaled to body weight like the fluid target?',
+          answer:
+              'Fluid pre-loading is proportional to body mass because larger athletes '
+              'have larger blood and extracellular volumes. Sodium, by contrast, is '
+              'regulated tightly against plasma concentration — not total mass. A '
+              'fixed dose is enough to prevent dilution-driven excretion for most '
+              'athletes, regardless of weight.',
+          citation: 'Cheuvront & Kenefick (2014) — Comprehensive Physiology',
+          transparencyNote:
+              'The 300–600 mg range is fixed across all athletes. For very heavy '
+              'athletes consuming larger fluid volumes, this results in a lower '
+              'sodium concentration per litre than the ACSM\'s 20–50 mEq/L '
+              'recommendation. This is a known limitation.',
+          confidence: ConfidenceLevel.medium,
+        ),
+        StorySection(
+          question: 'Is this the same as sodium loading?',
+          answer:
+              'No — sodium loading is a separate, more aggressive strategy used '
+              'before hot or long races to deliberately expand plasma volume. It '
+              'typically involves 20–30 mg sodium per kg body weight consumed '
+              'with fluid 1–2 hours before exercise — 2–3× the amount in the '
+              'everyday pre-workout protocol. Use only for heat or endurance events.',
+          citation: 'Sims et al. (2007) — Journal of Science and Medicine in Sport',
+          confidence: ConfidenceLevel.high,
         ),
       ],
       targetGrams: sodiumMg.toDouble(),
@@ -441,7 +492,7 @@ extension _$SodiumExt on MacroExplanationService {
         sodiumConc: sodiumConc,
         isTested: isTested,
       ),
-      videoTitle: 'Watch: Sodium & Electrolytes',
+      videoTitle: 'Watch: Sodium & Endurance',
       targetGrams: sodiumTotalMg.toDouble(),
       rangeLow: during.sodiumLowMg,
       rangeHigh: during.sodiumHighMg,
@@ -478,9 +529,9 @@ extension _$SodiumExt on MacroExplanationService {
         dataChips: isTested
             ? ['TESTED \u2713 \u00b7 personal concentration']
             : [
-                'Low \u00b7 650 mg/L',
-                'Average \u00b7 825 mg/L',
-                'High \u00b7 1000 mg/L',
+                'Low \u00b7 650 mg/L \u00b7 25th pct',
+                'Average \u00b7 825 mg/L \u00b7 50th pct',
+                'High \u00b7 1000 mg/L \u00b7 75th pct',
               ],
       ),
       const StorySection(
@@ -570,7 +621,7 @@ extension _$SodiumExt on MacroExplanationService {
         sodiumConc: sodiumConc,
         isTested: isTested,
       ),
-      videoTitle: 'Watch: Sodium & Electrolytes',
+      videoTitle: 'Watch: Sodium & Endurance',
       targetGrams: sodiumMg.toDouble(),
       rangeLow: segment.sodiumLowMg,
       rangeHigh: segment.sodiumHighMg,

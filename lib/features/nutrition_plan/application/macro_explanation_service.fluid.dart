@@ -39,30 +39,73 @@ extension _$FluidExt on MacroExplanationService {
       tldrLines = const [];
     } else if (isTier2) {
       blurb = 'Not enough time for the full protocol. 250 ml is all that can '
-          'meaningfully absorb before exercise begins. Sip it steadily \u2014 '
+          'meaningfully absorb before exercise begins. Sip it steadily — '
           'don\'t chug it just before you start.';
+      // Spec transparency_pre_hydration.md §Formula — multi-line TL;DR
+      // showing fixed amount and total range label.
       tldrLines = [
+        FormulaLine(
+          [
+            fAccent('10–120 min window '),
+            fOp('→ '),
+            fResult('${fluidsMl} ml'),
+            fOp(' (fixed)'),
+          ],
+          stepNumber: '①',
+        ),
         FormulaLine([
-          fAccent('fixed top-up '),
-          fOp('= '),
-          fResult('${fluidsMl}mL'),
+          fOp('range '),
+          fOp('→ '),
+          fDim('${rangeLowMl}–${rangeHighMl} ml'),
         ]),
       ];
     } else {
-      blurb = 'The goal before a workout is to start **euhydrated** \u2014 at your '
+      // Tier 1 — full ACSM protocol. Spec uses 6 ml/kg midpoint, 5 ml/kg
+      // floor, 7 ml/kg ceiling.
+      blurb = 'The goal before a workout is to start **euhydrated** — at your '
           'normal baseline, not loaded or depleted. With enough time available, '
           'you have time for the full protocol: sip ${fluidsMl}mL gradually, let '
           'it absorb, and aim for pale yellow urine before you head out.';
-      final mlPerKg = bodyWeightKg > 0
-          ? (fluidsMl / bodyWeightKg).toStringAsFixed(1)
-          : '6.0';
+      // Bucket the derived ml/kg to the spec-exact integer (5/6/7) when it's
+      // close, to avoid displaying e.g. "5.5 mL/kg" — which was the prior
+      // output even though the legacy calc used a non-spec tier.
+      final rawPerKg = bodyWeightKg > 0 ? fluidsMl / bodyWeightKg : 6.0;
+      final String mlPerKg;
+      if (rawPerKg < 5.5) {
+        mlPerKg = '5';
+      } else if (rawPerKg < 6.5) {
+        mlPerKg = '6';
+      } else {
+        mlPerKg = '7';
+      }
+      final floorMl = (bodyWeightKg * 5).round();
+      final ceilMl = (bodyWeightKg * 7).round();
       tldrLines = [
+        FormulaLine(
+          [
+            fAccent('${bodyWeightKg.toStringAsFixed(0)} kg '),
+            fOp('× '),
+            fAccent('$mlPerKg ml/kg '),
+            fOp('= '),
+            fResult('${fluidsMl} ml'),
+          ],
+          stepNumber: '①',
+        ),
         FormulaLine([
-          fAccent('body weight '),
-          fOp('\u00d7 '),
-          fAccent('${mlPerKg} mL/kg '),
-          fOp('= '),
-          fResult('${fluidsMl}mL'),
+          fOp('↓ floor = '),
+          fDim('$floorMl ml'),
+          fOp(' (5 ml/kg)'),
+        ]),
+        FormulaLine([
+          fOp('↑ ceiling = '),
+          fDim('$ceilMl ml'),
+          fOp(' (7 ml/kg)'),
+        ]),
+        FormulaLine([
+          fOp('range '),
+          fOp('→ '),
+          fDim('$floorMl–$ceilMl ml'),
+          fOp(' sipped over available window'),
         ]),
       ];
     }
@@ -356,7 +399,7 @@ extension _$FluidExt on MacroExplanationService {
           dataChips: ['Temp coefficient \u00b7 4%/\u00b0C', 'Humidity \u00b7 +2% above 50%'],
         ),
       ],
-      videoTitle: 'Watch: Hydration Strategy',
+      videoTitle: 'Watch: Hydration During Exercise',
       targetGrams: _mlToDisplay(fluidTotalMl.toDouble(), useImperial),
       rangeLow: _mlToDisplayOrNull(fluidsLowMl, useImperial),
       rangeHigh: _mlToDisplayOrNull(fluidsHighMl, useImperial),
@@ -468,7 +511,7 @@ extension _$FluidExt on MacroExplanationService {
           dataChips: ['Max \u00b7 20 oz / 600 mL', 'Replacement \u00b7 30% (soft, gated)'],
         ),
       ],
-      videoTitle: 'Watch: Hydration Strategy',
+      videoTitle: 'Watch: Hydration During Exercise',
       targetGrams: _mlToDisplay(fluidTotalMl.toDouble(), useImperial),
       rangeLow: _mlToDisplayOrNull(fluidsLowMl, useImperial),
       rangeHigh: _mlToDisplayOrNull(fluidsHighMl, useImperial),
@@ -596,7 +639,7 @@ extension _$FluidExt on MacroExplanationService {
           dataChips: ['Run \u00b7 max 800 mL/hr (GI limit)', 'Bike \u00b7 max 1200 mL/hr'],
         ),
       ],
-      videoTitle: 'Watch: Hydration Strategy',
+      videoTitle: 'Watch: Hydration During Exercise',
       targetGrams: _mlToDisplay(waterMl.toDouble(), useImperial),
       rangeLow: _mlToDisplayOrNull(fluidsLowMl, useImperial),
       rangeHigh: _mlToDisplayOrNull(fluidsHighMl, useImperial),
@@ -757,7 +800,7 @@ extension _$FluidExt on MacroExplanationService {
         shortWorkoutGate: shortWorkoutGate,
         hasDerivationFields: effectiveSweatRate != null,
       ),
-      videoTitle: 'Watch: Hydration Strategy',
+      videoTitle: 'Watch: Hydration During Exercise',
       targetGrams: _mlToDisplay(fluidTotalMl.toDouble(), useImperial),
       rangeLow: _mlToDisplayOrNull(fluidsLowMl, useImperial),
       rangeHigh: _mlToDisplayOrNull(fluidsHighMl, useImperial),
@@ -837,9 +880,9 @@ extension _$FluidExt on MacroExplanationService {
         dataChips: isTested
             ? ['TESTED \u2713 \u00b7 personal sweat test']
             : [
-                'Light \u00b7 0.90 L/hr',
-                'Medium \u00b7 1.28 L/hr',
-                'Heavy \u00b7 1.66 L/hr',
+                'Light \u00b7 0.90 L/hr \u00b7 25th pct',
+                'Medium \u00b7 1.28 L/hr \u00b7 50th pct',
+                'Heavy \u00b7 1.66 L/hr \u00b7 75th pct',
               ],
       ),
     ];
@@ -960,7 +1003,7 @@ extension _$FluidExt on MacroExplanationService {
         shortWorkoutGate: false,
         hasDerivationFields: effectiveSweatRate != null,
       ),
-      videoTitle: 'Watch: Hydration Strategy',
+      videoTitle: 'Watch: Hydration During Exercise',
       targetGrams: _mlToDisplay(waterMl.toDouble(), useImperial),
       rangeLow: _mlToDisplayOrNull(segment.waterLowMl, useImperial),
       rangeHigh: _mlToDisplayOrNull(segment.waterHighMl, useImperial),

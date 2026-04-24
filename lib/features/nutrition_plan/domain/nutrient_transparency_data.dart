@@ -126,6 +126,14 @@ enum InlineEditType {
   knownSodiumConcentration,
 }
 
+/// Confidence level for a Full Story answer, per `research_notes_updated.md`
+/// §1.6. Renders as a pill in the UI (HIGH/MEDIUM/LOW CONFIDENCE).
+enum ConfidenceLevel {
+  high,
+  medium,
+  low,
+}
+
 /// One Q&A section in the Full Story accordion.
 class StorySection {
   const StorySection({
@@ -135,6 +143,7 @@ class StorySection {
     this.transparencyNote,
     this.inlineEditType = InlineEditType.none,
     this.dataChips = const [],
+    this.confidence,
   });
 
   final String question;
@@ -143,6 +152,9 @@ class StorySection {
   final String? transparencyNote;
   final InlineEditType inlineEditType;
   final List<String> dataChips;
+
+  /// Per-answer confidence pill (null = no pill).
+  final ConfidenceLevel? confidence;
 }
 
 /// All data needed to render the nutrient transparency UI for one phase
