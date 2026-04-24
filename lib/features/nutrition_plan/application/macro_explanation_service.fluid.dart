@@ -476,9 +476,13 @@ extension _$FluidExt on MacroExplanationService {
       primaryUnit: useImperial ? 'oz/hr' : 'mL/hr',
       phase: 'during',
       isTested: during.isTested,
-      tldrBody: 'This workout is short and conditions are mild \u2014 no structured '
-          'hydration plan needed. **Drink to thirst.** If you want a number, '
-          'aim for no more than 10 oz. Don\'t exceed 20 oz.',
+      tldrBody: useImperial
+          ? 'This workout is short and conditions are mild \u2014 no structured '
+              'hydration plan needed. **Drink to thirst.** If you want a number, '
+              'aim for no more than 10 oz. Don\'t exceed 20 oz.'
+          : 'This workout is short and conditions are mild \u2014 no structured '
+              'hydration plan needed. **Drink to thirst.** If you want a number, '
+              'aim for no more than 300 mL. Don\'t exceed 600 mL.',
       tldrLines: [
         FormulaLine([
           fAccent('short gate '),
@@ -732,10 +736,13 @@ extension _$FluidExt on MacroExplanationService {
 
     if (shortWorkoutGate && fluidRateMlH < 200) {
       // Short-workout gate
-      blurb =
-          'This workout is short and conditions are mild \u2014 no structured '
-          'hydration plan needed. **Drink to thirst.** If you want a number, '
-          'aim for no more than 10 oz. Don\'t exceed 20 oz.';
+      blurb = useImperial
+          ? 'This workout is short and conditions are mild \u2014 no structured '
+              'hydration plan needed. **Drink to thirst.** If you want a number, '
+              'aim for no more than 10 oz. Don\'t exceed 20 oz.'
+          : 'This workout is short and conditions are mild \u2014 no structured '
+              'hydration plan needed. **Drink to thirst.** If you want a number, '
+              'aim for no more than 300 mL. Don\'t exceed 600 mL.';
       tldrLines = [
         FormulaLine([
           fAccent('short gate '),
