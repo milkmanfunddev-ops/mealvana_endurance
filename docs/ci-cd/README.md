@@ -48,7 +48,8 @@ Mealvana Endurance uses a **dual CI/CD strategy**:
 
 | Document | Description |
 |----------|-------------|
-| [Codemagic Setup](./codemagic-setup.md) | Mobile CI/CD configuration |
+| **[Codemagic Procedures](./codemagic-procedures.md)** | **Day-to-day ops: which branch ships where, when to bump versions, API commands, troubleshooting** |
+| [Codemagic Setup](./codemagic-setup.md) | First-time setup reference (some sections predate the 2026-04 rewrite — see Procedures for current) |
 | [GitHub Actions](./github-actions.md) | Backend CI/CD workflows |
 | [Secrets & Environments](./secrets-and-environments.md) | Complete secrets reference |
 | [Shorebird Integration](./shorebird-integration.md) | OTA code push setup |
