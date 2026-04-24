@@ -203,6 +203,7 @@ class MacroExplanationService {
         final data = _transitionFluidTransparency(
           phase: phase,
           macroTargets: macroTargets,
+          useImperial: useImperial,
         );
         return {Scenario.t1t2: data};
 

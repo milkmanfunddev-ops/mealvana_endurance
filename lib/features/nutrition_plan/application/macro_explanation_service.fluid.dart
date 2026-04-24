@@ -3,6 +3,17 @@
 
 part of 'macro_explanation_service.dart';
 
+// Conversion: 1 mL = 0.033814 fl oz. Used to pre-convert targetGrams /
+// rangeLow / rangeHigh values in the fluid service when useImperial=true so
+// the transparency card (which only knows the `unit` suffix) displays the
+// right magnitude. See audit doc `docs/sodium_hydration/2026-04-22_audit.md`
+// U1 for the bug this fixes (e.g. `1688mL` rendering as `1688oz`).
+double _mlToDisplay(double ml, bool useImperial) =>
+    useImperial ? (ml * 0.033814).roundToDouble() : ml;
+
+double? _mlToDisplayOrNull(double? ml, bool useImperial) =>
+    ml == null ? null : _mlToDisplay(ml, useImperial);
+
 extension _$FluidExt on MacroExplanationService {
   NutrientTransparencyData _preWorkoutFluidTransparency({
     required MacroTargets macroTargets,
@@ -71,9 +82,9 @@ extension _$FluidExt on MacroExplanationService {
         fluidsHighMl: rangeHighMl,
       ),
       videoTitle: 'Watch: Pre-Workout Hydration',
-      targetGrams: fluidsMl.toDouble(),
-      rangeLow: rangeLowMl.toDouble(),
-      rangeHigh: rangeHighMl.toDouble(),
+      targetGrams: _mlToDisplay(fluidsMl.toDouble(), useImperial),
+      rangeLow: _mlToDisplay(rangeLowMl.toDouble(), useImperial),
+      rangeHigh: _mlToDisplay(rangeHighMl.toDouble(), useImperial),
       sportLabel: 'Pre-Workout',
     );
   }
@@ -346,9 +357,9 @@ extension _$FluidExt on MacroExplanationService {
         ),
       ],
       videoTitle: 'Watch: Hydration Strategy',
-      targetGrams: fluidTotalMl.toDouble(),
-      rangeLow: fluidsLowMl,
-      rangeHigh: fluidsHighMl,
+      targetGrams: _mlToDisplay(fluidTotalMl.toDouble(), useImperial),
+      rangeLow: _mlToDisplayOrNull(fluidsLowMl, useImperial),
+      rangeHigh: _mlToDisplayOrNull(fluidsHighMl, useImperial),
       sportLabel: null,
     );
   }
@@ -458,9 +469,9 @@ extension _$FluidExt on MacroExplanationService {
         ),
       ],
       videoTitle: 'Watch: Hydration Strategy',
-      targetGrams: fluidTotalMl.toDouble(),
-      rangeLow: fluidsLowMl,
-      rangeHigh: fluidsHighMl,
+      targetGrams: _mlToDisplay(fluidTotalMl.toDouble(), useImperial),
+      rangeLow: _mlToDisplayOrNull(fluidsLowMl, useImperial),
+      rangeHigh: _mlToDisplayOrNull(fluidsHighMl, useImperial),
       sportLabel: null,
     );
   }
@@ -586,9 +597,9 @@ extension _$FluidExt on MacroExplanationService {
         ),
       ],
       videoTitle: 'Watch: Hydration Strategy',
-      targetGrams: waterMl.toDouble(),
-      rangeLow: fluidsLowMl,
-      rangeHigh: fluidsHighMl,
+      targetGrams: _mlToDisplay(waterMl.toDouble(), useImperial),
+      rangeLow: _mlToDisplayOrNull(fluidsLowMl, useImperial),
+      rangeHigh: _mlToDisplayOrNull(fluidsHighMl, useImperial),
       sportLabel: segment.sport,
     );
   }
@@ -747,9 +758,9 @@ extension _$FluidExt on MacroExplanationService {
         hasDerivationFields: effectiveSweatRate != null,
       ),
       videoTitle: 'Watch: Hydration Strategy',
-      targetGrams: fluidTotalMl.toDouble(),
-      rangeLow: fluidsLowMl,
-      rangeHigh: fluidsHighMl,
+      targetGrams: _mlToDisplay(fluidTotalMl.toDouble(), useImperial),
+      rangeLow: _mlToDisplayOrNull(fluidsLowMl, useImperial),
+      rangeHigh: _mlToDisplayOrNull(fluidsHighMl, useImperial),
       sportLabel: null,
     );
   }
@@ -950,9 +961,9 @@ extension _$FluidExt on MacroExplanationService {
         hasDerivationFields: effectiveSweatRate != null,
       ),
       videoTitle: 'Watch: Hydration Strategy',
-      targetGrams: waterMl.toDouble(),
-      rangeLow: segment.waterLowMl,
-      rangeHigh: segment.waterHighMl,
+      targetGrams: _mlToDisplay(waterMl.toDouble(), useImperial),
+      rangeLow: _mlToDisplayOrNull(segment.waterLowMl, useImperial),
+      rangeHigh: _mlToDisplayOrNull(segment.waterHighMl, useImperial),
       sportLabel: segmentSport,
     );
   }
@@ -1012,6 +1023,7 @@ extension _$FluidExt on MacroExplanationService {
   NutrientTransparencyData _transitionFluidTransparency({
     required ExplanationPhase phase,
     required MacroTargets macroTargets,
+    bool useImperial = false,
   }) {
     final isT1 = phase == ExplanationPhase.transition1;
     final transitionName = isT1 ? 'T1' : 'T2';
@@ -1059,9 +1071,9 @@ extension _$FluidExt on MacroExplanationService {
           dataChips: ['T1/T2 fixed \u00b7 300 mL', 'Confidence \u00b7 LOW'],
         ),
       ],
-      targetGrams: waterMl.toDouble(),
-      rangeLow: transition?.waterLowMl,
-      rangeHigh: transition?.waterHighMl,
+      targetGrams: _mlToDisplay(waterMl.toDouble(), useImperial),
+      rangeLow: _mlToDisplayOrNull(transition?.waterLowMl, useImperial),
+      rangeHigh: _mlToDisplayOrNull(transition?.waterHighMl, useImperial),
       sportLabel: transitionName,
     );
   }
