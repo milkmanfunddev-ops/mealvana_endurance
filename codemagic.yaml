@@ -180,11 +180,36 @@ workflows:
       - *install_cocoapods
       - *setup_ios_signing
 
+      - name: Resolve next iOS build number from TestFlight
+        # Looks up the dev ASC app by bundle id, asks ASC for the latest TestFlight
+        # build number, and exports BUILD_NUMBER = latest + 1. If lookup fails (e.g.
+        # ASC integration permissions issue or empty TestFlight history), falls back
+        # to Codemagic's project-level $PROJECT_BUILD_NUMBER, which auto-increments
+        # per project build.
+        script: |
+          set -e
+          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier com.mealvana.endurance.dev --json 2>/dev/null | jq -r '.[0].id // empty')
+          if [ -n "$APP_APPLE_ID" ]; then
+            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID" 2>/dev/null || echo "")
+          else
+            LATEST=""
+          fi
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "TestFlight latest build for com.mealvana.endurance.dev: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next iOS build number: $NEXT"
+
       - name: Build dev iOS
         script: |
           flutter build ipa --release \
             --flavor dev \
             --target lib/main_dev.dart \
+            --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
@@ -238,11 +263,36 @@ workflows:
       - *load_firebase_config
       - *setup_android_signing
 
+      - name: Resolve next Android build number from Play Internal track
+        # Asks Google Play for the highest versionCode it's seen for our dev
+        # package — across all tracks, so newly-promoted/old builds are also
+        # respected — and exports BUILD_NUMBER = max + 1. Falls back to the
+        # Codemagic $PROJECT_BUILD_NUMBER if Play returns nothing (first ever
+        # upload, or service-account auth issue).
+        script: |
+          set -e
+          PACKAGE_NAME=com.milkman.mealvanaendurance.dev
+          # Persist credentials for the google-play CLI
+          echo "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" > /tmp/gcloud-sa.json
+          LATEST=$(google-play get-latest-build-number \
+            --package-name "$PACKAGE_NAME" \
+            --credentials @file:/tmp/gcloud-sa.json 2>/dev/null || echo "")
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "Play latest build for $PACKAGE_NAME: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next Android build number: $NEXT"
+
       - name: Build dev Android
         script: |
           flutter build appbundle --release \
             --flavor dev \
-            --target lib/main_dev.dart
+            --target lib/main_dev.dart \
+            --build-number=$BUILD_NUMBER
 
     artifacts:
       - build/**/outputs/**/*.aab

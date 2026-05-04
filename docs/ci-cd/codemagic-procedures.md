@@ -39,7 +39,7 @@ This is the canonical operational guide for the Codemagic CI/CD pipeline. If you
 
 **When to use:** every push to `develop`. This is the everyday internal dogfooding build. Testers should be on the Internal Testers TestFlight group or Play Internal track.
 
-**Version bump:** not required. Dev builds aren't user-visible production releases. TestFlight/Play auto-increment build numbers per upload so multiple pushes just queue up as build 1, 2, 3, ... of the same version.
+**Version bump:** the **semver** (`X.Y.Z`) in `pubspec.yaml` does not need bumping for dev pushes. The **build number** (`+N`) is auto-resolved at CI time — each dev workflow asks ASC / Play for the latest build number it has on file and uploads `latest + 1`. So you can leave `pubspec.yaml` alone and just push; the `+N` in pubspec is treated as a floor, not the truth. (Implementation: see the "Resolve next ... build number" script steps in `dev-ios` / `dev-android` in `codemagic.yaml`. Falls back to Codemagic's `$PROJECT_BUILD_NUMBER` if the ASC/Play lookup fails.) If you want a specific semver shown in TestFlight (e.g., bumping to `1.19.0` to mark a milestone), bump `version: 1.19.0+N` in `pubspec.yaml` and push — the `+N` will still be overridden at CI time.
 
 ### Automatic on `release/*` push → prod TestFlight + Play Alpha (closed)
 
@@ -110,7 +110,7 @@ If any of those change, you need a fresh **release** (via `release/*` or `main`)
 
 | Situation | Bump? | Change what |
 |---|---|---|
-| Push to `develop` | No | — |
+| Push to `develop` | No | — (CI auto-resolves `+N` from ASC / Play; pubspec value is just a floor) |
 | First push to a new `release/vX.Y` branch | Yes | `X.Y.Z` to the target release version |
 | Re-push same commit to `release/vX.Y` | No (won't trigger) | — |
 | Additional commit pushed to existing `release/vX.Y` | **Yes** | Bump **only the `+N` build number** (e.g., `1.17.0+3` → `1.17.0+4`) |
@@ -235,7 +235,11 @@ Variable group IDs are in the non-checked-in memory reference.
 ## Troubleshooting
 
 ### `Codemagic.yaml references to unknown variable group(s): <name>`
-The named group is either not attached to the app, or exists but has **zero variables** (empty groups trip the validator). Add at least one var.
+Three possible causes, most → least common:
+
+1. **Group has zero variables.** Empty groups trip the validator. Add at least one var via the Codemagic UI or `POST /api/v3/variable-groups/{id}/variables`.
+2. **Group exists but is in a stale/unattached state.** Observed 2026-04-24 on a pre-existing `google_play_credentials` group: the v3 and legacy APIs both showed the group with its variable, yet the validator still flagged it "unknown". Fix: `DELETE /api/v3/variable-groups/{id}` and `POST /api/v3/apps/{app_id}/variable-groups` with the same name, then re-populate. Seems to affect some older groups created via paths that didn't fully register them.
+3. **Genuinely unreferenced group.** Check the exact spelling in `codemagic.yaml` `environment.groups:` against `GET /api/v3/apps/{app_id}/variable-groups`.
 
 ### `No matching profiles found for bundle identifier "com.mealvana.endurance"`
 Post-auth error from `xcode-project use-profiles`. The ASC API key is working, but:
@@ -272,5 +276,6 @@ Validator-level failure. Read `.build.message` — it's usually an env group pro
 
 ## Changelog
 
+- **2026-05-03:** Dev workflows (`dev-ios`, `dev-android`) now auto-resolve the build number at CI time by querying TestFlight / Google Play for the latest build and uploading `latest + 1`. The `+N` in `pubspec.yaml` is no longer authoritative for dev pushes — leaving it alone won't cause TestFlight/Play "build number already used" rejections. Falls back to `$PROJECT_BUILD_NUMBER` if the ASC/Play lookup fails. Prior docs incorrectly claimed TestFlight/Play auto-increment on their side; they don't — this is now done in CI.
 - **2026-04-24:** Rewrote branch-mapping (Phase 3). Added `main-ios`, `main-android`, `prod-ci-ios` workflows. `release/*` Android track changed `beta` → `alpha` (closed). `dev-*` workflows now auto-trigger on `develop` (previously manual). Android keystore + dotenv files now written from Codemagic secure vars at build time. `google_play_credentials` group populated with the Play service-account JSON.
 - Before 2026-04-24: all workflows existed as manual (`events: []`) or triggered only on `release/*`; env groups `google_play_credentials` and `mealvana_dev` were empty, causing every recent `release/1.17` build to fail at validator stage.
