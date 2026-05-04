@@ -158,7 +158,7 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.mealvana.endurance.dev
+        bundle_identifier: com.milkman.mealvanaendurance.dev
       groups:
         - mealvana_dev  # Dev environment variables
       vars:
@@ -188,7 +188,7 @@ workflows:
         # per project build.
         script: |
           set -e
-          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier com.mealvana.endurance.dev --json 2>/dev/null | jq -r '.[0].id // empty')
+          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier com.milkman.mealvanaendurance.dev --json 2>/dev/null | jq -r '.[0].id // empty')
           if [ -n "$APP_APPLE_ID" ]; then
             LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID" 2>/dev/null || echo "")
           else
@@ -198,7 +198,7 @@ workflows:
             LATEST=$PROJECT_BUILD_NUMBER
             echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
           else
-            echo "TestFlight latest build for com.mealvana.endurance.dev: $LATEST"
+            echo "TestFlight latest build for com.milkman.mealvanaendurance.dev: $LATEST"
           fi
           NEXT=$((LATEST + 1))
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
