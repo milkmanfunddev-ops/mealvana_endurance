@@ -125,6 +125,12 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
     }
   }
 
+  String _semanticLabel({required bool decrement}) {
+    final verb = decrement ? 'Decrease' : 'Increase';
+    final subject = widget.label ?? widget.unit ?? 'value';
+    return '$verb $subject';
+  }
+
   @override
   Widget build(BuildContext context) {
     final canIncrement =
@@ -400,6 +406,12 @@ class _KylePlusMinusDecimalControlState
     }
   }
 
+  String _semanticLabel({required bool decrement}) {
+    final verb = decrement ? 'Decrease' : 'Increase';
+    final subject = widget.label ?? widget.unit ?? 'value';
+    return '$verb $subject';
+  }
+
   @override
   Widget build(BuildContext context) {
     final canIncrement =
@@ -430,6 +442,7 @@ class _KylePlusMinusDecimalControlState
               icon: FontAwesomeIcons.minus,
               onPressed: canDecrement ? _decrement : null,
               enabled: widget.enabled && canDecrement,
+              semanticLabel: _semanticLabel(decrement: true),
             ),
 
             const SizedBox(width: AppSpacing.xl),
@@ -481,6 +494,7 @@ class _KylePlusMinusDecimalControlState
               icon: FontAwesomeIcons.plus,
               onPressed: canIncrement ? _increment : null,
               enabled: widget.enabled && canIncrement,
+              semanticLabel: _semanticLabel(decrement: false),
             ),
           ],
         ),

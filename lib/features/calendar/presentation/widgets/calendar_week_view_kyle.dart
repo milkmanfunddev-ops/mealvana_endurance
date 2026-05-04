@@ -84,36 +84,48 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Previous week arrow
-              GestureDetector(
-                onTap: _goToPreviousWeek,
-                child: Icon(
-                  Icons.chevron_left,
-                  size: 24,
-                  color: isDark ? AppColors.cream : AppColors.blackberry,
+              Semantics(
+                button: true,
+                label: 'Previous week',
+                child: GestureDetector(
+                  onTap: _goToPreviousWeek,
+                  child: Icon(
+                    Icons.chevron_left,
+                    size: 24,
+                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               // Month/Year title (tappable for date picker)
-              GestureDetector(
-                onTap: () => _showDatePicker(context),
-                child: Text(
-                  _formatMonthYear(widget.selectedDate),
-                  style: const TextStyle(
-                    fontFamily: 'Sansita',
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
+              Semantics(
+                button: true,
+                label: 'Choose month',
+                child: GestureDetector(
+                  onTap: () => _showDatePicker(context),
+                  child: Text(
+                    _formatMonthYear(widget.selectedDate),
+                    style: const TextStyle(
+                      fontFamily: 'Sansita',
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ),
               const SizedBox(width: 8),
               // Next week arrow
-              GestureDetector(
-                onTap: _goToNextWeek,
-                child: Icon(
-                  Icons.chevron_right,
-                  size: 24,
-                  color: isDark ? AppColors.cream : AppColors.blackberry,
+              Semantics(
+                button: true,
+                label: 'Next week',
+                child: GestureDetector(
+                  onTap: _goToNextWeek,
+                  child: Icon(
+                    Icons.chevron_right,
+                    size: 24,
+                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                  ),
                 ),
               ),
               // Today button - only shown when not on current week

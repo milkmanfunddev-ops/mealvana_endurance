@@ -133,6 +133,7 @@ class WelcomeScreen extends ConsumerWidget {
         child: Image.asset(
           'assets/images/welcome_inverted.png',
           fit: BoxFit.contain,
+          semanticLabel: 'Mealvana Endurance logo',
         ),
       ),
     );
