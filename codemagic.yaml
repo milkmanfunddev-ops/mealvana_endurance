@@ -229,9 +229,13 @@ workflows:
         auth: integration
         submit_to_testflight: true
         submit_to_app_store: false
-        # Internal testers only
-        beta_groups:
-          - Internal Testers
+        # Note: do NOT list "Internal Testers" under beta_groups. That is
+        # Apple's built-in auto-managed group (assigned implicitly to all
+        # team members with App Manager+ role), not a custom external
+        # group, and the ASC API rejects explicit assignment to it with
+        # "Cannot add internal group to a build". With submit_to_testflight
+        # alone, the build appears for the auto-managed Internal Testers
+        # group as soon as ASC finishes processing.
       slack:
         channel: '#builds'
         notify:
@@ -255,13 +259,14 @@ workflows:
         FLUTTER_ENV: dev
         APP_ENVIRONMENT: dev
 
+    # Manual-only trigger. Auto-trigger on `develop` push is disabled
+    # until the Play Console dev app (com.milkman.mealvanaendurance.dev)
+    # exists — without it the build always fails at publish with
+    # "Package not found", spamming Slack on every push to develop.
+    # Re-enable by adding back `events: [push]` once the Play Console
+    # dev app is created.
     triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'develop'
-          include: true
-      cancel_previous_builds: true
+      events: []
 
     scripts:
       - *write_dotenv_files
