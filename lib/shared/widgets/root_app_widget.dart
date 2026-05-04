@@ -177,6 +177,7 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                       // Pass router child back when initialization is complete
                       onLoaded: (_) => child!,
                     ),
+                    isDev: config.isDevelopment,
                   );
                 },
               ),
@@ -203,6 +204,7 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                   return _appShell(
                     context,
                     AppStartupWidget(onLoaded: (_) => child!),
+                    isDev: config.isDevelopment,
                   );
                 },
               ),
@@ -228,6 +230,7 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                   return _appShell(
                     context,
                     AppStartupWidget(onLoaded: (_) => child!),
+                    isDev: config.isDevelopment,
                   );
                 },
               ),
@@ -263,8 +266,18 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 /// inserts its own MediaQuery between the clamp and `child`, so panel slider
 /// changes override the clamped value for app content — testers can drive
 /// scale freely while the panel chrome stays bounded.
-Widget _appShell(BuildContext context, Widget child) {
+///
+/// Show-overlay rule: dev flavor in debug mode only. `kDebugMode` is a
+/// compile-time constant so any release/profile build tree-shakes the
+/// AccessibilityTools branch entirely. `isDev` (runtime, from AppConfig)
+/// further blocks prod-flavor debug runs from showing the overlay.
+Widget _appShell(
+  BuildContext context,
+  Widget child, {
+  required bool isDev,
+}) {
   final mq = MediaQuery.of(context);
+  final showA11yOverlay = kDebugMode && isDev;
   return MediaQuery(
     data: mq.copyWith(
       textScaler: mq.textScaler.clamp(
@@ -272,7 +285,7 @@ Widget _appShell(BuildContext context, Widget child) {
         maxScaleFactor: 1.6,
       ),
     ),
-    child: kDebugMode ? _DevAccessibilityTools(child: child) : child,
+    child: showA11yOverlay ? _DevAccessibilityTools(child: child) : child,
   );
 }
 
