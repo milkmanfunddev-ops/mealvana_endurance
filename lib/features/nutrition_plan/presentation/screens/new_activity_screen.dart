@@ -518,58 +518,55 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: NewActivityAppBar(isDark: isDark),
+      // Buttons live in bottomNavigationBar so they cannot be pushed off-screen
+      // when system text scaling makes the form taller than the viewport.
+      // Scaffold reserves space for this slot and respects SafeArea automatically.
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: _buildBottomButtons(context, coordinator, coordinatorState),
+      ),
       body: ContentArea(
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
           behavior: HitTestBehavior.opaque,
-          child: Column(
-            children: [
-              // Main scrollable content
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: 20),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 20),
 
-                      // Sport selector is horizontally scrollable on compact widths.
-                      const SportSelector(),
+                // Sport selector is horizontally scrollable on compact widths.
+                const SportSelector(),
 
-                      const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                      // Hero Image Section (center this)
-                      // For brick workouts, shows composite image of all three sports
-                      NewActivityHeroSection(
-                        heroImagePath: coordinator.getHeroImagePath(),
-                        isBrick: coordinatorState.selectedTab == SportTab.brick,
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Date and Time Section (center this)
-                      NewActivityDateTimeSection(
-                        selectedDate: coordinatorState.selectedDate,
-                        selectedTime: coordinatorState.selectedTime,
-                        onEditTapped: () =>
-                            _showDateTimePicker(coordinatorState, coordinator),
-                        isDark: isDark,
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Sport-specific form fields (full width)
-                      _buildFormFields(coordinatorState),
-
-                      const SizedBox(height: 16),
-                    ],
-                  ),
+                // Hero Image Section (center this)
+                // For brick workouts, shows composite image of all three sports
+                NewActivityHeroSection(
+                  heroImagePath: coordinator.getHeroImagePath(),
+                  isBrick: coordinatorState.selectedTab == SportTab.brick,
                 ),
-              ),
 
-              // Action Buttons (fixed at bottom)
-              _buildBottomButtons(context, coordinator, coordinatorState),
-            ],
+                const SizedBox(height: 24),
+
+                // Date and Time Section (center this)
+                NewActivityDateTimeSection(
+                  selectedDate: coordinatorState.selectedDate,
+                  selectedTime: coordinatorState.selectedTime,
+                  onEditTapped: () =>
+                      _showDateTimePicker(coordinatorState, coordinator),
+                  isDark: isDark,
+                ),
+
+                const SizedBox(height: 32),
+
+                // Sport-specific form fields (full width)
+                _buildFormFields(coordinatorState),
+
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),

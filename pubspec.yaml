@@ -112,6 +112,9 @@ dependencies:
   fl_chart: ^1.2.0
   onesignal_flutter: ^5.5.0
 
+  # Accessibility tooling (debug-only overlay; no-op in release)
+  accessibility_tools: ^2.2.3
+
 dev_dependencies:
   sentry_dart_plugin: ^3.1.1
   flutter_test:

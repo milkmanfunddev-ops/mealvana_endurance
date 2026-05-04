@@ -1,3 +1,5 @@
+import 'package:accessibility_tools/accessibility_tools.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -169,9 +171,12 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                 // Wrap router child with AppStartupWidget
                 // This is the key to supporting deep links during app initialization
                 builder: (context, child) {
-                  return AppStartupWidget(
-                    // Pass router child back when initialization is complete
-                    onLoaded: (_) => child!,
+                  return _appShell(
+                    context,
+                    AppStartupWidget(
+                      // Pass router child back when initialization is complete
+                      onLoaded: (_) => child!,
+                    ),
                   );
                 },
               ),
@@ -195,7 +200,10 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                 themeMode: ThemeMode.dark,
                 routerConfig: goRouter,
                 builder: (context, child) {
-                  return AppStartupWidget(onLoaded: (_) => child!);
+                  return _appShell(
+                    context,
+                    AppStartupWidget(onLoaded: (_) => child!),
+                  );
                 },
               ),
             );
@@ -217,7 +225,10 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                 themeMode: ThemeMode.dark,
                 routerConfig: goRouter,
                 builder: (context, child) {
-                  return AppStartupWidget(onLoaded: (_) => child!);
+                  return _appShell(
+                    context,
+                    AppStartupWidget(onLoaded: (_) => child!),
+                  );
                 },
               ),
             );
@@ -226,4 +237,32 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
       },
     );
   }
+}
+
+/// Shared MaterialApp.builder shell.
+///
+/// Two responsibilities:
+/// 1. Clamp `MediaQuery.textScaler` so a user with extreme system font scaling
+///    cannot break our layouts (cut-off CTAs, truncated labels, etc.).
+///    Floor stays at 1.0; ceiling at 1.6 — the level we currently test at.
+///    Bumping this requires verifying every screen at the new ceiling.
+/// 2. In debug builds, wrap the tree in `AccessibilityTools` so we get
+///    runtime warnings about small tap targets, missing semantics, and
+///    contrast issues while developing. No-op in release.
+Widget _appShell(BuildContext context, Widget child) {
+  final mq = MediaQuery.of(context);
+  final scaled = MediaQuery(
+    data: mq.copyWith(
+      textScaler: mq.textScaler.clamp(
+        minScaleFactor: 1.0,
+        maxScaleFactor: 1.6,
+      ),
+    ),
+    child: child,
+  );
+
+  if (kDebugMode) {
+    return AccessibilityTools(child: scaled);
+  }
+  return scaled;
 }

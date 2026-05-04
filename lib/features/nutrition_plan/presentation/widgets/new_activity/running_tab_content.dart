@@ -188,11 +188,17 @@ class RunningTabContent extends ConsumerWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Temperature label with Forecast link on the right
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Temperature label with Forecast link on the right.
+            // Wrap (vs Row) lets the forecast link drop to a second line when
+            // text scaling or longer translations would otherwise truncate it.
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
               children: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Temperature',

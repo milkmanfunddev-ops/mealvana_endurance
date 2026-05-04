@@ -157,12 +157,13 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
               child: Align(
                 alignment: Alignment.topCenter,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Title
                     const Text(
                       'Which sports do you train for?',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Sansita',
                         fontSize: 26,
@@ -177,6 +178,7 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
                     // Subtitle
                     const Text(
                       'We\'ll customize your nutrition plans for each sport.',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Apercu',
                         fontSize: 16,
