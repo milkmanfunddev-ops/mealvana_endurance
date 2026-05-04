@@ -271,15 +271,19 @@ export function calculatePreWorkoutHydration(
   // Gate: duration < 60 AND temp < 30
   const gateTriggered = workoutDurationMin < 60 && temp < 30;
   if (gateTriggered) {
+    // Target is 0 — the spec recommends no structured pre-hydration. We still
+    // emit an advisory upper band (matched to Tier-2 ceilings) so the UI can
+    // render a meaningful range bar. Athletes who happen to drink a bit pre-
+    // workout are graded against this ceiling rather than against zero.
     return {
       tier: 1, // tier is irrelevant when gated, but set to what it would have been
       gate_triggered: true,
       fluid_ml: 0,
       fluid_low_ml: 0,
-      fluid_high_ml: 0,
+      fluid_high_ml: 300,
       sodium_mg: 0,
       sodium_low_mg: 0,
-      sodium_high_mg: 0,
+      sodium_high_mg: 200,
       message: 'No structured pre-hydration needed for short workouts in mild conditions.',
     };
   }

@@ -196,7 +196,10 @@ class MacroSummaryItem extends StatelessWidget {
     final mutedColor = Theme.of(context).colorScheme.onSurfaceVariant;
 
     if (!_hasRange) {
-      // No range: show compact "actual/target unit" format
+      // No range provided. When target is 0 (spec says "no recommendation"),
+      // showing "actual/0 unit" reads as broken data — render just `actual unit`.
+      // Otherwise keep the compact "actual/target unit" format.
+      final showFlat = target == 0;
       return Column(
         children: [
           Row(
@@ -214,7 +217,7 @@ class MacroSummaryItem extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text: '/$target$unit',
+                      text: showFlat ? unit : '/$target$unit',
                       style: AppTextStyles.dataNumber.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 16,
