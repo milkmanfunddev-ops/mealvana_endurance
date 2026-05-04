@@ -13,6 +13,7 @@ import '../../../auth/domain/user_preferences.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// User Profile Screen - Design System
@@ -508,26 +509,51 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
           const SizedBox(height: AppSpacing.md),
 
-          // Weight field
-          _buildTextField(
-            context: context,
-            controller: _weightController,
-            label: _weightFromGarmin ? 'Weight (from Garmin Connect)' : 'Weight',
-            hint: 'Enter your weight',
-            icon: FontAwesomeIcons.weightScale,
-            keyboardType: TextInputType.number,
-            suffix: 'lbs',
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your weight';
-              }
-              final weight = double.tryParse(value);
-              if (weight == null || weight < 80 || weight > 500) {
-                return 'Please enter a valid weight (80-500 lbs)';
-              }
-              return null;
-            },
-          ),
+          // Weight field with optional Garmin attribution badge
+          Builder(builder: (context) {
+            final connectController = ref.read(
+              connectTrainingControllerProvider.notifier,
+            );
+            final userId = connectController.currentUserId;
+            final garminAsync = userId != null
+                ? ref.watch(garminLastBodyCompProvider(userId))
+                : null;
+            final garminData = garminAsync?.asData?.value;
+            final showGarminBadge = _weightFromGarmin ||
+                isGarminAuthoritativeForWeight(
+                  garmin: garminData,
+                  userWeightKg: null, // onboarding — no prior user value
+                  userUpdatedAt: null,
+                );
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (showGarminBadge) ...[
+                  const GarminAttribution(style: GarminAttributionStyle.compact),
+                  const SizedBox(height: AppSpacing.xs),
+                ],
+                _buildTextField(
+                  context: context,
+                  controller: _weightController,
+                  label: showGarminBadge ? 'Weight (from Garmin Connect)' : 'Weight',
+                  hint: 'Enter your weight',
+                  icon: FontAwesomeIcons.weightScale,
+                  keyboardType: TextInputType.number,
+                  suffix: 'lbs',
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your weight';
+                    }
+                    final weight = double.tryParse(value);
+                    if (weight == null || weight < 80 || weight > 500) {
+                      return 'Please enter a valid weight (80-500 lbs)';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            );
+          }),
         ],
       ),
     );

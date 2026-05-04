@@ -76,6 +76,7 @@ export async function sendActivityUploadedPush(params: {
       activity_id: params.activityId,
       provider: provider.toLowerCase(),
       activity_date: activityDateText,
+      scheduled_date: params.scheduledDate,
     },
   };
 

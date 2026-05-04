@@ -37,9 +37,13 @@ import {
 import type {
   GarminActivityDetail,
   GarminActivitySummary,
+  GarminBodyComposition,
   GarminDailySummary,
+  GarminEpochSummary,
   GarminPingNotification,
   GarminSleepSummary,
+  GarminStressDetail,
+  GarminUserMetrics,
 } from "../_shared/garmin/types.ts";
 
 const GARMIN_CLIENT_ID = Deno.env.get("GARMIN_CLIENT_ID") ?? "";
@@ -396,6 +400,255 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
         }
       }
       results.sleeps = stats;
+    }
+
+    // Process body comp pings
+    if (body.bodyComps && body.bodyComps.length > 0) {
+      const stats = { processed: 0, errors: 0 };
+      for (const ping of body.bodyComps) {
+        try {
+          if (!ping.callbackURL) {
+            stats.errors++;
+            continue;
+          }
+
+          const data = await fetchGarminCallback(ping.callbackURL);
+          const bodyComps =
+            (Array.isArray(data) ? data : [data]) as GarminBodyComposition[];
+
+          for (const bodyComp of bodyComps) {
+            const { data: mapping } = await supabase
+              .from("garmin_user_mappings")
+              .select("user_id")
+              .eq("garmin_user_id", ping.userId)
+              .single();
+
+            if (!mapping) {
+              stats.errors++;
+              continue;
+            }
+
+            const record = {
+              user_id: mapping.user_id,
+              garmin_user_id: ping.userId,
+              summary_id: bodyComp.summaryId,
+              data_type: "body_composition",
+              calendar_date:
+                new Date(bodyComp.measurementTimeInSeconds * 1000)
+                  .toISOString()
+                  .split("T")[0],
+              data: {
+                weight_grams: bodyComp.weightInGrams,
+                percent_fat: bodyComp.percentFat,
+                percent_hydration: bodyComp.percentHydration,
+                bone_mass_grams: bodyComp.boneMassInGrams,
+                muscle_mass_grams: bodyComp.muscleMassInGrams,
+                bmi: bodyComp.bmi,
+                measurement_time_seconds: bodyComp.measurementTimeInSeconds,
+              },
+            };
+
+            const { error } = await supabase
+              .from("garmin_health_data")
+              .upsert(record, { onConflict: "summary_id" });
+
+            if (error) {
+              console.error("[garmin-ping] Body comp upsert error:", error);
+              stats.errors++;
+            } else {
+              stats.processed++;
+            }
+          }
+        } catch (err) {
+          console.error("[garmin-ping] Body comp ping error:", err);
+          stats.errors++;
+        }
+      }
+      results.bodyComps = stats;
+    }
+
+    // Process stress detail pings
+    if (body.stressDetails && body.stressDetails.length > 0) {
+      const stats = { processed: 0, errors: 0 };
+      for (const ping of body.stressDetails) {
+        try {
+          if (!ping.callbackURL) {
+            stats.errors++;
+            continue;
+          }
+
+          const data = await fetchGarminCallback(ping.callbackURL);
+          const stresses =
+            (Array.isArray(data) ? data : [data]) as GarminStressDetail[];
+
+          for (const stress of stresses) {
+            const { data: mapping } = await supabase
+              .from("garmin_user_mappings")
+              .select("user_id")
+              .eq("garmin_user_id", ping.userId)
+              .single();
+
+            if (!mapping) {
+              stats.errors++;
+              continue;
+            }
+
+            const record = {
+              user_id: mapping.user_id,
+              garmin_user_id: ping.userId,
+              summary_id: stress.summaryId,
+              data_type: "stress",
+              calendar_date: stress.calendarDate,
+              data: {
+                duration_seconds: stress.durationInSeconds,
+                stress_levels: stress.timeOffsetStressLevelValues,
+                body_battery_values: stress.timeOffsetBodyBatteryValues,
+              },
+            };
+
+            const { error } = await supabase
+              .from("garmin_health_data")
+              .upsert(record, { onConflict: "summary_id" });
+
+            if (error) {
+              console.error("[garmin-ping] Stress upsert error:", error);
+              stats.errors++;
+            } else {
+              stats.processed++;
+            }
+          }
+        } catch (err) {
+          console.error("[garmin-ping] Stress ping error:", err);
+          stats.errors++;
+        }
+      }
+      results.stressDetails = stats;
+    }
+
+    // Process epoch pings
+    if (body.epochs && body.epochs.length > 0) {
+      const stats = { processed: 0, errors: 0 };
+      for (const ping of body.epochs) {
+        try {
+          if (!ping.callbackURL) {
+            stats.errors++;
+            continue;
+          }
+
+          const data = await fetchGarminCallback(ping.callbackURL);
+          const epochs =
+            (Array.isArray(data) ? data : [data]) as GarminEpochSummary[];
+
+          for (const epoch of epochs) {
+            const { data: mapping } = await supabase
+              .from("garmin_user_mappings")
+              .select("user_id")
+              .eq("garmin_user_id", ping.userId)
+              .single();
+
+            if (!mapping) {
+              stats.errors++;
+              continue;
+            }
+
+            const localEpochMs =
+              (epoch.startTimeInSeconds + epoch.startTimeOffsetInSeconds) *
+              1000;
+            const calendarDate =
+              new Date(localEpochMs).toISOString().split("T")[0];
+
+            const record = {
+              user_id: mapping.user_id,
+              garmin_user_id: ping.userId,
+              summary_id: epoch.summaryId,
+              data_type: "epoch",
+              calendar_date: calendarDate,
+              data: {
+                duration_seconds: epoch.durationInSeconds,
+                activity_type: epoch.activityType,
+                active_kilocalories: epoch.activeKilocalories,
+                steps: epoch.steps,
+                distance_meters: epoch.distanceInMeters,
+                avg_heart_rate: epoch.averageHeartRateInBeatsPerMinute,
+                max_heart_rate: epoch.maxHeartRateInBeatsPerMinute,
+                intensity: epoch.intensity,
+              },
+            };
+
+            const { error } = await supabase
+              .from("garmin_health_data")
+              .upsert(record, { onConflict: "summary_id" });
+
+            if (error) {
+              console.error("[garmin-ping] Epoch upsert error:", error);
+              stats.errors++;
+            } else {
+              stats.processed++;
+            }
+          }
+        } catch (err) {
+          console.error("[garmin-ping] Epoch ping error:", err);
+          stats.errors++;
+        }
+      }
+      results.epochs = stats;
+    }
+
+    // Process user metrics pings
+    if (body.userMetrics && body.userMetrics.length > 0) {
+      const stats = { processed: 0, errors: 0 };
+      for (const ping of body.userMetrics) {
+        try {
+          if (!ping.callbackURL) {
+            stats.errors++;
+            continue;
+          }
+
+          const data = await fetchGarminCallback(ping.callbackURL);
+          const metrics =
+            (Array.isArray(data) ? data : [data]) as GarminUserMetrics[];
+
+          for (const metric of metrics) {
+            const { data: mapping } = await supabase
+              .from("garmin_user_mappings")
+              .select("user_id")
+              .eq("garmin_user_id", ping.userId)
+              .single();
+
+            if (!mapping) {
+              stats.errors++;
+              continue;
+            }
+
+            const record = {
+              user_id: mapping.user_id,
+              garmin_user_id: ping.userId,
+              summary_id: metric.summaryId,
+              data_type: "user_metrics",
+              calendar_date: metric.calendarDate,
+              data: {
+                vo2_max: metric.vo2Max,
+                fitness_age: metric.fitnessAge,
+              },
+            };
+
+            const { error } = await supabase
+              .from("garmin_health_data")
+              .upsert(record, { onConflict: "summary_id" });
+
+            if (error) {
+              console.error("[garmin-ping] User metrics upsert error:", error);
+              stats.errors++;
+            } else {
+              stats.processed++;
+            }
+          }
+        } catch (err) {
+          console.error("[garmin-ping] User metrics ping error:", err);
+          stats.errors++;
+        }
+      }
+      results.userMetrics = stats;
     }
 
     console.log("[garmin-ping] Processing complete:", JSON.stringify(results));

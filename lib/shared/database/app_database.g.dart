@@ -654,6 +654,28 @@ class $UserProfilesTableTable extends UserProfilesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _weightPoundsUpdatedAtMeta =
+      const VerificationMeta('weightPoundsUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> weightPoundsUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'weight_pounds_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bodyFatPctUpdatedAtMeta =
+      const VerificationMeta('bodyFatPctUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> bodyFatPctUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'body_fat_pct_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _needsUploadMeta = const VerificationMeta(
     'needsUpload',
   );
@@ -725,6 +747,8 @@ class $UserProfilesTableTable extends UserProfilesTable
     knownSodiumConcentrationMgPerLiter,
     sweatTestDate,
     sweatTestSource,
+    weightPoundsUpdatedAt,
+    bodyFatPctUpdatedAt,
     needsUpload,
   ];
   @override
@@ -1169,6 +1193,24 @@ class $UserProfilesTableTable extends UserProfilesTable
         ),
       );
     }
+    if (data.containsKey('weight_pounds_updated_at')) {
+      context.handle(
+        _weightPoundsUpdatedAtMeta,
+        weightPoundsUpdatedAt.isAcceptableOrUnknown(
+          data['weight_pounds_updated_at']!,
+          _weightPoundsUpdatedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('body_fat_pct_updated_at')) {
+      context.handle(
+        _bodyFatPctUpdatedAtMeta,
+        bodyFatPctUpdatedAt.isAcceptableOrUnknown(
+          data['body_fat_pct_updated_at']!,
+          _bodyFatPctUpdatedAtMeta,
+        ),
+      );
+    }
     if (data.containsKey('needs_upload')) {
       context.handle(
         _needsUploadMeta,
@@ -1406,6 +1448,14 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.string,
         data['${effectivePrefix}sweat_test_source'],
       ),
+      weightPoundsUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}weight_pounds_updated_at'],
+      ),
+      bodyFatPctUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}body_fat_pct_updated_at'],
+      ),
       needsUpload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}needs_upload'],
@@ -1570,6 +1620,12 @@ class UserProfileEntry extends DataClass
   /// Source of the sweat test data: 'self_calculated', 'commercial_test', 'gatorade_gx', 'estimated', 'other'
   final String? sweatTestSource;
 
+  /// Timestamp of last weight_pounds update (for Garmin precedence resolution)
+  final DateTime? weightPoundsUpdatedAt;
+
+  /// Timestamp of last body_fat_pct update (for Garmin precedence resolution)
+  final DateTime? bodyFatPctUpdatedAt;
+
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
   final bool needsUpload;
@@ -1628,6 +1684,8 @@ class UserProfileEntry extends DataClass
     this.knownSodiumConcentrationMgPerLiter,
     this.sweatTestDate,
     this.sweatTestSource,
+    this.weightPoundsUpdatedAt,
+    this.bodyFatPctUpdatedAt,
     required this.needsUpload,
   });
   @override
@@ -1755,6 +1813,14 @@ class UserProfileEntry extends DataClass
     if (!nullToAbsent || sweatTestSource != null) {
       map['sweat_test_source'] = Variable<String>(sweatTestSource);
     }
+    if (!nullToAbsent || weightPoundsUpdatedAt != null) {
+      map['weight_pounds_updated_at'] = Variable<DateTime>(
+        weightPoundsUpdatedAt,
+      );
+    }
+    if (!nullToAbsent || bodyFatPctUpdatedAt != null) {
+      map['body_fat_pct_updated_at'] = Variable<DateTime>(bodyFatPctUpdatedAt);
+    }
     map['needs_upload'] = Variable<bool>(needsUpload);
     return map;
   }
@@ -1866,6 +1932,12 @@ class UserProfileEntry extends DataClass
       sweatTestSource: sweatTestSource == null && nullToAbsent
           ? const Value.absent()
           : Value(sweatTestSource),
+      weightPoundsUpdatedAt: weightPoundsUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weightPoundsUpdatedAt),
+      bodyFatPctUpdatedAt: bodyFatPctUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bodyFatPctUpdatedAt),
       needsUpload: Value(needsUpload),
     );
   }
@@ -1970,6 +2042,12 @@ class UserProfileEntry extends DataClass
       ),
       sweatTestDate: serializer.fromJson<DateTime?>(json['sweatTestDate']),
       sweatTestSource: serializer.fromJson<String?>(json['sweatTestSource']),
+      weightPoundsUpdatedAt: serializer.fromJson<DateTime?>(
+        json['weightPoundsUpdatedAt'],
+      ),
+      bodyFatPctUpdatedAt: serializer.fromJson<DateTime?>(
+        json['bodyFatPctUpdatedAt'],
+      ),
       needsUpload: serializer.fromJson<bool>(json['needsUpload']),
     );
   }
@@ -2047,6 +2125,10 @@ class UserProfileEntry extends DataClass
       ),
       'sweatTestDate': serializer.toJson<DateTime?>(sweatTestDate),
       'sweatTestSource': serializer.toJson<String?>(sweatTestSource),
+      'weightPoundsUpdatedAt': serializer.toJson<DateTime?>(
+        weightPoundsUpdatedAt,
+      ),
+      'bodyFatPctUpdatedAt': serializer.toJson<DateTime?>(bodyFatPctUpdatedAt),
       'needsUpload': serializer.toJson<bool>(needsUpload),
     };
   }
@@ -2106,6 +2188,8 @@ class UserProfileEntry extends DataClass
     Value<int?> knownSodiumConcentrationMgPerLiter = const Value.absent(),
     Value<DateTime?> sweatTestDate = const Value.absent(),
     Value<String?> sweatTestSource = const Value.absent(),
+    Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
+    Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
     bool? needsUpload,
   }) => UserProfileEntry(
     id: id ?? this.id,
@@ -2184,6 +2268,12 @@ class UserProfileEntry extends DataClass
     sweatTestSource: sweatTestSource.present
         ? sweatTestSource.value
         : this.sweatTestSource,
+    weightPoundsUpdatedAt: weightPoundsUpdatedAt.present
+        ? weightPoundsUpdatedAt.value
+        : this.weightPoundsUpdatedAt,
+    bodyFatPctUpdatedAt: bodyFatPctUpdatedAt.present
+        ? bodyFatPctUpdatedAt.value
+        : this.bodyFatPctUpdatedAt,
     needsUpload: needsUpload ?? this.needsUpload,
   );
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
@@ -2327,6 +2417,12 @@ class UserProfileEntry extends DataClass
       sweatTestSource: data.sweatTestSource.present
           ? data.sweatTestSource.value
           : this.sweatTestSource,
+      weightPoundsUpdatedAt: data.weightPoundsUpdatedAt.present
+          ? data.weightPoundsUpdatedAt.value
+          : this.weightPoundsUpdatedAt,
+      bodyFatPctUpdatedAt: data.bodyFatPctUpdatedAt.present
+          ? data.bodyFatPctUpdatedAt.value
+          : this.bodyFatPctUpdatedAt,
       needsUpload: data.needsUpload.present
           ? data.needsUpload.value
           : this.needsUpload,
@@ -2396,6 +2492,8 @@ class UserProfileEntry extends DataClass
           )
           ..write('sweatTestDate: $sweatTestDate, ')
           ..write('sweatTestSource: $sweatTestSource, ')
+          ..write('weightPoundsUpdatedAt: $weightPoundsUpdatedAt, ')
+          ..write('bodyFatPctUpdatedAt: $bodyFatPctUpdatedAt, ')
           ..write('needsUpload: $needsUpload')
           ..write(')'))
         .toString();
@@ -2457,6 +2555,8 @@ class UserProfileEntry extends DataClass
     knownSodiumConcentrationMgPerLiter,
     sweatTestDate,
     sweatTestSource,
+    weightPoundsUpdatedAt,
+    bodyFatPctUpdatedAt,
     needsUpload,
   ]);
   @override
@@ -2520,6 +2620,8 @@ class UserProfileEntry extends DataClass
               this.knownSodiumConcentrationMgPerLiter &&
           other.sweatTestDate == this.sweatTestDate &&
           other.sweatTestSource == this.sweatTestSource &&
+          other.weightPoundsUpdatedAt == this.weightPoundsUpdatedAt &&
+          other.bodyFatPctUpdatedAt == this.bodyFatPctUpdatedAt &&
           other.needsUpload == this.needsUpload);
 }
 
@@ -2578,6 +2680,8 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<int?> knownSodiumConcentrationMgPerLiter;
   final Value<DateTime?> sweatTestDate;
   final Value<String?> sweatTestSource;
+  final Value<DateTime?> weightPoundsUpdatedAt;
+  final Value<DateTime?> bodyFatPctUpdatedAt;
   final Value<bool> needsUpload;
   final Value<int> rowid;
   const UserProfilesTableCompanion({
@@ -2635,6 +2739,8 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.knownSodiumConcentrationMgPerLiter = const Value.absent(),
     this.sweatTestDate = const Value.absent(),
     this.sweatTestSource = const Value.absent(),
+    this.weightPoundsUpdatedAt = const Value.absent(),
+    this.bodyFatPctUpdatedAt = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2693,6 +2799,8 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.knownSodiumConcentrationMgPerLiter = const Value.absent(),
     this.sweatTestDate = const Value.absent(),
     this.sweatTestSource = const Value.absent(),
+    this.weightPoundsUpdatedAt = const Value.absent(),
+    this.bodyFatPctUpdatedAt = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2752,6 +2860,8 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<int>? knownSodiumConcentrationMgPerLiter,
     Expression<DateTime>? sweatTestDate,
     Expression<String>? sweatTestSource,
+    Expression<DateTime>? weightPoundsUpdatedAt,
+    Expression<DateTime>? bodyFatPctUpdatedAt,
     Expression<bool>? needsUpload,
     Expression<int>? rowid,
   }) {
@@ -2830,6 +2940,10 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
             knownSodiumConcentrationMgPerLiter,
       if (sweatTestDate != null) 'sweat_test_date': sweatTestDate,
       if (sweatTestSource != null) 'sweat_test_source': sweatTestSource,
+      if (weightPoundsUpdatedAt != null)
+        'weight_pounds_updated_at': weightPoundsUpdatedAt,
+      if (bodyFatPctUpdatedAt != null)
+        'body_fat_pct_updated_at': bodyFatPctUpdatedAt,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2890,6 +3004,8 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Value<int?>? knownSodiumConcentrationMgPerLiter,
     Value<DateTime?>? sweatTestDate,
     Value<String?>? sweatTestSource,
+    Value<DateTime?>? weightPoundsUpdatedAt,
+    Value<DateTime?>? bodyFatPctUpdatedAt,
     Value<bool>? needsUpload,
     Value<int>? rowid,
   }) {
@@ -2959,6 +3075,9 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           this.knownSodiumConcentrationMgPerLiter,
       sweatTestDate: sweatTestDate ?? this.sweatTestDate,
       sweatTestSource: sweatTestSource ?? this.sweatTestSource,
+      weightPoundsUpdatedAt:
+          weightPoundsUpdatedAt ?? this.weightPoundsUpdatedAt,
+      bodyFatPctUpdatedAt: bodyFatPctUpdatedAt ?? this.bodyFatPctUpdatedAt,
       needsUpload: needsUpload ?? this.needsUpload,
       rowid: rowid ?? this.rowid,
     );
@@ -3155,6 +3274,16 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     if (sweatTestSource.present) {
       map['sweat_test_source'] = Variable<String>(sweatTestSource.value);
     }
+    if (weightPoundsUpdatedAt.present) {
+      map['weight_pounds_updated_at'] = Variable<DateTime>(
+        weightPoundsUpdatedAt.value,
+      );
+    }
+    if (bodyFatPctUpdatedAt.present) {
+      map['body_fat_pct_updated_at'] = Variable<DateTime>(
+        bodyFatPctUpdatedAt.value,
+      );
+    }
     if (needsUpload.present) {
       map['needs_upload'] = Variable<bool>(needsUpload.value);
     }
@@ -3227,6 +3356,8 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           )
           ..write('sweatTestDate: $sweatTestDate, ')
           ..write('sweatTestSource: $sweatTestSource, ')
+          ..write('weightPoundsUpdatedAt: $weightPoundsUpdatedAt, ')
+          ..write('bodyFatPctUpdatedAt: $bodyFatPctUpdatedAt, ')
           ..write('needsUpload: $needsUpload, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -31515,6 +31646,8 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
       Value<int?> knownSodiumConcentrationMgPerLiter,
       Value<DateTime?> sweatTestDate,
       Value<String?> sweatTestSource,
+      Value<DateTime?> weightPoundsUpdatedAt,
+      Value<DateTime?> bodyFatPctUpdatedAt,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -31574,6 +31707,8 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
       Value<int?> knownSodiumConcentrationMgPerLiter,
       Value<DateTime?> sweatTestDate,
       Value<String?> sweatTestSource,
+      Value<DateTime?> weightPoundsUpdatedAt,
+      Value<DateTime?> bodyFatPctUpdatedAt,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -31860,6 +31995,16 @@ class $$UserProfilesTableTableFilterComposer
 
   ColumnFilters<String> get sweatTestSource => $composableBuilder(
     column: $table.sweatTestSource,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get weightPoundsUpdatedAt => $composableBuilder(
+    column: $table.weightPoundsUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get bodyFatPctUpdatedAt => $composableBuilder(
+    column: $table.bodyFatPctUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -32150,6 +32295,16 @@ class $$UserProfilesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get weightPoundsUpdatedAt => $composableBuilder(
+    column: $table.weightPoundsUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get bodyFatPctUpdatedAt => $composableBuilder(
+    column: $table.bodyFatPctUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => ColumnOrderings(column),
@@ -32414,6 +32569,16 @@ class $$UserProfilesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<DateTime> get weightPoundsUpdatedAt => $composableBuilder(
+    column: $table.weightPoundsUpdatedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get bodyFatPctUpdatedAt => $composableBuilder(
+    column: $table.bodyFatPctUpdatedAt,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => column,
@@ -32517,6 +32682,8 @@ class $$UserProfilesTableTableTableManager
                     const Value.absent(),
                 Value<DateTime?> sweatTestDate = const Value.absent(),
                 Value<String?> sweatTestSource = const Value.absent(),
+                Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
+                Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion(
@@ -32575,6 +32742,8 @@ class $$UserProfilesTableTableTableManager
                     knownSodiumConcentrationMgPerLiter,
                 sweatTestDate: sweatTestDate,
                 sweatTestSource: sweatTestSource,
+                weightPoundsUpdatedAt: weightPoundsUpdatedAt,
+                bodyFatPctUpdatedAt: bodyFatPctUpdatedAt,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),
@@ -32637,6 +32806,8 @@ class $$UserProfilesTableTableTableManager
                     const Value.absent(),
                 Value<DateTime?> sweatTestDate = const Value.absent(),
                 Value<String?> sweatTestSource = const Value.absent(),
+                Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
+                Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion.insert(
@@ -32695,6 +32866,8 @@ class $$UserProfilesTableTableTableManager
                     knownSodiumConcentrationMgPerLiter,
                 sweatTestDate: sweatTestDate,
                 sweatTestSource: sweatTestSource,
+                weightPoundsUpdatedAt: weightPoundsUpdatedAt,
+                bodyFatPctUpdatedAt: bodyFatPctUpdatedAt,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),

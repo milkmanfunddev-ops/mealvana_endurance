@@ -113,6 +113,14 @@ class UserProfile {
   /// Values: 'self_calculated', 'commercial_test', 'gatorade_gx', 'estimated', 'other'
   final String? sweatTestSource;
 
+  /// Timestamp of the last weight_pounds update. Used by the macro edge
+  /// function to resolve precedence between user-entered and Garmin values.
+  final DateTime? weightPoundsUpdatedAt;
+
+  /// Timestamp of the last body_fat_pct update. Used by the macro edge
+  /// function to resolve precedence between user-entered and Garmin values.
+  final DateTime? bodyFatPctUpdatedAt;
+
   UserProfile({
     required this.id,
     required this.deviceId,
@@ -171,6 +179,9 @@ class UserProfile {
     this.knownSodiumConcentrationMgPerLiter,
     this.sweatTestDate,
     this.sweatTestSource,
+    // Garmin precedence timestamps
+    this.weightPoundsUpdatedAt,
+    this.bodyFatPctUpdatedAt,
   });
 
   /// Returns the best available display name for the user.
@@ -350,6 +361,12 @@ class UserProfile {
           ? DateTime.tryParse(json['sweat_test_date'] as String)
           : null,
       sweatTestSource: json['sweat_test_source'] as String?,
+      weightPoundsUpdatedAt: json['weight_pounds_updated_at'] != null
+          ? DateTime.tryParse(json['weight_pounds_updated_at'] as String)
+          : null,
+      bodyFatPctUpdatedAt: json['body_fat_pct_updated_at'] != null
+          ? DateTime.tryParse(json['body_fat_pct_updated_at'] as String)
+          : null,
     );
   }
 
@@ -402,6 +419,8 @@ class UserProfile {
       'known_sodium_concentration_mg_per_liter': knownSodiumConcentrationMgPerLiter,
       'sweat_test_date': sweatTestDate?.toIso8601String(),
       'sweat_test_source': sweatTestSource,
+      'weight_pounds_updated_at': weightPoundsUpdatedAt?.toUtc().toIso8601String(),
+      'body_fat_pct_updated_at': bodyFatPctUpdatedAt?.toUtc().toIso8601String(),
       // Note: is_coach is NOT synced to Supabase - coach status lives in coaches table
       // Note: swipe_hint_shown, gi_sensitivity, typical_bike_bottles, has_aero_bottle,
       // has_bento_box, typical_wetsuit, typical_swim_cap_type are Drift-only fields
@@ -463,6 +482,9 @@ class UserProfile {
     int? knownSodiumConcentrationMgPerLiter,
     DateTime? sweatTestDate,
     String? sweatTestSource,
+    // Garmin precedence timestamps
+    DateTime? weightPoundsUpdatedAt,
+    DateTime? bodyFatPctUpdatedAt,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -518,6 +540,9 @@ class UserProfile {
       knownSodiumConcentrationMgPerLiter: knownSodiumConcentrationMgPerLiter ?? this.knownSodiumConcentrationMgPerLiter,
       sweatTestDate: sweatTestDate ?? this.sweatTestDate,
       sweatTestSource: sweatTestSource ?? this.sweatTestSource,
+      // Garmin precedence timestamps
+      weightPoundsUpdatedAt: weightPoundsUpdatedAt ?? this.weightPoundsUpdatedAt,
+      bodyFatPctUpdatedAt: bodyFatPctUpdatedAt ?? this.bodyFatPctUpdatedAt,
     );
   }
 }

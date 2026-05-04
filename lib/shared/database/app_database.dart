@@ -150,7 +150,9 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 8: Adds sweat profile fields to user_profiles table for
+  /// Schema version 9: Adds weight_pounds_updated_at + body_fat_pct_updated_at
+  /// to user_profiles (users) table for Garmin body-comp precedence resolution.
+  /// v8 added sweat profile fields to user_profiles table for
   /// hydration/sodium transparency — sweat_sodium, known_sweat_rate_ml_per_hour,
   /// known_sodium_concentration_mg_per_liter, sweat_test_date, sweat_test_source.
   /// v7 formalizes previously-runtime column/table additions and adds
@@ -159,7 +161,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -204,8 +206,18 @@ class AppDatabase extends _$AppDatabase {
           );
         }
 
+        // v9: Add Garmin precedence timestamp columns to users table.
+        if (from < 9) {
+          await customStatement(
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS weight_pounds_updated_at INTEGER',
+          );
+          await customStatement(
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS body_fat_pct_updated_at INTEGER',
+          );
+        }
+
         // Fallback for any future version mismatch not handled above.
-        if (from < to && from >= 8) {
+        if (from < to && from >= 9) {
           await m.createAll();
         }
       },

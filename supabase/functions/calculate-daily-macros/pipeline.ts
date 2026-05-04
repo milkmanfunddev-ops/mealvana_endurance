@@ -35,6 +35,11 @@ import {
   multiSessionCarbCompound,
   carbCycleAdjust,
 } from './formulas/safety.ts';
+import {
+  resolveAthleteProfile,
+  resolveRMR,
+  resolveNEAT,
+} from './formulas/resolve.ts';
 
 export const ALGORITHM_VERSION = 'v4.0.0';
 
@@ -132,9 +137,7 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
   const {
     sex,
     age,
-    weight_kg,
     height_cm,
-    body_fat_pct,
     lifestyle,
     typical_weekly_hours,
     carb_cycle_opt_in,
@@ -148,6 +151,20 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
     weekly_hours_ratio,
     mode,
   } = input;
+
+  // Resolve weight + body fat % — Garmin body comp wins when newer than user's
+  // last manual entry (latest-wins precedence). Falls back to input fields when
+  // no Garmin data is present.
+  const resolved = resolveAthleteProfile(
+    input.garmin_body_comp ?? null,
+    input.weight_kg,
+    input.body_fat_pct ?? null,
+    Math.floor(Date.now() / 1000),
+    input.user_weight_updated_at_seconds ?? null,
+    input.user_body_fat_updated_at_seconds ?? null,
+  );
+  const weight_kg = resolved.weight_kg;
+  const body_fat_pct = resolved.body_fat_pct;
 
   // Calculate LBM if body fat % available
   const lbm_kg =
@@ -275,17 +292,36 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
   // STEP 8: Dynamic NEAT + iterative TEF → TDEE + fat
   // ====================================================================
 
-  const rmr = calculateRMR(weight_kg, height_cm, age, sex, body_fat_pct);
+  // RMR: use Garmin daily BMR when present (positive number), else formula.
+  // Predicate: input.garmin_daily?.bmrKilocalories != null &&
+  //            input.garmin_daily.bmrKilocalories > 0
+  const resolvedRMR = resolveRMR(input.garmin_daily ?? null, {
+    weight_kg,
+    height_cm,
+    age,
+    sex,
+    body_fat_pct,
+  });
+  const rmr = resolvedRMR.rmr;
 
   const volume = inferVolumeTier(typical_weekly_hours);
   const day_info = getDayModifier(sessions, yesterday_tss);
 
-  const neat = calculateNEAT(
+  // NEAT: use Garmin daily activeKilocalories − session kcal when:
+  //   - mode is 'retrospective', AND
+  //   - input.garmin_daily?.activeKilocalories != null &&
+  //     input.garmin_daily.activeKilocalories > 0
+  // Otherwise use the formula-derived NEAT.
+  const resolvedNEAT = resolveNEAT(
+    mode ?? 'prospective',
+    input.garmin_daily ?? null,
+    total_session_kcal,
     rmr,
     volume.base_neat,
     day_info.modifier,
     lifestyle,
   );
+  const neat = resolvedNEAT.neat_kcal;
 
   const tdee_result = calculateTDEE(
     rmr,
@@ -380,6 +416,8 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
 /**
  * Calculate macros for an entire week in a single call.
  * Merges shared profile fields with each day's sessions/context.
+ * Per-day Garmin context (garmin_body_comp, garmin_daily) flows through from
+ * each WeekDayInput when present — populated server-side by attachGarminContext.
  */
 export function calculateWeekMacros(input: WeekMacroInput): DailyMacroOutput[] {
   return input.days.map((day) => {
@@ -394,6 +432,9 @@ export function calculateWeekMacros(input: WeekMacroInput): DailyMacroOutput[] {
       carb_cycle_opt_in: input.carb_cycle_opt_in,
       training_phase: input.training_phase,
       mode: input.mode,
+      // Shared user timestamps (used by resolveAthleteProfile)
+      user_weight_updated_at_seconds: input.user_weight_updated_at_seconds,
+      user_body_fat_updated_at_seconds: input.user_body_fat_updated_at_seconds,
       ...day,
     };
     return calculateDailyMacros(dayInput);

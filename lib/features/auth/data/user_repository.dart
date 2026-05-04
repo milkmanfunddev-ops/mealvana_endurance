@@ -181,6 +181,9 @@ class UserRepository with SyncableRepository {
       knownSodiumConcentrationMgPerLiter: dbUser.knownSodiumConcentrationMgPerLiter,
       sweatTestDate: dbUser.sweatTestDate,
       sweatTestSource: dbUser.sweatTestSource,
+      // Garmin precedence timestamps
+      weightPoundsUpdatedAt: dbUser.weightPoundsUpdatedAt,
+      bodyFatPctUpdatedAt: dbUser.bodyFatPctUpdatedAt,
     );
   }
 
@@ -957,6 +960,13 @@ class UserRepository with SyncableRepository {
       lastName: userData['last_name'] as String?,
       // Contact information
       email: userData['email'] as String?,
+      // Garmin precedence timestamps
+      weightPoundsUpdatedAt: userData['weight_pounds_updated_at'] != null
+          ? DateTime.tryParse(userData['weight_pounds_updated_at'] as String)
+          : null,
+      bodyFatPctUpdatedAt: userData['body_fat_pct_updated_at'] != null
+          ? DateTime.tryParse(userData['body_fat_pct_updated_at'] as String)
+          : null,
     );
   }
 

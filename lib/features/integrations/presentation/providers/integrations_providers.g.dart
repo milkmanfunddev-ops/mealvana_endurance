@@ -1156,3 +1156,110 @@ final class IsGarminConnectedFamily extends $Family
   @override
   String toString() => r'isGarminConnectedProvider';
 }
+
+/// Fetches the latest body composition record pushed by Garmin for [userId].
+///
+/// Queries the `garmin_health_data` table directly via Supabase (service-role
+/// reads are gated by RLS on the authenticated user's JWT). Returns null when
+/// Garmin is not connected, or no body-comp data has been received yet.
+
+@ProviderFor(garminLastBodyComp)
+const garminLastBodyCompProvider = GarminLastBodyCompFamily._();
+
+/// Fetches the latest body composition record pushed by Garmin for [userId].
+///
+/// Queries the `garmin_health_data` table directly via Supabase (service-role
+/// reads are gated by RLS on the authenticated user's JWT). Returns null when
+/// Garmin is not connected, or no body-comp data has been received yet.
+
+final class GarminLastBodyCompProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<GarminBodyCompData?>,
+          GarminBodyCompData?,
+          FutureOr<GarminBodyCompData?>
+        >
+    with
+        $FutureModifier<GarminBodyCompData?>,
+        $FutureProvider<GarminBodyCompData?> {
+  /// Fetches the latest body composition record pushed by Garmin for [userId].
+  ///
+  /// Queries the `garmin_health_data` table directly via Supabase (service-role
+  /// reads are gated by RLS on the authenticated user's JWT). Returns null when
+  /// Garmin is not connected, or no body-comp data has been received yet.
+  const GarminLastBodyCompProvider._({
+    required GarminLastBodyCompFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'garminLastBodyCompProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$garminLastBodyCompHash();
+
+  @override
+  String toString() {
+    return r'garminLastBodyCompProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<GarminBodyCompData?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<GarminBodyCompData?> create(Ref ref) {
+    final argument = this.argument as String;
+    return garminLastBodyComp(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is GarminLastBodyCompProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$garminLastBodyCompHash() =>
+    r'233cafa4713ba6984262d4bbf518a612bfda1a62';
+
+/// Fetches the latest body composition record pushed by Garmin for [userId].
+///
+/// Queries the `garmin_health_data` table directly via Supabase (service-role
+/// reads are gated by RLS on the authenticated user's JWT). Returns null when
+/// Garmin is not connected, or no body-comp data has been received yet.
+
+final class GarminLastBodyCompFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<GarminBodyCompData?>, String> {
+  const GarminLastBodyCompFamily._()
+    : super(
+        retry: null,
+        name: r'garminLastBodyCompProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Fetches the latest body composition record pushed by Garmin for [userId].
+  ///
+  /// Queries the `garmin_health_data` table directly via Supabase (service-role
+  /// reads are gated by RLS on the authenticated user's JWT). Returns null when
+  /// Garmin is not connected, or no body-comp data has been received yet.
+
+  GarminLastBodyCompProvider call(String userId) =>
+      GarminLastBodyCompProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'garminLastBodyCompProvider';
+}

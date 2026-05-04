@@ -323,6 +323,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               bone_mass_grams: bodyComp.boneMassInGrams,
               muscle_mass_grams: bodyComp.muscleMassInGrams,
               bmi: bodyComp.bmi,
+              measurement_time_seconds: bodyComp.measurementTimeInSeconds,
             },
           };
 

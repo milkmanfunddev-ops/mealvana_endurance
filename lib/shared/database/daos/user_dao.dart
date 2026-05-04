@@ -144,6 +144,9 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         knownSodiumConcentrationMgPerLiter: Value(profile.knownSodiumConcentrationMgPerLiter),
         sweatTestDate: Value(profile.sweatTestDate),
         sweatTestSource: Value(profile.sweatTestSource),
+        // Garmin precedence timestamps
+        weightPoundsUpdatedAt: Value(profile.weightPoundsUpdatedAt),
+        bodyFatPctUpdatedAt: Value(profile.bodyFatPctUpdatedAt),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -211,6 +214,9 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         knownSodiumConcentrationMgPerLiter: Value(profile.knownSodiumConcentrationMgPerLiter),
         sweatTestDate: Value(profile.sweatTestDate),
         sweatTestSource: Value(profile.sweatTestSource),
+        // Garmin precedence timestamps
+        weightPoundsUpdatedAt: Value(profile.weightPoundsUpdatedAt),
+        bodyFatPctUpdatedAt: Value(profile.bodyFatPctUpdatedAt),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -347,6 +353,9 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       knownSodiumConcentrationMgPerLiter: dbUser.knownSodiumConcentrationMgPerLiter,
       sweatTestDate: dbUser.sweatTestDate,
       sweatTestSource: dbUser.sweatTestSource,
+      // Garmin precedence timestamps
+      weightPoundsUpdatedAt: dbUser.weightPoundsUpdatedAt,
+      bodyFatPctUpdatedAt: dbUser.bodyFatPctUpdatedAt,
     );
   }
 }

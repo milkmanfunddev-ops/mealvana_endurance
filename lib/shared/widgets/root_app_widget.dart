@@ -10,6 +10,7 @@ import '../services/app_config.dart';
 import '../services/app_external_deps.dart';
 import '../services/auth/auth_listener_service.dart';
 import '../services/notification_service.dart';
+import '../../features/daily_macros/data/daily_macro_targets_repository.dart';
 
 /// Root app widget that handles app initialization and navigation
 /// Following Andrea Bizzotto's patterns for app startup with deep link support
@@ -34,6 +35,18 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 
     NotificationService.setNavigationHandler(_handleNotificationNavigation);
 
+    // Register the macro cache invalidator so Garmin activity-upload
+    // notifications automatically bust the cache for the affected date.
+    NotificationService.setDailyMacroCacheInvalidator((DateTime date) async {
+      if (!mounted) return;
+      // Use Supabase auth directly — no async wait required.
+      final userId = ref.read(appExternalDepsProvider).supabaseClient
+          .auth.currentUser?.id;
+      if (userId == null) return;
+      final repo = ref.read(dailyMacroTargetsRepositoryProvider);
+      await repo.invalidateForDate(userId, date);
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final pendingActivityId =
           NotificationService.getPendingNavigationActivityId();
@@ -47,6 +60,7 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
   @override
   void dispose() {
     NotificationService.setNavigationHandler(null);
+    NotificationService.setDailyMacroCacheInvalidator(null);
     super.dispose();
   }
 
