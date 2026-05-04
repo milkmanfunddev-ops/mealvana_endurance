@@ -112,6 +112,14 @@ dependencies:
   fl_chart: ^1.2.0
   onesignal_flutter: ^5.5.0
 
+  # Dev-only accessibility checker overlay + testing-tools panel.
+  # Pinned exact: 2.7.0+ uses SemanticsFlags collection APIs that require a
+  # newer Flutter SDK than Codemagic's stable channel ships.
+  # Wrapped in a debug-only widget that resets panel state on every hot
+  # reload so panel overrides (text scale, color mode, etc.) cannot leak
+  # across sessions — see lib/shared/widgets/root_app_widget.dart.
+  accessibility_tools: 2.2.3
+
 
 dev_dependencies:
   sentry_dart_plugin: ^3.1.1

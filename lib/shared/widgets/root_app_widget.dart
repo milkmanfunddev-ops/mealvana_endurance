@@ -1,3 +1,5 @@
+import 'package:accessibility_tools/accessibility_tools.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -239,27 +241,72 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 
 /// Shared MaterialApp.builder shell.
 ///
-/// Clamps `MediaQuery.textScaler` so a user with extreme system font scaling
-/// cannot break our layouts (cut-off CTAs, truncated labels, etc.).
-/// Floor stays at 1.0; ceiling at 1.6 — the level we currently test at.
-/// Bumping this requires verifying every screen at the new ceiling.
+/// Two responsibilities:
+/// 1. Clamp `MediaQuery.textScaler` to [1.0, 1.6] so extreme system font
+///    scaling can't break layouts (cut-off CTAs, truncated labels). Bumping
+///    the ceiling requires verifying every screen at the new value.
+/// 2. In **debug builds only**, wrap the tree in `_DevAccessibilityTools`
+///    which provides the wrench testing-tools panel + checker overlay —
+///    available in dev flavor, stripped from release/prod by `kDebugMode`.
 ///
-/// Note: we previously wrapped the tree in `AccessibilityTools` for dev-time
-/// runtime warnings, but the package's testing-tools panel held overrides
-/// (text scale, color simulation, etc.) in widget state that survived hot
-/// reload, leaving the app stuck at e.g. 3.1× scaling between sessions.
-/// The semantic labels we added across kyle_design widgets remain the
-/// user-facing accessibility win; for runtime checking use the Flutter
-/// Inspector's accessibility tab or `MaterialApp.showSemanticsDebugger`.
+/// Ordering matters: `AccessibilityTools` injects an overridden MediaQuery
+/// (text scale, locale, etc.) for descendants. The clamp must read
+/// MediaQuery from a context underneath it, hence the inner `Builder`.
 Widget _appShell(BuildContext context, Widget child) {
-  final mq = MediaQuery.of(context);
-  return MediaQuery(
-    data: mq.copyWith(
-      textScaler: mq.textScaler.clamp(
-        minScaleFactor: 1.0,
-        maxScaleFactor: 1.6,
+  Widget clampScaler(BuildContext innerContext) {
+    final mq = MediaQuery.of(innerContext);
+    return MediaQuery(
+      data: mq.copyWith(
+        textScaler: mq.textScaler.clamp(
+          minScaleFactor: 1.0,
+          maxScaleFactor: 1.6,
+        ),
       ),
-    ),
-    child: child,
-  );
+      child: child,
+    );
+  }
+
+  if (kDebugMode) {
+    return _DevAccessibilityTools(child: Builder(builder: clampScaler));
+  }
+  return Builder(builder: clampScaler);
+}
+
+/// Debug-only wrapper around [AccessibilityTools] that **resets the panel's
+/// state on every hot reload** by re-keying the widget.
+///
+/// Why: the package keeps its `TestEnvironment` (text scale, color mode,
+/// locale override, etc.) in `_AccessibilityToolsState`. Plain `setState`
+/// changes survive hot reload, which made the app stick at e.g. 3.1× text
+/// scale or grayscale between iterations with no obvious way to reset.
+///
+/// `reassemble` fires on every hot reload; bumping a counter and using it
+/// as the child's key forces Flutter to dispose the old `AccessibilityTools`
+/// and create a fresh one — wiping any panel overrides. Cold launches are
+/// also fresh because widget state starts empty.
+class _DevAccessibilityTools extends StatefulWidget {
+  const _DevAccessibilityTools({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_DevAccessibilityTools> createState() => _DevAccessibilityToolsState();
+}
+
+class _DevAccessibilityToolsState extends State<_DevAccessibilityTools> {
+  int _resetGeneration = 0;
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    _resetGeneration++;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AccessibilityTools(
+      key: ValueKey('accessibility-tools-$_resetGeneration'),
+      child: widget.child,
+    );
+  }
 }
