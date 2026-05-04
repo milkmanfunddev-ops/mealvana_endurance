@@ -205,12 +205,29 @@ workflows:
           echo "Next iOS build number: $NEXT"
 
       - name: Build dev iOS
+        # `flutter build ipa` archives correctly but its internal IPA-export
+        # step hardcodes signingCertificate="iOS Distribution" — a name that
+        # doesn't exist for modern Apple Distribution certs (Apple deprecated
+        # IOS_DISTRIBUTION cert type). flutter exits 0 even when xcodebuild
+        # exportArchive errors, leaving no IPA. We let flutter do the archive
+        # (best-effort), then re-run xcodebuild -exportArchive directly with
+        # Codemagic's correct export plist (which says "Apple Distribution").
         script: |
+          set -e
           flutter build ipa --release \
             --flavor dev \
             --target lib/main_dev.dart \
             --build-number=$BUILD_NUMBER \
-            --export-options-plist=/Users/builder/export_options.plist
+            --export-options-plist=/Users/builder/export_options.plist \
+            || echo "flutter build ipa exited with errors, continuing to manual export"
+
+          rm -rf build/ios/ipa
+          mkdir -p build/ios/ipa
+          xcodebuild -exportArchive \
+            -archivePath build/ios/archive/Runner.xcarchive \
+            -exportOptionsPlist /Users/builder/export_options.plist \
+            -exportPath build/ios/ipa
+          ls -la build/ios/ipa/
 
     artifacts:
       - build/ios/ipa/*.ipa
