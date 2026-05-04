@@ -69,6 +69,8 @@ class DailyMacroService {
     final heightCm = (profile.heightFeet * 12 + profile.heightInches) * 2.54;
 
     final input = {
+      'user_id': userId,
+      'date': normalizedDate.toIso8601String().split('T')[0],
       'sex': profile.gender == Gender.female ? 'female' : 'male',
       'age': profile.age,
       'weight_kg': weightKg,
@@ -86,6 +88,12 @@ class DailyMacroService {
       'tomorrow_is_race': tomorrowContext['is_race'] ?? false,
       'weekly_hours_ratio': weeklyHoursRatio,
       'mode': 'prospective',
+      if (profile.weightPoundsUpdatedAt != null)
+        'user_weight_updated_at_seconds':
+            profile.weightPoundsUpdatedAt!.millisecondsSinceEpoch ~/ 1000,
+      if (profile.bodyFatPctUpdatedAt != null)
+        'user_body_fat_updated_at_seconds':
+            profile.bodyFatPctUpdatedAt!.millisecondsSinceEpoch ~/ 1000,
     };
 
     // 6. Call edge function
@@ -208,6 +216,8 @@ class DailyMacroService {
     final heightCm = (profile.heightFeet * 12 + profile.heightInches) * 2.54;
 
     final payload = {
+      'user_id': userId,
+      'date': startOfWeek.toIso8601String().split('T')[0],
       'scope': 'week',
       'sex': profile.gender == Gender.female ? 'female' : 'male',
       'age': profile.age,
@@ -220,6 +230,12 @@ class DailyMacroService {
       'training_phase': profile.trainingPhase.dbValue,
       'mode': 'prospective',
       'days': dayInputs,
+      if (profile.weightPoundsUpdatedAt != null)
+        'user_weight_updated_at_seconds':
+            profile.weightPoundsUpdatedAt!.millisecondsSinceEpoch ~/ 1000,
+      if (profile.bodyFatPctUpdatedAt != null)
+        'user_body_fat_updated_at_seconds':
+            profile.bodyFatPctUpdatedAt!.millisecondsSinceEpoch ~/ 1000,
     };
 
     try {

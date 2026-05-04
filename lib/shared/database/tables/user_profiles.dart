@@ -162,6 +162,12 @@ class UserProfilesTable extends Table {
   /// Source of the sweat test data: 'self_calculated', 'commercial_test', 'gatorade_gx', 'estimated', 'other'
   TextColumn get sweatTestSource => text().nullable().named('sweat_test_source')();
 
+  /// Timestamp of last weight_pounds update (for Garmin precedence resolution)
+  DateTimeColumn get weightPoundsUpdatedAt => dateTime().nullable().named('weight_pounds_updated_at')();
+
+  /// Timestamp of last body_fat_pct update (for Garmin precedence resolution)
+  DateTimeColumn get bodyFatPctUpdatedAt => dateTime().nullable().named('body_fat_pct_updated_at')();
+
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
   BoolColumn get needsUpload => boolean().withDefault(const Constant(false)).named('needs_upload')();

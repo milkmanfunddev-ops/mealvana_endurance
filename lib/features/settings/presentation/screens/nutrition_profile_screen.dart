@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
@@ -98,8 +97,12 @@ class _NutritionProfileScreenState
       final bodyFat = double.tryParse(_bodyFatController.text);
       final weeklyHours = double.tryParse(_weeklyHoursController.text);
 
+      final bodyFatChanged = bodyFat != profile.bodyFatPct;
+
       final updated = profile.copyWith(
         bodyFatPct: bodyFat,
+        bodyFatPctUpdatedAt:
+            bodyFatChanged ? DateTime.now().toUtc() : profile.bodyFatPctUpdatedAt,
         lifestyle: _lifestyle,
         typicalWeeklyHours: weeklyHours,
         carbCycleOptIn: _carbCycleOptIn,
@@ -173,10 +176,27 @@ class _NutritionProfileScreenState
               // Body composition originates from a connected scale / Garmin
               // Connect and isn't tied to a specific wearable device model, so
               // we use the "Garmin Connect" fallback form.
-              if (_bodyFatFromGarmin) ...[
-                const SizedBox(height: 2),
-                const GarminAttribution(),
-              ],
+              Builder(builder: (context) {
+                // Get userId from settings controller state for the provider call
+                final settingsState = ref.watch(settingsControllerProvider);
+                final effectiveUserId = settingsState.asData?.value.userId;
+                final garminAsync = effectiveUserId != null
+                    ? ref.watch(garminLastBodyCompProvider(effectiveUserId))
+                    : null;
+                final garminData = garminAsync?.asData?.value;
+                final currentBodyFat = double.tryParse(_bodyFatController.text);
+                final showGarminBadge = _bodyFatFromGarmin ||
+                    isGarminAuthoritativeForBodyFat(
+                      garmin: garminData,
+                      userBodyFatPct: currentBodyFat,
+                      userUpdatedAt: null,
+                    );
+                if (!showGarminBadge) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: const GarminAttribution(style: GarminAttributionStyle.compact),
+                );
+              }),
               const SizedBox(height: AppSpacing.sm),
               _buildBodyFatInput(context),
 

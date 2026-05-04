@@ -564,12 +564,17 @@ class SettingsController extends _$SettingsController {
         throw Exception('No user profile found to update.');
       }
 
+      final newWeightPounds = currentState.weightPounds ?? existingProfile.weightPounds;
+      final weightChanged = newWeightPounds != existingProfile.weightPounds;
+
       final updatedProfile = existingProfile.copyWith(
         gender: currentState.gender ?? existingProfile.gender,
         birthday: currentState.birthday ?? existingProfile.birthday,
         heightFeet: currentState.heightFeet ?? existingProfile.heightFeet,
         heightInches: currentState.heightInches ?? existingProfile.heightInches,
-        weightPounds: currentState.weightPounds ?? existingProfile.weightPounds,
+        weightPounds: newWeightPounds,
+        weightPoundsUpdatedAt:
+            weightChanged ? DateTime.now().toUtc() : existingProfile.weightPoundsUpdatedAt,
         runsWithWaterBottle: currentState.runsWithWaterBottle,
         unitSystem: currentState.unitSystem,
         gutTraining: currentState.gutTrainingLevel,

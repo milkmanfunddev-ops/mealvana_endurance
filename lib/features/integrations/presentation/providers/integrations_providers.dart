@@ -22,6 +22,72 @@ import '../../domain/integration.dart';
 
 part 'integrations_providers.g.dart';
 
+// =============================================================================
+// GARMIN BODY COMP DATA CLASS
+// =============================================================================
+
+/// Latest body composition measurement received from Garmin Connect.
+class GarminBodyCompData {
+  const GarminBodyCompData({
+    this.weightKg,
+    this.bodyFatPct,
+    required this.measurementTime,
+  });
+
+  /// Weight in kilograms derived from Garmin weightInGrams.
+  final double? weightKg;
+
+  /// Body fat percentage from Garmin percentFat.
+  final double? bodyFatPct;
+
+  /// UTC timestamp of the body-comp measurement.
+  final DateTime measurementTime;
+}
+
+// =============================================================================
+// GARMIN BODY COMP AUTHORITY HELPERS (pure functions — not providers)
+// =============================================================================
+
+/// Returns true if Garmin's body composition data should be treated as more
+/// authoritative than the user's manually-entered weight.
+///
+/// Rules mirror `resolveAthleteProfile` in the edge function:
+///   1. No Garmin data → false (user value stands).
+///   2. Garmin data is more than 30 days old → false (stale, reject).
+///   3. User has no weight → true (Garmin fills the gap).
+///   4. Garmin measurement is newer than user's last update → true.
+bool isGarminAuthoritativeForWeight({
+  required GarminBodyCompData? garmin,
+  required double? userWeightKg,
+  required DateTime? userUpdatedAt,
+  DateTime? now,
+}) {
+  if (garmin == null || garmin.weightKg == null) return false;
+  final reference = now ?? DateTime.now().toUtc();
+  final ageDays = reference.difference(garmin.measurementTime).inDays;
+  if (ageDays > 30) return false;
+  if (userWeightKg == null || userUpdatedAt == null) return true;
+  return garmin.measurementTime.isAfter(userUpdatedAt);
+}
+
+/// Returns true if Garmin's body composition data should be treated as more
+/// authoritative than the user's manually-entered body fat percentage.
+///
+/// Same staleness and precedence rules as [isGarminAuthoritativeForWeight].
+bool isGarminAuthoritativeForBodyFat({
+  required GarminBodyCompData? garmin,
+  required double? userBodyFatPct,
+  required DateTime? userUpdatedAt,
+  DateTime? now,
+}) {
+  if (garmin == null || garmin.bodyFatPct == null) return false;
+  final reference = now ?? DateTime.now().toUtc();
+  final ageDays = reference.difference(garmin.measurementTime).inDays;
+  if (ageDays > 30) return false;
+  if (userBodyFatPct == null || userUpdatedAt == null) return true;
+  return garmin.measurementTime.isAfter(userUpdatedAt);
+}
+
 /// Provider for app package info (version, build number, etc.)
 @Riverpod(keepAlive: true)
 Future<PackageInfo> packageInfo(Ref ref) async {
@@ -250,4 +316,71 @@ Future<bool> isGarminConnected(Ref ref, String userId) async {
     garminIntegrationProvider(userId).future,
   );
   return integration?.isActive ?? false;
+}
+
+/// Fetches the latest body composition record pushed by Garmin for [userId].
+///
+/// Queries the `garmin_health_data` table directly via Supabase (service-role
+/// reads are gated by RLS on the authenticated user's JWT). Returns null when
+/// Garmin is not connected, or no body-comp data has been received yet.
+@riverpod
+Future<GarminBodyCompData?> garminLastBodyComp(
+  Ref ref,
+  String userId,
+) async {
+  final supabase = ref.read(appExternalDepsProvider).supabaseClient;
+
+  // First confirm Garmin is actually connected for this user.
+  final isConnected = await ref.watch(isGarminConnectedProvider(userId).future);
+  if (!isConnected) return null;
+
+  try {
+    // Look up the Garmin userId from our mapping table so we can query health data.
+    final mappingResponse = await supabase
+        .from('garmin_user_mappings')
+        .select('garmin_user_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (mappingResponse == null) return null;
+
+    final garminUserId = mappingResponse['garmin_user_id'] as String?;
+    if (garminUserId == null) return null;
+
+    // Fetch the most recent body_composition record for this Garmin user.
+    final response = await supabase
+        .from('garmin_health_data')
+        .select('data, created_at')
+        .eq('garmin_user_id', garminUserId)
+        .eq('data_type', 'body_composition')
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (response == null) return null;
+
+    final data = response['data'] as Map<String, dynamic>?;
+    if (data == null) return null;
+
+    final measurementTimeSec =
+        (data['measurement_time_seconds'] as num?)?.toInt();
+    if (measurementTimeSec == null) return null;
+
+    final measurementTime = DateTime.fromMillisecondsSinceEpoch(
+      measurementTimeSec * 1000,
+      isUtc: true,
+    );
+
+    final weightGrams = (data['weight_grams'] as num?)?.toDouble();
+    final weightKg = weightGrams != null ? weightGrams / 1000.0 : null;
+    final bodyFatPct = (data['percent_fat'] as num?)?.toDouble();
+
+    return GarminBodyCompData(
+      weightKg: weightKg,
+      bodyFatPct: bodyFatPct,
+      measurementTime: measurementTime,
+    );
+  } catch (_) {
+    return null;
+  }
 }

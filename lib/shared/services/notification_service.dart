@@ -19,8 +19,18 @@ class NotificationService {
   static String? _pendingRemoteUserId;
   static String? _lastSyncedRemoteUserId;
   static void Function(String activityId, String? type)? _navigationHandler;
+  static Future<void> Function(DateTime date)? _dailyMacroCacheInvalidator;
   static AnalyticsTracker _analytics = const NoopAnalyticsTracker();
   static String _oneSignalAppId = '';
+
+  /// Registers a callback invoked when a Garmin activity-upload notification
+  /// carries a [scheduled_date]. The callback should invalidate the macro
+  /// cache for that date so the next calculation re-runs with fresh data.
+  static void setDailyMacroCacheInvalidator(
+    Future<void> Function(DateTime date)? invalidator,
+  ) {
+    _dailyMacroCacheInvalidator = invalidator;
+  }
 
   static void configure(
     AnalyticsTracker tracker, {
@@ -120,6 +130,16 @@ class NotificationService {
   }
 
   static void _handleRemoteNotificationData(Map<String, dynamic> data) {
+    // Cache invalidation: if the notification carries a scheduled_date,
+    // invalidate the macro cache for that date before navigating.
+    final scheduledDateStr = data['scheduled_date']?.toString();
+    if (scheduledDateStr != null && scheduledDateStr.isNotEmpty) {
+      final scheduledDate = DateTime.tryParse(scheduledDateStr);
+      if (scheduledDate != null) {
+        _dailyMacroCacheInvalidator?.call(scheduledDate);
+      }
+    }
+
     final payload = data['payload']?.toString();
     if (payload != null && payload.isNotEmpty) {
       _handleNotificationPayload(payload);
