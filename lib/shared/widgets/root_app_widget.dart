@@ -1,5 +1,3 @@
-import 'package:accessibility_tools/accessibility_tools.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -241,36 +239,27 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 
 /// Shared MaterialApp.builder shell.
 ///
-/// Two responsibilities:
-/// 1. Clamp `MediaQuery.textScaler` so a user with extreme system font scaling
-///    cannot break our layouts (cut-off CTAs, truncated labels, etc.).
-///    Floor stays at 1.0; ceiling at 1.6 — the level we currently test at.
-///    Bumping this requires verifying every screen at the new ceiling.
-/// 2. In debug builds, wrap the tree in `AccessibilityTools` so we get
-///    runtime warnings about small tap targets, missing semantics, and
-///    contrast issues while developing. No-op in release.
+/// Clamps `MediaQuery.textScaler` so a user with extreme system font scaling
+/// cannot break our layouts (cut-off CTAs, truncated labels, etc.).
+/// Floor stays at 1.0; ceiling at 1.6 — the level we currently test at.
+/// Bumping this requires verifying every screen at the new ceiling.
 ///
-/// Ordering matters: `AccessibilityTools` injects an overridden MediaQuery
-/// (text scale, locale, etc.) for its descendants. The clamp must therefore
-/// read MediaQuery from a context *underneath* AccessibilityTools — hence
-/// the inner `Builder` — otherwise the AccessibilityTools text-scale slider
-/// has no effect because we'd overwrite it with the parent's MediaQuery.
+/// Note: we previously wrapped the tree in `AccessibilityTools` for dev-time
+/// runtime warnings, but the package's testing-tools panel held overrides
+/// (text scale, color simulation, etc.) in widget state that survived hot
+/// reload, leaving the app stuck at e.g. 3.1× scaling between sessions.
+/// The semantic labels we added across kyle_design widgets remain the
+/// user-facing accessibility win; for runtime checking use the Flutter
+/// Inspector's accessibility tab or `MaterialApp.showSemanticsDebugger`.
 Widget _appShell(BuildContext context, Widget child) {
-  Widget clampScaler(BuildContext innerContext) {
-    final mq = MediaQuery.of(innerContext);
-    return MediaQuery(
-      data: mq.copyWith(
-        textScaler: mq.textScaler.clamp(
-          minScaleFactor: 1.0,
-          maxScaleFactor: 1.6,
-        ),
+  final mq = MediaQuery.of(context);
+  return MediaQuery(
+    data: mq.copyWith(
+      textScaler: mq.textScaler.clamp(
+        minScaleFactor: 1.0,
+        maxScaleFactor: 1.6,
       ),
-      child: child,
-    );
-  }
-
-  if (kDebugMode) {
-    return AccessibilityTools(child: Builder(builder: clampScaler));
-  }
-  return Builder(builder: clampScaler);
+    ),
+    child: child,
+  );
 }
