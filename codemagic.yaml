@@ -150,7 +150,7 @@ workflows:
     max_build_duration: 120
 
     integrations:
-      app_store_connect: Mealvana
+      app_store_connect: API Key for CI builds
 
     environment:
       flutter: stable
@@ -321,7 +321,7 @@ workflows:
     max_build_duration: 120
 
     integrations:
-      app_store_connect: Mealvana
+      app_store_connect: API Key for CI builds
 
     environment:
       flutter: stable
@@ -469,7 +469,7 @@ workflows:
     max_build_duration: 120
 
     integrations:
-      app_store_connect: Mealvana
+      app_store_connect: API Key for CI builds
 
     environment:
       flutter: stable
@@ -602,7 +602,7 @@ workflows:
     max_build_duration: 120
 
     integrations:
-      app_store_connect: Mealvana
+      app_store_connect: API Key for CI builds
 
     environment:
       flutter: stable
@@ -875,7 +875,7 @@ workflows:
     max_build_duration: 120
 
     integrations:
-      app_store_connect: Mealvana
+      app_store_connect: API Key for CI builds
 
     environment:
       flutter: stable
