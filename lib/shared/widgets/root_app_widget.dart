@@ -249,27 +249,31 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 ///    which provides the wrench testing-tools panel + checker overlay —
 ///    available in dev flavor, stripped from release/prod by `kDebugMode`.
 ///
-/// Ordering matters: `AccessibilityTools` injects an overridden MediaQuery
-/// (text scale, locale, etc.) for descendants. The clamp must read
-/// MediaQuery from a context underneath it, hence the inner `Builder`.
+/// Tree order matters:
+///
+///     MediaQuery(clamp(OS))
+///       └ AccessibilityTools
+///           ├ TestingToolsWrapper(env override)
+///           │   └ child  ← reads env override OR clamped fallback
+///           └ Overlay(panel + buttons)  ← reads clamped MediaQuery
+///
+/// The clamp wraps the *whole* AccessibilityTools tree so the panel chrome
+/// itself respects the ceiling (otherwise the panel UI renders at the raw OS
+/// scale, e.g. 3.1× at AX5). Inside the package, `TestingToolsWrapper`
+/// inserts its own MediaQuery between the clamp and `child`, so panel slider
+/// changes override the clamped value for app content — testers can drive
+/// scale freely while the panel chrome stays bounded.
 Widget _appShell(BuildContext context, Widget child) {
-  Widget clampScaler(BuildContext innerContext) {
-    final mq = MediaQuery.of(innerContext);
-    return MediaQuery(
-      data: mq.copyWith(
-        textScaler: mq.textScaler.clamp(
-          minScaleFactor: 1.0,
-          maxScaleFactor: 1.6,
-        ),
+  final mq = MediaQuery.of(context);
+  return MediaQuery(
+    data: mq.copyWith(
+      textScaler: mq.textScaler.clamp(
+        minScaleFactor: 1.0,
+        maxScaleFactor: 1.6,
       ),
-      child: child,
-    );
-  }
-
-  if (kDebugMode) {
-    return _DevAccessibilityTools(child: Builder(builder: clampScaler));
-  }
-  return Builder(builder: clampScaler);
+    ),
+    child: kDebugMode ? _DevAccessibilityTools(child: child) : child,
+  );
 }
 
 /// Debug-only wrapper around [AccessibilityTools] that **resets the panel's
