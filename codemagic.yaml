@@ -65,8 +65,15 @@ definitions:
 
     - &setup_ios_signing
       name: Set up iOS code signing
+      # IMPORTANT: do NOT call `keychain initialize` here. Codemagic
+      # auto-injects a "Set up code signing identities" step when
+      # `ios_signing:` is present in the workflow environment, and that
+      # step initializes the keychain + imports the .p12 cert. A second
+      # `keychain initialize` creates a fresh empty keychain and pushes
+      # the cert-bearing keychain off the search list, leaving xcodebuild
+      # with 0 valid signing identities and the misleading
+      # "No signing certificate iOS Distribution found" error at export.
       script: |
-        keychain initialize
         xcode-project use-profiles
 
     - &setup_ios_signing_shorebird
@@ -206,43 +213,11 @@ workflows:
 
       - name: Build dev iOS
         script: |
-          set +e
-
-          echo "=== DEBUG: keychain identities ==="
-          security find-identity -v -p codesigning || true
-
-          echo "=== DEBUG: export_options.plist ==="
-          cat /Users/builder/export_options.plist || true
-
-          echo "=== Running flutter build ipa (archive only, --no-codesign) ==="
           flutter build ipa --release \
             --flavor dev \
             --target lib/main_dev.dart \
             --build-number=$BUILD_NUMBER \
-            --no-codesign
-
-          echo "=== xcarchive contents ==="
-          ls -la build/ios/archive/ || true
-
-          echo "=== Patching export_options.plist signingCertificate to match keychain ==="
-          # Force-set signingCertificate to the exact identity name we have
-          # in keychain. Apple-distribution certs of type DISTRIBUTION usually
-          # appear as "Apple Distribution: <Team Name> (<Team ID>)". Try
-          # common matches in order.
-          /usr/libexec/PlistBuddy -c "Print :signingCertificate" /Users/builder/export_options.plist || true
-
-          echo "=== Running xcodebuild -exportArchive directly ==="
-          rm -rf build/ios/ipa
-          mkdir -p build/ios/ipa
-          xcodebuild -exportArchive \
-            -archivePath build/ios/archive/Runner.xcarchive \
-            -exportOptionsPlist /Users/builder/export_options.plist \
-            -exportPath build/ios/ipa \
-            -allowProvisioningUpdates 2>&1
-          XCODE_RC=$?
-          echo "xcodebuild exit: $XCODE_RC"
-          ls -la build/ios/ipa/ || true
-          exit $XCODE_RC
+            --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
