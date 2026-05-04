@@ -59,6 +59,7 @@ export async function postProcessDuringPhase(
   maxFoodsAllowed: number,
   likedFoods?: string[],
   willingToTryFoods?: string[],
+  dislikedFoods?: string[],
 ): Promise<FoodResult[]> {
   const totals = calculateTotals(resultFoods);
   const sodiumDeficit = targets.sodium_mg - totals.sodium_mg;
@@ -151,6 +152,7 @@ export async function postProcessDuringPhase(
     supabase,
     likedFoods,
     willingToTryFoods,
+    dislikedFoods,
   );
   if (electrolytes.length === 0) {
     console.log(`[POST-PROCESS-DURING] No electrolyte foods available`);

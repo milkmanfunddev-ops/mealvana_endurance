@@ -19,6 +19,7 @@ class CircularActionButton extends StatelessWidget {
     super.key,
     required this.icon,
     required this.onPressed,
+    required this.semanticLabel,
     this.backgroundColor,
     this.iconColor,
     this.size = 42.0,
@@ -27,6 +28,10 @@ class CircularActionButton extends StatelessWidget {
 
   final IconData icon;
   final VoidCallback onPressed;
+
+  /// Spoken label for screen readers and a long-press tooltip.
+  /// Required so this button never ships unlabeled to assistive tech.
+  final String semanticLabel;
   final Color? backgroundColor;
   final Color? iconColor;
   final double size;
@@ -54,6 +59,7 @@ class CircularActionButton extends StatelessWidget {
         color: defaultIconColor,
         onPressed: onPressed,
         padding: EdgeInsets.zero,
+        tooltip: semanticLabel,
       ),
     );
   }

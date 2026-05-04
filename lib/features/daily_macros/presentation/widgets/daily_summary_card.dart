@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/daily_macro_targets.dart';
+import 'energy_source_breakdown.dart';
 import 'macro_breakdown_row.dart';
 
 /// Card showing daily macro summary:
@@ -54,6 +55,11 @@ class DailySummaryCard extends StatelessWidget {
             fatG: macros.fatG,
             textColor: textColor,
           ),
+
+          // Energy breakdown (RMR / NEAT / Workout) with Garmin attribution
+          // for any line that came from Garmin Connect data.
+          const SizedBox(height: AppSpacing.lg),
+          EnergySourceBreakdown(macros: macros),
         ],
       ),
     );

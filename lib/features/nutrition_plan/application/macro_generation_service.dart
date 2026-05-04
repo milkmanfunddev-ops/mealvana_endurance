@@ -401,6 +401,18 @@ class MacroGenerationService {
     final zoneMid = (intensity?.tempoPct ?? 20) / 100.0;
     final zoneHigh = (intensity?.allOutPct ?? 10) / 100.0;
 
+    final sweatSodiumValue =
+        (userProfile?.sweatSodium ?? SweatSodiumCat.average).value;
+
+    // Open-water swims expose users to ambient air-temperature/humidity loads
+    // for warm-ups, transitions, and post-swim. Treat pool swims as indoor for
+    // sweat-rate purposes.
+    final isIndoor = poolOrOpenWater == 'pool';
+
+    final knownSweatRateMlHr = userProfile?.knownSweatRateMlPerHour;
+    final knownSodiumConcMgL =
+        userProfile?.knownSodiumConcentrationMgPerLiter;
+
     return {
       'activity_type': 'swimming',
       'age': userMetrics['age'],
@@ -420,6 +432,14 @@ class MacroGenerationService {
         'zone_mid': zoneMid,
         'zone_high': zoneHigh,
       },
+      'gut_training': userProfile?.gutTraining.name ?? 'moderate',
+      'sweat_sodium': sweatSodiumValue,
+      'sweat_rate_category': userProfile?.sweatRate.name ?? 'medium',
+      'is_indoor': isIndoor,
+      if (knownSweatRateMlHr != null)
+        'known_sweat_rate_ml_hr': knownSweatRateMlHr,
+      if (knownSodiumConcMgL != null)
+        'known_sodium_concentration_mg_l': knownSodiumConcMgL,
       // Legacy param
       'time_before_min': timeBeforeMinutes,
       if (intensityTarget != null) 'intensity_target': intensityTarget,

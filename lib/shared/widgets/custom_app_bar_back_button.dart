@@ -69,13 +69,20 @@ class _CustomAppBarBackButtonState extends State<CustomAppBarBackButton> {
       child: Material(
         color: backgroundColor,
         shape: const CircleBorder(),
-        child: InkWell(
-          onTap: widget.enabled ? _handleTap : null,
-          customBorder: const CircleBorder(),
-          child: SizedBox(
-            width: 40,
-            height: 40,
-            child: _BackIcon(iconColor: iconColor),
+        child: Tooltip(
+          message: 'Back',
+          child: InkWell(
+            onTap: widget.enabled ? _handleTap : null,
+            customBorder: const CircleBorder(),
+            child: Semantics(
+              button: true,
+              label: 'Back',
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: _BackIcon(iconColor: iconColor),
+              ),
+            ),
           ),
         ),
       ),

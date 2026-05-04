@@ -12,6 +12,16 @@ import '../domain/daily_macro_targets.dart';
 
 part 'daily_macro_service.g.dart';
 
+/// Surfaces *why* a macro calculation failed. The controller catches this and
+/// shows the message on screen instead of the generic empty state.
+class DailyMacroCalculationException implements Exception {
+  final String reason;
+  const DailyMacroCalculationException(this.reason);
+
+  @override
+  String toString() => reason;
+}
+
 @riverpod
 DailyMacroService dailyMacroService(Ref ref) {
   return DailyMacroService(
@@ -42,6 +52,25 @@ class DailyMacroService {
     UserProfile profile,
   ) async {
     final normalizedDate = DateTime(date.year, date.month, date.day);
+
+    // 0. Profile completeness — required by the edge function's validateInput.
+    // Surface a precise reason so the UI can guide the user to onboarding /
+    // preferences instead of dumping them into a generic empty state.
+    if (profile.weightPounds <= 0) {
+      throw const DailyMacroCalculationException(
+        'Your weight is missing. Set it in Settings → Preferences → Profile.',
+      );
+    }
+    if (profile.heightFeet <= 0 && profile.heightInches <= 0) {
+      throw const DailyMacroCalculationException(
+        'Your height is missing. Set it in Settings → Preferences → Profile.',
+      );
+    }
+    if (profile.age <= 0) {
+      throw const DailyMacroCalculationException(
+        'Your birthday is missing. Set it in Settings → Preferences → Profile.',
+      );
+    }
 
     // 1. Check cache
     final cached = await _repository.getCachedForDate(userId, normalizedDate);
@@ -107,7 +136,14 @@ class DailyMacroService {
         if (kDebugMode) {
           print('calculate-daily-macros failed: ${response.status} ${response.data}');
         }
-        return null;
+        // Surface the server-side reason (e.g. "weight_kg must be a positive
+        // number <= 300") so the UI can show what's wrong instead of falling
+        // through to a generic empty state.
+        final data = response.data;
+        final reason = data is Map && data['error'] is String
+            ? data['error'] as String
+            : 'Edge function returned status ${response.status}';
+        throw DailyMacroCalculationException(reason);
       }
 
       final data = response.data as Map<String, dynamic>;
@@ -126,11 +162,13 @@ class DailyMacroService {
       _repository.saveToRemote(targets);
 
       return targets;
+    } on DailyMacroCalculationException {
+      rethrow;
     } catch (e) {
       if (kDebugMode) {
         print('Error calling calculate-daily-macros: $e');
       }
-      return null;
+      throw DailyMacroCalculationException(e.toString());
     }
   }
 
@@ -333,6 +371,8 @@ class DailyMacroService {
         'pct_tempo': z3z4,
         'pct_allout': z5,
         'tss': row.readNullable<double>('tss'),
+        // Server uses this to look up Garmin completion data for resolution.
+        'activity_id': row.read<String>('id'),
       };
     }).toList();
   }

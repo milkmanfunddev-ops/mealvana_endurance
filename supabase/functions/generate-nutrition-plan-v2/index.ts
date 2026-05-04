@@ -708,6 +708,7 @@ async function postProcessDuringPhase(
   maxFoodsAllowed: number,
   likedFoods?: string[],
   willingToTryFoods?: string[],
+  dislikedFoods?: string[],
 ): Promise<FoodResult[]> {
   const totals = calculateTotals(resultFoods);
   const sodiumDeficit = targets.sodium_mg - totals.sodium_mg;
@@ -780,7 +781,7 @@ async function postProcessDuringPhase(
   }
 
   // Fetch electrolyte foods
-  const electrolytes = await getTemplateElectrolyteFoods(supabase, likedFoods, willingToTryFoods);
+  const electrolytes = await getTemplateElectrolyteFoods(supabase, likedFoods, willingToTryFoods, dislikedFoods);
   if (electrolytes.length === 0) {
     console.log(`[POST-PROCESS-DURING] No electrolyte foods available`);
     return resultFoods;
@@ -1002,6 +1003,7 @@ async function generateLPPhase(
       phaseConfig.maxFoods,
       likedFoods,
       willingToTryFoods,
+      dislikedFoods,
     );
   }
 

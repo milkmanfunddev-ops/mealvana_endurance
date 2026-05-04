@@ -721,7 +721,7 @@ export async function calculateMacrosV4(
     weightKg,
     input.hours_before,
     input.is_fasted,
-    input.sweat_sodium,
+    input.sweat_sodium ?? "average",
     envLabel,
   );
 
@@ -763,8 +763,8 @@ export async function calculateMacrosV4(
   const duringHydration = calculateDuringWorkoutHydration({
     durationMin,
     weightKg,
-    sweatRateCategory: input.sweat_rate_category,
-    sweatSodiumCat: input.sweat_sodium,
+    sweatRateCategory: input.sweat_rate_category ?? "medium",
+    sweatSodiumCat: input.sweat_sodium ?? "average",
     tempC: input.temp_c ?? null,
     humidityPct: input.humidity_pct ?? null,
     isIndoor: input.is_indoor ?? false,

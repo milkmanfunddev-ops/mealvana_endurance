@@ -129,7 +129,7 @@ serve(async (req: Request) => {
         weightKg,
         input.hours_before,
         input.is_fasted,
-        input.sweat_sodium,
+        input.sweat_sodium ?? "average",
         envLabel,
       );
 

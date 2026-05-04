@@ -19,7 +19,12 @@ import {
   validationError,
   serverError,
 } from '../_shared/responses.ts';
-import type { DailyMacroInput, WeekMacroInput, WeekDayInput } from './types.ts';
+import type {
+  DailyMacroInput,
+  GarminActivityForSession,
+  WeekMacroInput,
+  WeekDayInput,
+} from './types.ts';
 import { validateInput, calculateDailyMacros, calculateWeekMacros } from './pipeline.ts';
 
 // ---------------------------------------------------------------------------
@@ -56,6 +61,56 @@ async function isGarminConnected(
 
 function tsToSec(s?: string | null): number | null {
   return s ? Math.floor(new Date(s).getTime() / 1000) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Per-session Garmin activity lookup
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch per-session Garmin completion data from the activities table.
+ * Returns an array aligned to `activityIds` order, with null where the row
+ * has no garmin_summary_id (i.e., not yet Garmin-uploaded) or the id is
+ * missing.
+ *
+ * Per Iter 5 spec, this drives `resolveSessionData()` retrospective overrides
+ * for session_kcal and duration.
+ */
+async function fetchGarminActivitiesForSessions(
+  supabase: SupabaseClient,
+  activityIds: (string | null | undefined)[],
+): Promise<(GarminActivityForSession | null)[]> {
+  const knownIds = activityIds.filter((id): id is string => !!id);
+  if (knownIds.length === 0) {
+    return activityIds.map(() => null);
+  }
+
+  const { data: rows, error } = await supabase
+    .from('activities')
+    .select('id, garmin_summary_id, calories_burned, actual_duration_minutes, duration_minutes')
+    .in('id', knownIds);
+
+  if (error || !rows) {
+    return activityIds.map(() => null);
+  }
+
+  const byId = new Map<string, Record<string, unknown>>();
+  for (const r of rows) {
+    if (r.id) byId.set(String(r.id), r as Record<string, unknown>);
+  }
+
+  return activityIds.map((id) => {
+    if (!id) return null;
+    const row = byId.get(id);
+    if (!row || !row.garmin_summary_id) return null;
+    const kcal = typeof row.calories_burned === 'number' ? row.calories_burned : null;
+    const minutes = typeof row.actual_duration_minutes === 'number'
+      ? row.actual_duration_minutes
+      : (typeof row.duration_minutes === 'number' ? row.duration_minutes : null);
+    const seconds = minutes != null ? minutes * 60 : null;
+    if (kcal == null && seconds == null) return null;
+    return { activeKilocalories: kcal, durationInSeconds: seconds };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -138,6 +193,17 @@ async function attachGarminContext(
           measurementTimeInSeconds: (bc.measurement_time_seconds as number | null) ?? null,
         },
       };
+    }
+
+    // Per-session Garmin completion data (calories_burned, actual_duration_minutes)
+    if (Array.isArray(augmented.sessions) && augmented.sessions.length > 0) {
+      const ids = augmented.sessions.map((s) => s.activity_id ?? null);
+      const garminActivities = await fetchGarminActivitiesForSessions(supabase, ids);
+      // Only attach if at least one session has Garmin data — keeps the input
+      // identical to the legacy shape when nothing was Garmin-uploaded.
+      if (garminActivities.some((g) => g != null)) {
+        augmented = { ...augmented, garmin_activities: garminActivities };
+      }
     }
 
     return augmented;
@@ -229,9 +295,40 @@ async function attachWeekGarminContext(
       }
     }
 
+    // Bulk-fetch per-session Garmin completion across all days in one query
+    const allActivityIds: string[] = [];
+    for (const day of input.days) {
+      for (const s of day.sessions ?? []) {
+        if (s.activity_id) allActivityIds.push(s.activity_id);
+      }
+    }
+    let activityById = new Map<string, GarminActivityForSession>();
+    if (allActivityIds.length > 0) {
+      const { data: actRows } = await supabase
+        .from('activities')
+        .select('id, garmin_summary_id, calories_burned, actual_duration_minutes, duration_minutes')
+        .in('id', allActivityIds);
+      for (const r of (actRows ?? [])) {
+        if (!r.id || !r.garmin_summary_id) continue;
+        const kcal = typeof r.calories_burned === 'number' ? r.calories_burned : null;
+        const minutes = typeof r.actual_duration_minutes === 'number'
+          ? r.actual_duration_minutes
+          : (typeof r.duration_minutes === 'number' ? r.duration_minutes : null);
+        if (kcal == null && minutes == null) continue;
+        activityById.set(String(r.id), {
+          activeKilocalories: kcal,
+          durationInSeconds: minutes != null ? minutes * 60 : null,
+        });
+      }
+    }
+
     // Attach Garmin context to each day
     const augmentedDays: WeekDayInput[] = input.days.map((day) => {
       const daily = day.date ? dailyByDate[day.date] : undefined;
+      const sessionGarmin = (day.sessions ?? []).map((s) =>
+        s.activity_id ? activityById.get(s.activity_id) ?? null : null,
+      );
+      const hasAny = sessionGarmin.some((g) => g != null);
       return {
         ...day,
         garmin_body_comp: sharedBodyComp,
@@ -241,6 +338,7 @@ async function attachWeekGarminContext(
               activeKilocalories: (daily.active_kilocalories as number | null) ?? null,
             }
           : day.garmin_daily ?? null,
+        garmin_activities: hasAny ? sessionGarmin : (day.garmin_activities ?? null),
         user_weight_updated_at_seconds: sharedWeightTs,
         user_body_fat_updated_at_seconds: sharedBFTs,
       };

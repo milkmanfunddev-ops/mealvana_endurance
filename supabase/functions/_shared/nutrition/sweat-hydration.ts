@@ -55,15 +55,17 @@ function clamp(val: number, min: number, max: number): number {
 /**
  * Spec base sweat rates: LIGHT=0.90, MEDIUM=1.28, HEAVY=1.66 L/hr.
  */
-export function baseSweatRateFromCategory(category: string): number {
-  return SWEAT_RATE_LPH[category.toLowerCase()] ?? SWEAT_RATE_LPH['medium'];
+export function baseSweatRateFromCategory(category: string | null | undefined): number {
+  const key = (category ?? 'medium').toLowerCase();
+  return SWEAT_RATE_LPH[key] ?? SWEAT_RATE_LPH['medium'];
 }
 
 /**
  * Sodium concentrations: LOW=650, AVERAGE=825 (medium alias), HIGH=1000 mg/L.
  */
-export function sodiumConcentrationFromCategory(category: string): number {
-  return SODIUM_CONC_MG_PER_L[category.toLowerCase()] ?? SODIUM_CONC_MG_PER_L['average'];
+export function sodiumConcentrationFromCategory(category: string | null | undefined): number {
+  const key = (category ?? 'average').toLowerCase();
+  return SODIUM_CONC_MG_PER_L[key] ?? SODIUM_CONC_MG_PER_L['average'];
 }
 
 // ============================================================================

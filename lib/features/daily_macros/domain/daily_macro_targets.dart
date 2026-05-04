@@ -1,5 +1,80 @@
 import 'enums.dart';
 
+/// Source attribution emitted by the calculate-daily-macros edge function.
+/// Mirrors `ResolveSource` on the backend. String literals (rather than an
+/// enum) so unknown values from a newer server don't crash older clients.
+class MacroSources {
+  final String rmr;
+  final String neat;
+  final String weight;
+  final String bodyFat;
+  final List<MacroSessionSources> sessions;
+
+  const MacroSources({
+    required this.rmr,
+    required this.neat,
+    required this.weight,
+    required this.bodyFat,
+    required this.sessions,
+  });
+
+  bool get rmrFromGarmin => rmr == 'GARMIN';
+  bool get neatFromGarmin => neat == 'GARMIN';
+  bool get weightFromGarmin => weight == 'GARMIN';
+  bool get bodyFatFromGarmin => bodyFat == 'GARMIN';
+
+  /// True if any input came from Garmin — used to render a single
+  /// "Powered by Garmin" footer when finer-grained badges are too noisy.
+  bool get anyFromGarmin =>
+      rmrFromGarmin ||
+      neatFromGarmin ||
+      weightFromGarmin ||
+      bodyFatFromGarmin ||
+      sessions.any((s) => s.kcalFromGarmin || s.durationFromGarmin);
+
+  static MacroSources? fromJson(Map<String, dynamic>? json) {
+    if (json == null) return null;
+    final sessionsJson = (json['sessions'] as List?) ?? const [];
+    return MacroSources(
+      rmr: json['rmr']?.toString() ?? 'FORMULA',
+      neat: json['neat']?.toString() ?? 'FORMULA',
+      weight: json['weight']?.toString() ?? 'MANUAL',
+      bodyFat: json['body_fat']?.toString() ?? 'NONE',
+      sessions: sessionsJson
+          .whereType<Map>()
+          .map((m) => MacroSessionSources.fromJson(m.cast<String, dynamic>()))
+          .toList(growable: false),
+    );
+  }
+}
+
+/// Source attribution for a single session (one row in sessions[]).
+class MacroSessionSources {
+  final String sessionKcal;
+  final String intensityFactor;
+  final String tss;
+  final String duration;
+
+  const MacroSessionSources({
+    required this.sessionKcal,
+    required this.intensityFactor,
+    required this.tss,
+    required this.duration,
+  });
+
+  bool get kcalFromGarmin => sessionKcal == 'GARMIN';
+  bool get durationFromGarmin => duration == 'GARMIN';
+
+  factory MacroSessionSources.fromJson(Map<String, dynamic> json) {
+    return MacroSessionSources(
+      sessionKcal: json['session_kcal']?.toString() ?? 'FORMULA',
+      intensityFactor: json['intensity_factor']?.toString() ?? 'ZONE_DIST',
+      tss: json['tss']?.toString() ?? 'FORMULA',
+      duration: json['duration']?.toString() ?? 'FORMULA',
+    );
+  }
+}
+
 /// Domain model for calculated daily macro targets
 class DailyMacroTargets {
   final String id;
@@ -20,6 +95,18 @@ class DailyMacroTargets {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Resolved athlete weight (kg) used for this calculation. May come from
+  /// Garmin (if newer than user's manual entry, per `sources.weight`).
+  final double? weightKg;
+
+  /// Resolved body fat % used for this calculation, if any.
+  final double? bodyFatPct;
+
+  /// Source attribution from the edge function. Populated only when this
+  /// instance was just calculated (not persisted in cache yet) — null on
+  /// cached reads. Drives Garmin badges in the macro UI.
+  final MacroSources? sources;
+
   const DailyMacroTargets({
     required this.id,
     required this.userId,
@@ -38,6 +125,9 @@ class DailyMacroTargets {
     this.algorithmVersion = 'v4',
     required this.createdAt,
     required this.updatedAt,
+    this.weightKg,
+    this.bodyFatPct,
+    this.sources,
   });
 
   /// Total calories from macros
@@ -85,6 +175,11 @@ class DailyMacroTargets {
       algorithmVersion: json['algorithm_version'] as String? ?? 'v4',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      weightKg: (json['weight_kg'] as num?)?.toDouble(),
+      bodyFatPct: (json['body_fat_pct'] as num?)?.toDouble(),
+      sources: MacroSources.fromJson(
+        (json['sources'] as Map?)?.cast<String, dynamic>(),
+      ),
     );
   }
 

@@ -48,6 +48,12 @@ class SingleSportHeroImage extends StatelessWidget {
             imagePath,
             height: 200,
             fit: BoxFit.contain,
+            semanticLabel: switch (activityType) {
+              ActivityType.running => 'Running illustration',
+              ActivityType.cycling => 'Cycling illustration',
+              ActivityType.swimming => 'Swimming illustration',
+              _ => 'Sport illustration',
+            },
             errorBuilder: (context, error, stackTrace) {
               return Icon(
                 FontAwesomeIcons.personRunning,

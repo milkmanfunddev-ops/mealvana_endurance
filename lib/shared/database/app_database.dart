@@ -150,18 +150,18 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 9: Adds weight_pounds_updated_at + body_fat_pct_updated_at
-  /// to user_profiles (users) table for Garmin body-comp precedence resolution.
-  /// v8 added sweat profile fields to user_profiles table for
-  /// hydration/sodium transparency — sweat_sodium, known_sweat_rate_ml_per_hour,
-  /// known_sodium_concentration_mg_per_liter, sweat_test_date, sweat_test_source.
-  /// v7 formalizes previously-runtime column/table additions and adds
-  /// activities.garmin_device_name for Garmin brand-compliant attribution.
+  /// Schema version 7: Adds activities.garmin_device_name (Garmin brand-compliant
+  /// attribution), sweat profile fields on users (sweat_sodium,
+  /// known_sweat_rate_ml_per_hour, known_sodium_concentration_mg_per_liter,
+  /// sweat_test_date, sweat_test_source) for hydration/sodium transparency, and
+  /// users.weight_pounds_updated_at + users.body_fat_pct_updated_at for Garmin
+  /// body-comp precedence resolution. Formalizes previously-runtime column/table
+  /// additions.
   /// v6 added athlete_pairing_codes table for coach-athlete connections.
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 9;
+  int get schemaVersion => 7;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -187,38 +187,31 @@ class AppDatabase extends _$AppDatabase {
       // via VersionCheckService before the database is even opened.
       // If we somehow get here with a version mismatch, recreate all tables.
       onUpgrade: (Migrator m, int from, int to) async {
-        // v8: Add sweat profile fields to user_profiles (users) table.
-        if (from < 8) {
+        // v7: Add sweat profile + body-comp precedence columns to users.
+        // Note: SQLite does NOT support `ADD COLUMN IF NOT EXISTS`. The
+        // `from < 7` guard provides idempotency by version.
+        if (from < 7) {
           await customStatement(
-            'ALTER TABLE users ADD COLUMN IF NOT EXISTS sweat_sodium TEXT',
+            'ALTER TABLE users ADD COLUMN sweat_sodium TEXT',
           );
           await customStatement(
-            'ALTER TABLE users ADD COLUMN IF NOT EXISTS known_sweat_rate_ml_per_hour INTEGER',
+            'ALTER TABLE users ADD COLUMN known_sweat_rate_ml_per_hour INTEGER',
           );
           await customStatement(
-            'ALTER TABLE users ADD COLUMN IF NOT EXISTS known_sodium_concentration_mg_per_liter INTEGER',
+            'ALTER TABLE users ADD COLUMN known_sodium_concentration_mg_per_liter INTEGER',
           );
           await customStatement(
-            'ALTER TABLE users ADD COLUMN IF NOT EXISTS sweat_test_date INTEGER',
+            'ALTER TABLE users ADD COLUMN sweat_test_date INTEGER',
           );
           await customStatement(
-            'ALTER TABLE users ADD COLUMN IF NOT EXISTS sweat_test_source TEXT',
-          );
-        }
-
-        // v9: Add Garmin precedence timestamp columns to users table.
-        if (from < 9) {
-          await customStatement(
-            'ALTER TABLE users ADD COLUMN IF NOT EXISTS weight_pounds_updated_at INTEGER',
+            'ALTER TABLE users ADD COLUMN sweat_test_source TEXT',
           );
           await customStatement(
-            'ALTER TABLE users ADD COLUMN IF NOT EXISTS body_fat_pct_updated_at INTEGER',
+            'ALTER TABLE users ADD COLUMN weight_pounds_updated_at INTEGER',
           );
-        }
-
-        // Fallback for any future version mismatch not handled above.
-        if (from < to && from >= 9) {
-          await m.createAll();
+          await customStatement(
+            'ALTER TABLE users ADD COLUMN body_fat_pct_updated_at INTEGER',
+          );
         }
       },
 

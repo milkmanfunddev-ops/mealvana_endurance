@@ -98,6 +98,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       CircularActionButton(
                         icon: FontAwesomeIcons.calendar,
                         onPressed: onCalendarTap,
+                        semanticLabel: 'Calendar',
                         backgroundColor: activeButton == 0
                             ? activeBackground
                             : inactiveBackground,
@@ -109,6 +110,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       CircularActionButton(
                         icon: FontAwesomeIcons.utensils,
                         onPressed: onNutritionTap,
+                        semanticLabel: 'Nutrition diary',
                         backgroundColor: activeButton == 1
                             ? activeBackground
                             : inactiveBackground,
@@ -121,6 +123,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                         CircularActionButton(
                           icon: FontAwesomeIcons.userTie,
                           onPressed: onCoachTap,
+                          semanticLabel: 'Coach',
                           backgroundColor: activeButton == 2
                               ? activeBackground
                               : inactiveBackground,
@@ -135,6 +138,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       CircularActionButton(
                         icon: FontAwesomeIcons.calendarCheck,
                         onPressed: onEventsTap,
+                        semanticLabel: 'Events',
                         backgroundColor: activeButton == (showCoachTab ? 3 : 2)
                             ? activeBackground
                             : inactiveBackground,
@@ -146,6 +150,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       CircularActionButton(
                         icon: FontAwesomeIcons.graduationCap,
                         onPressed: onLearnTap,
+                        semanticLabel: 'Learn',
                         backgroundColor: activeButton == (showCoachTab ? 4 : 3)
                             ? activeBackground
                             : inactiveBackground,
@@ -160,23 +165,34 @@ class FloatingActionButtonsBar extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             // Orange plus button
-            GestureDetector(
-              onTap: onPlusTap,
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.orange,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+            Semantics(
+              button: true,
+              label: 'New activity',
+              child: Tooltip(
+                message: 'New activity',
+                child: GestureDetector(
+                  onTap: onPlusTap,
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: AppColors.orange,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
+                    child: const Icon(
+                      Icons.add,
+                      color: AppColors.cream,
+                      size: 28,
+                    ),
+                  ),
                 ),
-                child: const Icon(Icons.add, color: AppColors.cream, size: 28),
               ),
             ),
           ],

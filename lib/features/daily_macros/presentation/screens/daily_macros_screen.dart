@@ -97,6 +97,8 @@ class DailyMacrosScreen extends ConsumerWidget {
               weeklyMacros: state.weeklyMacros,
               startOfWeek: _getStartOfWeek(state.selectedDate),
             ),
+          ] else if (state.calculationError != null) ...[
+            _buildCalculationErrorState(context, ref, state.calculationError!),
           ] else ...[
             _buildEmptyState(context),
           ],
@@ -139,6 +141,60 @@ class DailyMacrosScreen extends ConsumerWidget {
             onPressed: () => context.push('/settings/nutrition-profile'),
           ),
           const SizedBox(height: AppSpacing.lg),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalculationErrorState(
+    BuildContext context,
+    WidgetRef ref,
+    String message,
+  ) {
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              FaIcon(
+                FontAwesomeIcons.triangleExclamation,
+                size: 18,
+                color: AppColors.dragonfruit,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                'Macros unavailable',
+                style: AppTextStyles.subtitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            message,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              KyleSecondaryButton(
+                text: 'Retry',
+                onPressed: () =>
+                    ref.invalidate(dailyMacrosControllerProvider),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              KyleSecondaryButton(
+                text: 'Open Preferences',
+                onPressed: () => context.push('/settings/preferences'),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
         ],
       ),
     );

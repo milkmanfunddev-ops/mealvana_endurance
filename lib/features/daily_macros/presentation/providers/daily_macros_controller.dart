@@ -18,10 +18,16 @@ class DailyMacrosState {
   final DailyMacroTargets? dailyMacros;
   final List<DailyMacroTargets?> weeklyMacros;
 
+  /// Reason the daily calculation failed, if any. Populated when the edge
+  /// function rejects the input or the user profile is missing required
+  /// fields. UI surfaces this instead of a generic empty state.
+  final String? calculationError;
+
   const DailyMacrosState({
     required this.selectedDate,
     this.dailyMacros,
     this.weeklyMacros = const [],
+    this.calculationError,
   });
 }
 
@@ -42,7 +48,11 @@ class DailyMacrosController extends _$DailyMacrosController {
     final profile = await userRepository.getCurrentUser();
 
     if (profile == null) {
-      return DailyMacrosState(selectedDate: selectedDate);
+      return DailyMacrosState(
+        selectedDate: selectedDate,
+        calculationError:
+            'Your profile is not loaded yet. Sign in or finish onboarding to see your nutrition targets.',
+      );
     }
 
     final service = ref.read(dailyMacroServiceProvider);
@@ -57,12 +67,25 @@ class DailyMacrosController extends _$DailyMacrosController {
     }
     _lastActivitiesData = currentActivitiesData.value;
 
-    // Calculate today's macros first (uses cache if available, else calls edge fn)
-    final macros = await service.calculateForDate(
-      profile.id,
-      selectedDate,
-      profile,
-    );
+    // Calculate today's macros first (uses cache if available, else calls edge fn).
+    // Catch the precise failure reason so the UI can show it.
+    DailyMacroTargets? macros;
+    String? calculationError;
+    try {
+      macros = await service.calculateForDate(
+        profile.id,
+        selectedDate,
+        profile,
+      );
+      if (macros == null) {
+        calculationError =
+            'Could not calculate macros for this date. Pull to refresh or try again.';
+      }
+    } on DailyMacroCalculationException catch (e) {
+      calculationError = e.reason;
+    } catch (e) {
+      calculationError = 'Unexpected error: $e';
+    }
 
     // Read week cache (local lookups only — no network calls)
     final weekMacros = await service.getWeekOverview(
@@ -78,6 +101,7 @@ class DailyMacrosController extends _$DailyMacrosController {
       selectedDate: selectedDate,
       dailyMacros: macros,
       weeklyMacros: weekMacros,
+      calculationError: calculationError,
     );
   }
 

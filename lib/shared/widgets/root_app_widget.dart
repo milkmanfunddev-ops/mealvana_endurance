@@ -249,20 +249,28 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 /// 2. In debug builds, wrap the tree in `AccessibilityTools` so we get
 ///    runtime warnings about small tap targets, missing semantics, and
 ///    contrast issues while developing. No-op in release.
+///
+/// Ordering matters: `AccessibilityTools` injects an overridden MediaQuery
+/// (text scale, locale, etc.) for its descendants. The clamp must therefore
+/// read MediaQuery from a context *underneath* AccessibilityTools — hence
+/// the inner `Builder` — otherwise the AccessibilityTools text-scale slider
+/// has no effect because we'd overwrite it with the parent's MediaQuery.
 Widget _appShell(BuildContext context, Widget child) {
-  final mq = MediaQuery.of(context);
-  final scaled = MediaQuery(
-    data: mq.copyWith(
-      textScaler: mq.textScaler.clamp(
-        minScaleFactor: 1.0,
-        maxScaleFactor: 1.6,
+  Widget clampScaler(BuildContext innerContext) {
+    final mq = MediaQuery.of(innerContext);
+    return MediaQuery(
+      data: mq.copyWith(
+        textScaler: mq.textScaler.clamp(
+          minScaleFactor: 1.0,
+          maxScaleFactor: 1.6,
+        ),
       ),
-    ),
-    child: child,
-  );
+      child: child,
+    );
+  }
 
   if (kDebugMode) {
-    return AccessibilityTools(child: scaled);
+    return AccessibilityTools(child: Builder(builder: clampScaler));
   }
-  return scaled;
+  return Builder(builder: clampScaler);
 }

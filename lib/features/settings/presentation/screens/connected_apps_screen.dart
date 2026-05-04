@@ -326,13 +326,12 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         const SizedBox(height: AppSpacing.lg),
 
         // Garmin Connect — push-only integration.
-        // Brand Guidelines: Use full app name "Garmin Connect" with tag logo.
+        // Brand Guidelines: Use the official Garmin Connect badge (per Garmin
+        // Connect Developer Program review, ticket 206017).
         IntegrationProviderCard(
           name: 'Garmin Connect',
-          iconPath: isDark
-              ? 'assets/images/integrations/garmin_tag_white.png'
-              : 'assets/images/integrations/garmin_tag_black.png',
-          logoHeight: 18,
+          iconPath: 'assets/images/integrations/garmin_connect_badge.png',
+          logoHeight: 40,
           isAvailable: true,
           isConnected: data.isGarminConnected,
           isConnecting:
@@ -461,13 +460,12 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         const SizedBox(height: AppSpacing.md),
 
         // Garmin Connect — push-only integration.
-        // Brand Guidelines: Use full app name "Garmin Connect" with tag logo.
+        // Brand Guidelines: Use the official Garmin Connect badge (per Garmin
+        // Connect Developer Program review, ticket 206017).
         IntegrationProviderCard(
           name: 'Garmin Connect',
-          iconPath: isDark
-              ? 'assets/images/integrations/garmin_tag_white.png'
-              : 'assets/images/integrations/garmin_tag_black.png',
-          logoHeight: 18,
+          iconPath: 'assets/images/integrations/garmin_connect_badge.png',
+          logoHeight: 40,
           isAvailable: true,
           isConnected: data.isGarminConnected,
           isConnecting:

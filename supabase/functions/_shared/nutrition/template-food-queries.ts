@@ -291,9 +291,13 @@ export async function getTemplateFoodsForPhase(
       const userFoodProductType = f.product_type as string | null;
       const isImportedUserFood = isUserFood &&
         (userFoodProductType == null || userFoodProductType === "import");
+      const isElectrolyte = f.is_electrolyte === true;
 
-      // Never filter out user foods or essential foods (e.g. water) as disliked
-      if (isDisliked && !isUserFood && !isEssential) {
+      // Filter disliked foods. Essentials (e.g. water/salt) bypass this so the
+      // solver always has a fallback for safety-critical hydration. Electrolyte
+      // *products* (capsules, drinks, powders) get NO essential-bypass — user
+      // preference dominates so we don't ship a plan featuring foods they hate.
+      if (isDisliked && !isUserFood && !(isEssential && !isElectrolyte)) {
         console.log(
           `[TMPL-FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`,
         );
@@ -501,9 +505,11 @@ export async function getTemplateElectrolyteFoods(
   supabase: SupabaseClient,
   likedFoods?: string[],
   willingToTryFoods?: string[],
+  dislikedFoods?: string[],
 ): Promise<Food[]> {
   const likedSet = buildPreferenceSet(likedFoods);
   const willTrySet = buildPreferenceSet(willingToTryFoods);
+  const dislikedSet = buildPreferenceSet(dislikedFoods);
 
   const { data: electrolytes, error } = await supabase
     .from("template_foods")
@@ -528,6 +534,18 @@ export async function getTemplateElectrolyteFoods(
 
   return (electrolytes || [])
     .filter((e: Record<string, unknown>) => {
+      // Always exclude disliked electrolytes — user preference for these dominates.
+      const isDisliked = matchesPreference(
+        e as { id?: string; name?: string; display_name?: string | null },
+        dislikedSet,
+      );
+      if (isDisliked) {
+        console.log(
+          `[TMPL-ELECTROLYTES] Excluding disliked electrolyte: ${e.name}`,
+        );
+        return false;
+      }
+
       if (e.is_essential === true) return true;
 
       const isLiked = matchesPreference(
@@ -953,13 +971,15 @@ export async function getTemplateFoodsForDuringWithConstraints(
       if (f.to_exclude_from_solver === true) return false;
 
       const isEssential = f.is_essential === true;
+      const isElectrolyte = f.is_electrolyte === true;
 
-      // Disliked filter (keep essentials)
+      // Disliked filter. Essentials bypass for hydration safety, but electrolyte
+      // products do NOT — user preference for capsules/powders/drinks dominates.
       const isDisliked = matchesPreference(
         f as { id?: string; name?: string; display_name?: string | null },
         dislikedSet,
       );
-      if (isDisliked && !isEssential) return false;
+      if (isDisliked && !(isEssential && !isElectrolyte)) return false;
 
       // Allergen filter
       if (allergiesLower.length > 0 && !isEssential) {

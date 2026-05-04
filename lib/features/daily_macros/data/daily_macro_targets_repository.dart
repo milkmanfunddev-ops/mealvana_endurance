@@ -27,6 +27,11 @@ class DailyMacroTargetsRepository {
   final AppDatabase _database;
   final SupabaseClient _supabase;
 
+  /// Algorithm version this client expects. Cached rows from older versions
+  /// are treated as misses so the next read recalculates with the current
+  /// pipeline (e.g., picks up Garmin source attribution introduced in v5).
+  static const String _expectedAlgorithmVersion = 'v5.0.0';
+
   /// Get cached macro targets for a specific date
   Future<DailyMacroTargets?> getCachedForDate(String userId, DateTime date) async {
     final normalizedDate = DateTime(date.year, date.month, date.day);
@@ -42,6 +47,12 @@ class DailyMacroTargetsRepository {
     if (results.isEmpty) return null;
 
     final row = results.first;
+    final cachedVersion = row.read<String>('algorithm_version');
+    if (cachedVersion != _expectedAlgorithmVersion) {
+      // Stale cache — drop it so the caller recalculates fresh.
+      await invalidateForDate(userId, normalizedDate);
+      return null;
+    }
     return _mapRowToDomain(row);
   }
 

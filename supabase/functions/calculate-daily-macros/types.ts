@@ -15,6 +15,18 @@ export interface SessionInput {
   pct_tempo: number;
   pct_allout: number;
   tss?: number | null;
+  /**
+   * Activity row id used by the server to look up per-session Garmin
+   * completion data (calories_burned, actual_duration_minutes) and produce
+   * a GarminActivityForSession passed into the resolver.
+   */
+  activity_id?: string | null;
+}
+
+/** Per-session Garmin activity data, aligned to sessions[] by index. */
+export interface GarminActivityForSession {
+  activeKilocalories: number | null;
+  durationInSeconds: number | null;
 }
 
 export interface DailyMacroInput {
@@ -58,6 +70,13 @@ export interface DailyMacroInput {
     bmrKilocalories: number | null;
     activeKilocalories: number | null;
   } | null;
+
+  /**
+   * Per-session Garmin activity data, aligned to sessions[] by index.
+   * Populated server-side from the activities table — entries are null
+   * for sessions that have no garmin_summary_id (no Garmin upload).
+   */
+  garmin_activities?: (GarminActivityForSession | null)[] | null;
 }
 
 /** Per-day input for week mode — day-specific fields only */
@@ -73,6 +92,7 @@ export interface WeekDayInput {
   // Per-day Garmin context (populated server-side)
   garmin_body_comp?: DailyMacroInput['garmin_body_comp'];
   garmin_daily?: DailyMacroInput['garmin_daily'];
+  garmin_activities?: DailyMacroInput['garmin_activities'];
   user_weight_updated_at_seconds?: number | null;
   user_body_fat_updated_at_seconds?: number | null;
 }
@@ -98,6 +118,27 @@ export interface WeekMacroInput {
   days: WeekDayInput[];
 }
 
+/**
+ * Source attribution for each major input that fed into the calculation.
+ * String literals match `ResolveSource` in formulas/resolve.ts. Stringly
+ * typed here to avoid leaking the resolver's internal enum type into the
+ * cross-platform output contract.
+ */
+export interface SessionSources {
+  session_kcal: string; // 'GARMIN' | 'FORMULA'
+  intensity_factor: string; // 'TP_ACTUAL' | 'TP_PLANNED' | 'ZONE_DIST'
+  tss: string; // 'TP_ACTUAL' | 'TP_PLANNED' | 'FORMULA'
+  duration: string; // 'GARMIN' | 'TP_PLANNED' | 'FORMULA'
+}
+
+export interface MacroSources {
+  rmr: string; // 'GARMIN' | 'FORMULA'
+  neat: string; // 'GARMIN' | 'FORMULA'
+  weight: string; // 'GARMIN' | 'MANUAL'
+  body_fat: string; // 'GARMIN' | 'MANUAL' | 'NONE'
+  sessions: SessionSources[];
+}
+
 export interface DailyMacroOutput {
   carb_g: number;
   prot_g: number;
@@ -111,4 +152,11 @@ export interface DailyMacroOutput {
   ea: number | null;
   ea_status: string | null;
   algorithm_version: string;
+  /**
+   * Resolved athlete weight & body-fat % actually used in this calculation.
+   * Lets the UI show "78 kg · from Garmin" alongside `sources.weight`.
+   */
+  weight_kg: number;
+  body_fat_pct: number | null;
+  sources: MacroSources;
 }

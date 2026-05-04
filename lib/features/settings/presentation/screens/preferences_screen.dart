@@ -9,6 +9,8 @@ import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
+import '../../../integrations/presentation/providers/integrations_providers.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 
 /// Preferences Screen - Settings version that matches onboarding UserProfileScreen
 /// Saves immediately to database instead of caching
@@ -502,26 +504,10 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
           const SizedBox(height: AppSpacing.md),
 
-          // Weight field
-          _buildTextField(
-            context: context,
-            controller: _weightController,
-            label: 'Weight',
-            hint: 'Enter your weight',
-            icon: FontAwesomeIcons.weightScale,
-            keyboardType: TextInputType.number,
-            suffix: 'lbs',
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your weight';
-              }
-              final weight = double.tryParse(value);
-              if (weight == null || weight < 80 || weight > 500) {
-                return 'Please enter a valid weight (80-500 lbs)';
-              }
-              return null;
-            },
-          ),
+          // Weight field — with optional Garmin attribution shown when the
+          // user's Garmin scale reading is newer than their manual entry.
+          // Mirrors the body-fat path in nutrition_profile_screen.dart.
+          _buildWeightFieldWithGarminBadge(context),
 
           const SizedBox(height: AppSpacing.md),
 
@@ -729,6 +715,69 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  /// Wraps the weight input field with a Garmin Connect attribution chip
+  /// shown above the input whenever Garmin's body-comp scale reading is
+  /// authoritative (newer than user's manual entry, within the 30-day
+  /// staleness window). Mirrors the body-fat path in nutrition_profile_screen.
+  Widget _buildWeightFieldWithGarminBadge(BuildContext context) {
+    final settingsState = ref.watch(settingsControllerProvider);
+    final effectiveUserId = settingsState.asData?.value.userId;
+    final garminAsync = effectiveUserId != null
+        ? ref.watch(garminLastBodyCompProvider(effectiveUserId))
+        : null;
+    final garminData = garminAsync?.asData?.value;
+    final userWeightLbs = double.tryParse(_weightController.text);
+    final userWeightKg =
+        userWeightLbs != null ? userWeightLbs * 0.453592 : null;
+    final showGarminBadge = isGarminAuthoritativeForWeight(
+      garmin: garminData,
+      userWeightKg: userWeightKg,
+      userUpdatedAt: null,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (showGarminBadge) ...[
+          const Padding(
+            padding: EdgeInsets.only(bottom: 4),
+            child: GarminAttribution(style: GarminAttributionStyle.compact),
+          ),
+        ],
+        _buildTextField(
+          context: context,
+          controller: _weightController,
+          label: 'Weight',
+          hint: 'Enter your weight',
+          icon: FontAwesomeIcons.weightScale,
+          keyboardType: TextInputType.number,
+          suffix: 'lbs',
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter your weight';
+            }
+            final weight = double.tryParse(value);
+            if (weight == null || weight < 80 || weight > 500) {
+              return 'Please enter a valid weight (80-500 lbs)';
+            }
+            return null;
+          },
+        ),
+        if (showGarminBadge && garminData?.weightKg != null) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Latest from Garmin: ${(garminData!.weightKg! * 2.20462).round()} lbs',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

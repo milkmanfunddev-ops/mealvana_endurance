@@ -206,6 +206,7 @@ export async function generateLPPhase(
       phaseConfig.maxFoods,
       likedFoods,
       willingToTryFoods,
+      dislikedFoods,
     );
   }
 
@@ -261,6 +262,7 @@ export async function generateLPPhase(
             phaseConfig.maxFoods,
             likedFoods,
             willingToTryFoods,
+            dislikedFoods,
           );
         }
 
