@@ -373,11 +373,16 @@ workflows:
       - *setup_ios_signing_shorebird
 
       - name: Create Shorebird iOS Release
+        # Don't pass --flutter-version=stable. Shorebird only accepts
+        # specific version strings (e.g. 3.27.4), not "stable", and will
+        # fail with "Version stable not found." Without the flag, Shorebird
+        # uses its default supported version. `set -e` ensures the build
+        # fails loudly here instead of silently producing no IPA.
         script: |
+          set -e
           shorebird release ios \
             --flavor prod \
             --target lib/main_prod.dart \
-            --flutter-version=stable \
             --export-options-plist=/Users/builder/export_options.plist
 
           echo ""
@@ -444,11 +449,14 @@ workflows:
       - *install_shorebird
 
       - name: Create Shorebird Android Release
+        # Same as iOS: drop --flutter-version=stable (Shorebird rejects
+        # the literal string "stable") and add set -e so a silent
+        # shorebird failure doesn't masquerade as a successful build.
         script: |
+          set -e
           shorebird release android \
             --flavor prod \
             --target lib/main_prod.dart \
-            --flutter-version=stable \
             --artifact=aab
 
           echo ""
@@ -526,11 +534,13 @@ workflows:
       - *setup_ios_signing_shorebird
 
       - name: Create Shorebird iOS Release (App Store)
+        # Don't pass --flutter-version=stable (Shorebird rejects it).
+        # set -e so silent shorebird failures don't get past CI.
         script: |
+          set -e
           shorebird release ios \
             --flavor prod \
             --target lib/main_prod.dart \
-            --flutter-version=stable \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
@@ -590,11 +600,12 @@ workflows:
       - *install_shorebird
 
       - name: Create Shorebird Android Release (Play Open/Beta)
+        # Drop --flutter-version=stable + add set -e (see iOS notes above).
         script: |
+          set -e
           shorebird release android \
             --flavor prod \
             --target lib/main_prod.dart \
-            --flutter-version=stable \
             --artifact=aab
 
     artifacts:
