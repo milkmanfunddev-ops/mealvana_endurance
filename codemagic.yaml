@@ -78,8 +78,15 @@ definitions:
 
     - &setup_ios_signing_shorebird
       name: Set up iOS code signing (Shorebird)
+      # IMPORTANT: do NOT call `keychain initialize` here. See note on
+      # &setup_ios_signing above for the full explanation. Codemagic's
+      # auto-injected "Set up code signing identities" step (triggered by
+      # the `ios_signing:` env block) already initializes the keychain
+      # and imports the cert .p12; a second `keychain initialize` here
+      # spawns a fresh empty keychain and silently knocks the cert off
+      # the search path, leading to "iOS Distribution not found" at
+      # exportArchive time.
       script: |
-        keychain initialize
         # CRITICAL: manageAppVersionAndBuildNumber must be false for Shorebird
         xcode-project use-profiles --custom-export-options='{"manageAppVersionAndBuildNumber":false}'
 
@@ -341,7 +348,7 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.mealvana.endurance
+        bundle_identifier: com.milkman.mealvanaendurance
       groups:
         - mealvana_prod
         - shorebird_credentials
@@ -389,8 +396,13 @@ workflows:
         auth: integration
         submit_to_testflight: true
         submit_to_app_store: false
-        beta_groups:
-          - Internal Testers
+        # Apple's auto-managed Internal Testers group sees the build
+        # as soon as ASC finishes processing; no explicit beta_groups
+        # entry is needed (and listing "Internal Testers" here causes
+        # post-publish failures — that's a built-in implicit group).
+        # To promote a specific build to External Testers, do that
+        # manually in App Store Connect → TestFlight → Builds → Add to
+        # Group when you want it; CI stays out of external review.
       slack:
         channel: '#builds'
         notify:
@@ -489,7 +501,7 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.mealvana.endurance
+        bundle_identifier: com.milkman.mealvanaendurance
       groups:
         - mealvana_prod
         - shorebird_credentials
@@ -533,6 +545,10 @@ workflows:
         submit_to_app_store: true
         # Leave manual release control in App Store Connect; don't auto-release to users.
         release_type: MANUAL
+        # External tester promotion is intentionally manual: do that
+        # from App Store Connect → TestFlight → Builds when you're
+        # ready, so CI doesn't burn Beta App Review submissions on
+        # candidates that aren't actually externally-tested-ready.
       slack:
         channel: '#builds'
         notify:
@@ -601,7 +617,7 @@ workflows:
   # ============================================================
   # PROD-CI WORKFLOW — manual. Prod flavor built against real prod
   # endpoints, uploaded to the DEV TestFlight app
-  # (bundle com.mealvana.endurance.dev) for dogfooding without
+  # (bundle com.milkman.mealvanaendurance.dev) for dogfooding without
   # going through release/*. No Shorebird (dev TestFlight = scratch).
   #
   # Uses --flavor dev (→ Xcode gives us the .dev bundle ID and signing)
@@ -622,7 +638,7 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.mealvana.endurance.dev
+        bundle_identifier: com.milkman.mealvanaendurance.dev
       groups:
         - mealvana_prod  # prod env vars via DOTENV_PROD_LOCAL
       vars:
@@ -895,7 +911,7 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.mealvana.endurance
+        bundle_identifier: com.milkman.mealvanaendurance
       groups:
         - mealvana_prod
       vars:
