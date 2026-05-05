@@ -225,6 +225,7 @@ class MacroRepositoryImpl implements MacroRepository {
         fatCapG: (macros['pre_run_fat_g_cap'] as num).toDouble(),
         fluidsMl: (macros['pre_run_water_ml'] as num).toDouble(),
         sodiumMg: (macros['pre_run_sodium_mg'] as num).toDouble(),
+        hydrationTier: (macros['pre_run_hydration_tier'] as num?)?.toInt(),
       ),
       duringRun: DuringRunMacros(
         carbRateGPerH: (macros['during_rate_g_per_h'] as num).toDouble(),

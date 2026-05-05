@@ -25,10 +25,16 @@ extension _$FluidExt on MacroExplanationService {
     final rangeLowMl = pre.fluidsLowMl?.round() ?? (fluidsMl * 0.8).round();
     final rangeHighMl = pre.fluidsHighMl?.round() ?? (fluidsMl * 1.2).round();
 
-    // Determine tier from time (estimate from fluid value: 250mL = Tier 2, BW-based = Tier 1)
-    // Tier 3 = 0 ml, Tier 2 = ~250 ml, Tier 1 = BW * 5–7 ml
-    final isTier3 = fluidsMl == 0;
-    final isTier2 = !isTier3 && (fluidsMl <= 300);
+    // Prefer the authoritative `hydrationTier` from the edge function
+    // (1 = body-weight scaled, 2 = fixed 250 ml top-up, 3 = no hydration).
+    // Fall back to the legacy fluid-magnitude heuristic only when tier is
+    // missing — older cached plans and some offline paths may not have
+    // populated it. The heuristic mislabels low-bodyweight Tier 1 athletes
+    // (e.g. 47.6 kg → 286 ml) as Tier 2; the explicit tier avoids that.
+    final tier = pre.hydrationTier;
+    final isTier3 = tier != null ? tier == 3 : fluidsMl == 0;
+    final isTier2 =
+        tier != null ? tier == 2 : (!isTier3 && fluidsMl <= 300);
     final String blurb;
     final List<FormulaLine> tldrLines;
 
@@ -138,6 +144,7 @@ extension _$FluidExt on MacroExplanationService {
         fluidsMl: fluidsMl,
         fluidsLowMl: rangeLowMl,
         fluidsHighMl: rangeHighMl,
+        tier: tier,
       ),
       videoTitle: 'Watch: Pre-Workout Hydration',
       targetGrams: _mlToDisplay(fluidsMl.toDouble(), useImperial),

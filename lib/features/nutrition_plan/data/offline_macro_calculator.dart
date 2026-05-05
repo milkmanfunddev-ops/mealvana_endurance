@@ -83,6 +83,7 @@ class OfflineMacroCalculator {
         'pre_run_fat_g_cap': preRunMacros['fat_cap_g'],
         'pre_run_water_ml': preRunMacros['water_ml'],
         'pre_run_sodium_mg': preRunMacros['sodium_mg'],
+        'pre_run_hydration_tier': preRunMacros['hydration_tier'],
         
         // During-run
         'during_rate_g_per_h': duringRunMacros['carb_rate_g_h'],
@@ -165,7 +166,18 @@ class OfflineMacroCalculator {
     
     // Sodium
     final sodiumMg = timeBeforeH >= 2.0 ? 400 : 200;
-    
+
+    // Hydration tier mirrors edge-function semantics so UI explanation can
+    // branch on tier instead of inferring from fluid magnitude:
+    //   tier 1: >= 2 h before (body-weight scaled)
+    //   tier 2: 10 min - 2 h before (fixed top-up)
+    //   tier 3: < 10 min before
+    final int hydrationTier = timeBeforeH >= 2.0
+        ? 1
+        : timeBeforeH >= (10.0 / 60.0)
+            ? 2
+            : 3;
+
     return {
       'carbs_g': carbsG.round(),
       'rule': rule,
@@ -173,6 +185,7 @@ class OfflineMacroCalculator {
       'fat_cap_g': (fatCapG * 10).round() / 10,
       'water_ml': waterMl,
       'sodium_mg': sodiumMg,
+      'hydration_tier': hydrationTier,
     };
   }
   

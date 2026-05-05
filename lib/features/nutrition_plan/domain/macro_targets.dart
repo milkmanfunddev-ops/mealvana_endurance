@@ -617,6 +617,7 @@ class PreRunMacros {
     this.sodiumHighMg,
     this.fluidsLowMl,
     this.fluidsHighMl,
+    this.hydrationTier,
   });
 
   final double carbsG;
@@ -632,6 +633,11 @@ class PreRunMacros {
   final double? sodiumHighMg;
   final double? fluidsLowMl;
   final double? fluidsHighMl;
+  // Pre-workout hydration tier from edge function:
+  // 1 = body-weight scaled (>=2h before, BW*6 ml), 2 = fixed 250 ml top-up
+  // (10 min - 2 h), 3 = no hydration (<10 min before / gated). Null when
+  // emitted by legacy paths that do not yet supply the tier.
+  final int? hydrationTier;
 
   /// Convert fluids to US units (fl oz)
   double get fluidsFlOz => fluidsMl * 0.033814;
@@ -650,6 +656,7 @@ class PreRunMacros {
     double? sodiumHighMg,
     double? fluidsLowMl,
     double? fluidsHighMl,
+    int? hydrationTier,
   }) {
     return PreRunMacros(
       carbsG: carbsG ?? this.carbsG,
@@ -665,6 +672,7 @@ class PreRunMacros {
       sodiumHighMg: sodiumHighMg ?? this.sodiumHighMg,
       fluidsLowMl: fluidsLowMl ?? this.fluidsLowMl,
       fluidsHighMl: fluidsHighMl ?? this.fluidsHighMl,
+      hydrationTier: hydrationTier ?? this.hydrationTier,
     );
   }
 
@@ -683,6 +691,7 @@ class PreRunMacros {
       if (sodiumHighMg != null) 'sodiumHighMg': sodiumHighMg,
       if (fluidsLowMl != null) 'fluidsLowMl': fluidsLowMl,
       if (fluidsHighMl != null) 'fluidsHighMl': fluidsHighMl,
+      if (hydrationTier != null) 'hydrationTier': hydrationTier,
     };
   }
 
@@ -701,6 +710,7 @@ class PreRunMacros {
       sodiumHighMg: (json['sodiumHighMg'] as num?)?.toDouble(),
       fluidsLowMl: (json['fluidsLowMl'] as num?)?.toDouble(),
       fluidsHighMl: (json['fluidsHighMl'] as num?)?.toDouble(),
+      hydrationTier: (json['hydrationTier'] as num?)?.toInt(),
     );
   }
 
@@ -720,7 +730,8 @@ class PreRunMacros {
         other.sodiumLowMg == sodiumLowMg &&
         other.sodiumHighMg == sodiumHighMg &&
         other.fluidsLowMl == fluidsLowMl &&
-        other.fluidsHighMl == fluidsHighMl;
+        other.fluidsHighMl == fluidsHighMl &&
+        other.hydrationTier == hydrationTier;
   }
 
   @override
@@ -739,6 +750,7 @@ class PreRunMacros {
       sodiumHighMg,
       fluidsLowMl,
       fluidsHighMl,
+      hydrationTier,
     );
   }
 

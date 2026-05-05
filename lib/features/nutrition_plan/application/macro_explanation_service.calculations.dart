@@ -650,16 +650,25 @@ extension _$CalculationsExt on MacroExplanationService {
 
   /// Pre-workout fluid tier math.
   ///
-  /// Tier detection mirrors the edge function overlay: 0 ml = gate or Tier 3,
-  /// 250 ml = Tier 2, body-weight scaled = Tier 1.
+  /// Tier detection prefers the authoritative `tier` (sourced from the edge
+  /// function field `pre_run_hydration_tier`): 1 = body-weight scaled,
+  /// 2 = fixed 250 ml top-up, 3 = no hydration. When [tier] is null
+  /// (legacy plans / older offline paths), falls back to the historical
+  /// fluid-magnitude heuristic — but note that heuristic mislabels low-BW
+  /// Tier 1 athletes whose BW × 6 ml lands ≤ 300 ml.
   List<CalculationSection> _buildPreWorkoutFluidCalculationSections({
     required double bodyWeightKg,
     required int fluidsMl,
     required int? fluidsLowMl,
     required int? fluidsHighMl,
+    int? tier,
   }) {
+    final bool isTier3 = tier != null ? tier == 3 : fluidsMl == 0;
+    final bool isTier2 =
+        tier != null ? tier == 2 : (!isTier3 && fluidsMl <= 300);
+
     // Tier 3 / gate — no structured intake, nothing numeric to show.
-    if (fluidsMl == 0) {
+    if (isTier3) {
       return [
         CalculationSection(
           header: 'PRE-WORKOUT TIER',
@@ -678,7 +687,7 @@ extension _$CalculationsExt on MacroExplanationService {
     }
 
     // Tier 2 — fixed 250 ml top-up.
-    if (fluidsMl <= 300) {
+    if (isTier2) {
       return [
         CalculationSection(
           header: 'PRE-WORKOUT TIER 2',
