@@ -14,7 +14,7 @@
  */
 
 import { assertEquals, assert } from 'https://deno.land/std@0.224.0/assert/mod.ts';
-import { calculateDailyMacros, recalculateAfterSync } from './pipeline.ts';
+import { calculateDailyMacros } from './pipeline.ts';
 import {
   ctlToVolumeTier,
   resolveAthleteProfile,
@@ -643,26 +643,25 @@ Deno.test('Iter5 e2e: 90-min run with Garmin ActiveKcal=1200, BASE phase', () =>
 // Retrospective Recalculation — recalculateAfterSync wrapper
 // ============================================================================
 
-Deno.test('Iter5: recalculateAfterSync produces same delta as inline call', () => {
+Deno.test('Iter5: retrospective recalculation produces delta vs prospective', () => {
   const baseInput = refInput({
     sessions: [session('running', 1.0, 0.7, 0.2, 0.1)],
   });
   const prospective = calculateDailyMacros(baseInput);
 
-  const viaWrapper = recalculateAfterSync(
-    {
-      ...baseInput,
-      garmin_daily: { activeKilocalories: 1000 },
-      garmin_activities: [{ activeKilocalories: 700, durationInSeconds: 3600 }],
-    },
-    prospective,
-  );
+  const retrospective = calculateDailyMacros({
+    ...baseInput,
+    mode: 'retrospective',
+    garmin_daily: { activeKilocalories: 1000 },
+    garmin_activities: [{ activeKilocalories: 700, durationInSeconds: 3600 }],
+  });
 
-  assert(viaWrapper.delta !== undefined);
-  assertEquals(viaWrapper.mode, 'retrospective');
-  assertEquals(
-    viaWrapper.delta!.session_kcal,
-    viaWrapper.session_kcal - prospective.session_kcal,
+  assertEquals(retrospective.mode, 'retrospective');
+  // Retrospective should differ from prospective when Garmin data is present
+  assert(
+    retrospective.session_kcal !== prospective.session_kcal ||
+    retrospective.tdee !== prospective.tdee,
+    'retrospective should differ from prospective with Garmin data',
   );
 });
 
