@@ -705,6 +705,37 @@ export function selectPreWorkoutFoods(
   const phases = getActiveSubPhases(hoursBefore);
   const phaseTargets = splitTargets(targets, hoursBefore);
 
+  // ── Pre-check: redistribute budget from empty phases ─────────────
+  // If a phase has zero eligible food templates (e.g. all top-off foods
+  // disliked), redistribute its carb/protein/fat budget proportionally
+  // to the surviving phases so the targets aren't silently dropped.
+  const emptyPhases = phases.filter(
+    (p) => getEligibleTemplates(foodTemplates, p, diet, dislikedFoods, allergies).length === 0,
+  );
+  if (emptyPhases.length > 0 && emptyPhases.length < phases.length) {
+    const activePhases = phases.filter((p) => !emptyPhases.includes(p));
+    const macroKeys: Array<keyof SubPhaseTargets> = [
+      'carbs_g', 'protein_g', 'fat_g', 'sodium_mg', 'water_ml',
+    ];
+    for (const key of macroKeys) {
+      let orphaned = 0;
+      for (const ep of emptyPhases) {
+        orphaned += phaseTargets.get(ep)?.[key] ?? 0;
+      }
+      if (orphaned <= 0) continue;
+      let activeTotal = 0;
+      for (const ap of activePhases) {
+        activeTotal += phaseTargets.get(ap)?.[key] ?? 0;
+      }
+      for (const ap of activePhases) {
+        const t = phaseTargets.get(ap)!;
+        const proportion = activeTotal > 0 ? t[key] / activeTotal : 1 / activePhases.length;
+        t[key] = Math.round((t[key] + orphaned * proportion) * 10) / 10;
+      }
+    }
+    console.log(`[ALGO-C] Redistributed budget from empty phases [${emptyPhases.join(', ')}] to [${activePhases.join(', ')}]`);
+  }
+
   const state: PlanState = {
     used_foods: new Set(),
     sports_drink_used: false,
