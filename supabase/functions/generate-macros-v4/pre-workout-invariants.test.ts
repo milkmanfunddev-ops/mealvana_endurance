@@ -344,25 +344,9 @@ describe('Pre-Workout V4 Integration Tests', () => {
       );
     });
 
-    it('should prefer different base_categories across phases', () => {
-      const targets = calculatePreWorkoutTargets(73, 3.0, false, 'medium', 'moderate');
-
-      const results = selectPreWorkoutFoods(
-        targets, 3.0, 'none',
-        ALL_FOOD_TEMPLATES, ALL_DRINK_TEMPLATES, ALL_ELECTROLYTE_TEMPLATES,
-      );
-
-      const categories = results
-        .filter((r) => r.primary !== null)
-        .map((r) => r.primary!.base_category);
-      const uniqueCategories = new Set(categories);
-
-      // With 3 sub-phases, we should get 3 different categories
-      assertEquals(
-        categories.length, uniqueCategories.size,
-        `Duplicate base categories across phases: ${categories.join(', ')}`,
-      );
-    });
+    // NOTE: base_category uniqueness across phases is covered by
+    // pre-workout-matrix.test.ts ("Cross-phase uniqueness") across the full
+    // athlete × time-window matrix. Kept here: template_id uniqueness only.
   });
 
   // ─── Test 4: Variety ─────────────────────────────────────────────────
