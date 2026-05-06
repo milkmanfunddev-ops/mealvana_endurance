@@ -287,6 +287,13 @@ class MacroExplanationService {
       );
     }
 
+    if (phase == ExplanationPhase.after) {
+      return _postWorkoutCarbTransparency(
+        macroTargets: macroTargets,
+        bodyWeightKg: bodyWeightKg,
+      );
+    }
+
     // Swim zero-state
     final sport = brickSegment?.sport ?? sportLabel?.toLowerCase() ?? 'running';
     if (sport.contains('swim')) {
