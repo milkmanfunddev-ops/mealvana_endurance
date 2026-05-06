@@ -297,16 +297,11 @@ export async function getTemplateFoodsForPhase(
       // solver always has a fallback for safety-critical hydration. Electrolyte
       // *products* (capsules, drinks, powders) get NO essential-bypass — user
       // preference dominates so we don't ship a plan featuring foods they hate.
-      if (isDisliked && !isUserFood && !(isEssential && !isElectrolyte)) {
+      if (isDisliked && !(isEssential && !isElectrolyte)) {
         console.log(
           `[TMPL-FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`,
         );
         return false;
-      }
-      if (isDisliked && isUserFood) {
-        console.log(
-          `[TMPL-FILTER-DISLIKED] Keeping user food despite dislike: ${f.name}`,
-        );
       }
 
       // Allergen filtering — exclude template foods whose allergens overlap with user's allergies

@@ -756,7 +756,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
         setState(() {
           _userFoods.insert(0, foodItem);
-          _sliderLevels[food.id] = 2;
+          _sliderLevels[food.name] = 2;
         });
 
         // Re-seed search controller
