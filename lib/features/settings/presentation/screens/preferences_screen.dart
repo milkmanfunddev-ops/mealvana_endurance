@@ -45,6 +45,12 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   bool _hasChanges = false;
   bool _isSaving = false;
 
+  /// True while the weight field still holds the value auto-filled from
+  /// Garmin's latest body-composition reading. Flipped to false the moment
+  /// the user edits the field — at which point the manual value supersedes
+  /// Garmin and the attribution chip is hidden.
+  bool _weightFromGarmin = false;
+
   @override
   void initState() {
     super.initState();
@@ -81,8 +87,43 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         if (settingsState.email != null) {
           _emailController.text = settingsState.email!;
         }
+
+        // Garmin auto-fill: if Garmin's body-comp reading is authoritative
+        // (newer than user's manual entry, within 30-day staleness window),
+        // overwrite the weight field with Garmin's value. The user can still
+        // edit it; doing so clears `_weightFromGarmin` and hides the chip.
+        _maybeOverrideWeightFromGarmin(settingsState.userId);
       }
     });
+  }
+
+  Future<void> _maybeOverrideWeightFromGarmin(String? userId) async {
+    if (userId == null || !mounted) return;
+    try {
+      final garminData =
+          await ref.read(garminLastBodyCompProvider(userId).future);
+      if (!mounted || garminData == null || garminData.weightKg == null) return;
+
+      final userWeightLbs = double.tryParse(_weightController.text);
+      final userWeightKg =
+          userWeightLbs != null ? userWeightLbs * 0.453592 : null;
+      final isGarminAuthoritative = isGarminAuthoritativeForWeight(
+        garmin: garminData,
+        userWeightKg: userWeightKg,
+        userUpdatedAt: null,
+      );
+      if (!isGarminAuthoritative) return;
+
+      final garminLbs = (garminData.weightKg! * 2.20462).round();
+      // Suppress onChanged side-effects while we replace the text — we don't
+      // want this auto-fill to be treated as a user edit.
+      setState(() {
+        _weightController.text = garminLbs.toString();
+        _weightFromGarmin = true;
+      });
+    } catch (_) {
+      // Best-effort; failures here just leave the user's value in place.
+    }
   }
 
   @override
@@ -719,30 +760,15 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     );
   }
 
-  /// Wraps the weight input field with a Garmin Connect attribution chip
-  /// shown above the input whenever Garmin's body-comp scale reading is
-  /// authoritative (newer than user's manual entry, within the 30-day
-  /// staleness window). Mirrors the body-fat path in nutrition_profile_screen.
+  /// Weight field rendered with the "Garmin always wins until user edits"
+  /// pattern. The Garmin chip appears whenever the field still holds the
+  /// auto-filled value; the moment the user types, `_weightFromGarmin`
+  /// flips false and the chip disappears.
   Widget _buildWeightFieldWithGarminBadge(BuildContext context) {
-    final settingsState = ref.watch(settingsControllerProvider);
-    final effectiveUserId = settingsState.asData?.value.userId;
-    final garminAsync = effectiveUserId != null
-        ? ref.watch(garminLastBodyCompProvider(effectiveUserId))
-        : null;
-    final garminData = garminAsync?.asData?.value;
-    final userWeightLbs = double.tryParse(_weightController.text);
-    final userWeightKg =
-        userWeightLbs != null ? userWeightLbs * 0.453592 : null;
-    final showGarminBadge = isGarminAuthoritativeForWeight(
-      garmin: garminData,
-      userWeightKg: userWeightKg,
-      userUpdatedAt: null,
-    );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (showGarminBadge) ...[
+        if (_weightFromGarmin) ...[
           const Padding(
             padding: EdgeInsets.only(bottom: 4),
             child: GarminAttribution(style: GarminAttributionStyle.compact),
@@ -756,6 +782,13 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           icon: FontAwesomeIcons.weightScale,
           keyboardType: TextInputType.number,
           suffix: 'lbs',
+          onChanged: (_) {
+            // User edit supersedes Garmin — clear the chip and mark dirty.
+            if (_weightFromGarmin) {
+              setState(() => _weightFromGarmin = false);
+            }
+            _markChanged();
+          },
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Please enter your weight';
@@ -767,17 +800,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             return null;
           },
         ),
-        if (showGarminBadge && garminData?.weightKg != null) ...[
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              'Latest from Garmin: ${(garminData!.weightKg! * 2.20462).round()} lbs',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -792,6 +814,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     TextCapitalization textCapitalization = TextCapitalization.none,
     String? suffix,
     String? Function(String?)? validator,
+    void Function(String)? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -811,7 +834,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
           validator: validator,
-          onChanged: (_) => _markChanged(),
+          onChanged: onChanged ?? (_) => _markChanged(),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: AppTextStyles.bodyMedium.copyWith(

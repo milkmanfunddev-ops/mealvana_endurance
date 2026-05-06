@@ -61,27 +61,27 @@ class _NutritionProfileScreenState
       _trainingPhase = profile.trainingPhase;
     });
 
-    // If body fat is empty, try to populate from Garmin integration
-    if (profile.bodyFatPct == null) {
-      try {
-        final integrationsRepo = ref.read(integrationsRepositoryProvider);
-        final garminIntegration = await integrationsRepo.getIntegration(
-          profile.id,
-          'garmin',
-        );
-        if (garminIntegration?.isActive == true &&
-            garminIntegration?.providerAthleteBodyFatPct != null &&
-            mounted) {
-          setState(() {
-            _bodyFatController.text =
-                garminIntegration!.providerAthleteBodyFatPct!
-                    .toStringAsFixed(1);
-            _bodyFatFromGarmin = true;
-          });
-        }
-      } catch (_) {
-        // Non-fatal — body fat from Garmin is best-effort
+    // Garmin auto-fill: if Garmin's latest body-comp reading is authoritative
+    // (newer than the user's manual entry, within 30-day staleness window),
+    // overwrite the body-fat field with Garmin's value. The user can still
+    // edit it; doing so clears `_bodyFatFromGarmin` and hides the chip.
+    try {
+      final garminData =
+          await ref.read(garminLastBodyCompProvider(profile.id).future);
+      if (!mounted || garminData == null) return;
+      final isGarminAuthoritative = isGarminAuthoritativeForBodyFat(
+        garmin: garminData,
+        userBodyFatPct: profile.bodyFatPct,
+        userUpdatedAt: profile.bodyFatPctUpdatedAt,
+      );
+      if (isGarminAuthoritative && garminData.bodyFatPct != null) {
+        setState(() {
+          _bodyFatController.text = garminData.bodyFatPct!.toStringAsFixed(1);
+          _bodyFatFromGarmin = true;
+        });
       }
+    } catch (_) {
+      // Non-fatal — body fat from Garmin is best-effort.
     }
   }
 
@@ -172,31 +172,14 @@ class _NutritionProfileScreenState
 
               // Body Fat %
               _buildSectionLabel(context, 'Body Fat % (optional)'),
-              // Garmin brand attribution (required by Garmin API Brand Guidelines).
-              // Body composition originates from a connected scale / Garmin
-              // Connect and isn't tied to a specific wearable device model, so
-              // we use the "Garmin Connect" fallback form.
-              Builder(builder: (context) {
-                // Get userId from settings controller state for the provider call
-                final settingsState = ref.watch(settingsControllerProvider);
-                final effectiveUserId = settingsState.asData?.value.userId;
-                final garminAsync = effectiveUserId != null
-                    ? ref.watch(garminLastBodyCompProvider(effectiveUserId))
-                    : null;
-                final garminData = garminAsync?.asData?.value;
-                final currentBodyFat = double.tryParse(_bodyFatController.text);
-                final showGarminBadge = _bodyFatFromGarmin ||
-                    isGarminAuthoritativeForBodyFat(
-                      garmin: garminData,
-                      userBodyFatPct: currentBodyFat,
-                      userUpdatedAt: null,
-                    );
-                if (!showGarminBadge) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: const GarminAttribution(style: GarminAttributionStyle.compact),
-                );
-              }),
+              // Garmin brand attribution shown only while the field still
+              // holds the auto-filled Garmin value. User edit clears it.
+              if (_bodyFatFromGarmin) ...[
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: GarminAttribution(style: GarminAttributionStyle.compact),
+                ),
+              ],
               const SizedBox(height: AppSpacing.sm),
               _buildBodyFatInput(context),
 
@@ -263,7 +246,13 @@ class _NutritionProfileScreenState
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}\.?\d{0,1}')),
             ],
-            onChanged: (_) => _markChanged(),
+            onChanged: (_) {
+              // User edit supersedes Garmin — clear the chip and mark dirty.
+              if (_bodyFatFromGarmin) {
+                setState(() => _bodyFatFromGarmin = false);
+              }
+              _markChanged();
+            },
           ),
         ],
       ),
