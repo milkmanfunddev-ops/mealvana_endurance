@@ -224,6 +224,7 @@ export async function generateBeforePhaseV3(
         phaseResults,
         templateFoodsMap,
         userFoods,
+        input.disliked_foods,
       );
       console.log(
         `[PLAN-V3] Found ${substitutions.size} user food substitutions for before phase`,

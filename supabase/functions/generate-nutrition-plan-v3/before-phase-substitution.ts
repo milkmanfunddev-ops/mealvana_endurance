@@ -154,13 +154,17 @@ export async function fetchUserFoodsForBefore(
  * Matching: user food product_type must map to the component's product_type,
  * and carbs per serving must be within 50% tolerance.
  * Never substitutes essential components (water).
+ * Never substitutes with a food the user has marked as disliked/avoided.
  */
 export function findSubstitutions(
   phaseResults: PreWorkoutPhaseResult[],
   templateFoodsMap: Map<string, TemplateFoodRow>,
   userFoods: UserFoodForSubstitution[],
+  dislikedFoods?: string[],
 ): Map<string, UserFoodForSubstitution> {
   if (userFoods.length === 0) return new Map();
+
+  const dislikedLower = (dislikedFoods ?? []).map((d) => d.toLowerCase());
 
   const substitutions = new Map<string, UserFoodForSubstitution>();
   const usedUserFoods = new Set<string>();
@@ -180,6 +184,22 @@ export function findSubstitutions(
 
         const candidates = userFoods.filter((uf) => {
           if (usedUserFoods.has(uf.id)) return false;
+
+          // Never substitute with a food the user has marked as disliked/avoided
+          if (dislikedLower.length > 0) {
+            const nameLower = uf.name.toLowerCase();
+            const displayLower = (uf.display_name ?? "").toLowerCase();
+            if (
+              dislikedLower.includes(nameLower) ||
+              dislikedLower.includes(displayLower) ||
+              dislikedLower.includes(uf.id)
+            ) {
+              console.log(
+                `[PLAN-V3-SUBST] Skipping disliked user food '${uf.name}' for substitution`,
+              );
+              return false;
+            }
+          }
 
           const allowedTypes = USER_TO_TEMPLATE_TYPE_MAP[uf.product_type] ?? [];
           if (
