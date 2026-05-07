@@ -42,7 +42,17 @@ abstract class MacroRepository {
   Future<MacroTargets?> getCachedMacroTargets();
 
   /// Get cached macro targets scoped to a specific activity ID.
-  Future<MacroTargets?> getCachedMacroTargetsForActivity(String activityId);
+  ///
+  /// [expectedActivityType] guards the one-time legacy → scoped migration: if
+  /// the global cache holds macros for a different sport (e.g. cycling cache
+  /// before a run is created), the cached blob is NOT copied into this
+  /// activity's slot. Pass the activity's type whenever it's known to prevent
+  /// cross-sport template corruption (issue #18). When null, the legacy
+  /// migration is skipped entirely — safer default than silent corruption.
+  Future<MacroTargets?> getCachedMacroTargetsForActivity(
+    String activityId, {
+    ActivityType? expectedActivityType,
+  });
 
   /// Update specific macro values
   Future<MacroTargets> updateMacroTargets(
@@ -311,8 +321,9 @@ class MacroRepositoryImpl implements MacroRepository {
 
   @override
   Future<MacroTargets?> getCachedMacroTargetsForActivity(
-    String activityId,
-  ) async {
+    String activityId, {
+    ActivityType? expectedActivityType,
+  }) async {
     final normalizedActivityId = activityId.trim();
     if (normalizedActivityId.isEmpty) {
       return getCachedMacroTargets();
@@ -335,6 +346,21 @@ class MacroRepositoryImpl implements MacroRepository {
 
     final legacyCached = await getCachedMacroTargets();
     if (legacyCached == null) {
+      await _prefs.setBool(migrationFlag, true);
+      return null;
+    }
+
+    // Sport guard (issue #18): the global cache is sport-agnostic and may
+    // hold a different sport's plan than this activity. Without this check
+    // a Run created right after a Cycling plan was generated would inherit
+    // cycling templates (e.g. Bar + Sports Drink + Water), silently. Refuse
+    // the copy when sports don't match — the caller will regenerate and
+    // overwrite the scoped slot with the correct sport's targets.
+    //
+    // When expectedActivityType is null (caller doesn't know), we also
+    // refuse the copy: silent corruption is worse than one regeneration.
+    if (expectedActivityType == null ||
+        legacyCached.activityType != expectedActivityType) {
       await _prefs.setBool(migrationFlag, true);
       return null;
     }

@@ -262,6 +262,12 @@ serve(async (req) => {
     if (duringPhaseResult.template_metadata) {
       duringResponse.template_metadata = duringPhaseResult.template_metadata;
     }
+    if (
+      duringPhaseResult.shortfalls &&
+      duringPhaseResult.shortfalls.length > 0
+    ) {
+      duringResponse.shortfalls = duringPhaseResult.shortfalls;
+    }
 
     const response: Record<string, unknown> = {
       success: true,

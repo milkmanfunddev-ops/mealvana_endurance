@@ -1496,7 +1496,11 @@ class MacroTargetsController extends _$MacroTargetsController {
     final currentStateSnapshot = state.value;
     final activityId = currentStateSnapshot?.activityId;
     final cachedTargets = activityId != null && activityId.isNotEmpty
-        ? await repository.getCachedMacroTargetsForActivity(activityId)
+        ? await repository.getCachedMacroTargetsForActivity(
+            activityId,
+            expectedActivityType:
+                currentStateSnapshot?.macroTargets?.activityType,
+          )
         : await repository.getCachedMacroTargets();
 
     if (cachedTargets == null) return;
@@ -1567,7 +1571,10 @@ class MacroTargetsController extends _$MacroTargetsController {
     final repository = ref.read(macroRepositoryProvider);
     final activityId = state.value?.activityId;
     final cachedTargets = activityId != null && activityId.isNotEmpty
-        ? await repository.getCachedMacroTargetsForActivity(activityId)
+        ? await repository.getCachedMacroTargetsForActivity(
+            activityId,
+            expectedActivityType: state.value?.macroTargets?.activityType,
+          )
         : await repository.getCachedMacroTargets();
 
     if (cachedTargets == null) return;
@@ -1760,6 +1767,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     if (activityId != null && activityId.isNotEmpty) {
       macroTargets = await repository.getCachedMacroTargetsForActivity(
         activityId,
+        expectedActivityType: currentState?.macroTargets?.activityType,
       );
     }
     macroTargets ??= await repository.getCachedMacroTargets();

@@ -93,7 +93,7 @@ const CEREAL_MILK = t({
 });
 
 const OATMEAL = t({
-  id: 'oatmeal', name: 'Oatmeal', base_category: 'Oatmeal',
+  id: 'oatmeal', name: 'Oatmeal', base_category: 'Oats / Granola',
   time_window: '1.5-3 hours', carbs_per_serving: 27, protein_per_serving: 3, fat_per_serving: 1.5,
   sodium_mg: 0, min_servings: 1, max_servings: 3,
   plus_sports_drink: false,
@@ -103,7 +103,7 @@ const OATMEAL = t({
 });
 
 const OATMEAL_RAISINS = t({
-  id: 'oatmeal-raisins', name: 'Oatmeal + Raisins', base_category: 'Oatmeal',
+  id: 'oatmeal-raisins', name: 'Oatmeal + Raisins', base_category: 'Oats / Granola',
   time_window: '1.5-3 hours', carbs_per_serving: 35, protein_per_serving: 3.5, fat_per_serving: 1.5,
   sodium_mg: 5, min_servings: 1, max_servings: 3,
   plus_sports_drink: false,
@@ -161,7 +161,7 @@ const BAGEL_PB_SNACK = t({
 });
 
 const GRANOLA_BAR = t({
-  id: 'granola-bar', name: 'Granola Bar', base_category: 'Quick Grab',
+  id: 'granola-bar', name: 'Granola Bar', base_category: 'Oats / Granola',
   time_window: '30-90 min', carbs_per_serving: 35, protein_per_serving: 4, fat_per_serving: 6,
   sodium_mg: 150, min_servings: 1, max_servings: 2,
   component_food_names: ['granola_bar'],
@@ -243,6 +243,58 @@ const ENERGY_GEL = t({
   component_food_names: ['energy_gel'], component_quantities: { energy_gel: 1 },
 });
 
+// ── Vegan + GF + allergen-free templates (issue #13 — match DB migration
+//    20260506100100_add_vegan_gf_pre_workout_templates.sql) ─────────────
+
+const RICE_BANANA = t({
+  id: 'rice-banana', name: 'Rice + Banana', base_category: 'White Rice',
+  time_window: '1.5-3 hours', template_type: 'food', digestion_speed: 'medium',
+  carbs_per_serving: 72, protein_per_serving: 5, fat_per_serving: 0.5,
+  sodium_mg: 5, min_servings: 0.5, max_servings: 2,
+  component_food_names: ['white_rice_cooked', 'banana'],
+  component_quantities: { white_rice_cooked: 1, banana: 1 },
+  allergens: [], excluded_diets: ['keto', 'low_carb'],
+});
+
+const POTATO_SALT = t({
+  id: 'potato-salt', name: 'Potato + Salt', base_category: 'Potato',
+  time_window: '1.5-3 hours', template_type: 'food', digestion_speed: 'medium',
+  carbs_per_serving: 37, protein_per_serving: 2, fat_per_serving: 0.5,
+  sodium_mg: 300, min_servings: 1, max_servings: 2,
+  component_food_names: ['baked_potato'],
+  component_quantities: { baked_potato: 1 },
+  allergens: [], excluded_diets: ['keto', 'low_carb'],
+});
+
+const FRUIT_BOWL = t({
+  id: 'fruit-bowl', name: 'Fruit Bowl', base_category: 'Fruit Mix',
+  time_window: '1.5-3 hours', template_type: 'food', digestion_speed: 'fast',
+  carbs_per_serving: 90, protein_per_serving: 2, fat_per_serving: 1,
+  sodium_mg: 5, min_servings: 0.5, max_servings: 1.5,
+  component_food_names: ['banana', 'dates', 'mixed_berries'],
+  component_quantities: { banana: 1, dates: 3, mixed_berries: 0.5 },
+  allergens: [], excluded_diets: ['keto'],
+});
+
+const DATES_BANANA = t({
+  id: 'dates-banana', name: 'Dates + Banana', base_category: 'Fruit Mix',
+  time_window: '30-90 min', template_type: 'food', digestion_speed: 'fast',
+  carbs_per_serving: 63, protein_per_serving: 1.5, fat_per_serving: 0.5,
+  sodium_mg: 5, min_servings: 0.5, max_servings: 2,
+  component_food_names: ['dates', 'banana'],
+  component_quantities: { dates: 2, banana: 1 },
+  allergens: [], excluded_diets: ['keto'],
+});
+
+const BANANA_STANDALONE = t({
+  id: 'banana', name: 'Banana', base_category: 'Fruit',
+  time_window: '30-90 min', template_type: 'food', digestion_speed: 'fast',
+  carbs_per_serving: 27, protein_per_serving: 1.3, fat_per_serving: 0.4,
+  sodium_mg: 1, min_servings: 1, max_servings: 3,
+  component_food_names: ['banana'], component_quantities: { banana: 1 },
+  allergens: [], excluded_diets: ['keto'],
+});
+
 // ── Drink templates ──────────────────────────────────────────────────────
 
 const WATER = t({
@@ -298,10 +350,12 @@ const ALL_FOOD = [
   // Meal
   BAGEL_CREAM_CHEESE, BAGEL_PB_JAM, CEREAL_MILK, OATMEAL, OATMEAL_RAISINS,
   RICE_CAKE_PB_JAM_MEAL, TOAST_PB_JAM_MEAL, YOGURT_GRANOLA,
+  RICE_BANANA, POTATO_SALT, FRUIT_BOWL, // vegan + GF + allergen-free meals
   // Snack
   BAGEL_JAM_SNACK, BAGEL_PB_SNACK, GRANOLA_BAR, OJ_TOAST,
   RICE_CAKE_JAM_SNACK, RICE_CAKE_PB_SNACK, SMOOTHIE_FRUIT,
   TOAST_JAM_SNACK, TOAST_PB_SNACK,
+  DATES_BANANA, BANANA_STANDALONE, // vegan + GF + allergen-free snacks
   // Top-up
   ENERGY_CHEWS, ENERGY_GEL,
 ];
@@ -497,11 +551,19 @@ describe('Pre-Workout Matrix', () => {
           // ── Carb range ────────────────────────────────────────────
           it('should deliver carbs within target range (or document shortfall)', () => {
             const carbs = totalCarbs(results);
-            // NOTE: If this fails, it exposes issue #11 — carb redistribution needed
+            // Per issue #15: when preferences eliminate all viable templates
+            // for a phase, the algorithm now emits a shortfalls[] array
+            // describing the gap rather than silently delivering 0g. Either
+            // the carb target is met OR every short phase carries a carb
+            // shortfall. Both are acceptable outcomes.
+            const carbShortfallDocumented = results.some(
+              (r) => (r.shortfalls ?? []).some((s) => s.macro === 'carbs'),
+            );
             assert(
-              carbs >= targets.carbs_low_g,
+              carbs >= targets.carbs_low_g || carbShortfallDocumented,
               `[${athlete.name} / ${scenario.name}] Carbs ${carbs.toFixed(1)}g below ` +
-              `minimum ${targets.carbs_low_g}g (target: ${targets.carbs_g}g)`,
+              `minimum ${targets.carbs_low_g}g (target: ${targets.carbs_g}g) ` +
+              `and no carb shortfall was documented`,
             );
             assert(
               carbs <= targets.carbs_high_g * 1.1, // 10% tolerance above high

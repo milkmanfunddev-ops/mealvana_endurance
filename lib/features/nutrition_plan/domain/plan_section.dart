@@ -1,4 +1,5 @@
 import 'food_item_data.dart';
+import 'macro_shortfall.dart';
 import 'time_slot_assignment.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
@@ -15,6 +16,7 @@ class BeforeSubPhase {
     this.fluidsTarget,
     this.templateId,
     this.templateName,
+    this.shortfalls = const <MacroShortfall>[],
   });
 
   final String subPhaseType; // 'meal', 'snack', 'top_up'
@@ -26,6 +28,11 @@ class BeforeSubPhase {
   final double? fluidsTarget;
   final String? templateId;
   final String? templateName;
+
+  /// Macros the algorithm could not satisfy due to user preference filtering
+  /// (dislikes, allergens, diet exclusions). Empty list means clean fit.
+  /// Issue #14 / #15.
+  final List<MacroShortfall> shortfalls;
 
   /// Display title for this sub-phase
   String get displayTitle {
@@ -102,6 +109,9 @@ class BeforeSubPhase {
           json['template_id'] as String? ?? json['templateId'] as String?,
       templateName:
           json['template_name'] as String? ?? json['templateName'] as String?,
+      shortfalls: ((json['shortfalls'] as List<dynamic>?) ?? const [])
+          .map((e) => MacroShortfall.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 
@@ -116,6 +126,8 @@ class BeforeSubPhase {
       'fluidsTarget': fluidsTarget,
       'templateId': templateId,
       'templateName': templateName,
+      if (shortfalls.isNotEmpty)
+        'shortfalls': shortfalls.map((s) => s.toJson()).toList(),
     };
   }
 
@@ -129,6 +141,7 @@ class BeforeSubPhase {
     double? fluidsTarget,
     String? templateId,
     String? templateName,
+    List<MacroShortfall>? shortfalls,
   }) {
     return BeforeSubPhase(
       subPhaseType: subPhaseType ?? this.subPhaseType,
@@ -140,6 +153,7 @@ class BeforeSubPhase {
       fluidsTarget: fluidsTarget ?? this.fluidsTarget,
       templateId: templateId ?? this.templateId,
       templateName: templateName ?? this.templateName,
+      shortfalls: shortfalls ?? this.shortfalls,
     );
   }
 

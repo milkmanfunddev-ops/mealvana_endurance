@@ -426,6 +426,7 @@ describe("Disliked Foods: Electrolyte Top-Up (fillElectrolytes)", () => {
       targets,
       120,
       "moderate",
+      DISLIKED_ELECTROLYTE_IDS,
     );
 
     assertExists(result, "Should produce a result");
@@ -470,6 +471,7 @@ describe("Disliked Foods: Electrolyte Top-Up (fillElectrolytes)", () => {
       targets,
       120,
       "moderate",
+      DISLIKED_ELECTROLYTE_IDS,
     );
 
     assertExists(result, "Should produce a result");
@@ -516,6 +518,7 @@ describe("Disliked Foods: Electrolyte Top-Up (fillElectrolytes)", () => {
       targets,
       120,
       "moderate",
+      DISLIKED_ELECTROLYTE_IDS,
     );
 
     // Should either return null (can't meet sodium without disliked foods)

@@ -99,6 +99,21 @@ export interface ScaledFood {
   calories: number;
 }
 
+/**
+ * A macro target the algorithm could not fully satisfy because viable foods
+ * were filtered out by the user's preferences (dislikes, allergens, diet).
+ * Surfaced to the UI as a guidance card with curated suggestions. Mirrors
+ * the same shape used by during-phase (PhaseShortfall in plan-v3 types) so
+ * the Flutter widget can render both with one code path. Issue #14 / #15.
+ */
+export interface SubPhaseShortfall {
+  macro: 'carbs' | 'sodium' | 'fluid' | 'protein' | 'caffeine';
+  delivered: number;
+  target: number;
+  unit: 'g' | 'mg' | 'ml';
+  reason: 'all_disliked' | 'no_diet_match' | 'all_templates_filtered';
+}
+
 export interface SubPhaseResult {
   sub_phase_type: SubPhaseType;
   targets: SubPhaseTargets;
@@ -106,6 +121,9 @@ export interface SubPhaseResult {
   template_id?: string;
   template_name?: string;
   drink?: FoodResult;
+  /** Per-macro shortfalls when preferences eliminated viable options for
+   * this sub-phase. Empty/absent on a clean fit. */
+  shortfalls?: SubPhaseShortfall[];
 }
 
 // ============================================================================

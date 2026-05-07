@@ -19,6 +19,7 @@ import {
   type PlanState,
   type TemplateSelection,
   type PreWorkoutPhaseResult,
+  type PreWorkoutShortfall,
   BUDGET_SPLITS,
   BANANA_CARBS,
   BANANA_SODIUM,
@@ -784,6 +785,40 @@ export function selectPreWorkoutFoods(
     }
 
     if (candidates.length === 0) {
+      // No template survived preference / diet / allergen filtering for this
+      // phase. Emit shortfalls so the UI surfaces "no foods matched, try X"
+      // guidance instead of silently dropping the carb target (issue #15).
+      // Specifically the top-up-only window: when hoursBefore < 0.5 and all
+      // top-up templates are disliked, this is the only phase — no
+      // redistribution can help, so the shortfall is the user's only signal.
+      const shortfalls: PreWorkoutShortfall[] = [];
+      if ((pTargets?.carbs_g ?? 0) > 0) {
+        shortfalls.push({
+          macro: 'carbs',
+          delivered: 0,
+          target: Math.round(pTargets!.carbs_g),
+          unit: 'g',
+          reason: 'all_disliked',
+        });
+      }
+      if ((pTargets?.sodium_mg ?? 0) > 0) {
+        shortfalls.push({
+          macro: 'sodium',
+          delivered: 0,
+          target: Math.round(pTargets!.sodium_mg),
+          unit: 'mg',
+          reason: 'all_disliked',
+        });
+      }
+      if ((pTargets?.water_ml ?? 0) > 0) {
+        shortfalls.push({
+          macro: 'fluid',
+          delivered: 0,
+          target: Math.round(pTargets!.water_ml),
+          unit: 'ml',
+          reason: 'all_disliked',
+        });
+      }
       results.push({
         phase,
         primary: null,
@@ -793,6 +828,7 @@ export function selectPreWorkoutFoods(
         total_fat_g: 0,
         total_sodium_mg: 0,
         total_fluid_ml: 0,
+        ...(shortfalls.length > 0 && { shortfalls }),
       });
       continue;
     }

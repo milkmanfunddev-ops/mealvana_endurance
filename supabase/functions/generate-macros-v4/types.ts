@@ -114,6 +114,24 @@ export interface TemplateSelection {
   component_quantities: Record<string, number>;
 }
 
+/**
+ * Macro target the algorithm could not satisfy because all viable templates
+ * or foods were filtered out by user preferences (dislikes/allergens/diet).
+ * Surfaced to the UI as a guidance card with curated suggestions. Different
+ * from "user just doesn't need much" — only emitted when target > 0 AND
+ * delivery is < 90% of target AND the cause is preference-driven filtering.
+ *
+ * Mirrors the during-phase PhaseShortfall in plan-v3 types.ts so the Flutter
+ * widget can render both with one code path.
+ */
+export interface PreWorkoutShortfall {
+  macro: 'carbs' | 'sodium' | 'fluid' | 'protein';
+  delivered: number;
+  target: number;
+  unit: 'g' | 'mg' | 'ml';
+  reason: 'all_disliked' | 'no_diet_match' | 'all_templates_filtered';
+}
+
 export interface PreWorkoutPhaseResult {
   phase: SubPhaseType;
   primary: TemplateSelection | null;
@@ -126,6 +144,9 @@ export interface PreWorkoutPhaseResult {
   total_fat_g: number;
   total_sodium_mg: number;
   total_fluid_ml: number;
+  /** Per-macro shortfalls when preferences eliminated all viable options
+   * for this phase. Issue #15. */
+  shortfalls?: PreWorkoutShortfall[];
 }
 
 // ============================================================================

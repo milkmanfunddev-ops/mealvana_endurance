@@ -3,6 +3,7 @@ import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../application/macro_explanation_service.dart';
 import '../../../domain/macro_targets.dart';
 import '../../../domain/nutrition_plan.dart';
+import '../macro_shortfall_card.dart';
 import 'macro_summary_row.dart';
 import 'dismissible_food_item.dart';
 import 'phase_explanation_sheet.dart';
@@ -358,6 +359,13 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                     );
                   }),
                   const SizedBox(height: AppSpacing.sm),
+                  if (subPhase.shortfalls.isNotEmpty) ...[
+                    MacroShortfallCard(
+                      shortfalls: subPhase.shortfalls,
+                      dietHint: _dietHint,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
                   KyleAddFoodButton(
                     text: 'ADD FOOD',
                     onPressed: () => widget.onAddFood('${widget.categoryPrefix}:${subPhase.subPhaseType}'),
@@ -370,6 +378,11 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
       ),
     );
   }
+
+  /// Optional diet hint passed to MacroShortfallCard for diet-aware
+  /// suggestions. Returns null when no diet context is available — the card
+  /// then uses the generic suggestion list.
+  String? get _dietHint => null; // Wire user diet here when threaded through
 
   /// Centered macro summary displayed inside expanded sub-phase content.
   /// Shows CARBS/FLUIDS/SODIUM to match the parent card header.

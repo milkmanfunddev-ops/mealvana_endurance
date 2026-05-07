@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 import '../../domain/daily_macro_targets.dart';
 import 'energy_source_breakdown.dart';
 import 'macro_breakdown_row.dart';
@@ -60,6 +61,19 @@ class DailySummaryCard extends StatelessWidget {
           // for any line that came from Garmin Connect data.
           const SizedBox(height: AppSpacing.lg),
           EnergySourceBreakdown(macros: macros),
+
+          // Card-level Garmin attribution (Garmin Developer API Brand
+          // Guidelines require attribution on every screen surfacing
+          // Garmin-derived data). Shown whenever any input — RMR, NEAT,
+          // weight, body fat, or session kcal/duration — came from Garmin.
+          if (macros.sources?.anyFromGarmin ?? false) ...[
+            const SizedBox(height: AppSpacing.md),
+            const Center(
+              child: GarminAttribution(
+                style: GarminAttributionStyle.standard,
+              ),
+            ),
+          ],
         ],
       ),
     );

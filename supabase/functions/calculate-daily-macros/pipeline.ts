@@ -156,6 +156,21 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
     mode,
   } = input;
 
+  // Auto-promote prospective → retrospective when Garmin data is present.
+  // Prospective plans are forecasts; the moment we have Garmin's measured
+  // session/daily kcal, we should be using it rather than formulas. Callers can
+  // pass mode='prospective' explicitly without having to also know to flip it
+  // when Garmin data shows up — the pipeline figures it out from the input.
+  const hasGarminActivity = (input.garmin_activities ?? []).some(
+    (a) => a != null && (a.activeKilocalories ?? 0) > 0,
+  );
+  const hasGarminDaily =
+    (input.garmin_daily?.activeKilocalories ?? 0) > 0;
+  const effectiveMode =
+    mode === 'retrospective' || hasGarminActivity || hasGarminDaily
+      ? 'retrospective'
+      : (mode ?? 'prospective');
+
   // Resolve weight + body fat % — Garmin body comp wins when newer than user's
   // last manual entry (latest-wins precedence). Falls back to input fields when
   // no Garmin data is present.
@@ -219,7 +234,7 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
     resolveSessionData(
       session,
       weight_kg,
-      mode ?? 'prospective',
+      effectiveMode,
       garmin_activities?.[i] ?? null,
       null, // tp_session — not yet wired
     ),
@@ -330,7 +345,7 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
   //     input.garmin_daily.activeKilocalories > 0
   // Otherwise use the formula-derived NEAT.
   const resolvedNEAT = resolveNEAT(
-    mode ?? 'prospective',
+    effectiveMode,
     input.garmin_daily ?? null,
     total_session_kcal,
     rmr,
@@ -460,22 +475,45 @@ export function calculateDailyMacros(input: DailyMacroInput): DailyMacroOutput {
     sessions: session_sources,
   };
 
+  const carb_g = Math.round(carb);
+  const prot_g = Math.round(prot);
+  const fat_g = Math.round(fat);
+  const session_kcal = Math.round(total_session_kcal);
+
+  // Delta vs prior prospective plan — only emitted when we just recomputed
+  // retrospectively and the caller passed in the prospective baseline. The
+  // contract is asymmetric on purpose: prospective recomputes never emit
+  // delta even if a prior plan is passed in (a forecast diffing another
+  // forecast isn't useful — we only diff against measured truth).
+  const prior = input.prospective_plan;
+  const delta =
+    effectiveMode === 'retrospective' && prior
+      ? {
+          carb_g: carb_g - prior.carb_g,
+          prot_g: prot_g - prior.prot_g,
+          fat_g: fat_g - prior.fat_g,
+          tdee: tdee - prior.tdee,
+          session_kcal: session_kcal - prior.session_kcal,
+        }
+      : undefined;
+
   return {
-    carb_g: Math.round(carb),
-    prot_g: Math.round(prot),
-    fat_g: Math.round(fat),
+    carb_g,
+    prot_g,
+    fat_g,
     tdee: tdee,
     rmr: Math.round(rmr),
-    session_kcal: Math.round(total_session_kcal),
+    session_kcal,
     neat_kcal: Math.round(neat),
     tef_kcal: tef,
-    mode: mode ?? 'prospective',
+    mode: effectiveMode,
     ea: parseFloat(ea_value.toFixed(1)),
     ea_status: ea_status,
     algorithm_version: ALGORITHM_VERSION,
     weight_kg: parseFloat(weight_kg.toFixed(2)),
     body_fat_pct: body_fat_pct,
     sources,
+    ...(delta !== undefined && { delta }),
   };
 }
 

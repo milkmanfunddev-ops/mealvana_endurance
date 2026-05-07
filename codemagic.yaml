@@ -448,16 +448,43 @@ workflows:
       - *setup_android_signing
       - *install_shorebird
 
+      - name: Resolve next Android build number from Play
+        # Play rejects rollouts whose versionCode isn't strictly greater
+        # than every existing one across ALL tracks (production, beta,
+        # alpha, internal). google-play get-latest-build-number scans all
+        # tracks; we bump by 1 and fall back to $PROJECT_BUILD_NUMBER if
+        # Play returns nothing.
+        script: |
+          set -e
+          PACKAGE_NAME=com.milkman.mealvanaendurance
+          echo "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" > /tmp/gcloud-sa.json
+          LATEST=$(google-play get-latest-build-number \
+            --package-name "$PACKAGE_NAME" \
+            --credentials @file:/tmp/gcloud-sa.json 2>/dev/null || echo "")
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "Play latest build for $PACKAGE_NAME: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next Android build number: $NEXT"
+
       - name: Create Shorebird Android Release
         # Same as iOS: drop --flutter-version=stable (Shorebird rejects
         # the literal string "stable") and add set -e so a silent
         # shorebird failure doesn't masquerade as a successful build.
+        # --build-number is forwarded to `flutter build appbundle` so
+        # versionCode picks up the value resolved above instead of the
+        # +1 from pubspec.yaml.
         script: |
           set -e
           shorebird release android \
             --flavor prod \
             --target lib/main_prod.dart \
-            --artifact=aab
+            --artifact=aab \
+            --build-number=$BUILD_NUMBER
 
           echo ""
           echo "=========================================="
@@ -599,14 +626,38 @@ workflows:
       - *setup_android_signing
       - *install_shorebird
 
+      - name: Resolve next Android build number from Play
+        # Same rationale as prod-android: Play won't accept a versionCode
+        # less than the max across all tracks (and main-android targets
+        # the beta/open-testing track on top of whatever release/* has
+        # already shipped to alpha).
+        script: |
+          set -e
+          PACKAGE_NAME=com.milkman.mealvanaendurance
+          echo "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" > /tmp/gcloud-sa.json
+          LATEST=$(google-play get-latest-build-number \
+            --package-name "$PACKAGE_NAME" \
+            --credentials @file:/tmp/gcloud-sa.json 2>/dev/null || echo "")
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "Play latest build for $PACKAGE_NAME: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next Android build number: $NEXT"
+
       - name: Create Shorebird Android Release (Play Open/Beta)
         # Drop --flutter-version=stable + add set -e (see iOS notes above).
+        # --build-number forwarded to flutter build (see prod-android).
         script: |
           set -e
           shorebird release android \
             --flavor prod \
             --target lib/main_prod.dart \
-            --artifact=aab
+            --artifact=aab \
+            --build-number=$BUILD_NUMBER
 
     artifacts:
       - build/**/outputs/**/*.aab
@@ -989,11 +1040,30 @@ workflows:
       - *load_firebase_config
       - *setup_android_signing
 
+      - name: Resolve next Android build number from Play
+        script: |
+          set -e
+          PACKAGE_NAME=com.milkman.mealvanaendurance
+          echo "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" > /tmp/gcloud-sa.json
+          LATEST=$(google-play get-latest-build-number \
+            --package-name "$PACKAGE_NAME" \
+            --credentials @file:/tmp/gcloud-sa.json 2>/dev/null || echo "")
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "Play latest build for $PACKAGE_NAME: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next Android build number: $NEXT"
+
       - name: Build Android App Bundle (Standard)
         script: |
           flutter build appbundle --release \
             --flavor prod \
-            --target lib/main_prod.dart
+            --target lib/main_prod.dart \
+            --build-number=$BUILD_NUMBER
 
     artifacts:
       - build/**/outputs/**/*.aab

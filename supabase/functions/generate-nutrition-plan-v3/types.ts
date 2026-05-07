@@ -107,8 +107,28 @@ export interface TemplateMetadata {
   template_formula: string;
 }
 
+/**
+ * A macro target the algorithm could not fully satisfy because viable foods
+ * were filtered out by the user's preferences (dislikes, allergens, diet
+ * exclusions). Surfaced to the UI as a guidance card with curated suggestions
+ * the user can swap in. Different from validation failure — the plan is still
+ * produced with a partial fill.
+ */
+export interface PhaseShortfall {
+  macro: "carbs" | "sodium" | "fluid" | "protein" | "caffeine";
+  delivered: number;
+  target: number;
+  unit: "g" | "mg" | "ml";
+  reason: "all_disliked" | "no_diet_match" | "all_templates_filtered";
+}
+
 export interface LPPhaseResult {
   foods: FoodResult[];
   by_hour_data?: ByHourData | null;
   template_metadata?: TemplateMetadata | null;
+  /**
+   * One entry per macro that fell short of target due to preference filtering.
+   * Empty/absent when the plan fully satisfies all targets. Issue #14 / #15.
+   */
+  shortfalls?: PhaseShortfall[];
 }

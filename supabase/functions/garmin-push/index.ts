@@ -38,6 +38,7 @@ import {
 import {
   buildGarminCompletionUpdate,
   findMatchingPlannedActivity,
+  insertGarminActivityIfMissing,
 } from "../_shared/garmin/activity_completion.ts";
 import {
   buildGarminProviderLabel,
@@ -105,9 +106,17 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
 
     const results: Record<string, { processed: number; errors: number }> = {};
 
-    // Process activities — with matching to existing planned activities
+    // Process activities — match an existing planned activity if one exists,
+    // otherwise auto-create a completed activity for endurance sports so the
+    // user gets a notification + nutrition surface for the workout.
     if (body.activities && body.activities.length > 0) {
-      const stats = { processed: 0, errors: 0, matched: 0, skipped: 0 };
+      const stats = {
+        processed: 0,
+        errors: 0,
+        matched: 0,
+        inserted: 0,
+        skipped: 0,
+      };
       for (const activity of body.activities) {
         try {
           // Look up our user by Garmin userId
@@ -199,10 +208,53 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               stats.processed++;
             }
           } else {
-            console.log(
-              `[garmin-push] No matching planned activity for ${sportType} on ${scheduledDate} — skipping`,
+            // No planned activity matched — try to auto-create one.
+            const outcome = await insertGarminActivityIfMissing(
+              supabase,
+              activity,
+              activityRow,
             );
-            stats.skipped++;
+            switch (outcome.kind) {
+              case "inserted":
+                console.log(
+                  `[garmin-push] Auto-created completed activity ${outcome.activityId} for ${sportType} on ${scheduledDate}`,
+                );
+                await sendActivityUploadedPush({
+                  userId: mapping.user_id,
+                  activityId: outcome.activityId,
+                  scheduledDate,
+                  provider: buildGarminProviderLabel(activity.deviceName),
+                  logPrefix: "[garmin-push]",
+                });
+                stats.inserted++;
+                stats.processed++;
+                break;
+              case "duplicate":
+                console.log(
+                  `[garmin-push] Activity for ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
+                );
+                stats.skipped++;
+                break;
+              case "skipped_non_endurance":
+                console.log(
+                  `[garmin-push] No matching planned activity for non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
+                );
+                stats.skipped++;
+                break;
+              case "skipped_no_summary_id":
+                console.warn(
+                  "[garmin-push] No matching planned activity and missing summaryId — skipping",
+                );
+                stats.errors++;
+                break;
+              case "error":
+                console.error(
+                  "[garmin-push] Auto-create insert error:",
+                  outcome.error,
+                );
+                stats.errors++;
+                break;
+            }
           }
         } catch (err) {
           console.error(`[garmin-push] Activity processing error:`, err);
@@ -495,10 +547,17 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       results.manuallyUpdatedActivities = stats;
     }
 
-    // Process activity details — same match-only strategy as regular activities.
-    // Only update an existing planned activity if one matches.
+    // Process activity details — same match-or-insert strategy as regular
+    // activities. Match wins update an existing planned activity; on no-match
+    // we auto-create for endurance sports.
     if (body.activityDetails && body.activityDetails.length > 0) {
-      const stats = { processed: 0, errors: 0, matched: 0, skipped: 0 };
+      const stats = {
+        processed: 0,
+        errors: 0,
+        matched: 0,
+        inserted: 0,
+        skipped: 0,
+      };
       for (const detail of body.activityDetails) {
         try {
           const { data: mapping } = await supabase
@@ -516,6 +575,20 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           }
 
           const summary = detail.summary;
+          // Guard against missing summaryId: Garmin occasionally omits it on
+          // ActivityDetails payloads. Bare String(undefined) would write the
+          // literal string "undefined" into garmin_summary_id and break the
+          // unique index.
+          const detailSummaryId = summary.summaryId ??
+            (summary as { activityId?: string }).activityId ??
+            (detail as { activityId?: string }).activityId;
+          if (!detailSummaryId) {
+            console.warn(
+              "[garmin-push] ActivityDetails missing summaryId — skipping",
+            );
+            stats.errors++;
+            continue;
+          }
           const activityRow = mapGarminActivityToActivity(
             summary,
             mapping.user_id,
@@ -538,7 +611,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               summary,
               activityRow,
             );
-            updateFields.garmin_summary_id = String(summary.summaryId);
+            updateFields.garmin_summary_id = String(detailSummaryId);
 
             const { data: updatedRows, error } = await supabase
               .from("activities")
@@ -573,10 +646,52 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               stats.processed++;
             }
           } else {
-            console.log(
-              `[garmin-push] No matching planned activity for detail ${sportType} on ${scheduledDate} — skipping`,
+            const outcome = await insertGarminActivityIfMissing(
+              supabase,
+              summary,
+              activityRow,
             );
-            stats.skipped++;
+            switch (outcome.kind) {
+              case "inserted":
+                console.log(
+                  `[garmin-push] Auto-created completed activity ${outcome.activityId} from detail push for ${sportType} on ${scheduledDate}`,
+                );
+                await sendActivityUploadedPush({
+                  userId: mapping.user_id,
+                  activityId: outcome.activityId,
+                  scheduledDate,
+                  provider: buildGarminProviderLabel(summary.deviceName),
+                  logPrefix: "[garmin-push]",
+                });
+                stats.inserted++;
+                stats.processed++;
+                break;
+              case "duplicate":
+                console.log(
+                  `[garmin-push] Activity for detail ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
+                );
+                stats.skipped++;
+                break;
+              case "skipped_non_endurance":
+                console.log(
+                  `[garmin-push] No matching planned activity for detail non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
+                );
+                stats.skipped++;
+                break;
+              case "skipped_no_summary_id":
+                console.warn(
+                  "[garmin-push] No matching planned activity for detail and missing summaryId — skipping",
+                );
+                stats.errors++;
+                break;
+              case "error":
+                console.error(
+                  "[garmin-push] Auto-create insert error (detail):",
+                  outcome.error,
+                );
+                stats.errors++;
+                break;
+            }
           }
         } catch (err) {
           console.error(`[garmin-push] Activity detail processing error:`, err);

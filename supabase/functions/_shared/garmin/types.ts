@@ -58,7 +58,33 @@ export type OurSportType =
   | 'triathlon'
   | 'duathlon'
   | 'multisport'
+  | 'transition'
   | 'other';
+
+/**
+ * Sport types Mealvana fuels and recalculates daily macros for.
+ * Garmin uploads outside this set are dropped (no activity created, no
+ * notification fired) — Mealvana is an endurance-nutrition tool, so a
+ * walk or strength session has nothing to attach a fuel plan to.
+ *
+ * Triathlon/duathlon/multisport parents are included so the parent row
+ * still gets created; child legs share the parent's nutrition context.
+ */
+export const ENDURANCE_SPORT_TYPES: ReadonlySet<OurSportType> = new Set<
+  OurSportType
+>([
+  'running',
+  'cycling',
+  'swimming',
+  'triathlon',
+  'duathlon',
+  'multisport',
+]);
+
+export function isEnduranceSportType(sport: string | undefined | null): boolean {
+  if (!sport) return false;
+  return ENDURANCE_SPORT_TYPES.has(sport as OurSportType);
+}
 
 // ============================================================================
 // Garmin Activity Summary (Push payload)

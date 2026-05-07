@@ -77,6 +77,15 @@ export interface DailyMacroInput {
    * for sessions that have no garmin_summary_id (no Garmin upload).
    */
   garmin_activities?: (GarminActivityForSession | null)[] | null;
+
+  /**
+   * Previously generated prospective plan for the same day. When provided
+   * AND the resolved mode is 'retrospective', the pipeline emits a `delta`
+   * showing how the retrospective recalculation differs from the original
+   * forecast. Used by the UI to surface "Garmin showed less burn — fat
+   * dropped 48g" style explanations.
+   */
+  prospective_plan?: DailyMacroOutput | null;
 }
 
 /** Per-day input for week mode — day-specific fields only */
@@ -159,4 +168,17 @@ export interface DailyMacroOutput {
   weight_kg: number;
   body_fat_pct: number | null;
   sources: MacroSources;
+
+  /**
+   * Retrospective-only diff vs the prior prospective plan for this day.
+   * Present when input.prospective_plan was provided AND mode resolved to
+   * 'retrospective'. Otherwise omitted.
+   */
+  delta?: {
+    carb_g: number;
+    prot_g: number;
+    fat_g: number;
+    tdee: number;
+    session_kcal: number;
+  };
 }
