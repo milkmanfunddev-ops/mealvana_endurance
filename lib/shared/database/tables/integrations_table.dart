@@ -31,11 +31,16 @@ class IntegrationsTable extends Table {
   // Athlete zone data (HR, Speed, Power zones from Training Peaks)
   TextColumn get athleteZonesJson => text().nullable().named('athlete_zones_json')();
 
-  // Sync metadata
+  // Sync metadata (provider sync — when we last pulled workouts from the provider)
   BoolColumn get isActive => boolean().withDefault(const Constant(true)).named('is_active')();
   DateTimeColumn get lastSyncAt => dateTime().nullable().named('last_sync_at')();
   TextColumn get lastSyncStatus => text().nullable().named('last_sync_status')(); // 'success', 'error', 'pending'
   TextColumn get lastSyncError => text().nullable().named('last_sync_error')();
+
+  // Supabase mirror tracking — true when local row has changes not yet pushed to Supabase.
+  // Distinct from last_sync_at, which tracks provider (TP/FS/Garmin) sync, not server backup.
+  BoolColumn get needsUpload =>
+      boolean().withDefault(const Constant(true)).named('needs_upload')();
 
   // Timestamps
   DateTimeColumn get createdAt => dateTime().named('created_at')();

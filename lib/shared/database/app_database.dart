@@ -161,7 +161,9 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 7;
+  /// v8 added needs_upload column to integrations so OAuth tokens are
+  /// mirrored to Supabase and survive Drift schema resyncs / reinstalls.
+  int get schemaVersion => 8;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -211,6 +213,16 @@ class AppDatabase extends _$AppDatabase {
           );
           await customStatement(
             'ALTER TABLE users ADD COLUMN body_fat_pct_updated_at INTEGER',
+          );
+        }
+
+        // v8: Add needs_upload column to integrations so existing OAuth
+        // tokens get backed up to Supabase on the next sync. Default 1 so
+        // every pre-existing row is treated as dirty exactly once — Supabase
+        // had no integrations table before this, so we need to seed it.
+        if (from < 8) {
+          await customStatement(
+            'ALTER TABLE integrations ADD COLUMN needs_upload INTEGER NOT NULL DEFAULT 1',
           );
         }
       },

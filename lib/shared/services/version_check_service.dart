@@ -19,6 +19,7 @@ import '../../features/events/data/events_repository.dart';
 import '../../features/food_preferences/data/food_preferences_repository.dart';
 import '../../features/carb_loading/data/carb_loading_repository.dart';
 import '../../features/feedback/data/feedback_repository.dart';
+import '../../features/integrations/presentation/providers/integrations_providers.dart';
 import '../../features/user_foods/data/user_foods_repository.dart';
 import '../data/syncable_repository.dart';
 
@@ -288,6 +289,7 @@ class VersionCheckService {
       'food_preferences': await _ref.read(
         foodPreferencesRepositoryProvider.future,
       ),
+      'integrations': _ref.read(integrationsRepositoryProvider),
       'user_foods': await _ref.read(userFoodsRepositoryProvider.future),
     };
   }

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_config.dart';
@@ -130,7 +131,13 @@ FinalSurgeApiClient finalSurgeApiClient(Ref ref) {
 @Riverpod(keepAlive: true)
 IntegrationsRepository integrationsRepository(Ref ref) {
   final database = ref.watch(appDatabaseProvider);
-  return IntegrationsRepository(database: database);
+  final deps = ref.watch(appExternalDepsProvider);
+  return IntegrationsRepository(
+    database: database,
+    supabase: Supabase.instance.client,
+    logger: deps.logger,
+    sentry: deps.sentry,
+  );
 }
 
 // =============================================================================
