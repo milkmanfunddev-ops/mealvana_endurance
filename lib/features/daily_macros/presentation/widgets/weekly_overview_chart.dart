@@ -131,7 +131,14 @@ class _WeeklyOverviewChartState extends State<WeeklyOverviewChart> {
                         sideTitles: SideTitles(
                           showTitles: true,
                           reservedSize: 24,
+                          interval: 1,
                           getTitlesWidget: (value, meta) {
+                            // Only render labels at integer day indices to
+                            // avoid duplicates when fl_chart picks a
+                            // sub-integer interval.
+                            if (value != value.roundToDouble()) {
+                              return const SizedBox.shrink();
+                            }
                             final index = value.toInt();
                             if (index < 0 || index >= _dayLabels.length) {
                               return const SizedBox.shrink();
