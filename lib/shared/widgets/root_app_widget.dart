@@ -71,23 +71,11 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 
     final router = ref.read(AppRouter.routerProvider);
 
-    // Activity-upload notifications (Garmin, etc.) route to the fuel log screen
-    // so the user can rate the workout and log what they actually ate vs
-    // what they planned. Seed the stack with /plan first, then push /fuel-log
-    // on top — that way the close/back buttons pop back to the activity
-    // detail screen instead of crashing with "nothing to pop".
-    if (type == 'activity') {
-      router.go('/plan', extra: {'activityId': activityId});
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        router.push(
-          '/fuel-log',
-          extra: {'activityId': activityId, 'isNewActivity': false},
-        );
-      });
-      return;
-    }
-
+    // Both activity-upload and reminder notifications now route to the
+    // activity-detail screen. ActivityDetailScreen owns the conditional
+    // redirect into the fuel-log surface (only when completed + plan exists
+    // + not yet logged), which avoids the "no plan" empty-state flash that
+    // happened when we unconditionally pushed /fuel-log on top from here.
     router.go('/plan', extra: {'activityId': activityId});
   }
 

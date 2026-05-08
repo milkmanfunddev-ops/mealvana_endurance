@@ -58,6 +58,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
   bool _hasShownSwipeHint = false;
   bool _swipeHintChecked = false;
 
+  /// Tracks whether we've already auto-routed this State instance to the
+  /// fuel-log entry surface. Set true after the first push, also set true
+  /// when the user actively dismisses the fuel-log screen so we honor their
+  /// choice for the rest of this navigation session. Resets when this State
+  /// is recreated (i.e., user navigates away and back).
+  bool _didAutoRedirectToFuelLog = false;
+
   // Fuel log animation
   late final AnimationController _fuelLogAnimation;
   late final Animation<double> _heroFadeOut;
@@ -272,6 +279,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     if (activity == null) {
       return _buildErrorState(context, 'No activity data available');
     }
+
+    // Auto-route to fuel-log when this is a completed activity that has a
+    // nutrition plan but hasn't been fuel-logged yet. Covers all entry paths
+    // (push tap, list tap, calendar tap) so the user lands on the entry
+    // surface instead of the post-completion satisfaction view. Skipped for
+    // coach view and new-activity flows (different intent), and for activities
+    // without a plan (Garmin auto-create case — keep activity-detail with the
+    // existing "Generate plan" CTA).
+    _maybeAutoRouteToFuelLog(state);
 
     return AnimatedBuilder(
       animation: _fuelLogAnimation,
@@ -687,6 +703,34 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
       return AppColors.dragonfruit;
     }
     return AppColors.orange;
+  }
+
+  /// Evaluates whether to push the fuel-log screen automatically and does
+  /// it on the next frame. The caller can be inside a build path so we never
+  /// trigger navigation synchronously. Idempotent — once we've redirected (or
+  /// the user has dismissed), we won't redirect again until this State is
+  /// recreated.
+  void _maybeAutoRouteToFuelLog(ActivityDetailState state) {
+    if (_didAutoRedirectToFuelLog) return;
+    if (widget.isCoachView || widget.isNewActivity) return;
+
+    final activity = state.activity;
+    if (activity == null) return;
+    if (!state.isCompleted) return;
+    if (state.nutritionPlan == null) return;
+    // hasFuelLog == activity?.fuelLogData != null. If they've already
+    // logged what they ate, the existing planned/actual toggle path covers
+    // them — no need to force them back into entry mode.
+    if (state.hasFuelLog) return;
+
+    _didAutoRedirectToFuelLog = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      // Push the dedicated fuel-log screen on top of activity-detail. When
+      // they close it (with or without saving), the pop returns here and
+      // the flag suppresses a re-redirect for this State instance.
+      await _openFuelLogScreen(context);
+    });
   }
 
   void _enterFuelLogMode() {
