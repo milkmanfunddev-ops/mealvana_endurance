@@ -90,10 +90,17 @@ export const COMPONENT_ALLERGEN_HINTS: Record<string, string[]> = {
 /**
  * Normalize a food/allergen name token to snake_case lowercase for consistent matching.
  * Handles various separators and special characters.
+ *
+ * Strips parenthetical qualifiers (e.g. "Oatmeal (½ cup dry)" → "oatmeal") and
+ * trailing brand variant suffixes after a comma (e.g. "Gatorade, Orange" → "gatorade")
+ * so that user-facing display strings match canonical snake_case tokens stored
+ * on templates.
  */
 export function normalizeToken(value: string): string {
   return value
     .toLowerCase()
+    .replace(/\([^)]*\)/g, '') // strip parenthetical qualifiers: "(½ cup dry)"
+    .replace(/,.*$/, '')        // strip trailing brand variants: ", Orange"
     .trim()
     .replace(/[+]/g, ' ')
     .replace(/[-/]/g, ' ')
