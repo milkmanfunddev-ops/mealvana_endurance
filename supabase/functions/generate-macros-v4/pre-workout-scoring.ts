@@ -233,15 +233,15 @@ export function pickBestFormula(
     const resultSodium = state.sodium_delivered + candidate.sodium;
     const resultFluid = state.fluid_delivered + candidate.fluid;
 
+    // Pass 1 optimizes for carb fit + protein fit + athlete preference only.
+    // Sodium/fluid delivery is handled by Pass 2 (pickDrink) and Pass 3
+    // (pickElectrolyte), which have their own gap-closing scoring. Rewarding
+    // sodium/fluid gap-closing here caused meal-phase picks like Potato + Salt
+    // to consume the entire session sodium budget, starving downstream passes
+    // and triggering the cascade into the no-water bug. (#25)
     const carbErr = carbTarget > 0 ? candidate.gap / carbTarget : 0;
     const proteinErr = state.protein_target > 0
       ? Math.abs(resultProtein - state.protein_target) / state.protein_target
-      : 0;
-    const sodiumErr = state.sodium_target > 0
-      ? Math.abs(resultSodium - state.sodium_target) / state.sodium_target
-      : 0;
-    const fluidErr = state.fluid_target > 0
-      ? Math.abs(resultFluid - state.fluid_target) / state.fluid_target
       : 0;
 
     const carbOverPenalty = state.carbs_target > 0 && resultCarbs > state.carbs_high
@@ -256,22 +256,21 @@ export function pickBestFormula(
     const proteinUnderPenalty = state.protein_target > 0 && resultProtein < state.protein_low
       ? ((state.protein_low - resultProtein) / state.protein_target) * 3
       : 0;
+    // Over-cap penalties remain as safety fallback tiebreakers — they only
+    // fire when safePool was empty and the algorithm fell back to scoring
+    // over-cap candidates. In that degenerate path we still prefer the
+    // least-over option. Under-cap penalties were removed: being below
+    // sodium_low is what pickElectrolyte exists to rescue.
     const sodiumOverPenalty = state.sodium_target > 0 && resultSodium > state.sodium_high
       ? ((resultSodium - state.sodium_high) / state.sodium_target) * 8
-      : 0;
-    const sodiumUnderPenalty = state.sodium_target > 0 && resultSodium < state.sodium_low
-      ? ((state.sodium_low - resultSodium) / state.sodium_target) * 2
       : 0;
     const fluidOverPenalty = state.fluid_target > 0 && resultFluid > state.fluid_high
       ? ((resultFluid - state.fluid_high) / state.fluid_target) * 6
       : 0;
-    const fluidUnderPenalty = state.fluid_target > 0 && resultFluid < state.fluid_low
-      ? ((state.fluid_low - resultFluid) / state.fluid_target) * 2
-      : 0;
 
-    const baseScore = carbErr + proteinErr + sodiumErr + fluidErr +
+    const baseScore = carbErr + proteinErr +
       carbOverPenalty + carbUnderPenalty + proteinOverPenalty + proteinUnderPenalty +
-      sodiumOverPenalty + sodiumUnderPenalty + fluidOverPenalty + fluidUnderPenalty;
+      sodiumOverPenalty + fluidOverPenalty;
     scoredPool.push({ candidate, score: baseScore });
   }
 
