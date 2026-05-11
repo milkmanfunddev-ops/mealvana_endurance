@@ -583,7 +583,7 @@ function scoreDrinkOption(
  * Scores every (drink × servings) combo against sodium and fluid targets.
  * "No drink" is a valid baseline.
  */
-function pickDrink(
+export function pickDrink(
   drinkTemplates: PreWorkoutTemplate[],
   proteinDelivered: number,
   totalSodiumDelivered: number,
@@ -611,7 +611,15 @@ function pickDrink(
       if (fluidTarget > 0 && resultFluid > fluidTarget * 1.5) continue;
       if (resultCarbs > carbsHigh + 1e-6) continue;
       if (resultProtein > proteinHigh + 1e-6) continue;
-      if (resultSodium > sodiumHigh + 1e-6) continue;
+      // Sodium cap: reject only if the drink itself would consume more sodium
+      // headroom than remains. When state is already over sodium_high
+      // (headroom = 0), a zero-sodium drink like water is still selectable
+      // because it can't make a sodium overage worse. Previously this check
+      // was `resultSodium > sodiumHigh`, which rejected water in that case
+      // and produced no-water plans. (#22)
+      const sodiumHeadroom = Math.max(0, sodiumHigh - totalSodiumDelivered);
+      const drinkSodiumAdded = template.sodium_mg * servings;
+      if (drinkSodiumAdded > sodiumHeadroom + 1e-6) continue;
       if (resultFluid > fluidHigh + 1e-6) continue;
 
       const score = scoreDrinkOption(resultSodium, resultFluid, sodiumTarget, fluidTarget);
