@@ -485,22 +485,40 @@ class AuthService {
     }
   }
 
-  /// Get liked foods for a user
+  /// Get liked foods for a user.
+  ///
+  /// Errors are reported to Sentry instead of being silently swallowed so the
+  /// "no dislikes/likes reach the edge function" failure mode in #23 surfaces
+  /// in observability. We still return [] on failure to keep the caller
+  /// non-fatal (plan generation continues without the preference filter
+  /// rather than crashing).
   Future<List<String>> getLikedFoods(String userId) async {
     try {
       final userRepo = await _userRepository;
       return await userRepo.getLikedFoods(userId);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      await _sentry.reportDatabaseError(
+        e,
+        operation: 'getLikedFoods',
+        table: 'food_preferences',
+        stackTrace: stackTrace,
+      );
       return [];
     }
   }
 
-  /// Get disliked foods for a user  
+  /// Get disliked foods for a user. See [getLikedFoods] for error handling. (#23)
   Future<List<String>> getDislikedFoods(String userId) async {
     try {
       final userRepo = await _userRepository;
       return await userRepo.getDislikedFoods(userId);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      await _sentry.reportDatabaseError(
+        e,
+        operation: 'getDislikedFoods',
+        table: 'food_preferences',
+        stackTrace: stackTrace,
+      );
       return [];
     }
   }
