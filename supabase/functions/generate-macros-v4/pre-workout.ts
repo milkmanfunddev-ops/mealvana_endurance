@@ -639,7 +639,7 @@ export function pickDrink(
  * Pick the best electrolyte supplement for sodium gap.
  * Independent from drink selection — electrolytes dissolve in water.
  */
-function pickElectrolyte(
+export function pickElectrolyte(
   electrolyteTemplates: PreWorkoutTemplate[],
   carbsDelivered: number,
   proteinDelivered: number,
@@ -667,10 +667,22 @@ function pickElectrolyte(
       const resultSodium = totalSodiumDelivered + template.sodium_mg * srv;
       // Electrolytes have 0 fluid_ml — they dissolve in the drink
       const resultFluid = totalFluidDelivered + template.fluid_ml * srv;
-      if (resultCarbs > carbsHigh + 1e-6) continue;
-      if (resultProtein > proteinHigh + 1e-6) continue;
-      if (resultSodium > sodiumHigh + 1e-6) continue;
-      if (resultFluid > fluidHigh + 1e-6) continue;
+      // Headroom-based caps: reject only candidates whose delta exceeds remaining
+      // headroom, so zero-delta picks (e.g. a zero-carb electrolyte tablet when
+      // state is already over carbs_high) stay selectable on their sodium criteria.
+      // Mirrors the fix in pickDrink for #22.
+      const carbsAdded = template.carbs_per_serving * srv;
+      const proteinAdded = template.protein_per_serving * srv;
+      const sodiumAdded = template.sodium_mg * srv;
+      const fluidAdded = template.fluid_ml * srv;
+      const carbsHeadroom = Math.max(0, carbsHigh - carbsDelivered);
+      const proteinHeadroom = Math.max(0, proteinHigh - proteinDelivered);
+      const sodiumHeadroom = Math.max(0, sodiumHigh - totalSodiumDelivered);
+      const fluidHeadroom = Math.max(0, fluidHigh - totalFluidDelivered);
+      if (carbsAdded > carbsHeadroom + 1e-6) continue;
+      if (proteinAdded > proteinHeadroom + 1e-6) continue;
+      if (sodiumAdded > sodiumHeadroom + 1e-6) continue;
+      if (fluidAdded > fluidHeadroom + 1e-6) continue;
 
       const score = scoreDrinkOption(resultSodium, resultFluid, sodiumTarget, fluidTarget) +
         (carbsTarget > 0 ? Math.max(0, resultCarbs - carbsHigh) / carbsTarget : 0) * 4;
