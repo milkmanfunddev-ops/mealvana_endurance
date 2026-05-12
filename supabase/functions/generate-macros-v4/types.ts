@@ -86,17 +86,28 @@ export const BANANA_FLUID = 0;
 export const SPORTS_DRINK_CARBS = 15;    // per 1 cup (8 oz)
 export const SPORTS_DRINK_SODIUM = 100;   // per 1 cup (8 oz)
 export const SPORTS_DRINK_FLUID = 240;    // per 1 cup (8 oz)
+// Pass 1.5 universal fallback foods (vegan, gluten-free, no common allergens).
+// Used to deliver carbs when banana/sports_drink are disliked or already used. (#15)
+export const DATES_CARBS = 18;            // per 2 medjool dates
+export const DATES_SODIUM = 0;
+export const DATES_FLUID = 0;
+export const APPLESAUCE_CARBS = 25;       // per 1/2 cup unsweetened pouch
+export const APPLESAUCE_SODIUM = 5;
+export const APPLESAUCE_FLUID = 0;
+export const RAISINS_CARBS = 22;          // per 1/4 cup
+export const RAISINS_SODIUM = 5;
+export const RAISINS_FLUID = 0;
 
 // ============================================================================
 // Algorithm Output Types
 // ============================================================================
 
 export interface AddOn {
-  type: 'banana' | 'sports_drink';
+  type: 'banana' | 'sports_drink' | 'dates' | 'applesauce' | 'raisins';
   carbs_g: number;
   sodium_mg: number;
   fluid_ml: number;
-  servings: number;        // 1 for banana; 0.5, 1, or 2 cups for sports drink
+  servings: number;        // 1 for fixed-size add-ons; 0.5, 1, or 2 cups for sports drink
 }
 
 export interface TemplateSelection {

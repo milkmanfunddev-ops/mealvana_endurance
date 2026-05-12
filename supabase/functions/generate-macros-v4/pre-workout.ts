@@ -20,6 +20,7 @@ import {
   type TemplateSelection,
   type PreWorkoutPhaseResult,
   type PreWorkoutShortfall,
+  type AddOn,
   BUDGET_SPLITS,
   BANANA_CARBS,
   BANANA_SODIUM,
@@ -27,6 +28,15 @@ import {
   SPORTS_DRINK_CARBS,
   SPORTS_DRINK_SODIUM,
   SPORTS_DRINK_FLUID,
+  DATES_CARBS,
+  DATES_SODIUM,
+  DATES_FLUID,
+  APPLESAUCE_CARBS,
+  APPLESAUCE_SODIUM,
+  APPLESAUCE_FLUID,
+  RAISINS_CARBS,
+  RAISINS_SODIUM,
+  RAISINS_FLUID,
 } from './types.ts';
 
 import {
@@ -105,6 +115,35 @@ function makeSelection(t: PreWorkoutTemplate, servings: number): TemplateSelecti
 function makeBananaAddOn() {
   return { type: 'banana' as const, carbs_g: BANANA_CARBS, sodium_mg: BANANA_SODIUM, fluid_ml: BANANA_FLUID, servings: 1 };
 }
+
+// Pass 1.5 universal fallback add-ons (#15). All three are vegan, gluten-free,
+// and free of the common allergens we filter on, so the only gating needed in
+// Pass 1.5 is dislikes + macro headroom.
+function makeDatesAddOn() {
+  return { type: 'dates' as const, carbs_g: DATES_CARBS, sodium_mg: DATES_SODIUM, fluid_ml: DATES_FLUID, servings: 1 };
+}
+
+function makeApplesauceAddOn() {
+  return { type: 'applesauce' as const, carbs_g: APPLESAUCE_CARBS, sodium_mg: APPLESAUCE_SODIUM, fluid_ml: APPLESAUCE_FLUID, servings: 1 };
+}
+
+function makeRaisinsAddOn() {
+  return { type: 'raisins' as const, carbs_g: RAISINS_CARBS, sodium_mg: RAISINS_SODIUM, fluid_ml: RAISINS_FLUID, servings: 1 };
+}
+
+interface FallbackFoodSpec {
+  name: 'dates' | 'applesauce' | 'raisins';
+  carbs: number;
+  sodium: number;
+  fluid: number;
+  make: () => AddOn;
+}
+
+const PASS_1_5_FALLBACK_FOODS: FallbackFoodSpec[] = [
+  { name: 'dates', carbs: DATES_CARBS, sodium: DATES_SODIUM, fluid: DATES_FLUID, make: makeDatesAddOn },
+  { name: 'applesauce', carbs: APPLESAUCE_CARBS, sodium: APPLESAUCE_SODIUM, fluid: APPLESAUCE_FLUID, make: makeApplesauceAddOn },
+  { name: 'raisins', carbs: RAISINS_CARBS, sodium: RAISINS_SODIUM, fluid: RAISINS_FLUID, make: makeRaisinsAddOn },
+];
 
 function makeSportsDrinkAddOn(servings: number = 1) {
   return {
@@ -962,6 +1001,39 @@ export function selectPreWorkoutFoods(
         filled = true;
         console.log(`[ALGO-C] Added banana to ${targetPhase} phase (+${BANANA_CARBS}g carbs). ` +
           `New total: ${(totalCarbsAfterPass1 + BANANA_CARBS).toFixed(1)}g`);
+      }
+    }
+
+    // #15: Try universal fallback foods (dates, applesauce, raisins) if the
+    // banana branch didn't fire or didn't close the gap. These are all vegan,
+    // gluten-free, and allergen-clean, so they only need dislikes + headroom
+    // checks. We loop until we've closed the gap or exhausted the catalog —
+    // this matters most in the top-up-only window where a single phase exists
+    // and the banana may have been disliked.
+    for (const food of PASS_1_5_FALLBACK_FOODS) {
+      const currentTotal = results.reduce((sum, p) => sum + p.total_carbs_g, 0);
+      if (currentTotal >= targets.carbs_low_g) break;
+      if (state.used_foods.has(food.name)) continue;
+      if (dislikedSet.has(food.name)) continue;
+      if (wouldExceedHighs(state, food.carbs, 0, food.sodium, food.fluid)) continue;
+
+      // Prefer top_up phase for fast-digesting fallbacks; fall back to snack/meal.
+      const phaseOrder: SubPhaseType[] = ['top_up', 'snack', 'meal'];
+      for (const targetPhase of phaseOrder) {
+        const phaseIdx = results.findIndex((p) => p.phase === targetPhase);
+        if (phaseIdx < 0) continue;
+        const phase = results[phaseIdx];
+        phase.add_ons.push(food.make());
+        phase.total_carbs_g = Math.round((phase.total_carbs_g + food.carbs) * 10) / 10;
+        phase.total_sodium_mg = Math.round((phase.total_sodium_mg + food.sodium) * 10) / 10;
+        phase.total_fluid_ml = Math.round((phase.total_fluid_ml + food.fluid) * 10) / 10;
+        state.used_foods.add(food.name);
+        state.carbs_delivered += food.carbs;
+        state.sodium_delivered += food.sodium;
+        state.fluid_delivered += food.fluid;
+        console.log(`[ALGO-C] Added ${food.name} to ${targetPhase} phase (+${food.carbs}g carbs). ` +
+          `New total: ${(currentTotal + food.carbs).toFixed(1)}g`);
+        break;
       }
     }
 
