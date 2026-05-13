@@ -116,9 +116,12 @@ plist_ref = ui_group.new_reference('Info.plist')
 plist_ref.last_known_file_type = 'text.plist.xml'
 puts "[ok] Added Info.plist as a project reference"
 
-# 5. Make Runner depend on RunnerUITests so building Runner builds the tests.
-host_target.add_dependency(ui_test_target)
-puts "[ok] Added '#{TARGET_NAME}' as dependency of '#{HOST_TARGET_NAME}'"
+# 5. UI test target depends on the host app target. NEVER reverse this — making
+#    the host depend on the UI test target causes `flutter run` to compile the
+#    test bundle, which fails because patrol's PATROL_INTEGRATION_TEST_IOS_RUNNER
+#    macro needs flags only set up when patrol_cli drives the build.
+ui_test_target.add_dependency(host_target)
+puts "[ok] Added '#{HOST_TARGET_NAME}' as dependency of '#{TARGET_NAME}'"
 
 # 6. Update shared schemes — add a test action that references the UI test
 #    target so `xcodebuild test -scheme <flavor>` discovers it.

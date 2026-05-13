@@ -1,17 +1,19 @@
 # Patrol Integration Test Setup — Status
 
 **Branch:** `feat/patrol-integration-tests`
-**As of:** 2026-05-08
+**As of:** 2026-05-12
 
 ## TL;DR
 
 Patrol's iOS UI test target is fully scaffolded (target created, schemes
-updated, pods installed, smoke test written). The pipeline runs end-to-end
-through `xcodebuild build-for-testing` — but fails at compile time because
-this project's Xcode build configurations are named `dev-Debug` (flavor-first)
-while Patrol's CLI hardcodes the Flutter-standard `Debug-dev` (config-first)
-format. Resolution is a one-time iOS configuration rename, deliberately
-deferred to a focused follow-up so it doesn't get rushed.
+updated, pods installed, smoke test written). The configuration-naming
+blocker (this project uses `dev-Debug`, patrol_cli hardcodes `Debug-dev`)
+was resolved on 2026-05-12 with **Option B** — a single parallel `Debug-dev`
+configuration added on PBXProject + Runner + RunnerUITests, all pointing at
+the existing `dev-Debug.xcconfig`. No config rename, no scheme changes, no
+codemagic.yaml changes. Script: `scripts/add_debug_dev_alias_config.rb`
+(idempotent). Next step is `pod install` to regenerate Pods xcconfigs, then
+`patrol test --target integration_test/patrol_smoke_test.dart --flavor dev`.
 
 ## What's done
 
@@ -115,13 +117,32 @@ What it touches:
 A small Ruby script analogous to `add_patrol_uitest_target.rb` can do the
 project-side rename programmatically. Pods regenerate on next `pod install`.
 
-### Option B — Add parallel configurations
+### Option B — Add parallel configurations (CHOSEN, 2026-05-12)
 
 Keep `dev-Debug` etc. AND add `Debug-dev` etc. alongside, all pointing at
-the same underlying xcconfig. 15 configs total (9 + 6). Pods would generate
-duplicate xcconfigs. Maintenance burden grows linearly.
+the same underlying xcconfig. Maintenance burden grows linearly if all six
+flavor-first names are added, but for the patrol smoke test only `Debug-dev`
+is strictly required, so we added just that one (10 configs total).
 
-Use this only if Option A is blocked by a release-pipeline constraint.
+What it touched:
+- `ios/Runner.xcodeproj/project.pbxproj` — one new `XCBuildConfiguration`
+  named `Debug-dev` on PBXProject + Runner + RunnerUITests, each cloning
+  build settings + `baseConfigurationReference` from the existing
+  `dev-Debug` configuration.
+
+What it did NOT touch:
+- Schemes (patrol's `xcodebuild -configuration Debug-dev` overrides the
+  scheme's default — no scheme edit needed).
+- `ios/Flutter/*.xcconfig` (reused unchanged).
+- `codemagic.yaml`.
+- `Pods` (will regenerate automatically on next `pod install`).
+
+Script: `scripts/add_debug_dev_alias_config.rb` (idempotent — safe to
+re-run; adds Debug-dev only if missing).
+
+If we later want patrol to run on prod or release builds, add the
+corresponding alias by extending the script — e.g. `Release-dev`,
+`Debug-prod`, `Release-prod`.
 
 ### Option C — Stay on integration_test, defer Patrol
 

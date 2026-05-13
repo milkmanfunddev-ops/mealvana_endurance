@@ -22,13 +22,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		153D967CCE63A63A57277A89 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 9A1B8B8B013F50737F6E9AD7;
-			remoteInfo = RunnerUITests;
-		};
 		331C8085294A63A400263BE5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
@@ -317,7 +310,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				D097625020F71F6A6842C097 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
@@ -338,6 +330,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				D097625020F71F6A6842C097 /* PBXTargetDependency */,
 			);
 			name = RunnerUITests;
 			productName = RunnerUITests;
@@ -616,9 +609,8 @@
 		};
 		D097625020F71F6A6842C097 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = RunnerUITests;
-			target = 9A1B8B8B013F50737F6E9AD7 /* RunnerUITests */;
-			targetProxy = 153D967CCE63A63A57277A89 /* PBXContainerItemProxy */;
+			target = 97C146ED1CF9000F007C117D /* Runner */;
+			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -693,6 +685,63 @@
 				VALIDATE_PRODUCT = YES;
 			};
 			name = "prod-Release";
+		};
+		1E5F5BEEC26E23D38A1DA6EE /* Debug-dev */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = AppIcon;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-dev";
 		};
 		209FEF96BE3ADD6C14170E1F /* dev-Profile */ = {
 			isa = XCBuildConfiguration;
@@ -1483,6 +1532,31 @@
 			};
 			name = Profile;
 		};
+		68BCFCA91E446F06A6D9C202 /* Debug-dev */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AFB6119E3AB2A5E48644E0D4 /* Pods-Runner-RunnerUITests.dev-debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_BITCODE = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RunnerUITests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.milkman.mealvanaendurance.RunnerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Runner;
+			};
+			name = "Debug-dev";
+		};
 		8ED65D165202E9F8C7D6B39B /* dev-Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AFB6119E3AB2A5E48644E0D4 /* Pods-Runner-RunnerUITests.dev-debug.xcconfig */;
@@ -1723,6 +1797,33 @@
 			};
 			name = Debug;
 		};
+		ED023CC75BDC30E6A41D9806 /* Debug-dev */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 36E2FD202EF1D23900CE4CC0 /* dev-Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = 9Y99749RG3;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Runner/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Mealvana Endurance";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.1;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = "Debug-dev";
+		};
 		F4C3E597590E2F85E555C709 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4A0B93C3BD13EFB96215DF1B /* Pods-Runner-RunnerUITests.release.xcconfig */;
@@ -1780,6 +1881,7 @@
 				3824C2870E028DCC5ECD37F9 /* Profile */,
 				A1CDF7B2443116216D5C1700 /* prod-Profile */,
 				209FEF96BE3ADD6C14170E1F /* dev-Profile */,
+				68BCFCA91E446F06A6D9C202 /* Debug-dev */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1796,6 +1898,7 @@
 				249021D3217E4FDB00AE95B9 /* Profile */,
 				36E2FD1D2EF1D0B600CE4CC0 /* prod-Profile */,
 				36E2FD142EF1D06700CE4CC0 /* dev-Profile */,
+				1E5F5BEEC26E23D38A1DA6EE /* Debug-dev */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1812,6 +1915,7 @@
 				249021D4217E4FDB00AE95B9 /* Profile */,
 				36E2FD1E2EF1D0B600CE4CC0 /* prod-Profile */,
 				36E2FD152EF1D06700CE4CC0 /* dev-Profile */,
+				ED023CC75BDC30E6A41D9806 /* Debug-dev */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
