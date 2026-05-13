@@ -9,10 +9,7 @@ import '../../domain/daily_macro_targets.dart';
 /// Follows the existing [PhaseExplanationSheet] pattern:
 /// DraggableScrollableSheet with handle bar, title, and colored accent sections.
 class PeriodizationBottomSheet extends StatelessWidget {
-  const PeriodizationBottomSheet({
-    super.key,
-    required this.weeklyMacros,
-  });
+  const PeriodizationBottomSheet({super.key, required this.weeklyMacros});
 
   final List<DailyMacroTargets?> weeklyMacros;
 
@@ -31,8 +28,7 @@ class PeriodizationBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final analysis =
-        const PeriodizationAnalysisService().analyze(weeklyMacros);
+    final analysis = const PeriodizationAnalysisService().analyze(weeklyMacros);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
@@ -47,9 +43,7 @@ class PeriodizationBottomSheet extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(15),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,10 +54,9 @@ class PeriodizationBottomSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -200,9 +193,7 @@ class _InsightCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border(
-          left: BorderSide(color: accent, width: 3),
-        ),
+        border: Border(left: BorderSide(color: accent, width: 3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,8 +210,7 @@ class _InsightCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(4),

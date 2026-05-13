@@ -51,7 +51,8 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
   late DateTime _currentWeekStart;
   late DateTime _baseWeekStart; // Fixed reference point that never changes
   static const int _initialPage = 500; // Start at middle page
-  late DateTime _todayWeekStart; // Week start for today (for "Today" button logic)
+  late DateTime
+  _todayWeekStart; // Week start for today (for "Today" button logic)
   bool _handledFirstPageChange = false;
 
   @override
@@ -88,6 +89,7 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
                 button: true,
                 label: 'Previous week',
                 child: GestureDetector(
+                  key: const ValueKey('calendar.prev_month_button'),
                   onTap: _goToPreviousWeek,
                   child: Icon(
                     Icons.chevron_left,
@@ -104,6 +106,7 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
                 child: GestureDetector(
                   onTap: () => _showDatePicker(context),
                   child: Text(
+                    key: const ValueKey('calendar.month_label'),
                     _formatMonthYear(widget.selectedDate),
                     style: const TextStyle(
                       fontFamily: 'Sansita',
@@ -120,6 +123,7 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
                 button: true,
                 label: 'Next week',
                 child: GestureDetector(
+                  key: const ValueKey('calendar.next_month_button'),
                   onTap: _goToNextWeek,
                   child: Icon(
                     Icons.chevron_right,
@@ -134,7 +138,10 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
                 GestureDetector(
                   onTap: _goToToday,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark
                           ? AppColors.cream.withValues(alpha: 0.15)
@@ -164,7 +171,9 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
             controller: _pageController,
             onPageChanged: (index) {
               final weekOffset = index - _initialPage;
-              final newWeekStart = _baseWeekStart.add(Duration(days: weekOffset * 7));
+              final newWeekStart = _baseWeekStart.add(
+                Duration(days: weekOffset * 7),
+              );
               setState(() {
                 _currentWeekStart = newWeekStart;
               });
@@ -180,8 +189,13 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
             },
             itemBuilder: (context, index) {
               final weekOffset = index - _initialPage;
-              final weekStart = _baseWeekStart.add(Duration(days: weekOffset * 7));
-              final weekDays = List.generate(7, (i) => weekStart.add(Duration(days: i)));
+              final weekStart = _baseWeekStart.add(
+                Duration(days: weekOffset * 7),
+              );
+              final weekDays = List.generate(
+                7,
+                (i) => weekStart.add(Duration(days: i)),
+              );
 
               return Column(
                 children: [
@@ -195,7 +209,9 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
                           style: TextStyle(
                             fontFamily: 'Apercu',
                             fontSize: 12,
-                            color: isDark ? AppColors.cream : AppColors.blackberry,
+                            color: isDark
+                                ? AppColors.cream
+                                : AppColors.blackberry,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -210,17 +226,23 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: weekDays.map((date) {
                       final isSelected = _isSameDay(date, widget.selectedDate);
-                      final indicators = widget.dayIndicators[_dateKey(date)] ?? {};
+                      final indicators =
+                          widget.dayIndicators[_dateKey(date)] ?? {};
 
                       return Expanded(
                         child: GestureDetector(
+                          key: ValueKey(
+                            'calendar.day_cell_${date.year}_${date.month.toString().padLeft(2, '0')}_${date.day.toString().padLeft(2, '0')}',
+                          ),
                           onTap: () => widget.onDateSelected(_normalize(date)),
                           child: Container(
                             height: 60,
                             margin: const EdgeInsets.symmetric(horizontal: 2),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? (isDark ? AppColors.cream : AppColors.blackberry)
+                                  ? (isDark
+                                        ? AppColors.cream
+                                        : AppColors.blackberry)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(15),
                             ),
@@ -233,8 +255,12 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
                                     fontFamily: 'Compadre',
                                     fontSize: 18,
                                     color: isSelected
-                                        ? (isDark ? AppColors.blackberry : AppColors.cream)
-                                        : (isDark ? AppColors.cream : AppColors.blackberry),
+                                        ? (isDark
+                                              ? AppColors.blackberry
+                                              : AppColors.cream)
+                                        : (isDark
+                                              ? AppColors.cream
+                                              : AppColors.blackberry),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -264,8 +290,9 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
         // Divider line
         Container(
           height: 1,
-          color: (isDark ? AppColors.cream : AppColors.blackberry)
-              .withValues(alpha: 0.2),
+          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+            alpha: 0.2,
+          ),
         ),
       ],
     );
@@ -320,7 +347,7 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
   bool _isInWeek(DateTime date, DateTime weekStart) {
     final weekEnd = weekStart.add(const Duration(days: 6));
     return date.isAfter(weekStart.subtract(const Duration(days: 1))) &&
-           date.isBefore(weekEnd.add(const Duration(days: 1)));
+        date.isBefore(weekEnd.add(const Duration(days: 1)));
   }
 
   DateTime _getWeekStart(DateTime date) {
@@ -334,8 +361,18 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
 
   String _formatMonthYear(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${months[date.month - 1]} ${date.year}';
   }

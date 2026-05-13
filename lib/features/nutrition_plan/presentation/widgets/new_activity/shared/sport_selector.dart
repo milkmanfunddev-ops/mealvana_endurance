@@ -28,6 +28,7 @@ class SportSelector extends ConsumerWidget {
         child: Row(
           children: [
             _SportButton(
+              key: const ValueKey('activity_create.tab_running'),
               icon: FontAwesomeIcons.personRunning,
               label: 'RUNNING',
               isSelected: coordinatorState.selectedTab == SportTab.running,
@@ -36,6 +37,7 @@ class SportSelector extends ConsumerWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
             _SportButton(
+              key: const ValueKey('activity_create.tab_biking'),
               icon: FontAwesomeIcons.personBiking,
               label: 'BIKING',
               isSelected: coordinatorState.selectedTab == SportTab.cycling,
@@ -44,6 +46,7 @@ class SportSelector extends ConsumerWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
             _SportButton(
+              key: const ValueKey('activity_create.tab_swimming'),
               icon: FontAwesomeIcons.personSwimming,
               label: 'SWIMMING',
               isSelected: coordinatorState.selectedTab == SportTab.swimming,
@@ -52,6 +55,7 @@ class SportSelector extends ConsumerWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
             _SportButton(
+              key: const ValueKey('activity_create.tab_brick'),
               icon: FontAwesomeIcons.link,
               label: 'BRICK',
               isSelected: coordinatorState.selectedTab == SportTab.brick,
@@ -67,6 +71,7 @@ class SportSelector extends ConsumerWidget {
 
 class _SportButton extends StatelessWidget {
   const _SportButton({
+    super.key,
     required this.icon,
     required this.label,
     required this.isSelected,

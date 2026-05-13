@@ -35,6 +35,7 @@ class NutritionInputFields extends StatelessWidget {
       children: [
         // Section title
         Text(
+          key: const ValueKey('custom_food.nutrition_section'),
           'Nutrition Information',
           style: AppTextStyles.subtitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
@@ -44,6 +45,7 @@ class NutritionInputFields extends StatelessWidget {
 
         // Calories
         _buildNutritionField(
+          fieldKey: const ValueKey('custom_food.calories_field'),
           context: context,
           controller: caloriesController,
           label: 'Calories',
@@ -58,6 +60,7 @@ class NutritionInputFields extends StatelessWidget {
           children: [
             Expanded(
               child: _buildNutritionField(
+                fieldKey: const ValueKey('custom_food.carbs_field'),
                 context: context,
                 controller: carbsController,
                 label: 'Carbs',
@@ -68,6 +71,7 @@ class NutritionInputFields extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _buildNutritionField(
+                fieldKey: const ValueKey('custom_food.protein_field'),
                 context: context,
                 controller: proteinController,
                 label: 'Protein',
@@ -84,6 +88,7 @@ class NutritionInputFields extends StatelessWidget {
           children: [
             Expanded(
               child: _buildNutritionField(
+                fieldKey: const ValueKey('custom_food.fat_field'),
                 context: context,
                 controller: fatController,
                 label: 'Fat',
@@ -94,6 +99,7 @@ class NutritionInputFields extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _buildNutritionField(
+                fieldKey: const ValueKey('custom_food.sodium_field'),
                 context: context,
                 controller: sodiumController,
                 label: 'Sodium',
@@ -128,6 +134,7 @@ class NutritionInputFields extends StatelessWidget {
     required String suffix,
     required bool isDark,
     bool allowDecimals = true,
+    Key? fieldKey,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,6 +147,7 @@ class NutritionInputFields extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         TextField(
+          key: fieldKey,
           controller: controller,
           keyboardType: TextInputType.numberWithOptions(decimal: allowDecimals),
           inputFormatters: [

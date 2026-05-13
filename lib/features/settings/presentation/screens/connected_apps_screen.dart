@@ -103,8 +103,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
-        leading: const CustomAppBarBackButton(),
+        leading: const CustomAppBarBackButton(
+          key: ValueKey('connected_apps.back_button'),
+        ),
         title: Text(
+          key: const ValueKey('connected_apps.title'),
           'Connected Apps',
           style: AppTextStyles.sectionTitle.copyWith(color: onSurface),
         ),
@@ -188,6 +191,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
               onBack: widget.onBack,
               canContinue: true,
               isLoading: state.isLoading,
+              continueButtonKey: const ValueKey(
+                'connect_training.continue_button',
+              ),
+              backButtonKey: const ValueKey('connect_training.back_button'),
             ),
           ),
         ],
@@ -203,11 +210,13 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
+          key: const ValueKey('connect_training.title'),
           'Connect Your Training',
           style: AppTextStyles.pageTitle.copyWith(color: onSurface),
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
+          key: const ValueKey('connect_training.description'),
           'Import your upcoming workouts to get personalized nutrition plans for each session.',
           style: AppTextStyles.bodyMedium.copyWith(color: onSurfaceVariant),
         ),
@@ -236,6 +245,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       children: [
         // Header text
         Text(
+          key: const ValueKey('connected_apps.description'),
           'Connect your training platforms to automatically import workouts and generate nutrition plans.',
           style: AppTextStyles.bodyMedium.copyWith(color: onSurfaceVariant),
         ),
@@ -245,6 +255,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Final Surge - fully integrated
         // Logo includes wordmark - no separate text label needed
         IntegrationProviderCard(
+          key: const ValueKey('connected_apps.finalsurge_connect_button'),
           name: 'Final Surge',
           iconPath: finalSurgeLogo,
           logoHeight: 18,
@@ -278,6 +289,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // TrainingPeaks - Using horizontal logo with wordmark per Brand Guidelines
         // Larger height because logo has built-in dark background padding
         IntegrationProviderCard(
+          key: const ValueKey('connected_apps.trainingpeaks_connect_button'),
           name: 'TrainingPeaks',
           iconPath: trainingPeaksLogo,
           logoHeight: 38,
@@ -339,6 +351,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // DB so any push that arrived while the app was closed surfaces in
         // the calendar/list immediately.
         IntegrationProviderCard(
+          key: const ValueKey('connected_apps.garmin_connect_button'),
           name: 'Garmin Connect',
           iconPath: 'assets/images/integrations/garmin_connect_badge.png',
           logoHeight: 40,
@@ -476,6 +489,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Final Surge - fully integrated
         // Logo includes wordmark - no separate text label needed
         IntegrationProviderCard(
+          key: const ValueKey('connect_training.finalsurge_connect_button'),
           name: 'Final Surge',
           iconPath: finalSurgeLogo,
           logoHeight: 18,
@@ -499,6 +513,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Using horizontal logo with wordmark per Brand Guidelines
         // Larger height because logo has built-in dark background padding
         IntegrationProviderCard(
+          key: const ValueKey('connect_training.trainingpeaks_connect_button'),
           name: 'TrainingPeaks',
           iconPath: trainingPeaksLogo,
           logoHeight: 38,
@@ -523,6 +538,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Connect Developer Program review, ticket 206017).
         // Refresh re-pulls from Supabase (Garmin's API is push-only).
         IntegrationProviderCard(
+          key: const ValueKey('connect_training.garmin_connect_button'),
           name: 'Garmin Connect',
           iconPath: 'assets/images/integrations/garmin_connect_badge.png',
           logoHeight: 40,
@@ -587,6 +603,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   Widget _buildSkipButton(BuildContext context, WidgetRef ref) {
     return Center(
       child: TextButton(
+        key: const ValueKey('connect_training.skip_button'),
         onPressed: () => _skipConnection(ref),
         child: Text(
           'Skip for now',
@@ -606,6 +623,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     required double spacing,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final keyPrefix = isOnboardingMode ? 'connect_training' : 'connected_apps';
     final widgets = <Widget>[];
     for (var i = 0; i < _comingSoonProviders.length; i++) {
       final provider = _comingSoonProviders[i];
@@ -616,6 +634,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           : provider.iconPath;
       widgets.add(
         IntegrationProviderCard(
+          key: ValueKey('$keyPrefix.${provider.key}_notify_button'),
           name: provider.name,
           iconPath: iconPath,
           logoHeight: provider.logoHeight,
@@ -1019,6 +1038,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
             ),
           ),
           KyleSwitch(
+            key: const ValueKey('connected_apps.tp_writeback_toggle'),
             value: enabled,
             enabled: !premiumBlocked,
             onChanged: premiumBlocked

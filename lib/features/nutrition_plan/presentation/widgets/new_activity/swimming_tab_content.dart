@@ -39,6 +39,7 @@ class SwimmingTabContent extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ActivityNameField(
+          key: const ValueKey('activity_create.workout_name_field'),
           value: formState.activityTitle,
           onChanged: controller.updateActivityTitle,
           hint: 'e.g., Tempo Swim',
@@ -116,6 +117,7 @@ class SwimmingTabContent extends ConsumerWidget {
 
         // Time before Swim
         KylePlusMinusControl(
+          key: const ValueKey('activity_create.fueling_window_control'),
           label: 'Pre-Swim Fueling Window',
           value: formState.preSwimMinutes,
           onChanged: controller.updatePreSwimMinutes,

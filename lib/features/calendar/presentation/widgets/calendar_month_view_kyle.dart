@@ -52,12 +52,17 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
   late DateTime _currentMonth;
   late DateTime _baseMonth; // Fixed reference point that never changes
   static const int _initialPage = 500; // Start at middle page
-  late DateTime _todayMonth; // Month containing today (for "Today" button logic)
+  late DateTime
+  _todayMonth; // Month containing today (for "Today" button logic)
 
   @override
   void initState() {
     super.initState();
-    _currentMonth = DateTime(widget.selectedDate.year, widget.selectedDate.month, 1);
+    _currentMonth = DateTime(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+      1,
+    );
     _baseMonth = _currentMonth; // Store the base reference
     final now = DateTime.now();
     _todayMonth = DateTime(now.year, now.month, 1); // Store today's month
@@ -74,8 +79,9 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isCurrentMonth = _currentMonth.year == _todayMonth.year &&
-                           _currentMonth.month == _todayMonth.month;
+    final isCurrentMonth =
+        _currentMonth.year == _todayMonth.year &&
+        _currentMonth.month == _todayMonth.month;
 
     return Column(
       children: [
@@ -87,6 +93,7 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
             children: [
               // Previous month arrow
               GestureDetector(
+                key: const ValueKey('calendar.prev_month_button'),
                 onTap: _goToPreviousMonth,
                 child: Icon(
                   Icons.chevron_left,
@@ -99,6 +106,7 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
               GestureDetector(
                 onTap: () => _showDatePicker(context),
                 child: Text(
+                  key: const ValueKey('calendar.month_label'),
                   _formatMonthYear(widget.selectedDate),
                   style: const TextStyle(
                     fontFamily: 'Sansita',
@@ -111,6 +119,7 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
               const SizedBox(width: 8),
               // Next month arrow
               GestureDetector(
+                key: const ValueKey('calendar.next_month_button'),
                 onTap: _goToNextMonth,
                 child: Icon(
                   Icons.chevron_right,
@@ -124,7 +133,10 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
                 GestureDetector(
                   onTap: _goToToday,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark
                           ? AppColors.cream.withValues(alpha: 0.15)
@@ -198,7 +210,11 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
 
               // Get all days to display (including overflow from prev/next month)
               final monthStart = displayMonth;
-              final monthEnd = DateTime(displayMonth.year, displayMonth.month + 1, 0);
+              final monthEnd = DateTime(
+                displayMonth.year,
+                displayMonth.month + 1,
+                0,
+              );
 
               // Start from the Sunday before the 1st of the month
               final displayStart = monthStart.subtract(
@@ -206,80 +222,96 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
               );
 
               // Calculate number of weeks to show
-              final daysToShow = ((monthEnd.day + monthStart.weekday) / 7).ceil() * 7;
+              final daysToShow =
+                  ((monthEnd.day + monthStart.weekday) / 7).ceil() * 7;
               final allDays = List.generate(
                 daysToShow,
                 (i) => displayStart.add(Duration(days: i)),
               );
 
               return Column(
-                children: List.generate(
-                  (allDays.length / 7).ceil(),
-                  (weekIndex) {
-                    final weekStart = weekIndex * 7;
-                    final weekDays = allDays.sublist(
-                      weekStart,
-                      (weekStart + 7).clamp(0, allDays.length),
-                    );
+                children: List.generate((allDays.length / 7).ceil(), (
+                  weekIndex,
+                ) {
+                  final weekStart = weekIndex * 7;
+                  final weekDays = allDays.sublist(
+                    weekStart,
+                    (weekStart + 7).clamp(0, allDays.length),
+                  );
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: weekDays.map((date) {
-                          final isSelected = _isSameDay(date, widget.selectedDate);
-                          final indicators = widget.dayIndicators[_dateKey(date)] ?? {};
-                          final isCurrentMonth = date.month == displayMonth.month;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: weekDays.map((date) {
+                        final isSelected = _isSameDay(
+                          date,
+                          widget.selectedDate,
+                        );
+                        final indicators =
+                            widget.dayIndicators[_dateKey(date)] ?? {};
+                        final isCurrentMonth = date.month == displayMonth.month;
 
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () => widget.onDateSelected(date),
-                              child: Container(
-                                height: 44,
-                                margin: const EdgeInsets.symmetric(horizontal: 2),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? (isDark ? AppColors.cream : AppColors.blackberry)
-                                      : Colors.transparent,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      '${date.day}',
-                                      style: TextStyle(
-                                        fontFamily: 'Compadre',
-                                        fontSize: 16,
-                                        color: isSelected
-                                            ? (isDark ? AppColors.blackberry : AppColors.cream)
-                                            : isCurrentMonth
-                                                ? (isDark ? AppColors.cream : AppColors.blackberry)
-                                                : (isDark ? AppColors.cream : AppColors.blackberry)
-                                                    .withValues(alpha: 0.3),
+                        return Expanded(
+                          child: GestureDetector(
+                            key: ValueKey(
+                              'calendar.day_cell_${date.year}_${date.month.toString().padLeft(2, '0')}_${date.day.toString().padLeft(2, '0')}',
+                            ),
+                            onTap: () => widget.onDateSelected(date),
+                            child: Container(
+                              height: 44,
+                              margin: const EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? (isDark
+                                          ? AppColors.cream
+                                          : AppColors.blackberry)
+                                    : Colors.transparent,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '${date.day}',
+                                    style: TextStyle(
+                                      fontFamily: 'Compadre',
+                                      fontSize: 16,
+                                      color: isSelected
+                                          ? (isDark
+                                                ? AppColors.blackberry
+                                                : AppColors.cream)
+                                          : isCurrentMonth
+                                          ? (isDark
+                                                ? AppColors.cream
+                                                : AppColors.blackberry)
+                                          : (isDark
+                                                    ? AppColors.cream
+                                                    : AppColors.blackberry)
+                                                .withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  // Show indicator dots
+                                  if (indicators.isNotEmpty && isCurrentMonth)
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: CalendarDayIndicators.buildDots(
+                                        indicators: indicators,
+                                        dotSize: 4.0,
+                                        spacing: 2.0,
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
-                                    // Show indicator dots
-                                    if (indicators.isNotEmpty && isCurrentMonth)
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: CalendarDayIndicators.buildDots(
-                                          indicators: indicators,
-                                          dotSize: 4.0,
-                                          spacing: 2.0,
-                                        ),
-                                      ),
-                                  ],
-                                ),
+                                ],
                               ),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    );
-                  },
-                ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  );
+                }),
               );
             },
           ),
@@ -288,8 +320,9 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
         // Divider line
         Container(
           height: 1,
-          color: (isDark ? AppColors.cream : AppColors.blackberry)
-              .withValues(alpha: 0.2),
+          color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+            alpha: 0.2,
+          ),
         ),
       ],
     );
@@ -348,8 +381,18 @@ class _CalendarMonthViewKyleState extends State<CalendarMonthViewKyle> {
 
   String _formatMonthYear(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${months[date.month - 1]} ${date.year}';
   }

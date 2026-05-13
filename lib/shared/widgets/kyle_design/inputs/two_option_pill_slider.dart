@@ -23,6 +23,8 @@ class TwoOptionPillSlider extends StatelessWidget {
     this.height = 46,
     this.thumbInset = 2,
     this.enabled = true,
+    this.leftKey,
+    this.rightKey,
   });
 
   final String leftLabel;
@@ -40,6 +42,8 @@ class TwoOptionPillSlider extends StatelessWidget {
   final double height;
   final double thumbInset;
   final bool enabled;
+  final Key? leftKey;
+  final Key? rightKey;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +91,7 @@ class TwoOptionPillSlider extends StatelessWidget {
                 Row(
                   children: [
                     _SliderSegmentLabel(
+                      key: leftKey,
                       label: leftLabel,
                       selected: isLeftSelected,
                       selectedTextColor: selectedTextColor,
@@ -95,6 +100,7 @@ class TwoOptionPillSlider extends StatelessWidget {
                       onTap: enabled ? onLeftTap : null,
                     ),
                     _SliderSegmentLabel(
+                      key: rightKey,
                       label: rightLabel,
                       selected: !isLeftSelected,
                       selectedTextColor: selectedTextColor,
@@ -115,6 +121,7 @@ class TwoOptionPillSlider extends StatelessWidget {
 
 class _SliderSegmentLabel extends StatelessWidget {
   const _SliderSegmentLabel({
+    super.key,
     required this.label,
     required this.selected,
     required this.selectedTextColor,

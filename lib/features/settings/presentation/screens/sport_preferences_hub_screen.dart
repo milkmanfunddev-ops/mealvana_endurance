@@ -38,8 +38,11 @@ class SportPreferencesHubScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: const CustomAppBarBackButton(),
+      leading: const CustomAppBarBackButton(
+        key: ValueKey('sport_prefs.back_button'),
+      ),
       title: Text(
+        key: const ValueKey('sport_prefs.title'),
         'Sport Preferences',
         style: AppTextStyles.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
@@ -93,6 +96,7 @@ class SportPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
+                  tileKey: const ValueKey('sport_prefs.running_row'),
                   icon: FontAwesomeIcons.personRunning,
                   title: 'Running Preferences',
                   subtitle: _getRunningSubtitle(state),
@@ -106,6 +110,7 @@ class SportPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
+                  tileKey: const ValueKey('sport_prefs.cycling_row'),
                   icon: FontAwesomeIcons.personBiking,
                   title: 'Cycling Preferences',
                   subtitle: _getCyclingSubtitle(state),
@@ -119,6 +124,7 @@ class SportPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
+                  tileKey: const ValueKey('sport_prefs.swimming_row'),
                   icon: FontAwesomeIcons.personSwimming,
                   title: 'Swimming Preferences',
                   subtitle: _getSwimmingSubtitle(state),
@@ -143,8 +149,10 @@ class SportPreferencesHubScreen extends ConsumerWidget {
     required String subtitle,
     required String route,
     required String analyticsEvent,
+    Key? tileKey,
   }) {
     return InkWell(
+      key: tileKey,
       onTap: () {
         final analytics = ref.read(appExternalDepsProvider);
         analytics.analytics.track(analyticsEvent);

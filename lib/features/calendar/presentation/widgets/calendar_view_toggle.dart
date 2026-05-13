@@ -50,6 +50,7 @@ class CalendarViewToggle extends StatelessWidget {
           'BY WEEK',
           CalendarViewMode.week,
           textColor,
+          const ValueKey('calendar.by_week_toggle'),
         ),
         const SizedBox(width: 20),
         _buildToggleOption(
@@ -57,6 +58,7 @@ class CalendarViewToggle extends StatelessWidget {
           'BY MONTH',
           CalendarViewMode.month,
           textColor,
+          const ValueKey('calendar.by_month_toggle'),
         ),
       ],
     );
@@ -67,6 +69,7 @@ class CalendarViewToggle extends StatelessWidget {
     String label,
     CalendarViewMode mode,
     Color textColor,
+    Key optionKey,
   ) {
     final isSelected = selectedMode == mode;
 
@@ -75,6 +78,7 @@ class CalendarViewToggle extends StatelessWidget {
       selected: isSelected,
       label: '$label calendar view',
       child: GestureDetector(
+        key: optionKey,
         onTap: () => onModeChanged(mode),
         child: IntrinsicWidth(
           child: Column(
@@ -91,11 +95,7 @@ class CalendarViewToggle extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               if (isSelected)
-                Container(
-                  height: 1,
-                  width: double.infinity,
-                  color: textColor,
-                ),
+                Container(height: 1, width: double.infinity, color: textColor),
             ],
           ),
         ),

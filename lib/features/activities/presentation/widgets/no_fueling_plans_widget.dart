@@ -31,6 +31,7 @@ class NoFuelingPlansWidget extends StatelessWidget {
 
         // Main title: "No fueling plans yet" (Apercu font, not Compadre)
         Text(
+          key: const ValueKey('calendar.empty_title'),
           'No fueling plans yet',
           style: TextStyle(
             fontFamily: 'Apercu',
@@ -43,6 +44,7 @@ class NoFuelingPlansWidget extends StatelessWidget {
 
         // Orange subtitle: "Tap + to fuel your next workout" (larger, bolder)
         Text(
+          key: const ValueKey('calendar.empty_subtitle'),
           'Tap + to fuel your next workout',
           style: const TextStyle(
             fontFamily: 'Apercu',

@@ -84,6 +84,7 @@ class ActivityCard extends ConsumerWidget {
         ),
       ),
       child: InkWell(
+        key: ValueKey('calendar.activity_card_${activity.id}'),
         onTap: () => isSelectionMode
             ? onSelectionToggle?.call()
             : _handleTap(context, ref),

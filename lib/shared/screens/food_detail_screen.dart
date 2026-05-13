@@ -262,7 +262,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     }
 
     // Initialize product type (normalize to valid dropdown values)
-    _selectedProductType = normalizeProductTypeForDisplay(widget.foodData.productType);
+    _selectedProductType = normalizeProductTypeForDisplay(
+      widget.foodData.productType,
+    );
 
     // Initialize text controllers
     // For createNew mode, leave nutrition fields empty instead of showing "0"
@@ -447,7 +449,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       categoryIds: selectedCategoryIds,
     );
 
-    debugPrint('💾 FoodDetailScreen saving with ${carbsValue}g carbs for food: ${widget.foodData.id}');
+    debugPrint(
+      '💾 FoodDetailScreen saving with ${carbsValue}g carbs for food: ${widget.foodData.id}',
+    );
 
     // Pop with the result - the calling screen handles the result
     context.pop(result);
@@ -488,8 +492,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_screenTitle),
+        title: Text(key: const ValueKey('custom_food.title'), _screenTitle),
         leading: CustomAppBarBackButton(
+          key: const ValueKey('custom_food.back_button'),
           onPressed: () {
             if (_isNavigating) return;
             _isNavigating = true;
@@ -557,9 +562,13 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                   ],
 
                   // Food name
-                  _buildSectionTitle('Food Name'),
+                  _buildSectionTitle(
+                    'Food Name',
+                    titleKey: const ValueKey('custom_food.name_section'),
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   _buildTextField(
+                    fieldKey: const ValueKey('custom_food.name_field'),
                     controller: _nameController,
                     hint: 'Enter food name',
                     isDark: isDark,
@@ -568,7 +577,10 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Serving info
-                  _buildSectionTitle('Serving Size'),
+                  _buildSectionTitle(
+                    'Serving Size',
+                    titleKey: const ValueKey('custom_food.serving_section'),
+                  ),
                   const SizedBox(height: AppSpacing.sm),
 
                   // Serving size text (from barcode scan)
@@ -598,6 +610,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                             ),
                             const SizedBox(height: AppSpacing.xs),
                             TextField(
+                              key: const ValueKey('custom_food.amount_field'),
                               controller: _servingAmountController,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
@@ -670,6 +683,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                             ),
                             const SizedBox(height: AppSpacing.xs),
                             _buildTextField(
+                              fieldKey: const ValueKey(
+                                'custom_food.unit_field',
+                              ),
                               controller: _servingUnitController,
                               hint: 'e.g., serving, cup',
                               isDark: isDark,
@@ -747,6 +763,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               ],
             ),
             child: KylePrimaryButton(
+              key: const ValueKey('custom_food.create_button'),
               onPressed: _isValid ? _handleSave : null,
               text: _primaryButtonText,
               isFullWidth: true,
@@ -757,8 +774,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, {Key? titleKey}) {
     return Text(
+      key: titleKey,
       title,
       style: AppTextStyles.subtitle.copyWith(
         color: Theme.of(context).colorScheme.onSurface,
@@ -770,8 +788,10 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     required TextEditingController controller,
     required String hint,
     required bool isDark,
+    Key? fieldKey,
   }) {
     return TextField(
+      key: fieldKey,
       controller: controller,
       decoration: InputDecoration(
         hintText: hint,

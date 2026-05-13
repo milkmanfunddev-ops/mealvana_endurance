@@ -104,6 +104,7 @@ class EventListCard extends StatelessWidget {
         onDismissed();
       },
       child: BaseCard(
+        key: ValueKey('my_events.event_card_${event.id}'),
         margin: const EdgeInsets.only(bottom: AppSpacing.md),
         padding: const EdgeInsets.all(AppSpacing.md),
         onTap: () {

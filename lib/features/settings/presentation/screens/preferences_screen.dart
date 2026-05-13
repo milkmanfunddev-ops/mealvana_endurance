@@ -100,13 +100,15 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   Future<void> _maybeOverrideWeightFromGarmin(String? userId) async {
     if (userId == null || !mounted) return;
     try {
-      final garminData =
-          await ref.read(garminLastBodyCompProvider(userId).future);
+      final garminData = await ref.read(
+        garminLastBodyCompProvider(userId).future,
+      );
       if (!mounted || garminData == null || garminData.weightKg == null) return;
 
       final userWeightLbs = double.tryParse(_weightController.text);
-      final userWeightKg =
-          userWeightLbs != null ? userWeightLbs * 0.453592 : null;
+      final userWeightKg = userWeightLbs != null
+          ? userWeightLbs * 0.453592
+          : null;
       final isGarminAuthoritative = isGarminAuthoritativeForWeight(
         garmin: garminData,
         userWeightKg: userWeightKg,
@@ -246,6 +248,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 canContinue: _hasChanges && !_isSaving,
                 isLoading: _isSaving,
                 buttonText: 'Save Changes',
+                continueButtonKey: const ValueKey('profile_edit.save_button'),
+                backButtonKey: const ValueKey('profile_edit.back_button'),
               ),
             ),
           ],
@@ -380,6 +384,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             children: [
               Expanded(
                 child: _buildTextField(
+                  fieldKey: const ValueKey('profile_edit.first_name_field'),
                   context: context,
                   controller: _firstNameController,
                   hint: 'First name',
@@ -391,6 +396,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _buildTextField(
+                  fieldKey: const ValueKey('profile_edit.last_name_field'),
                   context: context,
                   controller: _lastNameController,
                   hint: 'Last name',
@@ -406,6 +412,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
           // Email field
           _buildTextField(
+            fieldKey: const ValueKey('profile_edit.email_field'),
             context: context,
             controller: _emailController,
             label: 'Email',
@@ -501,6 +508,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             children: [
               Expanded(
                 child: _buildTextField(
+                  fieldKey: const ValueKey('profile_edit.height_ft_field'),
                   context: context,
                   controller: _heightFeetController,
                   hint: 'ft',
@@ -522,6 +530,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _buildTextField(
+                  fieldKey: const ValueKey('profile_edit.height_in_field'),
                   context: context,
                   controller: _heightInchesController,
                   hint: 'in',
@@ -578,6 +587,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           children: [
             Expanded(
               child: _buildRadioOption(
+                radioKey: const ValueKey('profile_edit.gender_male_button'),
                 context: context,
                 title: 'Male',
                 value: Gender.male,
@@ -591,6 +601,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _buildRadioOption(
+                radioKey: const ValueKey('profile_edit.gender_female_button'),
                 context: context,
                 title: 'Female',
                 value: Gender.female,
@@ -604,6 +615,9 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _buildRadioOption(
+                radioKey: const ValueKey(
+                  'profile_edit.gender_non_binary_button',
+                ),
                 context: context,
                 title: 'Non-binary',
                 value: Gender.other,
@@ -626,12 +640,14 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     required Gender value,
     required Gender groupValue,
     required ValueChanged<Gender> onChanged,
+    Key? radioKey,
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isSelected = groupValue == value;
 
     return GestureDetector(
+      key: radioKey,
       onTap: () => onChanged(value),
       child: Container(
         height: 80,
@@ -699,6 +715,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         const SizedBox(height: AppSpacing.sm),
 
         InkWell(
+          key: const ValueKey('profile_edit.birthday_button'),
           onTap: () async {
             final selectedDate = await showAppDatePicker(
               context: context,
@@ -775,6 +792,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           ),
         ],
         _buildTextField(
+          fieldKey: const ValueKey('profile_edit.weight_field'),
           context: context,
           controller: _weightController,
           label: 'Weight',
@@ -815,6 +833,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     String? suffix,
     String? Function(String?)? validator,
     void Function(String)? onChanged,
+    Key? fieldKey,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -830,6 +849,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           const SizedBox(height: AppSpacing.sm),
         ],
         TextFormField(
+          key: fieldKey,
           controller: controller,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,

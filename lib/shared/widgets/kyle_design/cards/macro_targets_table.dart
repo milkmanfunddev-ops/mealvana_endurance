@@ -5,7 +5,6 @@ import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
-
 /// Macro targets table for Kyle's design system
 /// Table with borders showing nutritional targets
 class MacroTargetsTable extends ConsumerWidget {
@@ -27,7 +26,10 @@ class MacroTargetsTable extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       child: Material(
         color: backgroundColor ?? Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.cardRadius,
@@ -35,16 +37,14 @@ class MacroTargetsTable extends ConsumerWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: AppRadius.cardRadius,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline,
-            ),
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
               _buildHeader(context),
-              
+
               // Table
               _buildTable(context),
             ],
@@ -61,6 +61,7 @@ class MacroTargetsTable extends ConsumerWidget {
         children: [
           Expanded(
             child: Text(
+              key: const ValueKey('adjust_macros.targets_heading'),
               title,
               style: AppTextStyles.sectionTitle.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
@@ -69,6 +70,7 @@ class MacroTargetsTable extends ConsumerWidget {
           ),
           if (onInfoPressed != null)
             IconButton(
+              key: const ValueKey('adjust_macros.help_button'),
               icon: Icon(
                 FontAwesomeIcons.circleInfo,
                 color: AppColors.dragonfruit,
@@ -92,10 +94,11 @@ class MacroTargetsTable extends ConsumerWidget {
           isHeader: true,
           cells: const ['', 'PRE', 'DURING', 'POST'],
         ),
-        
+
         // Data rows
         _buildTableRow(
           context,
+          rowKey: const ValueKey('adjust_macros.row_carbs'),
           cells: [
             'CARBS',
             '${macroData.preCarbs}g',
@@ -103,9 +106,9 @@ class MacroTargetsTable extends ConsumerWidget {
             '${macroData.postCarbs}g',
           ],
         ),
-        
         _buildTableRow(
           context,
+          rowKey: const ValueKey('adjust_macros.row_protein'),
           cells: [
             'PROTEIN',
             '${macroData.preProtein}g',
@@ -113,9 +116,9 @@ class MacroTargetsTable extends ConsumerWidget {
             '${macroData.postProtein}g',
           ],
         ),
-        
         _buildTableRow(
           context,
+          rowKey: const ValueKey('adjust_macros.row_fluids'),
           cells: [
             'FLUIDS',
             '${macroData.preFluids}$fluidUnit',
@@ -123,9 +126,9 @@ class MacroTargetsTable extends ConsumerWidget {
             '${macroData.postFluids}$fluidUnit',
           ],
         ),
-        
         _buildTableRow(
           context,
+          rowKey: const ValueKey('adjust_macros.row_sodium'),
           cells: [
             'SODIUM',
             '${macroData.preSodium}mg',
@@ -141,8 +144,10 @@ class MacroTargetsTable extends ConsumerWidget {
     BuildContext context, {
     required List<String> cells,
     bool isHeader = false,
+    Key? rowKey,
   }) {
     return Container(
+      key: rowKey,
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -156,7 +161,7 @@ class MacroTargetsTable extends ConsumerWidget {
           final index = entry.key;
           final cell = entry.value;
           final isLast = index == cells.length - 1;
-          
+
           return Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(
@@ -168,7 +173,9 @@ class MacroTargetsTable extends ConsumerWidget {
                   right: isLast
                       ? BorderSide.none
                       : BorderSide(
-                          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.outline.withOpacity(0.3),
                           width: 1,
                         ),
                 ),
@@ -183,21 +190,21 @@ class MacroTargetsTable extends ConsumerWidget {
                       textAlign: TextAlign.center,
                     )
                   : index == 0
-                      ? Text(
-                          cell,
-                          style: AppTextStyles.smallLabel.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      : Text(
-                          cell,
-                          style: AppTextStyles.dataNumber.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 15,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
+                  ? Text(
+                      cell,
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  : Text(
+                      cell,
+                      style: AppTextStyles.dataNumber.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 15,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
             ),
           );
         }).toList(),
@@ -251,7 +258,10 @@ class MacroTargetsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       child: Material(
         color: backgroundColor ?? Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.cardRadius,
@@ -260,9 +270,7 @@ class MacroTargetsCard extends ConsumerWidget {
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             borderRadius: AppRadius.cardRadius,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline,
-            ),
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
           ),
           child: Column(
             children: [
@@ -270,7 +278,8 @@ class MacroTargetsCard extends ConsumerWidget {
               _buildMacroRow(
                 context,
                 label: 'CARBS',
-                value: '${macroData.preCarbs + macroData.duringCarbs + macroData.postCarbs}g',
+                value:
+                    '${macroData.preCarbs + macroData.duringCarbs + macroData.postCarbs}g',
                 color: Colors.orange,
               ),
 
@@ -280,17 +289,19 @@ class MacroTargetsCard extends ConsumerWidget {
               _buildMacroRow(
                 context,
                 label: 'PROTEIN',
-                value: '${macroData.preProtein + macroData.duringProtein + macroData.postProtein}g',
+                value:
+                    '${macroData.preProtein + macroData.duringProtein + macroData.postProtein}g',
                 color: AppColors.electrolyte,
               ),
 
               const SizedBox(height: AppSpacing.sm),
-              
+
               // Fluids
               _buildMacroRow(
                 context,
                 label: 'FLUIDS',
-                value: '${macroData.preFluids + macroData.duringFluids + macroData.postFluids}mL',
+                value:
+                    '${macroData.preFluids + macroData.duringFluids + macroData.postFluids}mL',
                 color: AppColors.dragonfruit,
               ),
             ],

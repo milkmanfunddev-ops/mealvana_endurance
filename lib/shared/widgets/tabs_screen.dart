@@ -15,10 +15,7 @@ import 'kyle_design/navigation/floating_action_buttons_bar.dart';
 import 'sync_status_indicator.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
-  const TabsScreen({
-    super.key,
-    this.initialTabIndex = 0,
-  });
+  const TabsScreen({super.key, this.initialTabIndex = 0});
 
   final int initialTabIndex;
 
@@ -92,10 +89,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       children: [
         const SyncStatusIndicator(),
         Expanded(
-          child: IndexedStack(
-            index: _currentIndex,
-            children: screens,
-          ),
+          child: IndexedStack(index: _currentIndex, children: screens),
         ),
       ],
     );
@@ -120,6 +114,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                     top: MediaQuery.of(context).padding.top + 12,
                     right: 16,
                     child: GestureDetector(
+                      key: const ValueKey('calendar.settings_button'),
                       onTap: () => context.push('/settings'),
                       child: FaIcon(
                         FontAwesomeIcons.gear,
@@ -140,10 +135,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: Size.zero,
-        child: Container(),
-      ),
+      appBar: PreferredSize(preferredSize: Size.zero, child: Container()),
       body: Stack(
         children: [
           body,
@@ -152,6 +144,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
             top: MediaQuery.of(context).padding.top + 12,
             right: 16,
             child: GestureDetector(
+              key: const ValueKey('calendar.settings_button'),
               onTap: () => context.push('/settings'),
               child: FaIcon(
                 FontAwesomeIcons.gear,
@@ -233,10 +226,7 @@ class _NavigationRailSection extends StatelessWidget {
       onDestinationSelected: onTabSelected,
       labelType: NavigationRailLabelType.all,
       backgroundColor: isDark ? AppColors.blackberryDark : AppColors.cream,
-      selectedIconTheme: IconThemeData(
-        color: AppColors.orange,
-        size: 20,
-      ),
+      selectedIconTheme: IconThemeData(color: AppColors.orange, size: 20),
       unselectedIconTheme: IconThemeData(
         color: isDark ? AppColors.cream : AppColors.blackberry,
         size: 20,

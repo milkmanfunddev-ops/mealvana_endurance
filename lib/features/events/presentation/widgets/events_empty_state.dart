@@ -9,10 +9,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 /// - "No Events Yet" title
 /// - Helpful message about creating first event
 class EventsEmptyState extends StatelessWidget {
-  const EventsEmptyState({
-    super.key,
-    this.onCreateEvent,
-  });
+  const EventsEmptyState({super.key, this.onCreateEvent});
 
   final VoidCallback? onCreateEvent;
 
@@ -27,10 +24,13 @@ class EventsEmptyState extends StatelessWidget {
             Icon(
               FontAwesomeIcons.calendarDay,
               size: AppIconSizes.xxl,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
             ),
             const SizedBox(height: AppSpacing.xl),
             Text(
+              key: const ValueKey('my_events.empty_title'),
               'No Events Yet',
               style: AppTextStyles.sectionTitle.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -38,6 +38,7 @@ class EventsEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
+              key: const ValueKey('my_events.empty_subtitle'),
               'Create your first race event to get started with event-specific nutrition planning!',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -47,6 +48,7 @@ class EventsEmptyState extends StatelessWidget {
             if (onCreateEvent != null) ...[
               const SizedBox(height: AppSpacing.xl),
               KylePrimaryButton(
+                key: const ValueKey('my_events.new_event_button'),
                 text: 'New Event',
                 icon: FontAwesomeIcons.plus,
                 isFullWidth: false,

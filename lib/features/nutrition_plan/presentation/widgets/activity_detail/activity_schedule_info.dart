@@ -52,6 +52,7 @@ class ActivityScheduleInfo extends StatelessWidget {
     return Column(
       children: [
         Text(
+          key: const ValueKey('plan_detail.summary_label'),
           '$activityLabel SCHEDULED FOR',
           style: AppTextStyles.smallLabel.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -78,14 +79,18 @@ class ActivityScheduleInfo extends StatelessWidget {
   }
 
   bool get _hasSummary =>
-      distanceMiles != null || durationMinutes != null || paceTargetMinutesPerMile != null;
+      distanceMiles != null ||
+      durationMinutes != null ||
+      paceTargetMinutesPerMile != null;
 
   Widget _buildActivitySummary(BuildContext context) {
     final parts = <String>[];
 
     if (distanceMiles != null) {
       final d = distanceMiles!;
-      final display = d == d.roundToDouble() ? d.toInt().toString() : d.toStringAsFixed(1);
+      final display = d == d.roundToDouble()
+          ? d.toInt().toString()
+          : d.toStringAsFixed(1);
       parts.add('$display mi');
     }
 
@@ -111,6 +116,7 @@ class ActivityScheduleInfo extends StatelessWidget {
     final dateWidget = Column(
       children: [
         Text(
+          key: const ValueKey('plan_detail.date_label'),
           'DATE',
           style: AppTextStyles.smallLabel.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -128,10 +134,7 @@ class ActivityScheduleInfo extends StatelessWidget {
     );
 
     if (onDateTap != null) {
-      return GestureDetector(
-        onTap: onDateTap,
-        child: dateWidget,
-      );
+      return GestureDetector(onTap: onDateTap, child: dateWidget);
     }
     return dateWidget;
   }
@@ -140,6 +143,7 @@ class ActivityScheduleInfo extends StatelessWidget {
     final timeWidget = Column(
       children: [
         Text(
+          key: const ValueKey('plan_detail.time_label'),
           'TIME',
           style: AppTextStyles.smallLabel.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -157,10 +161,7 @@ class ActivityScheduleInfo extends StatelessWidget {
     );
 
     if (onTimeTap != null) {
-      return GestureDetector(
-        onTap: onTimeTap,
-        child: timeWidget,
-      );
+      return GestureDetector(onTap: onTimeTap, child: timeWidget);
     }
     return timeWidget;
   }

@@ -18,10 +18,7 @@ import '../providers/checklist_controller.dart';
 class RaceChecklistScreen extends ConsumerWidget {
   final String eventId;
 
-  const RaceChecklistScreen({
-    super.key,
-    required this.eventId,
-  });
+  const RaceChecklistScreen({super.key, required this.eventId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,8 +31,11 @@ class RaceChecklistScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: const CustomAppBarBackButton(),
+        leading: const CustomAppBarBackButton(
+          key: ValueKey('checklist.back_button'),
+        ),
         title: Text(
+          key: const ValueKey('checklist.title'),
           'Race Day Checklist',
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
@@ -44,16 +44,10 @@ class RaceChecklistScreen extends ConsumerWidget {
       ),
       body: ContentArea.wide(
         child: checklistAsync.when(
-          data: (items) => _buildChecklistContent(
-            context,
-            ref,
-            items,
-            progress,
-          ),
+          data: (items) =>
+              _buildChecklistContent(context, ref, items, progress),
           loading: () => const Center(
-            child: CircularProgressIndicator(
-              color: AppColors.electrolyte,
-            ),
+            child: CircularProgressIndicator(color: AppColors.electrolyte),
           ),
           error: (error, stack) => _buildErrorState(context, error.toString()),
         ),
@@ -75,6 +69,7 @@ class RaceChecklistScreen extends ConsumerWidget {
 
           // Header Card
           BaseCard(
+            key: const ValueKey('checklist.intro_card'),
             margin: AppSpacing.screenPaddingHorizontal,
             child: Column(
               children: [
@@ -107,8 +102,12 @@ class RaceChecklistScreen extends ConsumerWidget {
 
           // Separate items by category
           ...() {
-            final gearItems = items.where((item) => item.category == 'gear').toList();
-            final nutritionItems = items.where((item) => item.category == 'nutrition').toList();
+            final gearItems = items
+                .where((item) => item.category == 'gear')
+                .toList();
+            final nutritionItems = items
+                .where((item) => item.category == 'nutrition')
+                .toList();
 
             return [
               // Gear Section
@@ -116,13 +115,15 @@ class RaceChecklistScreen extends ConsumerWidget {
                 _buildCategoryCard(
                   context,
                   ref,
+                  cardKey: const ValueKey('checklist.gear_section'),
                   title: 'Race Day Gear',
                   icon: FontAwesomeIcons.shirt,
                   items: gearItems,
                   category: 'gear',
                 ),
 
-              if (gearItems.isNotEmpty && (nutritionItems.isNotEmpty || items.isNotEmpty))
+              if (gearItems.isNotEmpty &&
+                  (nutritionItems.isNotEmpty || items.isNotEmpty))
                 const SizedBox(height: AppSpacing.lg),
 
               // Nutrition Section
@@ -130,6 +131,7 @@ class RaceChecklistScreen extends ConsumerWidget {
                 _buildCategoryCard(
                   context,
                   ref,
+                  cardKey: const ValueKey('checklist.nutrition_section'),
                   title: 'Nutrition',
                   icon: FontAwesomeIcons.appleWhole,
                   items: nutritionItems,
@@ -161,7 +163,9 @@ class RaceChecklistScreen extends ConsumerWidget {
                           Text(
                             '${progress.checked}/${progress.total}',
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -215,9 +219,11 @@ class RaceChecklistScreen extends ConsumerWidget {
     WidgetRef ref,
     String title,
     bool isChecked,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    Key? itemKey,
+  }) {
     return InkWell(
+      key: itemKey,
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
@@ -245,7 +251,9 @@ class RaceChecklistScreen extends ConsumerWidget {
                       ? Theme.of(context).colorScheme.onSurfaceVariant
                       : Theme.of(context).colorScheme.onSurface,
                   decoration: isChecked ? TextDecoration.lineThrough : null,
-                  decorationColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                  decorationColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
                   decorationThickness: 2,
                 ),
               ),
@@ -325,7 +333,11 @@ class RaceChecklistScreen extends ConsumerWidget {
         .toggleItem(itemId, isChecked);
   }
 
-  void _showAddItemDialog(BuildContext context, WidgetRef ref, String category) {
+  void _showAddItemDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String category,
+  ) {
     final controller = TextEditingController();
     final categoryName = category == 'nutrition' ? 'nutrition' : 'gear';
 
@@ -398,23 +410,21 @@ class RaceChecklistScreen extends ConsumerWidget {
   Widget _buildCategoryCard(
     BuildContext context,
     WidgetRef ref, {
+    Key? cardKey,
     required String title,
     required IconData icon,
     required List items,
     String? category,
   }) {
     return BaseCard(
+      key: cardKey,
       margin: AppSpacing.screenPaddingHorizontal,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                size: AppIconSizes.sm,
-                color: AppColors.electrolyte,
-              ),
+              Icon(icon, size: AppIconSizes.sm, color: AppColors.electrolyte),
               const SizedBox(width: AppSpacing.sm),
               Text(
                 title,
@@ -468,7 +478,9 @@ class RaceChecklistScreen extends ConsumerWidget {
                           child: Text(
                             'Cancel',
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -497,6 +509,7 @@ class RaceChecklistScreen extends ConsumerWidget {
                   item.itemName,
                   item.isChecked,
                   () => _toggleItem(ref, item.id, !item.isChecked),
+                  itemKey: ValueKey('checklist.gear_item_${item.id}'),
                 ),
               );
             }
@@ -508,6 +521,7 @@ class RaceChecklistScreen extends ConsumerWidget {
               item.itemName,
               item.isChecked,
               () => _toggleItem(ref, item.id, !item.isChecked),
+              itemKey: ValueKey('checklist.gear_item_${item.id}'),
             );
           }),
 
@@ -515,6 +529,7 @@ class RaceChecklistScreen extends ConsumerWidget {
 
           // Add custom item button
           InkWell(
+            key: ValueKey('checklist.add_custom_button_${category ?? 'gear'}'),
             onTap: () => _showAddItemDialog(context, ref, category ?? 'gear'),
             borderRadius: BorderRadius.circular(8),
             child: Padding(

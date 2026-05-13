@@ -77,6 +77,7 @@ class ActivityDetailAppBar extends ConsumerWidget
                   ),
                 )
               : CustomAppBarBackButton(
+                  key: const ValueKey('plan_detail.back_button'),
                   onPressed: () {
                     if (context.canPop()) {
                       context.pop();
@@ -142,6 +143,7 @@ class ActivityDetailAppBar extends ConsumerWidget
         final title =
             eventName ?? (isNewActivity ? 'New Activity' : 'Activity Details');
         return Text(
+          key: const ValueKey('plan_detail.title'),
           title,
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,

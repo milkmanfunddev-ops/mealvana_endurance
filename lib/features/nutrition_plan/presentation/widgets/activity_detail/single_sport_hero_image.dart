@@ -6,10 +6,7 @@ import 'geometric_pattern_painter.dart';
 
 /// Hero image with geometric pattern for single-sport activities
 class SingleSportHeroImage extends StatelessWidget {
-  const SingleSportHeroImage({
-    super.key,
-    required this.activityType,
-  });
+  const SingleSportHeroImage({super.key, required this.activityType});
 
   final ActivityType activityType;
 

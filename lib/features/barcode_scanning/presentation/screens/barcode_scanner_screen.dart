@@ -619,12 +619,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         title: Row(
           children: [
             const CustomAppBarBackButton(
+              key: ValueKey('barcode.back_button'),
               margin: EdgeInsets.zero,
               iconColor: Colors.white,
               backgroundColor: Color(0x80000000),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
+              key: const ValueKey('barcode.title'),
               title,
               style: AppTextStyles.sectionTitle.copyWith(color: Colors.white),
             ),
@@ -633,6 +635,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         actions: [
           // Flash toggle button
           IconButton(
+            key: const ValueKey('barcode.flash_button'),
             onPressed: _toggleFlashlight,
             icon: Icon(
               _flashOn ? FontAwesomeIcons.bolt : FontAwesomeIcons.bolt,
@@ -681,6 +684,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
   Widget _buildInstructions() {
     return Container(
+      key: const ValueKey('barcode.instructions'),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.7),
@@ -700,6 +704,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       children: [
         // Reset scanning button
         _buildControlButton(
+          buttonKey: const ValueKey('barcode.reset_button'),
           icon: FontAwesomeIcons.arrowRotateRight,
           onPressed: _resetScanning,
           label: 'Reset',
@@ -707,6 +712,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
         // Switch camera button
         _buildControlButton(
+          buttonKey: const ValueKey('barcode.switch_button'),
           icon: FontAwesomeIcons.cameraRotate,
           onPressed: _switchCamera,
           label: 'Switch',
@@ -719,6 +725,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     required IconData icon,
     required VoidCallback onPressed,
     required String label,
+    Key? buttonKey,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -735,6 +742,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             ),
           ),
           child: IconButton(
+            key: buttonKey,
             icon: Icon(icon, color: Colors.white, size: AppIconSizes.md),
             onPressed: onPressed,
           ),

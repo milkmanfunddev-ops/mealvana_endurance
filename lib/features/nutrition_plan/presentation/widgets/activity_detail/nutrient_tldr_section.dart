@@ -16,18 +16,16 @@ import '../../../domain/nutrient_transparency_data.dart';
 ///
 /// Swim zero-state has its own distinct layout.
 class NutrientTldrSection extends StatelessWidget {
-  const NutrientTldrSection({
-    super.key,
-    required this.data,
-  });
+  const NutrientTldrSection({super.key, required this.data});
 
   final NutrientTransparencyData data;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final secondaryText =
-        isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary;
+    final secondaryText = isDark
+        ? AppColors.textDarkSecondary
+        : AppColors.textLightSecondary;
     final primaryText = isDark ? AppColors.textDark : AppColors.textLight;
     final dimColor = isDark
         ? Colors.white.withValues(alpha: 0.4)
@@ -36,7 +34,12 @@ class NutrientTldrSection extends StatelessWidget {
 
     if (data.isSwimZero) {
       return _buildSwimZeroState(
-          context, primaryText, secondaryText, dimColor, accentColor);
+        context,
+        primaryText,
+        secondaryText,
+        dimColor,
+        accentColor,
+      );
     }
 
     return Column(
@@ -77,7 +80,12 @@ class NutrientTldrSection extends StatelessWidget {
                       ),
                     ),
                   _buildFormulaLine(
-                      line, primaryText, secondaryText, dimColor, accentColor),
+                    line,
+                    primaryText,
+                    secondaryText,
+                    dimColor,
+                    accentColor,
+                  ),
                 ],
               ],
             ),
@@ -88,12 +96,7 @@ class NutrientTldrSection extends StatelessWidget {
           const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(
-                  color: accentColor,
-                  width: 2,
-                ),
-              ),
+              border: Border(left: BorderSide(color: accentColor, width: 2)),
             ),
             padding: const EdgeInsets.only(left: 10),
             child: _buildRichBody(
@@ -152,11 +155,7 @@ class NutrientTldrSection extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 'Sport ceiling = 0 \u00b7 all steps skipped',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: dimColor,
-                  height: 1.5,
-                ),
+                style: TextStyle(fontSize: 12, color: dimColor, height: 1.5),
               ),
             ],
           ),
@@ -198,14 +197,17 @@ class NutrientTldrSection extends StatelessWidget {
     final spans = line.segments.map((seg) {
       return TextSpan(
         text: seg.text,
-        style:
-            _segmentStyle(seg.style, primaryText, secondaryText, dimColor, accentColor),
+        style: _segmentStyle(
+          seg.style,
+          primaryText,
+          secondaryText,
+          dimColor,
+          accentColor,
+        ),
       );
     }).toList();
 
-    final richText = RichText(
-      text: TextSpan(children: spans),
-    );
+    final richText = RichText(text: TextSpan(children: spans));
 
     if (line.stepNumber != null) {
       return Padding(
@@ -295,15 +297,17 @@ class NutrientTldrSection extends StatelessWidget {
     for (int i = 0; i < parts.length; i++) {
       if (parts[i].isEmpty) continue;
       final isBold = i % 2 == 1;
-      spans.add(TextSpan(
-        text: parts[i],
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: isBold ? FontWeight.w600 : fontWeight,
-          color: isBold ? boldColor : normalColor,
-          height: height,
+      spans.add(
+        TextSpan(
+          text: parts[i],
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: isBold ? FontWeight.w600 : fontWeight,
+            color: isBold ? boldColor : normalColor,
+            height: height,
+          ),
         ),
-      ));
+      );
     }
     return RichText(text: TextSpan(children: spans));
   }

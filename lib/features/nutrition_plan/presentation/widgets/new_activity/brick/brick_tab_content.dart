@@ -44,6 +44,7 @@ class BrickTabContent extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ActivityNameField(
+          key: const ValueKey('brick.workout_name_field'),
           value: formState.activityTitle,
           onChanged: controller.updateActivityTitle,
           hint: 'e.g., SWIM/BIKE BRICK',
@@ -63,6 +64,7 @@ class BrickTabContent extends ConsumerWidget {
 
         // Brick-level Pre-Activity Fueling Window (applies to whole brick)
         KylePlusMinusControl(
+          key: const ValueKey('brick.fueling_window_control'),
           label: 'Pre-Activity Fueling Window',
           value: formState.preActivityMinutes,
           onChanged: controller.updatePreActivityMinutes,
@@ -76,6 +78,7 @@ class BrickTabContent extends ConsumerWidget {
 
         // Brick-level Fasted Toggle (applies to pre-activity fueling only)
         FastedToggle(
+          key: const ValueKey('brick.fasted_toggle'),
           isFasted: formState.isFasted,
           onChanged: controller.updateFasted,
           showWarning: showFastedWarning,
@@ -94,6 +97,7 @@ class BrickTabContent extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
           Center(
             child: Text(
+              key: const ValueKey('brick.total_duration_label'),
               'Total Duration: $totalDuration minutes',
               style: AppTextStyles.descriptor.copyWith(
                 color: isDark ? AppColors.cream : AppColors.blackberry,
@@ -162,7 +166,7 @@ class BrickTabContent extends ConsumerWidget {
         final segmentInput = formState.segmentInputs[sport];
 
         return _ExpandableSegmentCard(
-          key: ValueKey(sport),
+          key: ValueKey('brick.segment_card_$index'),
           sport: sport,
           order: index + 1,
           segmentInput: segmentInput,
@@ -215,6 +219,7 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
         children: [
           // Header (always visible)
           GestureDetector(
+            key: ValueKey('brick.segment_expand_${widget.order - 1}'),
             onTap: () => setState(() => _isExpanded = !_isExpanded),
             child: Container(
               padding: const EdgeInsets.symmetric(
@@ -225,6 +230,7 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
                 children: [
                   // Drag handle
                   ReorderableDragStartListener(
+                    key: ValueKey('brick.segment_reorder_${widget.order - 1}'),
                     index: widget.order - 1,
                     child: Icon(
                       Icons.drag_handle,

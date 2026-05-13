@@ -35,6 +35,7 @@ class BrickSportToggleSelector extends StatelessWidget {
           children: [
             Expanded(
               child: _SportToggleButton(
+                key: const ValueKey('brick.discipline_swim_chip'),
                 sport: 'swimming',
                 icon: FontAwesomeIcons.personSwimming,
                 label: 'Swim',
@@ -46,6 +47,7 @@ class BrickSportToggleSelector extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _SportToggleButton(
+                key: const ValueKey('brick.discipline_bike_chip'),
                 sport: 'cycling',
                 icon: FontAwesomeIcons.personBiking,
                 label: 'Bike',
@@ -57,6 +59,7 @@ class BrickSportToggleSelector extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _SportToggleButton(
+                key: const ValueKey('brick.discipline_run_chip'),
                 sport: 'running',
                 icon: FontAwesomeIcons.personRunning,
                 label: 'Run',
@@ -105,6 +108,7 @@ class _SportToggleButton extends StatelessWidget {
   final bool isDark;
 
   const _SportToggleButton({
+    super.key,
     required this.sport,
     required this.icon,
     required this.label,
@@ -117,15 +121,21 @@ class _SportToggleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final backgroundColor = isSelected
         ? AppColors.electrolyte.withValues(alpha: 0.2)
-        : (isDark ? AppColors.blackberry : AppColors.cream).withValues(alpha: 0.5);
+        : (isDark ? AppColors.blackberry : AppColors.cream).withValues(
+            alpha: 0.5,
+          );
 
     final borderColor = isSelected
         ? AppColors.electrolyte
-        : (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.3);
+        : (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+            alpha: 0.3,
+          );
 
     final iconColor = isSelected
         ? AppColors.electrolyte
-        : (isDark ? AppColors.cream : AppColors.blackberry).withValues(alpha: 0.7);
+        : (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+            alpha: 0.7,
+          );
 
     final textColor = isSelected
         ? AppColors.electrolyte
@@ -142,10 +152,7 @@ class _SportToggleButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: borderColor,
-            width: isSelected ? 2 : 1,
-          ),
+          border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -154,11 +161,7 @@ class _SportToggleButton extends StatelessWidget {
             Stack(
               alignment: Alignment.center,
               children: [
-                FaIcon(
-                  icon,
-                  size: 28,
-                  color: iconColor,
-                ),
+                FaIcon(icon, size: 28, color: iconColor),
                 if (isSelected)
                   Positioned(
                     right: -8,

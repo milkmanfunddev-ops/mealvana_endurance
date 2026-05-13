@@ -25,6 +25,7 @@ class EventFooterLinks extends StatelessWidget {
             runSpacing: AppSpacing.xs,
             children: [
               TextButton(
+                key: const ValueKey('event_details.view_events_link'),
                 onPressed: () => context.push('/events'),
                 child: Text(
                   'View events list',
@@ -34,18 +35,21 @@ class EventFooterLinks extends StatelessWidget {
                 ),
               ),
               TextButton(
+                key: const ValueKey('event_details.create_new_event_link'),
                 onPressed: () async {
-                  final result = await Navigator.of(context).push<Map<String, dynamic>>(
-                    MaterialPageRoute(
-                      builder: (_) => const EventFormScreen(),
-                    ),
-                  );
+                  final result = await Navigator.of(context)
+                      .push<Map<String, dynamic>>(
+                        MaterialPageRoute(
+                          builder: (_) => const EventFormScreen(),
+                        ),
+                      );
                   if (result != null && result['success'] == true) {
                     final newEventId = result['eventId'];
                     if (newEventId is String && context.mounted) {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (_) => EventDetailScreen(eventId: newEventId),
+                          builder: (_) =>
+                              EventDetailScreen(eventId: newEventId),
                         ),
                       );
                     }

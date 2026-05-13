@@ -5,10 +5,7 @@ import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 /// Workout Completion Dialog
 /// Allows user to rate workout and add optional notes
 class CompletionDialog extends StatefulWidget {
-  const CompletionDialog({
-    super.key,
-    required this.onComplete,
-  });
+  const CompletionDialog({super.key, required this.onComplete});
 
   final Function(int rating, String? notes) onComplete;
 
@@ -82,7 +79,9 @@ class _CompletionDialogState extends State<CompletionDialog> {
                 final rating = index + 1;
                 return IconButton(
                   icon: Icon(
-                    rating <= _rating ? FontAwesomeIcons.solidStar : FontAwesomeIcons.star,
+                    rating <= _rating
+                        ? FontAwesomeIcons.solidStar
+                        : FontAwesomeIcons.star,
                     color: AppColors.orange,
                     size: AppIconSizes.md,
                   ),
@@ -99,9 +98,7 @@ class _CompletionDialogState extends State<CompletionDialog> {
               maxLines: 3,
               decoration: InputDecoration(
                 hintText: 'Add notes (optional)',
-                border: OutlineInputBorder(
-                  borderRadius: AppRadius.inputRadius,
-                ),
+                border: OutlineInputBorder(borderRadius: AppRadius.inputRadius),
               ),
             ),
 

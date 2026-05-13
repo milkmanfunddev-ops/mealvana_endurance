@@ -96,6 +96,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       CircularActionButton(
+                        key: const ValueKey('bottom_nav.calendar_tab'),
                         icon: FontAwesomeIcons.calendar,
                         onPressed: onCalendarTap,
                         semanticLabel: 'Calendar',
@@ -108,6 +109,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       CircularActionButton(
+                        key: const ValueKey('bottom_nav.diary_tab'),
                         icon: FontAwesomeIcons.utensils,
                         onPressed: onNutritionTap,
                         semanticLabel: 'Nutrition diary',
@@ -136,6 +138,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                         const SizedBox(width: 8),
                       ],
                       CircularActionButton(
+                        key: const ValueKey('bottom_nav.events_tab'),
                         icon: FontAwesomeIcons.calendarCheck,
                         onPressed: onEventsTap,
                         semanticLabel: 'Events',
@@ -148,6 +151,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       CircularActionButton(
+                        key: const ValueKey('bottom_nav.learn_tab'),
                         icon: FontAwesomeIcons.graduationCap,
                         onPressed: onLearnTap,
                         semanticLabel: 'Learn',
@@ -171,6 +175,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
               child: Tooltip(
                 message: 'New activity',
                 child: GestureDetector(
+                  key: const ValueKey('calendar.create_activity_fab'),
                   onTap: onPlusTap,
                   child: Container(
                     width: 50,

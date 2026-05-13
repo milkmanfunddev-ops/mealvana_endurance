@@ -28,8 +28,9 @@ class HelpFeedbackScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: const CustomAppBarBackButton(),
+      leading: const CustomAppBarBackButton(key: ValueKey('help.back_button')),
       title: Text(
+        key: const ValueKey('help.title'),
         'Help & Feedback',
         style: AppTextStyles.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
@@ -71,6 +72,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
+            key: const ValueKey('help.feedback_section'),
             'Feedback',
             style: AppTextStyles.subtitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
@@ -81,6 +83,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
           // Rate experience - NPS Promoter Survey
           _buildFeedbackOption(
+            rowKey: const ValueKey('help.rate_row'),
             context: context,
             icon: FontAwesomeIcons.star,
             title: 'Rate Your Experience',
@@ -92,6 +95,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
           // Bug report option
           _buildBugReportOption(
+            rowKey: const ValueKey('help.report_bug_row'),
             context: context,
             icon: FontAwesomeIcons.bug,
             title: 'Report a Bug',
@@ -166,6 +170,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
+            key: const ValueKey('help.contact_section'),
             'Contact Us',
             style: AppTextStyles.subtitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
@@ -176,6 +181,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
           // Contact options
           _buildContactOption(
+            rowKey: const ValueKey('help.email_row'),
             context: context,
             icon: FontAwesomeIcons.envelope,
             title: 'Email Support',
@@ -186,6 +192,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sm),
 
           _buildContactOption(
+            rowKey: const ValueKey('help.website_row'),
             context: context,
             icon: FontAwesomeIcons.globe,
             title: 'Website',
@@ -213,8 +220,10 @@ class HelpFeedbackScreen extends ConsumerWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Key? rowKey,
   }) {
     return InkWell(
+      key: rowKey,
       onTap: onTap,
       borderRadius: AppRadius.cardRadius,
       child: Container(
@@ -280,8 +289,10 @@ class HelpFeedbackScreen extends ConsumerWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Key? rowKey,
   }) {
     return InkWell(
+      key: rowKey,
       onTap: onTap,
       borderRadius: AppRadius.cardRadius,
       child: Container(
@@ -414,8 +425,10 @@ class HelpFeedbackScreen extends ConsumerWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Key? rowKey,
   }) {
     return InkWell(
+      key: rowKey,
       onTap: onTap,
       borderRadius: AppRadius.cardRadius,
       child: Container(

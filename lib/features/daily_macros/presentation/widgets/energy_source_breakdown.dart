@@ -10,10 +10,7 @@ import '../../domain/daily_macro_targets.dart';
 /// shows a Garmin tag chip — fulfilling the API brand-guideline requirement
 /// that Garmin-derived data is attributed wherever it surfaces.
 class EnergySourceBreakdown extends StatelessWidget {
-  const EnergySourceBreakdown({
-    super.key,
-    required this.macros,
-  });
+  const EnergySourceBreakdown({super.key, required this.macros});
 
   final DailyMacroTargets macros;
 
@@ -40,6 +37,7 @@ class EnergySourceBreakdown extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
         ],
         Text(
+          key: const ValueKey('nutrition_diary.breakdown_section'),
           'Energy Breakdown',
           style: AppTextStyles.bodySmall.copyWith(
             color: textColor.withValues(alpha: 0.5),
@@ -49,6 +47,7 @@ class EnergySourceBreakdown extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         _BreakdownRow(
+          key: const ValueKey('nutrition_diary.resting_row'),
           label: 'Resting',
           kcal: macros.rmr,
           fromGarmin: sources?.rmrFromGarmin ?? false,
@@ -57,6 +56,7 @@ class EnergySourceBreakdown extends StatelessWidget {
         if (macros.neatKcal != null && macros.neatKcal! > 0) ...[
           const SizedBox(height: 6),
           _BreakdownRow(
+            key: const ValueKey('nutrition_diary.daily_activity_row'),
             label: 'Daily activity',
             kcal: macros.neatKcal!,
             fromGarmin: sources?.neatFromGarmin ?? false,
@@ -66,6 +66,7 @@ class EnergySourceBreakdown extends StatelessWidget {
         if (macros.sessionKcal > 0) ...[
           const SizedBox(height: 6),
           _BreakdownRow(
+            key: const ValueKey('nutrition_diary.workout_row'),
             label: 'Workout',
             kcal: macros.sessionKcal,
             fromGarmin: _anySessionFromGarmin(sources),
@@ -76,6 +77,7 @@ class EnergySourceBreakdown extends StatelessWidget {
         Divider(color: textColor.withValues(alpha: 0.1), height: 1),
         const SizedBox(height: 8),
         _BreakdownRow(
+          key: const ValueKey('nutrition_diary.tdee_row'),
           label: 'Total burn (TDEE)',
           kcal: macros.tdee,
           fromGarmin: false,
@@ -114,20 +116,24 @@ class _BodyCompositionRow extends StatelessWidget {
     if (weightKg != null) {
       // Display in lbs since the rest of the app uses imperial.
       final lbs = (weightKg! * 2.20462).round();
-      pieces.add(_ValueWithBadge(
-        label: 'Weight',
-        value: '$lbs lbs',
-        fromGarmin: weightFromGarmin,
-        textColor: textColor,
-      ));
+      pieces.add(
+        _ValueWithBadge(
+          label: 'Weight',
+          value: '$lbs lbs',
+          fromGarmin: weightFromGarmin,
+          textColor: textColor,
+        ),
+      );
     }
     if (bodyFatPct != null) {
-      pieces.add(_ValueWithBadge(
-        label: 'Body fat',
-        value: '${bodyFatPct!.toStringAsFixed(1)}%',
-        fromGarmin: bodyFatFromGarmin,
-        textColor: textColor,
-      ));
+      pieces.add(
+        _ValueWithBadge(
+          label: 'Body fat',
+          value: '${bodyFatPct!.toStringAsFixed(1)}%',
+          fromGarmin: bodyFatFromGarmin,
+          textColor: textColor,
+        ),
+      );
     }
 
     return Column(
@@ -200,6 +206,7 @@ class _ValueWithBadge extends StatelessWidget {
 
 class _BreakdownRow extends StatelessWidget {
   const _BreakdownRow({
+    super.key,
     required this.label,
     required this.kcal,
     required this.fromGarmin,

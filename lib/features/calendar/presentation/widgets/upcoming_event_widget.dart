@@ -11,10 +11,7 @@ import '../../../events/presentation/screens/event_detail_screen.dart';
 class UpcomingEventWidget extends ConsumerWidget {
   final Event? upcomingEvent;
 
-  const UpcomingEventWidget({
-    super.key,
-    required this.upcomingEvent,
-  });
+  const UpcomingEventWidget({super.key, required this.upcomingEvent});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,9 +23,7 @@ class UpcomingEventWidget extends ConsumerWidget {
         child: InkWell(
           onTap: () {
             Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const EventsListScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const EventsListScreen()),
             );
           },
           child: Padding(
@@ -43,11 +38,7 @@ class UpcomingEventWidget extends ConsumerWidget {
                     color: Colors.grey.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.event,
-                    color: Colors.grey[600],
-                    size: 24,
-                  ),
+                  child: Icon(Icons.event, color: Colors.grey[600], size: 24),
                 ),
                 const SizedBox(width: 16),
                 // Event details
@@ -57,7 +48,8 @@ class UpcomingEventWidget extends ConsumerWidget {
                     children: [
                       Text(
                         'No upcoming events',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: Colors.grey[700],
                             ),
@@ -66,17 +58,14 @@ class UpcomingEventWidget extends ConsumerWidget {
                       Text(
                         'Tap to add a race event',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                          color: Colors.grey[600],
+                        ),
                       ),
                     ],
                   ),
                 ),
                 // Chevron
-                Icon(
-                  Icons.chevron_right,
-                  color: Colors.grey[400],
-                ),
+                Icon(Icons.chevron_right, color: Colors.grey[400]),
               ],
             ),
           ),
@@ -91,9 +80,8 @@ class UpcomingEventWidget extends ConsumerWidget {
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => EventDetailScreen(
-                eventId: upcomingEvent!.id,
-              ),
+              builder: (context) =>
+                  EventDetailScreen(eventId: upcomingEvent!.id),
             ),
           );
         },
@@ -123,33 +111,31 @@ class UpcomingEventWidget extends ConsumerWidget {
                   children: [
                     Text(
                       'Upcoming Event',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      upcomingEvent!.eventName ?? upcomingEvent!.formattedEventType,
+                      upcomingEvent!.eventName ??
+                          upcomingEvent!.formattedEventType,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     // TODO: Add date to Event model or fetch activity for date
                     Text(
                       'Upcoming Event',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: const Color(0xFF9C27B0),
-                          ),
+                        color: const Color(0xFF9C27B0),
+                      ),
                     ),
                   ],
                 ),
               ),
               // Chevron
-              const Icon(
-                Icons.chevron_right,
-                color: Colors.grey,
-              ),
+              const Icon(Icons.chevron_right, color: Colors.grey),
             ],
           ),
         ),
@@ -157,4 +143,3 @@ class UpcomingEventWidget extends ConsumerWidget {
     );
   }
 }
-

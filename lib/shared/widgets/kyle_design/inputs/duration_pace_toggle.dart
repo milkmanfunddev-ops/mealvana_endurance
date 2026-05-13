@@ -67,6 +67,8 @@ class DurationPaceToggle extends StatelessWidget {
             : AppColors.inactive.withValues(alpha: 0.2),
         thumbColor: AppColors.orange,
         enabled: enabled,
+        leftKey: const ValueKey('activity_create.by_duration_toggle'),
+        rightKey: const ValueKey('activity_create.by_pace_toggle'),
       ),
     );
   }

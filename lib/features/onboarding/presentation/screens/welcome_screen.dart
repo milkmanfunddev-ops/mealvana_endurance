@@ -64,12 +64,14 @@ class WelcomeScreen extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           KylePrimaryButton(
+            key: const ValueKey('welcome.get_started_button'),
             text: 'Get Started',
             onPressed: () => _getStarted(context, ref),
             isFullWidth: false,
           ),
           const SizedBox(height: AppSpacing.md),
           KyleSecondaryButton(
+            key: const ValueKey('welcome.log_in_button'),
             text: 'Log In',
             onPressed: () => _goToLogin(context, ref),
             isFullWidth: false,
@@ -101,6 +103,7 @@ class WelcomeScreen extends ConsumerWidget {
 
         // App title
         Text(
+          key: const ValueKey('welcome.title'),
           'Mealvana',
           style: AppTextStyles.pageTitle.copyWith(color: AppColors.cream),
         ),
@@ -109,6 +112,7 @@ class WelcomeScreen extends ConsumerWidget {
 
         // Subtitle
         Text(
+          key: const ValueKey('welcome.subtitle'),
           'Endurance',
           style: AppTextStyles.subtitle.copyWith(
             color: AppColors.cream.withValues(alpha: 0.8),
@@ -141,6 +145,7 @@ class WelcomeScreen extends ConsumerWidget {
 
   Widget _buildWelcomeMessage(BuildContext context) {
     return Text(
+      key: const ValueKey('welcome.description'),
       'Get personalized nutrition plans tailored to your endurance activities. Track your fueling, optimize your performance, and achieve your goals.',
       style: AppTextStyles.bodyMedium.copyWith(
         color: AppColors.cream.withValues(alpha: 0.9),

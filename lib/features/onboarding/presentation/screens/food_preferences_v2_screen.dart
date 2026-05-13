@@ -215,6 +215,7 @@ class _FoodPreferencesV2ScreenState
                         children: [
                           // Title
                           const Text(
+                            key: ValueKey('food_selection.title'),
                             'What foods fuel your training?',
                             style: TextStyle(
                               fontFamily: 'Sansita',
@@ -244,6 +245,7 @@ class _FoodPreferencesV2ScreenState
 
                           // Search bar
                           FigmaSearchBar(
+                            key: const ValueKey('food_selection.search_field'),
                             controller: _searchController,
                             onChanged: _onSearchChanged,
                           ),
@@ -252,6 +254,7 @@ class _FoodPreferencesV2ScreenState
 
                           // Common foods section title
                           const Text(
+                            key: ValueKey('food_selection.common_section'),
                             'Common foods',
                             style: TextStyle(
                               fontFamily: 'Sansita',
@@ -299,6 +302,8 @@ class _FoodPreferencesV2ScreenState
             onBack: widget.onBack ?? () => context.pop(),
             canContinue: true, // Allow skip/continue always
             isLoading: _isSaving,
+            continueButtonKey: const ValueKey('food_selection.continue_button'),
+            backButtonKey: const ValueKey('food_selection.back_button'),
           ),
         ],
       ),

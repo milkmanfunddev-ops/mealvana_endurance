@@ -118,6 +118,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
                   // Title
                   Text(
+                    key: const ValueKey('login.title'),
                     contentService.getValue(
                       'auth.login.title',
                       defaultValue: 'Log In',
@@ -133,6 +134,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
                   // Subtitle
                   Text(
+                    key: const ValueKey('login.subtitle'),
                     contentService.getValue(
                       'auth.login.subtitle',
                       defaultValue: 'Welcome back',
@@ -147,6 +149,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
                   // Email field
                   TextFormField(
+                    key: const ValueKey('login.email_field'),
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     autocorrect: false,
@@ -178,6 +181,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
                   // Password field
                   TextFormField(
+                    key: const ValueKey('login.password_field'),
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     autocorrect: false,
@@ -196,6 +200,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       suffixIcon: IconButton(
+                        key: const ValueKey('login.password_visibility_button'),
                         icon: Icon(
                           _obscurePassword
                               ? FontAwesomeIcons.eye
@@ -225,6 +230,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
+                      key: const ValueKey('login.forgot_password_button'),
                       onTap: asyncState.isLoading
                           ? null
                           : () => context.push('/auth/forgot-password'),
@@ -244,6 +250,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
                   // Login button
                   KylePrimaryButton(
+                    key: const ValueKey('login.log_in_button'),
                     text: contentService.getValue(
                       asyncState.isLoading
                           ? 'auth.login.logging_in_button'
@@ -259,6 +266,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
                   // Back button
                   KyleSecondaryButton(
+                    key: const ValueKey('login.back_button'),
                     text: contentService.getValue(
                       'auth.email_signup.back_button',
                       defaultValue: 'Back',
@@ -323,6 +331,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
           Opacity(
             opacity: isLoading ? 0.5 : 1.0,
             child: CustomAppBarBackButton(
+              key: const ValueKey('login.back_button_appbar'),
               onPressed: () => context.pop(),
               enabled: !isLoading,
               margin: EdgeInsets.zero,

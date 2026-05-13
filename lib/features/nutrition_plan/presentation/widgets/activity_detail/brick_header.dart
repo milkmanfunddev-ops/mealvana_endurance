@@ -11,11 +11,7 @@ import 'geometric_pattern_painter.dart';
 /// Shows side-by-side sport icons, brick type name, combined distance/duration,
 /// and scheduled date/time information.
 class BrickHeader extends StatelessWidget {
-  const BrickHeader({
-    super.key,
-    required this.brick,
-    required this.metadata,
-  });
+  const BrickHeader({super.key, required this.brick, required this.metadata});
 
   final Activity brick;
   final BrickMetadata metadata;
@@ -53,10 +49,7 @@ class BrickHeader extends StatelessWidget {
             painter: GeometricPatternPainter(),
           ),
           // Use the same BrickCompositeHeroImage widget as the new activity screen
-          BrickCompositeHeroImage(
-            selectedSports: selectedSports,
-            height: 220,
-          ),
+          BrickCompositeHeroImage(selectedSports: selectedSports, height: 220),
         ],
       ),
     );
@@ -143,7 +136,9 @@ class BrickHeader extends StatelessWidget {
               ),
             ),
             Text(
-              ActivityDetailHelpers.formatDuration(metadata.totalDurationMinutes),
+              ActivityDetailHelpers.formatDuration(
+                metadata.totalDurationMinutes,
+              ),
               style: AppTextStyles.bodyMedium.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -204,5 +199,4 @@ class BrickHeader extends StatelessWidget {
         return sport;
     }
   }
-
 }

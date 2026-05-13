@@ -613,6 +613,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
         children: [
           Expanded(
             child: KylePrimaryButton(
+              key: const ValueKey('activity_create.generate_plan_button'),
               text: 'Generate Plan',
               onPressed: coordinatorState.isGenerating
                   ? null
@@ -624,6 +625,7 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: KyleSecondaryButton(
+                key: const ValueKey('activity_create.use_template_button'),
                 text: 'Use Template',
                 onPressed: coordinatorState.isGenerating
                     ? null

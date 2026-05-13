@@ -26,6 +26,7 @@ class EventHeaderCard extends StatelessWidget {
         children: [
           // Event name/type
           Text(
+            key: const ValueKey('event_details.event_name'),
             event.eventName ?? event.formattedEventType,
             style: AppTextStyles.pageTitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
@@ -45,10 +46,15 @@ class EventHeaderCard extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
+                  key: const ValueKey('event_details.event_date'),
                   activity != null
-                    ? DateFormat('EEEE, MMMM d, yyyy').format(activity!.scheduledDateTime)
-                    : event.startTime != null
-                      ? DateFormat('EEEE, MMMM d, yyyy').format(DateTime.parse(event.startTime!))
+                      ? DateFormat(
+                          'EEEE, MMMM d, yyyy',
+                        ).format(activity!.scheduledDateTime)
+                      : event.startTime != null
+                      ? DateFormat(
+                          'EEEE, MMMM d, yyyy',
+                        ).format(DateTime.parse(event.startTime!))
                       : 'Date TBD',
                   style: AppTextStyles.bodyLarge.copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
@@ -61,9 +67,15 @@ class EventHeaderCard extends StatelessWidget {
 
           // Countdown (from activity if exists, otherwise parse from event.startTime)
           if (activity?.scheduledDateTime != null)
-            EventCountdownBadge(eventDate: activity!.scheduledDateTime)
+            EventCountdownBadge(
+              key: const ValueKey('event_details.event_countdown'),
+              eventDate: activity!.scheduledDateTime,
+            )
           else if (event.startTime != null)
-            EventCountdownBadge(eventDate: DateTime.parse(event.startTime!)),
+            EventCountdownBadge(
+              key: const ValueKey('event_details.event_countdown'),
+              eventDate: DateTime.parse(event.startTime!),
+            ),
         ],
       ),
     );

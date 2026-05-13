@@ -73,6 +73,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       title: Row(
         children: [
           CustomAppBarBackButton(
+            key: const ValueKey('adjust_macros.back_button'),
             onPressed: () => context.pop(),
             margin: EdgeInsets.zero,
             iconColor: Theme.of(context).colorScheme.onSurface,
@@ -82,6 +83,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
+            key: const ValueKey('adjust_macros.title'),
             state?.adjustMacrosTitle ?? 'Adjust Your Macros',
             style: AppTextStyles.sectionTitle.copyWith(
               fontSize: 17,
@@ -140,6 +142,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       child: Column(
         children: [
           Text(
+            key: const ValueKey('adjust_macros.activity_summary'),
             activityTypeText,
             style: AppTextStyles.sectionTitle.copyWith(
               fontSize: 20,
@@ -178,6 +181,8 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         pace: pace,
         totalBurn: totalBurn,
         backgroundColor: Colors.transparent,
+        paceStatKey: const ValueKey('adjust_macros.pace_stat'),
+        burnStatKey: const ValueKey('adjust_macros.calories_stat'),
       ),
     );
   }
@@ -366,6 +371,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         children: [
           Expanded(
             child: KyleSecondaryButton(
+              key: const ValueKey('adjust_macros.edit_macros_button'),
               text: 'Edit Macros',
               onPressed: () =>
                   _showEditMacrosDialog(context, ref, state, macros),
@@ -376,6 +382,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: KyleSecondaryButton(
+              key: const ValueKey('adjust_macros.reset_all_button'),
               text: state.resetAllButton,
               onPressed: () => _handleResetAll(context, ref),
               isFullWidth: true,
@@ -395,6 +402,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 17),
       child: KylePrimaryButton(
+        key: const ValueKey('adjust_macros.create_plan_button'),
         text: state.createPlanButton,
         onPressed: () => _handleCreatePlan(context, ref),
         isFullWidth: true,

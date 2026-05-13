@@ -11,10 +11,7 @@ import 'macro_breakdown_row.dart';
 /// Row 1: "1,130 cal" (left) | "Daily Total" (right)
 /// Row 2: colored macro breakdown (carbs/protein/fat with dot indicators)
 class DailySummaryCard extends StatelessWidget {
-  const DailySummaryCard({
-    super.key,
-    required this.macros,
-  });
+  const DailySummaryCard({super.key, required this.macros});
 
   final DailyMacroTargets macros;
 
@@ -24,6 +21,7 @@ class DailySummaryCard extends StatelessWidget {
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
     return BaseCard(
+      key: const ValueKey('nutrition_diary.daily_total_card'),
       child: Column(
         children: [
           // Compact header row: calories left, "Daily Total" right
@@ -69,9 +67,7 @@ class DailySummaryCard extends StatelessWidget {
           if (macros.sources?.anyFromGarmin ?? false) ...[
             const SizedBox(height: AppSpacing.md),
             const Center(
-              child: GarminAttribution(
-                style: GarminAttributionStyle.standard,
-              ),
+              child: GarminAttribution(style: GarminAttributionStyle.standard),
             ),
           ],
         ],

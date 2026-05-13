@@ -36,6 +36,7 @@ class IntensityPresetChips extends StatelessWidget {
         final label = WorkoutPresetData.labelFor(sportType, preset);
 
         return GestureDetector(
+          key: ValueKey('activity_create.intensity_${preset.name}_chip'),
           onTap: enabled ? () => onSelected(preset) : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),

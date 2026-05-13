@@ -495,6 +495,7 @@ class _NutritionSectionsBuilderState
             }),
             const SizedBox(height: AppSpacing.md),
             KyleAddFoodButton(
+              key: ValueKey('plan_detail.${category}_add_food_button'),
               text: 'ADD FOOD',
               onPressed: () => widget.onAddFood(category),
             ),
@@ -563,6 +564,7 @@ class _NutritionSectionsBuilderState
       children: [
         Expanded(
           child: Text(
+            key: ValueKey('plan_detail.${category}_section'),
             title,
             style: AppTextStyles.sectionTitle.copyWith(
               color: sectionColor,
@@ -616,7 +618,9 @@ class _NutritionSectionsBuilderState
     if (activityId == null) return null;
     return () {
       ref
-          .read(activityDetailControllerProvider(activityId: activityId).notifier)
+          .read(
+            activityDetailControllerProvider(activityId: activityId).notifier,
+          )
           .regeneratePlan();
     };
   }

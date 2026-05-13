@@ -38,8 +38,11 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: const CustomAppBarBackButton(),
+      leading: const CustomAppBarBackButton(
+        key: ValueKey('food_prefs.back_button'),
+      ),
       title: Text(
+        key: const ValueKey('food_prefs.title'),
         'Food Preferences',
         style: AppTextStyles.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
@@ -93,6 +96,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
+                  tileKey: const ValueKey('food_prefs.dietary_row'),
                   icon: FontAwesomeIcons.leaf,
                   title: 'Dietary Preference',
                   subtitle: _getDietaryPreferenceSubtitle(state),
@@ -106,6 +110,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
+                  tileKey: const ValueKey('food_prefs.allergies_row'),
                   icon: FontAwesomeIcons.triangleExclamation,
                   title: 'Allergies',
                   subtitle: _getAllergiesSubtitle(state),
@@ -119,6 +124,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
+                  tileKey: const ValueKey('food_prefs.likes_dislikes_row'),
                   icon: FontAwesomeIcons.heart,
                   title: 'Food Likes & Dislikes',
                   subtitle: 'Manage your food preferences',
@@ -143,8 +149,10 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
     required String subtitle,
     required String route,
     required String analyticsEvent,
+    Key? tileKey,
   }) {
     return InkWell(
+      key: tileKey,
       onTap: () {
         final analytics = ref.read(appExternalDepsProvider);
         analytics.analytics.track(analyticsEvent);

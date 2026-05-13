@@ -430,8 +430,11 @@ class _NutritionTargetsScreenState
 
     return Scaffold(
       appBar: AppBar(
-        leading: const CustomAppBarBackButton(),
+        leading: const CustomAppBarBackButton(
+          key: ValueKey('nutrition_targets.back_button'),
+        ),
         title: Text(
+          key: const ValueKey('nutrition_targets.title'),
           'Nutrition Targets',
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
@@ -439,6 +442,7 @@ class _NutritionTargetsScreenState
         ),
         actions: [
           IconButton(
+            key: const ValueKey('nutrition_targets.help_button'),
             onPressed: _showDefaultsHelpSheet,
             icon: Icon(
               Icons.help_outline_rounded,
@@ -456,6 +460,7 @@ class _NutritionTargetsScreenState
             children: [
               // Info banner
               BaseCard(
+                key: const ValueKey('nutrition_targets.info_card'),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -493,13 +498,42 @@ class _NutritionTargetsScreenState
 
               // Pre-Activity section
               _buildSectionCard(
+                cardKey: const ValueKey('nutrition_targets.pre_section'),
                 title: 'Pre-Activity',
                 children: [
-                  _buildField('Carbs (g)', _preCarbsController),
-                  _buildField('Protein (g)', _preProteinController),
-                  _buildField('Fat (g)', _preFatController),
-                  _buildField('Sodium (mg)', _preSodiumController),
-                  _buildField('Fluids (ml)', _preFluidController),
+                  _buildField(
+                    'Carbs (g)',
+                    _preCarbsController,
+                    fieldKey: const ValueKey(
+                      'nutrition_targets.pre_carbs_field',
+                    ),
+                  ),
+                  _buildField(
+                    'Protein (g)',
+                    _preProteinController,
+                    fieldKey: const ValueKey(
+                      'nutrition_targets.pre_protein_field',
+                    ),
+                  ),
+                  _buildField(
+                    'Fat (g)',
+                    _preFatController,
+                    fieldKey: const ValueKey('nutrition_targets.pre_fat_field'),
+                  ),
+                  _buildField(
+                    'Sodium (mg)',
+                    _preSodiumController,
+                    fieldKey: const ValueKey(
+                      'nutrition_targets.pre_sodium_field',
+                    ),
+                  ),
+                  _buildField(
+                    'Fluids (ml)',
+                    _preFluidController,
+                    fieldKey: const ValueKey(
+                      'nutrition_targets.pre_fluids_field',
+                    ),
+                  ),
                 ],
               ),
 
@@ -523,6 +557,7 @@ class _NutritionTargetsScreenState
 
               // During Run section
               DuringSportOverrideSection(
+                key: const ValueKey('nutrition_targets.during_run_section'),
                 sportLabel: 'Run',
                 sportIcon: Icons.directions_run,
                 carbController: _duringRunCarbRateController,
@@ -538,6 +573,7 @@ class _NutritionTargetsScreenState
 
               // During Bike section
               DuringSportOverrideSection(
+                key: const ValueKey('nutrition_targets.during_bike_section'),
                 sportLabel: 'Bike',
                 sportIcon: Icons.directions_bike,
                 carbController: _duringBikeCarbRateController,
@@ -553,6 +589,7 @@ class _NutritionTargetsScreenState
 
               // During Swim section
               DuringSportOverrideSection(
+                key: const ValueKey('nutrition_targets.during_swim_section'),
                 sportLabel: 'Swim',
                 sportIcon: Icons.pool,
                 carbController: _duringSwimCarbRateController,
@@ -608,8 +645,10 @@ class _NutritionTargetsScreenState
   Widget _buildSectionCard({
     required String title,
     required List<Widget> children,
+    Key? cardKey,
   }) {
     return BaseCard(
+      key: cardKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -626,7 +665,11 @@ class _NutritionTargetsScreenState
     );
   }
 
-  Widget _buildField(String label, TextEditingController controller) {
+  Widget _buildField(
+    String label,
+    TextEditingController controller, {
+    Key? fieldKey,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
@@ -644,6 +687,7 @@ class _NutritionTargetsScreenState
           Expanded(
             flex: 2,
             child: TextFormField(
+              key: fieldKey,
               controller: controller,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,

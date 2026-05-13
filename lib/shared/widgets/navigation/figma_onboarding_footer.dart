@@ -16,6 +16,8 @@ class FigmaOnboardingFooter extends StatelessWidget {
     this.isLoading = false,
     this.buttonText = 'Continue',
     this.showBackButton = true,
+    this.continueButtonKey,
+    this.backButtonKey,
   });
 
   /// Called when the continue button is pressed
@@ -36,6 +38,12 @@ class FigmaOnboardingFooter extends StatelessWidget {
   /// Whether to show the back button (default: true)
   final bool showBackButton;
 
+  /// Key for the continue/save button (for integration tests)
+  final Key? continueButtonKey;
+
+  /// Key for the back button (for integration tests)
+  final Key? backButtonKey;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -52,6 +60,7 @@ class FigmaOnboardingFooter extends StatelessWidget {
                 borderRadius: BorderRadius.circular(28),
               ),
               child: IconButton(
+                key: backButtonKey,
                 onPressed: isLoading ? null : onBack,
                 icon: const Icon(
                   Icons.arrow_back,
@@ -69,6 +78,7 @@ class FigmaOnboardingFooter extends StatelessWidget {
             child: SizedBox(
               height: 48,
               child: ElevatedButton(
+                key: continueButtonKey,
                 onPressed: canContinue && !isLoading ? onContinue : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: canContinue && !isLoading

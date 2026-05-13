@@ -58,32 +58,33 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
         //   onPressed: () => Navigator.of(context).pop(),
         // ),
         title: Text(
+          key: const ValueKey('my_events.title'),
           'My Events',
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         actions: [
-        //   IconButton(
-        //     icon: Icon(
-        //       FontAwesomeIcons.house,
-        //       size: AppIconSizes.sm,
-        //       color: Theme.of(context).colorScheme.onSurface,
-        //     ),
-        //     tooltip: 'Home',
-        //     onPressed: () => context.go('/main'),
-        //   ),
+          //   IconButton(
+          //     icon: Icon(
+          //       FontAwesomeIcons.house,
+          //       size: AppIconSizes.sm,
+          //       color: Theme.of(context).colorScheme.onSurface,
+          //     ),
+          //     tooltip: 'Home',
+          //     onPressed: () => context.go('/main'),
+          //   ),
         ],
       ),
       body: eventsState.when(
         data: (events) {
           // Filter out dismissed events for optimistic UI
-          final visibleEvents = events.where((e) => !_dismissedEventIds.contains(e.id)).toList();
+          final visibleEvents = events
+              .where((e) => !_dismissedEventIds.contains(e.id))
+              .toList();
 
           if (visibleEvents.isEmpty) {
-            return EventsEmptyState(
-              onCreateEvent: _openCreateEvent,
-            );
+            return EventsEmptyState(onCreateEvent: _openCreateEvent);
           }
 
           // Get activities from activities controller
@@ -96,8 +97,10 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
           final now = DateTime.now();
           final today = DateTime(now.year, now.month, now.day);
 
-          final upcomingEvents = <({Event event, Activity? activity, DateTime eventDate})>[];
-          final pastEvents = <({Event event, Activity? activity, DateTime eventDate})>[];
+          final upcomingEvents =
+              <({Event event, Activity? activity, DateTime eventDate})>[];
+          final pastEvents =
+              <({Event event, Activity? activity, DateTime eventDate})>[];
 
           for (final event in visibleEvents) {
             // Find corresponding activity if one exists
@@ -125,17 +128,34 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
             }
 
             // Compare dates only (ignore time)
-            final eventDateOnly = DateTime(eventDate.year, eventDate.month, eventDate.day);
-            if (eventDateOnly.isAfter(today) || eventDateOnly.isAtSameMomentAs(today)) {
-              upcomingEvents.add((event: event, activity: activity, eventDate: eventDate));
+            final eventDateOnly = DateTime(
+              eventDate.year,
+              eventDate.month,
+              eventDate.day,
+            );
+            if (eventDateOnly.isAfter(today) ||
+                eventDateOnly.isAtSameMomentAs(today)) {
+              upcomingEvents.add((
+                event: event,
+                activity: activity,
+                eventDate: eventDate,
+              ));
             } else {
-              pastEvents.add((event: event, activity: activity, eventDate: eventDate));
+              pastEvents.add((
+                event: event,
+                activity: activity,
+                eventDate: eventDate,
+              ));
             }
           }
 
           // Sort events by date
-          upcomingEvents.sort((a, b) => a.eventDate.compareTo(b.eventDate)); // Ascending (earliest first)
-          pastEvents.sort((a, b) => b.eventDate.compareTo(a.eventDate)); // Descending (most recent first)
+          upcomingEvents.sort(
+            (a, b) => a.eventDate.compareTo(b.eventDate),
+          ); // Ascending (earliest first)
+          pastEvents.sort(
+            (a, b) => b.eventDate.compareTo(a.eventDate),
+          ); // Descending (most recent first)
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -152,23 +172,27 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                 // Upcoming Events Section
                 if (upcomingEvents.isNotEmpty) ...[
                   Text(
+                    key: const ValueKey('my_events.upcoming_heading'),
                     'Upcoming Events',
                     style: AppTextStyles.subtitle.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  ...upcomingEvents.map((eventData) => EventListCard(
-                        event: eventData.event,
-                        activity: eventData.activity,
-                        eventDate: eventData.eventDate,
-                        onDismissed: () => _handleEventDismissed(eventData.event),
-                      )),
+                  ...upcomingEvents.map(
+                    (eventData) => EventListCard(
+                      event: eventData.event,
+                      activity: eventData.activity,
+                      eventDate: eventData.eventDate,
+                      onDismissed: () => _handleEventDismissed(eventData.event),
+                    ),
+                  ),
                 ],
 
                 // Past Events Section
                 if (pastEvents.isNotEmpty) ...[
-                  if (upcomingEvents.isNotEmpty) const SizedBox(height: AppSpacing.xl),
+                  if (upcomingEvents.isNotEmpty)
+                    const SizedBox(height: AppSpacing.xl),
                   Text(
                     'Past Events',
                     style: AppTextStyles.subtitle.copyWith(
@@ -176,17 +200,20 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  ...pastEvents.map((eventData) => EventListCard(
-                        event: eventData.event,
-                        activity: eventData.activity,
-                        eventDate: eventData.eventDate,
-                        onDismissed: () => _handleEventDismissed(eventData.event),
-                      )),
+                  ...pastEvents.map(
+                    (eventData) => EventListCard(
+                      event: eventData.event,
+                      activity: eventData.activity,
+                      eventDate: eventData.eventDate,
+                      onDismissed: () => _handleEventDismissed(eventData.event),
+                    ),
+                  ),
                 ],
 
                 const SizedBox(height: AppSpacing.xl),
                 Center(
                   child: KylePrimaryButton(
+                    key: const ValueKey('my_events.new_event_button'),
                     text: 'New Event',
                     icon: FontAwesomeIcons.plus,
                     isFullWidth: false,
@@ -199,11 +226,9 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
           );
         },
         loading: () => const Center(
-            child: CircularProgressIndicator(
-              color: AppColors.electrolyte,
-            ),
-          ),
-          error: (error, stack) => Center(
+          child: CircularProgressIndicator(color: AppColors.electrolyte),
+        ),
+        error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -250,7 +275,8 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
     if (!mounted) return;
     final result = await Navigator.of(context).push<Map<String, dynamic>>(
       MaterialPageRoute(
-        builder: (context) => const EventFormScreen(), // Create mode (event = null)
+        builder: (context) =>
+            const EventFormScreen(), // Create mode (event = null)
       ),
     );
 
@@ -270,9 +296,7 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
       if (createdEventId is String && context.mounted) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => EventDetailScreen(
-              eventId: createdEventId,
-            ),
+            builder: (context) => EventDetailScreen(eventId: createdEventId),
           ),
         );
       }
@@ -290,26 +314,23 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
     final eventsController = ref.read(eventsControllerProvider.notifier);
 
     // Delete the event in the background
-    eventsController.deleteEvent(event.id).then((_) {
-      // Show success message
-      if (mounted) {
-        MealvanaSnackbar.showInfo(
-          context,
-          'Deleted "$eventName"',
-        );
-      }
-    }).catchError((e) {
-      // Deletion failed - restore the event in the UI
-      if (mounted) {
-        setState(() {
-          _dismissedEventIds.remove(event.id);
-        });
+    eventsController
+        .deleteEvent(event.id)
+        .then((_) {
+          // Show success message
+          if (mounted) {
+            MealvanaSnackbar.showInfo(context, 'Deleted "$eventName"');
+          }
+        })
+        .catchError((e) {
+          // Deletion failed - restore the event in the UI
+          if (mounted) {
+            setState(() {
+              _dismissedEventIds.remove(event.id);
+            });
 
-        MealvanaSnackbar.showError(
-          context,
-          'Error deleting event: $e',
-        );
-      }
-    });
+            MealvanaSnackbar.showError(context, 'Error deleting event: $e');
+          }
+        });
   }
 }

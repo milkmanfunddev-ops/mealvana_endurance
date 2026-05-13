@@ -72,6 +72,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       elevation: 0,
       scrolledUnderElevation: 0,
       leading: IconButton(
+        key: const ValueKey('settings.back_button'),
         onPressed: () => context.pop(),
         icon: Icon(
           Icons.arrow_back_ios_new,
@@ -80,6 +81,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
       title: Text(
+        key: const ValueKey('settings.title'),
         'Settings',
         style: AppTextStyles.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
@@ -163,6 +165,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 return Text(
+                  key: const ValueKey('settings.version_label'),
                   'Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -175,6 +178,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           if (userId != null) ...[
             const SizedBox(height: AppSpacing.xs),
             GestureDetector(
+              key: const ValueKey('settings.user_id_label'),
               onTap: () {
                 // Copy user ID to clipboard
                 Clipboard.setData(ClipboardData(text: userId));
@@ -225,6 +229,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
+            key: const ValueKey('settings.account_section'),
             state.accountSectionTitle ?? 'Account',
             style: AppTextStyles.subtitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
@@ -248,6 +253,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+                        key: const ValueKey('settings.account_status'),
                         state.accountStatusAnonymous ?? 'Not signed in',
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -273,6 +279,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SizedBox(
               width: double.infinity,
               child: KylePrimaryButton(
+                key: const ValueKey('settings.create_account_button'),
                 text: state.createAccountButton ?? 'Create Account',
                 onPressed: () {
                   final analytics = ref.read(appExternalDepsProvider);
@@ -288,6 +295,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SizedBox(
               width: double.infinity,
               child: KyleSecondaryButton(
+                key: const ValueKey('settings.log_in_button'),
                 text: 'Log In',
                 onPressed: () {
                   final analytics = ref.read(appExternalDepsProvider);
@@ -303,6 +311,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SizedBox(
               width: double.infinity,
               child: TextButton(
+                key: const ValueKey('settings.sign_out_button'),
                 onPressed: () async {
                   // Show warning dialog
                   final confirmed = await showDialog<bool>(
@@ -316,10 +325,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       actions: [
                         TextButton(
+                          key: const ValueKey('signout_dialog.cancel_button'),
                           onPressed: () => Navigator.pop(context, false),
                           child: const Text('Cancel'),
                         ),
                         TextButton(
+                          key: const ValueKey(
+                            'signout_dialog.create_account_button',
+                          ),
                           onPressed: () {
                             Navigator.pop(context, false);
                             // Take them to create account instead
@@ -328,6 +341,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           child: const Text('Create Account'),
                         ),
                         TextButton(
+                          key: const ValueKey(
+                            'signout_dialog.sign_out_anyway_button',
+                          ),
                           onPressed: () => Navigator.pop(context, true),
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.dragonfruit,
@@ -519,6 +535,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             behavior: HitTestBehavior.opaque,
             child: _buildQuickLink(
               context: context,
+              rowKey: const ValueKey('settings.profile_row'),
               icon: FontAwesomeIcons.user,
               title: 'Profile & Preferences',
               subtitle: 'Edit your profile, units, and preferences',
@@ -535,6 +552,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Appearance
           _buildQuickLink(
             context: context,
+            rowKey: const ValueKey('settings.appearance_row'),
             icon: FontAwesomeIcons.palette,
             title: 'Appearance',
             subtitle: 'Theme mode (light/dark/system)',
@@ -549,6 +567,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Food Preferences Hub (NEW 2-tier navigation)
           _buildQuickLink(
             context: context,
+            rowKey: const ValueKey('settings.food_prefs_row'),
             icon: FontAwesomeIcons.utensils,
             title: 'Food Preferences',
             subtitle: 'Diet, allergies, and food choices',
@@ -564,6 +583,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Sport Preferences Hub (NEW 2-tier navigation)
           _buildQuickLink(
             context: context,
+            rowKey: const ValueKey('settings.sport_prefs_row'),
             icon: FontAwesomeIcons.personRunning,
             title: 'Sport Preferences',
             subtitle: 'Running, cycling, and swimming',
@@ -581,6 +601,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Nutrition Profile - Body composition, training phase, lifestyle
           _buildQuickLink(
             context: context,
+            rowKey: const ValueKey('settings.nutrition_profile_row'),
             icon: FontAwesomeIcons.chartPie,
             title: 'Nutrition Profile',
             subtitle: 'Body composition, training phase, lifestyle',
@@ -596,6 +617,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Nutrition Targets - Default macro target overrides
           _buildQuickLink(
             context: context,
+            rowKey: const ValueKey('settings.nutrition_targets_row'),
             icon: FontAwesomeIcons.bullseye,
             title: 'Nutrition Targets',
             subtitle: 'Set default macro targets',
@@ -611,6 +633,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Always available: connect, review status, or message coach.
           _buildQuickLink(
             context: context,
+            rowKey: const ValueKey('settings.coach_connection_row'),
             icon: FontAwesomeIcons.userGroup,
             title: 'Coach Connection',
             subtitle: 'Connect with your coach or manage your connection',
@@ -626,6 +649,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Connected Apps (Final Surge, TrainingPeaks, Garmin integrations)
           _buildQuickLink(
             context: context,
+            rowKey: const ValueKey('settings.connected_apps_row'),
             icon: FontAwesomeIcons.link,
             title: 'Connected Apps',
             subtitle: 'Final Surge, TrainingPeaks, Garmin Connect',
@@ -641,6 +665,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Help & Feedback
           _buildQuickLink(
             context: context,
+            rowKey: const ValueKey('settings.help_row'),
             icon: FontAwesomeIcons.circleQuestion,
             title: 'Help & Feedback',
             subtitle: 'Get help and send feedback',
@@ -720,7 +745,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: ThemeMode.values.map((mode) {
+                final modeKey = switch (mode) {
+                  ThemeMode.system => 'appearance.system_button',
+                  ThemeMode.light => 'appearance.light_button',
+                  ThemeMode.dark => 'appearance.dark_button',
+                };
                 return RadioListTile<ThemeMode>(
+                  key: ValueKey(modeKey),
                   title: Text(_getThemeModeName(mode)),
                   value: mode,
                   groupValue: currentMode,
@@ -760,8 +791,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Key? rowKey,
   }) {
     return InkWell(
+      key: rowKey,
       onTap: onTap,
       borderRadius: AppRadius.cardRadius,
       child: Container(

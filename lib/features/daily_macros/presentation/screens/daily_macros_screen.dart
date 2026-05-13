@@ -66,7 +66,11 @@ class DailyMacrosScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, DailyMacrosState state) {
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    DailyMacrosState state,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
@@ -79,6 +83,7 @@ class DailyMacrosScreen extends ConsumerWidget {
 
           // Page title (below calendar, in scrollable area)
           Text(
+            key: const ValueKey('nutrition_diary.heading'),
             'Nutrition Diary',
             style: AppTextStyles.sectionTitle.copyWith(
               color: textColor.withValues(alpha: 0.7),
@@ -184,8 +189,7 @@ class DailyMacrosScreen extends ConsumerWidget {
             children: [
               KyleSecondaryButton(
                 text: 'Retry',
-                onPressed: () =>
-                    ref.invalidate(dailyMacrosControllerProvider),
+                onPressed: () => ref.invalidate(dailyMacrosControllerProvider),
               ),
               const SizedBox(width: AppSpacing.sm),
               KyleSecondaryButton(
@@ -235,7 +239,10 @@ class DailyMacrosScreen extends ConsumerWidget {
 
   DateTime _getStartOfWeek(DateTime date) {
     // Sunday-start (matches calendar_week_view_kyle.dart)
-    return DateTime(date.year, date.month, date.day)
-        .subtract(Duration(days: date.weekday % 7));
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).subtract(Duration(days: date.weekday % 7));
   }
 }

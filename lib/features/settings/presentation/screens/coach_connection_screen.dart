@@ -185,8 +185,11 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: const CustomAppBarBackButton(),
+        leading: const CustomAppBarBackButton(
+          key: ValueKey('coach_connection.back_button'),
+        ),
         title: Text(
+          key: const ValueKey('coach_connection.title'),
           'Coach Connection',
           style: TextStyle(
             color: isDark ? AppColors.cream : AppColors.blackberry,
@@ -221,11 +224,17 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
           decoration: BoxDecoration(
             color: AppColors.electrolyte.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.electrolyte.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: AppColors.electrolyte.withValues(alpha: 0.3),
+            ),
           ),
           child: Row(
             children: [
-              const Icon(Icons.check_circle, color: AppColors.electrolyte, size: 24),
+              const Icon(
+                Icons.check_circle,
+                color: AppColors.electrolyte,
+                size: 24,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -261,7 +270,9 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               side: BorderSide(
-                color: isDark ? AppColors.blackberryLight : AppColors.blackberry,
+                color: isDark
+                    ? AppColors.blackberryLight
+                    : AppColors.blackberry,
               ),
             ),
           ),
@@ -290,6 +301,7 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
       children: [
         // Explanation
         Text(
+          key: const ValueKey('coach_connection.subheading'),
           'Connect with Your Coach',
           style: TextStyle(
             color: isDark ? AppColors.cream : AppColors.blackberry,
@@ -299,6 +311,7 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
         ),
         const SizedBox(height: 8),
         Text(
+          key: const ValueKey('coach_connection.description'),
           'Enter the pairing code your coach gave you. '
           'Once connected, your coach can view your activities and create nutrition plans for you.',
           style: TextStyle(
@@ -336,6 +349,7 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
               ),
               const SizedBox(height: 16),
               TextField(
+                key: const ValueKey('coach_connection.code_field'),
                 controller: _codeController,
                 textCapitalization: TextCapitalization.characters,
                 textAlign: TextAlign.center,
@@ -351,10 +365,11 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
                   hintText: 'ABC123',
                   counterText: '',
                   hintStyle: TextStyle(
-                    color: (isDark
-                            ? AppColors.textDarkSecondary
-                            : AppColors.textLightSecondary)
-                        .withValues(alpha: 0.5),
+                    color:
+                        (isDark
+                                ? AppColors.textDarkSecondary
+                                : AppColors.textLightSecondary)
+                            .withValues(alpha: 0.5),
                     letterSpacing: 6,
                   ),
                   filled: true,
@@ -379,9 +394,7 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppColors.electrolyte,
-                    ),
+                    borderSide: const BorderSide(color: AppColors.electrolyte),
                   ),
                 ),
                 onSubmitted: (_) => _connectViaCode(),
@@ -401,6 +414,7 @@ class _CoachConnectionScreenState extends ConsumerState<CoachConnectionScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
+                  key: const ValueKey('coach_connection.connect_button'),
                   onPressed: _isConnecting ? null : _connectViaCode,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.electrolyte,

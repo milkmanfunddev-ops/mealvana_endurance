@@ -37,18 +37,22 @@ class _CarbLoadingDayDetailPageState
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       appBar: AppBar(
-        leading: CustomAppBarBackButton(),
+        leading: CustomAppBarBackButton(
+          key: const ValueKey('carb_plan_day.back_button'),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
+              key: const ValueKey('carb_plan_day.title'),
               'Carb Loading Day ${widget.carbLoadingDay.dayNumber}',
               style: AppTextStyles.subtitle.copyWith(
                 color: isDark ? AppColors.cream : AppColors.blackberry,
               ),
             ),
             Text(
+              key: const ValueKey('carb_plan_day.date_label'),
               DateFormat('EEEE, MMM d').format(widget.carbLoadingDay.planDate),
               style: AppTextStyles.smallLabel.copyWith(
                 color: isDark
@@ -65,6 +69,7 @@ class _CarbLoadingDayDetailPageState
         ),
         actions: [
           TextButton(
+            key: const ValueKey('carb_plan_day.done_button'),
             onPressed: () => context.go('/main?tab=events'),
             child: Text(
               'Done',
@@ -74,6 +79,7 @@ class _CarbLoadingDayDetailPageState
             ),
           ),
           PopupMenuButton<String>(
+            key: const ValueKey('carb_plan_day.menu_button'),
             icon: Icon(
               Icons.more_vert,
               color: isDark ? AppColors.cream : AppColors.blackberry,
@@ -82,6 +88,7 @@ class _CarbLoadingDayDetailPageState
             color: isDark ? AppColors.blackberryLight : AppColors.cream,
             itemBuilder: (context) => [
               PopupMenuItem(
+                key: const ValueKey('carb_plan_day.menu_reset_progress'),
                 value: 'reset_progress',
                 child: ListTile(
                   leading: Icon(
@@ -99,6 +106,7 @@ class _CarbLoadingDayDetailPageState
                 ),
               ),
               PopupMenuItem(
+                key: const ValueKey('carb_plan_day.menu_mark_complete'),
                 value: 'mark_complete',
                 child: ListTile(
                   leading: Icon(
@@ -234,6 +242,7 @@ class _CarbLoadingDayDetailPageState
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
     return BaseCard(
+      key: const ValueKey('carb_plan_day.daily_total_card'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -246,6 +255,7 @@ class _CarbLoadingDayDetailPageState
                 style: AppTextStyles.sectionTitle.copyWith(color: textColor),
               ),
               TextButton.icon(
+                key: const ValueKey('carb_plan_day.edit_target_button'),
                 onPressed: () => _showEditTargetDialog(context),
                 icon: Icon(Icons.edit, size: 16, color: textColor),
                 label: Text(
@@ -378,6 +388,7 @@ class _CarbLoadingDayDetailPageState
     return Container(
       margin: EdgeInsets.only(bottom: AppSpacing.md),
       child: BaseCard(
+        key: ValueKey('carb_plan_day.section_${mealType.name}'),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -471,6 +482,10 @@ class _CarbLoadingDayDetailPageState
                         );
                       } else {
                         // Show as gray button
+                        final slug = food.displayName.toLowerCase().replaceAll(
+                          RegExp(r'[^a-z0-9]+'),
+                          '_',
+                        );
                         return _buildQuickAddFoodButton(
                           context,
                           food.displayName,
@@ -484,6 +499,7 @@ class _CarbLoadingDayDetailPageState
                                 )
                                 .addDefaultFood(mealType, food);
                           },
+                          chipKey: ValueKey('carb_plan_day.food_chip_$slug'),
                         );
                       }
                     }),
@@ -541,6 +557,10 @@ class _CarbLoadingDayDetailPageState
                         );
                       } else {
                         // Show as gray button
+                        final slug = food.displayName.toLowerCase().replaceAll(
+                          RegExp(r'[^a-z0-9]+'),
+                          '_',
+                        );
                         return _buildQuickAddFoodButton(
                           context,
                           food.displayName,
@@ -554,6 +574,7 @@ class _CarbLoadingDayDetailPageState
                                 )
                                 .addUserFood(mealType, food);
                           },
+                          chipKey: ValueKey('carb_plan_day.food_chip_$slug'),
                         );
                       }
                     }),
@@ -577,12 +598,14 @@ class _CarbLoadingDayDetailPageState
     BuildContext context,
     String name,
     String carbs,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    Key? chipKey,
+  }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
+      key: chipKey,
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(
@@ -610,9 +633,7 @@ class _CarbLoadingDayDetailPageState
               child: Text(
                 name,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark
-                      ? AppColors.cream
-                      : AppColors.blackberry,
+                  color: isDark ? AppColors.cream : AppColors.blackberry,
                 ),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
@@ -635,6 +656,7 @@ class _CarbLoadingDayDetailPageState
 
   Widget _buildAddFoodButton(BuildContext context, MealType mealType) {
     return InkWell(
+      key: ValueKey('carb_plan_day.add_food_${mealType.name}'),
       onTap: () async {
         // Navigate to carb loading food selection screen
         await context.push(
@@ -663,19 +685,12 @@ class _CarbLoadingDayDetailPageState
           // Orange outlined button (matching branded design)
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: AppColors.orange,
-            width: 2,
-          ),
+          border: Border.all(color: AppColors.orange, width: 2),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.add,
-              color: AppColors.orange,
-              size: 20,
-            ),
+            Icon(Icons.add, color: AppColors.orange, size: 20),
             SizedBox(width: AppSpacing.xs),
             Text(
               'ADD FOOD',

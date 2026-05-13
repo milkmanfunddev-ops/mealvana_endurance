@@ -9,12 +9,14 @@ class ComingSoonSectionWidget extends StatelessWidget {
     required this.iconColor,
     required this.title,
     required this.description,
+    this.notifyButtonKey,
   });
 
   final IconData icon;
   final Color iconColor;
   final String title;
   final String description;
+  final Key? notifyButtonKey;
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +39,7 @@ class ComingSoonSectionWidget extends StatelessWidget {
                   color: iconColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 24,
-                ),
+                child: Icon(icon, color: iconColor, size: 24),
               ),
               const SizedBox(width: AppSpacing.md),
 
@@ -94,6 +92,7 @@ class ComingSoonSectionWidget extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           KylePrimaryButton(
+            key: notifyButtonKey,
             text: 'Notify Me',
             onPressed: null, // Disabled
           ),

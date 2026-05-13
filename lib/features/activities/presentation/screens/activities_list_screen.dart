@@ -237,10 +237,12 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
                 data: (eventData) {
                   if (eventData != null) {
                     return [
-                      SliverToBoxAdapter(
-                        child: Container(
-                          margin: const EdgeInsets.only(top: 24, bottom: 8),
-                          child: _buildUpcomingRacesHeader(),
+                      const SliverToBoxAdapter(
+                        child: SectionHeaderText(
+                          key: ValueKey('calendar.upcoming_races_heading'),
+                          text: 'Upcoming Races',
+                          topPadding: 24,
+                          bottomPadding: 8,
                         ),
                       ),
                       SliverToBoxAdapter(
@@ -396,6 +398,7 @@ class _ActivitiesListScreenState extends ConsumerState<ActivitiesListScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const SectionHeaderText(
+            key: ValueKey('calendar.todays_activities_heading'),
             text: "Today's Activities",
             topPadding: 0,
             bottomPadding: 0,

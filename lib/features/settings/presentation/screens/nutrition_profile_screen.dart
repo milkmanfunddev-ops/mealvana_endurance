@@ -55,7 +55,8 @@ class _NutritionProfileScreenState
       }
       _lifestyle = profile.lifestyle;
       if (profile.typicalWeeklyHours != null) {
-        _weeklyHoursController.text = profile.typicalWeeklyHours!.toStringAsFixed(1);
+        _weeklyHoursController.text = profile.typicalWeeklyHours!
+            .toStringAsFixed(1);
       }
       _carbCycleOptIn = profile.carbCycleOptIn;
       _trainingPhase = profile.trainingPhase;
@@ -66,8 +67,9 @@ class _NutritionProfileScreenState
     // overwrite the body-fat field with Garmin's value. The user can still
     // edit it; doing so clears `_bodyFatFromGarmin` and hides the chip.
     try {
-      final garminData =
-          await ref.read(garminLastBodyCompProvider(profile.id).future);
+      final garminData = await ref.read(
+        garminLastBodyCompProvider(profile.id).future,
+      );
       if (!mounted || garminData == null) return;
       final isGarminAuthoritative = isGarminAuthoritativeForBodyFat(
         garmin: garminData,
@@ -101,8 +103,9 @@ class _NutritionProfileScreenState
 
       final updated = profile.copyWith(
         bodyFatPct: bodyFat,
-        bodyFatPctUpdatedAt:
-            bodyFatChanged ? DateTime.now().toUtc() : profile.bodyFatPctUpdatedAt,
+        bodyFatPctUpdatedAt: bodyFatChanged
+            ? DateTime.now().toUtc()
+            : profile.bodyFatPctUpdatedAt,
         lifestyle: _lifestyle,
         typicalWeeklyHours: weeklyHours,
         carbCycleOptIn: _carbCycleOptIn,
@@ -141,8 +144,11 @@ class _NutritionProfileScreenState
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: const CustomAppBarBackButton(),
+        leading: const CustomAppBarBackButton(
+          key: ValueKey('nutrition_profile.back_button'),
+        ),
         title: Text(
+          key: const ValueKey('nutrition_profile.title'),
           'Nutrition Profile',
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
@@ -171,13 +177,19 @@ class _NutritionProfileScreenState
               const SizedBox(height: AppSpacing.lg),
 
               // Body Fat %
-              _buildSectionLabel(context, 'Body Fat % (optional)'),
+              _buildSectionLabel(
+                context,
+                'Body Fat % (optional)',
+                labelKey: const ValueKey('nutrition_profile.body_fat_section'),
+              ),
               // Garmin brand attribution shown only while the field still
               // holds the auto-filled Garmin value. User edit clears it.
               if (_bodyFatFromGarmin) ...[
                 const Padding(
                   padding: EdgeInsets.only(top: 2),
-                  child: GarminAttribution(style: GarminAttributionStyle.compact),
+                  child: GarminAttribution(
+                    style: GarminAttributionStyle.compact,
+                  ),
                 ),
               ],
               const SizedBox(height: AppSpacing.sm),
@@ -186,14 +198,26 @@ class _NutritionProfileScreenState
               const SizedBox(height: AppSpacing.xl),
 
               // Lifestyle
-              _buildSectionLabel(context, 'Daily Activity Level'),
+              _buildSectionLabel(
+                context,
+                'Daily Activity Level',
+                labelKey: const ValueKey(
+                  'nutrition_profile.activity_level_section',
+                ),
+              ),
               const SizedBox(height: AppSpacing.sm),
               _buildLifestyleSelector(context),
 
               const SizedBox(height: AppSpacing.xl),
 
               // Weekly Hours
-              _buildSectionLabel(context, 'Typical Weekly Training Hours'),
+              _buildSectionLabel(
+                context,
+                'Typical Weekly Training Hours',
+                labelKey: const ValueKey(
+                  'nutrition_profile.training_hours_section',
+                ),
+              ),
               const SizedBox(height: AppSpacing.sm),
               _buildWeeklyHoursInput(context),
 
@@ -205,7 +229,13 @@ class _NutritionProfileScreenState
               const SizedBox(height: AppSpacing.xl),
 
               // Training Phase
-              _buildSectionLabel(context, 'Training Phase'),
+              _buildSectionLabel(
+                context,
+                'Training Phase',
+                labelKey: const ValueKey(
+                  'nutrition_profile.training_phase_section',
+                ),
+              ),
               const SizedBox(height: AppSpacing.sm),
               _buildTrainingPhaseSelector(context),
 
@@ -217,8 +247,13 @@ class _NutritionProfileScreenState
     );
   }
 
-  Widget _buildSectionLabel(BuildContext context, String label) {
+  Widget _buildSectionLabel(
+    BuildContext context,
+    String label, {
+    Key? labelKey,
+  }) {
     return Text(
+      key: labelKey,
       label,
       style: AppTextStyles.subtitle.copyWith(
         color: Theme.of(context).colorScheme.onSurface,
@@ -239,6 +274,7 @@ class _NutritionProfileScreenState
           ),
           const SizedBox(height: AppSpacing.md),
           KyleInputField(
+            key: const ValueKey('nutrition_profile.body_fat_field'),
             controller: _bodyFatController,
             hintText: 'e.g., 15.0',
             suffixText: '%',
@@ -271,16 +307,21 @@ class _NutritionProfileScreenState
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          ...Lifestyle.values.map((lifestyle) => _buildRadioTile(
-                context: context,
-                title: lifestyle.displayName,
-                subtitle: _lifestyleDescription(lifestyle),
-                selected: _lifestyle == lifestyle,
-                onTap: () {
-                  setState(() => _lifestyle = lifestyle);
-                  _markChanged();
-                },
-              )),
+          ...Lifestyle.values.map(
+            (lifestyle) => _buildRadioTile(
+              context: context,
+              tileKey: ValueKey(
+                'nutrition_profile.activity_${lifestyle.name}_button',
+              ),
+              title: lifestyle.displayName,
+              subtitle: _lifestyleDescription(lifestyle),
+              selected: _lifestyle == lifestyle,
+              onTap: () {
+                setState(() => _lifestyle = lifestyle);
+                _markChanged();
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -312,6 +353,7 @@ class _NutritionProfileScreenState
           ),
           const SizedBox(height: AppSpacing.md),
           KyleInputField(
+            key: const ValueKey('nutrition_profile.training_hours_field'),
             controller: _weeklyHoursController,
             hintText: 'e.g., 10.0',
             suffixText: 'hrs/week',
@@ -352,6 +394,7 @@ class _NutritionProfileScreenState
           ),
           const SizedBox(width: AppSpacing.md),
           KyleSwitch(
+            key: const ValueKey('nutrition_profile.carb_cycling_toggle'),
             value: _carbCycleOptIn,
             onChanged: (value) {
               setState(() => _carbCycleOptIn = value);
@@ -375,16 +418,19 @@ class _NutritionProfileScreenState
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          ...TrainingPhase.values.map((phase) => _buildRadioTile(
-                context: context,
-                title: phase.displayName,
-                subtitle: _phaseDescription(phase),
-                selected: _trainingPhase == phase,
-                onTap: () {
-                  setState(() => _trainingPhase = phase);
-                  _markChanged();
-                },
-              )),
+          ...TrainingPhase.values.map(
+            (phase) => _buildRadioTile(
+              context: context,
+              tileKey: ValueKey('nutrition_profile.phase_${phase.name}_button'),
+              title: phase.displayName,
+              subtitle: _phaseDescription(phase),
+              selected: _trainingPhase == phase,
+              onTap: () {
+                setState(() => _trainingPhase = phase);
+                _markChanged();
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -413,8 +459,10 @@ class _NutritionProfileScreenState
     required String subtitle,
     required bool selected,
     required VoidCallback onTap,
+    Key? tileKey,
   }) {
     return InkWell(
+      key: tileKey,
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
@@ -440,7 +488,9 @@ class _NutritionProfileScreenState
                     title,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: selected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
                   ),
                   Text(
