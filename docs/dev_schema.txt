@@ -423,7 +423,9 @@ create table users
     lifestyle                         text                     default 'mixed'::text,
     typical_weekly_hours              real,
     carb_cycle_opt_in                 boolean                  default false                           not null,
-    training_phase                    text                     default 'base'::text
+    training_phase                    text                     default 'base'::text,
+    weight_pounds_updated_at          timestamp with time zone,
+    body_fat_pct_updated_at           timestamp with time zone
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -664,9 +666,8 @@ comment on index idx_activities_provider_deleted_at is 'Partial index for activi
 create unique index uq_activities_provider_workout
     on activities (user_id, synced_from_provider, provider_workout_id);
 
-create index idx_activities_user_garmin_summary
-    on activities (user_id, garmin_summary_id)
-    where (garmin_summary_id IS NOT NULL);
+create unique index activities_user_garmin_summary_id_key
+    on activities (user_id, garmin_summary_id);
 
 grant delete, insert, references, select, trigger, truncate, update on activities to anon;
 
@@ -1153,12 +1154,23 @@ create table integrations
     threshold_pace_min_per_mile   real,
     athlete_zones_json            jsonb,
     provider_athlete_body_fat_pct real,
+    provider_athlete_weight_kg    real,
+    provider_athlete_birth_month  text,
+    provider_athlete_gender       text,
     unique (user_id, provider)
 );
 
 comment on column integrations.threshold_pace_min_per_mile is 'Athlete threshold pace in minutes per mile (e.g., 7.5 = 7:30/mi). Used to calculate accurate workout pace from Training Peaks IF and Structure data. Fetched from provider speed zones during sync.';
 
+comment on column integrations.athlete_zones_json is 'Serialized HR/Speed/Power zone data from Training Peaks for intensity classification.';
+
 comment on column integrations.provider_athlete_body_fat_pct is 'Athlete body fat percentage from Garmin body composition API. Used to auto-populate nutrition profile.';
+
+comment on column integrations.provider_athlete_weight_kg is 'Athlete weight in kilograms from provider profile. Convert to lbs: kg * 2.20462';
+
+comment on column integrations.provider_athlete_birth_month is 'Athlete birth month in YYYY-MM format (Training Peaks does not provide birth day).';
+
+comment on column integrations.provider_athlete_gender is 'Athlete gender: "m" or "f" (Training Peaks format).';
 
 alter table integrations
     owner to postgres;
