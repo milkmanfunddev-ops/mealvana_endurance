@@ -21,6 +21,7 @@ class SyncDependencyGraph {
     'coach_messages': ['coach_athlete_relationships'],
     'template_foods': [],
     'templates': ['template_foods'],
+    'during_workout_templates': ['template_foods'],
     'personal_templates': ['users'],
   };
 

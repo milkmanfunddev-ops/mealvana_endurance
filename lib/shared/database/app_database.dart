@@ -31,6 +31,7 @@ import 'tables/coach_athlete_relationships_table.dart';
 import 'tables/coach_messages_table.dart';
 import 'tables/template_foods_table.dart';
 import 'tables/templates_table.dart';
+import 'tables/during_workout_templates_table.dart';
 import 'tables/tp_writeback_table.dart';
 import 'tables/personal_templates_table.dart';
 import 'tables/athlete_pairing_codes_table.dart';
@@ -109,6 +110,7 @@ part 'app_database.g.dart';
     // Template system tables (read-only reference data)
     TemplateFoodsTable,
     TemplatesTable,
+    DuringWorkoutTemplatesTable,
 
     // TrainingPeaks write-back tracking
     TpWritebackTable,
@@ -150,7 +152,9 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 7: Adds activities.garmin_device_name (Garmin brand-compliant
+  /// Schema version 8: Adds during_workout_templates table (read-only mirror of
+  /// Supabase during-workout formula catalog) to back the Formula Kit browse UI.
+  /// v7 added activities.garmin_device_name (Garmin brand-compliant
   /// attribution), sweat profile fields on users (sweat_sodium,
   /// known_sweat_rate_ml_per_hour, known_sodium_concentration_mg_per_liter,
   /// sweat_test_date, sweat_test_source) for hydration/sodium transparency, and
@@ -161,7 +165,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -212,6 +216,13 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             'ALTER TABLE users ADD COLUMN body_fat_pct_updated_at INTEGER',
           );
+        }
+
+        // v8: Create during_workout_templates table (read-only mirror).
+        // Guarded by version comparison; CREATE TABLE IF NOT EXISTS for
+        // idempotency in case the table was previously created at runtime.
+        if (from < 8) {
+          await m.createTable(duringWorkoutTemplatesTable);
         }
       },
 
