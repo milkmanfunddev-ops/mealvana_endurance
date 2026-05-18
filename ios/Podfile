@@ -52,4 +52,37 @@ post_install do |installer|
       end
     end
   end
+
+  # Apple's App Store IPA validator rejects builds that bundle
+  # patrol.framework because Patrol's native plugin references the private
+  # `terminate` selector. Patrol is only needed inside the RunnerUITests
+  # target (it drives UI automation during integration tests), so we strip
+  # it out of the main Runner target's xcconfigs + embed-frameworks script
+  # after pod install runs. RunnerUITests keeps its own
+  # Pods-Runner-RunnerUITests xcconfigs untouched, so `patrol test`
+  # continues to work.
+  pods_runner_dir = File.join(__dir__, 'Pods', 'Target Support Files', 'Pods-Runner')
+
+  Dir.glob(File.join(pods_runner_dir, 'Pods-Runner.*.xcconfig')).each do |file|
+    original = File.read(file)
+    cleaned = original
+      .gsub(/\s+-framework\s+"patrol"/, '')
+      .gsub(/\s+"\$\{PODS_CONFIGURATION_BUILD_DIR\}\/patrol"/, '')
+      .gsub(/\s+"\$\{PODS_CONFIGURATION_BUILD_DIR\}\/patrol\/[^"]+"/, '')
+      .gsub(/\s+"-F\$\{PODS_CONFIGURATION_BUILD_DIR\}\/patrol"/, '')
+    if cleaned != original
+      File.write(file, cleaned)
+      puts "[Podfile] Stripped patrol from #{File.basename(file)}"
+    end
+  end
+
+  frameworks_script = File.join(pods_runner_dir, 'Pods-Runner-frameworks.sh')
+  if File.exist?(frameworks_script)
+    original = File.read(frameworks_script)
+    cleaned = original.gsub(/^\s*install_framework\s+"[^"]*patrol\.framework"\s*\n/, '')
+    if cleaned != original
+      File.write(frameworks_script, cleaned)
+      puts "[Podfile] Removed patrol.framework install step from Pods-Runner-frameworks.sh"
+    end
+  end
 end
