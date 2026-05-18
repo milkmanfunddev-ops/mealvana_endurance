@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../integrations/presentation/widgets/garmin_attribution.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
 import '../../domain/carb_adjustment_level.dart';
 import '../../domain/fuel_log_data.dart';
 import '../providers/activity_detail_controller.dart';
@@ -216,9 +216,9 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
           if (hasGarminData) ...[
             // Required by Garmin Developer API Brand Guidelines whenever
             // screens display data derived from a Garmin Connect upload.
-            GarminAttribution(
+            GarminAttributionMessage(
               deviceName: state.activity?.garminDeviceName,
-              style: GarminAttributionStyle.standard,
+              subject: 'Workout calories and duration',
             ),
             const SizedBox(height: AppSpacing.md),
           ],

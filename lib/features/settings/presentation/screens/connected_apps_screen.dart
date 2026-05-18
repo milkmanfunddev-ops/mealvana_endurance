@@ -48,6 +48,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   /// Resets when navigating away and back
   bool _finalSurgeSynced = false;
   bool _trainingPeaksSynced = false;
+  bool _vdotSynced = false;
 
   /// Garmin's "Refresh" doesn't poll Garmin (their API is push-only) — it
   /// just re-fetches activities from Supabase. We track in-flight state so
@@ -58,7 +59,6 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   static const List<_ComingSoonProviderConfig> _comingSoonProviders = [
     _ComingSoonProviderConfig(name: 'TriDot', key: 'tridot'),
     _ComingSoonProviderConfig(name: 'Runna', key: 'runna'),
-    _ComingSoonProviderConfig(name: 'VDOT', key: 'vdot'),
     _ComingSoonProviderConfig(
       name: 'Strava',
       key: 'strava',
@@ -383,6 +383,26 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
         const SizedBox(height: AppSpacing.lg),
 
+        // V.O2 (VDOT) — OAuth + pull-based workout sync.
+        IntegrationProviderCard(
+          key: const ValueKey('connected_apps.vdot_connect_button'),
+          name: 'V.O2',
+          isAvailable: true,
+          isConnected: data.isVdotConnected,
+          isConnecting:
+              data.isConnecting && data.connectingProvider == 'vdot',
+          isSyncing: data.syncingProvider == 'vdot',
+          athleteName: data.vdotAthleteName,
+          lastSyncAt: data.vdotLastSyncAt,
+          onConnect: () => _connectVdot(context, ref),
+          onDisconnect: () => _disconnectVdot(context, ref),
+          onSync: () => _syncVdotWithState(context, ref),
+          showSyncButton: data.isVdotConnected,
+          hasSynced: _vdotSynced,
+        ),
+
+        const SizedBox(height: AppSpacing.lg),
+
         ..._buildComingSoonProviders(
           context,
           ref,
@@ -552,6 +572,26 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onDisconnect: () => _disconnectGarmin(context, ref),
           onSync: () => _refreshGarminWithState(context, ref),
           showSyncButton: data.isGarminConnected,
+        ),
+
+        const SizedBox(height: AppSpacing.md),
+
+        // V.O2 (VDOT) — OAuth + pull-based workout sync.
+        IntegrationProviderCard(
+          key: const ValueKey('connect_training.vdot_connect_button'),
+          name: 'V.O2',
+          isAvailable: true,
+          isConnected: data.isVdotConnected,
+          isConnecting:
+              data.isConnecting && data.connectingProvider == 'vdot',
+          isSyncing: data.syncingProvider == 'vdot',
+          athleteName: data.vdotAthleteName,
+          lastSyncAt: data.vdotLastSyncAt,
+          onConnect: () => _connectVdotOnboarding(context, ref),
+          onSync: () => _syncVdotWithState(context, ref),
+          onDisconnect: () => _disconnectVdot(context, ref),
+          showSyncButton: true,
+          hasSynced: _vdotSynced,
         ),
 
         const SizedBox(height: AppSpacing.md),
@@ -896,6 +936,85 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
     if (context.mounted) {
       MealvanaSnackbar.showInfo(context, 'Garmin Connect disconnected');
+    }
+  }
+
+  // ============================================================
+  // V.O2 (VDOT) handlers
+  // ============================================================
+
+  Future<void> _connectVdot(BuildContext context, WidgetRef ref) async {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    final success = await controller.connectVdot();
+
+    if (success && context.mounted) {
+      MealvanaSnackbar.showSuccess(context, 'V.O2 connected!');
+    }
+  }
+
+  Future<void> _connectVdotOnboarding(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    final success = await controller.connectVdot();
+
+    if (!success || !context.mounted) return;
+
+    MealvanaSnackbar.showSuccess(
+      context,
+      'V.O2 connected! Importing workouts...',
+    );
+
+    final result = await controller.importVdotWorkouts();
+    if (!context.mounted) return;
+
+    final state = ref.read(connectTrainingControllerProvider).value;
+    final message = buildWorkoutSyncMessage(
+      newCount: result.newWorkouts,
+      updatedCount: result.updated,
+      deletedCount: result.deleted,
+      unchangedCount: result.skipped,
+    );
+
+    if (result.success && result.hasChanges) {
+      MealvanaSnackbar.showSuccess(context, message);
+    } else if (!result.success || state?.errorMessage != null) {
+      MealvanaSnackbar.showError(
+        context,
+        'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+      );
+    } else {
+      MealvanaSnackbar.showInfo(context, message);
+    }
+
+    if (mounted && result.success && state?.errorMessage == null) {
+      setState(() {
+        _vdotSynced = true;
+      });
+    }
+  }
+
+  Future<void> _disconnectVdot(BuildContext context, WidgetRef ref) async {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    await controller.disconnectVdot();
+
+    if (context.mounted) {
+      MealvanaSnackbar.showInfo(context, 'V.O2 disconnected');
+    }
+  }
+
+  Future<void> _syncVdotWithState(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    await syncVdot(context, ref, showLoadingSnackbar: false);
+
+    final state = ref.read(connectTrainingControllerProvider).value;
+    if (state?.errorMessage == null && mounted) {
+      setState(() {
+        _vdotSynced = true;
+      });
     }
   }
 

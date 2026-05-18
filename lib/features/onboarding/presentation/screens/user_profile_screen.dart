@@ -13,7 +13,7 @@ import '../../../auth/domain/user_preferences.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
-import '../../../integrations/presentation/widgets/garmin_attribution.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// User Profile Screen - Design System
@@ -542,8 +542,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (showGarminBadge) ...[
-                    const GarminAttribution(
-                      style: GarminAttributionStyle.compact,
+                    const GarminAttributionMessage(
+                      subject: 'Weight',
+                      compact: true,
                     ),
                     const SizedBox(height: AppSpacing.xs),
                   ],

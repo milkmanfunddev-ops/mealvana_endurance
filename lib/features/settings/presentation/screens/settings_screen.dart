@@ -73,6 +73,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       scrolledUnderElevation: 0,
       leading: IconButton(
         key: const ValueKey('settings.back_button'),
+        tooltip: 'Back',
         onPressed: () => context.pop(),
         icon: Icon(
           Icons.arrow_back_ios_new,
@@ -179,6 +180,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: AppSpacing.xs),
             GestureDetector(
               key: const ValueKey('settings.user_id_label'),
+              behavior: HitTestBehavior.opaque,
               onTap: () {
                 // Copy user ID to clipboard
                 Clipboard.setData(ClipboardData(text: userId));
@@ -187,13 +189,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   'User ID copied to clipboard',
                 );
               },
-              child: Text(
-                'User ID: $userId',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                  fontSize: 10,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'User ID: $userId',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                    fontSize: 10,
+                  ),
                 ),
               ),
             ),
@@ -533,6 +538,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           GestureDetector(
             onTap: _handleProfileTap,
             behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
             child: _buildQuickLink(
               context: context,
               rowKey: const ValueKey('settings.profile_row'),
@@ -598,13 +604,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: AppSpacing.sm),
 
-          // Nutrition Profile - Body composition, training phase, lifestyle
+          // Body Composition - weight, height, body fat, training phase, lifestyle
           _buildQuickLink(
             context: context,
-            rowKey: const ValueKey('settings.nutrition_profile_row'),
+            rowKey: const ValueKey('settings.body_composition_row'),
             icon: FontAwesomeIcons.chartPie,
-            title: 'Nutrition Profile',
-            subtitle: 'Body composition, training phase, lifestyle',
+            title: 'Body Composition',
+            subtitle: 'Weight, height, body fat, training phase, lifestyle',
             onTap: () {
               final analytics = ref.read(appExternalDepsProvider);
               analytics.analytics.track('settings_nutrition_profile_tapped');
@@ -646,13 +652,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: AppSpacing.sm),
 
-          // Connected Apps (Final Surge, TrainingPeaks, Garmin integrations)
+          // Connected Apps (Final Surge, TrainingPeaks, Garmin, V.O2 integrations)
           _buildQuickLink(
             context: context,
             rowKey: const ValueKey('settings.connected_apps_row'),
             icon: FontAwesomeIcons.link,
             title: 'Connected Apps',
-            subtitle: 'Final Surge, TrainingPeaks, Garmin Connect',
+            subtitle: 'Final Surge, TrainingPeaks, Garmin, V.O2',
             onTap: () {
               final analytics = ref.read(appExternalDepsProvider);
               analytics.analytics.track('settings_connected_apps_tapped');

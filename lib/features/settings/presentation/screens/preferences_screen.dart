@@ -9,8 +9,6 @@ import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
-import '../../../integrations/presentation/providers/integrations_providers.dart';
-import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 
 /// Preferences Screen - Settings version that matches onboarding UserProfileScreen
 /// Saves immediately to database instead of caching
@@ -27,9 +25,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   // Local state for editing
   Gender? _gender;
   DateTime? _birthday;
-  final _heightFeetController = TextEditingController();
-  final _heightInchesController = TextEditingController();
-  final _weightController = TextEditingController();
   bool? _runsWithWaterBottle;
   UnitSystem? _unitSystem;
   GutTraining? _gutTraining;
@@ -44,12 +39,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
   bool _hasChanges = false;
   bool _isSaving = false;
-
-  /// True while the weight field still holds the value auto-filled from
-  /// Garmin's latest body-composition reading. Flipped to false the moment
-  /// the user edits the field — at which point the manual value supersedes
-  /// Garmin and the attribution chip is hidden.
-  bool _weightFromGarmin = false;
 
   @override
   void initState() {
@@ -66,16 +55,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           _gutTraining = settingsState.gutTrainingLevel;
           _sweatRate = settingsState.sweatRate;
         });
-        // Set text controller values
-        if (settingsState.heightFeet != null) {
-          _heightFeetController.text = settingsState.heightFeet.toString();
-        }
-        if (settingsState.heightInches != null) {
-          _heightInchesController.text = settingsState.heightInches.toString();
-        }
-        if (settingsState.weightPounds != null) {
-          _weightController.text = settingsState.weightPounds.toString();
-        }
         // Optional name fields
         if (settingsState.firstName != null) {
           _firstNameController.text = settingsState.firstName!;
@@ -87,52 +66,12 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
         if (settingsState.email != null) {
           _emailController.text = settingsState.email!;
         }
-
-        // Garmin auto-fill: if Garmin's body-comp reading is authoritative
-        // (newer than user's manual entry, within 30-day staleness window),
-        // overwrite the weight field with Garmin's value. The user can still
-        // edit it; doing so clears `_weightFromGarmin` and hides the chip.
-        _maybeOverrideWeightFromGarmin(settingsState.userId);
       }
     });
   }
 
-  Future<void> _maybeOverrideWeightFromGarmin(String? userId) async {
-    if (userId == null || !mounted) return;
-    try {
-      final garminData = await ref.read(
-        garminLastBodyCompProvider(userId).future,
-      );
-      if (!mounted || garminData == null || garminData.weightKg == null) return;
-
-      final userWeightLbs = double.tryParse(_weightController.text);
-      final userWeightKg = userWeightLbs != null
-          ? userWeightLbs * 0.453592
-          : null;
-      final isGarminAuthoritative = isGarminAuthoritativeForWeight(
-        garmin: garminData,
-        userWeightKg: userWeightKg,
-        userUpdatedAt: null,
-      );
-      if (!isGarminAuthoritative) return;
-
-      final garminLbs = (garminData.weightKg! * 2.20462).round();
-      // Suppress onChanged side-effects while we replace the text — we don't
-      // want this auto-fill to be treated as a user edit.
-      setState(() {
-        _weightController.text = garminLbs.toString();
-        _weightFromGarmin = true;
-      });
-    } catch (_) {
-      // Best-effort; failures here just leave the user's value in place.
-    }
-  }
-
   @override
   void dispose() {
-    _heightFeetController.dispose();
-    _heightInchesController.dispose();
-    _weightController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
@@ -167,18 +106,11 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     final controller = ref.read(settingsControllerProvider.notifier);
 
     try {
-      // Parse height values
-      final heightFeet = int.tryParse(_heightFeetController.text);
-      final heightInches = int.tryParse(_heightInchesController.text);
-      final weightPounds = double.tryParse(_weightController.text);
-
-      // Save all preferences in a single batch operation
+      // weight/height intentionally not passed — those fields now live in
+      // the Body Composition screen and are saved through its own flow.
       await controller.saveAllPreferences(
         gender: _gender,
         birthday: _birthday,
-        heightFeet: heightFeet,
-        heightInches: heightInches,
-        weightPounds: weightPounds,
         runsWithWaterBottle: _runsWithWaterBottle,
         unitSystem: _unitSystem,
         gutTrainingLevel: _gutTraining,
@@ -482,86 +414,22 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   }
 
   Widget _buildPhysicalInfoSection(BuildContext context) {
+    // Weight, height, and body fat now live in the dedicated Body
+    // Composition screen (settings → Body Composition). This section
+    // retains the on-run hydration toggle since it's a behavioral
+    // preference, not a body metric.
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Physical Information',
-            style: AppTextStyles.subtitle.copyWith(
+            'Hydration',
+            style: AppTextStyles.sectionTitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 18,
             ),
           ),
-
           const SizedBox(height: AppSpacing.md),
-
-          // Height fields (feet + inches) with validation
-          Text(
-            'Height',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  fieldKey: const ValueKey('profile_edit.height_ft_field'),
-                  context: context,
-                  controller: _heightFeetController,
-                  hint: 'ft',
-                  icon: FontAwesomeIcons.rulerVertical,
-                  keyboardType: TextInputType.number,
-                  suffix: 'ft',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Required';
-                    }
-                    final feet = int.tryParse(value);
-                    if (feet == null || feet < 3 || feet > 8) {
-                      return 'Valid: 3-8';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: _buildTextField(
-                  fieldKey: const ValueKey('profile_edit.height_in_field'),
-                  context: context,
-                  controller: _heightInchesController,
-                  hint: 'in',
-                  icon: FontAwesomeIcons.rulerVertical,
-                  keyboardType: TextInputType.number,
-                  suffix: 'in',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Required';
-                    }
-                    final inches = int.tryParse(value);
-                    if (inches == null || inches < 0 || inches >= 12) {
-                      return 'Valid: 0-11';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Weight field — with optional Garmin attribution shown when the
-          // user's Garmin scale reading is newer than their manual entry.
-          // Mirrors the body-fat path in nutrition_profile_screen.dart.
-          _buildWeightFieldWithGarminBadge(context),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Water bottle toggle
           _buildWaterBottleToggle(context),
         ],
       ),
@@ -772,51 +640,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  /// Weight field rendered with the "Garmin always wins until user edits"
-  /// pattern. The Garmin chip appears whenever the field still holds the
-  /// auto-filled value; the moment the user types, `_weightFromGarmin`
-  /// flips false and the chip disappears.
-  Widget _buildWeightFieldWithGarminBadge(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_weightFromGarmin) ...[
-          const Padding(
-            padding: EdgeInsets.only(bottom: 4),
-            child: GarminAttribution(style: GarminAttributionStyle.compact),
-          ),
-        ],
-        _buildTextField(
-          fieldKey: const ValueKey('profile_edit.weight_field'),
-          context: context,
-          controller: _weightController,
-          label: 'Weight',
-          hint: 'Enter your weight',
-          icon: FontAwesomeIcons.weightScale,
-          keyboardType: TextInputType.number,
-          suffix: 'lbs',
-          onChanged: (_) {
-            // User edit supersedes Garmin — clear the chip and mark dirty.
-            if (_weightFromGarmin) {
-              setState(() => _weightFromGarmin = false);
-            }
-            _markChanged();
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter your weight';
-            }
-            final weight = double.tryParse(value);
-            if (weight == null || weight < 80 || weight > 500) {
-              return 'Please enter a valid weight (80-500 lbs)';
-            }
-            return null;
-          },
         ),
       ],
     );

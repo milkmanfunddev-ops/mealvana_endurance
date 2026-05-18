@@ -163,6 +163,9 @@ class AppDatabase extends _$AppDatabase {
   /// v3 added intensity distribution and default pace columns.
   /// v8 added needs_upload column to integrations so OAuth tokens are
   /// mirrored to Supabase and survive Drift schema resyncs / reinstalls.
+  /// (v8 also includes 'vdot' in the integrations.provider CHECK and
+  /// 'requires_reauth' in the last_sync_status CHECK — added 2026-05-18,
+  /// before v8 shipped.)
   int get schemaVersion => 8;
 
   /// Ensure sync tracking columns exist for user-authored tables.

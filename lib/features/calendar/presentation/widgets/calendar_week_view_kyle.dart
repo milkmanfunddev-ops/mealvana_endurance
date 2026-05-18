@@ -90,45 +90,55 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
                 label: 'Previous week',
                 child: GestureDetector(
                   key: const ValueKey('calendar.prev_month_button'),
+                  behavior: HitTestBehavior.opaque,
                   onTap: _goToPreviousWeek,
-                  child: Icon(
-                    Icons.chevron_left,
-                    size: 24,
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Icon(
+                      Icons.chevron_left,
+                      size: 24,
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
               // Month/Year title (tappable for date picker)
               Semantics(
                 button: true,
                 label: 'Choose month',
                 child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => _showDatePicker(context),
-                  child: Text(
-                    key: const ValueKey('calendar.month_label'),
-                    _formatMonthYear(widget.selectedDate),
-                    style: const TextStyle(
-                      fontFamily: 'Sansita',
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      key: const ValueKey('calendar.month_label'),
+                      _formatMonthYear(widget.selectedDate),
+                      style: const TextStyle(
+                        fontFamily: 'Sansita',
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
               // Next week arrow
               Semantics(
                 button: true,
                 label: 'Next week',
                 child: GestureDetector(
                   key: const ValueKey('calendar.next_month_button'),
+                  behavior: HitTestBehavior.opaque,
                   onTap: _goToNextWeek,
-                  child: Icon(
-                    Icons.chevron_right,
-                    size: 24,
-                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Icon(
+                      Icons.chevron_right,
+                      size: 24,
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                    ),
                   ),
                 ),
               ),

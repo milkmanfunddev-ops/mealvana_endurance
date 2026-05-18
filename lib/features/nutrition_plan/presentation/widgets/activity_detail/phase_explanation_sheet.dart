@@ -314,6 +314,14 @@ class _PhaseExplanationSheetState
     ref.watch(settingsControllerProvider);
 
     final title = _service.getSheetTitle(widget.phase, widget.sportLabel);
+
+    // After phase has no macro targeting — short-circuit to a single
+    // explanatory card and skip the entire carbs/fluids/sodium/protein
+    // transparency pipeline.
+    if (widget.phase == ExplanationPhase.after) {
+      return _AfterPhilosophySheet(title: title);
+    }
+
     final actuals = _computeActuals();
 
     // Collect all transparency data maps for this phase
@@ -601,6 +609,116 @@ class _PhaseExplanationSheetState
 // Private widgets
 // ---------------------------------------------------------------------------
 
+/// After-phase explanation. The 30–60 min post-workout window is treated as a
+/// trigger, not a macro-dosing event, so we don't surface carb / protein /
+/// sodium / fluid targets here. Instead, we describe the philosophy and the
+/// template-selection algorithm.
+class _AfterPhilosophySheet extends StatelessWidget {
+  const _AfterPhilosophySheet({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = AppColors.dragonfruit;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.55,
+      minChildSize: 0.35,
+      maxChildSize: 0.85,
+      builder: (context, scrollController) => Container(
+        padding: EdgeInsets.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          top: 8,
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: accent.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 3,
+                            height: 16,
+                            margin: const EdgeInsets.only(top: 3, right: 8),
+                            decoration: BoxDecoration(
+                              color: accent,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              'Why we don’t show macro targets here',
+                              style: AppTextStyles.sectionTitle.copyWith(
+                                fontSize: 15,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Recovery starters in the 30–60 min post-workout window don’t require precise macro dosing. ISSN and ACSM treat this window as a trigger — your total daily intake and the follow-up meal within 1–2 hours carry the actual recovery load.',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+}
 
 /// Static scenario label when only one scenario applies.
 class _ScenarioStaticLabel extends StatelessWidget {

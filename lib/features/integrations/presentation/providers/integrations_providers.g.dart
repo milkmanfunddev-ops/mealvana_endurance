@@ -1263,3 +1263,358 @@ final class GarminLastBodyCompFamily extends $Family
   @override
   String toString() => r'garminLastBodyCompProvider';
 }
+
+/// Provider for the V.O2 API client (auth + workouts).
+
+@ProviderFor(vdotApiClient)
+const vdotApiClientProvider = VdotApiClientProvider._();
+
+/// Provider for the V.O2 API client (auth + workouts).
+
+final class VdotApiClientProvider
+    extends $FunctionalProvider<VdotApiClient, VdotApiClient, VdotApiClient>
+    with $Provider<VdotApiClient> {
+  /// Provider for the V.O2 API client (auth + workouts).
+  const VdotApiClientProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'vdotApiClientProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$vdotApiClientHash();
+
+  @$internal
+  @override
+  $ProviderElement<VdotApiClient> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  VdotApiClient create(Ref ref) {
+    return vdotApiClient(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(VdotApiClient value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<VdotApiClient>(value),
+    );
+  }
+}
+
+String _$vdotApiClientHash() => r'e2d9cdd5402c6543ba6d640c4b9e1de8df4f41db';
+
+/// Provider for the V.O2 OAuth service.
+
+@ProviderFor(vdotOAuthService)
+const vdotOAuthServiceProvider = VdotOAuthServiceProvider._();
+
+/// Provider for the V.O2 OAuth service.
+
+final class VdotOAuthServiceProvider
+    extends
+        $FunctionalProvider<
+          VdotOAuthService,
+          VdotOAuthService,
+          VdotOAuthService
+        >
+    with $Provider<VdotOAuthService> {
+  /// Provider for the V.O2 OAuth service.
+  const VdotOAuthServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'vdotOAuthServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$vdotOAuthServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<VdotOAuthService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  VdotOAuthService create(Ref ref) {
+    return vdotOAuthService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(VdotOAuthService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<VdotOAuthService>(value),
+    );
+  }
+}
+
+String _$vdotOAuthServiceHash() => r'faa21874a656d9965fa327ad809ca3a5418d783a';
+
+/// Provider to get the V.O2 integration for a user.
+
+@ProviderFor(vdotIntegration)
+const vdotIntegrationProvider = VdotIntegrationFamily._();
+
+/// Provider to get the V.O2 integration for a user.
+
+final class VdotIntegrationProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<IntegrationModel?>,
+          IntegrationModel?,
+          FutureOr<IntegrationModel?>
+        >
+    with
+        $FutureModifier<IntegrationModel?>,
+        $FutureProvider<IntegrationModel?> {
+  /// Provider to get the V.O2 integration for a user.
+  const VdotIntegrationProvider._({
+    required VdotIntegrationFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'vdotIntegrationProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$vdotIntegrationHash();
+
+  @override
+  String toString() {
+    return r'vdotIntegrationProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<IntegrationModel?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<IntegrationModel?> create(Ref ref) {
+    final argument = this.argument as String;
+    return vdotIntegration(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is VdotIntegrationProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$vdotIntegrationHash() => r'975d16ac1b322c4ecd0067b3a9a31ef305aafab3';
+
+/// Provider to get the V.O2 integration for a user.
+
+final class VdotIntegrationFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<IntegrationModel?>, String> {
+  const VdotIntegrationFamily._()
+    : super(
+        retry: null,
+        name: r'vdotIntegrationProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provider to get the V.O2 integration for a user.
+
+  VdotIntegrationProvider call(String userId) =>
+      VdotIntegrationProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'vdotIntegrationProvider';
+}
+
+/// Provider to check whether V.O2 is connected for a user.
+
+@ProviderFor(isVdotConnected)
+const isVdotConnectedProvider = IsVdotConnectedFamily._();
+
+/// Provider to check whether V.O2 is connected for a user.
+
+final class IsVdotConnectedProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
+  /// Provider to check whether V.O2 is connected for a user.
+  const IsVdotConnectedProvider._({
+    required IsVdotConnectedFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'isVdotConnectedProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$isVdotConnectedHash();
+
+  @override
+  String toString() {
+    return r'isVdotConnectedProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool> create(Ref ref) {
+    final argument = this.argument as String;
+    return isVdotConnected(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is IsVdotConnectedProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$isVdotConnectedHash() => r'48c55df8934b36d5a2baf40a26ecbda4fa83a053';
+
+/// Provider to check whether V.O2 is connected for a user.
+
+final class IsVdotConnectedFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<bool>, String> {
+  const IsVdotConnectedFamily._()
+    : super(
+        retry: null,
+        name: r'isVdotConnectedProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provider to check whether V.O2 is connected for a user.
+
+  IsVdotConnectedProvider call(String userId) =>
+      IsVdotConnectedProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'isVdotConnectedProvider';
+}
+
+/// Provider for the V.O2 transformer (workout JSON → Activity).
+
+@ProviderFor(vdotTransformer)
+const vdotTransformerProvider = VdotTransformerProvider._();
+
+/// Provider for the V.O2 transformer (workout JSON → Activity).
+
+final class VdotTransformerProvider
+    extends
+        $FunctionalProvider<VdotTransformer, VdotTransformer, VdotTransformer>
+    with $Provider<VdotTransformer> {
+  /// Provider for the V.O2 transformer (workout JSON → Activity).
+  const VdotTransformerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'vdotTransformerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$vdotTransformerHash();
+
+  @$internal
+  @override
+  $ProviderElement<VdotTransformer> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  VdotTransformer create(Ref ref) {
+    return vdotTransformer(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(VdotTransformer value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<VdotTransformer>(value),
+    );
+  }
+}
+
+String _$vdotTransformerHash() => r'834b3198ea2c756a914b85d88a5bc88d634dbdf9';
+
+/// Provider for the V.O2 sync service.
+
+@ProviderFor(vdotSyncService)
+const vdotSyncServiceProvider = VdotSyncServiceProvider._();
+
+/// Provider for the V.O2 sync service.
+
+final class VdotSyncServiceProvider
+    extends
+        $FunctionalProvider<VdotSyncService, VdotSyncService, VdotSyncService>
+    with $Provider<VdotSyncService> {
+  /// Provider for the V.O2 sync service.
+  const VdotSyncServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'vdotSyncServiceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$vdotSyncServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<VdotSyncService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  VdotSyncService create(Ref ref) {
+    return vdotSyncService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(VdotSyncService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<VdotSyncService>(value),
+    );
+  }
+}
+
+String _$vdotSyncServiceHash() => r'd5bd0a1549f8553754f5655fb2f91c55eadaaa3d';

@@ -3570,8 +3570,8 @@ final class Schema3 extends i0.VersionedSchema {
       isStrict: false,
       tableConstraints: [
         'PRIMARY KEY(id)',
-        'CHECK (provider IN (\'final_surge\', \'training_peaks\', \'strava\', \'garmin\'))',
-        'CHECK (last_sync_status IS NULL OR last_sync_status IN (\'success\', \'error\', \'pending\'))',
+        'CHECK (provider IN (\'final_surge\', \'training_peaks\', \'strava\', \'garmin\', \'vdot\'))',
+        'CHECK (last_sync_status IS NULL OR last_sync_status IN (\'success\', \'error\', \'pending\', \'requires_reauth\'))',
         'UNIQUE(user_id, provider)',
       ],
       columns: [

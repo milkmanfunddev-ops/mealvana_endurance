@@ -105,6 +105,13 @@ export interface TemplateMetadata {
   template_number: number;
   template_name: string;
   template_formula: string;
+  /** Human-readable portion description (post-workout templates only) */
+  template_portions?: string | null;
+  /** Notion taxonomy fields (post-workout templates only) */
+  protein_anchor?: string | null;
+  flavor_profile?: string | null;
+  prep_effort?: string | null;
+  travel_friendliness?: string | null;
 }
 
 /**

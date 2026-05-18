@@ -1521,6 +1521,9 @@ class ActivitiesRepository with SyncableRepository {
       case 'final_surge':
         variants.addAll(const ['finalsurge', 'final surge']);
         break;
+      case 'vdot':
+        variants.addAll(const ['v.o2', 'v02', 'vo2', 'vdoto2']);
+        break;
       default:
         break;
     }

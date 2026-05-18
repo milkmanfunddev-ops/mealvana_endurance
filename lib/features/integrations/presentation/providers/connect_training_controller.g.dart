@@ -38,7 +38,7 @@ final class ConnectTrainingControllerProvider
 }
 
 String _$connectTrainingControllerHash() =>
-    r'592e82d773164182695fa13b6b566493e264274a';
+    r'0f88c5a210e7e5fc945e47d96a5eb22be0778299';
 
 abstract class _$ConnectTrainingController
     extends $AsyncNotifier<ConnectTrainingState> {

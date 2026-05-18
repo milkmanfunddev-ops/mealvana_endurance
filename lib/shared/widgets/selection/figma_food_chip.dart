@@ -112,12 +112,8 @@ class FigmaFoodChipGrid extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: foods.map((food) {
-        final slug = food.name.toLowerCase().replaceAll(
-          RegExp(r'[^a-z0-9]+'),
-          '_',
-        );
         return FigmaFoodChip(
-          key: ValueKey('food_selection.chip_$slug'),
+          key: ValueKey('food_selection.chip_${food.id}'),
           label: food.name,
           isSelected: selectedFoodIds.contains(food.id),
           onTap: () => onFoodToggled(food.id),

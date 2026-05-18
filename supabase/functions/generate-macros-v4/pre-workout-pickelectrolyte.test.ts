@@ -16,7 +16,7 @@ import type { PreWorkoutTemplate } from './types.ts';
 function makeTemplate(overrides: Partial<PreWorkoutTemplate> & { id: string; name: string }): PreWorkoutTemplate {
   return {
     base_category: 'Electrolyte',
-    time_window: '0-30 min',
+    time_window: '< 30 min',
     digestion_speed: 'fast',
     allergens: [],
     serving_unit: 'capsule',

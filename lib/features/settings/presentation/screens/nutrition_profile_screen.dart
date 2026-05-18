@@ -9,7 +9,7 @@ import '../../../daily_macros/domain/enums.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
-import '../../../integrations/presentation/widgets/garmin_attribution.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
 
 class NutritionProfileScreen extends ConsumerStatefulWidget {
   const NutritionProfileScreen({super.key});
@@ -21,6 +21,9 @@ class NutritionProfileScreen extends ConsumerStatefulWidget {
 
 class _NutritionProfileScreenState
     extends ConsumerState<NutritionProfileScreen> {
+  final _weightController = TextEditingController();
+  final _heightFeetController = TextEditingController();
+  final _heightInchesController = TextEditingController();
   final _bodyFatController = TextEditingController();
   final _weeklyHoursController = TextEditingController();
 
@@ -28,6 +31,7 @@ class _NutritionProfileScreenState
   bool _carbCycleOptIn = false;
   TrainingPhase _trainingPhase = TrainingPhase.base;
   bool _hasChanges = false;
+  bool _weightFromGarmin = false;
   bool _bodyFatFromGarmin = false;
   bool _isSaving = false;
 
@@ -39,6 +43,9 @@ class _NutritionProfileScreenState
 
   @override
   void dispose() {
+    _weightController.dispose();
+    _heightFeetController.dispose();
+    _heightInchesController.dispose();
     _bodyFatController.dispose();
     _weeklyHoursController.dispose();
     super.dispose();
@@ -50,6 +57,9 @@ class _NutritionProfileScreenState
     if (profile == null || !mounted) return;
 
     setState(() {
+      _weightController.text = profile.weightPounds.toStringAsFixed(0);
+      _heightFeetController.text = profile.heightFeet.toString();
+      _heightInchesController.text = profile.heightInches.toString();
       if (profile.bodyFatPct != null) {
         _bodyFatController.text = profile.bodyFatPct!.toStringAsFixed(1);
       }
@@ -64,26 +74,41 @@ class _NutritionProfileScreenState
 
     // Garmin auto-fill: if Garmin's latest body-comp reading is authoritative
     // (newer than the user's manual entry, within 30-day staleness window),
-    // overwrite the body-fat field with Garmin's value. The user can still
-    // edit it; doing so clears `_bodyFatFromGarmin` and hides the chip.
+    // overwrite weight + body-fat fields. User edits clear the corresponding
+    // _fromGarmin flag and hide the chip.
     try {
       final garminData = await ref.read(
         garminLastBodyCompProvider(profile.id).future,
       );
       if (!mounted || garminData == null) return;
-      final isGarminAuthoritative = isGarminAuthoritativeForBodyFat(
+
+      final userWeightKg = profile.weightPounds * 0.453592;
+      final weightAuthoritative = isGarminAuthoritativeForWeight(
+        garmin: garminData,
+        userWeightKg: userWeightKg,
+        userUpdatedAt: profile.weightPoundsUpdatedAt,
+      );
+      if (weightAuthoritative && garminData.weightKg != null) {
+        final garminLbs = (garminData.weightKg! * 2.20462).round();
+        setState(() {
+          _weightController.text = garminLbs.toString();
+          _weightFromGarmin = true;
+        });
+      }
+
+      final bodyFatAuthoritative = isGarminAuthoritativeForBodyFat(
         garmin: garminData,
         userBodyFatPct: profile.bodyFatPct,
         userUpdatedAt: profile.bodyFatPctUpdatedAt,
       );
-      if (isGarminAuthoritative && garminData.bodyFatPct != null) {
+      if (bodyFatAuthoritative && garminData.bodyFatPct != null) {
         setState(() {
           _bodyFatController.text = garminData.bodyFatPct!.toStringAsFixed(1);
           _bodyFatFromGarmin = true;
         });
       }
     } catch (_) {
-      // Non-fatal — body fat from Garmin is best-effort.
+      // Non-fatal — Garmin auto-fill is best-effort.
     }
   }
 
@@ -96,12 +121,29 @@ class _NutritionProfileScreenState
       final profile = await userRepository.getCurrentUser();
       if (profile == null) return;
 
+      final weightLbs = double.tryParse(_weightController.text);
+      final heightFeet = int.tryParse(_heightFeetController.text);
+      final heightInches = int.tryParse(_heightInchesController.text);
       final bodyFat = double.tryParse(_bodyFatController.text);
       final weeklyHours = double.tryParse(_weeklyHoursController.text);
 
-      final bodyFatChanged = bodyFat != profile.bodyFatPct;
+      // Only bump weight_pounds_updated_at when the user edits the field
+      // away from whatever Garmin auto-filled. If the displayed value still
+      // matches Garmin's reading, leave the timestamp on Garmin's so the
+      // edge-function resolver can still resolve weight correctly.
+      final weightChanged = weightLbs != null &&
+          !_weightFromGarmin &&
+          weightLbs != profile.weightPounds;
+      final bodyFatChanged = bodyFat != profile.bodyFatPct &&
+          !_bodyFatFromGarmin;
 
       final updated = profile.copyWith(
+        weightPounds: weightLbs ?? profile.weightPounds,
+        weightPoundsUpdatedAt: weightChanged
+            ? DateTime.now().toUtc()
+            : profile.weightPoundsUpdatedAt,
+        heightFeet: heightFeet ?? profile.heightFeet,
+        heightInches: heightInches ?? profile.heightInches,
         bodyFatPct: bodyFat,
         bodyFatPctUpdatedAt: bodyFatChanged
             ? DateTime.now().toUtc()
@@ -149,7 +191,7 @@ class _NutritionProfileScreenState
         ),
         title: Text(
           key: const ValueKey('nutrition_profile.title'),
-          'Nutrition Profile',
+          'Body Composition',
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -176,19 +218,49 @@ class _NutritionProfileScreenState
             children: [
               const SizedBox(height: AppSpacing.lg),
 
+              // Weight (with Garmin auto-fill when authoritative)
+              _buildSectionLabel(
+                context,
+                'Weight',
+                labelKey: const ValueKey('body_composition.weight_section'),
+              ),
+              if (_weightFromGarmin) ...[
+                const Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: GarminAttributionMessage(
+                    subject: 'Weight',
+                    compact: true,
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.sm),
+              _buildWeightInput(context),
+
+              const SizedBox(height: AppSpacing.xl),
+
+              // Height (feet + inches)
+              _buildSectionLabel(
+                context,
+                'Height',
+                labelKey: const ValueKey('body_composition.height_section'),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _buildHeightInput(context),
+
+              const SizedBox(height: AppSpacing.xl),
+
               // Body Fat %
               _buildSectionLabel(
                 context,
                 'Body Fat % (optional)',
                 labelKey: const ValueKey('nutrition_profile.body_fat_section'),
               ),
-              // Garmin brand attribution shown only while the field still
-              // holds the auto-filled Garmin value. User edit clears it.
               if (_bodyFatFromGarmin) ...[
                 const Padding(
-                  padding: EdgeInsets.only(top: 2),
-                  child: GarminAttribution(
-                    style: GarminAttributionStyle.compact,
+                  padding: EdgeInsets.only(top: 4),
+                  child: GarminAttributionMessage(
+                    subject: 'Body fat %',
+                    compact: true,
                   ),
                 ),
               ],
@@ -255,8 +327,71 @@ class _NutritionProfileScreenState
     return Text(
       key: labelKey,
       label,
-      style: AppTextStyles.subtitle.copyWith(
+      // Section labels here use Sansita (the heading face) rather than
+      // Compadre's capitalized-look subtitle style — matches how page
+      // titles are rendered and reads as proper headings, not labels.
+      style: AppTextStyles.sectionTitle.copyWith(
         color: Theme.of(context).colorScheme.onSurface,
+        fontSize: 18,
+      ),
+    );
+  }
+
+  Widget _buildWeightInput(BuildContext context) {
+    return BaseCard(
+      child: KyleInputField(
+        key: const ValueKey('body_composition.weight_field'),
+        controller: _weightController,
+        hintText: 'e.g., 165',
+        suffixText: 'lbs',
+        keyboardType: TextInputType.number,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+        ],
+        onChanged: (_) {
+          // User edit supersedes Garmin — clear the chip and mark dirty.
+          if (_weightFromGarmin) {
+            setState(() => _weightFromGarmin = false);
+          }
+          _markChanged();
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeightInput(BuildContext context) {
+    return BaseCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: KyleInputField(
+              key: const ValueKey('body_composition.height_ft_field'),
+              controller: _heightFeetController,
+              hintText: 'ft',
+              suffixText: 'ft',
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              onChanged: (_) => _markChanged(),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: KyleInputField(
+              key: const ValueKey('body_composition.height_in_field'),
+              controller: _heightInchesController,
+              hintText: 'in',
+              suffixText: 'in',
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              onChanged: (_) => _markChanged(),
+            ),
+          ),
+        ],
       ),
     );
   }

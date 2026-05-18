@@ -147,7 +147,7 @@ class ProVersionScreen extends ConsumerWidget {
                 icon: Icons.sync,
                 iconColor: AppColors.electrolyte,
                 title: 'App Integrations',
-                description: 'Sync with TrainingPeaks, Final Surge, and other training platforms.',
+                description: 'Sync with TrainingPeaks, Final Surge, V.O2, and other training platforms.',
               ),
               const SizedBox(height: AppSpacing.md),
 

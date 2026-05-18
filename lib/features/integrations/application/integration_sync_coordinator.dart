@@ -11,8 +11,8 @@ part 'integration_sync_coordinator.g.dart';
 
 /// Lightweight coordinator for integration staleness checks and dedup.
 ///
-/// Purpose-built for external provider sync (Final Surge, Training Peaks).
-/// NOT part of the SyncCoordinator dependency graph because integration
+/// Purpose-built for external provider sync (Final Surge, Training Peaks,
+/// V.O2). NOT part of the SyncCoordinator dependency graph because integration
 /// sync has no dirty-record upload concept.
 ///
 /// Design:
@@ -184,6 +184,10 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           final service =
               await ref.read(trainingPeaksSyncServiceProvider.future);
           await service.syncAll(userId);
+          break;
+        case 'vdot':
+          final service = ref.read(vdotSyncServiceProvider);
+          await service.syncWorkouts(userId);
           break;
         case 'garmin':
           // Garmin is push-only — no client-side sync needed.

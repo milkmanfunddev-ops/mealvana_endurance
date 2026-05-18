@@ -201,6 +201,9 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                       ),
                       suffixIcon: IconButton(
                         key: const ValueKey('login.password_visibility_button'),
+                        tooltip: _obscurePassword
+                            ? 'Show password'
+                            : 'Hide password',
                         icon: Icon(
                           _obscurePassword
                               ? FontAwesomeIcons.eye
@@ -231,16 +234,23 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
                       key: const ValueKey('login.forgot_password_button'),
+                      behavior: HitTestBehavior.opaque,
                       onTap: asyncState.isLoading
                           ? null
                           : () => context.push('/auth/forgot-password'),
-                      child: Text(
-                        contentService.getValue(
-                          'auth.login.forgot_password',
-                          defaultValue: 'Forgot Password?',
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 4,
                         ),
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.electrolyte,
+                        child: Text(
+                          contentService.getValue(
+                            'auth.login.forgot_password',
+                            defaultValue: 'Forgot Password?',
+                          ),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.electrolyte,
+                          ),
                         ),
                       ),
                     ),

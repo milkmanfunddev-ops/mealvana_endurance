@@ -339,21 +339,25 @@ class BrickNutritionSections extends StatelessWidget {
           if (_isEmptyNutritionSection(section, isSwimming, isTransition)) ...[
             _buildQuickTransitionMessage(context, section, isTransition),
           ] else ...[
-            MacroSummaryRow(
-              foods: section.foodItems,
-              section: section,
-              category: category,
-              useImperial: useImperial,
-              carbsLow: _getCarbsLow(section, category),
-              carbsHigh: _getCarbsHigh(section, category),
-              proteinLow: _getProteinLow(section, category),
-              proteinHigh: _getProteinHigh(section, category),
-              sodiumLow: _getSodiumLow(section, category),
-              sodiumHigh: _getSodiumHigh(section, category),
-              fluidsLow: _getFluidsLow(section, category),
-              fluidsHigh: _getFluidsHigh(section, category),
-            ),
-            const SizedBox(height: AppSpacing.md),
+            // Post-workout recovery is a trigger, not a macro-dosing event —
+            // hide the carbs/protein/sodium/fluid bar for the after section.
+            if (!category.startsWith('after')) ...[
+              MacroSummaryRow(
+                foods: section.foodItems,
+                section: section,
+                category: category,
+                useImperial: useImperial,
+                carbsLow: _getCarbsLow(section, category),
+                carbsHigh: _getCarbsHigh(section, category),
+                proteinLow: _getProteinLow(section, category),
+                proteinHigh: _getProteinHigh(section, category),
+                sodiumLow: _getSodiumLow(section, category),
+                sodiumHigh: _getSodiumHigh(section, category),
+                fluidsLow: _getFluidsLow(section, category),
+                fluidsHigh: _getFluidsHigh(section, category),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             ...section.foodItems.asMap().entries.map((entry) {
               final index = entry.key;
               final food = entry.value;

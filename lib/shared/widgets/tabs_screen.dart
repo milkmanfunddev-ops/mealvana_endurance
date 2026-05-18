@@ -141,15 +141,23 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           body,
           // Settings gear — top-right on every tab
           Positioned(
-            top: MediaQuery.of(context).padding.top + 12,
-            right: 16,
-            child: GestureDetector(
-              key: const ValueKey('calendar.settings_button'),
-              onTap: () => context.push('/settings'),
-              child: FaIcon(
-                FontAwesomeIcons.gear,
-                size: 18,
-                color: isDark ? AppColors.cream : AppColors.blackberry,
+            top: MediaQuery.of(context).padding.top,
+            right: 4,
+            child: Semantics(
+              button: true,
+              label: 'Settings',
+              child: GestureDetector(
+                key: const ValueKey('calendar.settings_button'),
+                behavior: HitTestBehavior.opaque,
+                onTap: () => context.push('/settings'),
+                child: Padding(
+                  padding: const EdgeInsets.all(15),
+                  child: FaIcon(
+                    FontAwesomeIcons.gear,
+                    size: 18,
+                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                  ),
+                ),
               ),
             ),
           ),

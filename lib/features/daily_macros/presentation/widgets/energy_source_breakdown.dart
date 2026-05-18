@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../auth/application/auth_service.dart';
+import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 import '../../domain/daily_macro_targets.dart';
 
@@ -9,16 +12,51 @@ import '../../domain/daily_macro_targets.dart';
 /// attribution for each. When a value comes from Garmin Connect, the row
 /// shows a Garmin tag chip — fulfilling the API brand-guideline requirement
 /// that Garmin-derived data is attributed wherever it surfaces.
-class EnergySourceBreakdown extends StatelessWidget {
+class EnergySourceBreakdown extends ConsumerWidget {
   const EnergySourceBreakdown({super.key, required this.macros});
 
   final DailyMacroTargets macros;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final sources = macros.sources;
+
+    // The macro edge function returns `weight_kg`/`body_fat_pct`/`sources`
+    // only on a fresh calc; cached Drift rows don't carry them. Fall back to
+    // the user profile so the Body Composition row + its Garmin badge keep
+    // rendering once the row is cached.
+    final profile = ref.watch(currentUserProvider).asData?.value;
+    final garmin = profile == null
+        ? null
+        : ref
+              .watch(garminLastBodyCompProvider(profile.id))
+              .asData
+              ?.value;
+
+    final resolvedWeightKg =
+        macros.weightKg ?? (profile?.weightPounds != null
+            ? profile!.weightPounds * 0.453592
+            : null);
+    final resolvedBodyFatPct = macros.bodyFatPct ?? profile?.bodyFatPct;
+
+    // Source flag: trust the fresh calc when we have it, otherwise derive
+    // from the same authoritative check the rest of the app uses.
+    final weightFromGarmin = sources?.weightFromGarmin ??
+        isGarminAuthoritativeForWeight(
+          garmin: garmin,
+          userWeightKg: profile != null
+              ? profile.weightPounds * 0.453592
+              : null,
+          userUpdatedAt: profile?.weightPoundsUpdatedAt,
+        );
+    final bodyFatFromGarmin = sources?.bodyFatFromGarmin ??
+        isGarminAuthoritativeForBodyFat(
+          garmin: garmin,
+          userBodyFatPct: profile?.bodyFatPct,
+          userUpdatedAt: profile?.bodyFatPctUpdatedAt,
+        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -26,12 +64,12 @@ class EnergySourceBreakdown extends StatelessWidget {
         // Body composition — shows the actual weight + body fat used in the
         // calc, with Garmin attribution when those values came from a Garmin
         // body-comp scale via the latest-wins resolver.
-        if (macros.weightKg != null || macros.bodyFatPct != null) ...[
+        if (resolvedWeightKg != null || resolvedBodyFatPct != null) ...[
           _BodyCompositionRow(
-            weightKg: macros.weightKg,
-            bodyFatPct: macros.bodyFatPct,
-            weightFromGarmin: sources?.weightFromGarmin ?? false,
-            bodyFatFromGarmin: sources?.bodyFatFromGarmin ?? false,
+            weightKg: resolvedWeightKg,
+            bodyFatPct: resolvedBodyFatPct,
+            weightFromGarmin: weightFromGarmin,
+            bodyFatFromGarmin: bodyFatFromGarmin,
             textColor: textColor,
           ),
           const SizedBox(height: AppSpacing.md),

@@ -155,7 +155,7 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
               safeAreaBottom: false,
               padding: const EdgeInsets.all(20),
               child: Align(
-                alignment: Alignment.topCenter,
+                alignment: Alignment.center,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,

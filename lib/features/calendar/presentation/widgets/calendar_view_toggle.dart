@@ -79,24 +79,32 @@ class CalendarViewToggle extends StatelessWidget {
       label: '$label calendar view',
       child: GestureDetector(
         key: optionKey,
+        behavior: HitTestBehavior.opaque,
         onTap: () => onModeChanged(mode),
-        child: IntrinsicWidth(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Compadre',
-                  fontSize: 12,
-                  color: textColor,
-                  height: 1.3,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: IntrinsicWidth(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'Compadre',
+                    fontSize: 12,
+                    color: textColor,
+                    height: 1.3,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              if (isSelected)
-                Container(height: 1, width: double.infinity, color: textColor),
-            ],
+                const SizedBox(height: 2),
+                if (isSelected)
+                  Container(
+                    height: 1,
+                    width: double.infinity,
+                    color: textColor,
+                  ),
+              ],
+            ),
           ),
         ),
       ),

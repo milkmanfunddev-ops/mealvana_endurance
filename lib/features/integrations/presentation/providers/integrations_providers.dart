@@ -16,9 +16,13 @@ import '../../application/garmin_oauth_service.dart';
 import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
 import '../../application/training_peaks_transformer.dart';
+import '../../application/vdot_oauth_service.dart';
+import '../../application/vdot_sync_service.dart';
+import '../../application/vdot_transformer.dart';
 import '../../data/final_surge_api_client.dart';
 import '../../data/integrations_repository.dart';
 import '../../data/training_peaks_api_client.dart';
+import '../../data/vdot_api_client.dart';
 import '../../domain/integration.dart';
 
 part 'integrations_providers.g.dart';
@@ -56,7 +60,19 @@ class GarminBodyCompData {
 ///   1. No Garmin data → false (user value stands).
 ///   2. Garmin data is more than 30 days old → false (stale, reject).
 ///   3. User has no weight → true (Garmin fills the gap).
-///   4. Garmin measurement is newer than user's last update → true.
+///   4. Garmin measurement is at or after the user's last update → true.
+///   5. User's current weight matches Garmin's (within 0.5 kg) → true.
+///      This rule catches the case where the server-side mirror already
+///      copied Garmin's value into `users.weight_pounds` and bumped the
+///      `_updated_at` timestamp to Garmin's measurement time. Even if local
+///      Drift sync hasn't caught up to that updated_at, value-equality
+///      proves the displayed weight came from Garmin.
+///
+/// The "at or after" check (not strict "after") is intentional: when the
+/// server-side mirror in garmin-push updates `users.weight_pounds` from a
+/// Garmin reading, it bumps `weight_pounds_updated_at` to the Garmin
+/// measurement time. Equal timestamps therefore still mean "Garmin is the
+/// source of truth", and the UI should attribute accordingly.
 bool isGarminAuthoritativeForWeight({
   required GarminBodyCompData? garmin,
   required double? userWeightKg,
@@ -68,13 +84,18 @@ bool isGarminAuthoritativeForWeight({
   final ageDays = reference.difference(garmin.measurementTime).inDays;
   if (ageDays > 30) return false;
   if (userWeightKg == null || userUpdatedAt == null) return true;
-  return garmin.measurementTime.isAfter(userUpdatedAt);
+  if (!garmin.measurementTime.isBefore(userUpdatedAt)) return true;
+  // Value-equality fallback: if the user's stored weight matches Garmin's
+  // reading within rounding tolerance, Garmin is the source even if our
+  // timestamps look out of order (e.g. local Drift lagging Supabase).
+  return (userWeightKg - garmin.weightKg!).abs() < 0.5;
 }
 
 /// Returns true if Garmin's body composition data should be treated as more
 /// authoritative than the user's manually-entered body fat percentage.
 ///
-/// Same staleness and precedence rules as [isGarminAuthoritativeForWeight].
+/// Same staleness and precedence rules as [isGarminAuthoritativeForWeight],
+/// plus a value-equality fallback (within 0.3 percentage points).
 bool isGarminAuthoritativeForBodyFat({
   required GarminBodyCompData? garmin,
   required double? userBodyFatPct,
@@ -86,7 +107,8 @@ bool isGarminAuthoritativeForBodyFat({
   final ageDays = reference.difference(garmin.measurementTime).inDays;
   if (ageDays > 30) return false;
   if (userBodyFatPct == null || userUpdatedAt == null) return true;
-  return garmin.measurementTime.isAfter(userUpdatedAt);
+  if (!garmin.measurementTime.isBefore(userUpdatedAt)) return true;
+  return (userBodyFatPct - garmin.bodyFatPct!).abs() < 0.3;
 }
 
 /// Provider for app package info (version, build number, etc.)
@@ -390,4 +412,76 @@ Future<GarminBodyCompData?> garminLastBodyComp(
   } catch (_) {
     return null;
   }
+}
+
+// =============================================================================
+// V.O2 (VDOT) PROVIDERS
+// =============================================================================
+
+/// Redirect URI sent to V.O2 during the authorize request. Registered with
+/// VDOT (info@vdoto2.com). Shared scheme with TP/FS/Garmin — VDOT
+/// distinguishes callbacks by the `state` parameter rather than the path.
+const _vdotRedirectUri = '$_baseCallbackScheme://callback';
+
+/// Provider for the V.O2 API client (auth + workouts).
+@Riverpod(keepAlive: true)
+VdotApiClient vdotApiClient(Ref ref) {
+  final config = ref.watch(appConfigProvider);
+  return VdotApiClient(
+    clientId: config.vdotClientId,
+    clientSecret: config.vdotClientSecret,
+    authBaseUrl: config.vdotAuthBaseUrl,
+    apiBaseUrl: config.vdotApiBaseUrl,
+  );
+}
+
+/// Provider for the V.O2 OAuth service.
+@Riverpod(keepAlive: true)
+VdotOAuthService vdotOAuthService(Ref ref) {
+  final config = ref.watch(appConfigProvider);
+  final apiClient = ref.watch(vdotApiClientProvider);
+  final repository = ref.watch(integrationsRepositoryProvider);
+  return VdotOAuthService(
+    apiClient: apiClient,
+    repository: repository,
+    clientId: config.vdotClientId,
+    authBaseUrl: config.vdotAuthBaseUrl,
+    redirectUri: _vdotRedirectUri,
+    callbackUrlScheme: _baseCallbackScheme,
+  );
+}
+
+/// Provider to get the V.O2 integration for a user.
+@riverpod
+Future<IntegrationModel?> vdotIntegration(Ref ref, String userId) async {
+  final repository = ref.watch(integrationsRepositoryProvider);
+  return repository.getIntegration(userId, 'vdot');
+}
+
+/// Provider to check whether V.O2 is connected for a user.
+@riverpod
+Future<bool> isVdotConnected(Ref ref, String userId) async {
+  final integration = await ref.watch(vdotIntegrationProvider(userId).future);
+  return integration?.isActive ?? false;
+}
+
+/// Provider for the V.O2 transformer (workout JSON → Activity).
+@Riverpod(keepAlive: true)
+VdotTransformer vdotTransformer(Ref ref) => const VdotTransformer();
+
+/// Provider for the V.O2 sync service.
+@Riverpod(keepAlive: true)
+VdotSyncService vdotSyncService(Ref ref) {
+  final apiClient = ref.watch(vdotApiClientProvider);
+  final integrationsRepository = ref.watch(integrationsRepositoryProvider);
+  final activitiesRepository = ref.watch(activitiesRepositoryProvider);
+  final transformer = ref.watch(vdotTransformerProvider);
+  final changeDetectionService = ref.watch(changeDetectionServiceProvider);
+  return VdotSyncService(
+    apiClient: apiClient,
+    integrationsRepository: integrationsRepository,
+    activitiesRepository: activitiesRepository,
+    transformer: transformer,
+    changeDetectionService: changeDetectionService,
+  );
 }

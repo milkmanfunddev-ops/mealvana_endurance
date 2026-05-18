@@ -22,6 +22,8 @@ import '../../application/final_surge_sync_service.dart';
 import '../../application/garmin_oauth_service.dart';
 import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
+import '../../application/vdot_oauth_service.dart';
+import '../../application/vdot_sync_service.dart';
 import '../../data/integrations_repository.dart';
 import 'integrations_providers.dart';
 
@@ -54,6 +56,9 @@ class ConnectTrainingState {
     this.trainingPeaksLastSyncAt,
     this.isGarminConnected = false,
     this.garminAthleteName,
+    this.isVdotConnected = false,
+    this.vdotAthleteName,
+    this.vdotLastSyncAt,
     this.isConnecting = false,
     this.connectingProvider,
     this.importedWorkoutsCount = 0,
@@ -76,6 +81,9 @@ class ConnectTrainingState {
   final DateTime? trainingPeaksLastSyncAt;
   final bool isGarminConnected;
   final String? garminAthleteName;
+  final bool isVdotConnected;
+  final String? vdotAthleteName;
+  final DateTime? vdotLastSyncAt;
   final bool isConnecting;
   final String? connectingProvider;
   final int importedWorkoutsCount;
@@ -112,6 +120,10 @@ class ConnectTrainingState {
     bool? isGarminConnected,
     String? garminAthleteName,
     bool clearGarminAthleteName = false,
+    bool? isVdotConnected,
+    String? vdotAthleteName,
+    bool clearVdotAthleteName = false,
+    DateTime? vdotLastSyncAt,
     bool? isConnecting,
     String? connectingProvider,
     bool clearConnectingProvider = false,
@@ -144,6 +156,11 @@ class ConnectTrainingState {
       garminAthleteName: clearGarminAthleteName
           ? null
           : (garminAthleteName ?? this.garminAthleteName),
+      isVdotConnected: isVdotConnected ?? this.isVdotConnected,
+      vdotAthleteName: clearVdotAthleteName
+          ? null
+          : (vdotAthleteName ?? this.vdotAthleteName),
+      vdotLastSyncAt: vdotLastSyncAt ?? this.vdotLastSyncAt,
       isConnecting: isConnecting ?? this.isConnecting,
       connectingProvider: clearConnectingProvider
           ? null
@@ -180,6 +197,8 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   Future<TrainingPeaksSyncService> get _trainingPeaksSync =>
       ref.read(trainingPeaksSyncServiceProvider.future);
   GarminOAuthService get _garminOAuth => ref.read(garminOAuthServiceProvider);
+  VdotOAuthService get _vdotOAuth => ref.read(vdotOAuthServiceProvider);
+  VdotSyncService get _vdotSync => ref.read(vdotSyncServiceProvider);
   IntegrationsRepository get _integrationsRepo =>
       ref.read(integrationsRepositoryProvider);
   ActivitiesRepository get _activitiesRepo =>
@@ -189,6 +208,13 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Prevents concurrent sync operations from causing duplicate inserts.
   /// Shared across both manual and automatic sync paths.
   final Set<String> _syncingProviders = {};
+
+  /// Session-scoped flag: have we already kicked a Garmin backfill on this
+  /// controller instance? Garmin's Health API is push-only, so on app open
+  /// we proactively ask Garmin to re-push the last 90 days of body comp +
+  /// user metrics — but only once per session so we don't hammer their API
+  /// across every controller rebuild.
+  bool _garminBackfillTriggeredThisSession = false;
 
   String? _currentUserId;
 
@@ -267,6 +293,26 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _currentUserId!,
       'garmin',
     );
+    final vdotIntegration = await _integrationsRepo.getIntegration(
+      _currentUserId!,
+      'vdot',
+    );
+
+    final isGarminActive = garminIntegration?.isActive ?? false;
+
+    // Fire-and-forget a Garmin backfill on the first build of each app
+    // session when Garmin is connected. Without this, weight/body fat
+    // changes the user made in Garmin Connect won't show up until their
+    // device organically syncs — which may be hours away. We don't await
+    // it because Garmin replies 202 and the data lands later via webhook.
+    if (isGarminActive &&
+        !_garminBackfillTriggeredThisSession &&
+        !_isUsingTempUserId) {
+      _garminBackfillTriggeredThisSession = true;
+      Future<void>(() async {
+        await triggerGarminBackfill();
+      });
+    }
 
     return ConnectTrainingState(
       isFinalSurgeConnected: finalSurgeIntegration?.isActive ?? false,
@@ -275,8 +321,11 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       isTrainingPeaksConnected: trainingPeaksIntegration?.isActive ?? false,
       trainingPeaksAthleteName: trainingPeaksIntegration?.providerAthleteName,
       trainingPeaksLastSyncAt: trainingPeaksIntegration?.lastSyncAt,
-      isGarminConnected: garminIntegration?.isActive ?? false,
+      isGarminConnected: isGarminActive,
       garminAthleteName: garminIntegration?.providerAthleteName,
+      isVdotConnected: vdotIntegration?.isActive ?? false,
+      vdotAthleteName: vdotIntegration?.providerAthleteName,
+      vdotLastSyncAt: vdotIntegration?.lastSyncAt,
     );
   }
 
@@ -462,6 +511,253 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         clearGarminAthleteName: true,
       ),
     );
+  }
+
+  /// Trigger Garmin's backfill API to retroactively push body composition +
+  /// user metrics (VO2 max, fitness age) into our `garmin-push` webhook.
+  ///
+  /// Garmin's Health API is push-only with no pull endpoint — without
+  /// backfill, weight from a manual Garmin Connect entry sits on Garmin's
+  /// side until the user's device organically syncs and triggers a push.
+  /// This call asks Garmin to deliver the last 90 days of body comp +
+  /// user metrics to us right now.
+  ///
+  /// Returns true if at least one summary type was queued successfully.
+  /// Returns false (and surfaces an error via snackbar in the caller) on
+  /// auth failure / network error / Garmin refusal.
+  Future<bool> triggerGarminBackfill() async {
+    final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
+    final session = supabaseClient.auth.currentSession;
+    final supabaseAccessToken = session?.accessToken;
+    if (supabaseAccessToken == null || supabaseAccessToken.isEmpty) {
+      if (kDebugMode) {
+        print('[syncGarmin] No Supabase session; cannot trigger backfill');
+      }
+      return false;
+    }
+
+    try {
+      final response = await supabaseClient.functions.invoke(
+        'garmin-backfill',
+        headers: {'Authorization': 'Bearer $supabaseAccessToken'},
+        body: {
+          'summary_types': ['body_composition', 'user_metrics'],
+          'window_days': 90,
+        },
+      );
+
+      if (response.status < 200 || response.status >= 300) {
+        if (kDebugMode) {
+          print(
+            '[syncGarmin] backfill HTTP ${response.status}: ${response.data}',
+          );
+        }
+        return false;
+      }
+
+      final data = response.data;
+      final success = data is Map && data['success'] == true;
+      if (!success) {
+        if (kDebugMode) {
+          print('[syncGarmin] backfill returned no success flag: $data');
+        }
+        return false;
+      }
+
+      // Garmin pushes the requested data asynchronously to our webhook.
+      // Invalidate the Supabase-backed body-comp provider so any consumers
+      // (Preferences auto-fill, Nutrition Diary attribution, body comp
+      // breakdown) re-read once the push lands. We give Garmin a few
+      // seconds to deliver before invalidating, then again after a longer
+      // delay in case the first push was slow.
+      Future<void>(() async {
+        await Future.delayed(const Duration(seconds: 5));
+        if (_currentUserId != null) {
+          ref.invalidate(garminLastBodyCompProvider(_currentUserId!));
+        }
+        await Future.delayed(const Duration(seconds: 15));
+        if (_currentUserId != null) {
+          ref.invalidate(garminLastBodyCompProvider(_currentUserId!));
+        }
+      });
+
+      return true;
+    } catch (e, st) {
+      if (kDebugMode) {
+        print('[syncGarmin] backfill invoke failed: $e\n$st');
+      }
+      return false;
+    }
+  }
+
+  Future<bool> connectVdot() async {
+    return _connectProvider(
+      providerId: 'vdot',
+      authenticate: () => _vdotOAuth.authenticate(_currentUserId!),
+      updateState: (athleteName) => state.value!.copyWith(
+        isConnecting: false,
+        clearConnectingProvider: true,
+        isVdotConnected: true,
+        vdotAthleteName: athleteName,
+      ),
+    );
+  }
+
+  Future<void> disconnectVdot() async {
+    await _disconnectProvider(
+      providerId: 'vdot',
+      disconnect: () => _vdotOAuth.disconnect(_currentUserId!),
+      updateState: () => state.value!.copyWith(
+        isVdotConnected: false,
+        clearVdotAthleteName: true,
+      ),
+    );
+  }
+
+  /// Sync workouts from V.O2 into the local activities table.
+  ///
+  /// Mirrors the FS / TP sync flow: uses the shared `_importWorkouts`
+  /// pipeline only loosely (VDOT's result shape diverges enough that we
+  /// inline the state management), and pushes dirty rows to Supabase
+  /// immediately after sync to avoid the duplicate-on-relogin trap.
+  Future<VdotSyncResult> importVdotWorkouts() async {
+    if (_currentUserId == null) {
+      return VdotSyncResult.error('Missing user ID');
+    }
+    if (_syncingProviders.contains('vdot')) {
+      if (kDebugMode) {
+        print('⚠️ vdot sync already in progress, skipping');
+      }
+      return const VdotSyncResult(success: true);
+    }
+    _syncingProviders.add('vdot');
+
+    state = AsyncData(
+      state.value!.copyWith(
+        isImporting: true,
+        syncingProvider: 'vdot',
+        importProgress: 0.0,
+        clearErrorMessage: true,
+        isNetworkError: false,
+      ),
+    );
+
+    try {
+      _trackIntegrationConnectStarted('vdot');
+      final result = await _vdotSync.syncWorkouts(_currentUserId!);
+
+      if (!ref.mounted) return result;
+
+      if (!result.success) {
+        if (result.needsReauth) {
+          // Don't flip isVdotConnected to false here — the DB integration
+          // row is still active (sync service only updated last_sync_status
+          // to 'requires_reauth'). Flipping the in-memory bool would create
+          // a mismatch between the visible button state ("Connect") and the
+          // DB state, so navigating away and back would revert to "Sync Now".
+          // Just surface the error and let the user manually disconnect if
+          // they actually need to re-OAuth.
+          state = AsyncData(
+            state.value!.copyWith(
+              isImporting: false,
+              clearSyncingProvider: true,
+              errorMessage: result.summary,
+            ),
+          );
+          _trackIntegrationSyncFailed(
+            'vdot',
+            'token_expired',
+            errorMessage: 'Requires re-authentication',
+          );
+          return result;
+        }
+        if (result.isNetworkError) {
+          state = AsyncData(
+            state.value!.copyWith(
+              isImporting: false,
+              clearSyncingProvider: true,
+              isNetworkError: true,
+              errorMessage: result.summary,
+            ),
+          );
+          _trackIntegrationSyncFailed(
+            'vdot',
+            'network_error',
+            errorMessage: result.error,
+          );
+          return result;
+        }
+        state = AsyncData(
+          state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            errorMessage: result.error ?? 'Failed to import workouts',
+          ),
+        );
+        _trackIntegrationSyncFailed(
+          'vdot',
+          result.errorType.name,
+          errorMessage: result.error,
+        );
+        return result;
+      }
+
+      // Upload dirty activities to Supabase immediately so duplicates don't
+      // appear after logout/relogin/resync (same pattern as FS/TP).
+      if ((result.newWorkouts > 0 || result.updated > 0) && !_isUsingTempUserId) {
+        try {
+          final uploadResult =
+              await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+          if (kDebugMode) {
+            if (uploadResult.success) {
+              print('☁️ Uploaded ${uploadResult.count} synced VDOT activities');
+            } else {
+              print('⚠️ VDOT activity upload failed: ${uploadResult.error}');
+            }
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('⚠️ Failed to upload synced VDOT activities: $e');
+          }
+        }
+      }
+
+      state = AsyncData(state.value!.copyWith(importProgress: 0.8));
+      _invalidateCalendar();
+
+      state = AsyncData(
+        state.value!.copyWith(
+          isImporting: false,
+          clearSyncingProvider: true,
+          importProgress: 1.0,
+          importedWorkoutsCount: result.newWorkouts,
+          isNetworkError: false,
+          clearErrorMessage: true,
+          vdotLastSyncAt: DateTime.now(),
+        ),
+      );
+
+      _trackIntegrationSyncSuccess(
+        'vdot',
+        result.newWorkouts,
+        skippedCount: result.skipped,
+      );
+      return result;
+    } catch (e) {
+      if (ref.mounted) {
+        state = AsyncData(
+          state.value!.copyWith(
+            isImporting: false,
+            clearSyncingProvider: true,
+            errorMessage: 'Failed to import workouts: $e',
+          ),
+        );
+      }
+      _trackIntegrationSyncFailed('vdot', 'exception', errorMessage: e.toString());
+      return VdotSyncResult.error(e.toString());
+    } finally {
+      _syncingProviders.remove('vdot');
+    }
   }
 
   /// Generic workout import helper to reduce duplication
@@ -944,6 +1240,10 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     }
     if (state.value?.isTrainingPeaksConnected == true) {
       final result = await importTrainingPeaksWorkouts();
+      return result.newWorkouts;
+    }
+    if (state.value?.isVdotConnected == true) {
+      final result = await importVdotWorkouts();
       return result.newWorkouts;
     }
     return 0;
