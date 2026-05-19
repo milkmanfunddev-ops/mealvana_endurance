@@ -52,7 +52,7 @@ class SingleSportHeroImage extends StatelessWidget {
               _ => 'Sport illustration',
             },
             errorBuilder: (context, error, stackTrace) {
-              return Icon(
+              return FaIcon(
                 FontAwesomeIcons.personRunning,
                 size: 120,
                 color: AppColors.cream.withValues(alpha: 0.5),

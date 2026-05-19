@@ -51,7 +51,7 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
         scrolledUnderElevation: 0,
         // leading: IconButton(
         //   icon: Icon(
-        //     FontAwesomeIcons.chevronLeft,
+        //     FontAwesomeIcons.chevronLeft.data,
         //     size: AppIconSizes.sm,
         //     color: Theme.of(context).colorScheme.onSurface,
         //   ),
@@ -67,7 +67,7 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
         actions: [
           //   IconButton(
           //     icon: Icon(
-          //       FontAwesomeIcons.house,
+          //       FontAwesomeIcons.house.data,
           //       size: AppIconSizes.sm,
           //       color: Theme.of(context).colorScheme.onSurface,
           //     ),
@@ -215,7 +215,7 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                   child: KylePrimaryButton(
                     key: const ValueKey('my_events.new_event_button'),
                     text: 'New Event',
-                    icon: FontAwesomeIcons.plus,
+                    icon: FontAwesomeIcons.plus.data,
                     isFullWidth: false,
                     onPressed: _openCreateEvent,
                   ),
@@ -232,7 +232,7 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.circleExclamation,
                 size: AppIconSizes.xl,
                 color: AppColors.dragonfruit,

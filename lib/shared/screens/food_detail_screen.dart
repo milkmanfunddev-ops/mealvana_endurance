@@ -505,7 +505,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
           if (widget.mode == FoodDetailMode.editExisting && widget.allowDelete)
             IconButton(
               onPressed: _handleDelete,
-              icon: Icon(
+              icon: FaIcon(
                 FontAwesomeIcons.trash,
                 color: Colors.red.shade400,
                 size: AppIconSizes.md,
@@ -546,7 +546,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                                     : Colors.grey[200],
                                 borderRadius: AppRadius.cardRadius,
                               ),
-                              child: Icon(
+                              child: FaIcon(
                                 FontAwesomeIcons.utensils,
                                 size: 40,
                                 color: Theme.of(

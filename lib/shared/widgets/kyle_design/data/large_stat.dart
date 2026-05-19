@@ -132,13 +132,13 @@ class PaceBurnDisplay extends ConsumerWidget {
     return LargeStatDisplay(
       stats: [
         StatItem(
-          icon: FontAwesomeIcons.clock,
+          icon: FontAwesomeIcons.clock.data,
           label: 'PACE',
           value: pace,
           iconColor: Colors.orange,
         ),
         StatItem(
-          icon: FontAwesomeIcons.fire,
+          icon: FontAwesomeIcons.fire.data,
           label: 'TOTAL BURN',
           value: totalBurn,
           iconColor: AppColors.dragonfruit,
@@ -169,13 +169,13 @@ class DistanceTimeDisplay extends ConsumerWidget {
     return LargeStatDisplay(
       stats: [
         StatItem(
-          icon: FontAwesomeIcons.route,
+          icon: FontAwesomeIcons.route.data,
           label: 'DISTANCE',
           value: distance,
           iconColor: AppColors.electrolyte,
         ),
         StatItem(
-          icon: FontAwesomeIcons.clock,
+          icon: FontAwesomeIcons.clock.data,
           label: 'DURATION',
           value: duration,
           iconColor: AppColors.orange,

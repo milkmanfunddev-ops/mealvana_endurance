@@ -44,23 +44,23 @@ class KyleActivityIcon extends ConsumerWidget {
   IconData _getIconForActivityType(KyleActivityType type) {
     switch (type) {
       case KyleActivityType.running:
-        return FontAwesomeIcons.personRunning;
+        return FontAwesomeIcons.personRunning.data;
       case KyleActivityType.cycling:
-        return FontAwesomeIcons.personBiking;
+        return FontAwesomeIcons.personBiking.data;
       case KyleActivityType.swimming:
-        return FontAwesomeIcons.personSwimming;
+        return FontAwesomeIcons.personSwimming.data;
       case KyleActivityType.triathlon:
-        return FontAwesomeIcons.medal;
+        return FontAwesomeIcons.medal.data;
       case KyleActivityType.strength:
-        return FontAwesomeIcons.dumbbell;
+        return FontAwesomeIcons.dumbbell.data;
       case KyleActivityType.yoga:
-        return FontAwesomeIcons.spa;
+        return FontAwesomeIcons.spa.data;
       case KyleActivityType.hiking:
-        return FontAwesomeIcons.personHiking;
+        return FontAwesomeIcons.personHiking.data;
       case KyleActivityType.walking:
-        return FontAwesomeIcons.personWalking;
+        return FontAwesomeIcons.personWalking.data;
       case KyleActivityType.other:
-        return FontAwesomeIcons.circle;
+        return FontAwesomeIcons.circle.data;
     }
   }
 }
@@ -158,23 +158,23 @@ class KyleActivityTypeSelectorIcon extends ConsumerWidget {
   IconData _getIconForActivityType(KyleActivityType type) {
     switch (type) {
       case KyleActivityType.running:
-        return FontAwesomeIcons.personRunning;
+        return FontAwesomeIcons.personRunning.data;
       case KyleActivityType.cycling:
-        return FontAwesomeIcons.personBiking;
+        return FontAwesomeIcons.personBiking.data;
       case KyleActivityType.swimming:
-        return FontAwesomeIcons.personSwimming;
+        return FontAwesomeIcons.personSwimming.data;
       case KyleActivityType.triathlon:
-        return FontAwesomeIcons.medal;
+        return FontAwesomeIcons.medal.data;
       case KyleActivityType.strength:
-        return FontAwesomeIcons.dumbbell;
+        return FontAwesomeIcons.dumbbell.data;
       case KyleActivityType.yoga:
-        return FontAwesomeIcons.spa;
+        return FontAwesomeIcons.spa.data;
       case KyleActivityType.hiking:
-        return FontAwesomeIcons.personHiking;
+        return FontAwesomeIcons.personHiking.data;
       case KyleActivityType.walking:  
-        return FontAwesomeIcons.personWalking;
+        return FontAwesomeIcons.personWalking.data;
       case KyleActivityType.other:
-        return FontAwesomeIcons.circle;
+        return FontAwesomeIcons.circle.data;
     }
   }
 }

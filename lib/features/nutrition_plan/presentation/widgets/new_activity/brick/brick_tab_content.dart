@@ -343,7 +343,7 @@ class _ExpandableSegmentCardState extends State<_ExpandableSegmentCard> {
     }
   }
 
-  IconData _getSportIcon(String sport) {
+  FaIconData _getSportIcon(String sport) {
     switch (sport) {
       case 'swimming':
         return FontAwesomeIcons.personSwimming;

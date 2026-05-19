@@ -93,7 +93,7 @@ class RecommendedAlternatives extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.utensils,
                 size: AppIconSizes.xl,
                 color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),

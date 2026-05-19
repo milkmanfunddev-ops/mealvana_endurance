@@ -21,7 +21,7 @@ class EventsEmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.calendarDay,
               size: AppIconSizes.xxl,
               color: Theme.of(
@@ -50,7 +50,7 @@ class EventsEmptyState extends StatelessWidget {
               KylePrimaryButton(
                 key: const ValueKey('my_events.new_event_button'),
                 text: 'New Event',
-                icon: FontAwesomeIcons.plus,
+                icon: FontAwesomeIcons.plus.data,
                 isFullWidth: false,
                 onPressed: onCreateEvent,
               ),

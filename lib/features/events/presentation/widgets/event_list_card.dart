@@ -51,7 +51,7 @@ class EventListCard extends StatelessWidget {
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: AppSpacing.lg),
-        child: const Icon(
+        child: const FaIcon(
           FontAwesomeIcons.trash,
           color: Colors.white,
           size: AppIconSizes.md,
@@ -126,7 +126,7 @@ class EventListCard extends StatelessWidget {
                 ),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: FaIcon(
                 FontAwesomeIcons.calendarDay,
                 color: AppColors.electrolyte.withValues(
                   alpha: isPast ? 0.5 : 1.0,
@@ -154,7 +154,7 @@ class EventListCard extends StatelessWidget {
                   if (event.location != null) ...[
                     Row(
                       children: [
-                        Icon(
+                        FaIcon(
                           FontAwesomeIcons.locationDot,
                           size: AppIconSizes.xs,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -180,7 +180,7 @@ class EventListCard extends StatelessWidget {
                   if (event.formattedGoalTime != null) ...[
                     Row(
                       children: [
-                        Icon(
+                        FaIcon(
                           FontAwesomeIcons.clock,
                           size: AppIconSizes.xs,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,

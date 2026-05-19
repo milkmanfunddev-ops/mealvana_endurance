@@ -73,7 +73,7 @@ class RaceChecklistScreen extends ConsumerWidget {
             margin: AppSpacing.screenPaddingHorizontal,
             child: Column(
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.listCheck,
                   size: 48,
                   color: AppColors.electrolyte,
@@ -117,7 +117,7 @@ class RaceChecklistScreen extends ConsumerWidget {
                   ref,
                   cardKey: const ValueKey('checklist.gear_section'),
                   title: 'Race Day Gear',
-                  icon: FontAwesomeIcons.shirt,
+                  icon: FontAwesomeIcons.shirt.data,
                   items: gearItems,
                   category: 'gear',
                 ),
@@ -133,7 +133,7 @@ class RaceChecklistScreen extends ConsumerWidget {
                   ref,
                   cardKey: const ValueKey('checklist.nutrition_section'),
                   title: 'Nutrition',
-                  icon: FontAwesomeIcons.appleWhole,
+                  icon: FontAwesomeIcons.appleWhole.data,
                   items: nutritionItems,
                   category: 'nutrition',
                 )
@@ -183,7 +183,7 @@ class RaceChecklistScreen extends ConsumerWidget {
                           ),
                           child: Row(
                             children: [
-                              Icon(
+                              FaIcon(
                                 FontAwesomeIcons.circleCheck,
                                 size: AppIconSizes.sm,
                                 color: AppColors.electrolyte,
@@ -235,8 +235,8 @@ class RaceChecklistScreen extends ConsumerWidget {
           children: [
             Icon(
               isChecked
-                  ? FontAwesomeIcons.solidSquareCheck
-                  : FontAwesomeIcons.square,
+                  ? FontAwesomeIcons.solidSquareCheck.data
+                  : FontAwesomeIcons.square.data,
               size: AppIconSizes.sm,
               color: isChecked
                   ? AppColors.electrolyte
@@ -269,7 +269,7 @@ class RaceChecklistScreen extends ConsumerWidget {
       margin: AppSpacing.screenPaddingHorizontal,
       child: Column(
         children: [
-          Icon(
+          FaIcon(
             FontAwesomeIcons.boxOpen,
             size: 48,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -301,7 +301,7 @@ class RaceChecklistScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.triangleExclamation,
               size: 48,
               color: Theme.of(context).colorScheme.error,
@@ -450,7 +450,7 @@ class RaceChecklistScreen extends ConsumerWidget {
                     color: Theme.of(context).colorScheme.error,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.trash,
                     color: Colors.white,
                     size: AppIconSizes.sm,
@@ -539,7 +539,7 @@ class RaceChecklistScreen extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  FaIcon(
                     FontAwesomeIcons.plus,
                     size: AppIconSizes.xs,
                     color: AppColors.electrolyte,
@@ -568,7 +568,7 @@ class RaceChecklistScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.appleWhole,
                 size: AppIconSizes.sm,
                 color: AppColors.electrolyte,
@@ -583,7 +583,7 @@ class RaceChecklistScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Icon(
+          FaIcon(
             FontAwesomeIcons.bottleWater,
             size: 40,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -611,7 +611,7 @@ class RaceChecklistScreen extends ConsumerWidget {
               context.pop();
             },
             text: 'Create Nutrition Plan',
-            icon: FontAwesomeIcons.plus,
+            icon: FontAwesomeIcons.plus.data,
           ),
         ],
       ),

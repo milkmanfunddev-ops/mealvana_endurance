@@ -894,7 +894,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                     Center(
                       child: TextButton.icon(
                         onPressed: _onClearSearch,
-                        icon: const Icon(
+                        icon: const FaIcon(
                           FontAwesomeIcons.xmark,
                           size: 16,
                           color: AppColors.orange,
@@ -918,7 +918,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                     child: TextButton.icon(
                       key: const ValueKey('food_likes.create_custom_button'),
                       onPressed: _openCreateFoodScreen,
-                      icon: const Icon(
+                      icon: const FaIcon(
                         FontAwesomeIcons.plus,
                         size: 14,
                         color: AppColors.orange,

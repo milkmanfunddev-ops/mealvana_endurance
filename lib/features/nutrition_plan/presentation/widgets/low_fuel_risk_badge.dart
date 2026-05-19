@@ -120,7 +120,7 @@ class LowFuelRiskBadge extends StatelessWidget {
               color: AppColors.dragonfruit.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: FaIcon(
               FontAwesomeIcons.bolt,
               color: AppColors.dragonfruit,
               size: 16,

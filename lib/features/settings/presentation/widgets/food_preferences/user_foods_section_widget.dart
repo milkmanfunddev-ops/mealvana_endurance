@@ -40,7 +40,7 @@ class UserFoodsSectionWidget extends StatelessWidget {
           // Section header
           Row(
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.circlePlus,
                 size: AppIconSizes.md,
                 color: AppColors.electrolyte,

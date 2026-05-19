@@ -43,46 +43,20 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
 
-    # Patrol: add PATROL_ENABLED Swift flag so the patrol pod compiles its
-    # native automator code (otherwise it ships as a no-op).
+    # Patrol gates its native automation code behind `#if PATROL_ENABLED`.
+    # Setting that flag in Debug only keeps the test-time automator
+    # available locally / for CI integration runs, while Release builds
+    # compile patrol as a no-op shell — no IOSAutomator, no `terminate`
+    # selector reference, no App Store IPA validator rejection.
+    # (See Apple error: "The app references non-public selectors in
+    # Payload/Runner.app/Frameworks/patrol.framework/patrol: terminate")
     if target.name == 'patrol'
       target.build_configurations.each do |config|
         config.build_settings['OTHER_SWIFT_FLAGS'] ||= '$(inherited)'
-        config.build_settings['OTHER_SWIFT_FLAGS'] += ' -D PATROL_ENABLED'
+        if config.name.start_with?('Debug')
+          config.build_settings['OTHER_SWIFT_FLAGS'] += ' -D PATROL_ENABLED'
+        end
       end
-    end
-  end
-
-  # Apple's App Store IPA validator rejects builds that bundle
-  # patrol.framework because Patrol's native plugin references the private
-  # `terminate` selector. Patrol is only needed inside the RunnerUITests
-  # target (it drives UI automation during integration tests), so we strip
-  # it out of the main Runner target's xcconfigs + embed-frameworks script
-  # after pod install runs. RunnerUITests keeps its own
-  # Pods-Runner-RunnerUITests xcconfigs untouched, so `patrol test`
-  # continues to work.
-  pods_runner_dir = File.join(__dir__, 'Pods', 'Target Support Files', 'Pods-Runner')
-
-  Dir.glob(File.join(pods_runner_dir, 'Pods-Runner.*.xcconfig')).each do |file|
-    original = File.read(file)
-    cleaned = original
-      .gsub(/\s+-framework\s+"patrol"/, '')
-      .gsub(/\s+"\$\{PODS_CONFIGURATION_BUILD_DIR\}\/patrol"/, '')
-      .gsub(/\s+"\$\{PODS_CONFIGURATION_BUILD_DIR\}\/patrol\/[^"]+"/, '')
-      .gsub(/\s+"-F\$\{PODS_CONFIGURATION_BUILD_DIR\}\/patrol"/, '')
-    if cleaned != original
-      File.write(file, cleaned)
-      puts "[Podfile] Stripped patrol from #{File.basename(file)}"
-    end
-  end
-
-  frameworks_script = File.join(pods_runner_dir, 'Pods-Runner-frameworks.sh')
-  if File.exist?(frameworks_script)
-    original = File.read(frameworks_script)
-    cleaned = original.gsub(/^\s*install_framework\s+"[^"]*patrol\.framework"\s*\n/, '')
-    if cleaned != original
-      File.write(frameworks_script, cleaned)
-      puts "[Podfile] Removed patrol.framework install step from Pods-Runner-frameworks.sh"
     end
   end
 end

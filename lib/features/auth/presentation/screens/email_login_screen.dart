@@ -162,7 +162,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                         'auth.email_signup.email_hint',
                         defaultValue: 'you@example.com',
                       ),
-                      prefixIcon: Icon(
+                      prefixIcon: FaIcon(
                         FontAwesomeIcons.envelope,
                         size: AppIconSizes.controlIcon,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -194,7 +194,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                         'auth.email_signup.password_hint',
                         defaultValue: 'Enter your password',
                       ),
-                      prefixIcon: Icon(
+                      prefixIcon: FaIcon(
                         FontAwesomeIcons.lock,
                         size: AppIconSizes.controlIcon,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -206,8 +206,8 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                             : 'Hide password',
                         icon: Icon(
                           _obscurePassword
-                              ? FontAwesomeIcons.eye
-                              : FontAwesomeIcons.eyeSlash,
+                              ? FontAwesomeIcons.eye.data
+                              : FontAwesomeIcons.eyeSlash.data,
                           size: AppIconSizes.controlIcon,
                         ),
                         onPressed: () {

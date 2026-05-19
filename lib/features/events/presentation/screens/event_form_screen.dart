@@ -607,7 +607,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         scrolledUnderElevation: 0,
         leading: IconButton(
           key: const ValueKey('event_create.close_button'),
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.xmark,
             size: AppIconSizes.sm,
             color: Theme.of(context).colorScheme.onSurface,
@@ -624,7 +624,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         actions: [
           IconButton(
             key: const ValueKey('event_create.home_button'),
-            icon: Icon(
+            icon: FaIcon(
               FontAwesomeIcons.house,
               size: AppIconSizes.sm,
               color: Theme.of(context).colorScheme.onSurface,
@@ -820,7 +820,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                                         : null;
                                     return ListTile(
                                       dense: true,
-                                      leading: Icon(
+                                      leading: FaIcon(
                                         FontAwesomeIcons.calendarDay,
                                         size: AppIconSizes.sm,
                                         color: AppColors.electrolyte,
@@ -904,7 +904,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                                   width: 2,
                                 ),
                               ),
-                              prefixIcon: Icon(
+                              prefixIcon: FaIcon(
                                 FontAwesomeIcons.locationDot,
                                 size: AppIconSizes.sm,
                                 color: AppColors.electrolyte,
@@ -967,7 +967,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                                         );
                                     return ListTile(
                                       dense: true,
-                                      leading: Icon(
+                                      leading: FaIcon(
                                         FontAwesomeIcons.locationDot,
                                         size: AppIconSizes.sm,
                                         color: AppColors.electrolyte,
@@ -1005,7 +1005,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                       OutlinedButton.icon(
                         key: const ValueKey('event_create.date_button'),
                         onPressed: _selectDate,
-                        icon: Icon(
+                        icon: FaIcon(
                           FontAwesomeIcons.calendar,
                           size: AppIconSizes.sm,
                           color: AppColors.electrolyte,
@@ -1045,7 +1045,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                       OutlinedButton.icon(
                         key: const ValueKey('event_create.time_button'),
                         onPressed: _selectTime,
-                        icon: Icon(
+                        icon: FaIcon(
                           FontAwesomeIcons.clock,
                           size: AppIconSizes.sm,
                           color: AppColors.electrolyte,
@@ -1361,7 +1361,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                                   width: 2,
                                 ),
                               ),
-                              prefixIcon: Icon(
+                              prefixIcon: FaIcon(
                                 FontAwesomeIcons.link,
                                 size: AppIconSizes.sm,
                                 color: AppColors.electrolyte,
@@ -1408,7 +1408,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                                   width: 2,
                                 ),
                               ),
-                              prefixIcon: Icon(
+                              prefixIcon: FaIcon(
                                 FontAwesomeIcons.hashtag,
                                 size: AppIconSizes.sm,
                                 color: AppColors.electrolyte,
@@ -1427,8 +1427,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                         onPressed: _isSaving ? null : _handleSave,
                         text: isEditMode ? 'Save Changes' : 'Create Event',
                         icon: isEditMode
-                            ? FontAwesomeIcons.check
-                            : FontAwesomeIcons.plus,
+                            ? FontAwesomeIcons.check.data
+                            : FontAwesomeIcons.plus.data,
                         isLoading: _isSaving,
                       ),
 

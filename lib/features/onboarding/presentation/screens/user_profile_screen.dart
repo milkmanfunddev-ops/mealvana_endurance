@@ -337,7 +337,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        const FaIcon(
                           FontAwesomeIcons.circleExclamation,
                           color: AppColors.dragonfruit,
                           size: AppIconSizes.controlIcon,
@@ -397,7 +397,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   controller: _firstNameController,
                   label: 'First Name',
                   hint: 'First name',
-                  icon: FontAwesomeIcons.user,
+                  icon: FontAwesomeIcons.user.data,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -410,7 +410,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   controller: _lastNameController,
                   label: 'Last Name',
                   hint: 'Last name',
-                  icon: FontAwesomeIcons.user,
+                  icon: FontAwesomeIcons.user.data,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -427,7 +427,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             controller: _emailController,
             label: 'Email',
             hint: 'Email address',
-            icon: FontAwesomeIcons.envelope,
+            icon: FontAwesomeIcons.envelope.data,
             keyboardType: TextInputType.emailAddress,
           ),
 
@@ -477,7 +477,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   controller: _heightFeetController,
                   label: 'Feet',
                   hint: 'ft',
-                  icon: FontAwesomeIcons.rulerVertical,
+                  icon: FontAwesomeIcons.rulerVertical.data,
                   keyboardType: TextInputType.number,
                   suffix: 'ft',
                   validator: (value) {
@@ -500,7 +500,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   controller: _heightInchesController,
                   label: 'Inches',
                   hint: 'in',
-                  icon: FontAwesomeIcons.rulerVertical,
+                  icon: FontAwesomeIcons.rulerVertical.data,
                   keyboardType: TextInputType.number,
                   suffix: 'in',
                   validator: (value) {
@@ -556,7 +556,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         ? 'Weight (from Garmin Connect)'
                         : 'Weight',
                     hint: 'Enter your weight',
-                    icon: FontAwesomeIcons.weightScale,
+                    icon: FontAwesomeIcons.weightScale.data,
                     keyboardType: TextInputType.number,
                     suffix: 'lbs',
                     validator: (value) {
@@ -674,7 +674,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   //                   ),
   //                   child: _runsWithWaterBottle
   //                       ? const Icon(
-  //                           FontAwesomeIcons.check,
+  //                           FontAwesomeIcons.check.data,
   //                           size: 14,
   //                           color: AppColors.cream,
   //                         )
@@ -807,7 +807,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             ),
             child: Row(
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.calendar,
                   size: AppIconSizes.controlIcon,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -949,10 +949,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             // Icon based on gender
             Icon(
               value == Gender.male
-                  ? FontAwesomeIcons.mars
+                  ? FontAwesomeIcons.mars.data
                   : value == Gender.female
-                  ? FontAwesomeIcons.venus
-                  : FontAwesomeIcons.genderless,
+                  ? FontAwesomeIcons.venus.data
+                  : FontAwesomeIcons.genderless.data,
               size: 28,
               color: isSelected
                   ? (isDark ? AppColors.blackberry : AppColors.cream)

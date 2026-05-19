@@ -249,7 +249,7 @@ class _CarbLoadingFoodSelectionScreenState
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Row(
                 children: [
-                  Icon(
+                  FaIcon(
                     FontAwesomeIcons.solidHeart,
                     size: AppIconSizes.sm,
                     color: AppColors.dragonfruit,
@@ -282,8 +282,8 @@ class _CarbLoadingFoodSelectionScreenState
                   const Spacer(),
                   Icon(
                     _isMyFoodsExpanded
-                        ? FontAwesomeIcons.chevronUp
-                        : FontAwesomeIcons.chevronDown,
+                        ? FontAwesomeIcons.chevronUp.data
+                        : FontAwesomeIcons.chevronDown.data,
                     size: AppIconSizes.sm,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -320,7 +320,7 @@ class _CarbLoadingFoodSelectionScreenState
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Row(
                 children: [
-                  Icon(
+                  FaIcon(
                     FontAwesomeIcons.solidHeart,
                     size: AppIconSizes.sm,
                     color: AppColors.orange,
@@ -353,8 +353,8 @@ class _CarbLoadingFoodSelectionScreenState
                   const Spacer(),
                   Icon(
                     _isNutritionPlanUserFoodsExpanded
-                        ? FontAwesomeIcons.chevronUp
-                        : FontAwesomeIcons.chevronDown,
+                        ? FontAwesomeIcons.chevronUp.data
+                        : FontAwesomeIcons.chevronDown.data,
                     size: AppIconSizes.sm,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -378,7 +378,7 @@ class _CarbLoadingFoodSelectionScreenState
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Row(
                 children: [
-                  Icon(
+                  FaIcon(
                     FontAwesomeIcons.utensils,
                     size: AppIconSizes.sm,
                     color: AppColors.electrolyte,
@@ -411,8 +411,8 @@ class _CarbLoadingFoodSelectionScreenState
                   const Spacer(),
                   Icon(
                     _isNutritionPlanFoodsExpanded
-                        ? FontAwesomeIcons.chevronUp
-                        : FontAwesomeIcons.chevronDown,
+                        ? FontAwesomeIcons.chevronUp.data
+                        : FontAwesomeIcons.chevronDown.data,
                     size: AppIconSizes.sm,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -487,7 +487,7 @@ class _CarbLoadingFoodSelectionScreenState
           return FloatingActionButton.extended(
             onPressed: _navigateToCustomFoodEntry,
             backgroundColor: AppColors.orange,
-            icon: const Icon(
+            icon: const FaIcon(
               FontAwesomeIcons.plus,
               color: AppColors.textLight,
               size: AppIconSizes.controlIcon,
@@ -554,7 +554,7 @@ class _CarbLoadingFoodSelectionScreenState
                           Center(
                             child: TextButton.icon(
                               onPressed: _onClearSearch,
-                              icon: const Icon(
+                              icon: const FaIcon(
                                 FontAwesomeIcons.xmark,
                                 size: AppIconSizes.sm,
                                 color: AppColors.orange,
@@ -914,7 +914,7 @@ class _CarbLoadingFoodSelectionScreenState
                 // Show edit button for custom foods, customize button for templates
                 if (isCustom)
                   IconButton(
-                    icon: Icon(
+                    icon: FaIcon(
                       FontAwesomeIcons.penToSquare,
                       color: AppColors.electrolyte.withValues(alpha: 0.7),
                       size: AppIconSizes.sm,
@@ -927,7 +927,7 @@ class _CarbLoadingFoodSelectionScreenState
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: Icon(
+                        icon: FaIcon(
                           FontAwesomeIcons.copy,
                           color: AppColors.electrolyte.withValues(alpha: 0.7),
                           size: AppIconSizes.sm,
@@ -936,7 +936,7 @@ class _CarbLoadingFoodSelectionScreenState
                         tooltip: 'Duplicate & customize',
                       ),
                       const SizedBox(width: AppSpacing.xs),
-                      Icon(
+                      FaIcon(
                         FontAwesomeIcons.circlePlus,
                         color: AppColors.orange,
                         size: AppIconSizes.md,

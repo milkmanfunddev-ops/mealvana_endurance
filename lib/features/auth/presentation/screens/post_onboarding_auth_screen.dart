@@ -530,7 +530,7 @@ class _PostOnboardingAuthScreenState
                       'auth.post_onboarding.apple_button',
                       defaultValue: 'Continue with Apple',
                     ),
-                    icon: FontAwesomeIcons.apple,
+                    icon: FontAwesomeIcons.apple.data,
                     onPressed: asyncState.isLoading ? null : _handleAppleSignIn,
                     isLoading: asyncState.isLoading,
                   ),
@@ -549,7 +549,7 @@ class _PostOnboardingAuthScreenState
                     'auth.post_onboarding.google_button',
                     defaultValue: 'Continue with Google',
                   ),
-                  icon: FontAwesomeIcons.google,
+                  icon: FontAwesomeIcons.google.data,
                   onPressed: asyncState.isLoading ? null : _handleGoogleSignIn,
                   isLoading: asyncState.isLoading,
                 ),
@@ -728,7 +728,7 @@ class _PostOnboardingAuthScreenState
           // Benefits title
           Row(
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.circleCheck,
                 size: AppIconSizes.md,
                 color: AppColors.electrolyte,
@@ -756,7 +756,7 @@ class _PostOnboardingAuthScreenState
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
+                  FaIcon(
                     FontAwesomeIcons.check,
                     size: AppIconSizes.sm,
                     color: AppColors.electrolyte,

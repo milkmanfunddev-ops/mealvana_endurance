@@ -337,7 +337,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
               ),
               TextButton.icon(
                 onPressed: _showHowToTestSheet,
-                icon: const Icon(
+                icon: const FaIcon(
                   FontAwesomeIcons.circleInfo,
                   size: 14,
                   color: AppColors.orange,
@@ -384,7 +384,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
               context,
               hint: 'e.g. 800',
               suffix: 'mg/L',
-              icon: FontAwesomeIcons.droplet,
+              icon: FontAwesomeIcons.droplet.data,
             ),
             style: AppTextStyles.bodyMedium.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
@@ -486,7 +486,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
             context,
             hint: _showOzHr ? 'e.g. 44' : 'e.g. 1300',
             suffix: _showOzHr ? 'oz/hr' : 'mL/hr',
-            icon: FontAwesomeIcons.personRunning,
+            icon: FontAwesomeIcons.personRunning.data,
           ),
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
@@ -527,7 +527,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
         ),
         child: Row(
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.calendar,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -550,7 +550,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
                 onTap: () => ref
                     .read(sweatProfileControllerProvider.notifier)
                     .setSweatTestDate(null),
-                child: Icon(
+                child: FaIcon(
                   FontAwesomeIcons.xmark,
                   size: 14,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -582,7 +582,7 @@ class _SweatProfileScreenState extends ConsumerState<SweatProfileScreen> {
       decoration: _inputDecoration(
         context,
         hint: '',
-        icon: FontAwesomeIcons.vial,
+        icon: FontAwesomeIcons.vial.data,
       ),
       items: sources
           .map(

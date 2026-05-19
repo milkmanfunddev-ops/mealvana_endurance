@@ -155,7 +155,7 @@ class _PaceControl extends StatelessWidget {
           children: [
             // Minus button
             _ControlButton(
-              icon: FontAwesomeIcons.minus,
+              icon: FontAwesomeIcons.minus.data,
               onPressed: paceMinutes > 4.0
                   ? () => onChanged((paceMinutes - 0.08333).clamp(4.0, 20.0))
                   : null,
@@ -177,7 +177,7 @@ class _PaceControl extends StatelessWidget {
             const SizedBox(width: AppSpacing.xl),
             // Plus button
             _ControlButton(
-              icon: FontAwesomeIcons.plus,
+              icon: FontAwesomeIcons.plus.data,
               onPressed: paceMinutes < 20.0
                   ? () => onChanged((paceMinutes + 0.08333).clamp(4.0, 20.0))
                   : null,

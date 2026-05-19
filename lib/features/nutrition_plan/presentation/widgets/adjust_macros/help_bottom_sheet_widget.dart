@@ -232,8 +232,8 @@ class _HelpBottomSheetWidgetState extends ConsumerState<HelpBottomSheetWidget> {
                   ),
                   Icon(
                     isExpanded
-                        ? FontAwesomeIcons.chevronUp
-                        : FontAwesomeIcons.chevronDown,
+                        ? FontAwesomeIcons.chevronUp.data
+                        : FontAwesomeIcons.chevronDown.data,
                     size: 16,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),

@@ -22,7 +22,7 @@ class NoNutritionPlanState extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.utensils,
                 size: AppIconSizes.xl,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -47,7 +47,7 @@ class NoNutritionPlanState extends StatelessWidget {
               KylePrimaryButton(
                 onPressed: onGeneratePlan,
                 text: 'Generate Plan',
-                icon: FontAwesomeIcons.wandMagicSparkles,
+                icon: FontAwesomeIcons.wandMagicSparkles.data,
               ),
             ],
           ),

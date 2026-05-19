@@ -92,7 +92,7 @@ class NewActivityDateTimeSection extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.penToSquare,
                 size: 14,
                 color: AppColors.dragonfruit,

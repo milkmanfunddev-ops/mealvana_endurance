@@ -62,7 +62,7 @@ class SportPreferencesHubScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          const FaIcon(
             FontAwesomeIcons.circleExclamation,
             color: AppColors.dragonfruit,
             size: 64,
@@ -97,7 +97,7 @@ class SportPreferencesHubScreen extends ConsumerWidget {
                   context: context,
                   ref: ref,
                   tileKey: const ValueKey('sport_prefs.running_row'),
-                  icon: FontAwesomeIcons.personRunning,
+                  icon: FontAwesomeIcons.personRunning.data,
                   title: 'Running Preferences',
                   subtitle: _getRunningSubtitle(state),
                   route: '/settings/running-details',
@@ -111,7 +111,7 @@ class SportPreferencesHubScreen extends ConsumerWidget {
                   context: context,
                   ref: ref,
                   tileKey: const ValueKey('sport_prefs.cycling_row'),
-                  icon: FontAwesomeIcons.personBiking,
+                  icon: FontAwesomeIcons.personBiking.data,
                   title: 'Cycling Preferences',
                   subtitle: _getCyclingSubtitle(state),
                   route: '/settings/cycling-details',
@@ -125,7 +125,7 @@ class SportPreferencesHubScreen extends ConsumerWidget {
                   context: context,
                   ref: ref,
                   tileKey: const ValueKey('sport_prefs.swimming_row'),
-                  icon: FontAwesomeIcons.personSwimming,
+                  icon: FontAwesomeIcons.personSwimming.data,
                   title: 'Swimming Preferences',
                   subtitle: _getSwimmingSubtitle(state),
                   route: '/settings/swimming-details',
@@ -202,7 +202,7 @@ class SportPreferencesHubScreen extends ConsumerWidget {
               ),
             ),
 
-            Icon(
+            FaIcon(
               FontAwesomeIcons.chevronRight,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,

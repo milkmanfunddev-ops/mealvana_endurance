@@ -123,7 +123,7 @@ class _SportCategoryButton extends StatelessWidget {
     );
   }
 
-  IconData _getIconForCategory(ActivityType category) {
+  FaIconData _getIconForCategory(ActivityType category) {
     switch (category) {
       case ActivityType.running:
         return FontAwesomeIcons.personRunning;

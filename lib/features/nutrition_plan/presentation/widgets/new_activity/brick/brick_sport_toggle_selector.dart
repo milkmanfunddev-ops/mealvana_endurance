@@ -101,7 +101,7 @@ class BrickSportToggleSelector extends StatelessWidget {
 /// Individual sport toggle button
 class _SportToggleButton extends StatelessWidget {
   final String sport;
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final bool isSelected;
   final VoidCallback onTap;

@@ -93,7 +93,7 @@ class WelcomeScreen extends ConsumerWidget {
         //     shape: BoxShape.circle,
         //   ),
         //   child: Icon(
-        //     FontAwesomeIcons.personRunning,
+        //     FontAwesomeIcons.personRunning.data,
         //     size: AppIconSizes.xl,
         //     color: AppColors.cream,
         //   ),

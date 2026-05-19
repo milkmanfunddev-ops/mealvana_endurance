@@ -429,7 +429,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Row(
                       children: [
-                        Icon(
+                        FaIcon(
                           FontAwesomeIcons.barcode,
                           color: AppColors.orange,
                           size: AppIconSizes.controlIcon,
@@ -456,7 +456,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                             ],
                           ),
                         ),
-                        Icon(
+                        FaIcon(
                           FontAwesomeIcons.chevronRight,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           size: AppIconSizes.chevron,
@@ -483,7 +483,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      FaIcon(
                         FontAwesomeIcons.triangleExclamation,
                         color: AppColors.dragonfruit,
                         size: AppIconSizes.controlIcon,
@@ -531,7 +531,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        FaIcon(
                           FontAwesomeIcons.magnifyingGlass,
                           size: 48,
                           color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
@@ -582,14 +582,14 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                           width: AppIconSizes.foodIcon,
                           height: AppIconSizes.foodIcon,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
+                          errorBuilder: (context, error, stackTrace) => FaIcon(
                             FontAwesomeIcons.utensils,
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                             size: AppIconSizes.controlIcon,
                           ),
                         ),
                       )
-                    : Icon(
+                    : FaIcon(
                         FontAwesomeIcons.utensils,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         size: AppIconSizes.controlIcon,
@@ -626,7 +626,7 @@ class _AddFoodScreenState extends ConsumerState<AddFoodScreen> {
                 ),
               ),
 
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.chevronRight,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 size: AppIconSizes.chevron,

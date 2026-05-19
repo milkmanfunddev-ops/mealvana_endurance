@@ -190,7 +190,7 @@ class ActivityDetailAppBar extends ConsumerWidget
       // Save as Template button (only for existing activities with a nutrition plan)
       if (!isNewActivity && !isCoachView && !isCompleted)
         IconButton(
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.bookmark,
             size: AppIconSizes.md,
             color: AppColors.electrolyte,
@@ -201,7 +201,7 @@ class ActivityDetailAppBar extends ConsumerWidget
       // Edit button for existing activities (not new ones, not coach view)
       if (!isNewActivity && !isCoachView && !isCompleted)
         IconButton(
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.penToSquare,
             size: AppIconSizes.md,
             color: Theme.of(context).colorScheme.onSurface,
@@ -212,7 +212,7 @@ class ActivityDetailAppBar extends ConsumerWidget
       // Edit Fuel Log button for completed activities
       if (isCompleted && !isCoachView)
         IconButton(
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.penToSquare,
             size: AppIconSizes.md,
             color: Theme.of(context).colorScheme.onSurface,
@@ -223,7 +223,7 @@ class ActivityDetailAppBar extends ConsumerWidget
       // Show delete button for existing activities (including coach view)
       if (!isNewActivity)
         IconButton(
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.trash,
             size: AppIconSizes.md,
             color: AppColors.dragonfruit,

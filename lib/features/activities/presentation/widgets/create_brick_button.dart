@@ -25,7 +25,7 @@ class CreateBrickButton extends ConsumerWidget {
         height: 44, // Ensure minimum touch target height
         child: KyleSecondaryButtonSmall(
           text: "Create Brick",
-          icon: FontAwesomeIcons.link,
+          icon: FontAwesomeIcons.link.data,
           onPressed: onPressed,
           variant: SecondaryButtonVariant.orange,
         ),

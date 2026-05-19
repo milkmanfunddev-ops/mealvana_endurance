@@ -127,7 +127,7 @@ class RunningTabContent extends ConsumerWidget {
         //           mainAxisSize: MainAxisSize.min,
         //           children: [
         //             Icon(
-        //               FontAwesomeIcons.heartPulse,
+        //               FontAwesomeIcons.heartPulse.data,
         //               size: 10,
         //               color: AppColors.electrolyteDark,
         //             ),
@@ -623,7 +623,7 @@ class _TimeBeforeRunControl extends StatelessWidget {
             // Minus button
             _ControlButton(
               key: const ValueKey('activity_create.fueling_window_minus'),
-              icon: FontAwesomeIcons.minus,
+              icon: FontAwesomeIcons.minus.data,
               onPressed: canDecrement ? () => onChanged(value - 15) : null,
               enabled: canDecrement,
             ),
@@ -645,7 +645,7 @@ class _TimeBeforeRunControl extends StatelessWidget {
             // Plus button
             _ControlButton(
               key: const ValueKey('activity_create.fueling_window_plus'),
-              icon: FontAwesomeIcons.plus,
+              icon: FontAwesomeIcons.plus.data,
               onPressed: canIncrement ? () => onChanged(value + 15) : null,
               enabled: canIncrement,
             ),

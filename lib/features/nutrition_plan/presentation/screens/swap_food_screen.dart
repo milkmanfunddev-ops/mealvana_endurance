@@ -706,7 +706,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.triangleExclamation,
               size: AppIconSizes.xl,
               color: AppColors.dragonfruit,
@@ -770,7 +770,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                   Center(
                     child: TextButton.icon(
                       onPressed: _onClearSearch,
-                      icon: const Icon(
+                      icon: const FaIcon(
                         FontAwesomeIcons.xmark,
                         size: AppIconSizes.sm,
                         color: AppColors.orange,
@@ -793,7 +793,7 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
                 Center(
                   child: TextButton.icon(
                     onPressed: _openCreateFoodScreen,
-                    icon: const Icon(
+                    icon: const FaIcon(
                       FontAwesomeIcons.plus,
                       size: AppIconSizes.sm,
                       color: AppColors.orange,
@@ -951,8 +951,8 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
           children: [
             Icon(
               state.isMyFoodsExpanded
-                  ? FontAwesomeIcons.chevronDown
-                  : FontAwesomeIcons.chevronRight,
+                  ? FontAwesomeIcons.chevronDown.data
+                  : FontAwesomeIcons.chevronRight.data,
               size: AppIconSizes.sm,
               color: AppColors.orange,
             ),

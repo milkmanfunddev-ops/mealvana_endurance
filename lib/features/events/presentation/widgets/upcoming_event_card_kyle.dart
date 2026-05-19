@@ -87,7 +87,7 @@ class UpcomingEventCardKyle extends ConsumerWidget {
                         .withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.calendarDay,
                     color: isDark ? AppColors.cream : AppColors.blackberry,
                     size: 16,
@@ -175,7 +175,7 @@ class UpcomingEventCardKyle extends ConsumerWidget {
                   color: AppColors.electrolyte,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: const FaIcon(
                   FontAwesomeIcons.trophy,
                   color: AppColors.blackberry,
                   size: 16,

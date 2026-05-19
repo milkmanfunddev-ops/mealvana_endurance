@@ -151,7 +151,7 @@ class EducationScreen extends ConsumerWidget {
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({super.key, required this.icon, required this.title});
 
-  final IconData icon;
+  final FaIconData icon;
   final String title;
 
   @override

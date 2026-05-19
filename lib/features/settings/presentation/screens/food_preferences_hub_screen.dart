@@ -62,7 +62,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          const FaIcon(
             FontAwesomeIcons.circleExclamation,
             color: AppColors.dragonfruit,
             size: 64,
@@ -97,7 +97,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                   context: context,
                   ref: ref,
                   tileKey: const ValueKey('food_prefs.dietary_row'),
-                  icon: FontAwesomeIcons.leaf,
+                  icon: FontAwesomeIcons.leaf.data,
                   title: 'Dietary Preference',
                   subtitle: _getDietaryPreferenceSubtitle(state),
                   route: '/settings/dietary-preference',
@@ -111,7 +111,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                   context: context,
                   ref: ref,
                   tileKey: const ValueKey('food_prefs.allergies_row'),
-                  icon: FontAwesomeIcons.triangleExclamation,
+                  icon: FontAwesomeIcons.triangleExclamation.data,
                   title: 'Allergies',
                   subtitle: _getAllergiesSubtitle(state),
                   route: '/settings/allergies',
@@ -125,7 +125,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                   context: context,
                   ref: ref,
                   tileKey: const ValueKey('food_prefs.likes_dislikes_row'),
-                  icon: FontAwesomeIcons.heart,
+                  icon: FontAwesomeIcons.heart.data,
                   title: 'Food Likes & Dislikes',
                   subtitle: 'Manage your food preferences',
                   route: '/settings/food-preferences',
@@ -202,7 +202,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
               ),
             ),
 
-            Icon(
+            FaIcon(
               FontAwesomeIcons.chevronRight,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,

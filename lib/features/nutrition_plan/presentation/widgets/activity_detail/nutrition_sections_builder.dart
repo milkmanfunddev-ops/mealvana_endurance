@@ -572,7 +572,7 @@ class _NutritionSectionsBuilderState
     return '${food_utils.formatQuantity(qty)} $label';
   }
 
-  IconData _getSportIcon(ActivityType activityType) {
+  FaIconData _getSportIcon(ActivityType activityType) {
     switch (activityType) {
       case ActivityType.cycling:
         return FontAwesomeIcons.personBiking;

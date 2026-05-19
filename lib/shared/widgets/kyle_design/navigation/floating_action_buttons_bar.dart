@@ -97,7 +97,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                     children: [
                       CircularActionButton(
                         key: const ValueKey('bottom_nav.calendar_tab'),
-                        icon: FontAwesomeIcons.calendar,
+                        icon: FontAwesomeIcons.calendar.data,
                         onPressed: onCalendarTap,
                         semanticLabel: 'Calendar',
                         backgroundColor: activeButton == 0
@@ -110,7 +110,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       const SizedBox(width: 8),
                       CircularActionButton(
                         key: const ValueKey('bottom_nav.diary_tab'),
-                        icon: FontAwesomeIcons.utensils,
+                        icon: FontAwesomeIcons.utensils.data,
                         onPressed: onNutritionTap,
                         semanticLabel: 'Nutrition diary',
                         backgroundColor: activeButton == 1
@@ -123,7 +123,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       const SizedBox(width: 8),
                       if (showCoachTab) ...[
                         CircularActionButton(
-                          icon: FontAwesomeIcons.userTie,
+                          icon: FontAwesomeIcons.userTie.data,
                           onPressed: onCoachTap,
                           semanticLabel: 'Coach',
                           backgroundColor: activeButton == 2
@@ -139,7 +139,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       ],
                       CircularActionButton(
                         key: const ValueKey('bottom_nav.events_tab'),
-                        icon: FontAwesomeIcons.calendarCheck,
+                        icon: FontAwesomeIcons.calendarCheck.data,
                         onPressed: onEventsTap,
                         semanticLabel: 'Events',
                         backgroundColor: activeButton == (showCoachTab ? 3 : 2)
@@ -152,7 +152,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       const SizedBox(width: 8),
                       CircularActionButton(
                         key: const ValueKey('bottom_nav.learn_tab'),
-                        icon: FontAwesomeIcons.graduationCap,
+                        icon: FontAwesomeIcons.graduationCap.data,
                         onPressed: onLearnTap,
                         semanticLabel: 'Learn',
                         backgroundColor: activeButton == (showCoachTab ? 4 : 3)

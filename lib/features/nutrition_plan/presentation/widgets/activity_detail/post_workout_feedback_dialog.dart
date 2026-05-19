@@ -107,7 +107,7 @@ class _PostWorkoutFeedbackDialogState extends State<PostWorkoutFeedbackDialog> {
             color: AppColors.electrolyte.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
-          child: Icon(
+          child: FaIcon(
             FontAwesomeIcons.check,
             size: AppIconSizes.xl,
             color: AppColors.electrolyte,
@@ -142,8 +142,8 @@ class _PostWorkoutFeedbackDialogState extends State<PostWorkoutFeedbackDialog> {
             return IconButton(
               icon: Icon(
                 rating <= _rating
-                    ? FontAwesomeIcons.solidStar
-                    : FontAwesomeIcons.star,
+                    ? FontAwesomeIcons.solidStar.data
+                    : FontAwesomeIcons.star.data,
                 color: AppColors.orange,
                 size: AppIconSizes.md,
               ),

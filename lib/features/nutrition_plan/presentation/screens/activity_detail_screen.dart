@@ -243,7 +243,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.triangleExclamation,
               size: AppIconSizes.xxl,
               color: AppColors.dragonfruit,

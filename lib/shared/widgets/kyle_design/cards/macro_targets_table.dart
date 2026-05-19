@@ -71,7 +71,7 @@ class MacroTargetsTable extends ConsumerWidget {
           if (onInfoPressed != null)
             IconButton(
               key: const ValueKey('adjust_macros.help_button'),
-              icon: Icon(
+              icon: FaIcon(
                 FontAwesomeIcons.circleInfo,
                 color: AppColors.dragonfruit,
                 size: AppIconSizes.controlIcon,

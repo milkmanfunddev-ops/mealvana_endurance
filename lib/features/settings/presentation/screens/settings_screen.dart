@@ -102,7 +102,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          const FaIcon(
             FontAwesomeIcons.circleExclamation,
             color: AppColors.dragonfruit,
             size: 64,
@@ -247,7 +247,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             // Anonymous user - show "Create Account" CTA
             Row(
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.user,
                   size: AppIconSizes.md,
                   color: AppColors.orange.withValues(alpha: 0.7),
@@ -390,10 +390,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 Icon(
                   authProvider == 'apple'
-                      ? FontAwesomeIcons.apple
+                      ? FontAwesomeIcons.apple.data
                       : authProvider == 'google'
-                      ? FontAwesomeIcons.google
-                      : FontAwesomeIcons.envelope,
+                      ? FontAwesomeIcons.google.data
+                      : FontAwesomeIcons.envelope.data,
                   size: AppIconSizes.md,
                   color: AppColors.electrolyte,
                 ),
@@ -542,7 +542,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: _buildQuickLink(
               context: context,
               rowKey: const ValueKey('settings.profile_row'),
-              icon: FontAwesomeIcons.user,
+              icon: FontAwesomeIcons.user.data,
               title: 'Profile & Preferences',
               subtitle: 'Edit your profile, units, and preferences',
               onTap: () {
@@ -559,7 +559,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildQuickLink(
             context: context,
             rowKey: const ValueKey('settings.appearance_row'),
-            icon: FontAwesomeIcons.palette,
+            icon: FontAwesomeIcons.palette.data,
             title: 'Appearance',
             subtitle: 'Theme mode (light/dark/system)',
             onTap: () {
@@ -574,7 +574,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildQuickLink(
             context: context,
             rowKey: const ValueKey('settings.food_prefs_row'),
-            icon: FontAwesomeIcons.utensils,
+            icon: FontAwesomeIcons.utensils.data,
             title: 'Food Preferences',
             subtitle: 'Diet, allergies, and food choices',
             onTap: () {
@@ -590,7 +590,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildQuickLink(
             context: context,
             rowKey: const ValueKey('settings.sport_prefs_row'),
-            icon: FontAwesomeIcons.personRunning,
+            icon: FontAwesomeIcons.personRunning.data,
             title: 'Sport Preferences',
             subtitle: 'Running, cycling, and swimming',
             onTap: () {
@@ -608,7 +608,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildQuickLink(
             context: context,
             rowKey: const ValueKey('settings.body_composition_row'),
-            icon: FontAwesomeIcons.chartPie,
+            icon: FontAwesomeIcons.chartPie.data,
             title: 'Body Composition',
             subtitle: 'Weight, height, body fat, training phase, lifestyle',
             onTap: () {
@@ -624,7 +624,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildQuickLink(
             context: context,
             rowKey: const ValueKey('settings.nutrition_targets_row'),
-            icon: FontAwesomeIcons.bullseye,
+            icon: FontAwesomeIcons.bullseye.data,
             title: 'Nutrition Targets',
             subtitle: 'Set default macro targets',
             onTap: () {
@@ -640,7 +640,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildQuickLink(
             context: context,
             rowKey: const ValueKey('settings.coach_connection_row'),
-            icon: FontAwesomeIcons.userGroup,
+            icon: FontAwesomeIcons.userGroup.data,
             title: 'Coach Connection',
             subtitle: 'Connect with your coach or manage your connection',
             onTap: () {
@@ -656,7 +656,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildQuickLink(
             context: context,
             rowKey: const ValueKey('settings.connected_apps_row'),
-            icon: FontAwesomeIcons.link,
+            icon: FontAwesomeIcons.link.data,
             title: 'Connected Apps',
             subtitle: 'Final Surge, TrainingPeaks, Garmin, V.O2',
             onTap: () {
@@ -672,7 +672,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildQuickLink(
             context: context,
             rowKey: const ValueKey('settings.help_row'),
-            icon: FontAwesomeIcons.circleQuestion,
+            icon: FontAwesomeIcons.circleQuestion.data,
             title: 'Help & Feedback',
             subtitle: 'Get help and send feedback',
             onTap: () {
@@ -700,7 +700,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         // User is a coach - show Coach Dashboard
         return _buildQuickLink(
           context: context,
-          icon: FontAwesomeIcons.userTie,
+          icon: FontAwesomeIcons.userTie.data,
           title: 'Coach Dashboard',
           subtitle: 'Manage your athletes',
           onTap: () {
@@ -713,7 +713,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         // User is not a coach - show Apply to Coach option (web only)
         return _buildQuickLink(
           context: context,
-          icon: FontAwesomeIcons.userPlus,
+          icon: FontAwesomeIcons.userPlus.data,
           title: 'Apply to Coach',
           subtitle: 'Register as a coach',
           onTap: () {
@@ -727,7 +727,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // MOBILE: Athletes can view their coaches
       return _buildQuickLink(
         context: context,
-        icon: FontAwesomeIcons.userGroup,
+        icon: FontAwesomeIcons.userGroup.data,
         title: 'My Coaches',
         subtitle: 'View and chat with your coaches',
         onTap: () {
@@ -845,7 +845,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
 
-            Icon(
+            FaIcon(
               FontAwesomeIcons.chevronRight,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,

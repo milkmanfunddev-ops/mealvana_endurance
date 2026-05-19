@@ -112,8 +112,8 @@ class EventActionButtonsCard extends ConsumerWidget {
                 ? 'View Nutrition Plan'
                 : 'Create Nutrition Plan',
             icon: hasLinkedNutritionPlan
-                ? FontAwesomeIcons.eye
-                : FontAwesomeIcons.plus,
+                ? FontAwesomeIcons.eye.data
+                : FontAwesomeIcons.plus.data,
           ),
 
           const SizedBox(height: AppSpacing.sm),
@@ -132,8 +132,8 @@ class EventActionButtonsCard extends ConsumerWidget {
                 ? 'Edit Carb Loading Plan'
                 : 'Create Carb Loading Plan',
             icon: event.hasCarbLoading
-                ? FontAwesomeIcons.pen
-                : FontAwesomeIcons.plus,
+                ? FontAwesomeIcons.pen.data
+                : FontAwesomeIcons.plus.data,
           ),
 
           const SizedBox(height: AppSpacing.sm),
@@ -145,7 +145,7 @@ class EventActionButtonsCard extends ConsumerWidget {
               context.push('/events/$eventId/checklist');
             },
             text: 'Race Day Checklist',
-            icon: FontAwesomeIcons.listCheck,
+            icon: FontAwesomeIcons.listCheck.data,
           ),
 
           // const SizedBox(height: AppSpacing.md),

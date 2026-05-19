@@ -29,7 +29,7 @@ class SportSelector extends ConsumerWidget {
           children: [
             _SportButton(
               key: const ValueKey('activity_create.tab_running'),
-              icon: FontAwesomeIcons.personRunning,
+              icon: FontAwesomeIcons.personRunning.data,
               label: 'RUNNING',
               isSelected: coordinatorState.selectedTab == SportTab.running,
               onTap: () => coordinator.selectTab(SportTab.running),
@@ -38,7 +38,7 @@ class SportSelector extends ConsumerWidget {
             const SizedBox(width: AppSpacing.sm),
             _SportButton(
               key: const ValueKey('activity_create.tab_biking'),
-              icon: FontAwesomeIcons.personBiking,
+              icon: FontAwesomeIcons.personBiking.data,
               label: 'BIKING',
               isSelected: coordinatorState.selectedTab == SportTab.cycling,
               onTap: () => coordinator.selectTab(SportTab.cycling),
@@ -47,7 +47,7 @@ class SportSelector extends ConsumerWidget {
             const SizedBox(width: AppSpacing.sm),
             _SportButton(
               key: const ValueKey('activity_create.tab_swimming'),
-              icon: FontAwesomeIcons.personSwimming,
+              icon: FontAwesomeIcons.personSwimming.data,
               label: 'SWIMMING',
               isSelected: coordinatorState.selectedTab == SportTab.swimming,
               onTap: () => coordinator.selectTab(SportTab.swimming),
@@ -56,7 +56,7 @@ class SportSelector extends ConsumerWidget {
             const SizedBox(width: AppSpacing.sm),
             _SportButton(
               key: const ValueKey('activity_create.tab_brick'),
-              icon: FontAwesomeIcons.link,
+              icon: FontAwesomeIcons.link.data,
               label: 'BRICK',
               isSelected: coordinatorState.selectedTab == SportTab.brick,
               onTap: () => coordinator.selectTab(SportTab.brick),

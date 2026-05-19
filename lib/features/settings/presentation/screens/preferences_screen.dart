@@ -202,7 +202,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          const FaIcon(
             FontAwesomeIcons.circleExclamation,
             color: AppColors.dragonfruit,
             size: 64,
@@ -320,7 +320,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                   context: context,
                   controller: _firstNameController,
                   hint: 'First name',
-                  icon: FontAwesomeIcons.user,
+                  icon: FontAwesomeIcons.user.data,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -332,7 +332,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                   context: context,
                   controller: _lastNameController,
                   hint: 'Last name',
-                  icon: FontAwesomeIcons.user,
+                  icon: FontAwesomeIcons.user.data,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -349,7 +349,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             controller: _emailController,
             label: 'Email',
             hint: 'Email address',
-            icon: FontAwesomeIcons.envelope,
+            icon: FontAwesomeIcons.envelope.data,
             keyboardType: TextInputType.emailAddress,
           ),
 
@@ -535,10 +535,10 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             // Icon based on gender
             Icon(
               value == Gender.male
-                  ? FontAwesomeIcons.mars
+                  ? FontAwesomeIcons.mars.data
                   : value == Gender.female
-                  ? FontAwesomeIcons.venus
-                  : FontAwesomeIcons.genderless,
+                  ? FontAwesomeIcons.venus.data
+                  : FontAwesomeIcons.genderless.data,
               size: 28,
               color: isSelected
                   ? (isDark ? AppColors.blackberry : AppColors.cream)
@@ -619,7 +619,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             ),
             child: Row(
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.calendar,
                   size: AppIconSizes.controlIcon,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -815,7 +815,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
               child: Row(
                 children: [
-                  const Icon(
+                  const FaIcon(
                     FontAwesomeIcons.droplet,
                     size: 16,
                     color: AppColors.orange,
@@ -844,7 +844,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                       ],
                     ),
                   ),
-                  Icon(
+                  FaIcon(
                     FontAwesomeIcons.chevronRight,
                     size: 14,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -903,7 +903,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: (_runsWithWaterBottle ?? false)
-                  ? const Icon(
+                  ? const FaIcon(
                       FontAwesomeIcons.check,
                       size: 14,
                       color: AppColors.cream,

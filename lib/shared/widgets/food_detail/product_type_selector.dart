@@ -139,7 +139,7 @@ class ProductTypeSelector extends StatelessWidget {
             child: DropdownButton<String>(
               value: selectedProductType,
               isExpanded: true,
-              icon: Icon(
+              icon: FaIcon(
                 FontAwesomeIcons.chevronDown,
                 size: AppIconSizes.chevron,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,

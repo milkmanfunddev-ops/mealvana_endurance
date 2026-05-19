@@ -202,29 +202,29 @@ class _NavigationRailSection extends StatelessWidget {
     // Build destinations list — same order as tab indices.
     final destinations = <NavigationRailDestination>[
       const NavigationRailDestination(
-        icon: Icon(FontAwesomeIcons.calendar),
-        selectedIcon: Icon(FontAwesomeIcons.solidCalendar),
+        icon: FaIcon(FontAwesomeIcons.calendar),
+        selectedIcon: FaIcon(FontAwesomeIcons.solidCalendar),
         label: Text('Calendar'),
       ),
       const NavigationRailDestination(
-        icon: Icon(FontAwesomeIcons.utensils),
-        selectedIcon: Icon(FontAwesomeIcons.utensils),
+        icon: FaIcon(FontAwesomeIcons.utensils),
+        selectedIcon: FaIcon(FontAwesomeIcons.utensils),
         label: Text('Nutrition'),
       ),
       if (showCoachTab)
         const NavigationRailDestination(
-          icon: Icon(FontAwesomeIcons.userTie),
-          selectedIcon: Icon(FontAwesomeIcons.userTie),
+          icon: FaIcon(FontAwesomeIcons.userTie),
+          selectedIcon: FaIcon(FontAwesomeIcons.userTie),
           label: Text('Coach'),
         ),
       const NavigationRailDestination(
-        icon: Icon(FontAwesomeIcons.calendarCheck),
-        selectedIcon: Icon(FontAwesomeIcons.solidCalendarCheck),
+        icon: FaIcon(FontAwesomeIcons.calendarCheck),
+        selectedIcon: FaIcon(FontAwesomeIcons.solidCalendarCheck),
         label: Text('Events'),
       ),
       const NavigationRailDestination(
-        icon: Icon(FontAwesomeIcons.graduationCap),
-        selectedIcon: Icon(FontAwesomeIcons.graduationCap),
+        icon: FaIcon(FontAwesomeIcons.graduationCap),
+        selectedIcon: FaIcon(FontAwesomeIcons.graduationCap),
         label: Text('Learn'),
       ),
     ];

@@ -48,7 +48,7 @@ class KyleAddFoodButton extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.plus,
                 size: AppIconSizes.controlIcon,
                 color: txtColor,

@@ -42,7 +42,7 @@ class FuelLogNoPlanState extends StatelessWidget {
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   children: [
-                    Icon(
+                    FaIcon(
                       FontAwesomeIcons.utensils,
                       size: AppIconSizes.xxl,
                       color: theme.colorScheme.onSurfaceVariant,
@@ -67,7 +67,7 @@ class FuelLogNoPlanState extends StatelessWidget {
                     KylePrimaryButton(
                       onPressed: onGeneratePlan,
                       text: 'Generate fueling plan',
-                      icon: FontAwesomeIcons.wandMagicSparkles,
+                      icon: FontAwesomeIcons.wandMagicSparkles.data,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     TextButton(

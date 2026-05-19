@@ -39,7 +39,7 @@ class EventHeaderCard extends StatelessWidget {
           if (activity?.scheduledDateTime != null || event.startTime != null)
             Row(
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.calendar,
                   color: AppColors.electrolyte,
                   size: AppIconSizes.sm,

@@ -436,7 +436,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.triangleExclamation,
               size: 48,
               color: AppColors.dragonfruit,
@@ -475,7 +475,7 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.circleInfo,
               size: 48,
               color: Theme.of(context).colorScheme.onSurfaceVariant,

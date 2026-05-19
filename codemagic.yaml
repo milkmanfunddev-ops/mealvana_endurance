@@ -190,7 +190,7 @@ workflows:
       app_store_connect: API Key for CI builds
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       xcode: latest
       cocoapods: default
       ios_signing:
@@ -278,7 +278,7 @@ workflows:
     max_build_duration: 120
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       java: 17
       groups:
         - mealvana_dev
@@ -366,7 +366,7 @@ workflows:
       app_store_connect: API Key for CI builds
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       xcode: latest
       cocoapods: default
       ios_signing:
@@ -472,7 +472,7 @@ workflows:
     max_build_duration: 120
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       java: 17
       groups:
         - mealvana_prod
@@ -583,7 +583,7 @@ workflows:
       app_store_connect: API Key for CI builds
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       xcode: latest
       cocoapods: default
       ios_signing:
@@ -674,7 +674,7 @@ workflows:
     max_build_duration: 120
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       java: 17
       groups:
         - mealvana_prod
@@ -771,7 +771,7 @@ workflows:
       app_store_connect: API Key for CI builds
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       xcode: latest
       cocoapods: default
       ios_signing:
@@ -851,7 +851,7 @@ workflows:
     max_build_duration: 60
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       xcode: latest
       cocoapods: default
       groups:
@@ -895,7 +895,7 @@ workflows:
     max_build_duration: 60
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       java: 17
       groups:
         - mealvana_prod
@@ -944,7 +944,7 @@ workflows:
     max_build_duration: 60
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       xcode: latest
       cocoapods: default
       groups:
@@ -993,7 +993,7 @@ workflows:
     max_build_duration: 30
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       xcode: latest
       cocoapods: default
       groups:
@@ -1033,7 +1033,7 @@ workflows:
     max_build_duration: 30
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       xcode: latest
       groups:
         - mealvana_dev  # needed for DOTENV_* secrets so asset-bundled .env files exist
@@ -1067,7 +1067,7 @@ workflows:
       app_store_connect: API Key for CI builds
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       xcode: latest
       cocoapods: default
       ios_signing:
@@ -1139,7 +1139,7 @@ workflows:
     max_build_duration: 120
 
     environment:
-      flutter: 3.35.5
+      flutter: stable
       java: 17
       groups:
         - mealvana_prod

@@ -77,7 +77,7 @@ class BrickMacroSummary extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
                     ),
-                    child: Icon(
+                    child: FaIcon(
                       FontAwesomeIcons.circleQuestion,
                       size: 12,
                       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
@@ -184,7 +184,7 @@ class BrickMacroSummary extends StatelessWidget {
                 color: AppColors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
+              child: FaIcon(
                 FontAwesomeIcons.pencil,
                 size: 14,
                 color: AppColors.orange,

@@ -60,7 +60,7 @@ class EventDetailScreen extends ConsumerWidget {
         actions: [
           IconButton(
             key: const ValueKey('event_details.home_button'),
-            icon: Icon(
+            icon: FaIcon(
               FontAwesomeIcons.house,
               size: AppIconSizes.sm,
               color: Theme.of(context).colorScheme.onSurface,
@@ -72,7 +72,7 @@ class EventDetailScreen extends ConsumerWidget {
           if (eventDetailAsync.hasValue)
             PopupMenuButton<String>(
               key: const ValueKey('event_details.more_button'),
-              icon: Icon(
+              icon: FaIcon(
                 FontAwesomeIcons.ellipsisVertical,
                 size: AppIconSizes.sm,
                 color: Theme.of(context).colorScheme.onSurface,
@@ -101,7 +101,7 @@ class EventDetailScreen extends ConsumerWidget {
                   value: 'edit',
                   child: Row(
                     children: [
-                      Icon(
+                      FaIcon(
                         FontAwesomeIcons.pen,
                         size: AppIconSizes.xs,
                         color: Theme.of(context).colorScheme.onSurface,
@@ -121,7 +121,7 @@ class EventDetailScreen extends ConsumerWidget {
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(
+                      FaIcon(
                         FontAwesomeIcons.trash,
                         size: AppIconSizes.xs,
                         color: AppColors.dragonfruit,
@@ -208,7 +208,7 @@ class EventDetailScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      FaIcon(
                         FontAwesomeIcons.circleExclamation,
                         size: AppIconSizes.xl,
                         color: AppColors.dragonfruit,

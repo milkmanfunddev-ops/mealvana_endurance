@@ -405,7 +405,7 @@ class BrickNutritionSections extends StatelessWidget {
     return Row(
       children: [
         if (isTransition) ...[
-          Icon(
+          FaIcon(
             FontAwesomeIcons.repeat,
             size: AppIconSizes.md,
             color: sectionColor,
@@ -489,22 +489,22 @@ class BrickNutritionSections extends StatelessWidget {
     Color iconColor;
 
     if (sportType == 'swimming') {
-      iconData = FontAwesomeIcons.personSwimming;
+      iconData = FontAwesomeIcons.personSwimming.data;
       iconColor = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
     } else if (sportType == 'cycling') {
-      iconData = FontAwesomeIcons.personBiking;
+      iconData = FontAwesomeIcons.personBiking.data;
       iconColor = AppColors.orange;
     } else if (sportType == 'running') {
-      iconData = FontAwesomeIcons.personRunning;
+      iconData = FontAwesomeIcons.personRunning.data;
       iconColor = AppColors.dragonfruit;
     } else if (sportType == null && sectionId == 'before') {
-      iconData = FontAwesomeIcons.clock;
+      iconData = FontAwesomeIcons.clock.data;
       iconColor = AppColors.orange;
     } else if (sportType == null && sectionId == 'after') {
-      iconData = FontAwesomeIcons.utensils;
+      iconData = FontAwesomeIcons.utensils.data;
       iconColor = AppColors.dragonfruit;
     } else {
-      iconData = FontAwesomeIcons.utensils;
+      iconData = FontAwesomeIcons.utensils.data;
       iconColor = AppColors.orange;
     }
 

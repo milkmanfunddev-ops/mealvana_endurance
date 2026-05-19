@@ -120,7 +120,7 @@ class CategorySelector extends StatelessWidget {
                 ),
               ),
               child: isSelected
-                  ? const Icon(
+                  ? const FaIcon(
                       FontAwesomeIcons.check,
                       color: AppColors.blackberry,
                       size: 14,

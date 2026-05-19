@@ -184,7 +184,7 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
                       LocationFormatter.formatCityState(location);
                   return ListTile(
                     dense: true,
-                    leading: Icon(
+                    leading: FaIcon(
                       FontAwesomeIcons.locationDot,
                       size: AppIconSizes.sm,
                       color: AppColors.electrolyte,

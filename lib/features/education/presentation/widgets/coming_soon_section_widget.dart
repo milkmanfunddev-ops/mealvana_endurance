@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Coming soon card matching ProVersionScreen's _FeatureCard pattern
@@ -12,7 +13,7 @@ class ComingSoonSectionWidget extends StatelessWidget {
     this.notifyButtonKey,
   });
 
-  final IconData icon;
+  final FaIconData icon;
   final Color iconColor;
   final String title;
   final String description;
@@ -39,7 +40,7 @@ class ComingSoonSectionWidget extends StatelessWidget {
                   color: iconColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: iconColor, size: 24),
+                child: FaIcon(icon, color: iconColor, size: 24),
               ),
               const SizedBox(width: AppSpacing.md),
 

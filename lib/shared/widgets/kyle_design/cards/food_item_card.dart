@@ -77,8 +77,8 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
                   // Expand/collapse icon
                   Icon(
                     _isExpanded 
-                        ? FontAwesomeIcons.chevronUp
-                        : FontAwesomeIcons.chevronDown,
+                        ? FontAwesomeIcons.chevronUp.data
+                        : FontAwesomeIcons.chevronDown.data,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     size: AppIconSizes.chevron,
                   ),
@@ -237,7 +237,7 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
                     horizontal: AppSpacing.sm,
                     vertical: AppSpacing.xs,
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.minus,
                     size: AppIconSizes.controlIcon,
                     color: AppColors.orange,
@@ -271,7 +271,7 @@ class _FoodItemCardState extends ConsumerState<FoodItemCard> {
                     horizontal: AppSpacing.sm,
                     vertical: AppSpacing.xs,
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.plus,
                     size: AppIconSizes.controlIcon,
                     color: AppColors.orange,

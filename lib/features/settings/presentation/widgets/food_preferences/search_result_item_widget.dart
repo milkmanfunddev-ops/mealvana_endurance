@@ -77,7 +77,7 @@ class SearchResultItemWidget extends StatelessWidget {
             ),
 
             // Add button
-            Icon(
+            FaIcon(
               FontAwesomeIcons.circlePlus,
               size: AppIconSizes.lg,
               color: AppColors.electrolyte,
