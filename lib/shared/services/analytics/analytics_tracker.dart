@@ -140,6 +140,17 @@ class MixpanelAnalyticsTracker implements AnalyticsTracker {
 
   @override
   Future<void> track(String eventName, {Map<String, dynamic>? properties}) async {
+    // Dev-only echo: lets engineers verify event names + payloads from the
+    // simulator console without needing Mixpanel access. Stripped in prod
+    // so we don't add log volume to release builds.
+    if (_config.devModeEnabled) {
+      _logger.info(
+        '📊 $eventName',
+        context: 'ANALYTICS',
+        data: properties,
+      );
+    }
+
     final mixpanel = _mixpanel;
     if (mixpanel == null) return;
 

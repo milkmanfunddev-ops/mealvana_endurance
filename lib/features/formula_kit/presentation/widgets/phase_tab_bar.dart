@@ -38,6 +38,7 @@ class PhaseTabBar extends StatelessWidget {
       color: isActive ? AppColors.orange : scheme.surfaceContainerHighest,
       borderRadius: AppRadius.circularRadius,
       child: InkWell(
+        key: ValueKey('formula_kit.phase_tab.${phase.name}'),
         borderRadius: AppRadius.circularRadius,
         onTap: () => onSelected(phase),
         child: Padding(

@@ -6,10 +6,16 @@ import 'formula_phase.dart';
 
 /// Immutable filter state for the Formula Library browse screen.
 ///
-/// PR 1 of Formula Kit owns this state in `FormulaLibraryController`. The
-/// "Show favorites only" and "More Filters" chips that ship in PR 3 / PR 5
-/// will hang their additional fields off the same object via `copyWith` —
-/// the field set below is the minimum required for the V1 browse-only slice.
+/// PR 1 of Formula Kit owns this state in `FormulaLibraryController`. PR 1
+/// surfaces:
+///   - Phase tabs (Before / During)
+///   - Per-phase chip row (Timing for Before; Activity + Duration for During)
+///   - More Filters sheet (digestion speed, gut training level,
+///     "ignore my dietary profile" toggle)
+///
+/// PR 3 / PR 5 will extend this object via `copyWith` to add the
+/// "Show favorites only" chip and multi-select diet / allergen pickers — the
+/// field set below is the minimum required for the V1 browse-only slice.
 @immutable
 class FormulaFilterState {
   const FormulaFilterState({

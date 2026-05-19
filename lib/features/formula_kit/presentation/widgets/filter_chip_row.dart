@@ -12,12 +12,17 @@ class FilterChipRow<T> extends StatelessWidget {
     required this.labelOf,
     required this.isSelected,
     required this.onToggled,
+    this.keyOf,
   });
 
   final List<T> options;
   final String Function(T value) labelOf;
   final bool Function(T value) isSelected;
   final ValueChanged<T> onToggled;
+
+  /// Optional per-chip key, used by patrol integration tests to address
+  /// individual chips without depending on label strings.
+  final Key Function(T value)? keyOf;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +36,7 @@ class FilterChipRow<T> extends StatelessWidget {
         itemBuilder: (context, i) {
           final opt = options[i];
           return _Chip(
+            key: keyOf?.call(opt),
             label: labelOf(opt),
             selected: isSelected(opt),
             onTap: () => onToggled(opt),
@@ -43,6 +49,7 @@ class FilterChipRow<T> extends StatelessWidget {
 
 class _Chip extends StatelessWidget {
   const _Chip({
+    super.key,
     required this.label,
     required this.selected,
     required this.onTap,

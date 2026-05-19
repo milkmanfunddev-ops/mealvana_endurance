@@ -1,12 +1,19 @@
 /// Sub-phase filter for Before formulas — drives the "Timing" chip row on
-/// the Before tab. Values mirror the existing `templates.meal_type` strings
-/// (`full_meal`, `snack`, `top_up`) so we can filter without remapping.
+/// the Before tab.
+///
+/// `pre_workout_templates` doesn't have a direct meal/snack/top-up column;
+/// we derive the sub-phase from `time_window`:
+///   `1.5-3 hours` → Meal,  `30-90 min` → Snack,  `< 30 min` → Top-up.
+///
+/// The `storageValue` strings (`full_meal`, `snack`, `top_up`) are kept
+/// stable so analytics payloads don't drift across the table migration.
 enum BeforeSubPhase {
   meal,
   snack,
   topUp;
 
-  /// Value as it appears in `templates.meal_type` (and in analytics).
+  /// Logical bucket id used in analytics and filter state. Not a column
+  /// value — see `fromTimeWindow` for how the bucket is derived.
   String get storageValue => switch (this) {
         BeforeSubPhase.meal => 'full_meal',
         BeforeSubPhase.snack => 'snack',
@@ -34,10 +41,22 @@ enum BeforeSubPhase {
       _ => null,
     };
   }
+
+  /// Derive the sub-phase from the live `pre_workout_templates.time_window`
+  /// string. Unknown windows return `null` so the row is shown in the "All"
+  /// view but excluded from any sub-phase filter.
+  static BeforeSubPhase? fromTimeWindow(String? timeWindow) {
+    return switch (timeWindow) {
+      '1.5-3 hours' => BeforeSubPhase.meal,
+      '30-90 min' => BeforeSubPhase.snack,
+      '< 30 min' => BeforeSubPhase.topUp,
+      _ => null,
+    };
+  }
 }
 
 /// Digestion-speed filter for the More Filters sheet on the Before tab.
-/// Values mirror `templates.digestion_speed`.
+/// Values mirror `pre_workout_templates.digestion_speed` after lowercasing.
 enum FormulaDigestionSpeed {
   fast,
   medium,

@@ -1,0 +1,721 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
+import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
+
+import '../../application/formula_library_controller.dart';
+import '../../domain/formula_phase.dart';
+import '../../domain/formula_view.dart';
+
+/// Read-only detail view for a system formula (PR 1).
+///
+/// Re-uses `formulaLibraryControllerProvider` state to look up the formula
+/// by `id` + `phase` — avoids spinning up a second fetch since the user
+/// arrived here from the library list.
+///
+/// Edit / personalize / favorite affordances land in PR 2-5.
+class FormulaDetailScreen extends ConsumerStatefulWidget {
+  const FormulaDetailScreen({
+    super.key,
+    required this.id,
+    required this.phase,
+  });
+
+  final String id;
+  final FormulaPhase phase;
+
+  @override
+  ConsumerState<FormulaDetailScreen> createState() =>
+      _FormulaDetailScreenState();
+}
+
+class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
+  bool _trackedView = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final asyncState = ref.watch(formulaLibraryControllerProvider);
+
+    if (!_trackedView) {
+      _trackedView = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(formulaLibraryControllerProvider.notifier).trackDetailViewed(
+              templateId: widget.id,
+              phase: widget.phase,
+              isPersonal: false,
+            );
+      });
+    }
+
+    return AdaptivePageScaffold(
+      key: ValueKey('formula_kit.detail_screen.${widget.phase.name}.${widget.id}'),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: _buildAppBar(context, asyncState),
+      contentWidth: AdaptiveContentWidth.standard,
+      body: asyncState.when(
+        loading: () => const Center(
+          key: ValueKey('formula_kit.detail_loading'),
+          child: CircularProgressIndicator(color: AppColors.electrolyte),
+        ),
+        error: (e, _) => _ErrorView(message: e.toString()),
+        data: (state) {
+          if (widget.phase == FormulaPhase.before) {
+            final formula = state.beforeFormulas
+                .cast<BeforeFormulaView?>()
+                .firstWhere(
+                  (f) => f?.id == widget.id,
+                  orElse: () => null,
+                );
+            if (formula == null) return const _NotFoundView();
+            return _BeforeDetailBody(formula: formula);
+          } else {
+            final formula = state.duringFormulas
+                .cast<DuringFormulaView?>()
+                .firstWhere(
+                  (f) => f?.id == widget.id,
+                  orElse: () => null,
+                );
+            if (formula == null) return const _NotFoundView();
+            return _DuringDetailBody(formula: formula);
+          }
+        },
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    AsyncValue<FormulaLibraryState> asyncState,
+  ) {
+    String title = 'Formula';
+    asyncState.whenData((state) {
+      if (widget.phase == FormulaPhase.before) {
+        final f = state.beforeFormulas
+            .cast<BeforeFormulaView?>()
+            .firstWhere(
+              (f) => f?.id == widget.id,
+              orElse: () => null,
+            );
+        if (f != null) title = f.name;
+      } else {
+        final f = state.duringFormulas
+            .cast<DuringFormulaView?>()
+            .firstWhere(
+              (f) => f?.id == widget.id,
+              orElse: () => null,
+            );
+        if (f != null) title = f.formula;
+      }
+    });
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      leading: const CustomAppBarBackButton(),
+      title: Text(
+        title,
+        key: const ValueKey('formula_kit.detail_title'),
+        style: AppTextStyles.sectionTitle.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+// ─── Before body ──────────────────────────────────────────────────────────
+
+class _BeforeDetailBody extends StatelessWidget {
+  const _BeforeDetailBody({required this.formula});
+
+  final BeforeFormulaView formula;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return AdaptiveScrollableBody(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.xxxl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              _InfoPill(label: formula.timingWindow, color: AppColors.orange),
+              if (formula.digestionSpeed.isNotEmpty)
+                _InfoPill(
+                  label: '${formula.digestionSpeed} digest',
+                  color: AppColors.electrolyte,
+                ),
+              if (formula.subPhase != null)
+                _InfoPill(
+                  label: formula.subPhase!.displayLabel,
+                  color: AppColors.electrolyte,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _MacrosCard(
+            calories: formula.totalCalories,
+            carbs: formula.totalCarbsG,
+            protein: formula.totalProteinG,
+            fat: formula.totalFatG,
+            sodium: formula.totalSodiumMg,
+            fluid: formula.totalFluidMl,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _SectionLabel(text: 'Components'),
+          const SizedBox(height: AppSpacing.xs),
+          BaseCard(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (formula.componentDisplayNames.isEmpty)
+                    Text(
+                      'No components listed.',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    )
+                  else
+                    for (var i = 0; i < formula.componentDisplayNames.length;
+                        i++) ...[
+                      if (i > 0) const Divider(height: AppSpacing.md),
+                      Text(
+                        formula.componentDisplayNames[i],
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                    ],
+                ],
+              ),
+            ),
+          ),
+          if (formula.notes != null && formula.notes!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            _SectionLabel(text: 'Notes'),
+            const SizedBox(height: AppSpacing.xs),
+            BaseCard(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  formula.notes!,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ],
+          if (formula.allergens.isNotEmpty ||
+              formula.excludedDiets.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            _DietTags(
+              allergens: formula.allergens,
+              excludedDiets: formula.excludedDiets,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── During body ──────────────────────────────────────────────────────────
+
+class _DuringDetailBody extends StatelessWidget {
+  const _DuringDetailBody({required this.formula});
+
+  final DuringFormulaView formula;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return AdaptiveScrollableBody(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.xxxl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'FORMULA #${formula.templateNumber}',
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              if (formula.foodForm.isNotEmpty)
+                _InfoPill(
+                  label: formula.foodForm,
+                  color: AppColors.electrolyte,
+                ),
+              if (formula.primaryToSecondaryRatio != null)
+                _InfoPill(
+                  label: 'Ratio ${formula.primaryToSecondaryRatio}',
+                  color: AppColors.orange,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (formula.activityTypes.isNotEmpty) ...[
+            _SectionLabel(text: 'Activities'),
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                for (final a in formula.activityTypes)
+                  _Tag(label: _humanActivity(a)),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (formula.durationBrackets.isNotEmpty)
+                Expanded(
+                  child: _LabeledList(
+                    label: 'Duration',
+                    items: formula.durationBrackets,
+                  ),
+                ),
+              if (formula.gutTrainingLevels.isNotEmpty)
+                Expanded(
+                  child: _LabeledList(
+                    label: 'Gut training',
+                    items: formula.gutTrainingLevels
+                        .map((g) =>
+                            '${g[0].toUpperCase()}${g.substring(1)}')
+                        .toList(),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _SectionLabel(text: 'Components'),
+          const SizedBox(height: AppSpacing.xs),
+          BaseCard(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    formula.componentFoodNames.isEmpty
+                        ? formula.formula
+                        : formula.componentFoodNames.join(', '),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.orange.withValues(alpha: 0.10),
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          FontAwesomeIcons.boltLightning,
+                          size: 12,
+                          color: AppColors.orange,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            'Macros scale to your hourly carb target',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (formula.notes != null && formula.notes!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            _SectionLabel(text: 'Notes'),
+            const SizedBox(height: AppSpacing.xs),
+            BaseCard(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  formula.notes!,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ],
+          if (formula.allergens.isNotEmpty ||
+              formula.excludedDiets.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            _DietTags(
+              allergens: formula.allergens,
+              excludedDiets: formula.excludedDiets,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _humanActivity(String raw) {
+    return switch (raw) {
+      'triathlon_bike' => 'Tri — Bike',
+      'triathlon_run' => 'Tri — Run',
+      'triathlon_transition' => 'Tri — Transition',
+      _ => raw.isEmpty ? raw : '${raw[0].toUpperCase()}${raw.substring(1)}',
+    };
+  }
+}
+
+// ─── Shared bits ──────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: AppTextStyles.bodyMedium.copyWith(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+}
+
+class _InfoPill extends StatelessWidget {
+  const _InfoPill({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.18),
+        borderRadius: AppRadius.circularRadius,
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.bodyMedium.copyWith(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _Tag extends StatelessWidget {
+  const _Tag({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: AppRadius.circularRadius,
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.bodyMedium.copyWith(
+          fontSize: 12,
+          color: scheme.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
+class _LabeledList extends StatelessWidget {
+  const _LabeledList({required this.label, required this.items});
+
+  final String label;
+  final List<String> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionLabel(text: label),
+        const SizedBox(height: AppSpacing.xs),
+        for (final i in items)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: Text(
+              i,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _MacrosCard extends StatelessWidget {
+  const _MacrosCard({
+    required this.calories,
+    required this.carbs,
+    required this.protein,
+    required this.fat,
+    required this.sodium,
+    required this.fluid,
+  });
+
+  final int calories;
+  final double carbs;
+  final double protein;
+  final double fat;
+  final double sodium;
+  final double fluid;
+
+  @override
+  Widget build(BuildContext context) {
+    return BaseCard(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(child: _Macro(label: 'Cal', value: '$calories')),
+                Expanded(
+                    child: _Macro(label: 'Carbs', value: '${carbs.round()}g')),
+                Expanded(
+                    child:
+                        _Macro(label: 'Protein', value: '${protein.round()}g')),
+                Expanded(child: _Macro(label: 'Fat', value: '${fat.round()}g')),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                    child: _Macro(
+                        label: 'Sodium', value: '${sodium.round()}mg')),
+                Expanded(
+                    child:
+                        _Macro(label: 'Fluid', value: '${fluid.round()}mL')),
+                const Spacer(),
+                const Spacer(),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Macro extends StatelessWidget {
+  const _Macro({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: AppTextStyles.bodyMedium.copyWith(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: AppTextStyles.bodyMedium.copyWith(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: scheme.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DietTags extends StatelessWidget {
+  const _DietTags({required this.allergens, required this.excludedDiets});
+
+  final List<String> allergens;
+  final List<String> excludedDiets;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionLabel(text: 'Dietary'),
+        const SizedBox(height: AppSpacing.xs),
+        Wrap(
+          spacing: AppSpacing.xs,
+          runSpacing: AppSpacing.xs,
+          children: [
+            for (final a in allergens)
+              _Tag(label: 'Contains $a'),
+            for (final d in excludedDiets)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.dragonfruit.withValues(alpha: 0.12),
+                  borderRadius: AppRadius.circularRadius,
+                ),
+                child: Text(
+                  'Not $d',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.dragonfruit,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (allergens.isEmpty && excludedDiets.isEmpty)
+          Text(
+            'No restrictions noted.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _NotFoundView extends StatelessWidget {
+  const _NotFoundView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      key: const ValueKey('formula_kit.detail_not_found'),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              FontAwesomeIcons.circleQuestion,
+              size: 40,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Formula not found.',
+              style: AppTextStyles.subtitle,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      key: const ValueKey('formula_kit.detail_error'),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              FontAwesomeIcons.circleExclamation,
+              color: AppColors.dragonfruit,
+              size: 48,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Could not load formula',
+              style: AppTextStyles.subtitle.copyWith(
+                color: AppColors.dragonfruit,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              message,
+              style: AppTextStyles.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

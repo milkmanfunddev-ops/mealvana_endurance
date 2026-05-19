@@ -2,6 +2,51 @@
 
 > **Branch:** all work lands on a new branch — `feat/formula-kit`, branched from `origin/develop`. We'll create and switch to it as the first step on plan acceptance.
 
+## Status — 2026-05-16
+
+**PR 1 (V1 Browse + Detail) — code complete (incl. pre_workout_templates fix), ready for final commit + PR.**
+
+Already committed on `feat/formula-kit`:
+- `463cdbc` docs(formula-kit): add implementation plan
+- `14adfa5` feat(formula-kit): browse data layer + library screen (PR 1 partial)
+  - Drift mirror of `during_workout_templates` + schema bump v7→v8
+  - `DuringWorkoutTemplatesRepository` with on-demand sync + dep-graph wiring
+  - Domain: `FormulaFilterState`, `FormulaPhase`, `BeforeSubPhase`, `DuringActivity`/`Duration`/`GutLevel`, `FormulaDigestionSpeed`, `BeforeFormulaView`, `DuringFormulaView`
+  - `FormulaLibraryController` (@riverpod AsyncNotifier) with full filter mutations + analytics tracking
+  - `FormulaLibraryScreen` with phase tabs, per-phase filter chip rows, list cards, empty states
+
+Uncommitted, ready to land as the PR 1 finishing commit:
+- **Before-phase table fix:** switched from legacy `templates` (filtered by `phase='before'`) to `pre_workout_templates` — the actual canonical Before-formula table (29 rows, per-serving macros + serving range).
+  - New `lib/shared/database/tables/pre_workout_templates_table.dart` mirroring the 24-column Supabase schema
+  - New `lib/features/formula_kit/data/pre_workout_templates_repository.dart` with `SyncableRepository` mixin + on-demand sync
+  - Schema bump v8→v9 with `onUpgrade` create-table guard
+  - `sync_dependency_graph` entry: `pre_workout_templates` has no deps (component_food_names is a denormalized array, not an FK)
+  - `BeforeSubPhase.fromTimeWindow()` derives Meal/Snack/Top-up from `time_window` (no `meal_type` column on this table)
+  - `FormulaLibraryController._mapBefore()` rewritten: aggregates `*_per_serving × max_servings` for totals, lowercases `digestion_speed`, reads `component_food_names` ARRAY directly
+- `presentation/screens/formula_detail_screen.dart` — read-only Before/During detail
+- `lib/shared/core/app_router.dart` — `/settings/food-preferences/formula-library` + `before/:id` + `during/:id` subroutes
+- `lib/features/settings/presentation/screens/food_preferences_hub_screen.dart` — 4th tile (flask icon)
+- `test/features/formula_kit/` — 22 passing unit tests on filter state + state filtering logic + new `fromTimeWindow` test
+- `scripts/run_dev.sh` — convenience runner (see "Dev runner" note below)
+- `lib/shared/services/analytics/analytics_tracker.dart` — dev-only debug echo of analytics events
+
+Verification done:
+- `dart run build_runner build` clean (0 errors)
+- `flutter analyze lib` clean
+- `flutter test test/features/formula_kit/` — 22/22 passing
+- Manual smoke test on iPhone 17 simulator (pre-table-fix): entry tile renders, library opens, phase tabs + chips filter correctly, detail screen renders for both phases. ✅ — re-smoke after switching to `pre_workout_templates` once the simulator picks up the schema bump.
+
+### Cross-cutting improvements landed during PR 1
+
+These are independent of Formula Kit but were uncovered while smoke-testing it:
+
+1. **`scripts/run_dev.sh`** — `flutter run --flavor dev` alone uses the dev iOS xcconfig BUT defaults to `lib/main.dart`, which loads `.env.prod.local` — so analytics events go to **production** Mixpanel even though the bundle says "dev". The script forces `--target lib/main_dev.dart` so the dev entry point (and `.env.dev.local`) wins. VSCode's `launch.json` was already correct; this brings the terminal experience to parity.
+2. **Dev-only analytics debug log** — `MixpanelAnalyticsTracker.track()` now `_logger.info`s `📊 <event_name>` with the properties payload when `config.devModeEnabled` is true. Stripped in prod. Lets us verify event firing without depending on Mixpanel dashboard access.
+
+### Dev Mixpanel project — open question
+
+The dev Mixpanel token (`df6e8dd4f3dc1363fa194a156298b16c` in `.env.dev.local`) is not surfacing events on any Mixpanel board Sunshine has access to. Could be: (a) token belongs to a project that was deleted, (b) project exists but Sunshine doesn't have viewer access, (c) project was never created. Not blocking PR 1 — the debug log gives parallel observability. Worth investigating before we start relying on dev Mixpanel for funnel work in PR 4+.
+
 ## Context
 
 **What this is.** Formula Kit is a new UI surface for browsing, personalizing, and creating "formulas" (nutrition templates) for the Before and During phases of endurance workouts. It's been prototyped in HTML/React on [claude.ai/design](https://claude.ai/design) across 5 iteration chats and ships as a 5,657-line standalone HTML prototype + bundle of `.jsx` source files. We need to recreate it in the Flutter app pixel-perfectly while wiring it to real backend infrastructure.

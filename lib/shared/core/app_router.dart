@@ -37,6 +37,9 @@ import '../../features/settings/presentation/screens/food_preferences_screen.dar
     as settings;
 import '../../features/settings/presentation/screens/food_settings_consolidated_screen.dart';
 import '../../features/settings/presentation/screens/food_preferences_hub_screen.dart';
+import '../../features/formula_kit/domain/formula_phase.dart';
+import '../../features/formula_kit/presentation/screens/formula_detail_screen.dart';
+import '../../features/formula_kit/presentation/screens/formula_library_screen.dart';
 import '../../features/settings/presentation/screens/sport_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/personal_templates/presentation/screens/personal_templates_screen.dart';
@@ -646,6 +649,31 @@ class AppRouter {
           path: '/settings/food-preferences/add-food',
           name: 'settings-add-food',
           builder: (context, state) => const AddFoodScreen(),
+        ),
+
+        // Formula Library — browse system Before/During formulas (PR 1).
+        GoRoute(
+          path: '/settings/food-preferences/formula-library',
+          name: 'settings-formula-library',
+          builder: (context, state) => const FormulaLibraryScreen(),
+          routes: [
+            GoRoute(
+              path: 'before/:id',
+              name: 'settings-formula-detail-before',
+              builder: (context, state) => FormulaDetailScreen(
+                id: state.pathParameters['id']!,
+                phase: FormulaPhase.before,
+              ),
+            ),
+            GoRoute(
+              path: 'during/:id',
+              name: 'settings-formula-detail-during',
+              builder: (context, state) => FormulaDetailScreen(
+                id: state.pathParameters['id']!,
+                phase: FormulaPhase.during,
+              ),
+            ),
+          ],
         ),
 
         // Help & Feedback Screen - Support and feedback collection

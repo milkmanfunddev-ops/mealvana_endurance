@@ -6,10 +6,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../auth/data/user_repository.dart';
-import '../../nutrition_plan/data/templates_repository.dart';
 import '../../onboarding/domain/allergy.dart';
 import '../../onboarding/domain/dietary_preference.dart';
 import '../data/during_workout_templates_repository.dart';
+import '../data/pre_workout_templates_repository.dart';
 import '../domain/before_sub_phase.dart';
 import '../domain/during_filter_options.dart';
 import '../domain/formula_filter_state.dart';
@@ -24,7 +24,7 @@ part 'formula_library_controller.g.dart';
 ///   - Filter state (phase tabs, sub-phase / activity / duration chips,
 ///     digestion / gut-level chips, "ignore diet" toggle).
 ///   - Pre-fetched Before and During formula views, derived from
-///     `templates` (phase='before') + `during_workout_templates`.
+///     `pre_workout_templates` + `during_workout_templates`.
 ///   - The user's diet + allergens, sourced from the current `UserProfile`.
 ///
 /// PR 1 is browse-only, so this controller doesn't yet expose any
@@ -121,7 +121,7 @@ class FormulaLibraryState {
 class FormulaLibraryController extends _$FormulaLibraryController {
   @override
   FutureOr<FormulaLibraryState> build() async {
-    final templatesRepo = ref.read(templatesRepositoryProvider);
+    final preWorkoutRepo = ref.read(preWorkoutTemplatesRepositoryProvider);
     final duringRepo = ref.read(duringWorkoutTemplatesRepositoryProvider);
     final userRepo = await ref.read(userRepositoryProvider.future);
     final logger = ref.read(appExternalDepsProvider).logger;
@@ -131,10 +131,8 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     final user = await userRepo.getCurrentUser();
     final userId = user?.id;
     if (userId != null) {
-      // Fire-and-await sequentially so dependencies (template_foods) sync
-      // before consumers — matches SyncDependencyGraph ordering.
-      if (await templatesRepo.isStale()) {
-        await templatesRepo.syncFromRemote(userId);
+      if (await preWorkoutRepo.isStale()) {
+        await preWorkoutRepo.syncFromRemote(userId);
       }
       if (await duringRepo.isStale()) {
         await duringRepo.syncFromRemote(userId);
@@ -147,13 +145,10 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       );
     }
 
-    final beforeEntries = await templatesRepo.getAllTemplates();
+    final beforeEntries = await preWorkoutRepo.getAll();
     final duringEntries = await duringRepo.getAll();
 
-    final beforeViews = beforeEntries
-        .where((e) => e.phase == 'before')
-        .map(_mapBefore)
-        .toList();
+    final beforeViews = beforeEntries.map(_mapBefore).toList();
     final duringViews = duringEntries.map(_mapDuring).toList();
 
     return FormulaLibraryState(
@@ -278,6 +273,26 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     }
   }
 
+  /// Clear all More Filters sheet fields for the current phase. Phase chip
+  /// filters (Timing / Activity / Duration) are left intact — those have
+  /// their own clear path via [clearPhaseChipFilters].
+  void clearMoreFilters() {
+    final current = state.value;
+    if (current == null) return;
+    final filter = current.filter;
+    state = AsyncData(
+      current.copyWith(
+        filter: filter.copyWith(
+          beforeDigestionSpeed:
+              filter.phase == FormulaPhase.before ? () => null : null,
+          duringGutLevel:
+              filter.phase == FormulaPhase.during ? () => null : null,
+          ignoreDietaryProfile: false,
+        ),
+      ),
+    );
+  }
+
   /// Clear all phase chip filters (Timing for Before; Activity + Duration
   /// for During). Sheet-level filters (digestion / gut / ignore-diet) are
   /// left intact.
@@ -334,23 +349,33 @@ class FormulaLibraryController extends _$FormulaLibraryController {
 
   // ── Mapping helpers ────────────────────────────────────────────────────
 
-  BeforeFormulaView _mapBefore(TemplateEntry e) {
-    final components = _extractComponentDisplayNames(e.foods);
+  BeforeFormulaView _mapBefore(PreWorkoutTemplateEntry e) {
+    // pre_workout_templates stores per-serving macros plus a min/max serving
+    // range. For the card/detail view we surface the **maximum-serving**
+    // totals, which matches what the design uses as the headline number.
+    final servings = e.maxServings;
+    final carbs = e.carbsPerServing * servings;
+    final protein = e.proteinPerServing * servings;
+    final fat = e.fatPerServing * servings;
+    final calories = ((carbs * 4) + (protein * 4) + (fat * 9)).round();
+
     return BeforeFormulaView(
       id: e.id,
       name: e.name,
-      subPhase: BeforeSubPhase.fromStorageValue(e.mealType),
-      digestionSpeed: e.digestionSpeed,
-      componentDisplayNames: components,
+      // pre_workout_templates has no meal_type column — derive from time_window.
+      subPhase: BeforeSubPhase.fromTimeWindow(e.timeWindow),
+      // Lowercase to match FormulaDigestionSpeed.storageValue (`fast`/`medium`).
+      digestionSpeed: e.digestionSpeed.toLowerCase(),
+      componentDisplayNames: _decodeStringArray(e.componentFoodNames),
       allergens: _decodeStringArray(e.allergens),
       excludedDiets: _decodeStringArray(e.excludedDiets),
-      totalCarbsG: e.totalCarbsG,
-      totalProteinG: e.totalProteinG,
-      totalFatG: e.totalFatG,
-      totalSodiumMg: e.totalSodiumMg,
-      totalFluidMl: e.totalFluidMl,
-      totalCalories: e.totalCalories,
-      timingWindow: e.timingWindow,
+      totalCarbsG: carbs,
+      totalProteinG: protein,
+      totalFatG: fat,
+      totalSodiumMg: e.sodiumMg,
+      totalFluidMl: e.fluidMl,
+      totalCalories: calories,
+      timingWindow: e.timeWindow,
       notes: e.notes,
     );
   }
@@ -396,23 +421,6 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       }
     } catch (_) {}
     return const [];
-  }
-
-  /// templates.foods is stored as a JSON array of objects with
-  /// `display_name` (preferred) or `food_name`. Extract a flat display list.
-  List<String> _extractComponentDisplayNames(String foodsJson) {
-    if (foodsJson.isEmpty) return const [];
-    try {
-      final decoded = jsonDecode(foodsJson);
-      if (decoded is! List) return const [];
-      return decoded
-          .whereType<Map>()
-          .map((m) => (m['display_name'] ?? m['food_name'] ?? '').toString())
-          .where((s) => s.isNotEmpty)
-          .toList();
-    } catch (_) {
-      return const [];
-    }
   }
 
   Future<void> _trackFilterApplied(

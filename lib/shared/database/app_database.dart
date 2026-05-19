@@ -32,6 +32,7 @@ import 'tables/coach_messages_table.dart';
 import 'tables/template_foods_table.dart';
 import 'tables/templates_table.dart';
 import 'tables/during_workout_templates_table.dart';
+import 'tables/pre_workout_templates_table.dart';
 import 'tables/tp_writeback_table.dart';
 import 'tables/personal_templates_table.dart';
 import 'tables/athlete_pairing_codes_table.dart';
@@ -111,6 +112,7 @@ part 'app_database.g.dart';
     TemplateFoodsTable,
     TemplatesTable,
     DuringWorkoutTemplatesTable,
+    PreWorkoutTemplatesTable,
 
     // TrainingPeaks write-back tracking
     TpWritebackTable,
@@ -152,7 +154,10 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 8: Adds during_workout_templates table (read-only mirror of
+  /// Schema version 9: Adds pre_workout_templates table (read-only mirror of
+  /// Supabase pre-workout formula catalog). Replaces the legacy `templates`
+  /// table for Before-phase formulas in Formula Kit.
+  /// v8 added during_workout_templates table (read-only mirror of
   /// Supabase during-workout formula catalog) to back the Formula Kit browse UI.
   /// v7 added activities.garmin_device_name (Garmin brand-compliant
   /// attribution), sweat profile fields on users (sweat_sodium,
@@ -165,7 +170,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -223,6 +228,11 @@ class AppDatabase extends _$AppDatabase {
         // idempotency in case the table was previously created at runtime.
         if (from < 8) {
           await m.createTable(duringWorkoutTemplatesTable);
+        }
+
+        // v9: Create pre_workout_templates table (read-only mirror).
+        if (from < 9) {
+          await m.createTable(preWorkoutTemplatesTable);
         }
       },
 
