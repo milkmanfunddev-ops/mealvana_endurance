@@ -163,9 +163,11 @@ class MoreFiltersSheet extends ConsumerWidget {
                                 key: const ValueKey(
                                   'formula_kit.more_filters.ignore_diet_toggle',
                                 ),
-                                label: state.filter.ignoreDietaryProfile
-                                    ? 'Ignoring my diet'
-                                    : 'Apply my diet',
+                                // Constant label + selected highlight indicates
+                                // ON/OFF. Earlier the label flipped between
+                                // "Apply my diet" / "Ignoring my diet" which
+                                // read as an action and felt reversed.
+                                label: 'Show all formulas',
                                 selected: state.filter.ignoreDietaryProfile,
                                 onTap: () => controller.setIgnoreDietaryProfile(
                                   !state.filter.ignoreDietaryProfile,
