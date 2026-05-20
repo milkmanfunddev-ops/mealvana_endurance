@@ -2,11 +2,11 @@
 
 > **Branch:** all work lands on a new branch — `feat/formula-kit`, branched from `origin/develop`. We'll create and switch to it as the first step on plan acceptance.
 
-## Status — 2026-05-16
+## Status — 2026-05-20
 
-**PR 1 (V1 Browse + Detail) — code complete (incl. pre_workout_templates fix), ready for final commit + PR.**
+**PR 1 (V1 Browse + Detail) — complete and polished on `feat/formula-kit`.**
 
-Already committed on `feat/formula-kit`:
+Committed on `feat/formula-kit`:
 - `463cdbc` docs(formula-kit): add implementation plan
 - `14adfa5` feat(formula-kit): browse data layer + library screen (PR 1 partial)
   - Drift mirror of `during_workout_templates` + schema bump v7→v8
@@ -14,27 +14,29 @@ Already committed on `feat/formula-kit`:
   - Domain: `FormulaFilterState`, `FormulaPhase`, `BeforeSubPhase`, `DuringActivity`/`Duration`/`GutLevel`, `FormulaDigestionSpeed`, `BeforeFormulaView`, `DuringFormulaView`
   - `FormulaLibraryController` (@riverpod AsyncNotifier) with full filter mutations + analytics tracking
   - `FormulaLibraryScreen` with phase tabs, per-phase filter chip rows, list cards, empty states
+- PR 1 finishing commits (Before table switch, detail screen, router wiring, hub tile, tests, dev runner, debug analytics log) — landed between 14adfa5 and the polish commits below.
+- `5efbcd4` feat(formula_kit): render component quantities on Before formula detail
+  - Surfaced per-component quantity descriptions on Before detail using `FoodItemData.buildDisplayQuantity` (no new formatter — reused fueling-plan's)
+  - `template_foods` now syncs to Drift (added `pre_workout_templates → template_foods` edge to `sync_dependency_graph`)
+  - Renamed `componentDisplayNames` → `componentDisplayStrings` and built display string per component (e.g. "1 cup Oats", "0.5 cups Mixed Berries")
+- `4953d28` fix(formula_kit): render Before components per-serving, drop max_servings multiplier
+  - Earlier code multiplied per-serving macros + component proportions by `max_servings`, which disagreed with the legacy `serving_unit` description (e.g. "Oatmeal + Raisins" rendered 3× too much). Switched to per-serving across the board; scale range is a plan-time concern, not a headline number.
+- `49495ed` fix(formula_kit): drop FORMULA #N eyebrow + raw component subtitle from During cards
+  - Removed `'FORMULA #${formula.templateNumber}'` eyebrow from During card + detail body (was visual noise).
+  - Removed snake_case `componentFoodNames.join(' + ')` subtitle from During card (duplicated and uglified the formula title above it).
+  - Before phase untouched.
 
-Uncommitted, ready to land as the PR 1 finishing commit:
-- **Before-phase table fix:** switched from legacy `templates` (filtered by `phase='before'`) to `pre_workout_templates` — the actual canonical Before-formula table (29 rows, per-serving macros + serving range).
-  - New `lib/shared/database/tables/pre_workout_templates_table.dart` mirroring the 24-column Supabase schema
-  - New `lib/features/formula_kit/data/pre_workout_templates_repository.dart` with `SyncableRepository` mixin + on-demand sync
-  - Schema bump v8→v9 with `onUpgrade` create-table guard
-  - `sync_dependency_graph` entry: `pre_workout_templates` has no deps (component_food_names is a denormalized array, not an FK)
-  - `BeforeSubPhase.fromTimeWindow()` derives Meal/Snack/Top-up from `time_window` (no `meal_type` column on this table)
-  - `FormulaLibraryController._mapBefore()` rewritten: aggregates `*_per_serving × max_servings` for totals, lowercases `digestion_speed`, reads `component_food_names` ARRAY directly
-- `presentation/screens/formula_detail_screen.dart` — read-only Before/During detail
-- `lib/shared/core/app_router.dart` — `/settings/food-preferences/formula-library` + `before/:id` + `during/:id` subroutes
-- `lib/features/settings/presentation/screens/food_preferences_hub_screen.dart` — 4th tile (flask icon)
-- `test/features/formula_kit/` — 22 passing unit tests on filter state + state filtering logic + new `fromTimeWindow` test
-- `scripts/run_dev.sh` — convenience runner (see "Dev runner" note below)
-- `lib/shared/services/analytics/analytics_tracker.dart` — dev-only debug echo of analytics events
-
-Verification done:
+Verification done (final pass):
 - `dart run build_runner build` clean (0 errors)
 - `flutter analyze lib` clean
-- `flutter test test/features/formula_kit/` — 22/22 passing
-- Manual smoke test on iPhone 17 simulator (pre-table-fix): entry tile renders, library opens, phase tabs + chips filter correctly, detail screen renders for both phases. ✅ — re-smoke after switching to `pre_workout_templates` once the simulator picks up the schema bump.
+- `flutter test test/features/formula_kit/` — 22/22 passing (incl. updated During card test that asserts the eyebrow + raw-names row are absent)
+- Manual smoke test on iPhone simulator with each polish commit. ✅
+
+### Data hygiene issues uncovered during PR 1 polish (filed, not blockers)
+
+- **#27** — `template_foods.serving_unit` missing on some rows causes bare display strings like "1 Jam / Jelly" (no unit token between quantity and food name).
+- **#28** — `pre_workout_templates` "Potato + Salt" lists only `baked_potato` as a component, but `sodium_mg = 300` implies ~283 mg from salt that's never structurally referenced. `template_foods.salt` exists (390 mg/serving) but isn't in `component_food_names`. Sibling pattern to #27.
+- **(unfiled)** `pre_workout_templates.serving_unit` is vestigial English text; the only consumer is a legacy fallback in `supabase/functions/before-phase-explosion/index.ts:147`. Worth retiring alongside #27.
 
 ### Cross-cutting improvements landed during PR 1
 
