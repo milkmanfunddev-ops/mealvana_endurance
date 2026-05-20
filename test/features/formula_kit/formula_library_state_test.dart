@@ -20,7 +20,7 @@ BeforeFormulaView _before({
     name: 'Test $id',
     subPhase: subPhase,
     digestionSpeed: digestionSpeed,
-    componentDisplayNames: const ['Oats'],
+    componentDisplayStrings: const ['1 cup Oats'],
     allergens: allergens,
     excludedDiets: excludedDiets,
     totalCarbsG: 40,

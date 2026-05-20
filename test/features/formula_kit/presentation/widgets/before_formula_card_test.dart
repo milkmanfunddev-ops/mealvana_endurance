@@ -6,7 +6,11 @@ import 'package:mealvana_endurance/features/formula_kit/presentation/widgets/bef
 
 BeforeFormulaView _fixture({
   String name = 'Oatmeal & Banana',
-  List<String> components = const ['Oats', 'Banana', 'Honey'],
+  List<String> components = const [
+    '1 cup Oats',
+    '1 Banana',
+    '1 tbsp Honey',
+  ],
   double carbs = 62,
   double protein = 9,
   double fat = 3,
@@ -19,7 +23,7 @@ BeforeFormulaView _fixture({
     name: name,
     subPhase: subPhase,
     digestionSpeed: 'medium',
-    componentDisplayNames: components,
+    componentDisplayStrings: components,
     allergens: const [],
     excludedDiets: const [],
     totalCarbsG: carbs,
@@ -49,7 +53,10 @@ void main() {
       await tester.pumpWidget(_wrap(
         BeforeFormulaCard(formula: _fixture(), onTap: () {}),
       ));
-      expect(find.text('Oats + Banana + Honey'), findsOneWidget);
+      expect(
+        find.text('1 cup Oats + 1 Banana + 1 tbsp Honey'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('renders rounded macro pills (carbs, protein, fat, sodium)',

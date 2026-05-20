@@ -45,10 +45,10 @@ class BeforeFormulaCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (formula.componentDisplayNames.isNotEmpty) ...[
+              if (formula.componentDisplayStrings.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  formula.componentDisplayNames.join(' + '),
+                  formula.componentDisplayStrings.join(' + '),
                   style: AppTextStyles.bodyMedium.copyWith(
                     fontSize: 13,
                     color: scheme.onSurfaceVariant,

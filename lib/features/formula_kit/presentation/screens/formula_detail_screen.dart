@@ -175,34 +175,24 @@ class _BeforeDetailBody extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           _SectionLabel(text: 'Components'),
           const SizedBox(height: AppSpacing.xs),
-          BaseCard(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (formula.componentDisplayNames.isEmpty)
-                    Text(
-                      'No components listed.',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    )
-                  else
-                    for (var i = 0; i < formula.componentDisplayNames.length;
-                        i++) ...[
-                      if (i > 0) const Divider(height: AppSpacing.md),
-                      Text(
-                        formula.componentDisplayNames[i],
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                    ],
-                ],
+          if (formula.componentDisplayStrings.isEmpty)
+            BaseCard(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  'No components listed.',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
               ),
-            ),
-          ),
+            )
+          else
+            for (var i = 0; i < formula.componentDisplayStrings.length;
+                i++) ...[
+              if (i > 0) const SizedBox(height: AppSpacing.xs),
+              _ComponentRow(label: formula.componentDisplayStrings[i]),
+            ],
           if (formula.notes != null && formula.notes!.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             _SectionLabel(text: 'Notes'),
@@ -408,6 +398,55 @@ class _DuringDetailBody extends StatelessWidget {
 }
 
 // ─── Shared bits ──────────────────────────────────────────────────────────
+
+/// A single component row used in the Before-formula detail "Components"
+/// section. Renders as its own card with an orange utensil-icon badge on the
+/// left and the pre-formatted display string (e.g. `"1 cup Blueberries"`).
+class _ComponentRow extends StatelessWidget {
+  const _ComponentRow({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return BaseCard(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: AppColors.orange,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                FontAwesomeIcons.utensils,
+                size: 14,
+                color: AppColors.cream,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.text});

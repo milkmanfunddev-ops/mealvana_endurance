@@ -22,7 +22,7 @@ class SyncDependencyGraph {
     'template_foods': [],
     'templates': ['template_foods'],
     'during_workout_templates': ['template_foods'],
-    'pre_workout_templates': [],
+    'pre_workout_templates': ['template_foods'],
     'personal_templates': ['users'],
   };
 

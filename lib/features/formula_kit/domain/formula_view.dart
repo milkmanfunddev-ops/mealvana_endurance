@@ -12,7 +12,7 @@ class BeforeFormulaView {
     required this.name,
     required this.subPhase,
     required this.digestionSpeed,
-    required this.componentDisplayNames,
+    required this.componentDisplayStrings,
     required this.allergens,
     required this.excludedDiets,
     required this.totalCarbsG,
@@ -29,7 +29,14 @@ class BeforeFormulaView {
   final String name;
   final BeforeSubPhase? subPhase;
   final String digestionSpeed;
-  final List<String> componentDisplayNames;
+
+  /// Per-component display strings already including quantity + unit + name,
+  /// e.g. `["1 Banana", "1 cup Blueberries", "1 cup Milk"]`. Built by the
+  /// controller by joining `pre_workout_templates.component_quantities`
+  /// with `template_foods.serving_unit` / `display_name(_plural)` via
+  /// [FoodItemData.buildDisplayQuantity]. Rendered as-is in the list card
+  /// subtitle and the detail "Components" section.
+  final List<String> componentDisplayStrings;
   final List<String> allergens;
   final List<String> excludedDiets;
   final double totalCarbsG;

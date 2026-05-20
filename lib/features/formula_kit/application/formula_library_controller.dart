@@ -6,6 +6,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../auth/data/user_repository.dart';
+import '../../nutrition_plan/data/template_foods_repository.dart';
+import '../../nutrition_plan/domain/food_item_data.dart';
 import '../../onboarding/domain/allergy.dart';
 import '../../onboarding/domain/dietary_preference.dart';
 import '../data/during_workout_templates_repository.dart';
@@ -163,14 +165,21 @@ class FormulaLibraryController extends _$FormulaLibraryController {
   FutureOr<FormulaLibraryState> build() async {
     final preWorkoutRepo = ref.read(preWorkoutTemplatesRepositoryProvider);
     final duringRepo = ref.read(duringWorkoutTemplatesRepositoryProvider);
+    final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
     final userRepo = await ref.read(userRepositoryProvider.future);
     final logger = ref.read(appExternalDepsProvider).logger;
 
     // On-demand sync: only if Drift cache is empty/stale, fetch from Supabase
     // before reading. Keeps the screen useful offline for repeat visits.
+    // template_foods is required so we can render component display strings
+    // like "1 cup Blueberries" by joining pre_workout_templates.component_*
+    // columns with template_foods.serving_unit / display_name(_plural).
     final user = await userRepo.getCurrentUser();
     final userId = user?.id;
     if (userId != null) {
+      if (await templateFoodsRepo.isStale()) {
+        await templateFoodsRepo.syncFromRemote(userId);
+      }
       if (await preWorkoutRepo.isStale()) {
         await preWorkoutRepo.syncFromRemote(userId);
       }
@@ -187,8 +196,16 @@ class FormulaLibraryController extends _$FormulaLibraryController {
 
     final beforeEntries = await preWorkoutRepo.getAll();
     final duringEntries = await duringRepo.getAll();
+    final templateFoods = await templateFoodsRepo.getAllTemplateFoods();
 
-    final beforeViews = beforeEntries.map(_mapBefore).toList();
+    // Index template foods by their machine name (lowercased) so _mapBefore
+    // can resolve `component_food_names` entries to display metadata.
+    final templateFoodsByName = <String, TemplateFoodEntry>{
+      for (final tf in templateFoods) tf.name.toLowerCase(): tf,
+    };
+
+    final beforeViews =
+        beforeEntries.map((e) => _mapBefore(e, templateFoodsByName)).toList();
     final duringViews = duringEntries.map(_mapDuring).toList();
 
     final userDiets = user?.dietaryPreference == null
@@ -433,7 +450,10 @@ class FormulaLibraryController extends _$FormulaLibraryController {
 
   // ── Mapping helpers ────────────────────────────────────────────────────
 
-  BeforeFormulaView _mapBefore(PreWorkoutTemplateEntry e) {
+  BeforeFormulaView _mapBefore(
+    PreWorkoutTemplateEntry e,
+    Map<String, TemplateFoodEntry> templateFoodsByName,
+  ) {
     // pre_workout_templates stores per-serving macros plus a min/max serving
     // range. For the card/detail view we surface the **maximum-serving**
     // totals, which matches what the design uses as the headline number.
@@ -443,6 +463,22 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     final fat = e.fatPerServing * servings;
     final calories = ((carbs * 4) + (protein * 4) + (fat * 9)).round();
 
+    final componentNames = _decodeStringArray(e.componentFoodNames);
+    final componentQuantities = _decodeQuantityMap(e.componentQuantities);
+    final componentDisplayStrings = componentNames
+        .map(
+          (n) => _buildComponentDisplayString(
+            componentName: n,
+            // Per-serving proportion from component_quantities × the template's
+            // max-serving scale, so the displayed quantity lines up with the
+            // headline macro totals (which also use max_servings).
+            proportion: componentQuantities[n.toLowerCase()] ?? 1,
+            servings: servings,
+            templateFoodsByName: templateFoodsByName,
+          ),
+        )
+        .toList();
+
     return BeforeFormulaView(
       id: e.id,
       name: e.name,
@@ -450,7 +486,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       subPhase: BeforeSubPhase.fromTimeWindow(e.timeWindow),
       // Lowercase to match FormulaDigestionSpeed.storageValue (`fast`/`medium`).
       digestionSpeed: e.digestionSpeed.toLowerCase(),
-      componentDisplayNames: _decodeStringArray(e.componentFoodNames),
+      componentDisplayStrings: componentDisplayStrings,
       allergens: _decodeStringArray(e.allergens),
       excludedDiets: _decodeStringArray(e.excludedDiets),
       totalCarbsG: carbs,
@@ -462,6 +498,64 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       timingWindow: e.timeWindow,
       notes: e.notes,
     );
+  }
+
+  /// Produce a single component line like `"1 cup Blueberries"` or `"4 Medjool
+  /// Dates"`. Falls back to a titlecased component name if `template_foods`
+  /// doesn't have a matching row.
+  String _buildComponentDisplayString({
+    required String componentName,
+    required num proportion,
+    required double servings,
+    required Map<String, TemplateFoodEntry> templateFoodsByName,
+  }) {
+    final tf = templateFoodsByName[componentName.toLowerCase()];
+    final qty = proportion.toDouble() * servings;
+    final qtyStr = _formatQuantity(qty);
+
+    if (tf == null) {
+      // Best-effort fallback: prepend qty to the raw component name (which
+      // is the machine identifier like "medjool_dates"). Humanise underscores.
+      final humanName = componentName
+          .split('_')
+          .where((s) => s.isNotEmpty)
+          .map((s) => '${s[0].toUpperCase()}${s.substring(1)}')
+          .join(' ');
+      return '$qtyStr $humanName';
+    }
+
+    return FoodItemData.buildDisplayQuantity(
+      rawQty: qtyStr,
+      servingUnit: tf.servingUnit,
+      displayName: tf.displayName,
+      displayNamePlural: tf.displayNamePlural,
+    );
+  }
+
+  /// Format a numeric servings count for display: `1` (not `1.0`), `0.5`,
+  /// `1.5`. Stays in sync with the conventions used by the fuel-log row and
+  /// expandable food item widgets.
+  String _formatQuantity(double qty) {
+    if (qty == qty.roundToDouble()) return qty.toInt().toString();
+    return qty.toStringAsFixed(qty.toStringAsFixed(2).endsWith('0') ? 1 : 2);
+  }
+
+  /// Decode the JSONB `component_quantities` column into a lowercased map.
+  /// Stored shape is `{"banana": 1, "blueberries": 0.5}`. Returns an empty
+  /// map for null / malformed input.
+  Map<String, num> _decodeQuantityMap(String? raw) {
+    if (raw == null || raw.isEmpty) return const {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        return {
+          for (final entry in decoded.entries)
+            if (entry.value is num)
+              entry.key.toString().toLowerCase(): entry.value as num,
+        };
+      }
+    } catch (_) {}
+    return const {};
   }
 
   DuringFormulaView _mapDuring(DuringWorkoutTemplateEntry e) {
