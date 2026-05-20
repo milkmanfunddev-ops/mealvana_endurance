@@ -4,7 +4,53 @@
 
 ## Status — 2026-05-20
 
-**PR 1 (V1 Browse + Detail) — complete and polished on `feat/formula-kit`.**
+**PR 1 (V1 Browse + Detail) — complete and polished on `feat/formula-kit`. PR 2 scope changed (see "Plan revision" below).**
+
+### Plan revision — 2026-05-20: Pins replace Favorites, move from PR 5 to PR 2
+
+Originally PR 5 added a star/heart "favorites" feature, Drift-only. After product discussion, the feature was rescoped to **pins** — pins are not bookmarks, they are **preference signals consumed by the plan-generation algorithm**. When a pin exists matching a workout's scope, the algorithm uses pinned templates as the candidate set first; if none fit (allergen/dislike/scale/gut-training constraints), it falls through to the existing algorithm.
+
+Why this moved earlier:
+- Pins are the user's explicit "use this for this kind of workout" signal — exactly the signal needed to start tuning template assignment empirically.
+- Shipping pins early starts data collection (`plan_used_pin`, `plan_pin_fallthrough`) so we have real usage signal by the time later PRs land.
+- Pins are orthogonal to edit/personalize/swap/coach work — clean isolated PR.
+
+PR phasing has shifted: new PR 2 is Pins. Old PR 2–5 each move up by one. Favorites (star + favorites-only filter) is **removed** from the plan — pins serve the user-need it was solving.
+
+### Next up — PR 2: Pin a formula as an algorithm signal (planned, not started)
+
+**Goal:** User can toggle a pin on any system formula. When the plan-generation algorithm runs, pinned templates are tried first for the matching scope; fall through to existing logic if none fit. Show transparent fallback to the user.
+
+**Scope decisions (locked):**
+- **UX = single-tap toggle.** No scope picker. Scope (sub_phase for Before, activity_type × duration_bracket for During) is inherited from the template's existing metadata.
+- **Multiple pins per scope allowed.** Algorithm picks best from pinned set by carb proximity.
+- **V1 = system templates only.** Personal templates become pinnable in PR 4 (after personal_templates evolution lands).
+- **Storage = Drift + Supabase.** Both client-side (`client_plan_service`) and server-side (`generate-nutrition-plan-v*`) need to read pins. Drift-only is not an option.
+- **Fit-failure UX = transparent (option b).** Banner on activity detail: "Your pinned formula didn't fit today's target — using [fallback]."
+- **Pin entry points = (i) card/detail toggle + (iii) activity detail awareness banner.** Skip the workout-settings management surface in V1.
+
+**Substeps (in order, each is a commit):**
+
+1. **Schema** — Supabase migration `formula_pins` table + Drift mirror + schema bump v8→v9 + codegen
+2. **Domain + repository** — `FormulaPin` model, `FormulaPinsRepository` (CRUD + sync). Register edge in `sync_dependency_graph`.
+3. **Sync handler** — `formula_pins_sync_handler` mirroring `personal_templates_sync_handler` pattern (local-dirty-preserved + remote-upsert).
+4. **Client-side algorithm hook** — modify `_tryTemplateBasedBefore` in `client_plan_service.dart:307` to check pins first; fall through on no-fit. (During phase is server-only — no client hook needed for During.)
+5. **Edge function v4** — new `supabase/functions/generate-nutrition-plan-v4/` directory, near-copy of v3, with pin-check at Pass 1 (Before, `pre-workout.ts:691`) and template-selection (During, `during-template-solver.ts:713`). Identical-when-no-pins behavior.
+6. **Edge function parity test** — run v3 and v4 against fixture users with zero pins, diff outputs, confirm byte-identical.
+7. **Telemetry** — `formula_pinned`, `formula_unpinned`, `plan_used_pin`, `plan_pin_fallthrough { reason: 'scale_out_of_range' | 'allergen' | 'dislike' | 'gut_train_mismatch' | 'no_pin_for_scope' }`.
+8. **UX (i)** — pin toggle on `FormulaLibraryScreen` cards + Before/During detail screens. State in `FormulaLibraryController` + new `FormulaPinController`.
+9. **UX (iii)** — `activity_detail_screen` banner: "Using your pinned formula ✓ [Name]" + fallback variant. Routes back to library on tap.
+10. **Client cutover** — `nutrition_plan_service.dart:348` switches the edge-function call from `generate-nutrition-plan-v3` to `generate-nutrition-plan-v4`. Old app versions on old binaries keep calling v3 — zero risk to existing prod traffic.
+11. **Tests** — `formula_pins_repository_test`, `client_plan_service_pinned_template_test`, edge function pin-path test, UI tests for pin toggle + banner states.
+12. **Status update + memory update** — refresh this Status section, refresh `project_formula_kit.md` memory.
+
+**Out of scope for PR 2 (deferred):**
+- Pinning personal formulas (depends on PR 4).
+- Workout-settings management surface (V2 if power users ask).
+- Coach insight reading pins as context (folded into PR 5 coach insight scope).
+- Plan-time formula picker ("use this formula for this specific workout") — V3+.
+
+
 
 Committed on `feat/formula-kit`:
 - `463cdbc` docs(formula-kit): add implementation plan
@@ -55,7 +101,7 @@ The dev Mixpanel token (`df6e8dd4f3dc1363fa194a156298b16c` in `.env.dev.local`) 
 
 **Why it's being built.** Today, Mealvana has a sophisticated template *backend* (pre/during/post-workout templates in Supabase, mirrored to Drift) but no user-facing browse/personalize UI for templates. Templates are applied silently inside `client_plan_service._tryTemplateBasedBefore()` during plan generation. Athletes can't see the catalog, can't pick from it, can't tweak a template, and can't save personal variants. Formula Kit fills that gap.
 
-**Intended outcome.** Athletes can (a) browse the system formula library on Before/During tabs with filters; (b) tap a template to see its breakdown; (c) "Make this mine" to fork it with quantity tweaks, swaps, removals, and AI coach guidance; (d) create personal formulas from scratch; (e) favorite formulas; (f) have all of this persist locally and sync to Supabase like every other Mealvana entity.
+**Intended outcome.** Athletes can (a) browse the system formula library on Before/During tabs with filters; (b) tap a template to see its breakdown; (c) "Make this mine" to fork it with quantity tweaks, swaps, removals, and AI coach guidance; (d) create personal formulas from scratch; (e) **pin formulas so the plan-generation algorithm uses them as the preference signal for matching workouts** (replaces the original "favorite" concept — see Plan revision in Status); (f) have all of this persist locally and sync to Supabase like every other Mealvana entity.
 
 ## Source material
 
@@ -76,16 +122,18 @@ The dev Mixpanel token (`df6e8dd4f3dc1363fa194a156298b16c` in `.env.dev.local`) 
 - Route: add `/settings/food-preferences/formula-library` (and its sub-routes for detail + create) to the router config.
 - Implication: Formula Kit is treated as a **preferences/configuration surface**, not an inline workout planner. Athletes go there to *manage* their formulas, not to *pick one for today's workout*. This shapes the answer to the two remaining product questions below.
 
-## Plan integration (recommended, given entry point)
+## Plan integration (revised 2026-05-20)
 
-**Browse-only for PR 1–5. Defer "user pick overrides silent picker" to V4.**
+**PR 1 is browse-only (no algorithm coupling). PR 2 introduces pins as the algorithm signal. Browse + manage stays in Settings; the per-workout impact is observed in the existing activity detail screen.**
 
-Reasoning: because the entry point sits under Settings, the user mental model is "this is where I manage my preferences" — not "this is where I pick what I'll eat in 2 hours." So:
-- PR 1–5 build the browse + personalize + favorite + create experience as a standalone settings surface.
-- `client_plan_service._tryTemplateBasedBefore()` continues to silently pick from the system catalog *plus* the user's personal_formulas (treat them as additional candidates), but doesn't yet honor a "user selected this specific one" signal.
-- V4 (out of scope for this work) can add a Formula picker into the New Activity flow that explicitly says "use this formula for this workout."
+Reasoning: Settings is the right home for "manage your preferences." The signal those preferences produce flows into plan generation automatically — the user doesn't go to Settings to pick today's formula, they go to Settings to declare their long-standing preferences, then the algorithm honors them.
 
-This keeps PR 1 small and decouples Formula Kit from the plan-generation algorithm.
+- **PR 1**: Standalone settings surface, no algorithm coupling. ✅ Shipped.
+- **PR 2**: Pins become a first-class algorithm input. Both `client_plan_service._tryTemplateBasedBefore()` and the new `generate-nutrition-plan-v4` edge function check pins for the matching scope before falling through to the existing scoring algorithm.
+- **PR 3–6**: Personalize, swap, create, coach — all build on the same Settings surface. Personal formulas become pinnable in PR 4.
+- **V3+ (out of scope)**: Plan-time formula picker in New Activity flow ("use this formula for this specific workout") — distinct from pins, which apply across many workouts.
+
+This is what the user reads from the algorithm change: pins say "these are my long-standing preferences for this kind of workout." The plan-time picker (someday) would say "for this particular workout, use this one regardless."
 
 ## PR 1 scope (recommended)
 
@@ -119,19 +167,20 @@ git checkout -b feat/formula-kit origin/develop
 - `feat/patrol-integration-tests` — massive divergence, mid-flight test infrastructure work.
 - `fix/preworkout-bundle-may2026` (current branch) — that's a small bugfix branch on its own trajectory.
 
-## Scope (recommended phasing)
+## Scope (recommended phasing — revised 2026-05-20)
 
-Formula Kit shipped across **5 iterations** in design. Recommend shipping the same way in Flutter — each iteration is a mergeable PR that adds a coherent slice. Don't try to land the whole thing at once.
+Formula Kit ships across **6 PRs**. New PR 2 (Pins) inserted ahead of personalization. All later PRs shift up one. Favorites removed (pins serve the user-need).
 
 | PR | Slice | Approx scope |
 |----|-------|--------------|
-| **PR 1** | V1 Browse + Detail (read-only) | Library screen, phase tabs, filter chips, collapsible header, detail view with components. No personalization. |
-| **PR 2** | V3 iter 1 — "Make this mine" edit state (Before only) | Edit-state UI on Before detail, quantity stepper, placeholder swap sheet, real-time macro recompute. |
-| **PR 3** | V3 iter 2 — Real Swap sheet + Your formulas + persistence + During edit + **legacy personal_templates UI deprecation** | Wires up real swap sheet (reusing existing `swap_food_screen` patterns), adds Your Formulas section, Drift+Supabase persistence via the **evolved `personal_templates` table** (see schema section), During edit variant. Also removes the old "My Templates" UI entry points from Settings (the data backbone is the same table — just the UI gets retired). |
-| **PR 4** | Coach insight + Add Food | AI-coach guidance panel (calls Claude API via multi-mode edge function — see Coach Insight section), Add Food button in edit state. |
-| **PR 5** | Create-from-scratch flow + Favorites | New formula from blank, "+ New" entry on Your Formulas, star toggle on cards, "Favorites only" filter. Final polish (during-card descriptors). |
+| **PR 1** | V1 Browse + Detail (read-only) ✅ Done | Library screen, phase tabs, filter chips, collapsible header, detail view with components. No personalization. |
+| **PR 2** | **NEW — Pin a formula as algorithm signal** | Single-tap pin toggle on cards/detail. Pins drive plan generation: matching pinned templates considered first, fall through to existing algorithm. New `formula_pins` table (Supabase + Drift). New `generate-nutrition-plan-v4` edge function. Transparent fit-failure banner on activity detail. System templates only in V1. |
+| **PR 3** | V3 iter 1 — "Make this mine" edit state (Before only) | Edit-state UI on Before detail, quantity stepper, placeholder swap sheet, real-time macro recompute. |
+| **PR 4** | V3 iter 2 — Real Swap sheet + Your formulas + persistence + During edit + **legacy personal_templates UI deprecation** + **personal formulas become pinnable** | Real swap sheet, Your Formulas section, Drift+Supabase persistence via evolved `personal_templates`, During edit variant. Remove old "My Templates" UI. Extend `formula_pins.template_kind` to include `'personal_template'`. |
+| **PR 5** | Coach insight + Add Food | AI-coach guidance panel (multi-mode edge function), Add Food button. Coach insight reads pins as part of structured context. |
+| **PR 6** | Create-from-scratch | New formula from blank, "+ New" entry on Your Formulas. Final polish (during-card descriptors). |
 
-PR 1 is shippable on its own — it provides immediate user value (browse the existing catalog) before any personalization lands.
+PR 1 shipped on its own. PR 2 is the first PR that touches plan generation — it's the riskiest in terms of prod impact, isolated for that reason.
 
 ## Architecture
 
@@ -144,16 +193,17 @@ lib/features/formula_kit/
 │   ├── formula_personalizer_controller.dart   # edit/create draft state machine
 │   ├── formula_swap_controller.dart           # wraps existing swap_food infrastructure
 │   ├── coach_insight_service.dart             # calls ai-coach edge function
-│   └── favorites_controller.dart              # @riverpod AsyncNotifier
+│   └── formula_pin_controller.dart            # NEW (PR 2) — @riverpod AsyncNotifier, single source of truth for pin state
 ├── data/
 │   ├── personal_formulas_repository.dart      # thin wrapper around evolved personal_templates_repository — filters/writes only formula-provenance rows
 │   ├── custom_foods_repository.dart           # offline-first writes to CustomFoodsTable, identical sync pattern to personal_templates
-│   ├── favorites_repository.dart              # local-only Drift (per design — no Supabase sync in V1)
+│   ├── formula_pins_repository.dart           # NEW (PR 2) — offline-first writes to FormulaPinsTable, syncs to Supabase
 │   └── ai_coach_client.dart                   # remote-only edge function client (mode: 'insight' for now)
 ├── domain/
 │   ├── personal_formula.dart                  # value type — provenance: forked | from_scratch (filters from personal_templates rows)
 │   ├── custom_food.dart
 │   ├── coach_insight.dart                     # { insight, staleMarker }
+│   ├── formula_pin.dart                       # NEW (PR 2) — { user_id, template_id, template_kind, created_at }
 │   └── formula_filter_state.dart
 └── presentation/
     ├── screens/
@@ -162,7 +212,7 @@ lib/features/formula_kit/
     │   └── formula_create_screen.dart         # create-from-scratch (full-screen)
     └── widgets/
         ├── phase_tab_bar.dart
-        ├── formula_card.dart                  # system + personal variants
+        ├── formula_card.dart                  # system + personal variants; shows pin toggle (PR 2)
         ├── filter_chip_row.dart
         ├── more_filters_sheet.dart
         ├── collapsible_header.dart
@@ -171,7 +221,8 @@ lib/features/formula_kit/
         ├── coach_insight_panel.dart
         ├── add_food_button.dart
         ├── delete_confirmation.dart
-        └── favorite_star.dart
+        ├── pin_toggle.dart                    # NEW (PR 2) — icon button used in card + detail
+        └── pin_status_banner.dart             # NEW (PR 2) — used by activity_detail_screen, shows "Using pinned ✓" or fit-failure
 ```
 
 ### Drift schema additions
@@ -180,8 +231,8 @@ lib/features/formula_kit/
 lib/shared/database/tables/
 ├── personal_templates_table.dart         # EVOLVE — already exists; add formula-kit columns (see below)
 ├── custom_foods_table.dart               # NEW — mirrors mealvana.kit.custom_foods
-├── favorites_table.dart                  # NEW — mirrors mealvana.kit.favorites
-├── during_workout_templates_table.dart   # NEW — sync from existing Supabase table
+├── formula_pins_table.dart               # NEW (PR 2) — mirrors Supabase formula_pins; offline-first, syncs both ways
+├── during_workout_templates_table.dart   # NEW (PR 1) ✅ — sync from existing Supabase table
 └── post_workout_templates_table.dart     # NEW — sync from existing Supabase table (for later After-phase work)
 ```
 
@@ -196,11 +247,11 @@ lib/shared/database/tables/
 - `durations` — nullable JSON array (During only)
 - `gut_training` — nullable (During only)
 - `custom_food_ids` — nullable JSON array (links to `custom_foods` rows used as components)
-- `is_pinned_to_workout` — bool, defaults false (reserved for V4 "use this formula for this workout" feature — not used by V1–V5, but the column avoids a future migration)
+- ~~`is_pinned_to_workout`~~ — **SUPERSEDED by `formula_pins` table (PR 2).** Originally reserved for V4 plan-time picker; that feature is now distinct from pins. If a plan-time picker ships later, it'll use its own column or join table — do not add `is_pinned_to_workout` in the PR 4 migration.
 
 Old `personal_templates` UI surface continues to work unchanged during PR 2 — the backfill maps every existing row to `provenance = legacy_plan` so nothing breaks. Legacy UI entry points removed in PR 3.
 
-The design prototype uses `localStorage` for `mealvana.kit.favorites`. In Flutter, favorites stay Drift-only initially (per design — no cross-device sync needed for V1); `personal_templates` (now the formulas backbone) and `custom_foods` sync to Supabase.
+`personal_templates` (the formulas backbone), `custom_foods`, and `formula_pins` all sync to Supabase via the standard offline-first pattern. Pins specifically must sync because both the client (`client_plan_service`) and the edge function (`generate-nutrition-plan-v4`) read them — Drift-only would prevent the server-side path from honoring pins.
 
 ### Sync + conflict resolution
 
@@ -218,20 +269,40 @@ State this conflict policy explicitly in the new `custom_foods_repository.dart` 
 
 ```
 supabase/migrations/
-├── 2026MMDDhhmmss_personal_templates_formula_kit_columns.sql   # ALTER TABLE — add columns + backfill
-├── 2026MMDDhhmmss_custom_foods.sql                              # user-owned, RLS scoped to owner
-├── 2026MMDDhhmmss_llm_usage.sql                                 # token usage log (see Coach Insight section)
-└── (favorites stays Drift-only for V1)
+├── 2026MMDDhhmmss_formula_pins.sql                              # NEW (PR 2) — user-owned, RLS scoped to owner
+├── 2026MMDDhhmmss_personal_templates_formula_kit_columns.sql   # ALTER TABLE — add columns + backfill (PR 4)
+├── 2026MMDDhhmmss_custom_foods.sql                              # user-owned, RLS scoped to owner (PR 4)
+└── 2026MMDDhhmmss_llm_usage.sql                                 # token usage log (see Coach Insight section) (PR 5)
 
 supabase/functions/
-└── ai-coach/                                                     # NEW multi-mode edge function (insight, chat-future)
+├── generate-nutrition-plan-v4/                                   # NEW (PR 2) — near-copy of v3 with pin-check; v3 stays alive for old clients
+└── ai-coach/                                                     # NEW (PR 5) — multi-mode edge function (insight, chat-future)
 ```
 
-The migration:
+The `personal_templates_formula_kit_columns.sql` migration (PR 4):
 1. Adds the new columns described above to `personal_templates`.
 2. Backfills every existing row with `provenance = 'legacy_plan'`, `phase = NULL`.
 3. Adds CHECK constraint validating provenance + phase combinations (e.g., `forked_formula` requires `phase NOT NULL` and `source_template_id NOT NULL`).
 4. Keeps existing RLS policy unchanged — user-owned, scoped via `user_id`.
+
+The `formula_pins.sql` migration (PR 2):
+```sql
+create table formula_pins (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  template_id uuid not null,
+  template_kind text not null check (template_kind in ('pre_system', 'during_system')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  is_deleted boolean not null default false
+);
+create unique index formula_pins_active_unique
+  on formula_pins (user_id, template_id, template_kind)
+  where not is_deleted;
+create index formula_pins_user_kind on formula_pins (user_id, template_kind) where not is_deleted;
+-- RLS: user can read/write only their own pins
+```
+Note: `template_kind` is intentionally text, not an FK to either templates table — polymorphic ref. The check constraint can be widened to `('pre_system', 'during_system', 'personal_template')` in PR 4 when personal formulas become pinnable.
 
 ### Reused components (do not rebuild)
 
@@ -347,14 +418,23 @@ Fire from controllers (FOA: not from screens). Add the events listed below in th
 | `formula_filter_applied` | `{ filter_type: 'diet' \| 'allergen' \| 'sub_phase' \| 'activity' \| 'duration' \| 'gut_training', value: <string>, active_filter_count: <int> }` |
 | `formula_detail_viewed` | `{ template_id: <string>, phase: 'before' \| 'during', is_personal: false }` |
 
-**PR 2 — Make this mine (Before):**
+**PR 2 — Pins + algorithm signal:**
+| Event | Payload | Fired from |
+|---|---|---|
+| `formula_pinned` | `{ template_id, template_kind: 'pre_system' \| 'during_system', phase, sub_phase \| activities, source: 'card' \| 'detail' }` | `FormulaPinController` |
+| `formula_unpinned` | `{ template_id, template_kind, phase, source: 'card' \| 'detail' \| 'banner' }` | `FormulaPinController` |
+| `plan_used_pin` | `{ template_id, phase, sub_phase \| activity \| duration, pin_set_size: <int>, scaling_factor: <float> }` | client `client_plan_service` + edge fn v4 |
+| `plan_pin_fallthrough` | `{ pin_set_size: <int>, reason: 'scale_out_of_range' \| 'allergen' \| 'dislike' \| 'gut_train_mismatch' \| 'all_pins_failed_fit', fallback_template_id: <string> }` | client + edge fn v4 |
+| `pin_status_banner_tapped` | `{ template_id, banner_state: 'using_pin' \| 'pin_fallback' }` | `activity_detail_screen` |
+
+**PR 3 — Make this mine (Before):**
 | Event | Payload |
 |---|---|
 | `make_this_mine_tapped` | `{ source_template_id: <string>, phase: 'before' }` |
 | `personal_formula_saved` | `{ provenance: 'forked_formula', source_template_id: <string>, phase: 'before', component_count: <int>, edit_duration_sec: <int> }` |
 | `personal_formula_edit_cancelled` | `{ source_template_id: <string>, phase: 'before' }` |
 
-**PR 3 — Swap sheet + Your formulas + During edit:**
+**PR 4 — Swap sheet + Your formulas + During edit + pinnable personal formulas:**
 | Event | Payload |
 |---|---|
 | `formula_swap_opened` | `{ phase, component_id, source: 'edit' \| 'add_food' }` |
@@ -362,20 +442,19 @@ Fire from controllers (FOA: not from screens). Add the events listed below in th
 | `custom_food_created` | `{ category: 'solid' \| 'gel' \| 'fluid' \| 'drink_mix' \| 'tablet' }` |
 | `personal_formula_deleted` | `{ formula_id, phase, provenance }` |
 | `personal_formula_saved` | (extend with `phase: 'during'` rows) |
+| `formula_pinned` | (extend with `template_kind: 'personal_template'`) |
 
-**PR 4 — Coach insight + Add Food:**
+**PR 5 — Coach insight + Add Food:**
 | Event | Payload |
 |---|---|
-| `coach_insight_generated` | `{ phase, mode: 'insight', cached: bool, latency_ms: <int>, input_tokens: <int>, output_tokens: <int> }` |
+| `coach_insight_generated` | `{ phase, mode: 'insight', cached: bool, latency_ms: <int>, input_tokens: <int>, output_tokens: <int>, pinned_context_count: <int> }` |
 | `coach_insight_refresh_tapped` | `{ phase }` |
-| `add_food_tapped` | `{ phase, draft_component_count: <int> }` (note: name collides with existing nutrition-plan event — qualify with new payload `surface: 'formula_kit'`) |
+| `add_food_tapped` | `{ phase, draft_component_count: <int>, surface: 'formula_kit' }` (note: name collides with existing nutrition-plan event — qualify with `surface`) |
 
-**PR 5 — Create-from-scratch + Favorites:**
+**PR 6 — Create-from-scratch:**
 | Event | Payload |
 |---|---|
 | `formula_created_from_scratch` | `{ phase, sub_phase \| activities, component_count }` |
-| `formula_favorited` | `{ formula_id, formula_kind: 'system' \| 'personal', phase, action: 'add' \| 'remove' }` |
-| `favorites_only_filter_toggled` | `{ enabled: bool, source: 'header_star' \| 'more_filters' }` |
 
 ## Verification
 
@@ -389,34 +468,46 @@ End-to-end test plan, per slice:
 - Tap a card, see detail with components, hit back.
 - Run `flutter test test/features/formula_kit/` (unit + widget tests for filter logic + card rendering).
 
-**PR 2 (Make this mine):**
+**PR 2 (Pins + algorithm signal):**
+- Pin a Before formula → confirm pin icon toggles → kill app → relaunch → pin still active (Drift) → check Supabase `formula_pins` row exists (sync).
+- Create a new workout matching the pinned formula's sub_phase/scope → activity_detail banner reads "Using your pinned formula ✓ [name]".
+- Pin a formula whose scaling would exceed 2x for an extreme macro target → trigger plan generation → banner reads "pin didn't fit — using [fallback]" → `plan_pin_fallthrough` event fires with `reason: 'scale_out_of_range'`.
+- Pin multiple Before formulas for the same sub_phase → algorithm picks best by carb proximity within pinned set → confirm via `plan_used_pin.template_id`.
+- **v3↔v4 parity test:** invoke `generate-nutrition-plan-v3` and `generate-nutrition-plan-v4` with same fixture user (no pins) → diff `phases.*` outputs → confirm byte-identical.
+- **Old client safety:** bump app version on simulator A (calls v4) and keep simulator B on prior version (still calls v3) → confirm both produce valid plans, A honors pins, B unaffected.
+- Run `flutter test test/features/formula_kit/` (incl. new `formula_pins_repository_test`, `client_plan_service_pinned_template_test`).
+
+**PR 3 (Make this mine):**
 - On a Before template detail, tap "Make this mine".
 - Tweak quantities, watch macros tween. Save. Confirm a Personal formula appears.
 - Verify offline-first: enable airplane mode mid-edit, save, re-enable network, confirm sync.
 
-**PR 3 (real swap + persistence + During):**
+**PR 4 (real swap + persistence + During + personal pinning):**
 - Open swap sheet, add a custom food, save. Confirm it appears in My Foods on next open.
 - Pull-to-refresh / quit app / relaunch — confirm everything persists from Drift and reconciles with Supabase.
 - Verify During edit variant has no quantity stepper (per spec).
+- Pin a personal formula → confirm `formula_pins.template_kind = 'personal_template'` row created → confirm algorithm honors it.
 - Run integration tests via Patrol (if the patrol branch has merged by then) or via existing integration_test harness.
 
-**PR 4 (insight + add food):**
+**PR 5 (insight + add food):**
 - Confirm Coach insight panel renders shimmer → returns text from edge function in <2s.
 - Test edge function via `supabase functions invoke ai-coach --body '{"mode":"insight","context":{...}}'`.
 - Verify `llm_usage` table has a new row with non-zero input/output tokens after each call.
 - Add Food button opens swap sheet in add mode; selecting appends component.
+- Confirm coach insight prompt receives `pinned_template_ids[]` in structured context.
 
-**PR 5 (create + favorites):**
+**PR 6 (create-from-scratch):**
 - Create from scratch, confirm validation (toasts on muted Save), save, confirm landing on detail.
-- Star toggle on every card, persist across relaunch, "favorites only" filter ANDs with phase/diet filters.
 
 ## Risks & open questions
 
 1. **Patrol branch widget keys.** PR 1 will land while `feat/patrol-integration-tests` is in flight. If patrol merges first, Formula Kit screens need ValueKeys for the new test suite. Coordinate timing or add keys preemptively.
 2. **Custom food deduplication.** If a user creates "Banana 100g" custom food and we already have a system "Banana" — do they collide? Design defers this. Likely V2 cleanup.
 3. **Coach insight cost monitoring.** No per-user rate limiting (intentional — foundational metrics first). Monitor `llm_usage` table for outliers; if any user generates >100 insights/day, that's a signal to revisit. Cost itself is bounded by Haiku pricing × short prompts × short outputs.
-4. **PR 2 timing — when do personal formulas need to feed back into plan generation?** Current plan keeps them user-only-visible until V4. The new `is_pinned_to_workout` column on `personal_templates` is wired but unused — V4 can flip it on without another migration.
-5. **Migration backfill correctness.** The `provenance = 'legacy_plan'` backfill must run after the column is added but before any client reads the new column. Test on a Supabase branch first.
+4. **PR 2 edge-function risk.** This is the first PR that modifies plan generation. Mitigation: new `generate-nutrition-plan-v4/` directory (don't touch v3); pin-aware behavior is strictly additive (no-pins users get identical output to v3); client gates v3→v4 via app version (old binaries keep calling v3). Always run the v3↔v4 parity test on fixture users with zero pins before merging.
+5. **Pinned formula no longer fits user's diet.** If a user pins "Oatmeal + Berries" and later adds an oat allergy, the pin will fall through every time. Should we auto-prune pins that violate dietary changes? V2 cleanup; for V1, the fallthrough banner + analytics tell us how often this happens.
+6. **Pin a personal formula that gets deleted.** PR 4 cleanup: when a personal_templates row is hard-deleted, cascade-delete its pin rows (FK to `personal_templates.id` with `on delete cascade` for the personal-kind subset, OR soft-delete via `is_deleted` on the pin row at the application layer).
+7. **Migration backfill correctness.** The `provenance = 'legacy_plan'` backfill (PR 4) must run after the column is added but before any client reads the new column. Test on a Supabase branch first.
 
 ## Critical files to read before PR 1
 
