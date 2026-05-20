@@ -138,6 +138,39 @@ void main() {
       expect(state.filteredBeforeFormulas.map((f) => f.id), ['ok']);
     });
 
+    test('allergen matching is case-insensitive (seed has "Dairy", user has "dairy")',
+        () {
+      // Regression: live pre_workout_templates rows store capitalized values
+      // like "Dairy"/"Gluten" while user-side `Allergy.dairy.dbValue` returns
+      // lowercase "dairy". Without case-insensitive comparison the filter
+      // would leak e.g. "Bagel + Cream Cheese" past a dairy-allergic user.
+      final state = FormulaLibraryState(
+        filter: const FormulaFilterState(),
+        beforeFormulas: [
+          _before(id: 'ok'),
+          _before(id: 'has-dairy', allergens: const ['Dairy', 'Gluten']),
+        ],
+        duringFormulas: const [],
+        userDiets: const [],
+        userAllergies: const [Allergy.dairy],
+      );
+      expect(state.filteredBeforeFormulas.map((f) => f.id), ['ok']);
+    });
+
+    test('excluded-diet matching is case-insensitive', () {
+      final state = FormulaLibraryState(
+        filter: const FormulaFilterState(),
+        beforeFormulas: [
+          _before(id: 'ok'),
+          _before(id: 'not-vegan', excludedDiets: const ['Vegan']),
+        ],
+        duringFormulas: const [],
+        userDiets: const [DietaryPreference.vegan],
+        userAllergies: const [],
+      );
+      expect(state.filteredBeforeFormulas.map((f) => f.id), ['ok']);
+    });
+
     test('ignoreDietaryProfile bypasses both diet and allergen checks', () {
       final state = FormulaLibraryState(
         filter: const FormulaFilterState(ignoreDietaryProfile: true),

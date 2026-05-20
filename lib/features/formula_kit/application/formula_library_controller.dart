@@ -105,13 +105,19 @@ class FormulaLibraryState {
   }
 
   bool _passesDietary(List<String> allergens, List<String> excludedDiets) {
-    // Exclude if formula's excluded_diets intersects the user's diet.
+    // Compare case-insensitively: the seed data stores values like "Dairy" /
+    // "Gluten" (capitalized) while the user-side enums use lowercase dbValues
+    // ("dairy", "gluten"). The DB will be normalized in a follow-up migration;
+    // the controller stays defensive in the meantime.
+    final allergensLower = allergens.map((a) => a.toLowerCase()).toSet();
+    final excludedDietsLower =
+        excludedDiets.map((d) => d.toLowerCase()).toSet();
+
     for (final d in userDiets) {
-      if (excludedDiets.contains(d.dbValue)) return false;
+      if (excludedDietsLower.contains(d.dbValue.toLowerCase())) return false;
     }
-    // Exclude if formula's allergens intersect the user's allergens.
     for (final a in userAllergies) {
-      if (allergens.contains(a.dbValue)) return false;
+      if (allergensLower.contains(a.dbValue.toLowerCase())) return false;
     }
     return true;
   }

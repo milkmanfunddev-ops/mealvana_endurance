@@ -11,6 +11,7 @@ import '../../../content/domain/content_keys.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
+import '../../../formula_kit/application/formula_library_controller.dart';
 import '../../application/onboarding_service.dart';
 import '../../domain/dietary_preference.dart';
 import '../../domain/allergy.dart';
@@ -312,6 +313,11 @@ class OnboardingController extends _$OnboardingController {
       DebugLogger.info(
         '🎉 Allergies - Save operation completed without errors',
       );
+      // Invalidate the Formula Library so it picks up the new user.allergies
+      // on next watch. The controller's build() reads user.allergies once and
+      // caches it; without this invalidation, the library keeps showing
+      // formulas the user is allergic to until the next cold start.
+      ref.invalidate(formulaLibraryControllerProvider);
     }
 
     return !state.hasError;
