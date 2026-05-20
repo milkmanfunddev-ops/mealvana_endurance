@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../features/onboarding/domain/allergy.dart';
 import '../../../database/app_database.dart';
 import '../../../database/database_provider.dart';
 import '../../../utils/enum_parsers.dart';
@@ -207,7 +208,10 @@ class UserSyncHandler {
         // Convert 'none' to null since Supabase dietary_preference_enum doesn't include 'none'
         'dietary_preference':
             profile.dietaryPreference == 'none' ? null : profile.dietaryPreference,
-        'allergies': profile.allergies,
+        // Drift stores allergies as a PG-literal string ("{dairy,gluten}");
+        // Supabase column is `allergy_enum[]` and PostgREST cannot cast that
+        // string into an enum array, so we parse + re-emit as a JSON array.
+        'allergies': Allergy.toJsonList(Allergy.fromDbArray(profile.allergies)),
         'email': profile.email,
         // Daily macro calculation fields
         'body_fat_pct': profile.bodyFatPct,
