@@ -80,7 +80,7 @@ class _Chip extends StatelessWidget {
             border: Border.all(color: border, width: 1),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
+            horizontal: AppSpacing.sm,
             vertical: AppSpacing.xs,
           ),
           alignment: Alignment.center,

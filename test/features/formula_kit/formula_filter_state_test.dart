@@ -16,10 +16,9 @@ void main() {
       expect(state.duringActivity, isNull);
       expect(state.duringDuration, isNull);
       expect(state.duringGutLevel, isNull);
-      expect(state.bypassedAllergies, isEmpty);
-      expect(state.bypassedDiets, isEmpty);
+      expect(state.activeAllergyFilters, isEmpty);
+      expect(state.activeDietFilters, isEmpty);
       expect(state.activeChipFilterCount, 0);
-      expect(state.activeMoreFilterCount, 0);
     });
 
     test('activeChipFilterCount counts only the chips for the active phase',
@@ -36,34 +35,6 @@ void main() {
         duringDuration: DuringDuration.ninetyTo150,
       );
       expect(during.activeChipFilterCount, 2);
-    });
-
-    test('activeMoreFilterCount counts sheet-level filters per phase', () {
-      const before = FormulaFilterState(
-        phase: FormulaPhase.before,
-        beforeDigestionSpeed: FormulaDigestionSpeed.fast,
-        bypassedAllergies: {Allergy.dairy},
-      );
-      expect(before.activeMoreFilterCount, 2);
-
-      const during = FormulaFilterState(
-        phase: FormulaPhase.during,
-        duringGutLevel: DuringGutLevel.high,
-      );
-      expect(during.activeMoreFilterCount, 1);
-    });
-
-    test('dietary section contributes 1 regardless of how many are bypassed',
-        () {
-      const one = FormulaFilterState(
-        bypassedAllergies: {Allergy.dairy},
-      );
-      const many = FormulaFilterState(
-        bypassedAllergies: {Allergy.dairy, Allergy.gluten, Allergy.peanuts},
-        bypassedDiets: {DietaryPreference.vegan},
-      );
-      expect(one.activeMoreFilterCount, 1);
-      expect(many.activeMoreFilterCount, 1);
     });
 
     test('copyWith with no args returns an equal-but-not-same instance', () {
@@ -92,10 +63,10 @@ void main() {
         beforeSubPhase: BeforeSubPhase.topUp,
       );
       final preserved = original.copyWith(
-        bypassedAllergies: {Allergy.dairy},
+        activeAllergyFilters: {Allergy.dairy},
       ); // no subPhase sentinel
       expect(preserved.beforeSubPhase, BeforeSubPhase.topUp);
-      expect(preserved.bypassedAllergies, {Allergy.dairy});
+      expect(preserved.activeAllergyFilters, {Allergy.dairy});
     });
 
     test('equality is value-based across all fields', () {
@@ -104,8 +75,8 @@ void main() {
         duringActivity: DuringActivity.cycling,
         duringDuration: DuringDuration.over240,
         duringGutLevel: DuringGutLevel.high,
-        bypassedAllergies: const {Allergy.dairy, Allergy.gluten},
-        bypassedDiets: const {DietaryPreference.vegan},
+        activeAllergyFilters: const {Allergy.dairy, Allergy.gluten},
+        activeDietFilters: const {DietaryPreference.vegan},
       );
       final b = FormulaFilterState(
         phase: FormulaPhase.during,
@@ -113,8 +84,8 @@ void main() {
         duringDuration: DuringDuration.over240,
         duringGutLevel: DuringGutLevel.high,
         // Sets compared by membership, not iteration order.
-        bypassedAllergies: const {Allergy.gluten, Allergy.dairy},
-        bypassedDiets: const {DietaryPreference.vegan},
+        activeAllergyFilters: const {Allergy.gluten, Allergy.dairy},
+        activeDietFilters: const {DietaryPreference.vegan},
       );
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));

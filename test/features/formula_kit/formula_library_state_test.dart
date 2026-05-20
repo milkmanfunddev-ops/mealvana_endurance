@@ -104,9 +104,12 @@ void main() {
       expect(state.filteredBeforeFormulas.map((f) => f.id), ['fast']);
     });
 
-    test('excludes formulas whose excluded_diets intersects user diet', () {
+    test('excludes formulas whose excluded_diets intersects active diet filter',
+        () {
       final state = FormulaLibraryState(
-        filter: const FormulaFilterState(),
+        filter: const FormulaFilterState(
+          activeDietFilters: {DietaryPreference.vegan},
+        ),
         beforeFormulas: [
           _before(id: 'ok'),
           _before(
@@ -121,9 +124,12 @@ void main() {
       expect(state.filteredBeforeFormulas.map((f) => f.id), ['ok']);
     });
 
-    test('excludes formulas whose allergens intersect user allergies', () {
+    test('excludes formulas whose allergens intersect active allergy filter',
+        () {
       final state = FormulaLibraryState(
-        filter: const FormulaFilterState(),
+        filter: const FormulaFilterState(
+          activeAllergyFilters: {Allergy.peanuts},
+        ),
         beforeFormulas: [
           _before(id: 'ok'),
           _before(
@@ -138,14 +144,16 @@ void main() {
       expect(state.filteredBeforeFormulas.map((f) => f.id), ['ok']);
     });
 
-    test('allergen matching is case-insensitive (seed has "Dairy", user has "dairy")',
+    test('allergen matching is case-insensitive (seed has "Dairy", filter has "dairy")',
         () {
       // Regression: live pre_workout_templates rows store capitalized values
       // like "Dairy"/"Gluten" while user-side `Allergy.dairy.dbValue` returns
       // lowercase "dairy". Without case-insensitive comparison the filter
       // would leak e.g. "Bagel + Cream Cheese" past a dairy-allergic user.
       final state = FormulaLibraryState(
-        filter: const FormulaFilterState(),
+        filter: const FormulaFilterState(
+          activeAllergyFilters: {Allergy.dairy},
+        ),
         beforeFormulas: [
           _before(id: 'ok'),
           _before(id: 'has-dairy', allergens: const ['Dairy', 'Gluten']),
@@ -159,7 +167,9 @@ void main() {
 
     test('excluded-diet matching is case-insensitive', () {
       final state = FormulaLibraryState(
-        filter: const FormulaFilterState(),
+        filter: const FormulaFilterState(
+          activeDietFilters: {DietaryPreference.vegan},
+        ),
         beforeFormulas: [
           _before(id: 'ok'),
           _before(id: 'not-vegan', excludedDiets: const ['Vegan']),
@@ -172,12 +182,13 @@ void main() {
     });
 
     test(
-        'bypassing a specific allergy lets formulas with that allergen through '
-        'but keeps other allergens filtered', () {
-      // User has dairy + peanuts; bypass dairy only.
+        'removing an allergy from active filters lets formulas with that '
+        'allergen through but keeps other allergens filtered', () {
+      // Profile defaults would have included both dairy + peanuts, but the
+      // user has opted dairy out of the active filter for this session.
       final state = FormulaLibraryState(
         filter: const FormulaFilterState(
-          bypassedAllergies: {Allergy.dairy},
+          activeAllergyFilters: {Allergy.peanuts},
         ),
         beforeFormulas: [
           _before(id: 'ok'),
@@ -188,7 +199,7 @@ void main() {
         userDiets: const [],
         userAllergies: const [Allergy.dairy, Allergy.peanuts],
       );
-      // dairy is bypassed → has-dairy shows; peanuts still active → has-nuts hidden.
+      // dairy not in active set → has-dairy shows; peanuts still active → has-nuts hidden.
       expect(
         state.filteredBeforeFormulas.map((f) => f.id),
         containsAll(['ok', 'has-dairy']),
@@ -196,14 +207,10 @@ void main() {
       expect(state.filteredBeforeFormulas, hasLength(2));
     });
 
-    test(
-        'bypassing all user restrictions is equivalent to no dietary filter',
+    test('empty active dietary filter sets are equivalent to no dietary filter',
         () {
       final state = FormulaLibraryState(
-        filter: const FormulaFilterState(
-          bypassedAllergies: {Allergy.peanuts},
-          bypassedDiets: {DietaryPreference.vegan},
-        ),
+        filter: const FormulaFilterState(),
         beforeFormulas: [
           _before(
             id: 'not-vegan',

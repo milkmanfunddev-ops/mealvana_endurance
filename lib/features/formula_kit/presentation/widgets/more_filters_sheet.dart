@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
+import '../../../onboarding/domain/allergy.dart';
 import '../../../onboarding/domain/dietary_preference.dart';
 import '../../application/formula_library_controller.dart';
 import '../../domain/before_sub_phase.dart';
@@ -85,7 +86,7 @@ class MoreFiltersSheet extends ConsumerWidget {
                       ),
                       TextButton(
                         key: const ValueKey('formula_kit.more_filters.reset'),
-                        onPressed: state.filter.activeMoreFilterCount == 0
+                        onPressed: state.activeMoreFilterCount == 0
                             ? null
                             : () => controller.clearMoreFilters(),
                         style: TextButton.styleFrom(
@@ -155,45 +156,45 @@ class MoreFiltersSheet extends ConsumerWidget {
                               ],
                             ),
                           ),
-                        if (state.userAllergies.isNotEmpty ||
-                            state.userDiets
-                                .any((d) => d != DietaryPreference.none)) ...[
-                          const SizedBox(height: AppSpacing.lg),
-                          _Section(
-                            label: 'Dietary profile',
-                            child: _ChipWrap(
-                              children: [
-                                // One chip per dietary preference from the
-                                // profile (skip `.none`). Selected = applying
-                                // this restriction (default state).
-                                for (final d in state.userDiets)
-                                  if (d != DietaryPreference.none)
-                                    _Chip(
-                                      key: ValueKey(
-                                        'formula_kit.more_filters.diet.${d.dbValue}',
-                                      ),
-                                      label: d.displayName,
-                                      selected: !state.filter.bypassedDiets
-                                          .contains(d),
-                                      onTap: () =>
-                                          controller.toggleDietBypass(d),
-                                    ),
-                                // One chip per allergy from the profile.
-                                for (final a in state.userAllergies)
+                        const SizedBox(height: AppSpacing.lg),
+                        _Section(
+                          label: 'Hide formulas with',
+                          child: _ChipWrap(
+                            children: [
+                              // Diets: render one chip per dietary preference
+                              // from the user's profile (skip `.none`). The
+                              // user only sees their selected diet here; we
+                              // don't surface all diets in this V1.
+                              for (final d in state.userDiets)
+                                if (d != DietaryPreference.none)
                                   _Chip(
                                     key: ValueKey(
-                                      'formula_kit.more_filters.allergy.${a.dbValue}',
+                                      'formula_kit.more_filters.diet.${d.dbValue}',
                                     ),
-                                    label: a.displayName,
-                                    selected: !state.filter.bypassedAllergies
-                                        .contains(a),
+                                    label: d.displayName,
+                                    selected: state.filter.activeDietFilters
+                                        .contains(d),
                                     onTap: () =>
-                                        controller.toggleAllergyBypass(a),
+                                        controller.toggleDietFilter(d),
                                   ),
-                              ],
-                            ),
+                              // Allergens: render all 9 allergen types as
+                              // chips. Profile allergens are pre-selected
+                              // on first build; the user can add or remove
+                              // any of them for this session.
+                              for (final a in Allergy.values)
+                                _Chip(
+                                  key: ValueKey(
+                                    'formula_kit.more_filters.allergy.${a.dbValue}',
+                                  ),
+                                  label: a.displayName,
+                                  selected: state.filter.activeAllergyFilters
+                                      .contains(a),
+                                  onTap: () =>
+                                      controller.toggleAllergyFilter(a),
+                                ),
+                            ],
                           ),
-                        ],
+                        ),
                       ],
                     ),
                   ),

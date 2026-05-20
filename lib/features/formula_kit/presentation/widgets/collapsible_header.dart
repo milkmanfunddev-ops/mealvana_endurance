@@ -141,20 +141,26 @@ class _FilterPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Pill lives inside an Expanded(Wrap(...)) in CollapsedStrip. Wrap passes
+    // a finite maxWidth to its children, so a Container with `alignment` (or
+    // any other property that forces it to fill bounded constraints) would
+    // stretch to the full available width. Keep the pill intrinsic-sized.
     return Container(
       height: 24,
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.orange,
         borderRadius: AppRadius.circularRadius,
       ),
-      child: Text(
-        label,
-        style: AppTextStyles.bodyMedium.copyWith(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          color: AppColors.blackberry,
+      child: Center(
+        widthFactor: 1,
+        child: Text(
+          label,
+          style: AppTextStyles.bodyMedium.copyWith(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: AppColors.blackberry,
+          ),
         ),
       ),
     );

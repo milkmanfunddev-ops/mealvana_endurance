@@ -113,13 +113,45 @@ class FormulaLibraryState {
     final excludedDietsLower =
         excludedDiets.map((d) => d.toLowerCase()).toSet();
 
-    for (final d in userDiets) {
-      if (filter.bypassedDiets.contains(d)) continue;
+    for (final d in filter.activeDietFilters) {
       if (excludedDietsLower.contains(d.dbValue.toLowerCase())) return false;
     }
-    for (final a in userAllergies) {
-      if (filter.bypassedAllergies.contains(a)) continue;
+    for (final a in filter.activeAllergyFilters) {
       if (allergensLower.contains(a.dbValue.toLowerCase())) return false;
+    }
+    return true;
+  }
+
+  /// Default active-filter sets implied by the user's profile. Used to
+  /// determine whether the dietary section in the More Filters sheet has been
+  /// modified from its out-of-the-box state.
+  Set<Allergy> get profileAllergyDefaults => userAllergies.toSet();
+  Set<DietaryPreference> get profileDietDefaults =>
+      userDiets.where((d) => d != DietaryPreference.none).toSet();
+
+  /// Counts the More Filters sheet fields that diverge from defaults. Diet
+  /// section contributes 1 if the active set differs from the user's profile
+  /// (in either direction — adding restrictions or opting out of profile ones).
+  int get activeMoreFilterCount {
+    var count = 0;
+    if (filter.phase == FormulaPhase.before &&
+        filter.beforeDigestionSpeed != null) {
+      count += 1;
+    }
+    if (filter.phase == FormulaPhase.during && filter.duringGutLevel != null) {
+      count += 1;
+    }
+    if (!_setEq(filter.activeAllergyFilters, profileAllergyDefaults) ||
+        !_setEq(filter.activeDietFilters, profileDietDefaults)) {
+      count += 1;
+    }
+    return count;
+  }
+
+  bool _setEq<T>(Set<T> a, Set<T> b) {
+    if (a.length != b.length) return false;
+    for (final e in a) {
+      if (!b.contains(e)) return false;
     }
     return true;
   }
@@ -159,14 +191,25 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     final beforeViews = beforeEntries.map(_mapBefore).toList();
     final duringViews = duringEntries.map(_mapDuring).toList();
 
+    final userDiets = user?.dietaryPreference == null
+        ? const <DietaryPreference>[]
+        : [user!.dietaryPreference!];
+    final userAllergies = user?.allergies ?? const <Allergy>[];
+
+    // Seed dietary filters from the user's profile so the out-of-the-box
+    // experience hides formulas with their restrictions. The user can later
+    // add or remove any of the 9 allergens / any diet through the More
+    // Filters sheet.
     return FormulaLibraryState(
-      filter: const FormulaFilterState(),
+      filter: FormulaFilterState(
+        activeAllergyFilters: userAllergies.toSet(),
+        activeDietFilters:
+            userDiets.where((d) => d != DietaryPreference.none).toSet(),
+      ),
       beforeFormulas: beforeViews,
       duringFormulas: duringViews,
-      userDiets: user?.dietaryPreference == null
-          ? const []
-          : [user!.dietaryPreference!],
-      userAllergies: user?.allergies ?? const [],
+      userDiets: userDiets,
+      userAllergies: userAllergies,
     );
   }
 
@@ -283,11 +326,17 @@ class FormulaLibraryController extends _$FormulaLibraryController {
 
   /// Clear all More Filters sheet fields for the current phase. Phase chip
   /// filters (Timing / Activity / Duration) are left intact — those have
-  /// their own clear path via [clearPhaseChipFilters].
+  /// their own clear path via [clearPhaseChipFilters]. The dietary section
+  /// is reset to the user's profile defaults, not to "no filters" (matches
+  /// the seeded initial state).
   void clearMoreFilters() {
     final current = state.value;
     if (current == null) return;
     final filter = current.filter;
+    final profileAllergies = current.userAllergies.toSet();
+    final profileDiets = current.userDiets
+        .where((d) => d != DietaryPreference.none)
+        .toSet();
     state = AsyncData(
       current.copyWith(
         filter: filter.copyWith(
@@ -295,8 +344,8 @@ class FormulaLibraryController extends _$FormulaLibraryController {
               filter.phase == FormulaPhase.before ? () => null : null,
           duringGutLevel:
               filter.phase == FormulaPhase.during ? () => null : null,
-          bypassedAllergies: const {},
-          bypassedDiets: const {},
+          activeAllergyFilters: profileAllergies,
+          activeDietFilters: profileDiets,
         ),
       ),
     );
@@ -320,44 +369,48 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     );
   }
 
-  /// Toggle whether a specific allergy from the user profile is being applied
-  /// as a filter. Default state is "applied" (chip selected). Tapping the
-  /// chip moves the allergy into `bypassedAllergies`, opting the user out of
-  /// the filter for that allergen for this session.
-  Future<void> toggleAllergyBypass(Allergy value) async {
+  /// Toggle whether a specific allergy is being filtered against. When the
+  /// allergy is in `activeAllergyFilters`, formulas containing it are hidden.
+  /// On first build the controller seeds this set from the user's profile;
+  /// the sheet lets the user opt any of the 9 allergens in or out.
+  Future<void> toggleAllergyFilter(Allergy value) async {
     final current = state.value;
     if (current == null) return;
-    final next = Set<Allergy>.from(current.filter.bypassedAllergies);
-    final isNowBypassed = !next.contains(value);
-    if (isNowBypassed) {
+    final next = Set<Allergy>.from(current.filter.activeAllergyFilters);
+    final isNowActive = !next.contains(value);
+    if (isNowActive) {
       next.add(value);
     } else {
       next.remove(value);
     }
-    final nextFilter = current.filter.copyWith(bypassedAllergies: next);
+    final nextFilter = current.filter.copyWith(activeAllergyFilters: next);
     state = AsyncData(current.copyWith(filter: nextFilter));
-    if (isNowBypassed) {
-      await _trackFilterApplied('allergen_bypass', value.dbValue, nextFilter);
-    }
+    await _trackFilterApplied(
+      isNowActive ? 'allergen_added' : 'allergen_removed',
+      value.dbValue,
+      nextFilter,
+    );
   }
 
-  /// Toggle whether a specific dietary preference from the user profile is
-  /// being applied as a filter. Mirrors [toggleAllergyBypass] for diets.
-  Future<void> toggleDietBypass(DietaryPreference value) async {
+  /// Toggle whether a specific dietary preference is being filtered against.
+  /// Mirrors [toggleAllergyFilter] for diets.
+  Future<void> toggleDietFilter(DietaryPreference value) async {
     final current = state.value;
     if (current == null) return;
-    final next = Set<DietaryPreference>.from(current.filter.bypassedDiets);
-    final isNowBypassed = !next.contains(value);
-    if (isNowBypassed) {
+    final next = Set<DietaryPreference>.from(current.filter.activeDietFilters);
+    final isNowActive = !next.contains(value);
+    if (isNowActive) {
       next.add(value);
     } else {
       next.remove(value);
     }
-    final nextFilter = current.filter.copyWith(bypassedDiets: next);
+    final nextFilter = current.filter.copyWith(activeDietFilters: next);
     state = AsyncData(current.copyWith(filter: nextFilter));
-    if (isNowBypassed) {
-      await _trackFilterApplied('diet_bypass', value.dbValue, nextFilter);
-    }
+    await _trackFilterApplied(
+      isNowActive ? 'diet_added' : 'diet_removed',
+      value.dbValue,
+      nextFilter,
+    );
   }
 
   /// Fire the entry-point analytics event. Called by the screen on mount.
@@ -459,11 +512,12 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     String value,
     FormulaFilterState newFilter,
   ) async {
+    final current = state.value;
+    final moreCount = current?.activeMoreFilterCount ?? 0;
     await _track('formula_filter_applied', {
       'filter_type': filterType,
       'value': value,
-      'active_filter_count':
-          newFilter.activeChipFilterCount + newFilter.activeMoreFilterCount,
+      'active_filter_count': newFilter.activeChipFilterCount + moreCount,
     });
   }
 

@@ -51,7 +51,7 @@ class _FormulaLibraryScreenState extends ConsumerState<FormulaLibraryScreen> {
     }
 
     final moreFilterCount = asyncState.maybeWhen(
-      data: (s) => s.filter.activeMoreFilterCount,
+      data: (s) => s.activeMoreFilterCount,
       orElse: () => 0,
     );
 
