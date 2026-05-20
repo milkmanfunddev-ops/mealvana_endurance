@@ -454,13 +454,15 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     PreWorkoutTemplateEntry e,
     Map<String, TemplateFoodEntry> templateFoodsByName,
   ) {
-    // pre_workout_templates stores per-serving macros plus a min/max serving
-    // range. For the card/detail view we surface the **maximum-serving**
-    // totals, which matches what the design uses as the headline number.
-    final servings = e.maxServings;
-    final carbs = e.carbsPerServing * servings;
-    final protein = e.proteinPerServing * servings;
-    final fat = e.fatPerServing * servings;
+    // pre_workout_templates stores macros + component proportions as
+    // PER-SERVING values. The card / detail view surfaces a single canonical
+    // serving (matching the fueling-plan screen and the legacy serving_unit
+    // description) — `min_servings` / `max_servings` describe scaling that's
+    // the user's choice at plan time, not something we collapse into a
+    // headline number here.
+    final carbs = e.carbsPerServing;
+    final protein = e.proteinPerServing;
+    final fat = e.fatPerServing;
     final calories = ((carbs * 4) + (protein * 4) + (fat * 9)).round();
 
     final componentNames = _decodeStringArray(e.componentFoodNames);
@@ -469,11 +471,10 @@ class FormulaLibraryController extends _$FormulaLibraryController {
         .map(
           (n) => _buildComponentDisplayString(
             componentName: n,
-            // Per-serving proportion from component_quantities × the template's
-            // max-serving scale, so the displayed quantity lines up with the
-            // headline macro totals (which also use max_servings).
+            // Per-serving proportion straight from component_quantities,
+            // no max_servings multiplier — matches the rest of the macros
+            // surfaced on this view.
             proportion: componentQuantities[n.toLowerCase()] ?? 1,
-            servings: servings,
             templateFoodsByName: templateFoodsByName,
           ),
         )
@@ -506,11 +507,10 @@ class FormulaLibraryController extends _$FormulaLibraryController {
   String _buildComponentDisplayString({
     required String componentName,
     required num proportion,
-    required double servings,
     required Map<String, TemplateFoodEntry> templateFoodsByName,
   }) {
     final tf = templateFoodsByName[componentName.toLowerCase()];
-    final qty = proportion.toDouble() * servings;
+    final qty = proportion.toDouble();
     final qtyStr = _formatQuantity(qty);
 
     if (tf == null) {
