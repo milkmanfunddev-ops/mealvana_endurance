@@ -4,7 +4,7 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/formula_view.dart';
 
 /// List card for a During formula. Mirrors the design's `DuringCard` —
-/// formula-number eyebrow, formula string, components, activity + duration tags.
+/// formula string, components, activity + duration tags.
 class DuringFormulaCard extends StatelessWidget {
   const DuringFormulaCard({
     super.key,
@@ -28,34 +28,12 @@ class DuringFormulaCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'FORMULA #${formula.templateNumber}',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.8,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
                 formula.formula,
                 style: AppTextStyles.bodyMedium.copyWith(
                   fontWeight: FontWeight.w600,
                   color: scheme.onSurface,
                 ),
               ),
-              if (formula.componentFoodNames.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  formula.componentFoodNames.join(' + '),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontSize: 13,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
               const SizedBox(height: AppSpacing.sm),
               Wrap(
                 spacing: AppSpacing.xs,

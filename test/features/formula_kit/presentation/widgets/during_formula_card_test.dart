@@ -31,11 +31,13 @@ Widget _wrap(Widget child) {
 
 void main() {
   group('DuringFormulaCard', () {
-    testWidgets('renders FORMULA #<n> eyebrow', (tester) async {
+    testWidgets('does not render a FORMULA #<n> eyebrow', (tester) async {
+      // Eyebrow was removed per design — During cards lead with the formula
+      // string, not a "FORMULA #N" label.
       await tester.pumpWidget(_wrap(
         DuringFormulaCard(formula: _fixture(templateNumber: 12), onTap: () {}),
       ));
-      expect(find.text('FORMULA #12'), findsOneWidget);
+      expect(find.textContaining('FORMULA #'), findsNothing);
     });
 
     testWidgets('renders the formula string', (tester) async {
@@ -48,20 +50,21 @@ void main() {
       expect(find.text('Sports drink + chews'), findsOneWidget);
     });
 
-    testWidgets('renders components joined by " + "', (tester) async {
+    testWidgets('does not render the raw componentFoodNames subtitle',
+        (tester) async {
+      // The snake_case component-names row was removed — it duplicated and
+      // uglified the human-readable `formula` title above it.
       await tester.pumpWidget(_wrap(
         DuringFormulaCard(
           formula: _fixture(
             formula: 'High-carb endurance mix',
-            components: const ['Maltodextrin', 'Fructose', 'Sodium citrate'],
+            components: const ['maltodextrin', 'fructose', 'sodium_citrate'],
           ),
           onTap: () {},
         ),
       ));
-      expect(
-        find.text('Maltodextrin + Fructose + Sodium citrate'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('maltodextrin'), findsNothing);
+      expect(find.textContaining('sodium_citrate'), findsNothing);
     });
 
     testWidgets('humanizes triathlon activity codes', (tester) async {
