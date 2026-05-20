@@ -68,7 +68,7 @@ class FormulaLibraryState {
   /// list is small (≤ 30 rows in V1) so memoization isn't worth the bookkeeping.
   List<BeforeFormulaView> get filteredBeforeFormulas {
     return beforeFormulas.where((f) {
-      if (!filter.ignoreDietaryProfile && !_passesDietary(f.allergens, f.excludedDiets)) {
+      if (!_passesDietary(f.allergens, f.excludedDiets)) {
         return false;
       }
       if (filter.beforeSubPhase != null &&
@@ -85,7 +85,7 @@ class FormulaLibraryState {
 
   List<DuringFormulaView> get filteredDuringFormulas {
     return duringFormulas.where((f) {
-      if (!filter.ignoreDietaryProfile && !_passesDietary(f.allergens, f.excludedDiets)) {
+      if (!_passesDietary(f.allergens, f.excludedDiets)) {
         return false;
       }
       if (filter.duringActivity != null &&
@@ -114,9 +114,11 @@ class FormulaLibraryState {
         excludedDiets.map((d) => d.toLowerCase()).toSet();
 
     for (final d in userDiets) {
+      if (filter.bypassedDiets.contains(d)) continue;
       if (excludedDietsLower.contains(d.dbValue.toLowerCase())) return false;
     }
     for (final a in userAllergies) {
+      if (filter.bypassedAllergies.contains(a)) continue;
       if (allergensLower.contains(a.dbValue.toLowerCase())) return false;
     }
     return true;
@@ -293,7 +295,8 @@ class FormulaLibraryController extends _$FormulaLibraryController {
               filter.phase == FormulaPhase.before ? () => null : null,
           duringGutLevel:
               filter.phase == FormulaPhase.during ? () => null : null,
-          ignoreDietaryProfile: false,
+          bypassedAllergies: const {},
+          bypassedDiets: const {},
         ),
       ),
     );
@@ -317,21 +320,43 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     );
   }
 
-  /// Toggle "Show all" — when true, the user's dietary profile is bypassed.
-  Future<void> setIgnoreDietaryProfile(bool value) async {
+  /// Toggle whether a specific allergy from the user profile is being applied
+  /// as a filter. Default state is "applied" (chip selected). Tapping the
+  /// chip moves the allergy into `bypassedAllergies`, opting the user out of
+  /// the filter for that allergen for this session.
+  Future<void> toggleAllergyBypass(Allergy value) async {
     final current = state.value;
-    if (current == null || current.filter.ignoreDietaryProfile == value) return;
-    state = AsyncData(
-      current.copyWith(
-        filter: current.filter.copyWith(ignoreDietaryProfile: value),
-      ),
-    );
-    if (value) {
-      await _trackFilterApplied(
-        'diet',
-        'ignore',
-        current.filter.copyWith(ignoreDietaryProfile: value),
-      );
+    if (current == null) return;
+    final next = Set<Allergy>.from(current.filter.bypassedAllergies);
+    final isNowBypassed = !next.contains(value);
+    if (isNowBypassed) {
+      next.add(value);
+    } else {
+      next.remove(value);
+    }
+    final nextFilter = current.filter.copyWith(bypassedAllergies: next);
+    state = AsyncData(current.copyWith(filter: nextFilter));
+    if (isNowBypassed) {
+      await _trackFilterApplied('allergen_bypass', value.dbValue, nextFilter);
+    }
+  }
+
+  /// Toggle whether a specific dietary preference from the user profile is
+  /// being applied as a filter. Mirrors [toggleAllergyBypass] for diets.
+  Future<void> toggleDietBypass(DietaryPreference value) async {
+    final current = state.value;
+    if (current == null) return;
+    final next = Set<DietaryPreference>.from(current.filter.bypassedDiets);
+    final isNowBypassed = !next.contains(value);
+    if (isNowBypassed) {
+      next.add(value);
+    } else {
+      next.remove(value);
+    }
+    final nextFilter = current.filter.copyWith(bypassedDiets: next);
+    state = AsyncData(current.copyWith(filter: nextFilter));
+    if (isNowBypassed) {
+      await _trackFilterApplied('diet_bypass', value.dbValue, nextFilter);
     }
   }
 

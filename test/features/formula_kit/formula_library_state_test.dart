@@ -171,9 +171,39 @@ void main() {
       expect(state.filteredBeforeFormulas.map((f) => f.id), ['ok']);
     });
 
-    test('ignoreDietaryProfile bypasses both diet and allergen checks', () {
+    test(
+        'bypassing a specific allergy lets formulas with that allergen through '
+        'but keeps other allergens filtered', () {
+      // User has dairy + peanuts; bypass dairy only.
       final state = FormulaLibraryState(
-        filter: const FormulaFilterState(ignoreDietaryProfile: true),
+        filter: const FormulaFilterState(
+          bypassedAllergies: {Allergy.dairy},
+        ),
+        beforeFormulas: [
+          _before(id: 'ok'),
+          _before(id: 'has-dairy', allergens: [Allergy.dairy.dbValue]),
+          _before(id: 'has-nuts', allergens: [Allergy.peanuts.dbValue]),
+        ],
+        duringFormulas: const [],
+        userDiets: const [],
+        userAllergies: const [Allergy.dairy, Allergy.peanuts],
+      );
+      // dairy is bypassed → has-dairy shows; peanuts still active → has-nuts hidden.
+      expect(
+        state.filteredBeforeFormulas.map((f) => f.id),
+        containsAll(['ok', 'has-dairy']),
+      );
+      expect(state.filteredBeforeFormulas, hasLength(2));
+    });
+
+    test(
+        'bypassing all user restrictions is equivalent to no dietary filter',
+        () {
+      final state = FormulaLibraryState(
+        filter: const FormulaFilterState(
+          bypassedAllergies: {Allergy.peanuts},
+          bypassedDiets: {DietaryPreference.vegan},
+        ),
         beforeFormulas: [
           _before(
             id: 'not-vegan',

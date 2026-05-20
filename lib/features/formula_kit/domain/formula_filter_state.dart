@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../onboarding/domain/allergy.dart';
+import '../../onboarding/domain/dietary_preference.dart';
 import 'before_sub_phase.dart';
 import 'during_filter_options.dart';
 import 'formula_phase.dart';
@@ -10,12 +12,14 @@ import 'formula_phase.dart';
 /// surfaces:
 ///   - Phase tabs (Before / During)
 ///   - Per-phase chip row (Timing for Before; Activity + Duration for During)
-///   - More Filters sheet (digestion speed, gut training level,
-///     "ignore my dietary profile" toggle)
+///   - More Filters sheet (digestion speed, gut training level, per-restriction
+///     dietary-profile chips)
 ///
-/// PR 3 / PR 5 will extend this object via `copyWith` to add the
-/// "Show favorites only" chip and multi-select diet / allergen pickers — the
-/// field set below is the minimum required for the V1 browse-only slice.
+/// The dietary-profile section renders one chip per item in the user's profile
+/// (each allergy + the diet, if set). Each chip is selected by default — the
+/// user can deselect individual restrictions via `bypassedAllergies` /
+/// `bypassedDiets`. Bypassing is **opt-in**; the default empty sets mean every
+/// restriction is being applied.
 @immutable
 class FormulaFilterState {
   const FormulaFilterState({
@@ -25,7 +29,8 @@ class FormulaFilterState {
     this.duringActivity,
     this.duringDuration,
     this.duringGutLevel,
-    this.ignoreDietaryProfile = false,
+    this.bypassedAllergies = const {},
+    this.bypassedDiets = const {},
   });
 
   final FormulaPhase phase;
@@ -39,12 +44,16 @@ class FormulaFilterState {
   final DuringDuration? duringDuration;
   final DuringGutLevel? duringGutLevel;
 
-  // ---- Cross-phase ----
-  /// When true, the user's dietary preferences / allergens are ignored when
-  /// filtering the list. Controlled by the "Show all" toggle in the More
-  /// Filters sheet (PR 1 surfaces it as a soft escape hatch; in V1 we still
-  /// fetch profile but the chip lets the user bypass it explicitly).
-  final bool ignoreDietaryProfile;
+  // ---- Cross-phase: per-restriction bypass ----
+  /// Allergies from the user profile that the user has explicitly opted out of
+  /// for this session. The corresponding chips render as **unselected** in the
+  /// More Filters sheet; formulas containing these allergens will be shown.
+  final Set<Allergy> bypassedAllergies;
+
+  /// Diets from the user profile that the user has explicitly opted out of for
+  /// this session. Today the profile only carries a single dietary preference,
+  /// but the set keeps room for the V2 multi-select diet picker.
+  final Set<DietaryPreference> bypassedDiets;
 
   int get activeChipFilterCount {
     if (phase == FormulaPhase.before) {
@@ -54,11 +63,16 @@ class FormulaFilterState {
         (duringDuration == null ? 0 : 1);
   }
 
+  /// Count of "non-default" More Filters fields, used for the badge on the
+  /// More Filters button. The dietary section contributes 1 if any
+  /// restriction has been bypassed (regardless of how many).
   int get activeMoreFilterCount {
-    return (phase == FormulaPhase.before
-            ? (beforeDigestionSpeed == null ? 0 : 1)
-            : (duringGutLevel == null ? 0 : 1)) +
-        (ignoreDietaryProfile ? 1 : 0);
+    final phaseSpecific = phase == FormulaPhase.before
+        ? (beforeDigestionSpeed == null ? 0 : 1)
+        : (duringGutLevel == null ? 0 : 1);
+    final dietary =
+        (bypassedAllergies.isEmpty && bypassedDiets.isEmpty) ? 0 : 1;
+    return phaseSpecific + dietary;
   }
 
   FormulaFilterState copyWith({
@@ -68,7 +82,8 @@ class FormulaFilterState {
     DuringActivity? Function()? duringActivity,
     DuringDuration? Function()? duringDuration,
     DuringGutLevel? Function()? duringGutLevel,
-    bool? ignoreDietaryProfile,
+    Set<Allergy>? bypassedAllergies,
+    Set<DietaryPreference>? bypassedDiets,
   }) {
     return FormulaFilterState(
       phase: phase ?? this.phase,
@@ -83,8 +98,8 @@ class FormulaFilterState {
           duringDuration != null ? duringDuration() : this.duringDuration,
       duringGutLevel:
           duringGutLevel != null ? duringGutLevel() : this.duringGutLevel,
-      ignoreDietaryProfile:
-          ignoreDietaryProfile ?? this.ignoreDietaryProfile,
+      bypassedAllergies: bypassedAllergies ?? this.bypassedAllergies,
+      bypassedDiets: bypassedDiets ?? this.bypassedDiets,
     );
   }
 
@@ -97,7 +112,8 @@ class FormulaFilterState {
         other.duringActivity == duringActivity &&
         other.duringDuration == duringDuration &&
         other.duringGutLevel == duringGutLevel &&
-        other.ignoreDietaryProfile == ignoreDietaryProfile;
+        setEquals(other.bypassedAllergies, bypassedAllergies) &&
+        setEquals(other.bypassedDiets, bypassedDiets);
   }
 
   @override
@@ -108,6 +124,7 @@ class FormulaFilterState {
         duringActivity,
         duringDuration,
         duringGutLevel,
-        ignoreDietaryProfile,
+        Object.hashAllUnordered(bypassedAllergies),
+        Object.hashAllUnordered(bypassedDiets),
       );
 }

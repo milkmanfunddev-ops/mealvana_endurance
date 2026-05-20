@@ -3,6 +3,8 @@ import 'package:mealvana_endurance/features/formula_kit/domain/before_sub_phase.
 import 'package:mealvana_endurance/features/formula_kit/domain/during_filter_options.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/formula_filter_state.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/formula_phase.dart';
+import 'package:mealvana_endurance/features/onboarding/domain/allergy.dart';
+import 'package:mealvana_endurance/features/onboarding/domain/dietary_preference.dart';
 
 void main() {
   group('FormulaFilterState', () {
@@ -14,7 +16,8 @@ void main() {
       expect(state.duringActivity, isNull);
       expect(state.duringDuration, isNull);
       expect(state.duringGutLevel, isNull);
-      expect(state.ignoreDietaryProfile, isFalse);
+      expect(state.bypassedAllergies, isEmpty);
+      expect(state.bypassedDiets, isEmpty);
       expect(state.activeChipFilterCount, 0);
       expect(state.activeMoreFilterCount, 0);
     });
@@ -39,7 +42,7 @@ void main() {
       const before = FormulaFilterState(
         phase: FormulaPhase.before,
         beforeDigestionSpeed: FormulaDigestionSpeed.fast,
-        ignoreDietaryProfile: true,
+        bypassedAllergies: {Allergy.dairy},
       );
       expect(before.activeMoreFilterCount, 2);
 
@@ -48,6 +51,19 @@ void main() {
         duringGutLevel: DuringGutLevel.high,
       );
       expect(during.activeMoreFilterCount, 1);
+    });
+
+    test('dietary section contributes 1 regardless of how many are bypassed',
+        () {
+      const one = FormulaFilterState(
+        bypassedAllergies: {Allergy.dairy},
+      );
+      const many = FormulaFilterState(
+        bypassedAllergies: {Allergy.dairy, Allergy.gluten, Allergy.peanuts},
+        bypassedDiets: {DietaryPreference.vegan},
+      );
+      expect(one.activeMoreFilterCount, 1);
+      expect(many.activeMoreFilterCount, 1);
     });
 
     test('copyWith with no args returns an equal-but-not-same instance', () {
@@ -75,26 +91,30 @@ void main() {
         phase: FormulaPhase.before,
         beforeSubPhase: BeforeSubPhase.topUp,
       );
-      final preserved =
-          original.copyWith(ignoreDietaryProfile: true); // no subPhase sentinel
+      final preserved = original.copyWith(
+        bypassedAllergies: {Allergy.dairy},
+      ); // no subPhase sentinel
       expect(preserved.beforeSubPhase, BeforeSubPhase.topUp);
-      expect(preserved.ignoreDietaryProfile, isTrue);
+      expect(preserved.bypassedAllergies, {Allergy.dairy});
     });
 
     test('equality is value-based across all fields', () {
-      const a = FormulaFilterState(
+      final a = FormulaFilterState(
         phase: FormulaPhase.during,
         duringActivity: DuringActivity.cycling,
         duringDuration: DuringDuration.over240,
         duringGutLevel: DuringGutLevel.high,
-        ignoreDietaryProfile: true,
+        bypassedAllergies: const {Allergy.dairy, Allergy.gluten},
+        bypassedDiets: const {DietaryPreference.vegan},
       );
-      const b = FormulaFilterState(
+      final b = FormulaFilterState(
         phase: FormulaPhase.during,
         duringActivity: DuringActivity.cycling,
         duringDuration: DuringDuration.over240,
         duringGutLevel: DuringGutLevel.high,
-        ignoreDietaryProfile: true,
+        // Sets compared by membership, not iteration order.
+        bypassedAllergies: const {Allergy.gluten, Allergy.dairy},
+        bypassedDiets: const {DietaryPreference.vegan},
       );
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));

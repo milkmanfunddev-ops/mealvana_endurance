@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
+import '../../../onboarding/domain/dietary_preference.dart';
 import '../../application/formula_library_controller.dart';
 import '../../domain/before_sub_phase.dart';
 import '../../domain/during_filter_options.dart';
@@ -154,28 +155,45 @@ class MoreFiltersSheet extends ConsumerWidget {
                               ],
                             ),
                           ),
-                        const SizedBox(height: AppSpacing.lg),
-                        _Section(
-                          label: 'Dietary profile',
-                          child: _ChipWrap(
-                            children: [
-                              _Chip(
-                                key: const ValueKey(
-                                  'formula_kit.more_filters.ignore_diet_toggle',
-                                ),
-                                // Constant label + selected highlight indicates
-                                // ON/OFF. Earlier the label flipped between
-                                // "Apply my diet" / "Ignoring my diet" which
-                                // read as an action and felt reversed.
-                                label: 'Show all formulas',
-                                selected: state.filter.ignoreDietaryProfile,
-                                onTap: () => controller.setIgnoreDietaryProfile(
-                                  !state.filter.ignoreDietaryProfile,
-                                ),
-                              ),
-                            ],
+                        if (state.userAllergies.isNotEmpty ||
+                            state.userDiets
+                                .any((d) => d != DietaryPreference.none)) ...[
+                          const SizedBox(height: AppSpacing.lg),
+                          _Section(
+                            label: 'Dietary profile',
+                            child: _ChipWrap(
+                              children: [
+                                // One chip per dietary preference from the
+                                // profile (skip `.none`). Selected = applying
+                                // this restriction (default state).
+                                for (final d in state.userDiets)
+                                  if (d != DietaryPreference.none)
+                                    _Chip(
+                                      key: ValueKey(
+                                        'formula_kit.more_filters.diet.${d.dbValue}',
+                                      ),
+                                      label: d.displayName,
+                                      selected: !state.filter.bypassedDiets
+                                          .contains(d),
+                                      onTap: () =>
+                                          controller.toggleDietBypass(d),
+                                    ),
+                                // One chip per allergy from the profile.
+                                for (final a in state.userAllergies)
+                                  _Chip(
+                                    key: ValueKey(
+                                      'formula_kit.more_filters.allergy.${a.dbValue}',
+                                    ),
+                                    label: a.displayName,
+                                    selected: !state.filter.bypassedAllergies
+                                        .contains(a),
+                                    onTap: () =>
+                                        controller.toggleAllergyBypass(a),
+                                  ),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
