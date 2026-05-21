@@ -31,7 +31,7 @@ PR phasing has shifted: new PR 2 is Pins. Old PR 2–5 each move up by one. Favo
 
 **Substeps (in order, each is a commit):**
 
-1. **Schema** — Supabase migration `formula_pins` table + Drift mirror + schema bump v8→v9 + codegen
+1. **Schema** — Supabase migration `formula_pins` table + Drift mirror + schema bump v9→v10 + codegen
 2. **Domain + repository** — `FormulaPin` model, `FormulaPinsRepository` (CRUD + sync). Register edge in `sync_dependency_graph`.
 3. **Sync handler** — `formula_pins_sync_handler` mirroring `personal_templates_sync_handler` pattern (local-dirty-preserved + remote-upsert).
 4. **Client-side algorithm hook** — modify `_tryTemplateBasedBefore` in `client_plan_service.dart:307` to check pins first; fall through on no-fit. (During phase is server-only — no client hook needed for During.)

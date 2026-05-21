@@ -35,6 +35,7 @@ import 'tables/during_workout_templates_table.dart';
 import 'tables/pre_workout_templates_table.dart';
 import 'tables/tp_writeback_table.dart';
 import 'tables/personal_templates_table.dart';
+import 'tables/formula_pins_table.dart';
 import 'tables/athlete_pairing_codes_table.dart';
 import 'tables/coach_pairing_codes_table.dart';
 import 'tables/daily_macro_targets_table.dart';
@@ -120,6 +121,9 @@ part 'app_database.g.dart';
     // Personal nutrition plan templates
     PersonalTemplatesTable,
 
+    // Formula Kit pins (user preference signal for plan generation)
+    FormulaPinsTable,
+
     // Pairing codes for coach connections
     AthletePairingCodesTable,
     CoachPairingCodesTable,
@@ -154,7 +158,11 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 9: Adds pre_workout_templates table (read-only mirror of
+  /// Schema version 10: Adds formula_pins table (user pins for Formula Kit
+  /// algorithm signal). Soft-deleted via `is_deleted` boolean to let unpin
+  /// events propagate across devices via the existing upsert-only sync.
+  /// Matches the user_foods soft-delete convention.
+  /// v9 added pre_workout_templates table (read-only mirror of
   /// Supabase pre-workout formula catalog). Replaces the legacy `templates`
   /// table for Before-phase formulas in Formula Kit.
   /// v8 added during_workout_templates table (read-only mirror of
@@ -170,7 +178,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -233,6 +241,13 @@ class AppDatabase extends _$AppDatabase {
         // v9: Create pre_workout_templates table (read-only mirror).
         if (from < 9) {
           await m.createTable(preWorkoutTemplatesTable);
+        }
+
+        // v10: Create formula_pins table (Formula Kit pins — user
+        // preference signal for plan generation). Soft-delete via
+        // is_deleted column.
+        if (from < 10) {
+          await m.createTable(formulaPinsTable);
         }
       },
 

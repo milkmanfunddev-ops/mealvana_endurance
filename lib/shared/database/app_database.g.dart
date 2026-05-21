@@ -31880,6 +31880,591 @@ class PersonalTemplatesTableCompanion
   }
 }
 
+class $FormulaPinsTableTable extends FormulaPinsTable
+    with TableInfo<$FormulaPinsTableTable, FormulaPinEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FormulaPinsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _templateIdMeta = const VerificationMeta(
+    'templateId',
+  );
+  @override
+  late final GeneratedColumn<String> templateId = GeneratedColumn<String>(
+    'template_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _templateKindMeta = const VerificationMeta(
+    'templateKind',
+  );
+  @override
+  late final GeneratedColumn<String> templateKind = GeneratedColumn<String>(
+    'template_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    templateId,
+    templateKind,
+    createdAt,
+    updatedAt,
+    isDeleted,
+    needsUpload,
+    localUpdatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'formula_pins';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FormulaPinEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('template_id')) {
+      context.handle(
+        _templateIdMeta,
+        templateId.isAcceptableOrUnknown(data['template_id']!, _templateIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_templateIdMeta);
+    }
+    if (data.containsKey('template_kind')) {
+      context.handle(
+        _templateKindMeta,
+        templateKind.isAcceptableOrUnknown(
+          data['template_kind']!,
+          _templateKindMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_templateKindMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FormulaPinEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FormulaPinEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      templateId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}template_id'],
+      )!,
+      templateKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}template_kind'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
+    );
+  }
+
+  @override
+  $FormulaPinsTableTable createAlias(String alias) {
+    return $FormulaPinsTableTable(attachedDatabase, alias);
+  }
+}
+
+class FormulaPinEntry extends DataClass implements Insertable<FormulaPinEntry> {
+  final String id;
+  final String userId;
+  final String templateId;
+
+  /// Polymorphic ref: 'pre_system' | 'during_system'.
+  /// PR 4 adds 'personal_template' when personal formulas become pinnable.
+  final String templateKind;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isDeleted;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
+  const FormulaPinEntry({
+    required this.id,
+    required this.userId,
+    required this.templateId,
+    required this.templateKind,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.isDeleted,
+    this.needsUpload,
+    this.localUpdatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['template_id'] = Variable<String>(templateId);
+    map['template_kind'] = Variable<String>(templateKind);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
+    return map;
+  }
+
+  FormulaPinsTableCompanion toCompanion(bool nullToAbsent) {
+    return FormulaPinsTableCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      templateId: Value(templateId),
+      templateKind: Value(templateKind),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      isDeleted: Value(isDeleted),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
+    );
+  }
+
+  factory FormulaPinEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FormulaPinEntry(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      templateId: serializer.fromJson<String>(json['templateId']),
+      templateKind: serializer.fromJson<String>(json['templateKind']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'templateId': serializer.toJson<String>(templateId),
+      'templateKind': serializer.toJson<String>(templateKind),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+    };
+  }
+
+  FormulaPinEntry copyWith({
+    String? id,
+    String? userId,
+    String? templateId,
+    String? templateKind,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? isDeleted,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
+  }) => FormulaPinEntry(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    templateId: templateId ?? this.templateId,
+    templateKind: templateKind ?? this.templateKind,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    isDeleted: isDeleted ?? this.isDeleted,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
+  );
+  FormulaPinEntry copyWithCompanion(FormulaPinsTableCompanion data) {
+    return FormulaPinEntry(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      templateId: data.templateId.present
+          ? data.templateId.value
+          : this.templateId,
+      templateKind: data.templateKind.present
+          ? data.templateKind.value
+          : this.templateKind,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FormulaPinEntry(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('templateId: $templateId, ')
+          ..write('templateKind: $templateKind, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    templateId,
+    templateKind,
+    createdAt,
+    updatedAt,
+    isDeleted,
+    needsUpload,
+    localUpdatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FormulaPinEntry &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.templateId == this.templateId &&
+          other.templateKind == this.templateKind &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.isDeleted == this.isDeleted &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
+}
+
+class FormulaPinsTableCompanion extends UpdateCompanion<FormulaPinEntry> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> templateId;
+  final Value<String> templateKind;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> isDeleted;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
+  final Value<int> rowid;
+  const FormulaPinsTableCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.templateId = const Value.absent(),
+    this.templateKind = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FormulaPinsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String userId,
+    required String templateId,
+    required String templateKind,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.isDeleted = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       templateId = Value(templateId),
+       templateKind = Value(templateKind),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<FormulaPinEntry> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? templateId,
+    Expression<String>? templateKind,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? isDeleted,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (templateId != null) 'template_id': templateId,
+      if (templateKind != null) 'template_kind': templateKind,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FormulaPinsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<String>? templateId,
+    Value<String>? templateKind,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<bool>? isDeleted,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
+    Value<int>? rowid,
+  }) {
+    return FormulaPinsTableCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      templateId: templateId ?? this.templateId,
+      templateKind: templateKind ?? this.templateKind,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (templateId.present) {
+      map['template_id'] = Variable<String>(templateId.value);
+    }
+    if (templateKind.present) {
+      map['template_kind'] = Variable<String>(templateKind.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FormulaPinsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('templateId: $templateId, ')
+          ..write('templateKind: $templateKind, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $AthletePairingCodesTableTable extends AthletePairingCodesTable
     with TableInfo<$AthletePairingCodesTableTable, AthletePairingCodeEntry> {
   @override
@@ -33949,6 +34534,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $PersonalTemplatesTableTable personalTemplatesTable =
       $PersonalTemplatesTableTable(this);
+  late final $FormulaPinsTableTable formulaPinsTable = $FormulaPinsTableTable(
+    this,
+  );
   late final $AthletePairingCodesTableTable athletePairingCodesTable =
       $AthletePairingCodesTableTable(this);
   late final $CoachPairingCodesTableTable coachPairingCodesTable =
@@ -33994,6 +34582,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     preWorkoutTemplatesTable,
     tpWritebackTable,
     personalTemplatesTable,
+    formulaPinsTable,
     athletePairingCodesTable,
     coachPairingCodesTable,
     dailyMacroTargetsTable,
@@ -47907,6 +48496,296 @@ typedef $$PersonalTemplatesTableTableProcessedTableManager =
       PersonalTemplateEntry,
       PrefetchHooks Function()
     >;
+typedef $$FormulaPinsTableTableCreateCompanionBuilder =
+    FormulaPinsTableCompanion Function({
+      Value<String> id,
+      required String userId,
+      required String templateId,
+      required String templateKind,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<bool> isDeleted,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+typedef $$FormulaPinsTableTableUpdateCompanionBuilder =
+    FormulaPinsTableCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<String> templateId,
+      Value<String> templateKind,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool> isDeleted,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+
+class $$FormulaPinsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $FormulaPinsTableTable> {
+  $$FormulaPinsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get templateId => $composableBuilder(
+    column: $table.templateId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get templateKind => $composableBuilder(
+    column: $table.templateKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FormulaPinsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $FormulaPinsTableTable> {
+  $$FormulaPinsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get templateId => $composableBuilder(
+    column: $table.templateId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get templateKind => $composableBuilder(
+    column: $table.templateKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FormulaPinsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FormulaPinsTableTable> {
+  $$FormulaPinsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get templateId => $composableBuilder(
+    column: $table.templateId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get templateKind => $composableBuilder(
+    column: $table.templateKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$FormulaPinsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FormulaPinsTableTable,
+          FormulaPinEntry,
+          $$FormulaPinsTableTableFilterComposer,
+          $$FormulaPinsTableTableOrderingComposer,
+          $$FormulaPinsTableTableAnnotationComposer,
+          $$FormulaPinsTableTableCreateCompanionBuilder,
+          $$FormulaPinsTableTableUpdateCompanionBuilder,
+          (
+            FormulaPinEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $FormulaPinsTableTable,
+              FormulaPinEntry
+            >,
+          ),
+          FormulaPinEntry,
+          PrefetchHooks Function()
+        > {
+  $$FormulaPinsTableTableTableManager(
+    _$AppDatabase db,
+    $FormulaPinsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FormulaPinsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FormulaPinsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FormulaPinsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> templateId = const Value.absent(),
+                Value<String> templateKind = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FormulaPinsTableCompanion(
+                id: id,
+                userId: userId,
+                templateId: templateId,
+                templateKind: templateKind,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                isDeleted: isDeleted,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                required String userId,
+                required String templateId,
+                required String templateKind,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<bool> isDeleted = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FormulaPinsTableCompanion.insert(
+                id: id,
+                userId: userId,
+                templateId: templateId,
+                templateKind: templateKind,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                isDeleted: isDeleted,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FormulaPinsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FormulaPinsTableTable,
+      FormulaPinEntry,
+      $$FormulaPinsTableTableFilterComposer,
+      $$FormulaPinsTableTableOrderingComposer,
+      $$FormulaPinsTableTableAnnotationComposer,
+      $$FormulaPinsTableTableCreateCompanionBuilder,
+      $$FormulaPinsTableTableUpdateCompanionBuilder,
+      (
+        FormulaPinEntry,
+        BaseReferences<_$AppDatabase, $FormulaPinsTableTable, FormulaPinEntry>,
+      ),
+      FormulaPinEntry,
+      PrefetchHooks Function()
+    >;
 typedef $$AthletePairingCodesTableTableCreateCompanionBuilder =
     AthletePairingCodesTableCompanion Function({
       required String id,
@@ -49001,6 +49880,8 @@ class $AppDatabaseManager {
         _db,
         _db.personalTemplatesTable,
       );
+  $$FormulaPinsTableTableTableManager get formulaPinsTable =>
+      $$FormulaPinsTableTableTableManager(_db, _db.formulaPinsTable);
   $$AthletePairingCodesTableTableTableManager get athletePairingCodesTable =>
       $$AthletePairingCodesTableTableTableManager(
         _db,
