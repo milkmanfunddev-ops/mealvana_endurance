@@ -35,7 +35,7 @@ PR phasing has shifted: new PR 2 is Pins. Old PR 2–5 each move up by one. Favo
 2. **Domain + repository** — `FormulaPin` model, `FormulaPinsRepository` (CRUD + sync). Register edge in `sync_dependency_graph`.
 3. **Sync handler** — `formula_pins_sync_handler` mirroring `personal_templates_sync_handler` pattern (local-dirty-preserved + remote-upsert).
 4. **Client-side algorithm hook** — modify `_tryTemplateBasedBefore` in `client_plan_service.dart:307` to check pins first; fall through on no-fit. (During phase is server-only — no client hook needed for During.)
-5. **Edge function v4** — new `supabase/functions/generate-nutrition-plan-v4/` directory, near-copy of v3, with pin-check at Pass 1 (Before, `pre-workout.ts:691`) and template-selection (During, `during-template-solver.ts:713`). Identical-when-no-pins behavior.
+5. **Edge function v4** — new `supabase/functions/generate-nutrition-plan-v4/` directory, near-copy of v3, with pin-check at Pass 1 (Before, `pre-workout.ts:691`) and template-selection (During, `during-template-solver.ts:713`). Identical-when-no-pins behavior. **Blocked until dev migration history is reconciled — see "Blocker" subsection below + issue #29.**
 6. **Edge function parity test** — run v3 and v4 against fixture users with zero pins, diff outputs, confirm byte-identical.
 7. **Telemetry** — `formula_pinned`, `formula_unpinned`, `plan_used_pin`, `plan_pin_fallthrough { reason: 'scale_out_of_range' | 'allergen' | 'dislike' | 'gut_train_mismatch' | 'no_pin_for_scope' }`.
 8. **UX (i)** — pin toggle on `FormulaLibraryScreen` cards + Before/During detail screens. State in `FormulaLibraryController` + new `FormulaPinController`.
@@ -50,7 +50,15 @@ PR phasing has shifted: new PR 2 is Pins. Old PR 2–5 each move up by one. Favo
 - Coach insight reading pins as context (folded into PR 5 coach insight scope).
 - Plan-time formula picker ("use this formula for this specific workout") — V3+.
 
+### Blocker — dev Supabase migration history out of sync (issue #29)
 
+Discovered 2026-05-21 while attempting to apply `20260520120000_formula_pins.sql` to dev. The Supabase CLI refuses `db push` because dev's `supabase_migrations.schema_migrations` table contains **49 timestamps older than the oldest file in `supabase/migrations/`** — those pre-March entries don't exist as files in the repo.
+
+- **What we tried:** fresh PAT auth → `supabase link --project-ref vlmtsdzpnjnavdgytcmi` (dev) succeeded → `supabase db push --dry-run` failed with "Remote migration versions not found in local migrations directory" listing the 49 missing timestamps. PAT revoked.
+- **Tracked in:** milkmanfunddev-ops/mealvana_endurance#29 — assigned to Lee for resolution. Three candidate fixes are listed there (`migration repair`, backfill files, or CI-only pushes).
+- **Substeps 3–4 are NOT blocked** — they're pure local Drift work and don't need the dev table to exist.
+- **Substep 5 IS blocked** — the v4 edge function needs `formula_pins` to exist on dev to be testable. Do not start substep 5 until issue #29 is closed (or until we have a clear workaround documented there).
+- **Do not retry `supabase db push` from local until #29 resolves** — same wall every time.
 
 Committed on `feat/formula-kit`:
 - `463cdbc` docs(formula-kit): add implementation plan
