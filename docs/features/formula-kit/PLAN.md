@@ -2,9 +2,20 @@
 
 > **Branch:** all work lands on a new branch — `feat/formula-kit`, branched from `origin/develop`. We'll create and switch to it as the first step on plan acceptance.
 
-## Status — 2026-05-20
+## Status — 2026-05-21
 
-**PR 1 (V1 Browse + Detail) — complete and polished on `feat/formula-kit`. PR 2 scope changed (see "Plan revision" below).**
+**PR 1 complete. PR 2 substeps 1–3 landed on `feat/formula-kit`. Substep 4 (client-side algorithm hook) is next; substep 5 (edge function v4) remains blocked on issue #29.**
+
+PR 2 progress:
+- Substep 1 ✅ `74e6b1f` — `formula_pins` table on Supabase + Drift mirror + schema v9→v10.
+- Substep 2 ✅ `b5bc272` — `FormulaPin` domain + `FormulaPinsRepository` (SyncableRepository mixin with `syncFromRemote`/`uploadDirtyRecords`, soft-delete unpin, idempotent pin, `sync_dependency_graph` registration).
+- Substep 3 ✅ (this commit) — verification-only. The "sync handler" the plan originally named was a misnomer: the dirty-preserved + remote-upsert pattern lives directly inside the repository (no parallel handler file pattern exists for `personal_templates` either; the project consolidates this into the repo itself). Locked in the sync invariants with `test/features/formula_kit/data/formula_pins_repository_test.dart`:
+  - Dirty-preserve: an active sync skips local rows flagged `needs_upload=true`.
+  - Tombstone-propagation: a remote `is_deleted=true` row is applied locally without physical delete, and is hidden by `getActivePinsForUser`/`isPinned`/`findActivePin`.
+  - Soft-delete unpin: `unpin()` flips `is_deleted=true` and dirties the row; no DELETE.
+  - Pin idempotency: a second `pin()` for the same `(user, template, kind)` returns the existing row.
+
+  Exposed `upsertRemotePinsPreservingDirty` via `@visibleForTesting` because the project's repo tests punt on full Supabase mocking (see `test/new_sync/coach_repository_sync_test.dart:116`).
 
 ### Plan revision — 2026-05-20: Pins replace Favorites, move from PR 5 to PR 2
 

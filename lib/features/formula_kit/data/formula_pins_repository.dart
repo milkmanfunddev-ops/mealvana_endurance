@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -86,7 +87,7 @@ class FormulaPinsRepository with SyncableRepository {
           .order('updated_at', ascending: false);
 
       final remotePins = response as List<dynamic>;
-      final syncedCount = await _upsertRemotePinsPreservingDirty(remotePins);
+      final syncedCount = await upsertRemotePinsPreservingDirty(remotePins);
 
       await setLastSyncTime(DateTime.now());
 
@@ -109,7 +110,17 @@ class FormulaPinsRepository with SyncableRepository {
     }
   }
 
-  Future<int> _upsertRemotePinsPreservingDirty(
+  /// Applies a batch of remote pin rows to Drift, skipping any local row
+  /// flagged `needs_upload = true` (dirty-preserve). Tombstones (rows with
+  /// `is_deleted = true`) are applied like any other row; read paths filter
+  /// them out via `WHERE NOT is_deleted`.
+  ///
+  /// Exposed via `@visibleForTesting` because the project's repository tests
+  /// punt on full Supabase mocking — see `test/new_sync/coach_repository_sync_test.dart`.
+  /// This lets the dirty-preserve + tombstone-propagation invariants be locked
+  /// down without a SupabaseQueryBuilder mock stack.
+  @visibleForTesting
+  Future<int> upsertRemotePinsPreservingDirty(
     List<dynamic> remotePins,
   ) async {
     final remoteById = <String, Map<String, dynamic>>{};
