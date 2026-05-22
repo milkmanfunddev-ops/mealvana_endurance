@@ -57,16 +57,19 @@ enum BeforeSubPhase {
 
 /// Digestion-speed filter for the More Filters sheet on the Before tab.
 /// Values mirror `pre_workout_templates.digestion_speed` after lowercasing.
+///
+/// NOTE: the `pre_workout_templates.digestion_speed` CHECK constraint only
+/// permits `'Fast'` and `'Medium'` — there is no `'Slow'` pre-workout formula
+/// in the catalog. A `slow` value here would render a filter chip that always
+/// returns an empty list, so it is intentionally omitted.
 enum FormulaDigestionSpeed {
   fast,
-  medium,
-  slow;
+  medium;
 
   String get storageValue => name;
 
   String get displayLabel => switch (this) {
         FormulaDigestionSpeed.fast => 'Fast',
         FormulaDigestionSpeed.medium => 'Medium',
-        FormulaDigestionSpeed.slow => 'Slow',
       };
 }

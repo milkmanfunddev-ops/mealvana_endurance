@@ -1,45 +1,44 @@
-# Supabase Migrations
+# Supabase migrations — how this repo actually works
 
-## Structure
+> **Read this before touching anything in `supabase/migrations/`.**
+> (Replaces an older README that described a `db push` / GitHub-Actions flow we
+> no longer use.)
 
-- **Active migrations**: Migration files in this directory will be applied to new environments
-- **`_archive/`**: Historical migrations already deployed to dev/prod (kept for reference)
+## We apply schema by hand, not with `supabase db push`
 
-## Local Development Setup
+Schema changes are applied to dev and prod by **pasting SQL into DataGrip**.
+We do **not** run `supabase db push` as part of the normal workflow. The `.sql`
+files here are a **historical record / source-of-truth for review**, not an
+automated pipeline.
 
-Since you're in active development, you have two options for setting up your local Supabase:
+When you make a schema change:
+1. Write the SQL as an idempotent `.sql` file in this folder (use
+   `IF NOT EXISTS`, `DROP ... IF EXISTS`, etc. so it's safe to re-run).
+2. Paste it into DataGrip against **dev** and **prod**.
+3. Track what's pending in `docs/database/formula_kit_sql_to_apply.md` (or a
+   similar per-feature "SQL to apply" doc).
 
-### Option 1: Use Production Baseline (Recommended)
-Pull the latest schema from your dev/prod Supabase instance:
+## Folder layout
 
-```bash
-supabase db pull
-```
+| Folder | Meaning |
+|--------|---------|
+| `*.sql` (root) | **Pending** changes not yet applied. Paste into DataGrip (dev + prod), then move the file into `_archived/`. (Currently none — all applied.) |
+| `_archived/` | Every historical migration, in one place: applied migrations, former data-seed migrations, the disabled pre-Oct-2025 base-schema attempts (`.sql.skip`), and the two `20250114_expand_category_enum*` files that were drafted but never applied. |
 
-This creates a snapshot of your current production schema.
+## ⚠️ `supabase db push` will fail (issue #29)
 
-### Option 2: Fresh Local Setup
-Reset your local Supabase to match the baseline:
+The dev project's `supabase_migrations.schema_migrations` table contains ~49
+timestamps from **before** the early migrations were moved into `_archived/` —
+those timestamps have no matching file in the root folder anymore. So
+`supabase db push` aborts with *"Remote migration versions not found in local
+migrations directory."*
 
-```bash
-supabase db reset
-```
+If you ever need `db push` to work again, pick one:
+- `supabase migration repair --status applied <timestamp>` for each of the ~49
+  phantom timestamps (marks them applied without running SQL), **or**
+- backfill the missing `.sql` files from git history / `_archived/`, **or**
+- keep using the DataGrip workflow and don't run `db push` at all (current
+  approach).
 
-This will apply only the active migrations (cycling/swimming support).
-
-## Deployment
-
-### Dev Environment
-```bash
-supabase db push --linked
-```
-
-### Production Environment
-When ready to ship to production users, migrations will be applied automatically via GitHub Actions or manual deployment.
-
-## Migration History
-
-All migrations prior to `20251015000000` have been archived. They were already deployed to dev/prod and are kept for historical reference only.
-
-Current active migrations:
-- `20251015000000_add_cycling_swimming_support.sql` - Adds cycling/swimming sport types, FTP/CSS preferences, and sport-specific food suitability
+This mismatch does **not** affect dev/prod data — both DBs are correct; only the
+CLI's migration-history comparison is out of sync.

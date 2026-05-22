@@ -2,8 +2,10 @@
 -- When pins exist matching a workout's scope, the algorithm tries pinned
 -- templates first; falls through to existing scoring if none fit.
 -- See docs/features/formula-kit/PLAN.md (PR 2).
+--
+-- Idempotent: safe to paste into DataGrip and re-run against dev or prod.
 
-CREATE TABLE formula_pins (
+CREATE TABLE IF NOT EXISTS formula_pins (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   template_id UUID NOT NULL,
@@ -21,17 +23,18 @@ CREATE TABLE formula_pins (
 
 -- One active pin per (user, template, kind). Re-pinning a soft-deleted row
 -- inserts a new active row (with new id); the old tombstone stays for sync.
-CREATE UNIQUE INDEX formula_pins_active_unique
+CREATE UNIQUE INDEX IF NOT EXISTS formula_pins_active_unique
   ON formula_pins (user_id, template_id, template_kind)
   WHERE NOT is_deleted;
 
 -- Algorithm reads pins by (user, kind); indexed for hot path.
-CREATE INDEX formula_pins_user_kind
+CREATE INDEX IF NOT EXISTS formula_pins_user_kind
   ON formula_pins (user_id, template_kind)
   WHERE NOT is_deleted;
 
 ALTER TABLE formula_pins ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users manage own pins" ON formula_pins;
 CREATE POLICY "Users manage own pins"
   ON formula_pins FOR ALL
   USING (user_id = auth.uid())
@@ -46,6 +49,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS formula_pins_updated_at_trigger ON formula_pins;
 CREATE TRIGGER formula_pins_updated_at_trigger
   BEFORE UPDATE ON formula_pins
   FOR EACH ROW EXECUTE FUNCTION formula_pins_set_updated_at();

@@ -403,7 +403,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     final nextFilter = current.filter.copyWith(activeAllergyFilters: next);
     state = AsyncData(current.copyWith(filter: nextFilter));
     await _trackFilterApplied(
-      isNowActive ? 'allergen_added' : 'allergen_removed',
+      'allergen',
       value.dbValue,
       nextFilter,
     );
@@ -424,7 +424,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     final nextFilter = current.filter.copyWith(activeDietFilters: next);
     state = AsyncData(current.copyWith(filter: nextFilter));
     await _trackFilterApplied(
-      isNowActive ? 'diet_added' : 'diet_removed',
+      'diet',
       value.dbValue,
       nextFilter,
     );
