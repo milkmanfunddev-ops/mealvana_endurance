@@ -2,9 +2,47 @@
 
 > **Branch:** all work lands on a new branch — `feat/formula-kit`, branched from `origin/develop`. We'll create and switch to it as the first step on plan acceptance.
 
-## Status — 2026-05-21
+## Status — 2026-05-22
 
-**PR 1 complete. PR 2 substeps 1–3 landed on `feat/formula-kit`. Substep 4 (client-side algorithm hook) is DEFERRED — see "Plan revision — 2026-05-21" below. Substep 5 (edge function v4) remains blocked on issue #29. Next active work is substep 8 (UX pin toggle), which is unblocked.**
+**PR 1 complete. PR 2 substeps 1–3 landed; substep 4 deferred. Substep 5 (edge function v4) is now UNBLOCKED — `formula_pins` is live on dev + prod (applied by hand via DataGrip on 2026-05-22; the `supabase db push` workflow is retired, see "Schema management — actual workflow" below). `custom_foods` was REVERTED as a duplicate of `user_foods` (Formula Kit reuses `user_foods`; PR 4 will not create a `custom_foods` table). Drift schema is now `schemaVersion = 11` after a develop merge resolved a version collision. Next active work is substep 5 (edge function v4) OR substep 8 (UX pin toggle) — either is now executable.**
+
+### Plan revision — 2026-05-22: schema applied, custom_foods reverted, workflow changed
+
+Lee did a substantial db-cleanup pass on 2026-05-22 (`b2f86b4f`, `2ca58e95`) that materially affects this plan. Summary of what changed and how it propagates:
+
+**Schema is live on dev + prod (not via `db push`).**
+- `formula_pins`, `personal_templates` formula-kit columns: applied to dev + prod via DataGrip on 2026-05-22. The `20260520120000_formula_pins.sql` migration was rewritten idempotently (now in `_archived/`) so it's safe to re-paste.
+- The `supabase db push` workflow is retired for this repo. Schema changes are written as idempotent SQL into `docs/database/apply_all.sql`, pasted into DataGrip against dev then prod, then moved to `supabase/migrations/_archived/`. See `supabase/migrations/README.md` for the full convention. The deploy-dev / deploy-prod / schema-drift-check GitHub Actions workflows were deleted (they failed on #29 and deployed nothing).
+- Issue #29 is no longer a substep 5 blocker — bypassed, not resolved. The CLI migration-history mismatch still exists; we just don't depend on the CLI anymore.
+
+**`custom_foods` is dropped from the plan.**
+- `custom_foods` table was applied 2026-05-22 then immediately reverted — it duplicated `user_foods` (which already stores user-created foods with macros, soft-delete, offline sync, and is wired into the app). Formula Kit reuses `user_foods` going forward.
+- `personal_templates.custom_food_ids` now references `user_foods.id` (column comment updated in DataGrip).
+- If formula components later need allergen/diet/caffeine filtering on user-created foods, add those columns to `user_foods` additively rather than creating a parallel table.
+- PR 4 substeps that previously created `custom_foods` table + repo are dropped. The architecture diagram + Drift schema additions + Supabase additions sections below still mention `custom_foods`; they are stale and should be read with this revision overlay. Not deleting them inline since the doc is the running record — propagate when PR 4 actually starts.
+
+**PR 4 prerequisite added: `TemplateKind.fromWireValue` crash-safety.**
+- Today the enum decoder throws `ArgumentError` on unknown wire values (`lib/features/formula_kit/domain/formula_pin.dart:21`). When PR 4 widens `template_kind` to include `'personal_template'`, old app binaries still on the V1 enum will crash reading new pins. Must be made tolerant (return null, filter out, log) before the PR 4 schema widening ships.
+- Tracked in `docs/database/REFACTOR_PLAN_2026-05-22.md` "Deferred code fixes."
+
+**Drift schema version is now 11 (not 10).**
+- The develop merge that came in with `b2f86b4f` raised the schema version past what PR 2 originally bumped. Substep 1's "v9→v10" in this doc is historically accurate but the actual current version is `schemaVersion = 11`. Any future schema bump increments from 11.
+
+**Substep 5 is now executable.** It still requires writing the edge function — schema being live is the necessary precondition, not the work itself.
+
+## Schema management — actual workflow (effective 2026-05-22)
+
+For any schema work on Formula Kit (or anywhere else) on this branch and forward:
+
+1. Write idempotent SQL into `docs/database/apply_all.sql` (use `CREATE ... IF NOT EXISTS`, `DROP ... IF EXISTS`, guarded `UPDATE`s).
+2. Paste `apply_all.sql` into DataGrip and run against dev. Verify.
+3. Paste into DataGrip and run against prod. Verify.
+4. Save a dated copy as `supabase/migrations/_archived/<YYYYMMDDhhmmss>_<slug>.sql` for the historical record.
+5. Clear `apply_all.sql` for the next change.
+6. Do **not** run `supabase db push` — it fails on #29 and we don't use it.
+
+Old Status — 2026-05-21
+=======================
 
 PR 2 progress:
 - Substep 1 ✅ `74e6b1f` — `formula_pins` table on Supabase + Drift mirror + schema v9→v10.
@@ -76,7 +114,7 @@ PR phasing has shifted: new PR 2 is Pins. Old PR 2–5 each move up by one. Favo
 2. **Domain + repository** — `FormulaPin` model, `FormulaPinsRepository` (CRUD + sync). Register edge in `sync_dependency_graph`.
 3. **Sync handler** — `formula_pins_sync_handler` mirroring `personal_templates_sync_handler` pattern (local-dirty-preserved + remote-upsert).
 4. ⏸ **DEFERRED — Client-side algorithm hook.** Original plan: modify `_tryTemplateBasedBefore` in `client_plan_service.dart:307` to check pins first. Deferred 2026-05-21 because the client reads `templates` while pins reference `pre_workout_templates` — see "Plan revision — 2026-05-21" above and "Deferred client-side work" subsection near the end. The client fallback path will not honor pins in V1.
-5. **Edge function v4** — new `supabase/functions/generate-nutrition-plan-v4/` directory, near-copy of v3, with pin-check at Pass 1 (Before, `pre-workout.ts:691`) and template-selection (During, `during-template-solver.ts:713`). Identical-when-no-pins behavior. **Blocked until dev migration history is reconciled — see "Blocker" subsection below + issue #29.**
+5. **Edge function v4** — new `supabase/functions/generate-nutrition-plan-v4/` directory, near-copy of v3, with pin-check at Pass 1 (Before, `pre-workout.ts:691`) and template-selection (During, `during-template-solver.ts:713`). Identical-when-no-pins behavior. **UNBLOCKED as of 2026-05-22** — `formula_pins` is live on dev + prod. See "Plan revision — 2026-05-22" above for what changed.
 6. **Edge function parity test** — run v3 and v4 against fixture users with zero pins, diff outputs, confirm byte-identical.
 7. **Telemetry** — `formula_pinned`, `formula_unpinned`, `plan_used_pin`, `plan_pin_fallthrough { reason: 'no_pin_for_scope' | 'gut_train_mismatch' }`. Per honor-pin policy (see Scope decisions), Before phase only fires `plan_pin_fallthrough` with `no_pin_for_scope`. Server-side During may still surface `gut_train_mismatch` (revisit when substep 5 is unblocked). The original `scale_out_of_range` / `allergen` / `dislike` reasons no longer fire under V1 policy.
 8. **UX (i)** — pin toggle on `FormulaLibraryScreen` cards + Before/During detail screens. State in `FormulaLibraryController` + new `FormulaPinController`.
@@ -91,15 +129,13 @@ PR phasing has shifted: new PR 2 is Pins. Old PR 2–5 each move up by one. Favo
 - Coach insight reading pins as context (folded into PR 5 coach insight scope).
 - Plan-time formula picker ("use this formula for this specific workout") — V3+.
 
-### Blocker — dev Supabase migration history out of sync (issue #29)
+### Blocker — dev Supabase migration history out of sync (issue #29) — BYPASSED 2026-05-22
 
-Discovered 2026-05-21 while attempting to apply `20260520120000_formula_pins.sql` to dev. The Supabase CLI refuses `db push` because dev's `supabase_migrations.schema_migrations` table contains **49 timestamps older than the oldest file in `supabase/migrations/`** — those pre-March entries don't exist as files in the repo.
+Original blocker (kept for context): dev's `supabase_migrations.schema_migrations` had ~49 phantom timestamps with no matching files, so `supabase db push` failed.
 
-- **What we tried:** fresh PAT auth → `supabase link --project-ref vlmtsdzpnjnavdgytcmi` (dev) succeeded → `supabase db push --dry-run` failed with "Remote migration versions not found in local migrations directory" listing the 49 missing timestamps. PAT revoked.
-- **Tracked in:** milkmanfunddev-ops/mealvana_endurance#29 — assigned to Lee for resolution. Three candidate fixes are listed there (`migration repair`, backfill files, or CI-only pushes).
-- **Substeps 3–4 are NOT blocked** — they're pure local Drift work and don't need the dev table to exist.
-- **Substep 5 IS blocked** — the v4 edge function needs `formula_pins` to exist on dev to be testable. Do not start substep 5 until issue #29 is closed (or until we have a clear workaround documented there).
-- **Do not retry `supabase db push` from local until #29 resolves** — same wall every time.
+**Resolution (effective 2026-05-22):** the project no longer uses `supabase db push`. Schema is applied by hand via DataGrip from `docs/database/apply_all.sql`. The broken `deploy-dev` / `deploy-prod` / `schema-drift-check` workflows were deleted. `formula_pins` was applied to dev + prod 2026-05-22. Substep 5 is unblocked.
+
+The underlying CLI mismatch is **not fixed** — if someone ever needs `db push` working again, options are documented in `supabase/migrations/README.md` (`migration repair` against the 49 phantom timestamps, or backfilling SQL files from history). Issue #29 remains open as a record but is no longer a blocker for this work.
 
 Committed on `feat/formula-kit`:
 - `463cdbc` docs(formula-kit): add implementation plan
