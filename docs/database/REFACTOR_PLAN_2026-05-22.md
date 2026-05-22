@@ -40,18 +40,24 @@ lower-risk plan.
 - Fueling-kit bug fixes: removed the dead `FormulaDigestionSpeed.slow` filter
   (DB only has Fast/Medium); fixed analytics `filter_type` to spec
   (`'allergen'`/`'diet'`).
-- Made `formula_pins.sql` idempotent; wrote `custom_foods.sql` +
-  `personal_templates_formula_kit_columns.sql` (PR 4 prep).
+- Made `formula_pins.sql` idempotent; added `personal_templates`
+  formula-kit columns (PR 4 prep). **Applied to dev + prod 2026-05-22.**
 - Replaced the outdated `supabase/migrations/README.md`.
+- **Reverted `custom_foods`** — it duplicated the existing `user_foods` table
+  (user-created foods w/ macros, owned + soft-deleted + offline-synced, and
+  richer + already wired in). Formula Kit reuses `user_foods`;
+  `personal_templates.custom_food_ids` references `user_foods.id`. If formula
+  components need allergen/diet/caffeine filtering, add those columns to
+  `user_foods` (additive) rather than a parallel table. **Other dev: PR 4's
+  `custom_foods` table/repo is dropped — use `user_foods`.**
 
 ## Pending schema to apply (DataGrip, dev + prod)
 
-Run **`docs/database/apply_all.sql`** top-to-bottom. It contains:
-1. `formula_pins` — needed for pins to sync.
-2. `custom_foods` — PR 4 prep (no app code uses it yet).
-3. `personal_templates` formula-kit columns — PR 4 prep, additive, auto-backfilled.
+Run **`docs/database/apply_all.sql`** top-to-bottom. Currently:
+1. Data-hygiene fixes #27 / #28 (`serving_unit`, "Potato + Salt").
+2. `DROP TABLE custom_foods` (+ corrected `custom_food_ids` comment).
 
-All additive and safe for old clients.
+All additive/safe for old clients.
 
 ## Legacy `templates` retirement (the one real code change — do carefully)
 
