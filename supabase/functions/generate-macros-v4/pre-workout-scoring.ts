@@ -90,10 +90,20 @@ export function scoreFormula(
   state: PlanState,
   dislikedSet: Set<string>,
   likedFoods: string[] = [],
+  /**
+   * When true, bypass the [min_servings, max_servings] clamp so the scaling
+   * factor can exceed the template's normal range. Used for pinned-template
+   * honoring per the locked Formula Kit policy ("if the pinned formula needs
+   * 3× to hit carb target, ship 3×"). When false (default), behavior is
+   * identical to pre-pin v3.
+   */
+  bypassScaleClamp = false,
 ): ScoredFormula {
   // Calculate ideal servings directly
   const ideal = carbTarget / template.carbs_per_serving;
-  const clamped = Math.max(template.min_servings, Math.min(template.max_servings, ideal));
+  const clamped = bypassScaleClamp
+    ? Math.max(0, ideal)
+    : Math.max(template.min_servings, Math.min(template.max_servings, ideal));
   const servings = snapToHalf(clamped);
 
   let carbs = templateCarbs(template, servings);

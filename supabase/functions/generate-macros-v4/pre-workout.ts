@@ -758,6 +758,16 @@ export function selectPreWorkoutFoods(
   likedFoods: string[] = [],
   dislikedFoods: string[] = [],
   allergies: string[] = [],
+  /**
+   * Set of pre_workout_template ids the user has actively pinned (food
+   * templates only; drink/electrolyte not pinnable in V1). When a pinned
+   * template matches the current sub_phase's time_window, it overrides
+   * candidate selection: allergen / diet / dislike / cross-phase-dedup
+   * filters and the [min_servings, max_servings] scale clamp are all
+   * bypassed for that phase. When undefined or empty, behavior is byte-
+   * identical to pre-pin v3. Formula Kit PR 2 substep 5a.
+   */
+  pinnedTemplateIds?: Set<string>,
 ): PreWorkoutPhaseResult[] {
   if (targets.meal_type === 'fasted') return [];
   const dislikedSet = new Set(dislikedFoods.map(normalizeToken));
@@ -819,28 +829,50 @@ export function selectPreWorkoutFoods(
   };
 
   const results: PreWorkoutPhaseResult[] = [];
+  const pinsActive = pinnedTemplateIds !== undefined && pinnedTemplateIds.size > 0;
 
   // ── Pass 1: Food selection per phase ────────────────────────────────
   for (const phase of phases) {
     const pTargets = phaseTargets.get(phase);
     const carbTarget = pTargets?.carbs_g ?? 0;
 
-    const eligible = getEligibleTemplates(foodTemplates, phase, diet, dislikedFoods, allergies);
+    // Pin override: when the user has pins matching this phase's time_window,
+    // they take over candidate selection — bypassing dietary/dislike/allergen
+    // filters, cross-phase dedup, and the scale clamp. Per locked Formula Kit
+    // policy (2026-05-21): in-scope pins are honored unconditionally.
+    const phaseTimeWindow = getTimeWindowForPhase(phase);
+    const pinnedForPhase = pinsActive
+      ? foodTemplates.filter(
+          (t) => pinnedTemplateIds!.has(t.id) && t.time_window === phaseTimeWindow,
+        )
+      : [];
+    const pinOverrideActive = pinnedForPhase.length > 0;
 
-    // Filter to unused categories (fallback to all if none left)
-    let candidates = eligible.filter((t) => !state.used_categories.has(t.base_category));
-    if (candidates.length === 0) candidates = eligible;
+    const eligible = pinOverrideActive
+      ? pinnedForPhase
+      : getEligibleTemplates(foodTemplates, phase, diet, dislikedFoods, allergies);
 
-    // Cross-phase food dedup: exclude templates that share non-exempt
-    // component foods with already-selected phases (e.g. no bagel in both meal and snack)
-    if (state.used_foods.size > 0) {
-      const deduped = candidates.filter((t) => {
-        const components = t.component_food_names ?? [];
-        return !components.some((name) =>
-          state.used_foods.has(name) && !CROSS_PHASE_EXEMPT_FOODS.has(name)
-        );
-      });
-      if (deduped.length > 0) candidates = deduped;
+    let candidates: PreWorkoutTemplate[];
+    if (pinOverrideActive) {
+      // Pins skip category-dedup and cross-phase-dedup. Whichever pinned
+      // template scores best is what ships.
+      candidates = pinnedForPhase;
+    } else {
+      // Filter to unused categories (fallback to all if none left)
+      candidates = eligible.filter((t) => !state.used_categories.has(t.base_category));
+      if (candidates.length === 0) candidates = eligible;
+
+      // Cross-phase food dedup: exclude templates that share non-exempt
+      // component foods with already-selected phases (e.g. no bagel in both meal and snack)
+      if (state.used_foods.size > 0) {
+        const deduped = candidates.filter((t) => {
+          const components = t.component_food_names ?? [];
+          return !components.some((name) =>
+            state.used_foods.has(name) && !CROSS_PHASE_EXEMPT_FOODS.has(name)
+          );
+        });
+        if (deduped.length > 0) candidates = deduped;
+      }
     }
 
     if (candidates.length === 0) {
@@ -888,12 +920,27 @@ export function selectPreWorkoutFoods(
         total_sodium_mg: 0,
         total_fluid_ml: 0,
         ...(shortfalls.length > 0 && { shortfalls }),
+        // pinsActive but no pin matched this scope — the user has pins
+        // elsewhere but not here, and the regular eligibility filter
+        // returned nothing. Surface as no_pin_for_scope for telemetry.
+        ...(pinsActive && {
+          pin_decision: {
+            used_pin: false,
+            pinned_template_id: null,
+            fallthrough_reason: 'no_pin_for_scope' as const,
+          },
+        }),
       });
       continue;
     }
 
-    // Score every candidate (with liked-food boost)
-    const scored = candidates.map((t) => scoreFormula(t, carbTarget, state, dislikedSet, likedFoods));
+    // Score every candidate (with liked-food boost). When the pin override is
+    // active, pass bypassScaleClamp=true so the scaling factor can exceed
+    // [min_servings, max_servings] — honoring the user's explicit pin even at
+    // 3× the template's normal range.
+    const scored = candidates.map((t) =>
+      scoreFormula(t, carbTarget, state, dislikedSet, likedFoods, pinOverrideActive),
+    );
 
     // Pick best by combined score
     const pick = pickBestFormula(scored, state, carbTarget);
@@ -906,7 +953,11 @@ export function selectPreWorkoutFoods(
 
     let stackSelection: TemplateSelection | null = null;
 
-    if (pctShort > STACK_THRESHOLD && remainingGap > 20) {
+    // Stacking is bypassed when the pin override is active: scaling is
+    // already unclamped (bypassScaleClamp=true), so the pinned template
+    // covers the carb target itself. Stacking another template on top
+    // would dilute the pin signal — the user pinned X, they want X.
+    if (!pinOverrideActive && pctShort > STACK_THRESHOLD && remainingGap > 20) {
       const stack = tryStack(
         remainingGap,
         eligible,
@@ -963,6 +1014,19 @@ export function selectPreWorkoutFoods(
       total_fat_g: Math.round(totalFat * 10) / 10,
       total_sodium_mg: Math.round(totalSodium * 10) / 10,
       total_fluid_ml: Math.round(totalFluid * 10) / 10,
+      ...(pinsActive && {
+        pin_decision: pinOverrideActive
+          ? {
+              used_pin: true,
+              pinned_template_id: pick.template.id,
+              fallthrough_reason: null,
+            }
+          : {
+              used_pin: false,
+              pinned_template_id: null,
+              fallthrough_reason: 'no_pin_for_scope' as const,
+            },
+      }),
     });
   }
 
