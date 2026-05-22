@@ -86,7 +86,7 @@ class BrickSegmentAccordion extends StatelessWidget {
                     children: [
                       // Drag handle (≡) - decorative since gesture is on whole card
                       ExcludeSemantics(
-                        child: Icon(
+                        child: FaIcon(
                           FontAwesomeIcons.gripVertical,
                           size: 20,
                           color: isDark
@@ -114,8 +114,8 @@ class BrickSegmentAccordion extends StatelessWidget {
                       ExcludeSemantics(
                         child: Icon(
                           expanded
-                              ? FontAwesomeIcons.chevronUp
-                              : FontAwesomeIcons.chevronDown,
+                              ? FontAwesomeIcons.chevronUp.data
+                              : FontAwesomeIcons.chevronDown.data,
                           size: 16,
                           color: isDark
                               ? AppColors.cream.withValues(alpha: 0.7)

@@ -32,13 +32,10 @@ import '../providers/events_controller.dart';
 /// - If [event] is provided, this is EDIT mode
 class EventFormScreen extends ConsumerStatefulWidget {
   final Event? event; // null = create mode, non-null = edit mode
-  final String? forUserId; // If provided, create event for this user (coach creating for athlete)
+  final String?
+  forUserId; // If provided, create event for this user (coach creating for athlete)
 
-  const EventFormScreen({
-    super.key,
-    this.event,
-    this.forUserId,
-  });
+  const EventFormScreen({super.key, this.event, this.forUserId});
 
   @override
   ConsumerState<EventFormScreen> createState() => _EventFormScreenState();
@@ -89,14 +86,20 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     _eventNameController = TextEditingController(text: widget.event?.eventName);
     _locationController = TextEditingController(text: widget.event?.location);
     _bibNumberController = TextEditingController(text: widget.event?.bibNumber);
-    _registrationUrlController = TextEditingController(text: widget.event?.registrationUrl);
+    _registrationUrlController = TextEditingController(
+      text: widget.event?.registrationUrl,
+    );
 
     // Parse goal time (stored as total minutes)
     if (widget.event?.goalTimeMinutes != null) {
       final hours = widget.event!.goalTimeMinutes! ~/ 60;
       final minutes = widget.event!.goalTimeMinutes! % 60;
-      _goalTimeHoursController = TextEditingController(text: hours > 0 ? hours.toString() : '');
-      _goalTimeMinutesController = TextEditingController(text: minutes > 0 ? minutes.toString() : '');
+      _goalTimeHoursController = TextEditingController(
+        text: hours > 0 ? hours.toString() : '',
+      );
+      _goalTimeMinutesController = TextEditingController(
+        text: minutes > 0 ? minutes.toString() : '',
+      );
     } else {
       _goalTimeHoursController = TextEditingController();
       _goalTimeMinutesController = TextEditingController();
@@ -105,9 +108,14 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     // Parse goal pace (stored as minutes per mile with decimal)
     if (widget.event?.goalPaceMinutesPerMile != null) {
       final minutes = widget.event!.goalPaceMinutesPerMile!.floor();
-      final seconds = ((widget.event!.goalPaceMinutesPerMile! - minutes) * 60).round();
-      _goalPaceMinutesController = TextEditingController(text: minutes.toString());
-      _goalPaceSecondsController = TextEditingController(text: seconds.toString());
+      final seconds = ((widget.event!.goalPaceMinutesPerMile! - minutes) * 60)
+          .round();
+      _goalPaceMinutesController = TextEditingController(
+        text: minutes.toString(),
+      );
+      _goalPaceSecondsController = TextEditingController(
+        text: seconds.toString(),
+      );
     } else {
       _goalPaceMinutesController = TextEditingController();
       _goalPaceSecondsController = TextEditingController();
@@ -115,11 +123,15 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
 
     // Initialize start time and event type
     if (isEditMode) {
-      _startTime = widget.event!.startTime != null ? DateTime.parse(widget.event!.startTime!) : null;
+      _startTime = widget.event!.startTime != null
+          ? DateTime.parse(widget.event!.startTime!)
+          : null;
       _selectedSportType = widget.event!.eventType;
       // Convert string to EventSubtype
       if (widget.event!.eventSubtype != null) {
-        final subtypes = EventSubtype.getSubtypesForEventType(widget.event!.eventType.dbValue);
+        final subtypes = EventSubtype.getSubtypesForEventType(
+          widget.event!.eventType.dbValue,
+        );
         _selectedEventSubtype = subtypes.firstWhere(
           (st) => st.name == widget.event!.eventSubtype,
           orElse: () => subtypes.first,
@@ -130,7 +142,9 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
       _startTime = DateTime.now().add(const Duration(days: 30));
       _selectedSportType = ActivityType.running;
       // Default to half marathon for running
-      final subtypes = EventSubtype.getSubtypesForEventType(_selectedSportType.dbValue);
+      final subtypes = EventSubtype.getSubtypesForEventType(
+        _selectedSportType.dbValue,
+      );
       _selectedEventSubtype = subtypes.firstWhere(
         (st) => st.name == 'half_marathon',
         orElse: () => subtypes.first,
@@ -285,12 +299,17 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
       // Auto-update sport type to match the event
       _selectedSportType = event.eventType;
       // Update subtype based on new sport type
-      final subtypes = EventSubtype.getSubtypesForEventType(_selectedSportType.dbValue);
+      final subtypes = EventSubtype.getSubtypesForEventType(
+        _selectedSportType.dbValue,
+      );
 
       // Try to match event subtype if available
       if (event.eventSubtype != null) {
-        final matchingSubtype = subtypes.where((st) => st.name == event.eventSubtype).firstOrNull;
-        _selectedEventSubtype = matchingSubtype ?? (subtypes.isNotEmpty ? subtypes.first : null);
+        final matchingSubtype = subtypes
+            .where((st) => st.name == event.eventSubtype)
+            .firstOrNull;
+        _selectedEventSubtype =
+            matchingSubtype ?? (subtypes.isNotEmpty ? subtypes.first : null);
       } else {
         _selectedEventSubtype = subtypes.isNotEmpty ? subtypes.first : null;
       }
@@ -459,7 +478,13 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           );
         } else {
           final now = DateTime.now();
-          _startTime = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+          _startTime = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            picked.hour,
+            picked.minute,
+          );
         }
       });
     }
@@ -482,7 +507,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     try {
       // Calculate goal time in minutes
       int? goalTimeMinutes;
-      if (_goalTimeHoursController.text.isNotEmpty || _goalTimeMinutesController.text.isNotEmpty) {
+      if (_goalTimeHoursController.text.isNotEmpty ||
+          _goalTimeMinutesController.text.isNotEmpty) {
         final hours = int.tryParse(_goalTimeHoursController.text) ?? 0;
         final minutes = int.tryParse(_goalTimeMinutesController.text) ?? 0;
         goalTimeMinutes = (hours * 60) + minutes;
@@ -490,7 +516,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
 
       // Calculate goal pace in minutes per mile
       double? goalPaceMinutesPerMile;
-      if (_goalPaceMinutesController.text.isNotEmpty || _goalPaceSecondsController.text.isNotEmpty) {
+      if (_goalPaceMinutesController.text.isNotEmpty ||
+          _goalPaceSecondsController.text.isNotEmpty) {
         final minutes = int.tryParse(_goalPaceMinutesController.text) ?? 0;
         final seconds = int.tryParse(_goalPaceSecondsController.text) ?? 0;
         goalPaceMinutesPerMile = minutes + (seconds / 60);
@@ -500,9 +527,15 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         // Update existing event
         final updatedEvent = widget.event!.copyWith(
           eventName: _eventNameController.text.trim(),
-          location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
-          bibNumber: _bibNumberController.text.trim().isEmpty ? null : _bibNumberController.text.trim(),
-          registrationUrl: _registrationUrlController.text.trim().isEmpty ? null : _registrationUrlController.text.trim(),
+          location: _locationController.text.trim().isEmpty
+              ? null
+              : _locationController.text.trim(),
+          bibNumber: _bibNumberController.text.trim().isEmpty
+              ? null
+              : _bibNumberController.text.trim(),
+          registrationUrl: _registrationUrlController.text.trim().isEmpty
+              ? null
+              : _registrationUrlController.text.trim(),
           startTime: _startTime!.toIso8601String(),
           eventType: _selectedSportType,
           eventSubtype: _selectedEventSubtype?.name,
@@ -510,26 +543,36 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           goalPaceMinutesPerMile: goalPaceMinutesPerMile,
         );
 
-        await ref.read(eventsControllerProvider.notifier).updateEvent(updatedEvent);
+        await ref
+            .read(eventsControllerProvider.notifier)
+            .updateEvent(updatedEvent);
 
         if (mounted) {
-          Navigator.of(context).pop({'success': true, 'eventName': updatedEvent.eventName});
+          Navigator.of(
+            context,
+          ).pop({'success': true, 'eventName': updatedEvent.eventName});
         }
       } else {
         // Create new event
-        final eventId = await ref.read(eventsControllerProvider.notifier).createEvent(
-          activityId: null,
-          forUserId: widget.forUserId,
-          eventType: _selectedSportType,
-          eventSubtype: _selectedEventSubtype?.name,
-          eventName: _eventNameController.text.trim(),
-          location: _locationController.text.trim().isEmpty ? null : _locationController.text.trim(),
-          registrationUrl: _registrationUrlController.text.trim().isEmpty ? null : _registrationUrlController.text.trim(),
-          startTime: _startTime!.toIso8601String(),
-          goalTimeMinutes: goalTimeMinutes,
-          goalPaceMinutesPerMile: goalPaceMinutesPerMile,
-          hasCarbLoading: false,
-        );
+        final eventId = await ref
+            .read(eventsControllerProvider.notifier)
+            .createEvent(
+              activityId: null,
+              forUserId: widget.forUserId,
+              eventType: _selectedSportType,
+              eventSubtype: _selectedEventSubtype?.name,
+              eventName: _eventNameController.text.trim(),
+              location: _locationController.text.trim().isEmpty
+                  ? null
+                  : _locationController.text.trim(),
+              registrationUrl: _registrationUrlController.text.trim().isEmpty
+                  ? null
+                  : _registrationUrlController.text.trim(),
+              startTime: _startTime!.toIso8601String(),
+              goalTimeMinutes: goalTimeMinutes,
+              goalPaceMinutesPerMile: goalPaceMinutesPerMile,
+              hasCarbLoading: false,
+            );
 
         if (mounted) {
           // Pop and return result - let calling screen handle navigation
@@ -563,7 +606,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: Icon(
+          key: const ValueKey('event_create.close_button'),
+          icon: FaIcon(
             FontAwesomeIcons.xmark,
             size: AppIconSizes.sm,
             color: Theme.of(context).colorScheme.onSurface,
@@ -571,6 +615,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
+          key: const ValueKey('event_create.title'),
           isEditMode ? 'Edit Event' : 'New Event',
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
@@ -578,7 +623,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(
+            key: const ValueKey('event_create.home_button'),
+            icon: FaIcon(
               FontAwesomeIcons.house,
               size: AppIconSizes.sm,
               color: Theme.of(context).colorScheme.onSurface,
@@ -613,395 +659,691 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                   },
                 ),
                 child: SingleChildScrollView(
-                padding: AppSpacing.screenPaddingHorizontal,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                  const SizedBox(height: AppSpacing.md),
+                  padding: AppSpacing.screenPaddingHorizontal,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: AppSpacing.md),
 
-                // Sport Category Selection
-                SportCategorySelector(
-                  selectedCategory: _selectedSportType,
-                  onCategoryChanged: (newCategory) {
-                    setState(() {
-                      _selectedSportType = newCategory;
-                      // Reset subtype to first option of the new category
-                      final subtypes = EventSubtype.getSubtypesForEventType(newCategory.dbValue);
-                      _selectedEventSubtype = subtypes.isNotEmpty ? subtypes.first : null;
-                    });
-                  },
-                ),
-
-                const SizedBox(height: AppSpacing.lg),
-
-                // Event Subtype Selection (Race Distance)
-                EventSubtypeDropdown(
-                  sportCategory: _selectedSportType,
-                  selectedSubtype: _selectedEventSubtype,
-                  onSubtypeChanged: (subtype) {
-                    setState(() {
-                      _selectedEventSubtype = subtype;
-                    });
-                  },
-                ),
-
-                const SizedBox(height: AppSpacing.lg),
-
-                // Event Name with Public Events Autocomplete
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextFormField(
-                      controller: _eventNameController,
-                      focusNode: _eventNameFocusNode,
-                      style: AppTextStyles.inputText.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
+                      // Sport Category Selection
+                      SportCategorySelector(
+                        selectedCategory: _selectedSportType,
+                        onCategoryChanged: (newCategory) {
+                          setState(() {
+                            _selectedSportType = newCategory;
+                            // Reset subtype to first option of the new category
+                            final subtypes =
+                                EventSubtype.getSubtypesForEventType(
+                                  newCategory.dbValue,
+                                );
+                            _selectedEventSubtype = subtypes.isNotEmpty
+                                ? subtypes.first
+                                : null;
+                          });
+                        },
                       ),
-                      decoration: InputDecoration(
-                        labelText: 'Event Name',
-                        labelStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        hintText: 'e.g., NYC Marathon 2025',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: AppColors.electrolyte,
-                            width: 2,
-                          ),
-                        ),
-                        suffixIcon: _isSearchingEvents
-                            ? const Padding(
-                                padding: EdgeInsets.all(AppSpacing.sm),
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.electrolyte,
-                                  ),
-                                ),
-                              )
-                            : null,
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Event Subtype Selection (Race Distance)
+                      EventSubtypeDropdown(
+                        sportCategory: _selectedSportType,
+                        selectedSubtype: _selectedEventSubtype,
+                        onSubtypeChanged: (subtype) {
+                          setState(() {
+                            _selectedEventSubtype = subtype;
+                          });
+                        },
                       ),
-                      textCapitalization: TextCapitalization.words,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter an event name';
-                        }
-                        return null;
-                      },
-                    ),
-                    // Event search results dropdown
-                    if (_eventSearchResults.isNotEmpty)
-                      GestureDetector(
-                        onTap: () {},
-                        child: Container(
-                          margin: const EdgeInsets.only(top: AppSpacing.xxs),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.outline,
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Event Name with Public Events Autocomplete
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextFormField(
+                            key: const ValueKey('event_create.name_field'),
+                            controller: _eventNameController,
+                            focusNode: _eventNameFocusNode,
+                            style: AppTextStyles.inputText.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
-                            borderRadius: AppRadius.inputRadius,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+                            decoration: InputDecoration(
+                              labelText: 'Event Name',
+                              labelStyle: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
-                            ],
-                          ),
-                          constraints: const BoxConstraints(maxHeight: 200),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            padding: EdgeInsets.zero,
-                            itemCount: _eventSearchResults.length,
-                            itemBuilder: (context, index) {
-                              final event = _eventSearchResults[index];
-                              // Build subtitle with location and date
-                              final subtitleParts = <String>[];
-                              if (event.city != null || event.state != null || event.location != null) {
-                                subtitleParts.add(event.formattedLocation);
-                              }
-                              if (event.eventDate != null) {
-                                subtitleParts.add(DateFormat('MMM d, yyyy').format(event.eventDate!));
-                              }
-                              final subtitle = subtitleParts.isNotEmpty ? subtitleParts.join(' - ') : null;
-                              return ListTile(
-                                dense: true,
-                                leading: Icon(
-                                  FontAwesomeIcons.calendarDay,
-                                  size: AppIconSizes.sm,
+                              hintText: 'e.g., NYC Marathon 2025',
+                              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant
+                                    .withValues(alpha: 0.5),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: AppRadius.inputRadius,
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: AppRadius.inputRadius,
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: AppRadius.inputRadius,
+                                borderSide: BorderSide(
                                   color: AppColors.electrolyte,
+                                  width: 2,
                                 ),
-                                title: Text(
-                                  event.eventName,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                subtitle: subtitle != null
-                                    ? Text(
-                                        subtitle,
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                              suffixIcon: _isSearchingEvents
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(AppSpacing.sm),
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.electrolyte,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      )
-                                    : null,
-                                onTap: () => _selectActiveComEvent(event),
-                              );
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            textCapitalization: TextCapitalization.words,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter an event name';
+                              }
+                              return null;
                             },
                           ),
+                          // Event search results dropdown
+                          if (_eventSearchResults.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {},
+                              child: Container(
+                                margin: const EdgeInsets.only(
+                                  top: AppSpacing.xxs,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  border: Border.all(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outline,
+                                  ),
+                                  borderRadius: AppRadius.inputRadius,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                constraints: const BoxConstraints(
+                                  maxHeight: 200,
+                                ),
+                                child: ListView.builder(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  itemCount: _eventSearchResults.length,
+                                  itemBuilder: (context, index) {
+                                    final event = _eventSearchResults[index];
+                                    // Build subtitle with location and date
+                                    final subtitleParts = <String>[];
+                                    if (event.city != null ||
+                                        event.state != null ||
+                                        event.location != null) {
+                                      subtitleParts.add(
+                                        event.formattedLocation,
+                                      );
+                                    }
+                                    if (event.eventDate != null) {
+                                      subtitleParts.add(
+                                        DateFormat(
+                                          'MMM d, yyyy',
+                                        ).format(event.eventDate!),
+                                      );
+                                    }
+                                    final subtitle = subtitleParts.isNotEmpty
+                                        ? subtitleParts.join(' - ')
+                                        : null;
+                                    return ListTile(
+                                      dense: true,
+                                      leading: FaIcon(
+                                        FontAwesomeIcons.calendarDay,
+                                        size: AppIconSizes.sm,
+                                        color: AppColors.electrolyte,
+                                      ),
+                                      title: Text(
+                                        event.eventName,
+                                        style: AppTextStyles.bodyMedium
+                                            .copyWith(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                            ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      subtitle: subtitle != null
+                                          ? Text(
+                                              subtitle,
+                                              style: AppTextStyles.bodySmall
+                                                  .copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            )
+                                          : null,
+                                      onTap: () => _selectActiveComEvent(event),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Location with Autocomplete
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextFormField(
+                            key: const ValueKey('event_create.location_field'),
+                            controller: _locationController,
+                            focusNode: _locationFocusNode,
+                            style: AppTextStyles.inputText.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                            decoration: InputDecoration(
+                              labelText: 'Location (optional)',
+                              labelStyle: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                              hintText: 'e.g., New York, NY',
+                              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant
+                                    .withValues(alpha: 0.5),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: AppRadius.inputRadius,
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: AppRadius.inputRadius,
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: AppRadius.inputRadius,
+                                borderSide: BorderSide(
+                                  color: AppColors.electrolyte,
+                                  width: 2,
+                                ),
+                              ),
+                              prefixIcon: FaIcon(
+                                FontAwesomeIcons.locationDot,
+                                size: AppIconSizes.sm,
+                                color: AppColors.electrolyte,
+                              ),
+                              suffixIcon: _isSearchingLocation
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(AppSpacing.sm),
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.electrolyte,
+                                        ),
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            textCapitalization: TextCapitalization.words,
+                          ),
+                          // Location search results dropdown
+                          if (_locationSearchResults.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {},
+                              child: Container(
+                                margin: const EdgeInsets.only(
+                                  top: AppSpacing.xxs,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  border: Border.all(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outline,
+                                  ),
+                                  borderRadius: AppRadius.inputRadius,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                constraints: const BoxConstraints(
+                                  maxHeight: 200,
+                                ),
+                                child: ListView.builder(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  itemCount: _locationSearchResults.length,
+                                  itemBuilder: (context, index) {
+                                    final location =
+                                        _locationSearchResults[index];
+                                    final formattedLocation =
+                                        LocationFormatter.formatCityState(
+                                          location,
+                                        );
+                                    return ListTile(
+                                      dense: true,
+                                      leading: FaIcon(
+                                        FontAwesomeIcons.locationDot,
+                                        size: AppIconSizes.sm,
+                                        color: AppColors.electrolyte,
+                                      ),
+                                      title: Text(
+                                        formattedLocation,
+                                        style: AppTextStyles.bodyMedium
+                                            .copyWith(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                            ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      onTap: () => _selectLocation(location),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Date
+                      Text(
+                        'Event Date',
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                  ],
-                ),
-
-                const SizedBox(height: AppSpacing.lg),
-
-                // Location with Autocomplete
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextFormField(
-                      controller: _locationController,
-                      focusNode: _locationFocusNode,
-                      style: AppTextStyles.inputText.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Location (optional)',
-                        labelStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        hintText: 'e.g., New York, NY',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: AppColors.electrolyte,
-                            width: 2,
-                          ),
-                        ),
-                        prefixIcon: Icon(
-                          FontAwesomeIcons.locationDot,
+                      const SizedBox(height: AppSpacing.sm),
+                      OutlinedButton.icon(
+                        key: const ValueKey('event_create.date_button'),
+                        onPressed: _selectDate,
+                        icon: FaIcon(
+                          FontAwesomeIcons.calendar,
                           size: AppIconSizes.sm,
                           color: AppColors.electrolyte,
                         ),
-                        suffixIcon: _isSearchingLocation
-                            ? const Padding(
-                                padding: EdgeInsets.all(AppSpacing.sm),
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.electrolyte,
-                                  ),
-                                ),
-                              )
-                            : null,
-                      ),
-                      textCapitalization: TextCapitalization.words,
-                    ),
-                    // Location search results dropdown
-                    if (_locationSearchResults.isNotEmpty)
-                      GestureDetector(
-                        onTap: () {},
-                        child: Container(
-                          margin: const EdgeInsets.only(top: AppSpacing.xxs),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
+                        label: Text(
+                          _startTime != null
+                              ? DateFormat(
+                                  'EEEE, MMMM d, yyyy',
+                                ).format(_startTime!)
+                              : 'Select date',
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          alignment: Alignment.centerLeft,
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                          shape: RoundedRectangleBorder(
                             borderRadius: AppRadius.inputRadius,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Time
+                      Text(
+                        'Start Time',
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      OutlinedButton.icon(
+                        key: const ValueKey('event_create.time_button'),
+                        onPressed: _selectTime,
+                        icon: FaIcon(
+                          FontAwesomeIcons.clock,
+                          size: AppIconSizes.sm,
+                          color: AppColors.electrolyte,
+                        ),
+                        label: Text(
+                          _startTime != null
+                              ? TimeOfDay.fromDateTime(
+                                  _startTime!,
+                                ).format(context)
+                              : 'Select time',
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          alignment: Alignment.centerLeft,
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.inputRadius,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: AppSpacing.xl),
+
+                      // Advanced Section
+                      ExpansionTile(
+                        key: const ValueKey('event_create.additional_heading'),
+                        title: Text(
+                          'Additional Details (Optional)',
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        tilePadding: EdgeInsets.zero,
+                        children: [
+                          const SizedBox(height: AppSpacing.sm),
+
+                          // Goal Time
+                          Text(
+                            'Goal Time',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _goalTimeHoursController,
+                                  style: AppTextStyles.inputText.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                  ),
+                                  decoration: InputDecoration(
+                                    labelText: 'Hours',
+                                    labelStyle: AppTextStyles.bodyMedium
+                                        .copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                    suffixText: 'h',
+                                    suffixStyle: AppTextStyles.bodyMedium
+                                        .copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                      borderSide: BorderSide(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outline,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                      borderSide: BorderSide(
+                                        color: AppColors.electrolyte,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _goalTimeMinutesController,
+                                  style: AppTextStyles.inputText.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                  ),
+                                  decoration: InputDecoration(
+                                    labelText: 'Minutes',
+                                    labelStyle: AppTextStyles.bodyMedium
+                                        .copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                    suffixText: 'm',
+                                    suffixStyle: AppTextStyles.bodyMedium
+                                        .copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                      borderSide: BorderSide(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outline,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                      borderSide: BorderSide(
+                                        color: AppColors.electrolyte,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  validator: (value) {
+                                    if (value != null && value.isNotEmpty) {
+                                      final minutes = int.tryParse(value);
+                                      if (minutes == null ||
+                                          minutes < 0 ||
+                                          minutes >= 60) {
+                                        return 'Must be 0-59';
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                ),
                               ),
                             ],
                           ),
-                          constraints: const BoxConstraints(maxHeight: 200),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            padding: EdgeInsets.zero,
-                            itemCount: _locationSearchResults.length,
-                            itemBuilder: (context, index) {
-                              final location = _locationSearchResults[index];
-                              final formattedLocation = LocationFormatter.formatCityState(location);
-                              return ListTile(
-                                dense: true,
-                                leading: Icon(
-                                  FontAwesomeIcons.locationDot,
-                                  size: AppIconSizes.sm,
-                                  color: AppColors.electrolyte,
-                                ),
-                                title: Text(
-                                  formattedLocation,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface,
+
+                          const SizedBox(height: AppSpacing.md),
+
+                          // Goal Pace
+                          Text(
+                            'Goal Pace (per mile)',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _goalPaceMinutesController,
+                                  style: AppTextStyles.inputText.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
                                   ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+                                  decoration: InputDecoration(
+                                    labelText: 'Minutes',
+                                    labelStyle: AppTextStyles.bodyMedium
+                                        .copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                    suffixText: 'm',
+                                    suffixStyle: AppTextStyles.bodyMedium
+                                        .copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                      borderSide: BorderSide(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outline,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                      borderSide: BorderSide(
+                                        color: AppColors.electrolyte,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  keyboardType: TextInputType.number,
                                 ),
-                                onTap: () => _selectLocation(location),
-                              );
-                            },
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _goalPaceSecondsController,
+                                  style: AppTextStyles.inputText.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                  ),
+                                  decoration: InputDecoration(
+                                    labelText: 'Seconds',
+                                    labelStyle: AppTextStyles.bodyMedium
+                                        .copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                    suffixText: 's',
+                                    suffixStyle: AppTextStyles.bodyMedium
+                                        .copyWith(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                      borderSide: BorderSide(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outline,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: AppRadius.inputRadius,
+                                      borderSide: BorderSide(
+                                        color: AppColors.electrolyte,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  validator: (value) {
+                                    if (value != null && value.isNotEmpty) {
+                                      final seconds = int.tryParse(value);
+                                      if (seconds == null ||
+                                          seconds < 0 ||
+                                          seconds >= 60) {
+                                        return 'Must be 0-59';
+                                      }
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ),
-                  ],
-                ),
 
-                const SizedBox(height: AppSpacing.lg),
+                          const SizedBox(height: AppSpacing.md),
 
-                // Date
-                Text(
-                  'Event Date',
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                OutlinedButton.icon(
-                  onPressed: _selectDate,
-                  icon: Icon(
-                    FontAwesomeIcons.calendar,
-                    size: AppIconSizes.sm,
-                    color: AppColors.electrolyte,
-                  ),
-                  label: Text(
-                    _startTime != null
-                        ? DateFormat('EEEE, MMMM d, yyyy').format(_startTime!)
-                        : 'Select date',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    alignment: Alignment.centerLeft,
-                    side: BorderSide(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.inputRadius,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: AppSpacing.lg),
-
-                // Time
-                Text(
-                  'Start Time',
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                OutlinedButton.icon(
-                  onPressed: _selectTime,
-                  icon: Icon(
-                    FontAwesomeIcons.clock,
-                    size: AppIconSizes.sm,
-                    color: AppColors.electrolyte,
-                  ),
-                  label: Text(
-                    _startTime != null
-                        ? TimeOfDay.fromDateTime(_startTime!).format(context)
-                        : 'Select time',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    alignment: Alignment.centerLeft,
-                    side: BorderSide(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.inputRadius,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Advanced Section
-                ExpansionTile(
-                  title: Text(
-                    'Additional Details (Optional)',
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  tilePadding: EdgeInsets.zero,
-                  children: [
-                    const SizedBox(height: AppSpacing.sm),
-
-                    // Goal Time
-                    Text(
-                      'Goal Time',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _goalTimeHoursController,
+                          // Registration URL
+                          TextFormField(
+                            controller: _registrationUrlController,
                             style: AppTextStyles.inputText.copyWith(
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
                             decoration: InputDecoration(
-                              labelText: 'Hours',
+                              labelText: 'Registration URL',
                               labelStyle: AppTextStyles.bodyMedium.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
-                              suffixText: 'h',
-                              suffixStyle: AppTextStyles.bodyMedium.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              hintText: 'https://...',
+                              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant
+                                    .withValues(alpha: 0.5),
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: AppRadius.inputRadius,
@@ -1019,25 +1361,36 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                                   width: 2,
                                 ),
                               ),
+                              prefixIcon: FaIcon(
+                                FontAwesomeIcons.link,
+                                size: AppIconSizes.sm,
+                                color: AppColors.electrolyte,
+                              ),
                             ),
-                            keyboardType: TextInputType.number,
+                            keyboardType: TextInputType.url,
                           ),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _goalTimeMinutesController,
+
+                          const SizedBox(height: AppSpacing.md),
+
+                          // Bib Number
+                          TextFormField(
+                            controller: _bibNumberController,
                             style: AppTextStyles.inputText.copyWith(
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
                             decoration: InputDecoration(
-                              labelText: 'Minutes',
+                              labelText: 'Bib Number',
                               labelStyle: AppTextStyles.bodyMedium.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
-                              suffixText: 'm',
-                              suffixStyle: AppTextStyles.bodyMedium.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              hintText: 'e.g., 12345',
+                              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant
+                                    .withValues(alpha: 0.5),
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: AppRadius.inputRadius,
@@ -1055,217 +1408,34 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                                   width: 2,
                                 ),
                               ),
-                            ),
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value != null && value.isNotEmpty) {
-                                final minutes = int.tryParse(value);
-                                if (minutes == null || minutes < 0 || minutes >= 60) {
-                                  return 'Must be 0-59';
-                                }
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Goal Pace
-                    Text(
-                      'Goal Pace (per mile)',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _goalPaceMinutesController,
-                            style: AppTextStyles.inputText.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Minutes',
-                              labelStyle: AppTextStyles.bodyMedium.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              suffixText: 'm',
-                              suffixStyle: AppTextStyles.bodyMedium.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: AppRadius.inputRadius,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: AppRadius.inputRadius,
-                                borderSide: BorderSide(
-                                  color: Theme.of(context).colorScheme.outline,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: AppRadius.inputRadius,
-                                borderSide: BorderSide(
-                                  color: AppColors.electrolyte,
-                                  width: 2,
-                                ),
+                              prefixIcon: FaIcon(
+                                FontAwesomeIcons.hashtag,
+                                size: AppIconSizes.sm,
+                                color: AppColors.electrolyte,
                               ),
                             ),
                             keyboardType: TextInputType.number,
                           ),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _goalPaceSecondsController,
-                            style: AppTextStyles.inputText.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                            decoration: InputDecoration(
-                              labelText: 'Seconds',
-                              labelStyle: AppTextStyles.bodyMedium.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              suffixText: 's',
-                              suffixStyle: AppTextStyles.bodyMedium.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: AppRadius.inputRadius,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: AppRadius.inputRadius,
-                                borderSide: BorderSide(
-                                  color: Theme.of(context).colorScheme.outline,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: AppRadius.inputRadius,
-                                borderSide: BorderSide(
-                                  color: AppColors.electrolyte,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value != null && value.isNotEmpty) {
-                                final seconds = int.tryParse(value);
-                                if (seconds == null || seconds < 0 || seconds >= 60) {
-                                  return 'Must be 0-59';
-                                }
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Registration URL
-                    TextFormField(
-                      controller: _registrationUrlController,
-                      style: AppTextStyles.inputText.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
+                        ],
                       ),
-                      decoration: InputDecoration(
-                        labelText: 'Registration URL',
-                        labelStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        hintText: 'https://...',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: AppColors.electrolyte,
-                            width: 2,
-                          ),
-                        ),
-                        prefixIcon: Icon(
-                          FontAwesomeIcons.link,
-                          size: AppIconSizes.sm,
-                          color: AppColors.electrolyte,
-                        ),
-                      ),
-                      keyboardType: TextInputType.url,
-                    ),
 
-                    const SizedBox(height: AppSpacing.md),
+                      const SizedBox(height: AppSpacing.xl),
 
-                    // Bib Number
-                    TextFormField(
-                      controller: _bibNumberController,
-                      style: AppTextStyles.inputText.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
+                      // Save Button
+                      KylePrimaryButton(
+                        key: const ValueKey('event_create.create_button'),
+                        onPressed: _isSaving ? null : _handleSave,
+                        text: isEditMode ? 'Save Changes' : 'Create Event',
+                        icon: isEditMode
+                            ? FontAwesomeIcons.check.data
+                            : FontAwesomeIcons.plus.data,
+                        isLoading: _isSaving,
                       ),
-                      decoration: InputDecoration(
-                        labelText: 'Bib Number',
-                        labelStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        hintText: 'e.g., 12345',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: AppRadius.inputRadius,
-                          borderSide: BorderSide(
-                            color: AppColors.electrolyte,
-                            width: 2,
-                          ),
-                        ),
-                        prefixIcon: Icon(
-                          FontAwesomeIcons.hashtag,
-                          size: AppIconSizes.sm,
-                          color: AppColors.electrolyte,
-                        ),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ],
+
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
+                  ),
                 ),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Save Button
-                KylePrimaryButton(
-                  onPressed: _isSaving ? null : _handleSave,
-                  text: isEditMode ? 'Save Changes' : 'Create Event',
-                  icon: isEditMode ? FontAwesomeIcons.check : FontAwesomeIcons.plus,
-                  isLoading: _isSaving,
-                ),
-
-                const SizedBox(height: AppSpacing.xl),
-              ],
-                ),
-              ),
               ),
             ),
           ),

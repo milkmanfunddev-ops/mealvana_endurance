@@ -41,6 +41,7 @@ class EventActionButtonsCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
+            key: const ValueKey('event_details.nutrition_heading'),
             'Nutrition Planning',
             style: AppTextStyles.subtitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
@@ -50,6 +51,7 @@ class EventActionButtonsCard extends ConsumerWidget {
 
           // Nutrition Plan Button (Create or View)
           KylePrimaryButton(
+            key: const ValueKey('event_details.create_nutrition_button'),
             onPressed: () async {
               if (hasLinkedNutritionPlan) {
                 // Event is linked to activity - navigate to view/edit existing nutrition plan
@@ -110,14 +112,15 @@ class EventActionButtonsCard extends ConsumerWidget {
                 ? 'View Nutrition Plan'
                 : 'Create Nutrition Plan',
             icon: hasLinkedNutritionPlan
-                ? FontAwesomeIcons.eye
-                : FontAwesomeIcons.plus,
+                ? FontAwesomeIcons.eye.data
+                : FontAwesomeIcons.plus.data,
           ),
 
           const SizedBox(height: AppSpacing.sm),
 
           // Create or Edit Carb Loading Plan Button
           KyleSecondaryButton(
+            key: const ValueKey('event_details.create_carb_loading_button'),
             onPressed: () => _handleCarbLoadingPlanAction(
               context,
               ref,
@@ -129,19 +132,20 @@ class EventActionButtonsCard extends ConsumerWidget {
                 ? 'Edit Carb Loading Plan'
                 : 'Create Carb Loading Plan',
             icon: event.hasCarbLoading
-                ? FontAwesomeIcons.pen
-                : FontAwesomeIcons.plus,
+                ? FontAwesomeIcons.pen.data
+                : FontAwesomeIcons.plus.data,
           ),
 
           const SizedBox(height: AppSpacing.sm),
 
           // Race Day Checklist Button
           KyleSecondaryButton(
+            key: const ValueKey('event_details.checklist_button'),
             onPressed: () {
               context.push('/events/$eventId/checklist');
             },
             text: 'Race Day Checklist',
-            icon: FontAwesomeIcons.listCheck,
+            icon: FontAwesomeIcons.listCheck.data,
           ),
 
           // const SizedBox(height: AppSpacing.md),
@@ -344,5 +348,4 @@ class EventActionButtonsCard extends ConsumerWidget {
       }
     }
   }
-
 }

@@ -13,7 +13,7 @@ import '../../../auth/domain/user_preferences.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
-import '../../../integrations/presentation/widgets/garmin_attribution.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 
 /// User Profile Screen - Design System
@@ -157,9 +157,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           print('   Gender: ${integration.providerAthleteGender}');
         }
         if (garminIntegration?.isActive == true) {
-          print('🔄 Garmin body comp: '
-              'weight=${garminIntegration!.providerAthleteWeightKg}kg, '
-              'bodyFat=${garminIntegration.providerAthleteBodyFatPct}%');
+          print(
+            '🔄 Garmin body comp: '
+            'weight=${garminIntegration!.providerAthleteWeightKg}kg, '
+            'bodyFat=${garminIntegration.providerAthleteBodyFatPct}%',
+          );
         }
       }
 
@@ -181,12 +183,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
         // Weight: prefer Garmin (scale data) over TP/FS
         if (_weightController.text.isEmpty) {
-          final useGarmin = garminIntegration?.isActive == true &&
+          final useGarmin =
+              garminIntegration?.isActive == true &&
               garminIntegration?.providerAthleteWeightKg != null;
           final weightSource = useGarmin ? garminIntegration : integration;
           if (weightSource?.providerAthleteWeightLbs != null) {
-            _weightController.text =
-                weightSource!.providerAthleteWeightLbs!.toStringAsFixed(1);
+            _weightController.text = weightSource!.providerAthleteWeightLbs!
+                .toStringAsFixed(1);
             if (useGarmin) _weightFromGarmin = true;
           }
         }
@@ -279,6 +282,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
               // Introduction text
               Text(
+                key: const ValueKey('profile.title'),
                 'Tell us about yourself',
                 style: const TextStyle(
                   fontFamily: 'Sansita',
@@ -333,7 +337,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        const FaIcon(
                           FontAwesomeIcons.circleExclamation,
                           color: AppColors.dragonfruit,
                           size: AppIconSizes.controlIcon,
@@ -364,6 +368,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       onBack: widget.onBack ?? () => context.pop(),
       canContinue: !asyncState.isLoading,
       isLoading: asyncState.isLoading,
+      continueButtonKey: const ValueKey('profile.continue_button'),
+      backButtonKey: const ValueKey('profile.back_button'),
     );
   }
 
@@ -386,11 +392,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             children: [
               Expanded(
                 child: _buildTextField(
+                  fieldKey: const ValueKey('profile.first_name_field'),
                   context: context,
                   controller: _firstNameController,
                   label: 'First Name',
                   hint: 'First name',
-                  icon: FontAwesomeIcons.user,
+                  icon: FontAwesomeIcons.user.data,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -398,11 +405,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _buildTextField(
+                  fieldKey: const ValueKey('profile.last_name_field'),
                   context: context,
                   controller: _lastNameController,
                   label: 'Last Name',
                   hint: 'Last name',
-                  icon: FontAwesomeIcons.user,
+                  icon: FontAwesomeIcons.user.data,
                   keyboardType: TextInputType.name,
                   textCapitalization: TextCapitalization.words,
                 ),
@@ -414,11 +422,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
           // Email field
           _buildTextField(
+            fieldKey: const ValueKey('profile.email_field'),
             context: context,
             controller: _emailController,
             label: 'Email',
             hint: 'Email address',
-            icon: FontAwesomeIcons.envelope,
+            icon: FontAwesomeIcons.envelope.data,
             keyboardType: TextInputType.emailAddress,
           ),
 
@@ -463,11 +472,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             children: [
               Expanded(
                 child: _buildTextField(
+                  fieldKey: const ValueKey('profile.height_ft_field'),
                   context: context,
                   controller: _heightFeetController,
                   label: 'Feet',
                   hint: 'ft',
-                  icon: FontAwesomeIcons.rulerVertical,
+                  icon: FontAwesomeIcons.rulerVertical.data,
                   keyboardType: TextInputType.number,
                   suffix: 'ft',
                   validator: (value) {
@@ -485,11 +495,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _buildTextField(
+                  fieldKey: const ValueKey('profile.height_in_field'),
                   context: context,
                   controller: _heightInchesController,
                   label: 'Inches',
                   hint: 'in',
-                  icon: FontAwesomeIcons.rulerVertical,
+                  icon: FontAwesomeIcons.rulerVertical.data,
                   keyboardType: TextInputType.number,
                   suffix: 'in',
                   validator: (value) {
@@ -510,50 +521,59 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           const SizedBox(height: AppSpacing.md),
 
           // Weight field with optional Garmin attribution badge
-          Builder(builder: (context) {
-            final connectController = ref.read(
-              connectTrainingControllerProvider.notifier,
-            );
-            final userId = connectController.currentUserId;
-            final garminAsync = userId != null
-                ? ref.watch(garminLastBodyCompProvider(userId))
-                : null;
-            final garminData = garminAsync?.asData?.value;
-            final showGarminBadge = _weightFromGarmin ||
-                isGarminAuthoritativeForWeight(
-                  garmin: garminData,
-                  userWeightKg: null, // onboarding — no prior user value
-                  userUpdatedAt: null,
-                );
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (showGarminBadge) ...[
-                  const GarminAttribution(style: GarminAttributionStyle.compact),
-                  const SizedBox(height: AppSpacing.xs),
+          Builder(
+            builder: (context) {
+              final connectController = ref.read(
+                connectTrainingControllerProvider.notifier,
+              );
+              final userId = connectController.currentUserId;
+              final garminAsync = userId != null
+                  ? ref.watch(garminLastBodyCompProvider(userId))
+                  : null;
+              final garminData = garminAsync?.asData?.value;
+              final showGarminBadge =
+                  _weightFromGarmin ||
+                  isGarminAuthoritativeForWeight(
+                    garmin: garminData,
+                    userWeightKg: null, // onboarding — no prior user value
+                    userUpdatedAt: null,
+                  );
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (showGarminBadge) ...[
+                    const GarminAttributionMessage(
+                      subject: 'Weight',
+                      compact: true,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                  ],
+                  _buildTextField(
+                    fieldKey: const ValueKey('profile.weight_field'),
+                    context: context,
+                    controller: _weightController,
+                    label: showGarminBadge
+                        ? 'Weight (from Garmin Connect)'
+                        : 'Weight',
+                    hint: 'Enter your weight',
+                    icon: FontAwesomeIcons.weightScale.data,
+                    keyboardType: TextInputType.number,
+                    suffix: 'lbs',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your weight';
+                      }
+                      final weight = double.tryParse(value);
+                      if (weight == null || weight < 80 || weight > 500) {
+                        return 'Please enter a valid weight (80-500 lbs)';
+                      }
+                      return null;
+                    },
+                  ),
                 ],
-                _buildTextField(
-                  context: context,
-                  controller: _weightController,
-                  label: showGarminBadge ? 'Weight (from Garmin Connect)' : 'Weight',
-                  hint: 'Enter your weight',
-                  icon: FontAwesomeIcons.weightScale,
-                  keyboardType: TextInputType.number,
-                  suffix: 'lbs',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your weight';
-                    }
-                    final weight = double.tryParse(value);
-                    if (weight == null || weight < 80 || weight > 500) {
-                      return 'Please enter a valid weight (80-500 lbs)';
-                    }
-                    return null;
-                  },
-                ),
-              ],
-            );
-          }),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -595,6 +615,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             onChanged: (value) {
               setState(() => _unitSystem = value);
             },
+            segmentKeyPrefix: 'profile.units',
           ),
         ],
       ),
@@ -653,7 +674,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   //                   ),
   //                   child: _runsWithWaterBottle
   //                       ? const Icon(
-  //                           FontAwesomeIcons.check,
+  //                           FontAwesomeIcons.check.data,
   //                           size: 14,
   //                           color: AppColors.cream,
   //                         )
@@ -713,6 +734,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           children: [
             Expanded(
               child: _buildRadioOption(
+                optionKey: const ValueKey('profile.gender_male_button'),
                 context: context,
                 title: 'Male',
                 subtitle: 'Select if you identify as male',
@@ -724,6 +746,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _buildRadioOption(
+                optionKey: const ValueKey('profile.gender_female_button'),
                 context: context,
                 title: 'Female',
                 subtitle: 'Select if you identify as female',
@@ -735,6 +758,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _buildRadioOption(
+                optionKey: const ValueKey('profile.gender_non_binary_button'),
                 context: context,
                 title: 'Non-binary',
                 subtitle: 'Select if you identify as non-binary',
@@ -764,6 +788,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         const SizedBox(height: AppSpacing.sm),
 
         InkWell(
+          key: const ValueKey('profile.birth_year_button'),
           onTap: _selectBirthYear,
           borderRadius: AppRadius.inputRadius,
           child: Container(
@@ -782,7 +807,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             ),
             child: Row(
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.calendar,
                   size: AppIconSizes.controlIcon,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -809,6 +834,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 
   Widget _buildTextField({
+    Key? fieldKey,
     required BuildContext context,
     required TextEditingController controller,
     required String label,
@@ -824,6 +850,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       children: [
         // Text field
         TextFormField(
+          key: fieldKey,
           controller: controller,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
@@ -889,6 +916,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 
   Widget _buildRadioOption({
+    Key? optionKey,
     required BuildContext context,
     required String title,
     required String subtitle,
@@ -901,6 +929,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     final isSelected = groupValue == value;
 
     return GestureDetector(
+      key: optionKey,
       onTap: () => onChanged(value),
       child: Container(
         height: 80,
@@ -920,10 +949,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             // Icon based on gender
             Icon(
               value == Gender.male
-                  ? FontAwesomeIcons.mars
+                  ? FontAwesomeIcons.mars.data
                   : value == Gender.female
-                  ? FontAwesomeIcons.venus
-                  : FontAwesomeIcons.genderless,
+                  ? FontAwesomeIcons.venus.data
+                  : FontAwesomeIcons.genderless.data,
               size: 28,
               color: isSelected
                   ? (isDark ? AppColors.blackberry : AppColors.cream)

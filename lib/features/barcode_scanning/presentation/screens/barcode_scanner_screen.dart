@@ -323,7 +323,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.triangleExclamation,
                 size: AppIconSizes.xl,
                 color: AppColors.dragonfruit,
@@ -378,7 +378,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               const SizedBox(height: AppSpacing.sm),
               KyleSecondaryButton(
                 text: 'Create Manually',
-                icon: FontAwesomeIcons.plus,
+                icon: FontAwesomeIcons.plus.data,
                 onPressed: () {
                   Navigator.of(context).pop();
                   _openCreateFoodScreen();
@@ -405,7 +405,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.xmark,
                 size: AppIconSizes.xl,
                 color: AppColors.dragonfruit,
@@ -444,7 +444,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               const SizedBox(height: AppSpacing.sm),
               KyleSecondaryButton(
                 text: 'Create Manually',
-                icon: FontAwesomeIcons.plus,
+                icon: FontAwesomeIcons.plus.data,
                 onPressed: () {
                   Navigator.of(context).pop();
                   _openCreateFoodScreen();
@@ -471,7 +471,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.triangleExclamation,
                 size: AppIconSizes.xl,
                 color: AppColors.dragonfruit,
@@ -518,7 +518,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
               const SizedBox(height: AppSpacing.sm),
               KyleSecondaryButton(
                 text: 'Create Manually',
-                icon: FontAwesomeIcons.plus,
+                icon: FontAwesomeIcons.plus.data,
                 onPressed: () {
                   Navigator.of(context).pop();
                   _openCreateFoodScreen();
@@ -619,12 +619,14 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         title: Row(
           children: [
             const CustomAppBarBackButton(
+              key: ValueKey('barcode.back_button'),
               margin: EdgeInsets.zero,
               iconColor: Colors.white,
               backgroundColor: Color(0x80000000),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
+              key: const ValueKey('barcode.title'),
               title,
               style: AppTextStyles.sectionTitle.copyWith(color: Colors.white),
             ),
@@ -633,9 +635,10 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
         actions: [
           // Flash toggle button
           IconButton(
+            key: const ValueKey('barcode.flash_button'),
             onPressed: _toggleFlashlight,
             icon: Icon(
-              _flashOn ? FontAwesomeIcons.bolt : FontAwesomeIcons.bolt,
+              _flashOn ? FontAwesomeIcons.bolt.data : FontAwesomeIcons.bolt.data,
               color: _flashOn ? AppColors.orange : Colors.white,
               size: AppIconSizes.md,
             ),
@@ -681,6 +684,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
 
   Widget _buildInstructions() {
     return Container(
+      key: const ValueKey('barcode.instructions'),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.7),
@@ -700,14 +704,16 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
       children: [
         // Reset scanning button
         _buildControlButton(
-          icon: FontAwesomeIcons.arrowRotateRight,
+          buttonKey: const ValueKey('barcode.reset_button'),
+          icon: FontAwesomeIcons.arrowRotateRight.data,
           onPressed: _resetScanning,
           label: 'Reset',
         ),
 
         // Switch camera button
         _buildControlButton(
-          icon: FontAwesomeIcons.cameraRotate,
+          buttonKey: const ValueKey('barcode.switch_button'),
+          icon: FontAwesomeIcons.cameraRotate.data,
           onPressed: _switchCamera,
           label: 'Switch',
         ),
@@ -719,6 +725,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     required IconData icon,
     required VoidCallback onPressed,
     required String label,
+    Key? buttonKey,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -735,6 +742,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
             ),
           ),
           child: IconButton(
+            key: buttonKey,
             icon: Icon(icon, color: Colors.white, size: AppIconSizes.md),
             onPressed: onPressed,
           ),

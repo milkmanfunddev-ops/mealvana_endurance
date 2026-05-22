@@ -325,7 +325,7 @@ class _DuringDetailBody extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        const FaIcon(
                           FontAwesomeIcons.boltLightning,
                           size: 12,
                           color: AppColors.orange,
@@ -415,7 +415,7 @@ class _ComponentRow extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: const Icon(
+              child: const FaIcon(
                 FontAwesomeIcons.utensils,
                 size: 14,
                 color: AppColors.cream,
@@ -694,7 +694,7 @@ class _NotFoundView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.circleQuestion,
               size: 40,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -724,7 +724,7 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            const FaIcon(
               FontAwesomeIcons.circleExclamation,
               color: AppColors.dragonfruit,
               size: 48,

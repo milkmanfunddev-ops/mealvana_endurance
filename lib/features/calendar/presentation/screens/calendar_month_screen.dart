@@ -201,7 +201,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
               ),
               borderRadius: AppRadius.buttonRadius,
             ),
-            child: Icon(
+            child: FaIcon(
               FontAwesomeIcons.chevronLeft,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurface,
@@ -229,7 +229,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
               ),
               borderRadius: AppRadius.buttonRadius,
             ),
-            child: Icon(
+            child: FaIcon(
               FontAwesomeIcons.chevronRight,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurface,
@@ -548,7 +548,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
                     ),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.check,
                     size: AppIconSizes.controlIcon,
                     color: AppColors.orange,
@@ -570,7 +570,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
                     ),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.xmark,
                     size: AppIconSizes.controlIcon,
                     color: AppColors.dragonfruit,
@@ -596,7 +596,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
               color: AppColors.electrolyte.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: FaIcon(
               FontAwesomeIcons.calendar,
               size: AppIconSizes.controlIcon,
               color: AppColors.electrolyte,
@@ -674,7 +674,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
               color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: FaIcon(
               FontAwesomeIcons.calendar,
               size: AppIconSizes.md,
               color: Theme.of(context).colorScheme.onSurface,
@@ -689,7 +689,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
               color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: FaIcon(
               FontAwesomeIcons.bars,
               size: AppIconSizes.md,
               color: Theme.of(context).colorScheme.onSurface,
@@ -704,7 +704,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
               color: AppColors.orange,
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: FaIcon(
               FontAwesomeIcons.plus,
               size: AppIconSizes.md,
               color: AppColors.blackberry,
@@ -909,7 +909,7 @@ class _ActivityCompletionDialog extends StatelessWidget {
                 color: AppColors.electrolyte.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: FaIcon(
                 FontAwesomeIcons.check,
                 size: AppIconSizes.xl,
                 color: AppColors.electrolyte,

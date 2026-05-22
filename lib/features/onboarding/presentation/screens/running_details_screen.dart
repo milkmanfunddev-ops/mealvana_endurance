@@ -227,6 +227,7 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
                     child: Row(
                       children: [
                         GestureDetector(
+                          key: const ValueKey('running_prefs.back_button'),
                           onTap: widget.onBack ?? () => context.pop(),
                           child: Container(
                             width: 48,
@@ -271,6 +272,7 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
                   children: [
                     // Title
                     const Text(
+                      key: ValueKey('running_prefs.title'),
                       'Running details',
                       style: TextStyle(
                         fontFamily: 'Sansita',
@@ -285,6 +287,7 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
 
                     // Subtitle
                     const Text(
+                      key: ValueKey('running_prefs.subheading'),
                       'Help us estimate your hydration needs.',
                       style: TextStyle(
                         fontFamily: 'Apercu',
@@ -300,6 +303,7 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
 
                     // Water bottle toggle
                     FigmaToggleCard(
+                      key: const ValueKey('running_prefs.water_bottle_toggle'),
                       label: 'I run with a water bottle',
                       value: _runsWithWaterBottle,
                       onChanged: (value) =>
@@ -321,6 +325,7 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
             isLoading: _isSaving,
             buttonText: _isSettings ? 'Save' : 'Continue',
             showBackButton: _isOnboarding,
+            continueButtonKey: const ValueKey('running_prefs.save_button'),
           ),
         ],
       ),

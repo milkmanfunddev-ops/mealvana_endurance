@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../shared/services/logging_service.dart';
+import '../../../shared/services/sync/sync_coordinator.dart';
 import '../presentation/providers/connect_training_controller.dart';
 import '../presentation/providers/integrations_providers.dart';
 
@@ -10,8 +11,8 @@ part 'integration_sync_coordinator.g.dart';
 
 /// Lightweight coordinator for integration staleness checks and dedup.
 ///
-/// Purpose-built for external provider sync (Final Surge, Training Peaks).
-/// NOT part of the SyncCoordinator dependency graph because integration
+/// Purpose-built for external provider sync (Final Surge, Training Peaks,
+/// V.O2). NOT part of the SyncCoordinator dependency graph because integration
 /// sync has no dirty-record upload concept.
 ///
 /// Design:
@@ -50,6 +51,12 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
   /// Failures are logged silently with a 5-minute cooldown.
   /// Returns true if any provider actually synced (not skipped).
   Future<bool> ensureIntegrationsSynced(String userId) async {
+    // Hydrate integration rows from Supabase first so that, after a Drift
+    // schema resync (which wipes the local DB), we restore OAuth tokens
+    // before iterating providers. Without this, getActiveIntegrationsForUser
+    // returns empty and the user gets silently disconnected.
+    await _ensureIntegrationsRowsSynced(userId);
+
     final integrations = await ref
         .read(integrationsRepositoryProvider)
         .getActiveIntegrationsForUser(userId);
@@ -63,6 +70,28 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
       if (didSync) anySynced = true;
     }
     return anySynced;
+  }
+
+  /// Run the SyncCoordinator pass for the 'integrations' repository so any
+  /// dirty local rows are pushed and any remote rows are hydrated locally.
+  /// Best-effort — failures are logged inside SyncCoordinator and ignored.
+  Future<void> _ensureIntegrationsRowsSynced(String userId) async {
+    try {
+      final repo = ref.read(integrationsRepositoryProvider);
+      await ref.read(syncCoordinatorProvider.notifier).ensureSynced(
+            'integrations',
+            userId,
+            repository: repo,
+          );
+    } catch (e, stackTrace) {
+      _logger.warning(
+        'Integration row sync failed; continuing with local data',
+        context: 'INTEGRATION_SYNC',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId},
+      );
+    }
   }
 
   /// Called from ActivitiesController.forceRefresh() - bypasses staleness.
@@ -155,6 +184,10 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           final service =
               await ref.read(trainingPeaksSyncServiceProvider.future);
           await service.syncAll(userId);
+          break;
+        case 'vdot':
+          final service = ref.read(vdotSyncServiceProvider);
+          await service.syncWorkouts(userId);
           break;
         case 'garmin':
           // Garmin is push-only — no client-side sync needed.

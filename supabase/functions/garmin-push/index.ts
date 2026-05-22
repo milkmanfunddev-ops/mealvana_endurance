@@ -38,6 +38,7 @@ import {
 import {
   buildGarminCompletionUpdate,
   findMatchingPlannedActivity,
+  insertGarminActivityIfMissing,
 } from "../_shared/garmin/activity_completion.ts";
 import {
   buildGarminProviderLabel,
@@ -67,14 +68,14 @@ serve(async (req: Request) => {
     });
   }
 
-  // Parse the body BEFORE returning the response. The request body stream
-  // is closed once we return, so any deferred `req.json()` call fails with
-  // "Interrupted: operation canceled". JSON parsing is fast (< a few ms
-  // even for 100MB payloads) — only the DB writes + outbound fetches get
-  // moved to the background task below.
+  // Capture the raw body up-front. The request body stream closes once we
+  // return, so we hold the raw text in a closure for both background
+  // processing AND potential fan-out to other environments.
+  let rawBody: string;
   let body: GarminPushNotification;
   try {
-    body = await req.json();
+    rawBody = await req.text();
+    body = JSON.parse(rawBody) as GarminPushNotification;
   } catch (err) {
     console.error("[garmin-push] Failed to parse request body:", err);
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
@@ -83,11 +84,22 @@ serve(async (req: Request) => {
     });
   }
 
+  // Snapshot the inbound Garmin headers so a fan-out call to dev passes
+  // validateGarminRequest cleanly (same `garmin-client-id` value).
+  const inboundClientId = req.headers.get("garmin-client-id") ?? "";
+
   // Garmin requires HTTP 200 returned asynchronously within 30 seconds.
-  // Ack immediately and process the parsed payload in the background.
-  const processing = processPushBody(body).catch((err) => {
-    console.error("[garmin-push] Background processing error:", err);
-  });
+  // Ack immediately and process the parsed payload in the background, plus
+  // forward to any configured fan-out URL (used by prod to mirror pushes
+  // into dev so the same data is available in both environments).
+  const processing = Promise.all([
+    processPushBody(body).catch((err) => {
+      console.error("[garmin-push] Background processing error:", err);
+    }),
+    forwardToFanout(rawBody, inboundClientId).catch((err) => {
+      console.error("[garmin-push] Fanout error:", err);
+    }),
+  ]);
 
   if (typeof EdgeRuntime !== "undefined") {
     EdgeRuntime.waitUntil(processing);
@@ -99,15 +111,152 @@ serve(async (req: Request) => {
   });
 });
 
+/**
+ * Optional fan-out: if `GARMIN_FANOUT_URL` is set, re-POST the inbound
+ * Garmin payload to that URL. Used by prod to mirror Garmin's push stream
+ * into dev (Garmin's developer portal only allows a single webhook URL per
+ * data type, so the two environments share one feed). Dev must NOT set
+ * this env var, otherwise it loops back into prod.
+ */
+async function forwardToFanout(
+  rawBody: string,
+  clientIdHeader: string,
+): Promise<void> {
+  const fanoutUrl = Deno.env.get("GARMIN_FANOUT_URL");
+  if (!fanoutUrl || fanoutUrl.trim().length === 0) return;
+
+  try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "x-garmin-fanout": "1",
+    };
+    if (clientIdHeader.length > 0) {
+      headers["garmin-client-id"] = clientIdHeader;
+    }
+
+    const resp = await fetch(fanoutUrl, {
+      method: "POST",
+      headers,
+      body: rawBody,
+    });
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error(
+        `[garmin-push] Fanout to ${fanoutUrl} returned ${resp.status}: ${
+          text.slice(0, 200)
+        }`,
+      );
+    }
+  } catch (err) {
+    console.error(`[garmin-push] Fanout to ${fanoutUrl} threw:`, err);
+  }
+}
+
+/**
+ * Garmin body comp readings are eligible as the authoritative value only if
+ * within this window. Matches GARMIN_BODY_COMP_MAX_AGE_DAYS in
+ * calculate-daily-macros/formulas/resolve.ts.
+ */
+const GARMIN_BODY_COMP_MAX_AGE_DAYS = 30;
+const GRAMS_PER_POUND = 453.592;
+
+interface GarminBodyCompForMirror {
+  weightInGrams?: number | null;
+  percentFat?: number | null;
+  measurementTimeInSeconds?: number | null;
+}
+
+/**
+ * Mirror a Garmin body-composition reading to `users.weight_pounds` and
+ * `users.body_fat_pct` (with their `_updated_at` siblings) so callers that
+ * read the users table directly — Drift sync, Preferences UI, macro
+ * resolver — see the freshest measured value.
+ *
+ * Precedence: latest-wins. If the user has manually edited their weight
+ * more recently than the Garmin measurement, the user value stands.
+ * Stale readings (>30 days) are ignored entirely.
+ */
+async function mirrorGarminBodyCompToUser(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userId: string,
+  bodyComp: GarminBodyCompForMirror,
+): Promise<void> {
+  const measurementSec = bodyComp.measurementTimeInSeconds;
+  if (measurementSec == null || measurementSec <= 0) return;
+
+  const ageDays = (Date.now() / 1000 - measurementSec) / 86400;
+  if (ageDays > GARMIN_BODY_COMP_MAX_AGE_DAYS || ageDays < 0) return;
+
+  const hasWeight = bodyComp.weightInGrams != null && bodyComp.weightInGrams > 0;
+  const hasBodyFat = bodyComp.percentFat != null && bodyComp.percentFat > 0;
+  if (!hasWeight && !hasBodyFat) return;
+
+  const { data: userRow, error: readErr } = await supabase
+    .from("users")
+    .select("weight_pounds_updated_at, body_fat_pct_updated_at")
+    .eq("id", userId)
+    .single();
+
+  if (readErr) {
+    console.error(`[garmin-push] Users read for mirror failed:`, readErr);
+    return;
+  }
+
+  const measurementIso = new Date(measurementSec * 1000).toISOString();
+  // deno-lint-ignore no-explicit-any
+  const update: Record<string, any> = {};
+
+  if (hasWeight) {
+    const userTsMs = userRow?.weight_pounds_updated_at
+      ? Date.parse(userRow.weight_pounds_updated_at)
+      : null;
+    // No prior timestamp → Garmin fills the gap. Otherwise newer wins.
+    if (userTsMs == null || measurementSec * 1000 > userTsMs) {
+      update.weight_pounds = bodyComp.weightInGrams! / GRAMS_PER_POUND;
+      update.weight_pounds_updated_at = measurementIso;
+    }
+  }
+
+  if (hasBodyFat) {
+    const userTsMs = userRow?.body_fat_pct_updated_at
+      ? Date.parse(userRow.body_fat_pct_updated_at)
+      : null;
+    if (userTsMs == null || measurementSec * 1000 > userTsMs) {
+      update.body_fat_pct = bodyComp.percentFat!;
+      update.body_fat_pct_updated_at = measurementIso;
+    }
+  }
+
+  if (Object.keys(update).length === 0) return;
+
+  const { error: writeErr } = await supabase
+    .from("users")
+    .update(update)
+    .eq("id", userId);
+
+  if (writeErr) {
+    console.error(`[garmin-push] Users mirror update failed:`, writeErr);
+  }
+}
+
 async function processPushBody(body: GarminPushNotification): Promise<void> {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const results: Record<string, { processed: number; errors: number }> = {};
 
-    // Process activities — with matching to existing planned activities
+    // Process activities — match an existing planned activity if one exists,
+    // otherwise auto-create a completed activity for endurance sports so the
+    // user gets a notification + nutrition surface for the workout.
     if (body.activities && body.activities.length > 0) {
-      const stats = { processed: 0, errors: 0, matched: 0, skipped: 0 };
+      const stats = {
+        processed: 0,
+        errors: 0,
+        matched: 0,
+        inserted: 0,
+        skipped: 0,
+      };
       for (const activity of body.activities) {
         try {
           // Look up our user by Garmin userId
@@ -199,10 +348,53 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               stats.processed++;
             }
           } else {
-            console.log(
-              `[garmin-push] No matching planned activity for ${sportType} on ${scheduledDate} — skipping`,
+            // No planned activity matched — try to auto-create one.
+            const outcome = await insertGarminActivityIfMissing(
+              supabase,
+              activity,
+              activityRow,
             );
-            stats.skipped++;
+            switch (outcome.kind) {
+              case "inserted":
+                console.log(
+                  `[garmin-push] Auto-created completed activity ${outcome.activityId} for ${sportType} on ${scheduledDate}`,
+                );
+                await sendActivityUploadedPush({
+                  userId: mapping.user_id,
+                  activityId: outcome.activityId,
+                  scheduledDate,
+                  provider: buildGarminProviderLabel(activity.deviceName),
+                  logPrefix: "[garmin-push]",
+                });
+                stats.inserted++;
+                stats.processed++;
+                break;
+              case "duplicate":
+                console.log(
+                  `[garmin-push] Activity for ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
+                );
+                stats.skipped++;
+                break;
+              case "skipped_non_endurance":
+                console.log(
+                  `[garmin-push] No matching planned activity for non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
+                );
+                stats.skipped++;
+                break;
+              case "skipped_no_summary_id":
+                console.warn(
+                  "[garmin-push] No matching planned activity and missing summaryId — skipping",
+                );
+                stats.errors++;
+                break;
+              case "error":
+                console.error(
+                  "[garmin-push] Auto-create insert error:",
+                  outcome.error,
+                );
+                stats.errors++;
+                break;
+            }
           }
         } catch (err) {
           console.error(`[garmin-push] Activity processing error:`, err);
@@ -334,9 +526,19 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           if (error) {
             console.error(`[garmin-push] Body comp upsert error:`, error);
             stats.errors++;
-          } else {
-            stats.processed++;
+            continue;
           }
+
+          stats.processed++;
+
+          // Mirror to users.{weight_pounds, body_fat_pct} with latest-wins
+          // precedence so the rest of the app (Drift sync, Preferences UI,
+          // macro calc) sees the freshest value without needing to read
+          // garmin_health_data directly. Mirrors the algorithm in
+          // calculate-daily-macros/formulas/resolve.ts: must have a
+          // measurement timestamp, within 30 days, newer than the value
+          // currently in `users`.
+          await mirrorGarminBodyCompToUser(supabase, mapping.user_id, bodyComp);
         } catch (err) {
           console.error(`[garmin-push] Body comp processing error:`, err);
           stats.errors++;
@@ -495,10 +697,17 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
       results.manuallyUpdatedActivities = stats;
     }
 
-    // Process activity details — same match-only strategy as regular activities.
-    // Only update an existing planned activity if one matches.
+    // Process activity details — same match-or-insert strategy as regular
+    // activities. Match wins update an existing planned activity; on no-match
+    // we auto-create for endurance sports.
     if (body.activityDetails && body.activityDetails.length > 0) {
-      const stats = { processed: 0, errors: 0, matched: 0, skipped: 0 };
+      const stats = {
+        processed: 0,
+        errors: 0,
+        matched: 0,
+        inserted: 0,
+        skipped: 0,
+      };
       for (const detail of body.activityDetails) {
         try {
           const { data: mapping } = await supabase
@@ -516,6 +725,20 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           }
 
           const summary = detail.summary;
+          // Guard against missing summaryId: Garmin occasionally omits it on
+          // ActivityDetails payloads. Bare String(undefined) would write the
+          // literal string "undefined" into garmin_summary_id and break the
+          // unique index.
+          const detailSummaryId = summary.summaryId ??
+            (summary as { activityId?: string }).activityId ??
+            (detail as { activityId?: string }).activityId;
+          if (!detailSummaryId) {
+            console.warn(
+              "[garmin-push] ActivityDetails missing summaryId — skipping",
+            );
+            stats.errors++;
+            continue;
+          }
           const activityRow = mapGarminActivityToActivity(
             summary,
             mapping.user_id,
@@ -538,7 +761,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               summary,
               activityRow,
             );
-            updateFields.garmin_summary_id = String(summary.summaryId);
+            updateFields.garmin_summary_id = String(detailSummaryId);
 
             const { data: updatedRows, error } = await supabase
               .from("activities")
@@ -573,10 +796,52 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               stats.processed++;
             }
           } else {
-            console.log(
-              `[garmin-push] No matching planned activity for detail ${sportType} on ${scheduledDate} — skipping`,
+            const outcome = await insertGarminActivityIfMissing(
+              supabase,
+              summary,
+              activityRow,
             );
-            stats.skipped++;
+            switch (outcome.kind) {
+              case "inserted":
+                console.log(
+                  `[garmin-push] Auto-created completed activity ${outcome.activityId} from detail push for ${sportType} on ${scheduledDate}`,
+                );
+                await sendActivityUploadedPush({
+                  userId: mapping.user_id,
+                  activityId: outcome.activityId,
+                  scheduledDate,
+                  provider: buildGarminProviderLabel(summary.deviceName),
+                  logPrefix: "[garmin-push]",
+                });
+                stats.inserted++;
+                stats.processed++;
+                break;
+              case "duplicate":
+                console.log(
+                  `[garmin-push] Activity for detail ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
+                );
+                stats.skipped++;
+                break;
+              case "skipped_non_endurance":
+                console.log(
+                  `[garmin-push] No matching planned activity for detail non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
+                );
+                stats.skipped++;
+                break;
+              case "skipped_no_summary_id":
+                console.warn(
+                  "[garmin-push] No matching planned activity for detail and missing summaryId — skipping",
+                );
+                stats.errors++;
+                break;
+              case "error":
+                console.error(
+                  "[garmin-push] Auto-create insert error (detail):",
+                  outcome.error,
+                );
+                stats.errors++;
+                break;
+            }
           }
         } catch (err) {
           console.error(`[garmin-push] Activity detail processing error:`, err);

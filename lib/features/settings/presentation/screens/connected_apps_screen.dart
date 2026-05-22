@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/navigation/figma_onboarding_footer.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 import '../../../integrations/presentation/integration_sync_helpers.dart';
 import '../../../integrations/presentation/providers/connect_training_controller.dart';
@@ -47,12 +48,17 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   /// Resets when navigating away and back
   bool _finalSurgeSynced = false;
   bool _trainingPeaksSynced = false;
+  bool _vdotSynced = false;
+
+  /// Garmin's "Refresh" doesn't poll Garmin (their API is push-only) — it
+  /// just re-fetches activities from Supabase. We track in-flight state so
+  /// the integration card can render a spinner while the call is running.
+  bool _isRefreshingGarmin = false;
   final Set<String> _notifiedProviders = {};
 
   static const List<_ComingSoonProviderConfig> _comingSoonProviders = [
     _ComingSoonProviderConfig(name: 'TriDot', key: 'tridot'),
     _ComingSoonProviderConfig(name: 'Runna', key: 'runna'),
-    _ComingSoonProviderConfig(name: 'VDOT', key: 'vdot'),
     _ComingSoonProviderConfig(
       name: 'Strava',
       key: 'strava',
@@ -97,8 +103,11 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
-        leading: const CustomAppBarBackButton(),
+        leading: const CustomAppBarBackButton(
+          key: ValueKey('connected_apps.back_button'),
+        ),
         title: Text(
+          key: const ValueKey('connected_apps.title'),
           'Connected Apps',
           style: AppTextStyles.sectionTitle.copyWith(color: onSurface),
         ),
@@ -182,6 +191,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
               onBack: widget.onBack,
               canContinue: true,
               isLoading: state.isLoading,
+              continueButtonKey: const ValueKey(
+                'connect_training.continue_button',
+              ),
+              backButtonKey: const ValueKey('connect_training.back_button'),
             ),
           ),
         ],
@@ -197,11 +210,13 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
+          key: const ValueKey('connect_training.title'),
           'Connect Your Training',
           style: AppTextStyles.pageTitle.copyWith(color: onSurface),
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
+          key: const ValueKey('connect_training.description'),
           'Import your upcoming workouts to get personalized nutrition plans for each session.',
           style: AppTextStyles.bodyMedium.copyWith(color: onSurfaceVariant),
         ),
@@ -230,6 +245,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       children: [
         // Header text
         Text(
+          key: const ValueKey('connected_apps.description'),
           'Connect your training platforms to automatically import workouts and generate nutrition plans.',
           style: AppTextStyles.bodyMedium.copyWith(color: onSurfaceVariant),
         ),
@@ -239,6 +255,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Final Surge - fully integrated
         // Logo includes wordmark - no separate text label needed
         IntegrationProviderCard(
+          key: const ValueKey('connected_apps.finalsurge_connect_button'),
           name: 'Final Surge',
           iconPath: finalSurgeLogo,
           logoHeight: 18,
@@ -272,6 +289,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // TrainingPeaks - Using horizontal logo with wordmark per Brand Guidelines
         // Larger height because logo has built-in dark background padding
         IntegrationProviderCard(
+          key: const ValueKey('connected_apps.trainingpeaks_connect_button'),
           name: 'TrainingPeaks',
           iconPath: trainingPeaksLogo,
           logoHeight: 38,
@@ -328,7 +346,12 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Garmin Connect — push-only integration.
         // Brand Guidelines: Use the official Garmin Connect badge (per Garmin
         // Connect Developer Program review, ticket 206017).
+        // The "Refresh" button doesn't poll Garmin (their Health API has no
+        // on-demand list endpoint). It re-pulls activities from our Supabase
+        // DB so any push that arrived while the app was closed surfaces in
+        // the calendar/list immediately.
         IntegrationProviderCard(
+          key: const ValueKey('connected_apps.garmin_connect_button'),
           name: 'Garmin Connect',
           iconPath: 'assets/images/integrations/garmin_connect_badge.png',
           logoHeight: 40,
@@ -336,10 +359,46 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           isConnected: data.isGarminConnected,
           isConnecting:
               data.isConnecting && data.connectingProvider == 'garmin',
+          isSyncing: _isRefreshingGarmin,
           athleteName: data.garminAthleteName,
           onConnect: () => _connectGarmin(context, ref),
           onDisconnect: () => _disconnectGarmin(context, ref),
-          showSyncButton: false,
+          onSync: () => _refreshGarminWithState(context, ref),
+          showSyncButton: data.isGarminConnected,
+        ),
+        if (data.isGarminConnected)
+          Padding(
+            padding: const EdgeInsets.only(
+              left: AppSpacing.md,
+              right: AppSpacing.md,
+              top: AppSpacing.xs,
+            ),
+            child: Text(
+              'Garmin syncs automatically when your watch uploads to Garmin '
+              'Connect. Tap Refresh to pull any activities that arrived while '
+              'the app was closed.',
+              style: AppTextStyles.bodySmall.copyWith(color: onSurfaceVariant),
+            ),
+          ),
+
+        const SizedBox(height: AppSpacing.lg),
+
+        // V.O2 (VDOT) — OAuth + pull-based workout sync.
+        IntegrationProviderCard(
+          key: const ValueKey('connected_apps.vdot_connect_button'),
+          name: 'V.O2',
+          isAvailable: true,
+          isConnected: data.isVdotConnected,
+          isConnecting:
+              data.isConnecting && data.connectingProvider == 'vdot',
+          isSyncing: data.syncingProvider == 'vdot',
+          athleteName: data.vdotAthleteName,
+          lastSyncAt: data.vdotLastSyncAt,
+          onConnect: () => _connectVdot(context, ref),
+          onDisconnect: () => _disconnectVdot(context, ref),
+          onSync: () => _syncVdotWithState(context, ref),
+          showSyncButton: data.isVdotConnected,
+          hasSynced: _vdotSynced,
         ),
 
         const SizedBox(height: AppSpacing.lg),
@@ -390,6 +449,39 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           style: AppTextStyles.bodySmall.copyWith(color: onSurfaceVariant),
           textAlign: TextAlign.center,
         ),
+
+        // Push-notification reset escape hatch.
+        //
+        // OneSignal v5.x sometimes leaves an iOS device on a stale or invalid
+        // APNs token (especially after iOS upgrades or re-installs that
+        // happened over an existing build). This button forces OneSignal to
+        // opt out and re-opt in, which clears cached subscription state and
+        // re-runs registerForRemoteNotifications. Most users will never need
+        // it; surfacing it here as a "Tip" keeps it discoverable for support
+        // without cluttering the main flow.
+        const SizedBox(height: AppSpacing.lg),
+        Center(
+          child: TextButton.icon(
+            onPressed: () => _resetPushNotifications(context),
+            icon: Icon(Icons.refresh, size: 16, color: onSurfaceVariant),
+            label: Text(
+              'Reset push notifications',
+              style: AppTextStyles.bodySmall.copyWith(color: onSurfaceVariant),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Text(
+            "Not getting workout alerts? Tap to re-register this device with "
+            "Mealvana's push service.",
+            style: AppTextStyles.bodySmall.copyWith(
+              color: onSurfaceVariant,
+              fontSize: 11,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ],
     );
   }
@@ -417,6 +509,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Final Surge - fully integrated
         // Logo includes wordmark - no separate text label needed
         IntegrationProviderCard(
+          key: const ValueKey('connect_training.finalsurge_connect_button'),
           name: 'Final Surge',
           iconPath: finalSurgeLogo,
           logoHeight: 18,
@@ -440,6 +533,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Using horizontal logo with wordmark per Brand Guidelines
         // Larger height because logo has built-in dark background padding
         IntegrationProviderCard(
+          key: const ValueKey('connect_training.trainingpeaks_connect_button'),
           name: 'TrainingPeaks',
           iconPath: trainingPeaksLogo,
           logoHeight: 38,
@@ -462,7 +556,9 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         // Garmin Connect — push-only integration.
         // Brand Guidelines: Use the official Garmin Connect badge (per Garmin
         // Connect Developer Program review, ticket 206017).
+        // Refresh re-pulls from Supabase (Garmin's API is push-only).
         IntegrationProviderCard(
+          key: const ValueKey('connect_training.garmin_connect_button'),
           name: 'Garmin Connect',
           iconPath: 'assets/images/integrations/garmin_connect_badge.png',
           logoHeight: 40,
@@ -470,10 +566,32 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           isConnected: data.isGarminConnected,
           isConnecting:
               data.isConnecting && data.connectingProvider == 'garmin',
+          isSyncing: _isRefreshingGarmin,
           athleteName: data.garminAthleteName,
           onConnect: () => _connectGarminOnboarding(context, ref),
           onDisconnect: () => _disconnectGarmin(context, ref),
-          showSyncButton: false,
+          onSync: () => _refreshGarminWithState(context, ref),
+          showSyncButton: data.isGarminConnected,
+        ),
+
+        const SizedBox(height: AppSpacing.md),
+
+        // V.O2 (VDOT) — OAuth + pull-based workout sync.
+        IntegrationProviderCard(
+          key: const ValueKey('connect_training.vdot_connect_button'),
+          name: 'V.O2',
+          isAvailable: true,
+          isConnected: data.isVdotConnected,
+          isConnecting:
+              data.isConnecting && data.connectingProvider == 'vdot',
+          isSyncing: data.syncingProvider == 'vdot',
+          athleteName: data.vdotAthleteName,
+          lastSyncAt: data.vdotLastSyncAt,
+          onConnect: () => _connectVdotOnboarding(context, ref),
+          onSync: () => _syncVdotWithState(context, ref),
+          onDisconnect: () => _disconnectVdot(context, ref),
+          showSyncButton: true,
+          hasSynced: _vdotSynced,
         ),
 
         const SizedBox(height: AppSpacing.md),
@@ -525,6 +643,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   Widget _buildSkipButton(BuildContext context, WidgetRef ref) {
     return Center(
       child: TextButton(
+        key: const ValueKey('connect_training.skip_button'),
         onPressed: () => _skipConnection(ref),
         child: Text(
           'Skip for now',
@@ -544,6 +663,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     required double spacing,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final keyPrefix = isOnboardingMode ? 'connect_training' : 'connected_apps';
     final widgets = <Widget>[];
     for (var i = 0; i < _comingSoonProviders.length; i++) {
       final provider = _comingSoonProviders[i];
@@ -554,6 +674,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           : provider.iconPath;
       widgets.add(
         IntegrationProviderCard(
+          key: ValueKey('$keyPrefix.${provider.key}_notify_button'),
           name: provider.name,
           iconPath: iconPath,
           logoHeight: provider.logoHeight,
@@ -819,6 +940,85 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   }
 
   // ============================================================
+  // V.O2 (VDOT) handlers
+  // ============================================================
+
+  Future<void> _connectVdot(BuildContext context, WidgetRef ref) async {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    final success = await controller.connectVdot();
+
+    if (success && context.mounted) {
+      MealvanaSnackbar.showSuccess(context, 'V.O2 connected!');
+    }
+  }
+
+  Future<void> _connectVdotOnboarding(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    final success = await controller.connectVdot();
+
+    if (!success || !context.mounted) return;
+
+    MealvanaSnackbar.showSuccess(
+      context,
+      'V.O2 connected! Importing workouts...',
+    );
+
+    final result = await controller.importVdotWorkouts();
+    if (!context.mounted) return;
+
+    final state = ref.read(connectTrainingControllerProvider).value;
+    final message = buildWorkoutSyncMessage(
+      newCount: result.newWorkouts,
+      updatedCount: result.updated,
+      deletedCount: result.deleted,
+      unchangedCount: result.skipped,
+    );
+
+    if (result.success && result.hasChanges) {
+      MealvanaSnackbar.showSuccess(context, message);
+    } else if (!result.success || state?.errorMessage != null) {
+      MealvanaSnackbar.showError(
+        context,
+        'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+      );
+    } else {
+      MealvanaSnackbar.showInfo(context, message);
+    }
+
+    if (mounted && result.success && state?.errorMessage == null) {
+      setState(() {
+        _vdotSynced = true;
+      });
+    }
+  }
+
+  Future<void> _disconnectVdot(BuildContext context, WidgetRef ref) async {
+    final controller = ref.read(connectTrainingControllerProvider.notifier);
+    await controller.disconnectVdot();
+
+    if (context.mounted) {
+      MealvanaSnackbar.showInfo(context, 'V.O2 disconnected');
+    }
+  }
+
+  Future<void> _syncVdotWithState(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    await syncVdot(context, ref, showLoadingSnackbar: false);
+
+    final state = ref.read(connectTrainingControllerProvider).value;
+    if (state?.errorMessage == null && mounted) {
+      setState(() {
+        _vdotSynced = true;
+      });
+    }
+  }
+
+  // ============================================================
   // Sync Methods with State Tracking
   // ============================================================
 
@@ -852,6 +1052,59 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
         _trainingPeaksSynced = true;
       });
     }
+  }
+
+  /// Re-pulls the activities table from Supabase so any Garmin push that
+  /// arrived while the app was closed (or the local DB missed) shows up
+  /// in the calendar/list. Garmin's Health API is push-only — this is the
+  /// closest thing to a manual sync we can offer.
+  Future<void> _refreshGarminWithState(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    if (_isRefreshingGarmin) return;
+    setState(() => _isRefreshingGarmin = true);
+    try {
+      await syncGarmin(context, ref, showLoadingSnackbar: true);
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshingGarmin = false);
+      }
+    }
+  }
+
+  /// Forces OneSignal to opt out and immediately opt back in, which clears
+  /// any cached subscription state (e.g., invalid_identifier flagged tokens)
+  /// and re-runs registerForRemoteNotifications. Used as a manual escape
+  /// hatch when push notifications stop arriving despite iOS Settings
+  /// reporting permission as granted.
+  Future<void> _resetPushNotifications(BuildContext context) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    MealvanaSnackbar.showLoading(context, 'Resetting push notifications...');
+    try {
+      await OneSignal.User.pushSubscription.optOut();
+      // Tiny delay so OneSignal has time to register the optOut state
+      // before we flip it back. Without this the second call sometimes
+      // races and the cached state isn't fully cleared.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      await OneSignal.User.pushSubscription.optIn();
+    } catch (e) {
+      messenger?.hideCurrentSnackBar();
+      if (!context.mounted) return;
+      MealvanaSnackbar.showError(
+        context,
+        'Reset failed: $e',
+        duration: const Duration(seconds: 4),
+      );
+      return;
+    }
+    messenger?.hideCurrentSnackBar();
+    if (!context.mounted) return;
+    MealvanaSnackbar.showSuccess(
+      context,
+      'Push notifications reset. Restart the app to complete.',
+      duration: const Duration(seconds: 5),
+    );
   }
 
   // ============================================================
@@ -904,6 +1157,7 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
             ),
           ),
           KyleSwitch(
+            key: const ValueKey('connected_apps.tp_writeback_toggle'),
             value: enabled,
             enabled: !premiumBlocked,
             onChanged: premiumBlocked

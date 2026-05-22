@@ -84,6 +84,7 @@ class ActivityCard extends ConsumerWidget {
         ),
       ),
       child: InkWell(
+        key: ValueKey('calendar.activity_card_${activity.id}'),
         onTap: () => isSelectionMode
             ? onSelectionToggle?.call()
             : _handleTap(context, ref),
@@ -379,17 +380,17 @@ class ActivityCard extends ConsumerWidget {
   IconData _getActivityIcon(ActivityType activityType) {
     switch (activityType) {
       case ActivityType.running:
-        return FontAwesomeIcons.personRunning;
+        return FontAwesomeIcons.personRunning.data;
       case ActivityType.cycling:
-        return FontAwesomeIcons.personBiking;
+        return FontAwesomeIcons.personBiking.data;
       case ActivityType.swimming:
-        return FontAwesomeIcons.personSwimming;
+        return FontAwesomeIcons.personSwimming.data;
       case ActivityType.triathlon:
       case ActivityType.duathlon:
       case ActivityType.multisport:
-        return FontAwesomeIcons.trophy;
+        return FontAwesomeIcons.trophy.data;
       case ActivityType.brick:
-        return FontAwesomeIcons.link; // Chain link icon for brick workouts
+        return FontAwesomeIcons.link.data; // Chain link icon for brick workouts
     }
   }
 }

@@ -62,7 +62,7 @@ class FoodSearchResultsWidget extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.magnifyingGlass,
                 size: AppIconSizes.xl,
                 color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
@@ -168,7 +168,7 @@ class _MyFoodsSectionHeader extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
         child: Row(
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.solidHeart,
               size: AppIconSizes.sm,
               color: AppColors.dragonfruit,
@@ -201,8 +201,8 @@ class _MyFoodsSectionHeader extends StatelessWidget {
             const Spacer(),
             Icon(
               isExpanded
-                  ? FontAwesomeIcons.chevronUp
-                  : FontAwesomeIcons.chevronDown,
+                  ? FontAwesomeIcons.chevronUp.data
+                  : FontAwesomeIcons.chevronDown.data,
               size: AppIconSizes.sm,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -278,14 +278,14 @@ class _OpenFoodFactsCard extends StatelessWidget {
                         child: Image.network(
                           result.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
+                          errorBuilder: (context, error, stackTrace) => FaIcon(
                             FontAwesomeIcons.utensils,
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                             size: AppIconSizes.controlIcon,
                           ),
                         ),
                       )
-                    : Icon(
+                    : FaIcon(
                         FontAwesomeIcons.utensils,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         size: AppIconSizes.controlIcon,
@@ -318,7 +318,7 @@ class _OpenFoodFactsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.chevronRight,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 size: AppIconSizes.chevron,

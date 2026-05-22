@@ -142,8 +142,8 @@ class EnvironmentSection extends StatelessWidget {
                 ),
                 Icon(
                   isExpanded
-                      ? FontAwesomeIcons.chevronUp
-                      : FontAwesomeIcons.chevronDown,
+                      ? FontAwesomeIcons.chevronUp.data
+                      : FontAwesomeIcons.chevronDown.data,
                   color: AppColors.orange,
                   size: 16,
                 ),

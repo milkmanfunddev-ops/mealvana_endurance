@@ -178,6 +178,7 @@ class ActivityDetailController extends _$ActivityDetailController {
       final macroRepo = ref.read(macroRepositoryProvider);
       macroTargets = await macroRepo.getCachedMacroTargetsForActivity(
         activityId,
+        expectedActivityType: activity.activityType,
       );
     } catch (e) {
       _logger.warning('Failed to load activity-scoped macro targets: $e');

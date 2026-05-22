@@ -22,6 +22,7 @@ class CategorySelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
+          key: const ValueKey('custom_food.timing_section'),
           'When would you eat this?',
           style: AppTextStyles.subtitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
@@ -29,6 +30,7 @@ class CategorySelector extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
+          key: const ValueKey('custom_food.timing_body'),
           'Select one or more categories (at least one required)',
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -38,6 +40,7 @@ class CategorySelector extends StatelessWidget {
 
         // Category checkboxes
         _buildCategoryCheckbox(
+          checkboxKey: const ValueKey('custom_food.timing_before_run'),
           context: context,
           categoryId: 1,
           title: 'Before Run',
@@ -46,6 +49,7 @@ class CategorySelector extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         _buildCategoryCheckbox(
+          checkboxKey: const ValueKey('custom_food.timing_during_run'),
           context: context,
           categoryId: 2,
           title: 'During Run',
@@ -54,6 +58,7 @@ class CategorySelector extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         _buildCategoryCheckbox(
+          checkboxKey: const ValueKey('custom_food.timing_after_run'),
           context: context,
           categoryId: 3,
           title: 'After Run',
@@ -70,10 +75,12 @@ class CategorySelector extends StatelessWidget {
     required String title,
     required String subtitle,
     required bool isDark,
+    Key? checkboxKey,
   }) {
     final isSelected = selectedCategories[categoryId] ?? false;
 
     return GestureDetector(
+      key: checkboxKey,
       onTap: () {
         final updatedCategories = Map<int, bool>.from(selectedCategories);
         updatedCategories[categoryId] = !isSelected;
@@ -90,8 +97,8 @@ class CategorySelector extends StatelessWidget {
             color: isSelected
                 ? AppColors.electrolyte
                 : isDark
-                    ? AppColors.cream.withValues(alpha: 0.3)
-                    : AppColors.blackberry.withValues(alpha: 0.3),
+                ? AppColors.cream.withValues(alpha: 0.3)
+                : AppColors.blackberry.withValues(alpha: 0.3),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -107,13 +114,13 @@ class CategorySelector extends StatelessWidget {
                   color: isSelected
                       ? AppColors.electrolyte
                       : isDark
-                          ? AppColors.cream.withValues(alpha: 0.5)
-                          : AppColors.blackberry.withValues(alpha: 0.5),
+                      ? AppColors.cream.withValues(alpha: 0.5)
+                      : AppColors.blackberry.withValues(alpha: 0.5),
                   width: 2,
                 ),
               ),
               child: isSelected
-                  ? const Icon(
+                  ? const FaIcon(
                       FontAwesomeIcons.check,
                       color: AppColors.blackberry,
                       size: 14,

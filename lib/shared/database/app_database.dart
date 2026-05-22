@@ -158,15 +158,20 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 10: Adds formula_pins table (user pins for Formula Kit
+  /// Schema version 11: Adds formula_pins table (user pins for Formula Kit
   /// algorithm signal). Soft-deleted via `is_deleted` boolean to let unpin
   /// events propagate across devices via the existing upsert-only sync.
   /// Matches the user_foods soft-delete convention.
-  /// v9 added pre_workout_templates table (read-only mirror of
+  /// v10 added pre_workout_templates table (read-only mirror of
   /// Supabase pre-workout formula catalog). Replaces the legacy `templates`
   /// table for Before-phase formulas in Formula Kit.
-  /// v8 added during_workout_templates table (read-only mirror of
+  /// v9 added during_workout_templates table (read-only mirror of
   /// Supabase during-workout formula catalog) to back the Formula Kit browse UI.
+  /// v8 added needs_upload column to integrations so OAuth tokens are
+  /// mirrored to Supabase and survive Drift schema resyncs / reinstalls.
+  /// (v8 also includes 'vdot' in the integrations.provider CHECK and
+  /// 'requires_reauth' in the last_sync_status CHECK — added 2026-05-18,
+  /// before v8 shipped.)
   /// v7 added activities.garmin_device_name (Garmin brand-compliant
   /// attribution), sweat profile fields on users (sweat_sodium,
   /// known_sweat_rate_ml_per_hour, known_sodium_concentration_mg_per_liter,
@@ -178,7 +183,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -231,22 +236,32 @@ class AppDatabase extends _$AppDatabase {
           );
         }
 
-        // v8: Create during_workout_templates table (read-only mirror).
+        // v8: Add needs_upload column to integrations so existing OAuth
+        // tokens get backed up to Supabase on the next sync. Default 1 so
+        // every pre-existing row is treated as dirty exactly once — Supabase
+        // had no integrations table before this, so we need to seed it.
+        if (from < 8) {
+          await customStatement(
+            'ALTER TABLE integrations ADD COLUMN needs_upload INTEGER NOT NULL DEFAULT 1',
+          );
+        }
+
+        // v9: Create during_workout_templates table (read-only mirror).
         // Guarded by version comparison; CREATE TABLE IF NOT EXISTS for
         // idempotency in case the table was previously created at runtime.
-        if (from < 8) {
+        if (from < 9) {
           await m.createTable(duringWorkoutTemplatesTable);
         }
 
-        // v9: Create pre_workout_templates table (read-only mirror).
-        if (from < 9) {
+        // v10: Create pre_workout_templates table (read-only mirror).
+        if (from < 10) {
           await m.createTable(preWorkoutTemplatesTable);
         }
 
-        // v10: Create formula_pins table (Formula Kit pins — user
+        // v11: Create formula_pins table (Formula Kit pins — user
         // preference signal for plan generation). Soft-delete via
         // is_deleted column.
-        if (from < 10) {
+        if (from < 11) {
           await m.createTable(formulaPinsTable);
         }
       },

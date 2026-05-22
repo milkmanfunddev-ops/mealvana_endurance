@@ -599,6 +599,7 @@ class MacroGenerationService {
         sodiumHighMg: _toDoubleOrNull(macrosData['pre_run_sodium_high_mg']),
         fluidsLowMl: _toDoubleOrNull(macrosData['pre_run_water_low_ml']),
         fluidsHighMl: _toDoubleOrNull(macrosData['pre_run_water_high_ml']),
+        hydrationTier: (macrosData['pre_run_hydration_tier'] as num?)?.toInt(),
       ),
       preRunSelections: _toMapListOrNull(macrosData['pre_run_selections']),
       duringRun: () {

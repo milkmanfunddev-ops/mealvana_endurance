@@ -27,6 +27,7 @@ import type {
   DuringWorkoutTemplate,
   FoodWithConstraints,
 } from "./during-template-solver.ts";
+import type { PostWorkoutTemplate } from "./post-template-solver.ts";
 
 /**
  * Resolve composite activity types to their constituent sports for
@@ -297,16 +298,11 @@ export async function getTemplateFoodsForPhase(
       // solver always has a fallback for safety-critical hydration. Electrolyte
       // *products* (capsules, drinks, powders) get NO essential-bypass — user
       // preference dominates so we don't ship a plan featuring foods they hate.
-      if (isDisliked && !isUserFood && !(isEssential && !isElectrolyte)) {
+      if (isDisliked && !(isEssential && !isElectrolyte)) {
         console.log(
           `[TMPL-FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`,
         );
         return false;
-      }
-      if (isDisliked && isUserFood) {
-        console.log(
-          `[TMPL-FILTER-DISLIKED] Keeping user food despite dislike: ${f.name}`,
-        );
       }
 
       // Allergen filtering — exclude template foods whose allergens overlap with user's allergies
@@ -1094,3 +1090,55 @@ export function buildFoodsByNameMap(
   }
   return map;
 }
+
+/**
+ * Build a Map<food.name, Food> for the post-workout template solver
+ * (post solver works with the plain Food shape, not FoodWithConstraints).
+ */
+export function buildFoodMap(foods: Food[]): Map<string, Food> {
+  const map = new Map<string, Food>();
+  for (const food of foods) {
+    map.set(food.name, food);
+  }
+  return map;
+}
+
+// ============================================================================
+// Post-Workout Template Queries
+// ============================================================================
+
+/**
+ * Fetch all active post_workout_templates from the database.
+ */
+export async function getPostWorkoutTemplates(
+  supabase: SupabaseClient,
+): Promise<PostWorkoutTemplate[]> {
+  const { data, error } = await supabase
+    .from("post_workout_templates")
+    .select(`
+      id, template_number, name, formula, portions,
+      activity_types, component_food_names, component_ratios,
+      default_servings, target_carb_protein_ratio,
+      allergens, excluded_diets,
+      travel_friendliness, flavor_profile, prep_effort, protein_anchor,
+      carb_sources, selection_priority,
+      notes, is_active
+    `)
+    .eq("is_active", true)
+    .order("template_number");
+
+  if (error) {
+    console.log(
+      "[PWT-QUERY] Error fetching post_workout_templates:",
+      error,
+    );
+    return [];
+  }
+
+  const templates = (data ?? []) as PostWorkoutTemplate[];
+  console.log(
+    `[PWT-QUERY] Fetched ${templates.length} active post-workout templates`,
+  );
+  return templates;
+}
+

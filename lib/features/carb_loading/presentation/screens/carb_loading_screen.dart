@@ -94,7 +94,7 @@ class CarbLoadingScreen extends ConsumerWidget {
                   color: AppColors.electrolyte.withOpacity(0.2),
                   borderRadius: AppRadius.cardRadius,
                 ),
-                child: Icon(
+                child: FaIcon(
                   FontAwesomeIcons.bolt,
                   size: AppIconSizes.lg,
                   color: AppColors.electrolyte,
@@ -295,7 +295,7 @@ class CarbLoadingScreen extends ConsumerWidget {
             context: context,
             title: 'Change Protocol',
             subtitle: 'Select a different carb loading protocol',
-            icon: FontAwesomeIcons.exchange,
+            icon: FontAwesomeIcons.exchange.data,
             onTap: () => _changeProtocol(context, ref),
           ),
 
@@ -305,7 +305,7 @@ class CarbLoadingScreen extends ConsumerWidget {
             context: context,
             title: 'Custom Protocol',
             subtitle: 'Create your own carb loading plan',
-            icon: FontAwesomeIcons.plus,
+            icon: FontAwesomeIcons.plus.data,
             onTap: () => _createCustomProtocol(context, ref),
           ),
 
@@ -315,7 +315,7 @@ class CarbLoadingScreen extends ConsumerWidget {
             context: context,
             title: 'Protocol History',
             subtitle: 'View past carb loading protocols',
-            icon: FontAwesomeIcons.clockRotateLeft,
+            icon: FontAwesomeIcons.clockRotateLeft.data,
             onTap: () => _viewProtocolHistory(context, ref),
           ),
         ],
@@ -378,7 +378,7 @@ class CarbLoadingScreen extends ConsumerWidget {
             ),
             
             // Arrow icon
-            Icon(
+            FaIcon(
               FontAwesomeIcons.chevronRight,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -410,31 +410,31 @@ class CarbLoadingScreen extends ConsumerWidget {
             children: [
               _buildFoodCategory(
                 context: context,
-                icon: FontAwesomeIcons.breadSlice,
+                icon: FontAwesomeIcons.breadSlice.data,
                 label: 'Grains',
                 onTap: () => _selectFoodCategory(context, ref, 'grains'),
               ),
               _buildFoodCategory(
                 context: context,
-                icon: FontAwesomeIcons.appleWhole,
+                icon: FontAwesomeIcons.appleWhole.data,
                 label: 'Fruits',
                 onTap: () => _selectFoodCategory(context, ref, 'fruits'),
               ),
               _buildFoodCategory(
                 context: context,
-                icon: FontAwesomeIcons.drumstickBite,
+                icon: FontAwesomeIcons.drumstickBite.data,
                 label: 'Proteins',
                 onTap: () => _selectFoodCategory(context, ref, 'proteins'),
               ),
               _buildFoodCategory(
                 context: context,
-                icon: FontAwesomeIcons.cookie,
+                icon: FontAwesomeIcons.cookie.data,
                 label: 'Snacks',
                 onTap: () => _selectFoodCategory(context, ref, 'snacks'),
               ),
               _buildFoodCategory(
                 context: context,
-                icon: FontAwesomeIcons.mugHot,
+                icon: FontAwesomeIcons.mugHot.data,
                 label: 'Drinks',
                 onTap: () => _selectFoodCategory(context, ref, 'drinks'),
               ),

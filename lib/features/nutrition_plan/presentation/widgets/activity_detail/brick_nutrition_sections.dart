@@ -339,21 +339,25 @@ class BrickNutritionSections extends StatelessWidget {
           if (_isEmptyNutritionSection(section, isSwimming, isTransition)) ...[
             _buildQuickTransitionMessage(context, section, isTransition),
           ] else ...[
-            MacroSummaryRow(
-              foods: section.foodItems,
-              section: section,
-              category: category,
-              useImperial: useImperial,
-              carbsLow: _getCarbsLow(section, category),
-              carbsHigh: _getCarbsHigh(section, category),
-              proteinLow: _getProteinLow(section, category),
-              proteinHigh: _getProteinHigh(section, category),
-              sodiumLow: _getSodiumLow(section, category),
-              sodiumHigh: _getSodiumHigh(section, category),
-              fluidsLow: _getFluidsLow(section, category),
-              fluidsHigh: _getFluidsHigh(section, category),
-            ),
-            const SizedBox(height: AppSpacing.md),
+            // Post-workout recovery is a trigger, not a macro-dosing event —
+            // hide the carbs/protein/sodium/fluid bar for the after section.
+            if (!category.startsWith('after')) ...[
+              MacroSummaryRow(
+                foods: section.foodItems,
+                section: section,
+                category: category,
+                useImperial: useImperial,
+                carbsLow: _getCarbsLow(section, category),
+                carbsHigh: _getCarbsHigh(section, category),
+                proteinLow: _getProteinLow(section, category),
+                proteinHigh: _getProteinHigh(section, category),
+                sodiumLow: _getSodiumLow(section, category),
+                sodiumHigh: _getSodiumHigh(section, category),
+                fluidsLow: _getFluidsLow(section, category),
+                fluidsHigh: _getFluidsHigh(section, category),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             ...section.foodItems.asMap().entries.map((entry) {
               final index = entry.key;
               final food = entry.value;
@@ -401,7 +405,7 @@ class BrickNutritionSections extends StatelessWidget {
     return Row(
       children: [
         if (isTransition) ...[
-          Icon(
+          FaIcon(
             FontAwesomeIcons.repeat,
             size: AppIconSizes.md,
             color: sectionColor,
@@ -485,22 +489,22 @@ class BrickNutritionSections extends StatelessWidget {
     Color iconColor;
 
     if (sportType == 'swimming') {
-      iconData = FontAwesomeIcons.personSwimming;
+      iconData = FontAwesomeIcons.personSwimming.data;
       iconColor = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
     } else if (sportType == 'cycling') {
-      iconData = FontAwesomeIcons.personBiking;
+      iconData = FontAwesomeIcons.personBiking.data;
       iconColor = AppColors.orange;
     } else if (sportType == 'running') {
-      iconData = FontAwesomeIcons.personRunning;
+      iconData = FontAwesomeIcons.personRunning.data;
       iconColor = AppColors.dragonfruit;
     } else if (sportType == null && sectionId == 'before') {
-      iconData = FontAwesomeIcons.clock;
+      iconData = FontAwesomeIcons.clock.data;
       iconColor = AppColors.orange;
     } else if (sportType == null && sectionId == 'after') {
-      iconData = FontAwesomeIcons.utensils;
+      iconData = FontAwesomeIcons.utensils.data;
       iconColor = AppColors.dragonfruit;
     } else {
-      iconData = FontAwesomeIcons.utensils;
+      iconData = FontAwesomeIcons.utensils.data;
       iconColor = AppColors.orange;
     }
 

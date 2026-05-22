@@ -53,7 +53,7 @@ class ThemeToggleWidget extends ConsumerWidget {
                   _ThemeOption(
                     title: 'Light Mode',
                     subtitle: 'Clean cream background',
-                    icon: FontAwesomeIcons.sun,
+                    icon: FontAwesomeIcons.sun.data,
                     isSelected: themeMode == ThemeMode.light,
                     onTap: () => themeNotifier.setThemeMode(ThemeMode.light),
                   ),
@@ -62,7 +62,7 @@ class ThemeToggleWidget extends ConsumerWidget {
                   _ThemeOption(
                     title: 'Dark Mode',
                     subtitle: 'Rich blackberry background',
-                    icon: FontAwesomeIcons.moon,
+                    icon: FontAwesomeIcons.moon.data,
                     isSelected: themeMode == ThemeMode.dark,
                     onTap: () => themeNotifier.setThemeMode(ThemeMode.dark),
                   ),
@@ -71,7 +71,7 @@ class ThemeToggleWidget extends ConsumerWidget {
                   _ThemeOption(
                     title: 'System',
                     subtitle: 'Follow device settings',
-                    icon: FontAwesomeIcons.desktop,
+                    icon: FontAwesomeIcons.desktop.data,
                     isSelected: themeMode == ThemeMode.system,
                     onTap: () => themeNotifier.setThemeMode(ThemeMode.system),
                   ),
@@ -94,7 +94,7 @@ class ThemeToggleWidget extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  FaIcon(
                     FontAwesomeIcons.infoCircle,
                     color: AppColors.electrolyte,
                     size: AppIconSizes.info,
@@ -200,7 +200,7 @@ class _ThemeOption extends StatelessWidget {
             
             // Selection indicator
             if (isSelected)
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.checkCircle,
                 color: AppColors.electrolyte,
                 size: AppIconSizes.md,

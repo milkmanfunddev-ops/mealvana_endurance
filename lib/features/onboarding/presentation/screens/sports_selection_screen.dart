@@ -155,13 +155,14 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
               safeAreaBottom: false,
               padding: const EdgeInsets.all(20),
               child: Align(
-                alignment: Alignment.topCenter,
+                alignment: Alignment.center,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Title
                     const Text(
+                      key: ValueKey('sport_selection.title'),
                       'Which sports do you train for?',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -193,6 +194,7 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
 
                     // Sport selection cards
                     FigmaCheckboxCard(
+                      key: const ValueKey('sport_selection.running_chip'),
                       label: 'Running',
                       isSelected: _selectedSports.contains('running'),
                       onTap: () => _toggleSport('running'),
@@ -201,6 +203,7 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
                     const SizedBox(height: 12),
 
                     FigmaCheckboxCard(
+                      key: const ValueKey('sport_selection.cycling_chip'),
                       label: 'Cycling',
                       isSelected: _selectedSports.contains('cycling'),
                       onTap: () => _toggleSport('cycling'),
@@ -209,6 +212,7 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
                     const SizedBox(height: 12),
 
                     FigmaCheckboxCard(
+                      key: const ValueKey('sport_selection.swimming_chip'),
                       label: 'Swimming',
                       isSelected: _selectedSports.contains('swimming'),
                       onTap: () => _toggleSport('swimming'),
@@ -224,6 +228,10 @@ class _SportsSelectionScreenState extends ConsumerState<SportsSelectionScreen> {
             onContinue: _continue,
             onBack: widget.onBack ?? () => context.pop(),
             canContinue: _selectedSports.isNotEmpty,
+            continueButtonKey: const ValueKey(
+              'sport_selection.continue_button',
+            ),
+            backButtonKey: const ValueKey('sport_selection.back_button'),
           ),
         ],
       ),

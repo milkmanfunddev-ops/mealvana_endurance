@@ -93,14 +93,14 @@ class CatalogCard extends StatelessWidget {
                         child: Image.network(
                           result.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
+                          errorBuilder: (context, error, stackTrace) => FaIcon(
                             FontAwesomeIcons.cartShopping,
                             color: AppColors.electrolyte,
                             size: AppIconSizes.controlIcon,
                           ),
                         ),
                       )
-                    : Icon(
+                    : FaIcon(
                         FontAwesomeIcons.cartShopping,
                         color: AppColors.electrolyte,
                         size: AppIconSizes.controlIcon,
@@ -176,8 +176,8 @@ class CatalogCard extends StatelessWidget {
               ),
               Icon(
                 result.hasNutrition
-                    ? FontAwesomeIcons.circlePlus
-                    : FontAwesomeIcons.chevronRight,
+                    ? FontAwesomeIcons.circlePlus.data
+                    : FontAwesomeIcons.chevronRight.data,
                 color: result.hasNutrition
                     ? AppColors.orange
                     : Theme.of(context).colorScheme.onSurfaceVariant,

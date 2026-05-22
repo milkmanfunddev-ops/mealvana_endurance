@@ -305,6 +305,7 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
                   const SizedBox(height: 22),
 
                   Text(
+                    key: const ValueKey('allergies.title'),
                     'Do you have any allergies?',
                     style: const TextStyle(
                       fontFamily: 'Sansita',
@@ -332,6 +333,8 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
             isLoading: _isSaving,
             buttonText: _isSettings ? 'Save' : 'Continue',
             showBackButton: _isOnboarding,
+            continueButtonKey: const ValueKey('allergies.continue_button'),
+            backButtonKey: const ValueKey('allergies.back_button'),
           ),
         ],
       ),
@@ -347,6 +350,7 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: FigmaCheckboxCard(
+            key: const ValueKey('allergies.none_chip'),
             label: 'No allergies',
             isSelected: _noAllergies,
             onTap: _toggleNoAllergies,
@@ -360,6 +364,7 @@ class _AllergiesScreenState extends ConsumerState<AllergiesScreen> {
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: FigmaCheckboxCard(
+              key: ValueKey('allergies.${allergy.name}_chip'),
               label: allergy.displayName,
               isSelected: isSelected,
               onTap: () => _toggleAllergy(allergy),

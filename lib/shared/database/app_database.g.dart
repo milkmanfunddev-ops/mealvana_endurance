@@ -21070,6 +21070,21 @@ class $IntegrationsTableTable extends IntegrationsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -21112,6 +21127,7 @@ class $IntegrationsTableTable extends IntegrationsTable
     lastSyncAt,
     lastSyncStatus,
     lastSyncError,
+    needsUpload,
     createdAt,
     updatedAt,
   ];
@@ -21282,6 +21298,15 @@ class $IntegrationsTableTable extends IntegrationsTable
         ),
       );
     }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -21379,6 +21404,10 @@ class $IntegrationsTableTable extends IntegrationsTable
         DriftSqlType.string,
         data['${effectivePrefix}last_sync_error'],
       ),
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -21400,7 +21429,7 @@ class Integration extends DataClass implements Insertable<Integration> {
   final String id;
   final String userId;
 
-  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin'
+  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin', 'vdot'
   final String provider;
   final String accessToken;
   final String? refreshToken;
@@ -21417,6 +21446,7 @@ class Integration extends DataClass implements Insertable<Integration> {
   final DateTime? lastSyncAt;
   final String? lastSyncStatus;
   final String? lastSyncError;
+  final bool needsUpload;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Integration({
@@ -21438,6 +21468,7 @@ class Integration extends DataClass implements Insertable<Integration> {
     this.lastSyncAt,
     this.lastSyncStatus,
     this.lastSyncError,
+    required this.needsUpload,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -21492,6 +21523,7 @@ class Integration extends DataClass implements Insertable<Integration> {
     if (!nullToAbsent || lastSyncError != null) {
       map['last_sync_error'] = Variable<String>(lastSyncError);
     }
+    map['needs_upload'] = Variable<bool>(needsUpload);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -21543,6 +21575,7 @@ class Integration extends DataClass implements Insertable<Integration> {
       lastSyncError: lastSyncError == null && nullToAbsent
           ? const Value.absent()
           : Value(lastSyncError),
+      needsUpload: Value(needsUpload),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -21584,6 +21617,7 @@ class Integration extends DataClass implements Insertable<Integration> {
       lastSyncAt: serializer.fromJson<DateTime?>(json['lastSyncAt']),
       lastSyncStatus: serializer.fromJson<String?>(json['lastSyncStatus']),
       lastSyncError: serializer.fromJson<String?>(json['lastSyncError']),
+      needsUpload: serializer.fromJson<bool>(json['needsUpload']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -21618,6 +21652,7 @@ class Integration extends DataClass implements Insertable<Integration> {
       'lastSyncAt': serializer.toJson<DateTime?>(lastSyncAt),
       'lastSyncStatus': serializer.toJson<String?>(lastSyncStatus),
       'lastSyncError': serializer.toJson<String?>(lastSyncError),
+      'needsUpload': serializer.toJson<bool>(needsUpload),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -21642,6 +21677,7 @@ class Integration extends DataClass implements Insertable<Integration> {
     Value<DateTime?> lastSyncAt = const Value.absent(),
     Value<String?> lastSyncStatus = const Value.absent(),
     Value<String?> lastSyncError = const Value.absent(),
+    bool? needsUpload,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Integration(
@@ -21683,6 +21719,7 @@ class Integration extends DataClass implements Insertable<Integration> {
     lastSyncError: lastSyncError.present
         ? lastSyncError.value
         : this.lastSyncError,
+    needsUpload: needsUpload ?? this.needsUpload,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -21734,6 +21771,9 @@ class Integration extends DataClass implements Insertable<Integration> {
       lastSyncError: data.lastSyncError.present
           ? data.lastSyncError.value
           : this.lastSyncError,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -21760,6 +21800,7 @@ class Integration extends DataClass implements Insertable<Integration> {
           ..write('lastSyncAt: $lastSyncAt, ')
           ..write('lastSyncStatus: $lastSyncStatus, ')
           ..write('lastSyncError: $lastSyncError, ')
+          ..write('needsUpload: $needsUpload, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -21767,7 +21808,7 @@ class Integration extends DataClass implements Insertable<Integration> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     userId,
     provider,
@@ -21786,9 +21827,10 @@ class Integration extends DataClass implements Insertable<Integration> {
     lastSyncAt,
     lastSyncStatus,
     lastSyncError,
+    needsUpload,
     createdAt,
     updatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -21811,6 +21853,7 @@ class Integration extends DataClass implements Insertable<Integration> {
           other.lastSyncAt == this.lastSyncAt &&
           other.lastSyncStatus == this.lastSyncStatus &&
           other.lastSyncError == this.lastSyncError &&
+          other.needsUpload == this.needsUpload &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -21834,6 +21877,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
   final Value<DateTime?> lastSyncAt;
   final Value<String?> lastSyncStatus;
   final Value<String?> lastSyncError;
+  final Value<bool> needsUpload;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -21856,6 +21900,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     this.lastSyncAt = const Value.absent(),
     this.lastSyncStatus = const Value.absent(),
     this.lastSyncError = const Value.absent(),
+    this.needsUpload = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -21879,6 +21924,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     this.lastSyncAt = const Value.absent(),
     this.lastSyncStatus = const Value.absent(),
     this.lastSyncError = const Value.absent(),
+    this.needsUpload = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -21907,6 +21953,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     Expression<DateTime>? lastSyncAt,
     Expression<String>? lastSyncStatus,
     Expression<String>? lastSyncError,
+    Expression<bool>? needsUpload,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -21936,6 +21983,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
       if (lastSyncAt != null) 'last_sync_at': lastSyncAt,
       if (lastSyncStatus != null) 'last_sync_status': lastSyncStatus,
       if (lastSyncError != null) 'last_sync_error': lastSyncError,
+      if (needsUpload != null) 'needs_upload': needsUpload,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -21961,6 +22009,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     Value<DateTime?>? lastSyncAt,
     Value<String?>? lastSyncStatus,
     Value<String?>? lastSyncError,
+    Value<bool>? needsUpload,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -21988,6 +22037,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
       lastSyncStatus: lastSyncStatus ?? this.lastSyncStatus,
       lastSyncError: lastSyncError ?? this.lastSyncError,
+      needsUpload: needsUpload ?? this.needsUpload,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -22063,6 +22113,9 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     if (lastSyncError.present) {
       map['last_sync_error'] = Variable<String>(lastSyncError.value);
     }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -22096,6 +22149,7 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
           ..write('lastSyncAt: $lastSyncAt, ')
           ..write('lastSyncStatus: $lastSyncStatus, ')
           ..write('lastSyncError: $lastSyncError, ')
+          ..write('needsUpload: $needsUpload, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -43586,6 +43640,7 @@ typedef $$IntegrationsTableTableCreateCompanionBuilder =
       Value<DateTime?> lastSyncAt,
       Value<String?> lastSyncStatus,
       Value<String?> lastSyncError,
+      Value<bool> needsUpload,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -43610,6 +43665,7 @@ typedef $$IntegrationsTableTableUpdateCompanionBuilder =
       Value<DateTime?> lastSyncAt,
       Value<String?> lastSyncStatus,
       Value<String?> lastSyncError,
+      Value<bool> needsUpload,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -43711,6 +43767,11 @@ class $$IntegrationsTableTableFilterComposer
 
   ColumnFilters<String> get lastSyncError => $composableBuilder(
     column: $table.lastSyncError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -43824,6 +43885,11 @@ class $$IntegrationsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -43926,6 +43992,11 @@ class $$IntegrationsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -43987,6 +44058,7 @@ class $$IntegrationsTableTableTableManager
                 Value<DateTime?> lastSyncAt = const Value.absent(),
                 Value<String?> lastSyncStatus = const Value.absent(),
                 Value<String?> lastSyncError = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -44009,6 +44081,7 @@ class $$IntegrationsTableTableTableManager
                 lastSyncAt: lastSyncAt,
                 lastSyncStatus: lastSyncStatus,
                 lastSyncError: lastSyncError,
+                needsUpload: needsUpload,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -44033,6 +44106,7 @@ class $$IntegrationsTableTableTableManager
                 Value<DateTime?> lastSyncAt = const Value.absent(),
                 Value<String?> lastSyncStatus = const Value.absent(),
                 Value<String?> lastSyncError = const Value.absent(),
+                Value<bool> needsUpload = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -44055,6 +44129,7 @@ class $$IntegrationsTableTableTableManager
                 lastSyncAt: lastSyncAt,
                 lastSyncStatus: lastSyncStatus,
                 lastSyncError: lastSyncError,
+                needsUpload: needsUpload,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

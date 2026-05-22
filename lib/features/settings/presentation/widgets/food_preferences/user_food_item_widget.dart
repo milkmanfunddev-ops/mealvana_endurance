@@ -135,7 +135,7 @@ class UserFoodItemWidget extends ConsumerWidget {
                 ),
 
                 // Edit indicator
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.penToSquare,
                   size: AppIconSizes.sm,
                   color: AppColors.electrolyte.withOpacity(0.7),

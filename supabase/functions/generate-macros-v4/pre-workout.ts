@@ -19,6 +19,8 @@ import {
   type PlanState,
   type TemplateSelection,
   type PreWorkoutPhaseResult,
+  type PreWorkoutShortfall,
+  type AddOn,
   BUDGET_SPLITS,
   BANANA_CARBS,
   BANANA_SODIUM,
@@ -26,6 +28,15 @@ import {
   SPORTS_DRINK_CARBS,
   SPORTS_DRINK_SODIUM,
   SPORTS_DRINK_FLUID,
+  DATES_CARBS,
+  DATES_SODIUM,
+  DATES_FLUID,
+  APPLESAUCE_CARBS,
+  APPLESAUCE_SODIUM,
+  APPLESAUCE_FLUID,
+  RAISINS_CARBS,
+  RAISINS_SODIUM,
+  RAISINS_FLUID,
 } from './types.ts';
 
 import {
@@ -104,6 +115,35 @@ function makeSelection(t: PreWorkoutTemplate, servings: number): TemplateSelecti
 function makeBananaAddOn() {
   return { type: 'banana' as const, carbs_g: BANANA_CARBS, sodium_mg: BANANA_SODIUM, fluid_ml: BANANA_FLUID, servings: 1 };
 }
+
+// Pass 1.5 universal fallback add-ons (#15). All three are vegan, gluten-free,
+// and free of the common allergens we filter on, so the only gating needed in
+// Pass 1.5 is dislikes + macro headroom.
+function makeDatesAddOn() {
+  return { type: 'dates' as const, carbs_g: DATES_CARBS, sodium_mg: DATES_SODIUM, fluid_ml: DATES_FLUID, servings: 1 };
+}
+
+function makeApplesauceAddOn() {
+  return { type: 'applesauce' as const, carbs_g: APPLESAUCE_CARBS, sodium_mg: APPLESAUCE_SODIUM, fluid_ml: APPLESAUCE_FLUID, servings: 1 };
+}
+
+function makeRaisinsAddOn() {
+  return { type: 'raisins' as const, carbs_g: RAISINS_CARBS, sodium_mg: RAISINS_SODIUM, fluid_ml: RAISINS_FLUID, servings: 1 };
+}
+
+interface FallbackFoodSpec {
+  name: 'dates' | 'applesauce' | 'raisins';
+  carbs: number;
+  sodium: number;
+  fluid: number;
+  make: () => AddOn;
+}
+
+const PASS_1_5_FALLBACK_FOODS: FallbackFoodSpec[] = [
+  { name: 'dates', carbs: DATES_CARBS, sodium: DATES_SODIUM, fluid: DATES_FLUID, make: makeDatesAddOn },
+  { name: 'applesauce', carbs: APPLESAUCE_CARBS, sodium: APPLESAUCE_SODIUM, fluid: APPLESAUCE_FLUID, make: makeApplesauceAddOn },
+  { name: 'raisins', carbs: RAISINS_CARBS, sodium: RAISINS_SODIUM, fluid: RAISINS_FLUID, make: makeRaisinsAddOn },
+];
 
 function makeSportsDrinkAddOn(servings: number = 1) {
   return {
@@ -582,7 +622,7 @@ function scoreDrinkOption(
  * Scores every (drink × servings) combo against sodium and fluid targets.
  * "No drink" is a valid baseline.
  */
-function pickDrink(
+export function pickDrink(
   drinkTemplates: PreWorkoutTemplate[],
   proteinDelivered: number,
   totalSodiumDelivered: number,
@@ -610,7 +650,15 @@ function pickDrink(
       if (fluidTarget > 0 && resultFluid > fluidTarget * 1.5) continue;
       if (resultCarbs > carbsHigh + 1e-6) continue;
       if (resultProtein > proteinHigh + 1e-6) continue;
-      if (resultSodium > sodiumHigh + 1e-6) continue;
+      // Sodium cap: reject only if the drink itself would consume more sodium
+      // headroom than remains. When state is already over sodium_high
+      // (headroom = 0), a zero-sodium drink like water is still selectable
+      // because it can't make a sodium overage worse. Previously this check
+      // was `resultSodium > sodiumHigh`, which rejected water in that case
+      // and produced no-water plans. (#22)
+      const sodiumHeadroom = Math.max(0, sodiumHigh - totalSodiumDelivered);
+      const drinkSodiumAdded = template.sodium_mg * servings;
+      if (drinkSodiumAdded > sodiumHeadroom + 1e-6) continue;
       if (resultFluid > fluidHigh + 1e-6) continue;
 
       const score = scoreDrinkOption(resultSodium, resultFluid, sodiumTarget, fluidTarget);
@@ -630,7 +678,7 @@ function pickDrink(
  * Pick the best electrolyte supplement for sodium gap.
  * Independent from drink selection — electrolytes dissolve in water.
  */
-function pickElectrolyte(
+export function pickElectrolyte(
   electrolyteTemplates: PreWorkoutTemplate[],
   carbsDelivered: number,
   proteinDelivered: number,
@@ -658,10 +706,22 @@ function pickElectrolyte(
       const resultSodium = totalSodiumDelivered + template.sodium_mg * srv;
       // Electrolytes have 0 fluid_ml — they dissolve in the drink
       const resultFluid = totalFluidDelivered + template.fluid_ml * srv;
-      if (resultCarbs > carbsHigh + 1e-6) continue;
-      if (resultProtein > proteinHigh + 1e-6) continue;
-      if (resultSodium > sodiumHigh + 1e-6) continue;
-      if (resultFluid > fluidHigh + 1e-6) continue;
+      // Headroom-based caps: reject only candidates whose delta exceeds remaining
+      // headroom, so zero-delta picks (e.g. a zero-carb electrolyte tablet when
+      // state is already over carbs_high) stay selectable on their sodium criteria.
+      // Mirrors the fix in pickDrink for #22.
+      const carbsAdded = template.carbs_per_serving * srv;
+      const proteinAdded = template.protein_per_serving * srv;
+      const sodiumAdded = template.sodium_mg * srv;
+      const fluidAdded = template.fluid_ml * srv;
+      const carbsHeadroom = Math.max(0, carbsHigh - carbsDelivered);
+      const proteinHeadroom = Math.max(0, proteinHigh - proteinDelivered);
+      const sodiumHeadroom = Math.max(0, sodiumHigh - totalSodiumDelivered);
+      const fluidHeadroom = Math.max(0, fluidHigh - totalFluidDelivered);
+      if (carbsAdded > carbsHeadroom + 1e-6) continue;
+      if (proteinAdded > proteinHeadroom + 1e-6) continue;
+      if (sodiumAdded > sodiumHeadroom + 1e-6) continue;
+      if (fluidAdded > fluidHeadroom + 1e-6) continue;
 
       const score = scoreDrinkOption(resultSodium, resultFluid, sodiumTarget, fluidTarget) +
         (carbsTarget > 0 ? Math.max(0, resultCarbs - carbsHigh) / carbsTarget : 0) * 4;
@@ -704,6 +764,37 @@ export function selectPreWorkoutFoods(
 
   const phases = getActiveSubPhases(hoursBefore);
   const phaseTargets = splitTargets(targets, hoursBefore);
+
+  // ── Pre-check: redistribute budget from empty phases ─────────────
+  // If a phase has zero eligible food templates (e.g. all top-off foods
+  // disliked), redistribute its carb/protein/fat budget proportionally
+  // to the surviving phases so the targets aren't silently dropped.
+  const emptyPhases = phases.filter(
+    (p) => getEligibleTemplates(foodTemplates, p, diet, dislikedFoods, allergies).length === 0,
+  );
+  if (emptyPhases.length > 0 && emptyPhases.length < phases.length) {
+    const activePhases = phases.filter((p) => !emptyPhases.includes(p));
+    const macroKeys: Array<keyof SubPhaseTargets> = [
+      'carbs_g', 'protein_g', 'fat_g', 'sodium_mg', 'water_ml',
+    ];
+    for (const key of macroKeys) {
+      let orphaned = 0;
+      for (const ep of emptyPhases) {
+        orphaned += phaseTargets.get(ep)?.[key] ?? 0;
+      }
+      if (orphaned <= 0) continue;
+      let activeTotal = 0;
+      for (const ap of activePhases) {
+        activeTotal += phaseTargets.get(ap)?.[key] ?? 0;
+      }
+      for (const ap of activePhases) {
+        const t = phaseTargets.get(ap)!;
+        const proportion = activeTotal > 0 ? t[key] / activeTotal : 1 / activePhases.length;
+        t[key] = Math.round((t[key] + orphaned * proportion) * 10) / 10;
+      }
+    }
+    console.log(`[ALGO-C] Redistributed budget from empty phases [${emptyPhases.join(', ')}] to [${activePhases.join(', ')}]`);
+  }
 
   const state: PlanState = {
     used_foods: new Set(),
@@ -753,6 +844,40 @@ export function selectPreWorkoutFoods(
     }
 
     if (candidates.length === 0) {
+      // No template survived preference / diet / allergen filtering for this
+      // phase. Emit shortfalls so the UI surfaces "no foods matched, try X"
+      // guidance instead of silently dropping the carb target (issue #15).
+      // Specifically the top-up-only window: when hoursBefore < 0.5 and all
+      // top-up templates are disliked, this is the only phase — no
+      // redistribution can help, so the shortfall is the user's only signal.
+      const shortfalls: PreWorkoutShortfall[] = [];
+      if ((pTargets?.carbs_g ?? 0) > 0) {
+        shortfalls.push({
+          macro: 'carbs',
+          delivered: 0,
+          target: Math.round(pTargets!.carbs_g),
+          unit: 'g',
+          reason: 'all_disliked',
+        });
+      }
+      if ((pTargets?.sodium_mg ?? 0) > 0) {
+        shortfalls.push({
+          macro: 'sodium',
+          delivered: 0,
+          target: Math.round(pTargets!.sodium_mg),
+          unit: 'mg',
+          reason: 'all_disliked',
+        });
+      }
+      if ((pTargets?.water_ml ?? 0) > 0) {
+        shortfalls.push({
+          macro: 'fluid',
+          delivered: 0,
+          target: Math.round(pTargets!.water_ml),
+          unit: 'ml',
+          reason: 'all_disliked',
+        });
+      }
       results.push({
         phase,
         primary: null,
@@ -762,6 +887,7 @@ export function selectPreWorkoutFoods(
         total_fat_g: 0,
         total_sodium_mg: 0,
         total_fluid_ml: 0,
+        ...(shortfalls.length > 0 && { shortfalls }),
       });
       continue;
     }
@@ -875,6 +1001,39 @@ export function selectPreWorkoutFoods(
         filled = true;
         console.log(`[ALGO-C] Added banana to ${targetPhase} phase (+${BANANA_CARBS}g carbs). ` +
           `New total: ${(totalCarbsAfterPass1 + BANANA_CARBS).toFixed(1)}g`);
+      }
+    }
+
+    // #15: Try universal fallback foods (dates, applesauce, raisins) if the
+    // banana branch didn't fire or didn't close the gap. These are all vegan,
+    // gluten-free, and allergen-clean, so they only need dislikes + headroom
+    // checks. We loop until we've closed the gap or exhausted the catalog —
+    // this matters most in the top-up-only window where a single phase exists
+    // and the banana may have been disliked.
+    for (const food of PASS_1_5_FALLBACK_FOODS) {
+      const currentTotal = results.reduce((sum, p) => sum + p.total_carbs_g, 0);
+      if (currentTotal >= targets.carbs_low_g) break;
+      if (state.used_foods.has(food.name)) continue;
+      if (dislikedSet.has(food.name)) continue;
+      if (wouldExceedHighs(state, food.carbs, 0, food.sodium, food.fluid)) continue;
+
+      // Prefer top_up phase for fast-digesting fallbacks; fall back to snack/meal.
+      const phaseOrder: SubPhaseType[] = ['top_up', 'snack', 'meal'];
+      for (const targetPhase of phaseOrder) {
+        const phaseIdx = results.findIndex((p) => p.phase === targetPhase);
+        if (phaseIdx < 0) continue;
+        const phase = results[phaseIdx];
+        phase.add_ons.push(food.make());
+        phase.total_carbs_g = Math.round((phase.total_carbs_g + food.carbs) * 10) / 10;
+        phase.total_sodium_mg = Math.round((phase.total_sodium_mg + food.sodium) * 10) / 10;
+        phase.total_fluid_ml = Math.round((phase.total_fluid_ml + food.fluid) * 10) / 10;
+        state.used_foods.add(food.name);
+        state.carbs_delivered += food.carbs;
+        state.sodium_delivered += food.sodium;
+        state.fluid_delivered += food.fluid;
+        console.log(`[ALGO-C] Added ${food.name} to ${targetPhase} phase (+${food.carbs}g carbs). ` +
+          `New total: ${(currentTotal + food.carbs).toFixed(1)}g`);
+        break;
       }
     }
 

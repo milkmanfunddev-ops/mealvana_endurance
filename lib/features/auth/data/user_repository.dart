@@ -496,14 +496,41 @@ class UserRepository with SyncableRepository {
     );
   }
 
-  /// Get liked foods for a user
+  /// Get liked foods for a user.
+  ///
+  /// Reads from local Drift first. If Drift has zero rows for this user
+  /// (post-wipe, fresh install, re-onboarded with different user_id), falls
+  /// back to Supabase via [fetchAndCacheRemoteFoodPreferences] which hydrates
+  /// Drift before returning. This prevents the silent "empty list reaches the
+  /// edge function" failure documented in #23.
   Future<List<String>> getLikedFoods(String userId) async {
+    final local = await database.foodPreferencesDao.getLikedFoods(userId);
+    if (local.isNotEmpty) return local;
+    await _safeHydrateFoodPreferencesFromRemote(userId);
     return await database.foodPreferencesDao.getLikedFoods(userId);
   }
 
-  /// Get disliked foods for a user
+  /// Get disliked foods for a user.
+  ///
+  /// Same Drift-first / Supabase-fallback policy as [getLikedFoods]. See #23.
   Future<List<String>> getDislikedFoods(String userId) async {
+    final local = await database.foodPreferencesDao.getDislikedFoods(userId);
+    if (local.isNotEmpty) return local;
+    await _safeHydrateFoodPreferencesFromRemote(userId);
     return await database.foodPreferencesDao.getDislikedFoods(userId);
+  }
+
+  /// Hydrate food_preferences from Supabase when the local Drift cache is
+  /// empty. Failures are swallowed because [fetchAndCacheRemoteFoodPreferences]
+  /// already reports to Sentry on its own error path, and we don't want a
+  /// network blip on plan generation to throw all the way up into the
+  /// pipeline.
+  Future<void> _safeHydrateFoodPreferencesFromRemote(String userId) async {
+    try {
+      await fetchAndCacheRemoteFoodPreferences(userId);
+    } catch (_) {
+      // Reported by fetchAndCacheRemoteFoodPreferences via SentryReporter.
+    }
   }
 
   /// Pull custom foods from Supabase and cache locally

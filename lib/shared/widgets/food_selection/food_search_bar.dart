@@ -68,7 +68,7 @@ class FoodSearchBar extends StatelessWidget {
                 children: [
                   // Barcode button
                   IconButton(
-                    icon: Icon(
+                    icon: FaIcon(
                       FontAwesomeIcons.barcode,
                       color: AppColors.orange,
                       size: AppIconSizes.controlIcon,
@@ -88,7 +88,7 @@ class FoodSearchBar extends StatelessWidget {
                           color: Colors.white,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
+                        child: FaIcon(
                           FontAwesomeIcons.magnifyingGlass,
                           size: AppIconSizes.controlIcon,
                           color: AppColors.blackberry,
@@ -100,7 +100,7 @@ class FoodSearchBar extends StatelessWidget {
                   // Filter button (only show for preferences screen)
                   if (showFilters)
                     IconButton(
-                      icon: Icon(
+                      icon: FaIcon(
                         FontAwesomeIcons.filter,
                         color: filtersEnabled
                             ? AppColors.orange
@@ -140,7 +140,7 @@ class FoodSearchBar extends StatelessWidget {
           Center(
             child: TextButton.icon(
               onPressed: onClear,
-              icon: Icon(
+              icon: FaIcon(
                 FontAwesomeIcons.xmark,
                 size: AppIconSizes.sm,
                 color: AppColors.orange,

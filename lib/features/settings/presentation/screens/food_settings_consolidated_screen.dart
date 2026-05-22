@@ -258,7 +258,7 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
             behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
-                const Icon(
+                const FaIcon(
                   FontAwesomeIcons.leaf,
                   color: AppColors.orange,
                   size: 20,
@@ -342,7 +342,7 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
             behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
-                const Icon(
+                const FaIcon(
                   FontAwesomeIcons.triangleExclamation,
                   color: AppColors.orange,
                   size: 20,
@@ -431,7 +431,7 @@ class _FoodSettingsConsolidatedScreenState extends ConsumerState<FoodSettingsCon
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              const Icon(
+              const FaIcon(
                 FontAwesomeIcons.utensils,
                 color: AppColors.orange,
                 size: 20,

@@ -10,7 +10,11 @@ import {
   garminTimestampToDateString,
   garminTimestampToISO,
 } from "./mappers.ts";
+import { isEnduranceSportType } from "./types.ts";
 import type { GarminActivitySummary } from "./types.ts";
+
+/** Postgres unique-violation error code surfaced by PostgREST. */
+const PG_UNIQUE_VIOLATION = "23505";
 
 type GarminActivityTiming = Pick<
   GarminActivitySummary,
@@ -203,4 +207,76 @@ export function buildGarminCompletionUpdate(
   }
 
   return updateFields;
+}
+
+export type GarminInsertOutcome =
+  | { kind: "inserted"; activityId: string }
+  | { kind: "duplicate" } // another push already inserted this summaryId
+  | { kind: "skipped_non_endurance"; sportType: string }
+  | { kind: "skipped_no_summary_id" }
+  | { kind: "error"; error: unknown };
+
+/**
+ * Insert a new completed activity for a Garmin upload that has no matching
+ * planned activity. Returns "inserted" only when WE created the row — the
+ * caller should fire a OneSignal push exactly when the outcome is
+ * "inserted" so concurrent webhooks don't double-notify.
+ *
+ * Idempotency: relies on the UNIQUE (user_id, garmin_summary_id) index
+ * (migration 20260506200000). On 23505 we report "duplicate" so the caller
+ * skips the notification.
+ *
+ * Sport gating: only endurance sports (run / bike / swim / triathlon /
+ * duathlon / multisport) get auto-created. Walks, strength sessions, and
+ * Garmin's "other" bucket have no nutrition context to attach to.
+ */
+export async function insertGarminActivityIfMissing(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  activity: GarminActivitySummary,
+  // deno-lint-ignore no-explicit-any
+  mappedActivity: Record<string, any>,
+): Promise<GarminInsertOutcome> {
+  const sportType = String(mappedActivity.activity_type ?? "");
+  if (!isEnduranceSportType(sportType)) {
+    return { kind: "skipped_non_endurance", sportType };
+  }
+
+  const summaryId = activity.summaryId ??
+    (activity as { activityId?: string }).activityId;
+  if (!summaryId) {
+    return { kind: "skipped_no_summary_id" };
+  }
+
+  const completionFields = buildGarminCompletionUpdate(activity, mappedActivity);
+
+  // Merge: mapped row supplies user_id / activity_type / title /
+  // scheduled_date_time / sport metrics; completion fields supply status,
+  // completed_at, last_synced_at, etc. Completion fields win on overlap.
+  const insertRow: Record<string, unknown> = {
+    ...mappedActivity,
+    ...completionFields,
+    garmin_summary_id: String(summaryId),
+    // Server-created — no client-side upload queue entry needed.
+    needs_upload: false,
+  };
+
+  const { data, error } = await supabase
+    .from("activities")
+    .insert(insertRow)
+    .select("id")
+    .single();
+
+  if (error) {
+    if ((error as { code?: string }).code === PG_UNIQUE_VIOLATION) {
+      return { kind: "duplicate" };
+    }
+    return { kind: "error", error };
+  }
+
+  const id = (data as { id?: string } | null)?.id;
+  if (!id) {
+    return { kind: "error", error: new Error("Insert returned no id") };
+  }
+  return { kind: "inserted", activityId: id };
 }

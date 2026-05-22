@@ -287,6 +287,7 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
                       child: Row(
                         children: [
                           GestureDetector(
+                            key: const ValueKey('swimming_prefs.back_button'),
                             onTap: widget.onBack ?? () => context.pop(),
                             child: Container(
                               width: 48,
@@ -333,6 +334,7 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
                       children: [
                         // Title
                         const Text(
+                          key: ValueKey('swimming_prefs.title'),
                           'Swimming details',
                           style: TextStyle(
                             fontFamily: 'Sansita',
@@ -350,12 +352,19 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
                           minutesController: _cssMinutesController,
                           secondsController: _cssSecondsController,
                           figmaCream: AppColors.textDark,
+                          minutesFieldKey: const ValueKey(
+                            'swimming_prefs.css_minutes_field',
+                          ),
+                          secondsFieldKey: const ValueKey(
+                            'swimming_prefs.css_seconds_field',
+                          ),
                         ),
 
                         const SizedBox(height: 28),
 
                         // Wetsuit toggle
                         FigmaToggleCard(
+                          key: const ValueKey('swimming_prefs.wetsuit_toggle'),
                           label: 'I typically wear a wetsuit',
                           value: _typicalWetsuit,
                           onChanged: (value) =>
@@ -382,18 +391,33 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
                         // Swim cap options
                         FigmaRadioOptionList<String>(
                           items: const [
-                            FigmaRadioOptionItem(value: 'none', label: 'None'),
+                            FigmaRadioOptionItem(
+                              value: 'none',
+                              label: 'None',
+                              valueKey: ValueKey(
+                                'swimming_prefs.cap_none_button',
+                              ),
+                            ),
                             FigmaRadioOptionItem(
                               value: 'latex',
                               label: 'Latex',
+                              valueKey: ValueKey(
+                                'swimming_prefs.cap_latex_button',
+                              ),
                             ),
                             FigmaRadioOptionItem(
                               value: 'silicone',
                               label: 'Silicone',
+                              valueKey: ValueKey(
+                                'swimming_prefs.cap_silicone_button',
+                              ),
                             ),
                             FigmaRadioOptionItem(
                               value: 'neoprene',
                               label: 'Neoprene',
+                              valueKey: ValueKey(
+                                'swimming_prefs.cap_neoprene_button',
+                              ),
                             ),
                           ],
                           selectedValue: _swimCapType,
@@ -417,6 +441,7 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
               isLoading: _isSaving,
               buttonText: _isSettings ? 'Save' : 'Continue',
               showBackButton: _isOnboarding,
+              continueButtonKey: const ValueKey('swimming_prefs.save_button'),
             ),
           ],
         ),
@@ -431,11 +456,15 @@ class _CSSSection extends StatelessWidget {
     required this.minutesController,
     required this.secondsController,
     required this.figmaCream,
+    this.minutesFieldKey,
+    this.secondsFieldKey,
   });
 
   final TextEditingController minutesController;
   final TextEditingController secondsController;
   final Color figmaCream;
+  final Key? minutesFieldKey;
+  final Key? secondsFieldKey;
 
   @override
   Widget build(BuildContext context) {
@@ -487,6 +516,7 @@ class _CSSSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TextFormField(
+                  key: minutesFieldKey,
                   controller: minutesController,
                   keyboardType: TextInputType.number,
                   style: TextStyle(
@@ -555,6 +585,7 @@ class _CSSSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TextFormField(
+                  key: secondsFieldKey,
                   controller: secondsController,
                   keyboardType: TextInputType.number,
                   style: TextStyle(

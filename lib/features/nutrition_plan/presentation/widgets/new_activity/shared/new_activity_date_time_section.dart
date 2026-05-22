@@ -31,6 +31,7 @@ class NewActivityDateTimeSection extends StatelessWidget {
       children: [
         // Date and Time side-by-side
         Row(
+          key: const ValueKey('activity_create.datetime_labels'),
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // DATE section
@@ -45,6 +46,7 @@ class NewActivityDateTimeSection extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
+                  key: const ValueKey('activity_create.datetime_display'),
                   _formatDate(selectedDate),
                   style: AppTextStyles.dataNumber.copyWith(
                     color: isDark ? AppColors.cream : AppColors.blackberry,
@@ -85,11 +87,12 @@ class NewActivityDateTimeSection extends StatelessWidget {
 
         // Edit link (centered)
         GestureDetector(
+          key: const ValueKey('activity_create.edit_datetime_button'),
           onTap: onEditTapped,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.penToSquare,
                 size: 14,
                 color: AppColors.dragonfruit,
@@ -123,7 +126,7 @@ class NewActivityDateTimeSection extends StatelessWidget {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     final monthName = months[date.month - 1];
     return '$monthName ${date.day}, ${date.year}';

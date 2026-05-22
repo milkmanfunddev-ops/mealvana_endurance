@@ -28,8 +28,7 @@ class _WeeklyOverviewChartState extends State<WeeklyOverviewChart> {
   // Sunday-start day labels
   static const _dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-  int get _dataPointCount =>
-      widget.weeklyMacros.where((m) => m != null).length;
+  int get _dataPointCount => widget.weeklyMacros.where((m) => m != null).length;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +45,7 @@ class _WeeklyOverviewChartState extends State<WeeklyOverviewChart> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               GestureDetector(
+                key: const ValueKey('nutrition_diary.weekly_overview_toggle'),
                 onTap: () => setState(() => _isExpanded = !_isExpanded),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -69,6 +69,7 @@ class _WeeklyOverviewChartState extends State<WeeklyOverviewChart> {
                 ),
               ),
               IconButton(
+                key: const ValueKey('weekly_chart.info_button'),
                 onPressed: () => _showInfoDialog(context),
                 icon: FaIcon(
                   FontAwesomeIcons.circleInfo,
@@ -94,7 +95,9 @@ class _WeeklyOverviewChartState extends State<WeeklyOverviewChart> {
                 // Sparse data check: need at least 2 data points for a meaningful chart
                 if (_dataPointCount < 2)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.lg,
+                    ),
                     child: Center(
                       child: Text(
                         'Calculate more days to see weekly trends',
@@ -108,152 +111,169 @@ class _WeeklyOverviewChartState extends State<WeeklyOverviewChart> {
                 else ...[
                   // Chart
                   SizedBox(
-                height: 180,
-                child: LineChart(
-                  LineChartData(
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      horizontalInterval: _calculateInterval(),
-                      getDrawingHorizontalLine: (value) => FlLine(
-                        color: textColor.withValues(alpha: 0.1),
-                        strokeWidth: 1,
-                      ),
-                    ),
-                    titlesData: FlTitlesData(
-                      topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
-                      leftTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 24,
-                          getTitlesWidget: (value, meta) {
-                            final index = value.toInt();
-                            if (index < 0 || index >= _dayLabels.length) {
-                              return const SizedBox.shrink();
-                            }
-                            return Text(
-                              _dayLabels[index],
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: textColor.withValues(alpha: 0.6),
-                                fontSize: 11,
-                              ),
-                            );
-                          },
+                    key: const ValueKey('weekly_chart.chart'),
+                    height: 180,
+                    child: LineChart(
+                      LineChartData(
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: false,
+                          horizontalInterval: _calculateInterval(),
+                          getDrawingHorizontalLine: (value) => FlLine(
+                            color: textColor.withValues(alpha: 0.1),
+                            strokeWidth: 1,
+                          ),
+                        ),
+                        titlesData: FlTitlesData(
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 24,
+                              interval: 1,
+                              getTitlesWidget: (value, meta) {
+                                // Only render labels at integer day indices to
+                                // avoid duplicates when fl_chart picks a
+                                // sub-integer interval.
+                                if (value != value.roundToDouble()) {
+                                  return const SizedBox.shrink();
+                                }
+                                final index = value.toInt();
+                                if (index < 0 || index >= _dayLabels.length) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Text(
+                                  _dayLabels[index],
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: textColor.withValues(alpha: 0.6),
+                                    fontSize: 11,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        borderData: FlBorderData(show: false),
+                        lineBarsData: [
+                          // Calories line (scaled down to fit with macros)
+                          _buildLine(
+                            (m) => m.totalCalories / 10,
+                            AppColors.cream,
+                            isDark,
+                          ),
+                          // Carbs
+                          _buildLine(
+                            (m) => m.carbG,
+                            AppColors.electrolyte,
+                            isDark,
+                          ),
+                          // Protein
+                          _buildLine((m) => m.protG, AppColors.orange, isDark),
+                          // Fat
+                          _buildLine(
+                            (m) => m.fatG,
+                            AppColors.dragonfruit,
+                            isDark,
+                          ),
+                        ],
+                        lineTouchData: LineTouchData(
+                          enabled: true,
+                          touchTooltipData: LineTouchTooltipData(
+                            getTooltipColor: (spot) =>
+                                isDark ? AppColors.blackberry : Colors.white,
+                            getTooltipItems: (touchedSpots) {
+                              return touchedSpots.map((spot) {
+                                final dayIndex = spot.x.toInt();
+                                if (dayIndex < 0 ||
+                                    dayIndex >= widget.weeklyMacros.length) {
+                                  return null;
+                                }
+                                final macro = widget.weeklyMacros[dayIndex];
+                                if (macro == null) return null;
+
+                                String label;
+                                double value;
+                                switch (spot.barIndex) {
+                                  case 0:
+                                    label = 'Cal';
+                                    value = macro.totalCalories;
+                                    break;
+                                  case 1:
+                                    label = 'C';
+                                    value = macro.carbG;
+                                    break;
+                                  case 2:
+                                    label = 'P';
+                                    value = macro.protG;
+                                    break;
+                                  case 3:
+                                    label = 'F';
+                                    value = macro.fatG;
+                                    break;
+                                  default:
+                                    label = '';
+                                    value = 0;
+                                }
+                                return LineTooltipItem(
+                                  '$label: ${value.round()}${spot.barIndex == 0 ? '' : 'g'}',
+                                  TextStyle(
+                                    color: spot.bar.color,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                );
+                              }).toList();
+                            },
+                          ),
                         ),
                       ),
                     ),
-                    borderData: FlBorderData(show: false),
-                    lineBarsData: [
-                      // Calories line (scaled down to fit with macros)
-                      _buildLine(
-                        (m) => m.totalCalories / 10,
-                        AppColors.cream,
-                        isDark,
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Legend
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _LegendItem(
+                        key: const ValueKey('weekly_chart.legend_cal'),
+                        color: AppColors.cream,
+                        label: 'Cal',
+                        isDark: isDark,
                       ),
-                      // Carbs
-                      _buildLine(
-                        (m) => m.carbG,
-                        AppColors.electrolyte,
-                        isDark,
+                      const SizedBox(width: 16),
+                      _LegendItem(
+                        key: const ValueKey('weekly_chart.legend_carbs'),
+                        color: AppColors.electrolyte,
+                        label: 'Carbs',
+                        isDark: isDark,
                       ),
-                      // Protein
-                      _buildLine(
-                        (m) => m.protG,
-                        AppColors.orange,
-                        isDark,
+                      const SizedBox(width: 16),
+                      _LegendItem(
+                        key: const ValueKey('weekly_chart.legend_protein'),
+                        color: AppColors.orange,
+                        label: 'Protein',
+                        isDark: isDark,
                       ),
-                      // Fat
-                      _buildLine(
-                        (m) => m.fatG,
-                        AppColors.dragonfruit,
-                        isDark,
+                      const SizedBox(width: 16),
+                      _LegendItem(
+                        key: const ValueKey('weekly_chart.legend_fat'),
+                        color: AppColors.dragonfruit,
+                        label: 'Fat',
+                        isDark: isDark,
                       ),
                     ],
-                    lineTouchData: LineTouchData(
-                      enabled: true,
-                      touchTooltipData: LineTouchTooltipData(
-                        getTooltipColor: (spot) =>
-                            isDark ? AppColors.blackberry : Colors.white,
-                        getTooltipItems: (touchedSpots) {
-                          return touchedSpots.map((spot) {
-                            final dayIndex = spot.x.toInt();
-                            if (dayIndex < 0 ||
-                                dayIndex >= widget.weeklyMacros.length) {
-                              return null;
-                            }
-                            final macro = widget.weeklyMacros[dayIndex];
-                            if (macro == null) return null;
-
-                            String label;
-                            double value;
-                            switch (spot.barIndex) {
-                              case 0:
-                                label = 'Cal';
-                                value = macro.totalCalories;
-                                break;
-                              case 1:
-                                label = 'C';
-                                value = macro.carbG;
-                                break;
-                              case 2:
-                                label = 'P';
-                                value = macro.protG;
-                                break;
-                              case 3:
-                                label = 'F';
-                                value = macro.fatG;
-                                break;
-                              default:
-                                label = '';
-                                value = 0;
-                            }
-                            return LineTooltipItem(
-                              '$label: ${value.round()}${spot.barIndex == 0 ? '' : 'g'}',
-                              TextStyle(
-                                color: spot.bar.color,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
-                              ),
-                            );
-                          }).toList();
-                        },
-                      ),
-                    ),
                   ),
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.md),
-
-              // Legend
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _LegendItem(
-                      color: AppColors.cream, label: 'Cal', isDark: isDark),
-                  const SizedBox(width: 16),
-                  _LegendItem(
-                      color: AppColors.electrolyte,
-                      label: 'Carbs',
-                      isDark: isDark),
-                  const SizedBox(width: 16),
-                  _LegendItem(
-                      color: AppColors.orange,
-                      label: 'Protein',
-                      isDark: isDark),
-                  const SizedBox(width: 16),
-                  _LegendItem(
-                      color: AppColors.dragonfruit,
-                      label: 'Fat',
-                      isDark: isDark),
                 ],
-              ),
-            ],
               ],
             ),
           ),
@@ -282,11 +302,7 @@ class _WeeklyOverviewChartState extends State<WeeklyOverviewChart> {
       dotData: FlDotData(
         show: true,
         getDotPainter: (spot, percent, barData, index) {
-          return FlDotCirclePainter(
-            radius: 3,
-            color: color,
-            strokeWidth: 0,
-          );
+          return FlDotCirclePainter(radius: 3, color: color, strokeWidth: 0);
         },
       ),
       belowBarData: BarAreaData(show: false),
@@ -306,15 +322,13 @@ class _WeeklyOverviewChartState extends State<WeeklyOverviewChart> {
   }
 
   void _showInfoDialog(BuildContext context) {
-    PeriodizationBottomSheet.show(
-      context,
-      weeklyMacros: widget.weeklyMacros,
-    );
+    PeriodizationBottomSheet.show(context, weeklyMacros: widget.weeklyMacros);
   }
 }
 
 class _LegendItem extends StatelessWidget {
   const _LegendItem({
+    super.key,
     required this.color,
     required this.label,
     required this.isDark,
@@ -332,10 +346,7 @@ class _LegendItem extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
         Text(

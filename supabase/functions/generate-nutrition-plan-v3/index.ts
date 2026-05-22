@@ -1,7 +1,8 @@
 /**
  * Generate Nutrition Plan V3 Edge Function
  *
- * Algorithm C pre-workout food selection with rule-based during and LP-based after phases.
+ * Pre-workout uses Algorithm C food selection; during and after both run a
+ * template solver as the primary path with rule-based / LP fallbacks.
  *
  * Pre-workout (before) phase:
  * - Algorithm C from generate-macros-v4 (scoring/stacking/drink/electrolyte)
@@ -9,10 +10,10 @@
  * - Transformed to V2's BeforePhaseResult shape
  *
  * During phase:
- * - Rule-based solver with LP fallback
+ * - during_workout_templates solver → rule-based solver → LP fallback
  *
  * After phase:
- * - LP solver with greedy fallback
+ * - post_workout_templates solver → LP fallback
  *
  * Brick workouts:
  * - Multi-segment with transitions (T1, T2)
@@ -20,8 +21,9 @@
  * Module structure:
  * - types.ts: PlanInputV2, LPPhaseResult interfaces
  * - by-hour-apportionment.ts: deprecated server-side by-hour placement
- * - during-phase.ts: rule-based during + electrolyte post-processing
- * - lp-phase.ts: LP solver orchestration (after phase + LP fallback)
+ * - during-phase.ts: during-workout template + rule solver + LP fallback
+ * - after-phase.ts: post-workout template solver + LP fallback
+ * - lp-phase.ts: LP solver orchestration
  * - validation.ts: phase result validation
  * - brick-handler.ts: brick workout multi-segment handler
  * - before-phase.ts: Algorithm C transformation layer
@@ -46,6 +48,7 @@ import {
 import type { LPPhaseResult, PlanInputV2 } from "./types.ts";
 import { generateBeforePhaseV3 } from "./before-phase.ts";
 import { generateDuringPhase } from "./during-phase.ts";
+import { generateAfterPhase } from "./after-phase.ts";
 import { generateLPPhase } from "./lp-phase.ts";
 import {
   flattenBeforeFoods,
@@ -174,22 +177,19 @@ serve(async (req) => {
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
 
-        // After: LP-based
+        // After: template solver → LP fallback
         input.macro_targets.post_run
           ? timeAsync(
             "after_phase",
             () =>
-              generateLPPhase(
+              generateAfterPhase(
                 supabase,
-                "after",
                 input.macro_targets.post_run,
                 activityType,
                 input.liked_foods,
                 input.willing_to_try_foods,
                 input.disliked_foods,
                 input.device_id,
-                undefined,
-                undefined,
                 input.allergies,
                 input.dietary_preference,
               ),
@@ -262,6 +262,29 @@ serve(async (req) => {
     if (duringPhaseResult.template_metadata) {
       duringResponse.template_metadata = duringPhaseResult.template_metadata;
     }
+    if (
+      duringPhaseResult.shortfalls &&
+      duringPhaseResult.shortfalls.length > 0
+    ) {
+      duringResponse.shortfalls = duringPhaseResult.shortfalls;
+    }
+
+    // Build the after response so post-workout template metadata + shortfalls
+    // flow to the client the same way the during phase does. When the LP
+    // fallback ran, template_metadata is absent and the client falls back to
+    // the plain food list — backwards compatible with older clients.
+    const afterResponse: Record<string, unknown> = {
+      foods: afterPhaseResult.foods,
+    };
+    if (afterPhaseResult.template_metadata) {
+      afterResponse.template_metadata = afterPhaseResult.template_metadata;
+    }
+    if (
+      afterPhaseResult.shortfalls &&
+      afterPhaseResult.shortfalls.length > 0
+    ) {
+      afterResponse.shortfalls = afterPhaseResult.shortfalls;
+    }
 
     const response: Record<string, unknown> = {
       success: true,
@@ -269,7 +292,13 @@ serve(async (req) => {
       plan: {
         before: beforeResult,
         during: duringResponse,
+        // Older clients read `after` as a flat FoodResult[]; serve the metadata
+        // alongside under a separate key so we don't break that contract.
         after: afterPhaseResult.foods,
+        after_metadata: afterResponse.template_metadata ?? null,
+        ...(afterResponse.shortfalls
+          ? { after_shortfalls: afterResponse.shortfalls }
+          : {}),
       },
       macro_targets: {
         ...input.macro_targets,

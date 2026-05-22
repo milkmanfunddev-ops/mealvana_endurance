@@ -29,6 +29,7 @@ import {
   buildGarminCompletionUpdate,
   findMatchingPlannedActivity,
   getGarminScheduledDate,
+  insertGarminActivityIfMissing,
 } from "../_shared/garmin/activity_completion.ts";
 import {
   buildGarminProviderLabel,
@@ -100,11 +101,17 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
 
     const results: Record<string, { processed: number; errors: number }> = {};
 
-    // Process activity pings using the same match-only strategy as garmin-push.
-    // Ping notifications should complete an existing planned activity instead of
-    // inserting standalone Garmin workouts.
+    // Process activity pings using the same match-or-insert strategy as
+    // garmin-push: complete a matching planned activity, otherwise auto-create
+    // for endurance sports so the user gets a notification + nutrition surface.
     if (body.activities && body.activities.length > 0) {
-      const stats = { processed: 0, errors: 0, matched: 0, skipped: 0 };
+      const stats = {
+        processed: 0,
+        errors: 0,
+        matched: 0,
+        inserted: 0,
+        skipped: 0,
+      };
       for (const ping of body.activities) {
         try {
           if (!ping.callbackURL) {
@@ -146,10 +153,52 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
             );
 
             if (!matchedActivity) {
-              console.log(
-                `[garmin-ping] No matching planned activity for ${sportType} on ${scheduledDate} - skipping`,
+              const outcome = await insertGarminActivityIfMissing(
+                supabase,
+                activity,
+                activityRow,
               );
-              stats.skipped++;
+              switch (outcome.kind) {
+                case "inserted":
+                  console.log(
+                    `[garmin-ping] Auto-created completed activity ${outcome.activityId} for ${sportType} on ${scheduledDate}`,
+                  );
+                  await sendActivityUploadedPush({
+                    userId: mapping.user_id,
+                    activityId: outcome.activityId,
+                    scheduledDate,
+                    provider: buildGarminProviderLabel(activity.deviceName),
+                    logPrefix: "[garmin-ping]",
+                  });
+                  stats.inserted++;
+                  stats.processed++;
+                  break;
+                case "duplicate":
+                  console.log(
+                    `[garmin-ping] Activity for ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
+                  );
+                  stats.skipped++;
+                  break;
+                case "skipped_non_endurance":
+                  console.log(
+                    `[garmin-ping] No matching planned activity for non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
+                  );
+                  stats.skipped++;
+                  break;
+                case "skipped_no_summary_id":
+                  console.warn(
+                    "[garmin-ping] No matching planned activity and missing summaryId — skipping",
+                  );
+                  stats.errors++;
+                  break;
+                case "error":
+                  console.error(
+                    "[garmin-ping] Auto-create insert error:",
+                    outcome.error,
+                  );
+                  stats.errors++;
+                  break;
+              }
               continue;
             }
 
@@ -209,7 +258,13 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
     }
 
     if (body.activityDetails && body.activityDetails.length > 0) {
-      const stats = { processed: 0, errors: 0, matched: 0, skipped: 0 };
+      const stats = {
+        processed: 0,
+        errors: 0,
+        matched: 0,
+        inserted: 0,
+        skipped: 0,
+      };
       for (const ping of body.activityDetails) {
         try {
           if (!ping.callbackURL) {
@@ -240,6 +295,17 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
             }
 
             const summary = detail.summary;
+            // Guard against missing summaryId — same reasoning as garmin-push.
+            const detailSummaryId = summary.summaryId ??
+              (summary as { activityId?: string }).activityId ??
+              (detail as { activityId?: string }).activityId;
+            if (!detailSummaryId) {
+              console.warn(
+                "[garmin-ping] ActivityDetails missing summaryId — skipping",
+              );
+              stats.errors++;
+              continue;
+            }
             const activityRow = mapGarminActivityToActivity(
               summary,
               mapping.user_id,
@@ -254,10 +320,52 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
             );
 
             if (!matchedActivity) {
-              console.log(
-                `[garmin-ping] No matching planned activity for detail ${sportType} on ${scheduledDate} - skipping`,
+              const outcome = await insertGarminActivityIfMissing(
+                supabase,
+                summary,
+                activityRow,
               );
-              stats.skipped++;
+              switch (outcome.kind) {
+                case "inserted":
+                  console.log(
+                    `[garmin-ping] Auto-created completed activity ${outcome.activityId} from detail ping for ${sportType} on ${scheduledDate}`,
+                  );
+                  await sendActivityUploadedPush({
+                    userId: mapping.user_id,
+                    activityId: outcome.activityId,
+                    scheduledDate,
+                    provider: buildGarminProviderLabel(summary.deviceName),
+                    logPrefix: "[garmin-ping]",
+                  });
+                  stats.inserted++;
+                  stats.processed++;
+                  break;
+                case "duplicate":
+                  console.log(
+                    `[garmin-ping] Activity for detail ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
+                  );
+                  stats.skipped++;
+                  break;
+                case "skipped_non_endurance":
+                  console.log(
+                    `[garmin-ping] No matching planned activity for detail non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
+                  );
+                  stats.skipped++;
+                  break;
+                case "skipped_no_summary_id":
+                  console.warn(
+                    "[garmin-ping] No matching planned activity for detail and missing summaryId — skipping",
+                  );
+                  stats.errors++;
+                  break;
+                case "error":
+                  console.error(
+                    "[garmin-ping] Auto-create insert error (detail):",
+                    outcome.error,
+                  );
+                  stats.errors++;
+                  break;
+              }
               continue;
             }
 
@@ -265,7 +373,7 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
               summary,
               activityRow,
             );
-            updateFields.garmin_summary_id = String(summary.summaryId);
+            updateFields.garmin_summary_id = String(detailSummaryId);
 
             const { data: updatedRows, error } = await supabase
               .from("activities")

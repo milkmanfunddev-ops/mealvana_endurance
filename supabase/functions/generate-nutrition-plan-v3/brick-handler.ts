@@ -227,6 +227,7 @@ async function generateTransitionPhase(
         targets,
         60,
         resolvedGutTrainingLevel,
+        buildPreferenceSet(dislikedFoods),
       );
       if (templateResult) {
         console.log(

@@ -133,7 +133,7 @@ class _VerifyResetCodeScreenState extends ConsumerState<VerifyResetCodeScreen> {
                   ),
                   hintText: '000000',
                   counterText: '',
-                  prefixIcon: Icon(
+                  prefixIcon: FaIcon(
                     FontAwesomeIcons.key,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,

@@ -158,7 +158,7 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
           children: [
             // Minus button
             _ControlButton(
-              icon: FontAwesomeIcons.minus,
+              icon: FontAwesomeIcons.minus.data,
               onPressed: canDecrement ? _decrement : null,
               enabled: widget.enabled && canDecrement,
               semanticLabel: _semanticLabel(decrement: true),
@@ -208,7 +208,7 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
 
             // Plus button
             _ControlButton(
-              icon: FontAwesomeIcons.plus,
+              icon: FontAwesomeIcons.plus.data,
               onPressed: canIncrement ? _increment : null,
               enabled: widget.enabled && canIncrement,
               semanticLabel: _semanticLabel(decrement: false),
@@ -439,7 +439,7 @@ class _KylePlusMinusDecimalControlState
           children: [
             // Minus button
             _ControlButton(
-              icon: FontAwesomeIcons.minus,
+              icon: FontAwesomeIcons.minus.data,
               onPressed: canDecrement ? _decrement : null,
               enabled: widget.enabled && canDecrement,
               semanticLabel: _semanticLabel(decrement: true),
@@ -491,7 +491,7 @@ class _KylePlusMinusDecimalControlState
 
             // Plus button
             _ControlButton(
-              icon: FontAwesomeIcons.plus,
+              icon: FontAwesomeIcons.plus.data,
               onPressed: canIncrement ? _increment : null,
               enabled: widget.enabled && canIncrement,
               semanticLabel: _semanticLabel(decrement: false),

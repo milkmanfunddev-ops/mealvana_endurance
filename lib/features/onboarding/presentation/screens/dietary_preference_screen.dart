@@ -272,6 +272,7 @@ class _DietaryPreferenceScreenState
                   // Title
                   const SizedBox(height: 24),
                   Text(
+                    key: const ValueKey('dietary_preference.title'),
                     'What is your dietary preference?',
                     style: const TextStyle(
                       fontFamily: 'Sansita',
@@ -300,6 +301,10 @@ class _DietaryPreferenceScreenState
             isLoading: _isSaving,
             buttonText: _isSettings ? 'Save' : 'Continue',
             showBackButton: _isOnboarding,
+            continueButtonKey: const ValueKey(
+              'dietary_preference.continue_button',
+            ),
+            backButtonKey: const ValueKey('dietary_preference.back_button'),
           ),
         ],
       ),
@@ -312,7 +317,11 @@ class _DietaryPreferenceScreenState
     // Use ordered list with omnivore first, excluding 'none'
     return FigmaRadioOptionList<DietaryPreference>(
       items: DietaryPreference.orderedForOnboarding.map((diet) {
-        return FigmaRadioOptionItem(value: diet, label: diet.displayName);
+        return FigmaRadioOptionItem(
+          value: diet,
+          label: diet.displayName,
+          valueKey: ValueKey('dietary_preference.${diet.name}_chip'),
+        );
       }).toList(),
       selectedValue: _selectedPreference,
       onSelected: (value) => setState(() => _selectedPreference = value),

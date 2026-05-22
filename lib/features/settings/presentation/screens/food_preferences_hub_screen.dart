@@ -38,8 +38,11 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: const CustomAppBarBackButton(),
+      leading: const CustomAppBarBackButton(
+        key: ValueKey('food_prefs.back_button'),
+      ),
       title: Text(
+        key: const ValueKey('food_prefs.title'),
         'Food Preferences',
         style: AppTextStyles.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
@@ -59,7 +62,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          const FaIcon(
             FontAwesomeIcons.circleExclamation,
             color: AppColors.dragonfruit,
             size: 64,
@@ -93,7 +96,8 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
-                  icon: FontAwesomeIcons.leaf,
+                  tileKey: const ValueKey('food_prefs.dietary_row'),
+                  icon: FontAwesomeIcons.leaf.data,
                   title: 'Dietary Preference',
                   subtitle: _getDietaryPreferenceSubtitle(state),
                   route: '/settings/dietary-preference',
@@ -106,7 +110,8 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
-                  icon: FontAwesomeIcons.triangleExclamation,
+                  tileKey: const ValueKey('food_prefs.allergies_row'),
+                  icon: FontAwesomeIcons.triangleExclamation.data,
                   title: 'Allergies',
                   subtitle: _getAllergiesSubtitle(state),
                   route: '/settings/allergies',
@@ -119,7 +124,8 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
-                  icon: FontAwesomeIcons.heart,
+                  tileKey: const ValueKey('food_prefs.likes_dislikes_row'),
+                  icon: FontAwesomeIcons.heart.data,
                   title: 'Food Likes & Dislikes',
                   subtitle: 'Manage your food preferences',
                   route: '/settings/food-preferences',
@@ -132,7 +138,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
-                  icon: FontAwesomeIcons.flask,
+                  icon: FontAwesomeIcons.flask.data,
                   title: 'Formula Library',
                   subtitle: 'Browse Before & During formulas',
                   route: '/settings/food-preferences/formula-library',
@@ -156,8 +162,10 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
     required String subtitle,
     required String route,
     required String analyticsEvent,
+    Key? tileKey,
   }) {
     return InkWell(
+      key: tileKey,
       onTap: () {
         final analytics = ref.read(appExternalDepsProvider);
         analytics.analytics.track(analyticsEvent);
@@ -207,7 +215,7 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
               ),
             ),
 
-            Icon(
+            FaIcon(
               FontAwesomeIcons.chevronRight,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,

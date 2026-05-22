@@ -93,10 +93,12 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         backgroundColor: Colors.black,
         elevation: 0,
         leading: const CustomAppBarBackButton(
+          key: ValueKey('lesson.back_button'),
           iconColor: Colors.white,
           backgroundColor: Color(0x33000000),
         ),
         title: Text(
+          key: const ValueKey('lesson.title'),
           widget.title,
           style: AppTextStyles.h5.copyWith(color: Colors.white),
           maxLines: 1,
@@ -133,7 +135,10 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                 ],
               )
             : _chewieController != null
-            ? Chewie(controller: _chewieController!)
+            ? Chewie(
+                key: const ValueKey('lesson.video_player'),
+                controller: _chewieController!,
+              )
             : const CircularProgressIndicator(color: AppColors.orange),
       ),
     );

@@ -72,7 +72,7 @@ class _CoachRegistrationScreenState
                     color: AppColors.electrolyte.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: const FaIcon(
                     FontAwesomeIcons.userTie,
                     color: AppColors.electrolyte,
                     size: 36,
@@ -128,7 +128,7 @@ class _CoachRegistrationScreenState
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        prefixIcon: Icon(
+                        prefixIcon: FaIcon(
                           FontAwesomeIcons.user,
                           size: AppIconSizes.controlIcon,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -201,7 +201,7 @@ class _CoachRegistrationScreenState
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        prefixIcon: Icon(
+                        prefixIcon: FaIcon(
                           FontAwesomeIcons.user,
                           size: AppIconSizes.controlIcon,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -274,7 +274,7 @@ class _CoachRegistrationScreenState
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        prefixIcon: Icon(
+                        prefixIcon: FaIcon(
                           FontAwesomeIcons.envelope,
                           size: AppIconSizes.controlIcon,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,

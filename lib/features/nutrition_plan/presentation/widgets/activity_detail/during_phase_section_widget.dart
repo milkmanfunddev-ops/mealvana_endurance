@@ -72,7 +72,7 @@ class DuringPhaseSectionWidget extends ConsumerStatefulWidget {
   final int durationMinutes;
   final bool useImperial;
   final String? subtitle;
-  final IconData? sportIcon;
+  final FaIconData? sportIcon;
   final Color? sportIconColor;
 
   /// Activity type for sport-aware UI (e.g., solid food warning badge on running)

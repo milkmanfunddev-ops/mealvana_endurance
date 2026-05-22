@@ -93,7 +93,7 @@ class NutritionSectionCard extends ConsumerWidget {
                   ),
                 ),
                 Icon(
-                  isExpanded ? FontAwesomeIcons.chevronUp : FontAwesomeIcons.chevronDown,
+                  isExpanded ? FontAwesomeIcons.chevronUp.data : FontAwesomeIcons.chevronDown.data,
                   size: AppIconSizes.controlIcon,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -217,7 +217,7 @@ class NutritionSectionCard extends ConsumerWidget {
                   children: [
                     if (food.onEdit != null)
                       IconButton(
-                        icon: Icon(
+                        icon: FaIcon(
                           FontAwesomeIcons.pen,
                           size: AppIconSizes.controlIcon,
                           color: Colors.orange,
@@ -226,7 +226,7 @@ class NutritionSectionCard extends ConsumerWidget {
                       ),
                     if (food.onRemove != null)
                       IconButton(
-                        icon: Icon(
+                        icon: FaIcon(
                           FontAwesomeIcons.trash,
                           size: AppIconSizes.controlIcon,
                           color: AppColors.dragonfruit,

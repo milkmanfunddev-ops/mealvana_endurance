@@ -271,8 +271,8 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
                   // Chevron icon
                   Icon(
                     _isExpanded
-                        ? FontAwesomeIcons.chevronUp
-                        : FontAwesomeIcons.chevronDown,
+                        ? FontAwesomeIcons.chevronUp.data
+                        : FontAwesomeIcons.chevronDown.data,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -309,7 +309,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
                           children: [
                             // Decrease button
                             IconButton(
-                              icon: Icon(
+                              icon: FaIcon(
                                 FontAwesomeIcons.minus,
                                 size: AppIconSizes.controlIcon,
                                 color: AppColors.orange,
@@ -341,7 +341,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
 
                             // Increase button
                             IconButton(
-                              icon: Icon(
+                              icon: FaIcon(
                                 FontAwesomeIcons.plus,
                                 size: AppIconSizes.controlIcon,
                                 color: AppColors.orange,
@@ -424,7 +424,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          FaIcon(
                             FontAwesomeIcons.trash,
                             size: AppIconSizes.controlIcon,
                             color: AppColors.dragonfruit,
@@ -486,7 +486,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
                               ),
                             ),
                             const SizedBox(width: AppSpacing.sm),
-                            Icon(
+                            FaIcon(
                               FontAwesomeIcons.arrowRightArrowLeft,
                               color: Colors.white,
                               size: AppIconSizes.md,
@@ -511,7 +511,7 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            FaIcon(
                               FontAwesomeIcons.trash,
                               color: Colors.white,
                               size: AppIconSizes.md,

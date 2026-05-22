@@ -39,7 +39,7 @@ class BrickConfirmationDialog extends StatelessWidget {
                 color: AppColors.electrolyte.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: const FaIcon(
                 FontAwesomeIcons.link,
                 size: AppIconSizes.xl,
                 color: AppColors.electrolyte,
@@ -130,7 +130,7 @@ class BrickConfirmationDialog extends StatelessWidget {
             //   child: Row(
             //     children: [
             //       const Icon(
-            //         FontAwesomeIcons.circleInfo,
+            //         FontAwesomeIcons.circleInfo.data,
             //         size: AppIconSizes.sm,
             //         color: AppColors.electrolyte,
             //       ),
@@ -170,13 +170,13 @@ class BrickConfirmationDialog extends StatelessWidget {
 
   IconData _getActivityIcon(ActivityType type) {
     return switch (type) {
-      ActivityType.running => FontAwesomeIcons.personRunning,
-      ActivityType.cycling => FontAwesomeIcons.personBiking,
-      ActivityType.swimming => FontAwesomeIcons.personSwimming,
-      ActivityType.triathlon => FontAwesomeIcons.personSwimming,
-      ActivityType.duathlon => FontAwesomeIcons.personRunning,
-      ActivityType.multisport => FontAwesomeIcons.personSwimming,
-      ActivityType.brick => FontAwesomeIcons.link,
+      ActivityType.running => FontAwesomeIcons.personRunning.data,
+      ActivityType.cycling => FontAwesomeIcons.personBiking.data,
+      ActivityType.swimming => FontAwesomeIcons.personSwimming.data,
+      ActivityType.triathlon => FontAwesomeIcons.personSwimming.data,
+      ActivityType.duathlon => FontAwesomeIcons.personRunning.data,
+      ActivityType.multisport => FontAwesomeIcons.personSwimming.data,
+      ActivityType.brick => FontAwesomeIcons.link.data,
     };
   }
 }

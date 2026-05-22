@@ -28,8 +28,9 @@ class HelpFeedbackScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: const CustomAppBarBackButton(),
+      leading: const CustomAppBarBackButton(key: ValueKey('help.back_button')),
       title: Text(
+        key: const ValueKey('help.title'),
         'Help & Feedback',
         style: AppTextStyles.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
@@ -71,6 +72,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
+            key: const ValueKey('help.feedback_section'),
             'Feedback',
             style: AppTextStyles.subtitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
@@ -81,8 +83,9 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
           // Rate experience - NPS Promoter Survey
           _buildFeedbackOption(
+            rowKey: const ValueKey('help.rate_row'),
             context: context,
-            icon: FontAwesomeIcons.star,
+            icon: FontAwesomeIcons.star.data,
             title: 'Rate Your Experience',
             subtitle: 'How likely are you to recommend us?',
             onTap: () => _showRatingsSurvey(context, ref),
@@ -92,8 +95,9 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
           // Bug report option
           _buildBugReportOption(
+            rowKey: const ValueKey('help.report_bug_row'),
             context: context,
-            icon: FontAwesomeIcons.bug,
+            icon: FontAwesomeIcons.bug.data,
             title: 'Report a Bug',
             subtitle: 'Help us fix issues you encounter',
             onTap: () => _showBugReport(context, ref),
@@ -120,7 +124,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
           // Help options
           // _buildHelpOption(
           //   context: context,
-          //   icon: FontAwesomeIcons.book,
+          //   icon: FontAwesomeIcons.book.data,
           //   title: 'Getting Started Guide',
           //   subtitle: 'Learn the basics of Mealvana Endurance',
           //   onTap: () => _openGettingStarted(context, ref),
@@ -130,7 +134,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
           // _buildHelpOption(
           //   context: context,
-          //   icon: FontAwesomeIcons.personRunning,
+          //   icon: FontAwesomeIcons.personRunning.data,
           //   title: 'Sport Training Tips',
           //   subtitle: 'Improve your endurance performance',
           //   onTap: () => _openTrainingTips(context, ref),
@@ -140,7 +144,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
           // _buildHelpOption(
           //   context: context,
-          //   icon: FontAwesomeIcons.utensils,
+          //   icon: FontAwesomeIcons.utensils.data,
           //   title: 'Nutrition Guide',
           //   subtitle: 'Fueling strategies and meal planning',
           //   onTap: () => _openNutritionGuide(context, ref),
@@ -150,7 +154,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
           // _buildHelpOption(
           //   context: context,
-          //   icon: FontAwesomeIcons.circleQuestion,
+          //   icon: FontAwesomeIcons.circleQuestion.data,
           //   title: 'FAQs',
           //   subtitle: 'Frequently asked questions',
           //   onTap: () => _openFAQs(context, ref),
@@ -166,6 +170,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
+            key: const ValueKey('help.contact_section'),
             'Contact Us',
             style: AppTextStyles.subtitle.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
@@ -176,8 +181,9 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
           // Contact options
           _buildContactOption(
+            rowKey: const ValueKey('help.email_row'),
             context: context,
-            icon: FontAwesomeIcons.envelope,
+            icon: FontAwesomeIcons.envelope.data,
             title: 'Email Support',
             subtitle: 'support@mealvana.com',
             onTap: () => _sendEmail(context, ref),
@@ -186,8 +192,9 @@ class HelpFeedbackScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sm),
 
           _buildContactOption(
+            rowKey: const ValueKey('help.website_row'),
             context: context,
-            icon: FontAwesomeIcons.globe,
+            icon: FontAwesomeIcons.globe.data,
             title: 'Website',
             subtitle: 'endurance.mealvana.io',
             onTap: () => _openWebsite(context, ref),
@@ -197,7 +204,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
 
           // _buildContactOption(
           //   context: context,
-          //   icon: FontAwesomeIcons.shareNodes,
+          //   icon: FontAwesomeIcons.shareNodes.data,
           //   title: 'Community Forum',
           //   subtitle: 'Connect with other athletes',
           //   onTap: () => _openForum(context, ref),
@@ -213,8 +220,10 @@ class HelpFeedbackScreen extends ConsumerWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Key? rowKey,
   }) {
     return InkWell(
+      key: rowKey,
       onTap: onTap,
       borderRadius: AppRadius.cardRadius,
       child: Container(
@@ -263,7 +272,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
             ),
 
             // Arrow icon
-            Icon(
+            FaIcon(
               FontAwesomeIcons.chevronRight,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -280,8 +289,10 @@ class HelpFeedbackScreen extends ConsumerWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Key? rowKey,
   }) {
     return InkWell(
+      key: rowKey,
       onTap: onTap,
       borderRadius: AppRadius.cardRadius,
       child: Container(
@@ -330,7 +341,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
             ),
 
             // Arrow icon
-            Icon(
+            FaIcon(
               FontAwesomeIcons.chevronRight,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -397,7 +408,7 @@ class HelpFeedbackScreen extends ConsumerWidget {
             ),
 
             // Arrow icon
-            Icon(
+            FaIcon(
               FontAwesomeIcons.chevronRight,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -414,8 +425,10 @@ class HelpFeedbackScreen extends ConsumerWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Key? rowKey,
   }) {
     return InkWell(
+      key: rowKey,
       onTap: onTap,
       borderRadius: AppRadius.cardRadius,
       child: Container(

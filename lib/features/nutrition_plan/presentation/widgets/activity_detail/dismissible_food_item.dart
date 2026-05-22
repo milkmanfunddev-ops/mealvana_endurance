@@ -42,7 +42,7 @@ class DismissibleFoodItem extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.trash,
               color: Colors.white,
               size: AppIconSizes.md,
@@ -76,7 +76,7 @@ class DismissibleFoodItem extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            Icon(
+            FaIcon(
               FontAwesomeIcons.arrowRightArrowLeft,
               color: Colors.white,
               size: AppIconSizes.md,

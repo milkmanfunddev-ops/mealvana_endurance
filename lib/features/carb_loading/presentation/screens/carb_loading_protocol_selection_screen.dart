@@ -13,7 +13,12 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Choose Carb Loading Protocol')),
+      appBar: AppBar(
+        title: const Text(
+          key: ValueKey('carb_loading.title'),
+          'Choose Carb Loading Protocol',
+        ),
+      ),
       body: SafeArea(
         child: ContentArea.wide(
           child: SingleChildScrollView(
@@ -23,6 +28,7 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
               children: [
                 // Header section
                 Text(
+                  key: const ValueKey('carb_loading.subheading'),
                   'Select Your Protocol',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
@@ -30,6 +36,7 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
+                  key: const ValueKey('carb_loading.description'),
                   'Choose a carb loading protocol based on your experience and race type. Each protocol is backed by research and customized to your body weight.',
                   style: Theme.of(
                     context,
@@ -39,6 +46,11 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
 
                 // 3-day protocol (Recommended)
                 _ProtocolCard(
+                  key: const ValueKey('carb_loading.protocol_3_day_card'),
+                  selectButtonKey: const ValueKey(
+                    'carb_loading.select_3_day_button',
+                  ),
+                  tagKeyPrefix: 'carb_loading.protocol_3_day_tag',
                   protocolDays: 3,
                   title: '3-Day Classic',
                   badge: 'RECOMMENDED',
@@ -73,6 +85,11 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
 
                 // 2-day protocol (Advanced)
                 _ProtocolCard(
+                  key: const ValueKey('carb_loading.protocol_2_day_card'),
+                  selectButtonKey: const ValueKey(
+                    'carb_loading.select_2_day_button',
+                  ),
+                  tagKeyPrefix: 'carb_loading.protocol_2_day_tag',
                   protocolDays: 2,
                   title: '2-Day Quick',
                   badge: 'ADVANCED',
@@ -121,6 +138,7 @@ class CarbLoadingProtocolSelectionScreen extends ConsumerWidget {
 /// Protocol card widget showing detailed protocol information
 class _ProtocolCard extends StatefulWidget {
   const _ProtocolCard({
+    super.key,
     required this.protocolDays,
     required this.title,
     required this.badge,
@@ -131,6 +149,8 @@ class _ProtocolCard extends StatefulWidget {
     required this.research,
     required this.phases,
     required this.onTap,
+    this.selectButtonKey,
+    this.tagKeyPrefix,
   });
 
   final int protocolDays;
@@ -143,6 +163,8 @@ class _ProtocolCard extends StatefulWidget {
   final String research;
   final List<_ProtocolPhase> phases;
   final VoidCallback onTap;
+  final Key? selectButtonKey;
+  final String? tagKeyPrefix;
 
   @override
   State<_ProtocolCard> createState() => _ProtocolCardState();
@@ -233,7 +255,14 @@ class _ProtocolCardState extends State<_ProtocolCard> {
                           spacing: 8,
                           runSpacing: 8,
                           children: widget.bestForTags.map((tag) {
+                            final slug = tag.toLowerCase().replaceAll(
+                              RegExp(r'[^a-z0-9]+'),
+                              '_',
+                            );
                             return Container(
+                              key: widget.tagKeyPrefix != null
+                                  ? ValueKey('${widget.tagKeyPrefix}_$slug')
+                                  : null,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
                                 vertical: 4,
@@ -379,6 +408,7 @@ class _ProtocolCardState extends State<_ProtocolCard> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
+                  key: widget.selectButtonKey,
                   onPressed: widget.onTap,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),

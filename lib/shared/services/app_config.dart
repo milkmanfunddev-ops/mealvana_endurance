@@ -25,6 +25,9 @@ class AppConfig {
     required this.garminClientId,
     required this.garminClientSecret,
     required this.garminRedirectUri,
+    required this.vdotClientId,
+    required this.vdotClientSecret,
+    required this.vdotUseSandbox,
     required this.devModeEnabled,
     required this.appEnvironment,
     this.enableDebugLogging = false,
@@ -68,6 +71,22 @@ class AppConfig {
   final String garminClientId;
   final String garminClientSecret;
   final String garminRedirectUri;
+
+  // V.O2 (VDOT) integration
+  final String vdotClientId;
+  final String vdotClientSecret;
+  final bool vdotUseSandbox;
+
+  /// Base host for the V.O2 OAuth authorize/token endpoints.
+  ///
+  /// Note: VDOT documents `app.sandbox.vdoto2.com` as the sandbox OAuth host,
+  /// but that hostname does not resolve in DNS (verified 2026-05-18). Only
+  /// `app.vdoto2.com` exists. The sandbox toggle only switches the API base.
+  String get vdotAuthBaseUrl => 'https://app.vdoto2.com';
+
+  /// Base host for the V.O2 REST API.
+  String get vdotApiBaseUrl =>
+      vdotUseSandbox ? 'https://api.sandbox.vdoto2.com' : 'https://api.vdoto2.com';
 
   // Environment configuration
   final bool devModeEnabled;
@@ -173,6 +192,13 @@ class AppConfig {
       garminClientSecret: dotenv.get('GARMIN_CLIENT_SECRET', fallback: ''),
       garminRedirectUri: dotenv.get('GARMIN_REDIRECT_URI', fallback: ''),
 
+      // V.O2 (VDOT) integration
+      vdotClientId: dotenv.get('VDOT_CLIENT_ID', fallback: 'mealvana'),
+      vdotClientSecret: dotenv.get('VDOT_CLIENT_SECRET', fallback: ''),
+      // Default to sandbox during development; flip to production once registered.
+      vdotUseSandbox:
+          dotenv.get('VDOT_USE_SANDBOX', fallback: 'true') == 'true',
+
       // Debug settings
       enableDebugLogging: kDebugMode,
       enableSentryProfiling: !kDebugMode, // Disabled in debug due to iOS crash
@@ -202,6 +228,9 @@ class AppConfig {
     String? garminClientId,
     String? garminClientSecret,
     String? garminRedirectUri,
+    String? vdotClientId,
+    String? vdotClientSecret,
+    bool vdotUseSandbox = true,
     bool devModeEnabled = true,
     String appEnvironment = 'dev',
     bool enableDebugLogging = true,
@@ -230,6 +259,9 @@ class AppConfig {
       garminClientSecret: garminClientSecret ?? 'test-garmin-secret',
       garminRedirectUri:
           garminRedirectUri ?? 'com.milkman.mealvanaendurance://callback',
+      vdotClientId: vdotClientId ?? 'test-vdot-client-id',
+      vdotClientSecret: vdotClientSecret ?? 'test-vdot-secret',
+      vdotUseSandbox: vdotUseSandbox,
       devModeEnabled: devModeEnabled,
       appEnvironment: appEnvironment,
       enableDebugLogging: enableDebugLogging,
@@ -376,6 +408,22 @@ class AppConfig {
         'GARMIN_REDIRECT_URI',
         defaultValue: '',
       ),
+
+      // V.O2 (VDOT) configuration - read from dart-define for web builds
+      vdotClientId: const String.fromEnvironment(
+        'VDOT_CLIENT_ID',
+        defaultValue: 'mealvana',
+      ),
+      vdotClientSecret: const String.fromEnvironment(
+        'VDOT_CLIENT_SECRET',
+        defaultValue: '',
+      ),
+      vdotUseSandbox:
+          const String.fromEnvironment(
+            'VDOT_USE_SANDBOX',
+            defaultValue: 'true',
+          ) ==
+          'true',
 
       // Debug settings
       enableDebugLogging: kDebugMode,

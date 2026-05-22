@@ -115,7 +115,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     'auth.email_signup.email_hint',
                     defaultValue: 'you@example.com',
                   ),
-                  prefixIcon: Icon(
+                  prefixIcon: FaIcon(
                     FontAwesomeIcons.envelope,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,

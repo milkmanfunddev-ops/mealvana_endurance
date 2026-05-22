@@ -126,7 +126,7 @@ class BrickSegmentCard extends StatelessWidget {
         height: 44, // Ensure minimum touch target size
         child: Center(
           child: KyleSecondaryIconButton(
-            icon: FontAwesomeIcons.xmark,
+            icon: FontAwesomeIcons.xmark.data,
             onPressed: onRemove!,
             size: 32, // Visual size (icon stays 32px)
             variant: SecondaryButtonVariant.orange,
@@ -139,13 +139,13 @@ class BrickSegmentCard extends StatelessWidget {
   IconData _getIconForSport(String sport) {
     switch (sport.toLowerCase()) {
       case 'swimming':
-        return FontAwesomeIcons.personSwimming;
+        return FontAwesomeIcons.personSwimming.data;
       case 'cycling':
-        return FontAwesomeIcons.personBiking;
+        return FontAwesomeIcons.personBiking.data;
       case 'running':
-        return FontAwesomeIcons.personRunning;
+        return FontAwesomeIcons.personRunning.data;
       default:
-        return FontAwesomeIcons.personRunning;
+        return FontAwesomeIcons.personRunning.data;
     }
   }
 

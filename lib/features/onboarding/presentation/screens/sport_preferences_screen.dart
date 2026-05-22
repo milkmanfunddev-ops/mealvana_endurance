@@ -187,7 +187,7 @@ class _SportPreferencesScreenState
 
               // Sport selection cards
               _buildSportSelectionCard(
-                icon: FontAwesomeIcons.personRunning,
+                icon: FontAwesomeIcons.personRunning.data,
                 label: 'Running',
                 isSelected: _doesRunning,
                 onTap: () => setState(() => _doesRunning = !_doesRunning),
@@ -196,7 +196,7 @@ class _SportPreferencesScreenState
               const SizedBox(height: AppSpacing.md),
 
               _buildSportSelectionCard(
-                icon: FontAwesomeIcons.personBiking,
+                icon: FontAwesomeIcons.personBiking.data,
                 label: 'Cycling',
                 isSelected: _doesCycling,
                 onTap: () => setState(() => _doesCycling = !_doesCycling),
@@ -205,7 +205,7 @@ class _SportPreferencesScreenState
               const SizedBox(height: AppSpacing.md),
 
               _buildSportSelectionCard(
-                icon: FontAwesomeIcons.personSwimming,
+                icon: FontAwesomeIcons.personSwimming.data,
                 label: 'Swimming',
                 isSelected: _doesSwimming,
                 onTap: () => setState(() => _doesSwimming = !_doesSwimming),
@@ -325,7 +325,7 @@ class _SportPreferencesScreenState
 
             // Checkmark indicator
             if (isSelected)
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.check,
                 size: AppIconSizes.controlIcon,
                 color: AppColors.blackberry,

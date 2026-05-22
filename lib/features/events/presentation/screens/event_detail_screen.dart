@@ -47,8 +47,11 @@ class EventDetailScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: const CustomAppBarBackButton(),
+        leading: const CustomAppBarBackButton(
+          key: ValueKey('event_details.back_button'),
+        ),
         title: Text(
+          key: const ValueKey('event_details.title'),
           'Event Details',
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
@@ -56,7 +59,8 @@ class EventDetailScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(
+            key: const ValueKey('event_details.home_button'),
+            icon: FaIcon(
               FontAwesomeIcons.house,
               size: AppIconSizes.sm,
               color: Theme.of(context).colorScheme.onSurface,
@@ -67,7 +71,8 @@ class EventDetailScreen extends ConsumerWidget {
           // Only show menu when event is loaded successfully
           if (eventDetailAsync.hasValue)
             PopupMenuButton<String>(
-              icon: Icon(
+              key: const ValueKey('event_details.more_button'),
+              icon: FaIcon(
                 FontAwesomeIcons.ellipsisVertical,
                 size: AppIconSizes.sm,
                 color: Theme.of(context).colorScheme.onSurface,
@@ -92,10 +97,11 @@ class EventDetailScreen extends ConsumerWidget {
               },
               itemBuilder: (context) => [
                 PopupMenuItem<String>(
+                  key: const ValueKey('event_details.menu_edit'),
                   value: 'edit',
                   child: Row(
                     children: [
-                      Icon(
+                      FaIcon(
                         FontAwesomeIcons.pen,
                         size: AppIconSizes.xs,
                         color: Theme.of(context).colorScheme.onSurface,
@@ -111,10 +117,11 @@ class EventDetailScreen extends ConsumerWidget {
                   ),
                 ),
                 PopupMenuItem<String>(
+                  key: const ValueKey('event_details.menu_delete'),
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(
+                      FaIcon(
                         FontAwesomeIcons.trash,
                         size: AppIconSizes.xs,
                         color: AppColors.dragonfruit,
@@ -153,34 +160,34 @@ class EventDetailScreen extends ConsumerWidget {
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Event Header Card
-                  EventHeaderCard(activity: activity, event: event),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Event Header Card
+                    EventHeaderCard(activity: activity, event: event),
 
-                  const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.md),
 
-                  // Event Details Card
-                  EventDetailsCard(activity: activity, event: event),
+                    // Event Details Card
+                    EventDetailsCard(activity: activity, event: event),
 
-                  const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.md),
 
-                  // Action Buttons Card
-                  EventActionButtonsCard(
-                    activity: activity,
-                    event: event,
-                    eventId: eventId,
-                    forUserId: forUserId,
-                  ),
+                    // Action Buttons Card
+                    EventActionButtonsCard(
+                      activity: activity,
+                      event: event,
+                      eventId: eventId,
+                      forUserId: forUserId,
+                    ),
 
-                  const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.md),
 
-                  // Footer links for navigation
-                  const EventFooterLinks(),
+                    // Footer links for navigation
+                    const EventFooterLinks(),
 
-                  const SizedBox(height: AppSpacing.xxl),
-                ],
-              ),
+                    const SizedBox(height: AppSpacing.xxl),
+                  ],
+                ),
               ),
             );
           },
@@ -201,7 +208,7 @@ class EventDetailScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      FaIcon(
                         FontAwesomeIcons.circleExclamation,
                         size: AppIconSizes.xl,
                         color: AppColors.dragonfruit,

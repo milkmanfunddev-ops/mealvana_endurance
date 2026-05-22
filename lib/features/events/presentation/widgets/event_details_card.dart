@@ -35,7 +35,7 @@ class EventDetailsCard extends StatelessWidget {
           if (activity?.distanceMiles != null)
             _buildDetailRow(
               context,
-              icon: FontAwesomeIcons.ruler,
+              icon: FontAwesomeIcons.ruler.data,
               label: 'Distance',
               value: '${activity!.distanceMiles} miles',
             ),
@@ -44,7 +44,7 @@ class EventDetailsCard extends StatelessWidget {
             const Divider(height: AppSpacing.xl),
             _buildDetailRow(
               context,
-              icon: FontAwesomeIcons.locationDot,
+              icon: FontAwesomeIcons.locationDot.data,
               label: 'Location',
               value: LocationFormatter.parseAndFormatCityState(event.location),
             ),
@@ -54,7 +54,7 @@ class EventDetailsCard extends StatelessWidget {
             const Divider(height: AppSpacing.xl),
             _buildDetailRow(
               context,
-              icon: FontAwesomeIcons.clock,
+              icon: FontAwesomeIcons.clock.data,
               label: 'Goal Time',
               value: event.formattedGoalTime!,
             ),
@@ -64,7 +64,7 @@ class EventDetailsCard extends StatelessWidget {
             const Divider(height: AppSpacing.xl),
             _buildDetailRow(
               context,
-              icon: FontAwesomeIcons.gaugeHigh,
+              icon: FontAwesomeIcons.gaugeHigh.data,
               label: 'Goal Pace',
               value: event.formattedGoalPace!,
             ),
@@ -74,7 +74,7 @@ class EventDetailsCard extends StatelessWidget {
             const Divider(height: AppSpacing.xl),
             _buildDetailRow(
               context,
-              icon: FontAwesomeIcons.link,
+              icon: FontAwesomeIcons.link.data,
               label: 'Registration',
               value: 'View registration',
               isLink: true,
@@ -85,7 +85,7 @@ class EventDetailsCard extends StatelessWidget {
             const Divider(height: AppSpacing.xl),
             _buildDetailRow(
               context,
-              icon: FontAwesomeIcons.hashtag,
+              icon: FontAwesomeIcons.hashtag.data,
               label: 'Bib Number',
               value: event.bibNumber!,
             ),

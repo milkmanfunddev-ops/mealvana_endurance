@@ -15,10 +15,7 @@ import 'kyle_design/navigation/floating_action_buttons_bar.dart';
 import 'sync_status_indicator.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
-  const TabsScreen({
-    super.key,
-    this.initialTabIndex = 0,
-  });
+  const TabsScreen({super.key, this.initialTabIndex = 0});
 
   final int initialTabIndex;
 
@@ -92,10 +89,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       children: [
         const SyncStatusIndicator(),
         Expanded(
-          child: IndexedStack(
-            index: _currentIndex,
-            children: screens,
-          ),
+          child: IndexedStack(index: _currentIndex, children: screens),
         ),
       ],
     );
@@ -120,6 +114,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
                     top: MediaQuery.of(context).padding.top + 12,
                     right: 16,
                     child: GestureDetector(
+                      key: const ValueKey('calendar.settings_button'),
                       onTap: () => context.push('/settings'),
                       child: FaIcon(
                         FontAwesomeIcons.gear,
@@ -140,23 +135,29 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: Size.zero,
-        child: Container(),
-      ),
+      appBar: PreferredSize(preferredSize: Size.zero, child: Container()),
       body: Stack(
         children: [
           body,
           // Settings gear — top-right on every tab
           Positioned(
-            top: MediaQuery.of(context).padding.top + 12,
-            right: 16,
-            child: GestureDetector(
-              onTap: () => context.push('/settings'),
-              child: FaIcon(
-                FontAwesomeIcons.gear,
-                size: 18,
-                color: isDark ? AppColors.cream : AppColors.blackberry,
+            top: MediaQuery.of(context).padding.top,
+            right: 4,
+            child: Semantics(
+              button: true,
+              label: 'Settings',
+              child: GestureDetector(
+                key: const ValueKey('calendar.settings_button'),
+                behavior: HitTestBehavior.opaque,
+                onTap: () => context.push('/settings'),
+                child: Padding(
+                  padding: const EdgeInsets.all(15),
+                  child: FaIcon(
+                    FontAwesomeIcons.gear,
+                    size: 18,
+                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                  ),
+                ),
               ),
             ),
           ),
@@ -201,29 +202,29 @@ class _NavigationRailSection extends StatelessWidget {
     // Build destinations list — same order as tab indices.
     final destinations = <NavigationRailDestination>[
       const NavigationRailDestination(
-        icon: Icon(FontAwesomeIcons.calendar),
-        selectedIcon: Icon(FontAwesomeIcons.solidCalendar),
+        icon: FaIcon(FontAwesomeIcons.calendar),
+        selectedIcon: FaIcon(FontAwesomeIcons.solidCalendar),
         label: Text('Calendar'),
       ),
       const NavigationRailDestination(
-        icon: Icon(FontAwesomeIcons.utensils),
-        selectedIcon: Icon(FontAwesomeIcons.utensils),
+        icon: FaIcon(FontAwesomeIcons.utensils),
+        selectedIcon: FaIcon(FontAwesomeIcons.utensils),
         label: Text('Nutrition'),
       ),
       if (showCoachTab)
         const NavigationRailDestination(
-          icon: Icon(FontAwesomeIcons.userTie),
-          selectedIcon: Icon(FontAwesomeIcons.userTie),
+          icon: FaIcon(FontAwesomeIcons.userTie),
+          selectedIcon: FaIcon(FontAwesomeIcons.userTie),
           label: Text('Coach'),
         ),
       const NavigationRailDestination(
-        icon: Icon(FontAwesomeIcons.calendarCheck),
-        selectedIcon: Icon(FontAwesomeIcons.solidCalendarCheck),
+        icon: FaIcon(FontAwesomeIcons.calendarCheck),
+        selectedIcon: FaIcon(FontAwesomeIcons.solidCalendarCheck),
         label: Text('Events'),
       ),
       const NavigationRailDestination(
-        icon: Icon(FontAwesomeIcons.graduationCap),
-        selectedIcon: Icon(FontAwesomeIcons.graduationCap),
+        icon: FaIcon(FontAwesomeIcons.graduationCap),
+        selectedIcon: FaIcon(FontAwesomeIcons.graduationCap),
         label: Text('Learn'),
       ),
     ];
@@ -233,10 +234,7 @@ class _NavigationRailSection extends StatelessWidget {
       onDestinationSelected: onTabSelected,
       labelType: NavigationRailLabelType.all,
       backgroundColor: isDark ? AppColors.blackberryDark : AppColors.cream,
-      selectedIconTheme: IconThemeData(
-        color: AppColors.orange,
-        size: 20,
-      ),
+      selectedIconTheme: IconThemeData(color: AppColors.orange, size: 20),
       unselectedIconTheme: IconThemeData(
         color: isDark ? AppColors.cream : AppColors.blackberry,
         size: 20,

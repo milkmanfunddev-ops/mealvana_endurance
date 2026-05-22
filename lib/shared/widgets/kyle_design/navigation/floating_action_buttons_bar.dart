@@ -96,7 +96,8 @@ class FloatingActionButtonsBar extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       CircularActionButton(
-                        icon: FontAwesomeIcons.calendar,
+                        key: const ValueKey('bottom_nav.calendar_tab'),
+                        icon: FontAwesomeIcons.calendar.data,
                         onPressed: onCalendarTap,
                         semanticLabel: 'Calendar',
                         backgroundColor: activeButton == 0
@@ -108,7 +109,8 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       CircularActionButton(
-                        icon: FontAwesomeIcons.utensils,
+                        key: const ValueKey('bottom_nav.diary_tab'),
+                        icon: FontAwesomeIcons.utensils.data,
                         onPressed: onNutritionTap,
                         semanticLabel: 'Nutrition diary',
                         backgroundColor: activeButton == 1
@@ -121,7 +123,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       const SizedBox(width: 8),
                       if (showCoachTab) ...[
                         CircularActionButton(
-                          icon: FontAwesomeIcons.userTie,
+                          icon: FontAwesomeIcons.userTie.data,
                           onPressed: onCoachTap,
                           semanticLabel: 'Coach',
                           backgroundColor: activeButton == 2
@@ -136,7 +138,8 @@ class FloatingActionButtonsBar extends StatelessWidget {
                         const SizedBox(width: 8),
                       ],
                       CircularActionButton(
-                        icon: FontAwesomeIcons.calendarCheck,
+                        key: const ValueKey('bottom_nav.events_tab'),
+                        icon: FontAwesomeIcons.calendarCheck.data,
                         onPressed: onEventsTap,
                         semanticLabel: 'Events',
                         backgroundColor: activeButton == (showCoachTab ? 3 : 2)
@@ -148,7 +151,8 @@ class FloatingActionButtonsBar extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       CircularActionButton(
-                        icon: FontAwesomeIcons.graduationCap,
+                        key: const ValueKey('bottom_nav.learn_tab'),
+                        icon: FontAwesomeIcons.graduationCap.data,
                         onPressed: onLearnTap,
                         semanticLabel: 'Learn',
                         backgroundColor: activeButton == (showCoachTab ? 4 : 3)
@@ -171,6 +175,7 @@ class FloatingActionButtonsBar extends StatelessWidget {
               child: Tooltip(
                 message: 'New activity',
                 child: GestureDetector(
+                  key: const ValueKey('calendar.create_activity_fab'),
                   onTap: onPlusTap,
                   child: Container(
                     width: 50,

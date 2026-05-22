@@ -67,7 +67,7 @@ class _BrickPhaseBreakdownState extends State<BrickPhaseBreakdown> {
                   ),
                 ),
                 Icon(
-                  _isExpanded ? FontAwesomeIcons.chevronUp : FontAwesomeIcons.chevronDown,
+                  _isExpanded ? FontAwesomeIcons.chevronUp.data : FontAwesomeIcons.chevronDown.data,
                   size: 14,
                   color: AppColors.orange,
                 ),

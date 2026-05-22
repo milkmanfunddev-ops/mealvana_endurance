@@ -15,6 +15,9 @@ migrate_working_dir/
 # Script data files (large exports, not for version control)
 scripts/data/
 
+# Patrol auto-generated bundle (regenerated on every `patrol test` run)
+patrol_test/
+
 # Environment variables (NEVER commit these!)
 .env
 .env.*

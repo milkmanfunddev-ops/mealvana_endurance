@@ -86,17 +86,28 @@ export const BANANA_FLUID = 0;
 export const SPORTS_DRINK_CARBS = 15;    // per 1 cup (8 oz)
 export const SPORTS_DRINK_SODIUM = 100;   // per 1 cup (8 oz)
 export const SPORTS_DRINK_FLUID = 240;    // per 1 cup (8 oz)
+// Pass 1.5 universal fallback foods (vegan, gluten-free, no common allergens).
+// Used to deliver carbs when banana/sports_drink are disliked or already used. (#15)
+export const DATES_CARBS = 18;            // per 2 medjool dates
+export const DATES_SODIUM = 0;
+export const DATES_FLUID = 0;
+export const APPLESAUCE_CARBS = 25;       // per 1/2 cup unsweetened pouch
+export const APPLESAUCE_SODIUM = 5;
+export const APPLESAUCE_FLUID = 0;
+export const RAISINS_CARBS = 22;          // per 1/4 cup
+export const RAISINS_SODIUM = 5;
+export const RAISINS_FLUID = 0;
 
 // ============================================================================
 // Algorithm Output Types
 // ============================================================================
 
 export interface AddOn {
-  type: 'banana' | 'sports_drink';
+  type: 'banana' | 'sports_drink' | 'dates' | 'applesauce' | 'raisins';
   carbs_g: number;
   sodium_mg: number;
   fluid_ml: number;
-  servings: number;        // 1 for banana; 0.5, 1, or 2 cups for sports drink
+  servings: number;        // 1 for fixed-size add-ons; 0.5, 1, or 2 cups for sports drink
 }
 
 export interface TemplateSelection {
@@ -114,6 +125,24 @@ export interface TemplateSelection {
   component_quantities: Record<string, number>;
 }
 
+/**
+ * Macro target the algorithm could not satisfy because all viable templates
+ * or foods were filtered out by user preferences (dislikes/allergens/diet).
+ * Surfaced to the UI as a guidance card with curated suggestions. Different
+ * from "user just doesn't need much" — only emitted when target > 0 AND
+ * delivery is < 90% of target AND the cause is preference-driven filtering.
+ *
+ * Mirrors the during-phase PhaseShortfall in plan-v3 types.ts so the Flutter
+ * widget can render both with one code path.
+ */
+export interface PreWorkoutShortfall {
+  macro: 'carbs' | 'sodium' | 'fluid' | 'protein';
+  delivered: number;
+  target: number;
+  unit: 'g' | 'mg' | 'ml';
+  reason: 'all_disliked' | 'no_diet_match' | 'all_templates_filtered';
+}
+
 export interface PreWorkoutPhaseResult {
   phase: SubPhaseType;
   primary: TemplateSelection | null;
@@ -126,6 +155,9 @@ export interface PreWorkoutPhaseResult {
   total_fat_g: number;
   total_sodium_mg: number;
   total_fluid_ml: number;
+  /** Per-macro shortfalls when preferences eliminated all viable options
+   * for this phase. Issue #15. */
+  shortfalls?: PreWorkoutShortfall[];
 }
 
 // ============================================================================

@@ -154,7 +154,7 @@ class _FigmaSearchBarState extends State<FigmaSearchBar> {
           prefixIcon: Icon(Icons.search, color: prefixIconColor, size: 24),
           suffixIcon: showBarcode
               ? IconButton(
-                  icon: const Icon(
+                  icon: const FaIcon(
                     FontAwesomeIcons.barcode,
                     color: AppColors.orange,
                     size: 20,

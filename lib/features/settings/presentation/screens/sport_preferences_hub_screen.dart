@@ -38,8 +38,11 @@ class SportPreferencesHubScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: const CustomAppBarBackButton(),
+      leading: const CustomAppBarBackButton(
+        key: ValueKey('sport_prefs.back_button'),
+      ),
       title: Text(
+        key: const ValueKey('sport_prefs.title'),
         'Sport Preferences',
         style: AppTextStyles.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
@@ -59,7 +62,7 @@ class SportPreferencesHubScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          const FaIcon(
             FontAwesomeIcons.circleExclamation,
             color: AppColors.dragonfruit,
             size: 64,
@@ -93,7 +96,8 @@ class SportPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
-                  icon: FontAwesomeIcons.personRunning,
+                  tileKey: const ValueKey('sport_prefs.running_row'),
+                  icon: FontAwesomeIcons.personRunning.data,
                   title: 'Running Preferences',
                   subtitle: _getRunningSubtitle(state),
                   route: '/settings/running-details',
@@ -106,7 +110,8 @@ class SportPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
-                  icon: FontAwesomeIcons.personBiking,
+                  tileKey: const ValueKey('sport_prefs.cycling_row'),
+                  icon: FontAwesomeIcons.personBiking.data,
                   title: 'Cycling Preferences',
                   subtitle: _getCyclingSubtitle(state),
                   route: '/settings/cycling-details',
@@ -119,7 +124,8 @@ class SportPreferencesHubScreen extends ConsumerWidget {
                 _buildHubTile(
                   context: context,
                   ref: ref,
-                  icon: FontAwesomeIcons.personSwimming,
+                  tileKey: const ValueKey('sport_prefs.swimming_row'),
+                  icon: FontAwesomeIcons.personSwimming.data,
                   title: 'Swimming Preferences',
                   subtitle: _getSwimmingSubtitle(state),
                   route: '/settings/swimming-details',
@@ -143,8 +149,10 @@ class SportPreferencesHubScreen extends ConsumerWidget {
     required String subtitle,
     required String route,
     required String analyticsEvent,
+    Key? tileKey,
   }) {
     return InkWell(
+      key: tileKey,
       onTap: () {
         final analytics = ref.read(appExternalDepsProvider);
         analytics.analytics.track(analyticsEvent);
@@ -194,7 +202,7 @@ class SportPreferencesHubScreen extends ConsumerWidget {
               ),
             ),
 
-            Icon(
+            FaIcon(
               FontAwesomeIcons.chevronRight,
               size: AppIconSizes.controlIcon,
               color: Theme.of(context).colorScheme.onSurfaceVariant,

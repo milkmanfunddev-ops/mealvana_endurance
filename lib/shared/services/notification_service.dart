@@ -122,6 +122,18 @@ class NotificationService {
         event.notification.display();
       });
 
+      // Trigger registerForRemoteNotifications and refresh the APNs token.
+      // OneSignal v5.x does not auto-register on iOS — without this call the
+      // SDK will sit on a stale (or missing) token even when iOS permission
+      // is already granted, and OneSignal eventually flags the subscription
+      // invalid_identifier:true after APNs rejects a delivery. fallbackToSettings
+      // is false so previously-denied users don't get hijacked into Settings.
+      try {
+        await OneSignal.Notifications.requestPermission(false);
+      } catch (e) {
+        debugPrint('OneSignal requestPermission failed: $e');
+      }
+
       _isOneSignalInitialized = true;
       await _syncRemotePushUserIdentity();
     } catch (e) {
@@ -328,6 +340,20 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin
           >();
+      // Mirror the grant into OneSignal so it registers for remote
+      // notifications and uploads the APNs token. Without this, OneSignal
+      // can stay on a stale token and APNs will eventually reject pushes,
+      // causing OneSignal to flag the subscription invalid_identifier:true.
+      // fallbackToSettings is true here because this method is called from
+      // explicit user-driven flows (settings screen, onboarding) where
+      // bouncing to Settings on prior denial is the expected UX.
+      if (_isOneSignalInitialized) {
+        try {
+          await OneSignal.Notifications.requestPermission(true);
+        } catch (e) {
+          debugPrint('OneSignal requestPermission (explicit) failed: $e');
+        }
+      }
       if (iosPlugin != null) {
         return await iosPlugin.requestPermissions(
               alert: true,

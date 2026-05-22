@@ -13,6 +13,29 @@
 # - Codemagic: https://docs.codemagic.io/yaml-testing/testing/
 # - Shorebird: https://docs.shorebird.dev/code-push/ci/codemagic/
 # - Project docs: /docs/ci-cd/README.md
+#
+# ============================================================
+# CONVENTION: Build-number resolution (do not skip)
+# ============================================================
+# Every workflow that produces a release artifact (.aab/.ipa) MUST:
+#   1. Run a "Resolve next … build number" step before the build, which
+#      queries Play / TestFlight for the highest existing buildNumber for
+#      that bundle id and exports BUILD_NUMBER = max + 1.
+#   2. Pass `--build-number=$BUILD_NUMBER` to whatever produces the
+#      artifact: `flutter build appbundle/ipa`, `shorebird release ios`,
+#      `shorebird release android`.
+#
+# WHY: pubspec.yaml's `version: x.y.z+N` is committed state. Without
+# runtime resolution every build of the same release branch ships the
+# same buildNumber, which:
+#   - Google Play rejects the rollout ("does not allow existing users to
+#     upgrade to the newly added APKs").
+#   - Shorebird rejects creating the release ("existing release for
+#     version x.y.z+N").
+#   - TestFlight silently dedupes / rejects.
+# Patch workflows (`prod-*-patch`) are exempt — they take a
+# `--release-version` instead of producing a new artifact.
+# ============================================================
 
 definitions:
   # ============================================================
@@ -372,13 +395,47 @@ workflows:
       - *install_cocoapods
       - *setup_ios_signing_shorebird
 
-      - name: Create Shorebird iOS Release
+      - name: Resolve next iOS build number from TestFlight
+        # Shorebird rejects creating a release for a (flavor, version,
+        # platform) tuple it has already seen. TestFlight likewise rejects
+        # duplicate build numbers. Both are derived from CFBundleVersion,
+        # which we set via --build-number below. Without this resolve,
+        # rerunning a release/* build (or main → release-merge) collides.
         script: |
+          set -e
+          BUNDLE_ID=com.milkman.mealvanaendurance
+          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier "$BUNDLE_ID" --json 2>/dev/null | jq -r '.[0].id // empty')
+          if [ -n "$APP_APPLE_ID" ]; then
+            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID" 2>/dev/null || echo "")
+          else
+            LATEST=""
+          fi
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "TestFlight latest build for $BUNDLE_ID: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next iOS build number: $NEXT"
+
+      - name: Create Shorebird iOS Release
+        # Don't pass --flutter-version=stable. Shorebird only accepts
+        # specific version strings (e.g. 3.27.4), not "stable", and will
+        # fail with "Version stable not found." Without the flag, Shorebird
+        # uses its default supported version. `set -e` ensures the build
+        # fails loudly here instead of silently producing no IPA.
+        # --build-number is forwarded to flutter build ipa so the IPA's
+        # CFBundleVersion picks up the resolved value, making the release
+        # version unique in Shorebird's records.
+        script: |
+          set -e
           shorebird release ios \
             --flavor prod \
             --target lib/main_prod.dart \
-            --flutter-version=stable \
-            --export-options-plist=/Users/builder/export_options.plist
+            --export-options-plist=/Users/builder/export_options.plist \
+            --build-number=$BUILD_NUMBER
 
           echo ""
           echo "=========================================="
@@ -443,13 +500,43 @@ workflows:
       - *setup_android_signing
       - *install_shorebird
 
-      - name: Create Shorebird Android Release
+      - name: Resolve next Android build number from Play
+        # Play rejects rollouts whose versionCode isn't strictly greater
+        # than every existing one across ALL tracks (production, beta,
+        # alpha, internal). google-play get-latest-build-number scans all
+        # tracks; we bump by 1 and fall back to $PROJECT_BUILD_NUMBER if
+        # Play returns nothing.
         script: |
+          set -e
+          PACKAGE_NAME=com.milkman.mealvanaendurance
+          echo "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" > /tmp/gcloud-sa.json
+          LATEST=$(google-play get-latest-build-number \
+            --package-name "$PACKAGE_NAME" \
+            --credentials @file:/tmp/gcloud-sa.json 2>/dev/null || echo "")
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "Play latest build for $PACKAGE_NAME: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next Android build number: $NEXT"
+
+      - name: Create Shorebird Android Release
+        # Same as iOS: drop --flutter-version=stable (Shorebird rejects
+        # the literal string "stable") and add set -e so a silent
+        # shorebird failure doesn't masquerade as a successful build.
+        # --build-number is forwarded to `flutter build appbundle` so
+        # versionCode picks up the value resolved above instead of the
+        # +1 from pubspec.yaml.
+        script: |
+          set -e
           shorebird release android \
             --flavor prod \
             --target lib/main_prod.dart \
-            --flutter-version=stable \
-            --artifact=aab
+            --artifact=aab \
+            --build-number=$BUILD_NUMBER
 
           echo ""
           echo "=========================================="
@@ -525,13 +612,39 @@ workflows:
       - *install_cocoapods
       - *setup_ios_signing_shorebird
 
-      - name: Create Shorebird iOS Release (App Store)
+      - name: Resolve next iOS build number from TestFlight
+        # Same rationale as prod-ios: every release artifact must get a
+        # versionCode/buildNumber that's unique in TestFlight + Shorebird.
         script: |
+          set -e
+          BUNDLE_ID=com.milkman.mealvanaendurance
+          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier "$BUNDLE_ID" --json 2>/dev/null | jq -r '.[0].id // empty')
+          if [ -n "$APP_APPLE_ID" ]; then
+            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID" 2>/dev/null || echo "")
+          else
+            LATEST=""
+          fi
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "TestFlight latest build for $BUNDLE_ID: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next iOS build number: $NEXT"
+
+      - name: Create Shorebird iOS Release (App Store)
+        # Don't pass --flutter-version=stable (Shorebird rejects it).
+        # set -e so silent shorebird failures don't get past CI.
+        # --build-number forwarded to flutter build ipa (see prod-ios).
+        script: |
+          set -e
           shorebird release ios \
             --flavor prod \
             --target lib/main_prod.dart \
-            --flutter-version=stable \
-            --export-options-plist=/Users/builder/export_options.plist
+            --export-options-plist=/Users/builder/export_options.plist \
+            --build-number=$BUILD_NUMBER
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -589,13 +702,38 @@ workflows:
       - *setup_android_signing
       - *install_shorebird
 
-      - name: Create Shorebird Android Release (Play Open/Beta)
+      - name: Resolve next Android build number from Play
+        # Same rationale as prod-android: Play won't accept a versionCode
+        # less than the max across all tracks (and main-android targets
+        # the beta/open-testing track on top of whatever release/* has
+        # already shipped to alpha).
         script: |
+          set -e
+          PACKAGE_NAME=com.milkman.mealvanaendurance
+          echo "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" > /tmp/gcloud-sa.json
+          LATEST=$(google-play get-latest-build-number \
+            --package-name "$PACKAGE_NAME" \
+            --credentials @file:/tmp/gcloud-sa.json 2>/dev/null || echo "")
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "Play latest build for $PACKAGE_NAME: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next Android build number: $NEXT"
+
+      - name: Create Shorebird Android Release (Play Open/Beta)
+        # Drop --flutter-version=stable + add set -e (see iOS notes above).
+        # --build-number forwarded to flutter build (see prod-android).
+        script: |
+          set -e
           shorebird release android \
             --flavor prod \
             --target lib/main_prod.dart \
-            --flutter-version=stable \
-            --artifact=aab
+            --artifact=aab \
+            --build-number=$BUILD_NUMBER
 
     artifacts:
       - build/**/outputs/**/*.aab
@@ -655,11 +793,34 @@ workflows:
       - *install_cocoapods
       - *setup_ios_signing
 
+      - name: Resolve next iOS build number from TestFlight (dev)
+        # prod-ci uploads to the .dev TestFlight app, so resolve against
+        # that bundle id (not the prod one).
+        script: |
+          set -e
+          BUNDLE_ID=com.milkman.mealvanaendurance.dev
+          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier "$BUNDLE_ID" --json 2>/dev/null | jq -r '.[0].id // empty')
+          if [ -n "$APP_APPLE_ID" ]; then
+            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID" 2>/dev/null || echo "")
+          else
+            LATEST=""
+          fi
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "TestFlight latest build for $BUNDLE_ID: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next iOS build number: $NEXT"
+
       - name: Build prod-flavor-code with dev bundle (iOS)
         script: |
           flutter build ipa --release \
             --flavor dev \
             --target lib/main_prod.dart \
+            --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
@@ -928,11 +1089,32 @@ workflows:
       - *install_cocoapods
       - *setup_ios_signing
 
+      - name: Resolve next iOS build number from TestFlight
+        script: |
+          set -e
+          BUNDLE_ID=com.milkman.mealvanaendurance
+          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier "$BUNDLE_ID" --json 2>/dev/null | jq -r '.[0].id // empty')
+          if [ -n "$APP_APPLE_ID" ]; then
+            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID" 2>/dev/null || echo "")
+          else
+            LATEST=""
+          fi
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "TestFlight latest build for $BUNDLE_ID: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next iOS build number: $NEXT"
+
       - name: Build iOS (Standard)
         script: |
           flutter build ipa --release \
             --flavor prod \
             --target lib/main_prod.dart \
+            --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
@@ -978,11 +1160,30 @@ workflows:
       - *load_firebase_config
       - *setup_android_signing
 
+      - name: Resolve next Android build number from Play
+        script: |
+          set -e
+          PACKAGE_NAME=com.milkman.mealvanaendurance
+          echo "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" > /tmp/gcloud-sa.json
+          LATEST=$(google-play get-latest-build-number \
+            --package-name "$PACKAGE_NAME" \
+            --credentials @file:/tmp/gcloud-sa.json 2>/dev/null || echo "")
+          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
+            LATEST=$PROJECT_BUILD_NUMBER
+            echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
+          else
+            echo "Play latest build for $PACKAGE_NAME: $LATEST"
+          fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+          echo "Next Android build number: $NEXT"
+
       - name: Build Android App Bundle (Standard)
         script: |
           flutter build appbundle --release \
             --flavor prod \
-            --target lib/main_prod.dart
+            --target lib/main_prod.dart \
+            --build-number=$BUILD_NUMBER
 
     artifacts:
       - build/**/outputs/**/*.aab

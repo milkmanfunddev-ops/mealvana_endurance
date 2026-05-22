@@ -197,7 +197,7 @@ class TodaysActivityCard extends ConsumerWidget {
                     ),
                   ),
                   if (isCompleted)
-                    Icon(
+                    FaIcon(
                       FontAwesomeIcons.circleCheck,
                       color: AppColors.electrolyte,
                       size: AppIconSizes.controlIcon,
@@ -278,7 +278,7 @@ class UpcomingEventCard extends ConsumerWidget {
                     color: AppColors.electrolyte.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.calendar,
                     size: AppIconSizes.activityIcon * 0.5,
                     color: AppColors.electrolyte,

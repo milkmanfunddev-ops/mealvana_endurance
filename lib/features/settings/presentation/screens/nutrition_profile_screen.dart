@@ -9,7 +9,7 @@ import '../../../daily_macros/domain/enums.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
-import '../../../integrations/presentation/widgets/garmin_attribution.dart';
+import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
 
 class NutritionProfileScreen extends ConsumerStatefulWidget {
   const NutritionProfileScreen({super.key});
@@ -21,6 +21,9 @@ class NutritionProfileScreen extends ConsumerStatefulWidget {
 
 class _NutritionProfileScreenState
     extends ConsumerState<NutritionProfileScreen> {
+  final _weightController = TextEditingController();
+  final _heightFeetController = TextEditingController();
+  final _heightInchesController = TextEditingController();
   final _bodyFatController = TextEditingController();
   final _weeklyHoursController = TextEditingController();
 
@@ -28,6 +31,7 @@ class _NutritionProfileScreenState
   bool _carbCycleOptIn = false;
   TrainingPhase _trainingPhase = TrainingPhase.base;
   bool _hasChanges = false;
+  bool _weightFromGarmin = false;
   bool _bodyFatFromGarmin = false;
   bool _isSaving = false;
 
@@ -39,6 +43,9 @@ class _NutritionProfileScreenState
 
   @override
   void dispose() {
+    _weightController.dispose();
+    _heightFeetController.dispose();
+    _heightInchesController.dispose();
     _bodyFatController.dispose();
     _weeklyHoursController.dispose();
     super.dispose();
@@ -50,38 +57,58 @@ class _NutritionProfileScreenState
     if (profile == null || !mounted) return;
 
     setState(() {
+      _weightController.text = profile.weightPounds.toStringAsFixed(0);
+      _heightFeetController.text = profile.heightFeet.toString();
+      _heightInchesController.text = profile.heightInches.toString();
       if (profile.bodyFatPct != null) {
         _bodyFatController.text = profile.bodyFatPct!.toStringAsFixed(1);
       }
       _lifestyle = profile.lifestyle;
       if (profile.typicalWeeklyHours != null) {
-        _weeklyHoursController.text = profile.typicalWeeklyHours!.toStringAsFixed(1);
+        _weeklyHoursController.text = profile.typicalWeeklyHours!
+            .toStringAsFixed(1);
       }
       _carbCycleOptIn = profile.carbCycleOptIn;
       _trainingPhase = profile.trainingPhase;
     });
 
-    // If body fat is empty, try to populate from Garmin integration
-    if (profile.bodyFatPct == null) {
-      try {
-        final integrationsRepo = ref.read(integrationsRepositoryProvider);
-        final garminIntegration = await integrationsRepo.getIntegration(
-          profile.id,
-          'garmin',
-        );
-        if (garminIntegration?.isActive == true &&
-            garminIntegration?.providerAthleteBodyFatPct != null &&
-            mounted) {
-          setState(() {
-            _bodyFatController.text =
-                garminIntegration!.providerAthleteBodyFatPct!
-                    .toStringAsFixed(1);
-            _bodyFatFromGarmin = true;
-          });
-        }
-      } catch (_) {
-        // Non-fatal — body fat from Garmin is best-effort
+    // Garmin auto-fill: if Garmin's latest body-comp reading is authoritative
+    // (newer than the user's manual entry, within 30-day staleness window),
+    // overwrite weight + body-fat fields. User edits clear the corresponding
+    // _fromGarmin flag and hide the chip.
+    try {
+      final garminData = await ref.read(
+        garminLastBodyCompProvider(profile.id).future,
+      );
+      if (!mounted || garminData == null) return;
+
+      final userWeightKg = profile.weightPounds * 0.453592;
+      final weightAuthoritative = isGarminAuthoritativeForWeight(
+        garmin: garminData,
+        userWeightKg: userWeightKg,
+        userUpdatedAt: profile.weightPoundsUpdatedAt,
+      );
+      if (weightAuthoritative && garminData.weightKg != null) {
+        final garminLbs = (garminData.weightKg! * 2.20462).round();
+        setState(() {
+          _weightController.text = garminLbs.toString();
+          _weightFromGarmin = true;
+        });
       }
+
+      final bodyFatAuthoritative = isGarminAuthoritativeForBodyFat(
+        garmin: garminData,
+        userBodyFatPct: profile.bodyFatPct,
+        userUpdatedAt: profile.bodyFatPctUpdatedAt,
+      );
+      if (bodyFatAuthoritative && garminData.bodyFatPct != null) {
+        setState(() {
+          _bodyFatController.text = garminData.bodyFatPct!.toStringAsFixed(1);
+          _bodyFatFromGarmin = true;
+        });
+      }
+    } catch (_) {
+      // Non-fatal — Garmin auto-fill is best-effort.
     }
   }
 
@@ -94,15 +121,33 @@ class _NutritionProfileScreenState
       final profile = await userRepository.getCurrentUser();
       if (profile == null) return;
 
+      final weightLbs = double.tryParse(_weightController.text);
+      final heightFeet = int.tryParse(_heightFeetController.text);
+      final heightInches = int.tryParse(_heightInchesController.text);
       final bodyFat = double.tryParse(_bodyFatController.text);
       final weeklyHours = double.tryParse(_weeklyHoursController.text);
 
-      final bodyFatChanged = bodyFat != profile.bodyFatPct;
+      // Only bump weight_pounds_updated_at when the user edits the field
+      // away from whatever Garmin auto-filled. If the displayed value still
+      // matches Garmin's reading, leave the timestamp on Garmin's so the
+      // edge-function resolver can still resolve weight correctly.
+      final weightChanged = weightLbs != null &&
+          !_weightFromGarmin &&
+          weightLbs != profile.weightPounds;
+      final bodyFatChanged = bodyFat != profile.bodyFatPct &&
+          !_bodyFatFromGarmin;
 
       final updated = profile.copyWith(
+        weightPounds: weightLbs ?? profile.weightPounds,
+        weightPoundsUpdatedAt: weightChanged
+            ? DateTime.now().toUtc()
+            : profile.weightPoundsUpdatedAt,
+        heightFeet: heightFeet ?? profile.heightFeet,
+        heightInches: heightInches ?? profile.heightInches,
         bodyFatPct: bodyFat,
-        bodyFatPctUpdatedAt:
-            bodyFatChanged ? DateTime.now().toUtc() : profile.bodyFatPctUpdatedAt,
+        bodyFatPctUpdatedAt: bodyFatChanged
+            ? DateTime.now().toUtc()
+            : profile.bodyFatPctUpdatedAt,
         lifestyle: _lifestyle,
         typicalWeeklyHours: weeklyHours,
         carbCycleOptIn: _carbCycleOptIn,
@@ -141,9 +186,12 @@ class _NutritionProfileScreenState
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: const CustomAppBarBackButton(),
+        leading: const CustomAppBarBackButton(
+          key: ValueKey('nutrition_profile.back_button'),
+        ),
         title: Text(
-          'Nutrition Profile',
+          key: const ValueKey('nutrition_profile.title'),
+          'Body Composition',
           style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -170,47 +218,78 @@ class _NutritionProfileScreenState
             children: [
               const SizedBox(height: AppSpacing.lg),
 
+              // Weight (with Garmin auto-fill when authoritative)
+              _buildSectionLabel(
+                context,
+                'Weight',
+                labelKey: const ValueKey('body_composition.weight_section'),
+              ),
+              if (_weightFromGarmin) ...[
+                const Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: GarminAttributionMessage(
+                    subject: 'Weight',
+                    compact: true,
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.sm),
+              _buildWeightInput(context),
+
+              const SizedBox(height: AppSpacing.xl),
+
+              // Height (feet + inches)
+              _buildSectionLabel(
+                context,
+                'Height',
+                labelKey: const ValueKey('body_composition.height_section'),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _buildHeightInput(context),
+
+              const SizedBox(height: AppSpacing.xl),
+
               // Body Fat %
-              _buildSectionLabel(context, 'Body Fat % (optional)'),
-              // Garmin brand attribution (required by Garmin API Brand Guidelines).
-              // Body composition originates from a connected scale / Garmin
-              // Connect and isn't tied to a specific wearable device model, so
-              // we use the "Garmin Connect" fallback form.
-              Builder(builder: (context) {
-                // Get userId from settings controller state for the provider call
-                final settingsState = ref.watch(settingsControllerProvider);
-                final effectiveUserId = settingsState.asData?.value.userId;
-                final garminAsync = effectiveUserId != null
-                    ? ref.watch(garminLastBodyCompProvider(effectiveUserId))
-                    : null;
-                final garminData = garminAsync?.asData?.value;
-                final currentBodyFat = double.tryParse(_bodyFatController.text);
-                final showGarminBadge = _bodyFatFromGarmin ||
-                    isGarminAuthoritativeForBodyFat(
-                      garmin: garminData,
-                      userBodyFatPct: currentBodyFat,
-                      userUpdatedAt: null,
-                    );
-                if (!showGarminBadge) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: const GarminAttribution(style: GarminAttributionStyle.compact),
-                );
-              }),
+              _buildSectionLabel(
+                context,
+                'Body Fat % (optional)',
+                labelKey: const ValueKey('nutrition_profile.body_fat_section'),
+              ),
+              if (_bodyFatFromGarmin) ...[
+                const Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: GarminAttributionMessage(
+                    subject: 'Body fat %',
+                    compact: true,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.sm),
               _buildBodyFatInput(context),
 
               const SizedBox(height: AppSpacing.xl),
 
               // Lifestyle
-              _buildSectionLabel(context, 'Daily Activity Level'),
+              _buildSectionLabel(
+                context,
+                'Daily Activity Level',
+                labelKey: const ValueKey(
+                  'nutrition_profile.activity_level_section',
+                ),
+              ),
               const SizedBox(height: AppSpacing.sm),
               _buildLifestyleSelector(context),
 
               const SizedBox(height: AppSpacing.xl),
 
               // Weekly Hours
-              _buildSectionLabel(context, 'Typical Weekly Training Hours'),
+              _buildSectionLabel(
+                context,
+                'Typical Weekly Training Hours',
+                labelKey: const ValueKey(
+                  'nutrition_profile.training_hours_section',
+                ),
+              ),
               const SizedBox(height: AppSpacing.sm),
               _buildWeeklyHoursInput(context),
 
@@ -222,7 +301,13 @@ class _NutritionProfileScreenState
               const SizedBox(height: AppSpacing.xl),
 
               // Training Phase
-              _buildSectionLabel(context, 'Training Phase'),
+              _buildSectionLabel(
+                context,
+                'Training Phase',
+                labelKey: const ValueKey(
+                  'nutrition_profile.training_phase_section',
+                ),
+              ),
               const SizedBox(height: AppSpacing.sm),
               _buildTrainingPhaseSelector(context),
 
@@ -234,11 +319,79 @@ class _NutritionProfileScreenState
     );
   }
 
-  Widget _buildSectionLabel(BuildContext context, String label) {
+  Widget _buildSectionLabel(
+    BuildContext context,
+    String label, {
+    Key? labelKey,
+  }) {
     return Text(
+      key: labelKey,
       label,
-      style: AppTextStyles.subtitle.copyWith(
+      // Section labels here use Sansita (the heading face) rather than
+      // Compadre's capitalized-look subtitle style — matches how page
+      // titles are rendered and reads as proper headings, not labels.
+      style: AppTextStyles.sectionTitle.copyWith(
         color: Theme.of(context).colorScheme.onSurface,
+        fontSize: 18,
+      ),
+    );
+  }
+
+  Widget _buildWeightInput(BuildContext context) {
+    return BaseCard(
+      child: KyleInputField(
+        key: const ValueKey('body_composition.weight_field'),
+        controller: _weightController,
+        hintText: 'e.g., 165',
+        suffixText: 'lbs',
+        keyboardType: TextInputType.number,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+        ],
+        onChanged: (_) {
+          // User edit supersedes Garmin — clear the chip and mark dirty.
+          if (_weightFromGarmin) {
+            setState(() => _weightFromGarmin = false);
+          }
+          _markChanged();
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeightInput(BuildContext context) {
+    return BaseCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: KyleInputField(
+              key: const ValueKey('body_composition.height_ft_field'),
+              controller: _heightFeetController,
+              hintText: 'ft',
+              suffixText: 'ft',
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              onChanged: (_) => _markChanged(),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: KyleInputField(
+              key: const ValueKey('body_composition.height_in_field'),
+              controller: _heightInchesController,
+              hintText: 'in',
+              suffixText: 'in',
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              onChanged: (_) => _markChanged(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -256,6 +409,7 @@ class _NutritionProfileScreenState
           ),
           const SizedBox(height: AppSpacing.md),
           KyleInputField(
+            key: const ValueKey('nutrition_profile.body_fat_field'),
             controller: _bodyFatController,
             hintText: 'e.g., 15.0',
             suffixText: '%',
@@ -263,7 +417,13 @@ class _NutritionProfileScreenState
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}\.?\d{0,1}')),
             ],
-            onChanged: (_) => _markChanged(),
+            onChanged: (_) {
+              // User edit supersedes Garmin — clear the chip and mark dirty.
+              if (_bodyFatFromGarmin) {
+                setState(() => _bodyFatFromGarmin = false);
+              }
+              _markChanged();
+            },
           ),
         ],
       ),
@@ -282,16 +442,21 @@ class _NutritionProfileScreenState
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          ...Lifestyle.values.map((lifestyle) => _buildRadioTile(
-                context: context,
-                title: lifestyle.displayName,
-                subtitle: _lifestyleDescription(lifestyle),
-                selected: _lifestyle == lifestyle,
-                onTap: () {
-                  setState(() => _lifestyle = lifestyle);
-                  _markChanged();
-                },
-              )),
+          ...Lifestyle.values.map(
+            (lifestyle) => _buildRadioTile(
+              context: context,
+              tileKey: ValueKey(
+                'nutrition_profile.activity_${lifestyle.name}_button',
+              ),
+              title: lifestyle.displayName,
+              subtitle: _lifestyleDescription(lifestyle),
+              selected: _lifestyle == lifestyle,
+              onTap: () {
+                setState(() => _lifestyle = lifestyle);
+                _markChanged();
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -323,6 +488,7 @@ class _NutritionProfileScreenState
           ),
           const SizedBox(height: AppSpacing.md),
           KyleInputField(
+            key: const ValueKey('nutrition_profile.training_hours_field'),
             controller: _weeklyHoursController,
             hintText: 'e.g., 10.0',
             suffixText: 'hrs/week',
@@ -363,6 +529,7 @@ class _NutritionProfileScreenState
           ),
           const SizedBox(width: AppSpacing.md),
           KyleSwitch(
+            key: const ValueKey('nutrition_profile.carb_cycling_toggle'),
             value: _carbCycleOptIn,
             onChanged: (value) {
               setState(() => _carbCycleOptIn = value);
@@ -386,16 +553,19 @@ class _NutritionProfileScreenState
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          ...TrainingPhase.values.map((phase) => _buildRadioTile(
-                context: context,
-                title: phase.displayName,
-                subtitle: _phaseDescription(phase),
-                selected: _trainingPhase == phase,
-                onTap: () {
-                  setState(() => _trainingPhase = phase);
-                  _markChanged();
-                },
-              )),
+          ...TrainingPhase.values.map(
+            (phase) => _buildRadioTile(
+              context: context,
+              tileKey: ValueKey('nutrition_profile.phase_${phase.name}_button'),
+              title: phase.displayName,
+              subtitle: _phaseDescription(phase),
+              selected: _trainingPhase == phase,
+              onTap: () {
+                setState(() => _trainingPhase = phase);
+                _markChanged();
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -424,8 +594,10 @@ class _NutritionProfileScreenState
     required String subtitle,
     required bool selected,
     required VoidCallback onTap,
+    Key? tileKey,
   }) {
     return InkWell(
+      key: tileKey,
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
@@ -451,7 +623,9 @@ class _NutritionProfileScreenState
                     title,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: selected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
                   ),
                   Text(

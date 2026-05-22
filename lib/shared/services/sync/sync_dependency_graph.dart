@@ -13,6 +13,7 @@ class SyncDependencyGraph {
     'feedback': ['users'],
     'food_preferences': ['users', 'template_foods'],
     'user_foods': ['users'],
+    'integrations': ['users'],
     'coaches': ['users'],
     'coach_athlete_relationships': ['coaches', 'users'],
     'carb_loading_plans': ['users', 'events'],

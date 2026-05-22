@@ -115,7 +115,10 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
     ref
         .read(foodSearchControllerProvider(_searchControllerKey).notifier)
-        .updateFoodPool(allFoods: [...allFoods, ...userFoods], userFoods: userFoods);
+        .updateFoodPool(
+          allFoods: [...allFoods, ...userFoods],
+          userFoods: userFoods,
+        );
   }
 
   Food _convertFoodItemToFood(FoodItem item) {
@@ -756,7 +759,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
 
         setState(() {
           _userFoods.insert(0, foodItem);
-          _sliderLevels[food.id] = 2;
+          _sliderLevels[food.name] = 2;
         });
 
         // Re-seed search controller
@@ -839,8 +842,11 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: const CustomAppBarBackButton(),
+      leading: const CustomAppBarBackButton(
+        key: ValueKey('food_likes.back_button'),
+      ),
       title: Text(
+        key: const ValueKey('food_likes.title'),
         'Food Preferences',
         style: AppTextStyles.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
@@ -862,6 +868,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
               Column(
                 children: [
                   FigmaSearchBar(
+                    key: const ValueKey('food_likes.search_field'),
                     controller: _searchController,
                     onChanged: _onSearchChanged,
                     onBarcodeScan: () {
@@ -887,7 +894,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                     Center(
                       child: TextButton.icon(
                         onPressed: _onClearSearch,
-                        icon: const Icon(
+                        icon: const FaIcon(
                           FontAwesomeIcons.xmark,
                           size: 16,
                           color: AppColors.orange,
@@ -909,8 +916,9 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
                   const SizedBox(height: AppSpacing.xs),
                   Center(
                     child: TextButton.icon(
+                      key: const ValueKey('food_likes.create_custom_button'),
                       onPressed: _openCreateFoodScreen,
-                      icon: const Icon(
+                      icon: const FaIcon(
                         FontAwesomeIcons.plus,
                         size: 14,
                         color: AppColors.orange,
@@ -982,6 +990,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
         Padding(
           padding: AppSpacing.screenPaddingHorizontal,
           child: KylePrimaryButton(
+            key: const ValueKey('food_likes.save_button'),
             text: _isSaving ? 'Saving...' : 'Save Changes',
             onPressed: _isSaving ? null : _savePreferences,
             isFullWidth: true,

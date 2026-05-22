@@ -336,6 +336,7 @@ export async function generateDuringPhase(
               targets,
               durationMinutes,
               gutTrainingLevel,
+              dislikedSet,
             );
             if (templateResult) break;
           }
@@ -366,6 +367,10 @@ export async function generateDuringPhase(
                 template_name: templateResult.template_name,
                 template_formula: templateResult.template_formula,
               },
+              ...(templateResult.shortfalls &&
+                templateResult.shortfalls.length > 0 && {
+                shortfalls: templateResult.shortfalls,
+              }),
             };
           }
 

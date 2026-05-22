@@ -250,7 +250,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                     'auth.email_signup.email_hint',
                     defaultValue: 'you@example.com',
                   ),
-                  prefixIcon: Icon(
+                  prefixIcon: FaIcon(
                     FontAwesomeIcons.envelope,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -282,7 +282,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                     'auth.email_signup.password_hint',
                     defaultValue: 'At least 8 characters',
                   ),
-                  prefixIcon: Icon(
+                  prefixIcon: FaIcon(
                     FontAwesomeIcons.lock,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -290,8 +290,8 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
-                          ? FontAwesomeIcons.eye
-                          : FontAwesomeIcons.eyeSlash,
+                          ? FontAwesomeIcons.eye.data
+                          : FontAwesomeIcons.eyeSlash.data,
                       size: AppIconSizes.controlIcon,
                     ),
                     onPressed: () {
@@ -326,7 +326,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                     'auth.email_signup.password_confirm_hint',
                     defaultValue: 'Re-enter your password',
                   ),
-                  prefixIcon: Icon(
+                  prefixIcon: FaIcon(
                     FontAwesomeIcons.lock,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -334,8 +334,8 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirmPassword
-                          ? FontAwesomeIcons.eye
-                          : FontAwesomeIcons.eyeSlash,
+                          ? FontAwesomeIcons.eye.data
+                          : FontAwesomeIcons.eyeSlash.data,
                       size: AppIconSizes.controlIcon,
                     ),
                     onPressed: () {

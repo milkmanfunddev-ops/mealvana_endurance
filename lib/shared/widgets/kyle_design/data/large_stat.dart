@@ -5,7 +5,6 @@ import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
-
 /// Large stat display for Kyle's design system
 /// Two-column layout with icon, label, and large value
 class LargeStatDisplay extends ConsumerWidget {
@@ -14,11 +13,15 @@ class LargeStatDisplay extends ConsumerWidget {
     required this.stats,
     this.backgroundColor,
     this.padding,
+    this.firstStatKey,
+    this.secondStatKey,
   });
 
   final List<StatItem> stats;
   final Color? backgroundColor;
   final EdgeInsets? padding;
+  final Key? firstStatKey;
+  final Key? secondStatKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,7 +30,10 @@ class LargeStatDisplay extends ConsumerWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: backgroundColor ?? Theme.of(context).colorScheme.surface,
@@ -37,20 +43,28 @@ class LargeStatDisplay extends ConsumerWidget {
         ),
       ),
       child: Row(
-        children: stats.map((stat) => _buildStatItem(context, stat)).toList(),
+        children: stats.asMap().entries.map((entry) {
+          final index = entry.key;
+          final stat = entry.value;
+          final statKey = index == 0 ? firstStatKey : secondStatKey;
+          return _buildStatItem(context, stat, statKey);
+        }).toList(),
       ),
     );
   }
 
-  Widget _buildStatItem(BuildContext context, StatItem stat) {
+  Widget _buildStatItem(BuildContext context, StatItem stat, [Key? itemKey]) {
     return Expanded(
       child: Column(
+        key: itemKey,
         children: [
           // Icon
           Icon(
             stat.icon,
             size: AppIconSizes.xl,
-            color: stat.iconColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
+            color:
+                stat.iconColor ??
+                Theme.of(context).colorScheme.onSurfaceVariant,
           ),
 
           const SizedBox(height: AppSpacing.sm),
@@ -103,30 +117,36 @@ class PaceBurnDisplay extends ConsumerWidget {
     required this.pace,
     required this.totalBurn,
     this.backgroundColor,
+    this.paceStatKey,
+    this.burnStatKey,
   });
 
   final String pace;
   final String totalBurn;
   final Color? backgroundColor;
+  final Key? paceStatKey;
+  final Key? burnStatKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return LargeStatDisplay(
       stats: [
         StatItem(
-          icon: FontAwesomeIcons.clock,
+          icon: FontAwesomeIcons.clock.data,
           label: 'PACE',
           value: pace,
           iconColor: Colors.orange,
         ),
         StatItem(
-          icon: FontAwesomeIcons.fire,
+          icon: FontAwesomeIcons.fire.data,
           label: 'TOTAL BURN',
           value: totalBurn,
           iconColor: AppColors.dragonfruit,
         ),
       ],
       backgroundColor: backgroundColor,
+      firstStatKey: paceStatKey,
+      secondStatKey: burnStatKey,
     );
   }
 }
@@ -149,13 +169,13 @@ class DistanceTimeDisplay extends ConsumerWidget {
     return LargeStatDisplay(
       stats: [
         StatItem(
-          icon: FontAwesomeIcons.route,
+          icon: FontAwesomeIcons.route.data,
           label: 'DISTANCE',
           value: distance,
           iconColor: AppColors.electrolyte,
         ),
         StatItem(
-          icon: FontAwesomeIcons.clock,
+          icon: FontAwesomeIcons.clock.data,
           label: 'DURATION',
           value: duration,
           iconColor: AppColors.orange,
@@ -188,7 +208,10 @@ class SingleLargeStat extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: backgroundColor ?? Theme.of(context).colorScheme.surface,
@@ -201,8 +224,8 @@ class SingleLargeStat extends ConsumerWidget {
         mainAxisAlignment: alignment == MainAxisAlignment.start
             ? MainAxisAlignment.start
             : alignment == MainAxisAlignment.end
-                ? MainAxisAlignment.end
-                : MainAxisAlignment.center,
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.center,
         children: [
           // Icon
           Icon(
@@ -223,7 +246,7 @@ class SingleLargeStat extends ConsumerWidget {
           ),
 
           const SizedBox(height: AppSpacing.xs),
-          
+
           // Value
           Text(
             value,
@@ -254,7 +277,10 @@ class CompactStatDisplay extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       padding: padding ?? const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: backgroundColor ?? Theme.of(context).colorScheme.surface,
@@ -264,7 +290,9 @@ class CompactStatDisplay extends ConsumerWidget {
         ),
       ),
       child: Column(
-        children: stats.map((stat) => _buildCompactStatItem(context, stat)).toList(),
+        children: stats
+            .map((stat) => _buildCompactStatItem(context, stat))
+            .toList(),
       ),
     );
   }
@@ -278,7 +306,9 @@ class CompactStatDisplay extends ConsumerWidget {
           Icon(
             stat.icon,
             size: AppIconSizes.controlIcon,
-            color: stat.iconColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
+            color:
+                stat.iconColor ??
+                Theme.of(context).colorScheme.onSurfaceVariant,
           ),
 
           const SizedBox(width: AppSpacing.sm),
@@ -291,9 +321,9 @@ class CompactStatDisplay extends ConsumerWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          
+
           const Spacer(),
-          
+
           // Value
           Text(
             stat.value,

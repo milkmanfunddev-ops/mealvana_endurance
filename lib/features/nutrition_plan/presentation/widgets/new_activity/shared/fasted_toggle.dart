@@ -44,6 +44,7 @@ class FastedToggle extends StatelessWidget {
                 ),
               ),
               KyleSwitch(
+                key: const ValueKey('activity_create.fasted_toggle'),
                 value: isFasted,
                 onChanged: onChanged,
                 activeTrackColor: AppColors.electrolyte,

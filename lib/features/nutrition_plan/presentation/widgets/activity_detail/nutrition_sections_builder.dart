@@ -387,6 +387,10 @@ class _NutritionSectionsBuilderState
     String? fluidsOverrideLabel,
   }) {
     final isExpanded = _expandedSections[category] ?? false;
+    // Post-workout recovery is treated as a trigger, not a macro-dosing event,
+    // so we hide carbs/protein/sodium/fluid targets for the after section.
+    // The food list below remains the canonical portion.
+    final isAfterSection = category.toLowerCase().contains('after');
 
     final foodSummary = section.foodItems
         .map(_buildCollapsedFoodSummaryLabel)
@@ -413,65 +417,34 @@ class _NutritionSectionsBuilderState
             section,
           ),
           const SizedBox(height: AppSpacing.md),
-          MacroSummaryRow(
-            foods: section.foodItems,
-            section: section,
-            category: category,
-            useImperial: useImperial,
-            carbsLow: carbsLow,
-            carbsHigh: carbsHigh,
-            proteinLow: proteinLow,
-            proteinHigh: proteinHigh,
-            sodiumLow: sodiumLow,
-            sodiumHigh: sodiumHigh,
-            fluidsLow: fluidsLow,
-            fluidsHigh: fluidsHigh,
-            carbsOverridden: carbsOverridden,
-            proteinOverridden: proteinOverridden,
-            sodiumOverridden: sodiumOverridden,
-            fluidsOverridden: fluidsOverridden,
-            carbsOverrideLabel: carbsOverrideLabel,
-            proteinOverrideLabel: proteinOverrideLabel,
-            sodiumOverrideLabel: sodiumOverrideLabel,
-            fluidsOverrideLabel: fluidsOverrideLabel,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          // Collapsible food list
-          InkWell(
-            onTap: () {
-              setState(() {
-                _expandedSections[category] = !isExpanded;
-              });
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              child: Row(
-                children: [
-                  Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_down
-                        : Icons.keyboard_arrow_right,
-                    color: sectionColor,
-                    size: 20,
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      foodSummary,
-                      style: AppTextStyles.smallLabel.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
+          if (!isAfterSection) ...[
+            MacroSummaryRow(
+              foods: section.foodItems,
+              section: section,
+              category: category,
+              useImperial: useImperial,
+              carbsLow: carbsLow,
+              carbsHigh: carbsHigh,
+              proteinLow: proteinLow,
+              proteinHigh: proteinHigh,
+              sodiumLow: sodiumLow,
+              sodiumHigh: sodiumHigh,
+              fluidsLow: fluidsLow,
+              fluidsHigh: fluidsHigh,
+              carbsOverridden: carbsOverridden,
+              proteinOverridden: proteinOverridden,
+              sodiumOverridden: sodiumOverridden,
+              fluidsOverridden: fluidsOverridden,
+              carbsOverrideLabel: carbsOverrideLabel,
+              proteinOverrideLabel: proteinOverrideLabel,
+              sodiumOverrideLabel: sodiumOverrideLabel,
+              fluidsOverrideLabel: fluidsOverrideLabel,
             ),
-          ),
-          if (isExpanded) ...[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          // Food list: collapsible by default; expanded inline for the after
+          // section since it has no macro summary above to scan past.
+          if (isAfterSection) ...[
             ...section.foodItems.asMap().entries.map((entry) {
               final index = entry.key;
               final food = entry.value;
@@ -495,9 +468,75 @@ class _NutritionSectionsBuilderState
             }),
             const SizedBox(height: AppSpacing.md),
             KyleAddFoodButton(
+              key: ValueKey('plan_detail.${category}_add_food_button'),
               text: 'ADD FOOD',
               onPressed: () => widget.onAddFood(category),
             ),
+          ] else ...[
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _expandedSections[category] = !isExpanded;
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                child: Row(
+                  children: [
+                    Icon(
+                      isExpanded
+                          ? Icons.keyboard_arrow_down
+                          : Icons.keyboard_arrow_right,
+                      color: sectionColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        foodSummary,
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (isExpanded) ...[
+              const SizedBox(height: AppSpacing.sm),
+              ...section.foodItems.asMap().entries.map((entry) {
+                final index = entry.key;
+                final food = entry.value;
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index < section.foodItems.length - 1
+                        ? AppSpacing.sm
+                        : 0,
+                  ),
+                  child: DismissibleFoodItem(
+                    food: food,
+                    category: category,
+                    onSwap: () =>
+                        widget.onSwapFood(food.id, food.name, category),
+                    onDelete: () => widget.onDeleteFood(food.id, category),
+                    onQuantityChange: (newQuantity) =>
+                        widget.onUpdateQuantity(food.id, category, newQuantity),
+                    showSwipeHint: widget.consumeSwipeHint(),
+                    useImperial: useImperial,
+                  ),
+                );
+              }),
+              const SizedBox(height: AppSpacing.md),
+              KyleAddFoodButton(
+                key: ValueKey('plan_detail.${category}_add_food_button'),
+                text: 'ADD FOOD',
+                onPressed: () => widget.onAddFood(category),
+              ),
+            ],
           ],
         ],
       ),
@@ -533,7 +572,7 @@ class _NutritionSectionsBuilderState
     return '${food_utils.formatQuantity(qty)} $label';
   }
 
-  IconData _getSportIcon(ActivityType activityType) {
+  FaIconData _getSportIcon(ActivityType activityType) {
     switch (activityType) {
       case ActivityType.cycling:
         return FontAwesomeIcons.personBiking;
@@ -563,6 +602,7 @@ class _NutritionSectionsBuilderState
       children: [
         Expanded(
           child: Text(
+            key: ValueKey('plan_detail.${category}_section'),
             title,
             style: AppTextStyles.sectionTitle.copyWith(
               color: sectionColor,
@@ -616,7 +656,9 @@ class _NutritionSectionsBuilderState
     if (activityId == null) return null;
     return () {
       ref
-          .read(activityDetailControllerProvider(activityId: activityId).notifier)
+          .read(
+            activityDetailControllerProvider(activityId: activityId).notifier,
+          )
           .regeneratePlan();
     };
   }

@@ -4,7 +4,7 @@ import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../../activities/domain/activity.dart';
 import '../../../../integrations/presentation/widgets/garmin_attribution.dart';
 
-/// Displays coach notes / TrainingPeaks description for an activity.
+/// Displays coach notes / provider description for an activity.
 /// Only shown when the activity has notes and was synced from a provider.
 class ActivityCoachNotesWidget extends StatelessWidget {
   final Activity activity;
@@ -19,11 +19,14 @@ class ActivityCoachNotesWidget extends StatelessWidget {
     final isFromTP = activity.syncedFromProvider == 'training_peaks';
     final isFromFS = activity.syncedFromProvider == 'final_surge';
     final isFromGarmin = activity.syncedFromProvider == 'garmin';
+    final isFromVdot = activity.syncedFromProvider == 'vdot';
     final providerName = isFromTP
         ? 'TrainingPeaks'
         : isFromFS
             ? 'Final Surge'
-            : null;
+            : isFromVdot
+                ? 'V.O2'
+                : null;
 
     // Extract the coach description (before metadata line)
     // The notes format from TP transformer: "description\nElevation: ... | Calories: ... | Tags: ..."

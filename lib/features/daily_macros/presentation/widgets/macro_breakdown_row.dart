@@ -25,18 +25,21 @@ class MacroBreakdownRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _MacroChip(
+          key: const ValueKey('nutrition_diary.carbs_label'),
           label: 'Carbs',
           value: '${carbG.round()}g',
           dotColor: AppColors.electrolyte,
           textColor: color,
         ),
         _MacroChip(
+          key: const ValueKey('nutrition_diary.protein_label'),
           label: 'Protein',
           value: '${protG.round()}g',
           dotColor: AppColors.orange,
           textColor: color,
         ),
         _MacroChip(
+          key: const ValueKey('nutrition_diary.fat_label'),
           label: 'Fat',
           value: '${fatG.round()}g',
           dotColor: AppColors.dragonfruit,
@@ -49,6 +52,7 @@ class MacroBreakdownRow extends StatelessWidget {
 
 class _MacroChip extends StatelessWidget {
   const _MacroChip({
+    super.key,
     required this.label,
     required this.value,
     required this.dotColor,
@@ -68,10 +72,7 @@ class _MacroChip extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: dotColor,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
         Column(

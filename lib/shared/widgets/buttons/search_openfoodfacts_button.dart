@@ -37,7 +37,7 @@ class SearchOpenFoodFactsButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(26),
               ),
             ),
-            icon: const Icon(
+            icon: const FaIcon(
               FontAwesomeIcons.magnifyingGlass,
               size: AppIconSizes.sm,
             ),

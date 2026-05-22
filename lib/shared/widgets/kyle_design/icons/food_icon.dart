@@ -45,29 +45,29 @@ class KyleFoodIcon extends ConsumerWidget {
   IconData _getIconForFoodType(KyleFoodType type) {
     switch (type) {
       case KyleFoodType.energyBar:
-        return FontAwesomeIcons.bars;
+        return FontAwesomeIcons.bars.data;
       case KyleFoodType.gel:
-        return FontAwesomeIcons.jar;
+        return FontAwesomeIcons.jar.data;
       case KyleFoodType.drink:
-        return FontAwesomeIcons.bottleWater;
+        return FontAwesomeIcons.bottleWater.data;
       case KyleFoodType.fruit:
-        return FontAwesomeIcons.appleWhole;
+        return FontAwesomeIcons.appleWhole.data;
       case KyleFoodType.sandwich:
-        return FontAwesomeIcons.burger;
+        return FontAwesomeIcons.burger.data;
       case KyleFoodType.pasta:
-        return FontAwesomeIcons.bowlFood;
+        return FontAwesomeIcons.bowlFood.data;
       case KyleFoodType.rice: 
-        return FontAwesomeIcons.bowlRice;
+        return FontAwesomeIcons.bowlRice.data;
       case KyleFoodType.protein:
-        return FontAwesomeIcons.drumstickBite;
+        return FontAwesomeIcons.drumstickBite.data;
       case KyleFoodType.vegetable:
-        return FontAwesomeIcons.carrot;
+        return FontAwesomeIcons.carrot.data;
       case KyleFoodType.snack:
-        return FontAwesomeIcons.cookie;
+        return FontAwesomeIcons.cookie.data;
       case KyleFoodType.supplement:
-        return FontAwesomeIcons.pills;
+        return FontAwesomeIcons.pills.data;
       case KyleFoodType.other:
-        return FontAwesomeIcons.utensils;
+        return FontAwesomeIcons.utensils.data;
     }
   }
 }
@@ -199,29 +199,29 @@ class KyleFoodPreferenceIcon extends ConsumerWidget {
   IconData _getIconForFoodType(KyleFoodType type) {
     switch (type) {
       case KyleFoodType.energyBar:
-        return FontAwesomeIcons.bars;
+        return FontAwesomeIcons.bars.data;
       case KyleFoodType.gel:
-        return FontAwesomeIcons.jar;
+        return FontAwesomeIcons.jar.data;
       case KyleFoodType.drink:
-        return FontAwesomeIcons.bottleWater;
+        return FontAwesomeIcons.bottleWater.data;
       case KyleFoodType.fruit:
-        return FontAwesomeIcons.appleWhole;
+        return FontAwesomeIcons.appleWhole.data;
       case KyleFoodType.sandwich:
-        return FontAwesomeIcons.burger;
+        return FontAwesomeIcons.burger.data;
       case KyleFoodType.pasta:
-        return FontAwesomeIcons.bowlFood;
+        return FontAwesomeIcons.bowlFood.data;
       case KyleFoodType.rice:
-        return FontAwesomeIcons.bowlRice;
+        return FontAwesomeIcons.bowlRice.data;
       case KyleFoodType.protein:
-        return FontAwesomeIcons.drumstickBite;
+        return FontAwesomeIcons.drumstickBite.data;
       case KyleFoodType.vegetable:
-        return FontAwesomeIcons.carrot;
+        return FontAwesomeIcons.carrot.data;
       case KyleFoodType.snack:
-        return FontAwesomeIcons.cookie;
+        return FontAwesomeIcons.cookie.data;
       case KyleFoodType.supplement:
-        return FontAwesomeIcons.pills;
+        return FontAwesomeIcons.pills.data;
       case KyleFoodType.other:
-        return FontAwesomeIcons.utensils;
+        return FontAwesomeIcons.utensils.data;
     }
   }
 }

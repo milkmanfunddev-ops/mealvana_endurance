@@ -116,7 +116,7 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
                     'auth.email_signup.password_hint',
                     defaultValue: 'At least 8 characters',
                   ),
-                  prefixIcon: Icon(
+                  prefixIcon: FaIcon(
                     FontAwesomeIcons.lock,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -124,8 +124,8 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
-                          ? FontAwesomeIcons.eye
-                          : FontAwesomeIcons.eyeSlash,
+                          ? FontAwesomeIcons.eye.data
+                          : FontAwesomeIcons.eyeSlash.data,
                       size: AppIconSizes.controlIcon,
                     ),
                     onPressed: () {
@@ -161,7 +161,7 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
                     'auth.email_signup.password_confirm_hint',
                     defaultValue: 'Re-enter your password',
                   ),
-                  prefixIcon: Icon(
+                  prefixIcon: FaIcon(
                     FontAwesomeIcons.lock,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -169,8 +169,8 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirmPassword
-                          ? FontAwesomeIcons.eye
-                          : FontAwesomeIcons.eyeSlash,
+                          ? FontAwesomeIcons.eye.data
+                          : FontAwesomeIcons.eyeSlash.data,
                       size: AppIconSizes.controlIcon,
                     ),
                     onPressed: () {

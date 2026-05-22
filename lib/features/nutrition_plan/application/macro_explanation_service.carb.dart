@@ -787,6 +787,91 @@ extension _$CarbExt on MacroExplanationService {
   }
 
   // ---------------------------------------------------------------------------
+  // POST-WORKOUT (AFTER)
+  // ---------------------------------------------------------------------------
+
+  NutrientTransparencyData _postWorkoutCarbTransparency({
+    required MacroTargets macroTargets,
+    required double bodyWeightKg,
+  }) {
+    final post = macroTargets.postRun;
+    final durationH = macroTargets.metrics.durationH;
+    final targetG = post.carbsG.round();
+    final rangeLow = post.carbsLowG?.round() ?? (targetG * 0.8).round();
+    final rangeHigh = post.carbsHighG?.round() ?? (targetG * 1.2).round();
+    final durationMult = durationH > 2 ? 1.2 : 1.0;
+    final durationNote = durationH > 2
+        ? '1.2\u00d7 multiplier applied (workout > 2 hr)'
+        : '1.0\u00d7 (standard recovery, workout \u2264 2 hr)';
+    final weightRounded = bodyWeightKg.round();
+
+    final tldrLines = <FormulaLine>[
+      FormulaLine([
+        fAccent('body weight '),
+        fOp('\u00d7 '),
+        fAccent('duration multiplier'),
+      ]),
+      FormulaLine([
+        fAccent('${weightRounded}kg '),
+        fOp('\u00d7 '),
+        fAccent('${durationMult.toStringAsFixed(1)} g/kg '),
+        fOp('= '),
+        fResult('${targetG}g'),
+      ], isResultLine: true),
+    ];
+
+    final storySections = <StorySection>[
+      const StorySection(
+        question: 'Why carbs after a workout?',
+        answer:
+            'Recovery carbs replenish the **glycogen** (stored energy) your '
+            'muscles burned during your workout. Refilling those stores within '
+            'the first hour kickstarts recovery for your next session.',
+      ),
+      StorySection(
+        question: 'Why does duration change the multiplier?',
+        answer:
+            'Workouts longer than 2 hours deplete glycogen more aggressively, '
+            'so we bump the recovery target by 20% '
+            '(**1.2 g/kg** vs. 1.0 g/kg for shorter workouts).\n\n'
+            'For your ${durationH.toStringAsFixed(1)} hr session: $durationNote.',
+      ),
+      StorySection(
+        question: 'Why a range and not one exact number?',
+        answer:
+            'Real food doesn\'t come in precise grams. The '
+            '**$rangeLow\u2013${rangeHigh}g** window gives you flexibility '
+            'while staying in the recovery zone.',
+      ),
+      const StorySection(
+        question: 'When should I eat?',
+        answer:
+            'Aim for the first hour after exercise, when your muscles are '
+            'most receptive to refueling. Pair carbs with protein for the '
+            'best recovery.',
+      ),
+    ];
+
+    return NutrientTransparencyData(
+      nutrientLabel: 'Carbs',
+      primaryUnit: 'g',
+      phase: 'after',
+      tldrBody:
+          'After your workout, we replenish glycogen with '
+          '**${durationMult.toStringAsFixed(1)} g of carbs per kg of body weight**. '
+          'Eat within the first hour for the best recovery.',
+      tldrLines: tldrLines,
+      tldrTip:
+          '**${targetG}g** target ($rangeLow\u2013${rangeHigh}g range).',
+      storySections: storySections,
+      targetGrams: targetG.toDouble(),
+      rangeLow: rangeLow.toDouble(),
+      rangeHigh: rangeHigh.toDouble(),
+      sportLabel: 'Post-Workout',
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // HELPERS
   // ---------------------------------------------------------------------------
 

@@ -165,7 +165,7 @@ class _KyleTextFieldState extends ConsumerState<KyleTextField> {
     if (widget.obscureText) {
       return IconButton(
         icon: Icon(
-          _obscureText ? FontAwesomeIcons.eye : FontAwesomeIcons.eyeSlash,
+          _obscureText ? FontAwesomeIcons.eye.data : FontAwesomeIcons.eyeSlash.data,
           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           size: AppIconSizes.controlIcon,
         ),
@@ -252,14 +252,14 @@ class _KyleSearchFieldState extends ConsumerState<KyleSearchField> {
         hintStyle: AppTextStyles.inputText.copyWith(
           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
         ),
-        prefixIcon: Icon(
+        prefixIcon: FaIcon(
           FontAwesomeIcons.magnifyingGlass,
           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           size: AppIconSizes.controlIcon,
         ),
         suffixIcon: _hasText
             ? IconButton(
-                icon: Icon(
+                icon: FaIcon(
                   FontAwesomeIcons.xmark,
                   color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                   size: AppIconSizes.controlIcon,

@@ -70,7 +70,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
         // Refresh button
         IconButton(
           onPressed: () => _refreshWeather(context),
-          icon: Icon(
+          icon: FaIcon(
             FontAwesomeIcons.arrowsRotate,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -107,7 +107,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
           // Header
           Row(
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.cloudSun,
                 size: AppIconSizes.md,
                 color: AppColors.electrolyte,
@@ -157,7 +157,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
             top: 20,
             left: 0,
             right: 0,
-            child: Icon(
+            child: FaIcon(
               FontAwesomeIcons.sun,
               size: 80,
               color: AppColors.cream,
@@ -195,7 +195,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.locationDot,
                   size: AppIconSizes.controlIcon,
                   color: AppColors.cream,
@@ -221,7 +221,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
         // Detail rows
         _buildDetailRow(
           context: context,
-          icon: FontAwesomeIcons.wind,
+          icon: FontAwesomeIcons.wind.data,
           label: 'Wind',
           value: '12 mph NW',
         ),
@@ -230,7 +230,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
         
         _buildDetailRow(
           context: context,
-          icon: FontAwesomeIcons.droplet,
+          icon: FontAwesomeIcons.droplet.data,
           label: 'Humidity',
           value: '65%',
         ),
@@ -239,7 +239,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
         
         _buildDetailRow(
           context: context,
-          icon: FontAwesomeIcons.gauge,
+          icon: FontAwesomeIcons.gauge.data,
           label: 'Pressure',
           value: '30.15 in',
         ),
@@ -248,7 +248,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
         
         _buildDetailRow(
           context: context,
-          icon: FontAwesomeIcons.eye,
+          icon: FontAwesomeIcons.eye.data,
           label: 'Visibility',
           value: '10 miles',
         ),
@@ -257,7 +257,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
         
         _buildDetailRow(
           context: context,
-          icon: FontAwesomeIcons.sun,
+          icon: FontAwesomeIcons.sun.data,
           label: 'UV Index',
           value: '6 (High)',
         ),
@@ -323,7 +323,7 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
           // Header
           Row(
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.calendarDays,
                 size: AppIconSizes.md,
                 color: AppColors.electrolyte,
@@ -546,17 +546,17 @@ class _WeatherDetailScreenState extends ConsumerState<WeatherDetailScreen>
   IconData _getWeatherIcon(String condition) {
     switch (condition) {
       case 'Sunny':
-        return FontAwesomeIcons.sun;
+        return FontAwesomeIcons.sun.data;
       case 'Partly Cloudy':
-        return FontAwesomeIcons.cloudSun;
+        return FontAwesomeIcons.cloudSun.data;
       case 'Cloudy':
-        return FontAwesomeIcons.cloud;
+        return FontAwesomeIcons.cloud.data;
       case 'Rainy':
-        return FontAwesomeIcons.cloudRain;
+        return FontAwesomeIcons.cloudRain.data;
       case 'Thunderstorms':
-        return FontAwesomeIcons.cloudBolt;
+        return FontAwesomeIcons.cloudBolt.data;
       default:
-        return FontAwesomeIcons.cloud;
+        return FontAwesomeIcons.cloud.data;
     }
   }
 

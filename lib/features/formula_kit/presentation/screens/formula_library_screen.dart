@@ -314,7 +314,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            FaIcon(
               FontAwesomeIcons.filter,
               size: 32,
               color: scheme.onSurfaceVariant,
@@ -364,7 +364,7 @@ class _MoreFiltersButton extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.sliders,
                   size: 14,
                   color: hasActive ? AppColors.orange : scheme.onSurface,
@@ -423,7 +423,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            const FaIcon(
               FontAwesomeIcons.circleExclamation,
               color: AppColors.dragonfruit,
               size: 48,

@@ -6,10 +6,7 @@ import 'geometric_pattern_painter.dart';
 
 /// Hero image with geometric pattern for single-sport activities
 class SingleSportHeroImage extends StatelessWidget {
-  const SingleSportHeroImage({
-    super.key,
-    required this.activityType,
-  });
+  const SingleSportHeroImage({super.key, required this.activityType});
 
   final ActivityType activityType;
 
@@ -55,7 +52,7 @@ class SingleSportHeroImage extends StatelessWidget {
               _ => 'Sport illustration',
             },
             errorBuilder: (context, error, stackTrace) {
-              return Icon(
+              return FaIcon(
                 FontAwesomeIcons.personRunning,
                 size: 120,
                 color: AppColors.cream.withValues(alpha: 0.5),

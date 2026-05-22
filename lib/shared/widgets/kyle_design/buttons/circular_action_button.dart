@@ -9,7 +9,7 @@ import '../../../../theme/kyle_design/app_colors.dart';
 /// Example:
 /// ```dart
 /// CircularActionButton(
-///   icon: FontAwesomeIcons.calendar,
+///   icon: FontAwesomeIcons.calendar.data,
 ///   onPressed: () => _handleCalendarTap(),
 ///   backgroundColor: AppColors.kyleOrange,
 /// )

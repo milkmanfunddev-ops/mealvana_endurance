@@ -145,7 +145,7 @@ class FoodPreferenceSliderWidget extends StatelessWidget {
             // Avoid label with X icon
             Row(
               children: [
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.xmark,
                   size: 15,
                   color: _getIconColor(context, sliderLevel, true),
@@ -170,7 +170,7 @@ class FoodPreferenceSliderWidget extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.xs),
-                Icon(
+                FaIcon(
                   FontAwesomeIcons.solidHeart,
                   size: 15,
                   color: _getIconColor(context, sliderLevel, false),
