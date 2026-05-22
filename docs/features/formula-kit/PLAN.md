@@ -4,18 +4,44 @@
 
 ## Status — 2026-05-21
 
-**PR 1 complete. PR 2 substeps 1–3 landed on `feat/formula-kit`. Substep 4 (client-side algorithm hook) is next; substep 5 (edge function v4) remains blocked on issue #29.**
+**PR 1 complete. PR 2 substeps 1–3 landed on `feat/formula-kit`. Substep 4 (client-side algorithm hook) is DEFERRED — see "Plan revision — 2026-05-21" below. Substep 5 (edge function v4) remains blocked on issue #29. Next active work is substep 8 (UX pin toggle), which is unblocked.**
 
 PR 2 progress:
 - Substep 1 ✅ `74e6b1f` — `formula_pins` table on Supabase + Drift mirror + schema v9→v10.
 - Substep 2 ✅ `b5bc272` — `FormulaPin` domain + `FormulaPinsRepository` (SyncableRepository mixin with `syncFromRemote`/`uploadDirtyRecords`, soft-delete unpin, idempotent pin, `sync_dependency_graph` registration).
-- Substep 3 ✅ (this commit) — verification-only. The "sync handler" the plan originally named was a misnomer: the dirty-preserved + remote-upsert pattern lives directly inside the repository (no parallel handler file pattern exists for `personal_templates` either; the project consolidates this into the repo itself). Locked in the sync invariants with `test/features/formula_kit/data/formula_pins_repository_test.dart`:
+- Substep 3 ✅ `41de5d0` — verification-only. The "sync handler" the plan originally named was a misnomer: the dirty-preserved + remote-upsert pattern lives directly inside the repository (no parallel handler file pattern exists for `personal_templates` either; the project consolidates this into the repo itself). Locked in the sync invariants with `test/features/formula_kit/data/formula_pins_repository_test.dart`:
   - Dirty-preserve: an active sync skips local rows flagged `needs_upload=true`.
   - Tombstone-propagation: a remote `is_deleted=true` row is applied locally without physical delete, and is hidden by `getActivePinsForUser`/`isPinned`/`findActivePin`.
   - Soft-delete unpin: `unpin()` flips `is_deleted=true` and dirties the row; no DELETE.
   - Pin idempotency: a second `pin()` for the same `(user, template, kind)` returns the existing row.
 
   Exposed `upsertRemotePinsPreservingDirty` via `@visibleForTesting` because the project's repo tests punt on full Supabase mocking (see `test/new_sync/coach_repository_sync_test.dart:116`).
+- Substep 4 ⏸ DEFERRED — see Plan revision below.
+
+### Plan revision — 2026-05-21: Substep 4 deferred (client/server template-table mismatch)
+
+While scoping substep 4, two architectural facts surfaced that the original plan did not account for:
+
+**Finding 1 — `client_plan_service` and Formula Library read from different tables.**
+
+| Surface | Table | Schema |
+|---|---|---|
+| `client_plan_service._tryTemplateBasedBefore` (`templates_repository.dart:99`) | `templates` | denormalized `foods` JSON, `meal_type`, `timing_*_minutes`, `total_*` macros |
+| Formula Library + Pins (`pre_workout_templates_repository.dart`, PR 1) | `pre_workout_templates` | `template_type` (food/drink/electrolyte), per-serving macros, joins to `template_foods` |
+| Edge function v3 (`generate-nutrition-plan-v3/before-phase-db.ts:19`) | `pre_workout_templates` | (same as Library — server is consistent) |
+
+A pin row stores `template_id` referencing **`pre_workout_templates`**. `_tryTemplateBasedBefore` reads from **`templates`**. The IDs don't match — substep 4 as originally scoped cannot find any pinned candidates without a table migration or a name/slug bridge. The server path (edge function v3/v4) already reads `pre_workout_templates`, so it is unaffected.
+
+**Finding 2 — `client_plan_service` lacks the edge function's hydration/electrolyte stacking.**
+
+The edge function (`before-phase.ts:166-200`) fetches three separate template pools (`food`, `drink`, `electrolyte`) and stacks selections from each. `_tryTemplateBasedBefore` picks only one template and scales linearly — no drink or electrolyte top-up. During-phase has a similar `[POST-PROCESS-DURING]` electrolyte top-up on the server (`during-phase.ts:48-150`) that the client greedy fallback does not replicate. This is a pre-existing client-fallback gap, independent of pins.
+
+**Decision — defer substep 4, document the gap, move to substep 8.** The client fallback path is a degraded experience that already lacks hydration parity; adding pin awareness here is rearranging deck chairs. When the edge function is up (~99% of plan generations), substep 5's v4 will honor pins correctly. When the edge function fails (rare), users get the existing legacy client behavior — no pin awareness, but a working plan. Substep 8 (UX pin toggle) becomes the next active work; the substep ordering after 5 is unchanged. See "Deferred client-side work" subsection near the end of this doc for the follow-up items.
+
+**Locked-in pin policy clarifications from the same session** (codified into "Scope decisions" below):
+- For Before phase, an in-scope pin is honored unconditionally — skip allergen/diet/dislike filters, skip the [0.5, 2.0] scale clamp. The pin is the user's explicit override.
+- The only "fall through to legacy" condition for Before is **no pin matches the workout's scope** (sub_phase + timing window). All other PLAN-listed `plan_pin_fallthrough` reasons (`allergen`, `dislike`, `scale_out_of_range`) do not fire on the Before client path under this policy.
+- Drink/electrolyte templates are **not pinnable in V1**. Pin policy applies to `template_type = 'food'` only.
 
 ### Plan revision — 2026-05-20: Pins replace Favorites, move from PR 5 to PR 2
 
@@ -35,9 +61,13 @@ PR phasing has shifted: new PR 2 is Pins. Old PR 2–5 each move up by one. Favo
 **Scope decisions (locked):**
 - **UX = single-tap toggle.** No scope picker. Scope (sub_phase for Before, activity_type × duration_bracket for During) is inherited from the template's existing metadata.
 - **Multiple pins per scope allowed.** Algorithm picks best from pinned set by carb proximity.
-- **V1 = system templates only.** Personal templates become pinnable in PR 4 (after personal_templates evolution lands).
+- **V1 = system templates only, food templates only.** Personal templates become pinnable in PR 4. Drink/electrolyte templates (`template_type != 'food'`) are not pinnable — they're algorithm internals consumed by the edge function's stacking pass, not a user-facing formula choice.
 - **Storage = Drift + Supabase.** Both client-side (`client_plan_service`) and server-side (`generate-nutrition-plan-v*`) need to read pins. Drift-only is not an option.
-- **Fit-failure UX = transparent (option b).** Banner on activity detail: "Your pinned formula didn't fit today's target — using [fallback]."
+- **Pin honoring policy (locked 2026-05-21).** An in-scope pin is honored unconditionally:
+  - Skip allergen, diet, and dislike filters. The pin is the user's explicit override; if their profile no longer matches, we surface the food anyway and rely on a V2 advisory pill (see "Deferred client-side work") to warn them visually.
+  - Skip the [0.5, 2.0] scale clamp that non-pinned candidates obey. If the pinned formula needs 3× to hit carb target, ship 3×.
+  - The ONLY condition that causes the algorithm to fall through from pins to legacy logic is "no pin matches the workout's scope." Allergen/dislike/scale fall-through reasons listed in original substep 7 telemetry do not fire under this policy on the Before client path. (Server-side During may still use `gut_train_mismatch` since gut training is a structural fit, not a preference filter — revisit during substep 5.)
+- **Fit-failure UX (V1).** Because in-scope pins are unconditionally honored, the "pin didn't fit, used [fallback]" banner planned at substep 9 only fires when **no pin matches the current scope** AND the user has any active pins (for other scopes). For a user with no active pins, the banner doesn't render. Original transparent-fallback copy ("Your pinned formula didn't fit today's target — using [fallback]") is replaced by the simpler "Using your pinned formula ✓ [Name]" / no-banner pair.
 - **Pin entry points = (i) card/detail toggle + (iii) activity detail awareness banner.** Skip the workout-settings management surface in V1.
 
 **Substeps (in order, each is a commit):**
@@ -45,10 +75,10 @@ PR phasing has shifted: new PR 2 is Pins. Old PR 2–5 each move up by one. Favo
 1. **Schema** — Supabase migration `formula_pins` table + Drift mirror + schema bump v9→v10 + codegen
 2. **Domain + repository** — `FormulaPin` model, `FormulaPinsRepository` (CRUD + sync). Register edge in `sync_dependency_graph`.
 3. **Sync handler** — `formula_pins_sync_handler` mirroring `personal_templates_sync_handler` pattern (local-dirty-preserved + remote-upsert).
-4. **Client-side algorithm hook** — modify `_tryTemplateBasedBefore` in `client_plan_service.dart:307` to check pins first; fall through on no-fit. (During phase is server-only — no client hook needed for During.)
+4. ⏸ **DEFERRED — Client-side algorithm hook.** Original plan: modify `_tryTemplateBasedBefore` in `client_plan_service.dart:307` to check pins first. Deferred 2026-05-21 because the client reads `templates` while pins reference `pre_workout_templates` — see "Plan revision — 2026-05-21" above and "Deferred client-side work" subsection near the end. The client fallback path will not honor pins in V1.
 5. **Edge function v4** — new `supabase/functions/generate-nutrition-plan-v4/` directory, near-copy of v3, with pin-check at Pass 1 (Before, `pre-workout.ts:691`) and template-selection (During, `during-template-solver.ts:713`). Identical-when-no-pins behavior. **Blocked until dev migration history is reconciled — see "Blocker" subsection below + issue #29.**
 6. **Edge function parity test** — run v3 and v4 against fixture users with zero pins, diff outputs, confirm byte-identical.
-7. **Telemetry** — `formula_pinned`, `formula_unpinned`, `plan_used_pin`, `plan_pin_fallthrough { reason: 'scale_out_of_range' | 'allergen' | 'dislike' | 'gut_train_mismatch' | 'no_pin_for_scope' }`.
+7. **Telemetry** — `formula_pinned`, `formula_unpinned`, `plan_used_pin`, `plan_pin_fallthrough { reason: 'no_pin_for_scope' | 'gut_train_mismatch' }`. Per honor-pin policy (see Scope decisions), Before phase only fires `plan_pin_fallthrough` with `no_pin_for_scope`. Server-side During may still surface `gut_train_mismatch` (revisit when substep 5 is unblocked). The original `scale_out_of_range` / `allergen` / `dislike` reasons no longer fire under V1 policy.
 8. **UX (i)** — pin toggle on `FormulaLibraryScreen` cards + Before/During detail screens. State in `FormulaLibraryController` + new `FormulaPinController`.
 9. **UX (iii)** — `activity_detail_screen` banner: "Using your pinned formula ✓ [Name]" + fallback variant. Routes back to library on tap.
 10. **Client cutover** — `nutrition_plan_service.dart:348` switches the edge-function call from `generate-nutrition-plan-v3` to `generate-nutrition-plan-v4`. Old app versions on old binaries keep calling v3 — zero risk to existing prod traffic.
@@ -524,7 +554,7 @@ End-to-end test plan, per slice:
 2. **Custom food deduplication.** If a user creates "Banana 100g" custom food and we already have a system "Banana" — do they collide? Design defers this. Likely V2 cleanup.
 3. **Coach insight cost monitoring.** No per-user rate limiting (intentional — foundational metrics first). Monitor `llm_usage` table for outliers; if any user generates >100 insights/day, that's a signal to revisit. Cost itself is bounded by Haiku pricing × short prompts × short outputs.
 4. **PR 2 edge-function risk.** This is the first PR that modifies plan generation. Mitigation: new `generate-nutrition-plan-v4/` directory (don't touch v3); pin-aware behavior is strictly additive (no-pins users get identical output to v3); client gates v3→v4 via app version (old binaries keep calling v3). Always run the v3↔v4 parity test on fixture users with zero pins before merging.
-5. **Pinned formula no longer fits user's diet.** If a user pins "Oatmeal + Berries" and later adds an oat allergy, the pin will fall through every time. Should we auto-prune pins that violate dietary changes? V2 cleanup; for V1, the fallthrough banner + analytics tell us how often this happens.
+5. **Pinned formula no longer fits user's diet.** Per the honor-pin policy locked 2026-05-21, pins are NOT auto-fallen-through on allergen/diet/dislike conflict — the user's explicit pin wins over their stored profile. The original concern ("the pin will fall through every time") no longer applies. The safety net is the V2 advisory pill (see "Deferred client-side work") that visually flags the conflict in the UI. Auto-pruning pins on dietary changes remains an open V2 question, but is lower priority now that the conflict is surfaced rather than silently dropped.
 6. **Pin a personal formula that gets deleted.** PR 4 cleanup: when a personal_templates row is hard-deleted, cascade-delete its pin rows (FK to `personal_templates.id` with `on delete cascade` for the personal-kind subset, OR soft-delete via `is_deleted` on the pin row at the application layer).
 7. **Migration backfill correctness.** The `provenance = 'legacy_plan'` backfill (PR 4) must run after the column is added but before any client reads the new column. Test on a Supabase branch first.
 
@@ -536,6 +566,16 @@ End-to-end test plan, per slice:
 - `lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart` — what to reuse / refactor for the design's Swap sheet.
 - `supabase/migrations/20260406320000_during_workout_templates_complete.sql` — during-template schema (only on develop).
 - `/tmp/formula-kit/formula-library-remix-remix/project/Formula Kit.html` — pixel reference for every PR.
+
+## Deferred client-side work
+
+Captured 2026-05-21 while scoping substep 4. Each item is real follow-up that the V1 plan does not deliver; tracked here so we don't lose them.
+
+1. **Client fallback path: migrate from `templates` to `pre_workout_templates` + pin awareness.** `client_plan_service._tryTemplateBasedBefore` (`client_plan_service.dart:307`) currently reads the legacy `templates` table via `TemplatesRepository`. The Formula Library, pin rows, and edge function v3/v4 all read `pre_workout_templates`. Until the client fallback is migrated, the rare "edge function unreachable" path can't honor pins. Tasks: (a) point the fallback at `PreWorkoutTemplatesRepository`, (b) translate `pre_workout_templates` (per-serving macros + joined `template_foods`) into the FoodItem emissions `client_plan_service` produces today, (c) layer in pin awareness with the locked honor-pin policy (skip filters, no scale clamp, food templates only, V2 advisory pill for diet/allergen conflicts), (d) handle the "pinned formula needs >2× servings" case without clamping. Out of V1 because (i) edge function covers ~99% of plan generations, and (ii) the legacy `templates` table itself is on a deprecation path.
+
+2. **Client-side hydration + electrolyte stacking parity with edge function.** The edge function stacks three template pools (`food`, `drink`, `electrolyte` — see `before-phase.ts:166-200`) and the During phase has a `[POST-PROCESS-DURING]` electrolyte top-up to fill sodium deficits (`during-phase.ts:48-150`). The client fallback picks one food template, scales it linearly, and stops there. Even without pins, this is a behavior gap — when the edge function fails over to client generation, hydration and sodium are unaddressed. Tasks: (a) port the three-pool stacking logic to `client_plan_service`, (b) port the sodium top-up pass, (c) integrate with the table migration above so the same `pre_workout_templates` query supports all three template types. This item is bigger than #1 and should land alongside or after it.
+
+3. **V2 advisory pill: dynamic "violates your profile" indicator.** When a pinned formula conflicts with the user's stored allergen/dietary preferences (because pins now bypass those filters per the locked honor-pin policy), the UI should surface this visually rather than silently honoring the pin. Design intent (from 2026-05-21 session): a pill or alert on the formula card / detail / activity-detail banner that reads something like "Violates your diet" or "Contains [allergen]", dynamically computed from the active user profile. Likely extends to non-conflict advisories too (e.g., "Low sodium for your sweat profile" once sweat-profile data is integrated). Scope: design proposal first, implementation deferred until at least one real user has pinned a profile-conflicting formula. Tracked here so we know the safety net exists before scaling out the honor-pin policy.
 
 ## Out of scope (per design)
 
