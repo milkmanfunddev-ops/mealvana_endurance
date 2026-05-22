@@ -124,6 +124,15 @@ export interface SubPhaseResult {
   /** Per-macro shortfalls when preferences eliminated viable options for
    * this sub-phase. Empty/absent on a clean fit. */
   shortfalls?: SubPhaseShortfall[];
+  /** Pin honoring telemetry. Populated only when pins were supplied to the
+   * algorithm. Mirrors PreWorkoutPhaseResult.pin_decision; carried into the
+   * SubPhaseResult so the response surfaces it per phase. Formula Kit PR 2
+   * substep 5b. */
+  pin_decision?: {
+    used_pin: boolean;
+    pinned_template_id: string | null;
+    fallthrough_reason: 'no_pin_for_scope' | null;
+  };
 }
 
 // ============================================================================

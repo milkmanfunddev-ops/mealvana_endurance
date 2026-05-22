@@ -255,14 +255,39 @@ export async function generateDuringPhase(
   dietaryPreference?: string,
   gutTrainingLevel?: GutTrainingLevel,
   durationMinutes?: number,
+  /** During-workout template ids the user has actively pinned. When an
+   * in-scope pin (activity × duration_bracket match) exists, the selector
+   * bypasses all preference / diet / gut-training filters. Empty/undefined
+   * for pre-pin behavior. Formula Kit PR 2 substep 5b. */
+  pinnedTemplateIds?: Set<string>,
 ): Promise<LPPhaseResult> {
   const phaseStart = performance.now();
   const elapsed = (start: number) => Math.round(performance.now() - start);
 
+  // Pin telemetry default: when pins were supplied but never fire, we
+  // surface `no_pin_for_scope` so the client knows the user has pins that
+  // didn't apply to this workout. Refined to `used_pin: true` below if the
+  // template selector returns a pinned template. Omitted entirely when no
+  // pins were supplied (byte-identical to pre-pin v3).
+  const pinsSupplied = pinnedTemplateIds !== undefined &&
+    pinnedTemplateIds.size > 0;
+  let duringPinDecision: LPPhaseResult["pin_decision"] | undefined =
+    pinsSupplied
+      ? {
+        used_pin: false,
+        pinned_template_id: null,
+        fallthrough_reason: "no_pin_for_scope",
+      }
+      : undefined;
+
   // Swimming: no during-phase nutrition
   if (activityType === "swimming") {
     console.log("[PLAN-V3] Swimming activity — skipping during phase");
-    return { foods: [], by_hour_data: null };
+    return {
+      foods: [],
+      by_hour_data: null,
+      ...(duringPinDecision && { pin_decision: duringPinDecision }),
+    };
   }
 
   console.log(
@@ -313,7 +338,23 @@ export async function generateDuringPhase(
           dislikedSet,
           allergies,
           dietaryPreference,
+          pinnedTemplateIds,
         );
+
+        // Refine pin telemetry: the selector returns ONLY pinned templates
+        // when pin override fires (per its doc), so membership of
+        // candidate[0] in the pin set tells us whether a pin actually fired.
+        // If no pin fired, the `no_pin_for_scope` default stays in place.
+        if (pinsSupplied) {
+          const first = templateCandidates[0];
+          if (first !== undefined && pinnedTemplateIds!.has(first.id)) {
+            duringPinDecision = {
+              used_pin: true,
+              pinned_template_id: first.id,
+              fallthrough_reason: null,
+            };
+          }
+        }
         console.log(
           `[PLAN-V3-TIMING] during_template_select completed in ${
             elapsed(templateSelectStart)
@@ -371,6 +412,7 @@ export async function generateDuringPhase(
                 templateResult.shortfalls.length > 0 && {
                 shortfalls: templateResult.shortfalls,
               }),
+              ...(duringPinDecision && { pin_decision: duringPinDecision }),
             };
           }
 
@@ -446,7 +488,10 @@ export async function generateDuringPhase(
         elapsed(phaseStart)
       }ms (path=empty)`,
     );
-    return { foods: [] };
+    return {
+      foods: [],
+      ...(duringPinDecision && { pin_decision: duringPinDecision }),
+    };
   }
 
   const ruleSolveStart = performance.now();
@@ -468,7 +513,11 @@ export async function generateDuringPhase(
         elapsed(phaseStart)
       }ms (path=rule)`,
     );
-    return { foods: ruleResult.foods, by_hour_data: null };
+    return {
+      foods: ruleResult.foods,
+      by_hour_data: null,
+      ...(duringPinDecision && { pin_decision: duringPinDecision }),
+    };
   }
 
   console.warn(
@@ -516,5 +565,8 @@ export async function generateDuringPhase(
       elapsed(phaseStart)
     }ms (path=lp)`,
   );
-  return lpResult;
+  return {
+    ...lpResult,
+    ...(duringPinDecision && { pin_decision: duringPinDecision }),
+  };
 }

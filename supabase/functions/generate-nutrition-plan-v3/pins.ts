@@ -1,0 +1,94 @@
+/**
+ * Pin Fetcher — Formula Kit PR 2 substep 5b
+ *
+ * Reads the user's active formula pins from `formula_pins` and returns them
+ * split by template kind. The orchestrator threads these Sets into the
+ * shared pre-workout and during-workout selectors so an in-scope pin can
+ * override normal candidate selection (locked policy 2026-05-21, revised
+ * 2026-05-22 — pins bypass allergen/diet/dislike/gut-training filters and
+ * the [min_servings, max_servings] scale clamp).
+ *
+ * Pin scope check itself happens inside the algorithm (time_window match for
+ * before; activity_type × duration_bracket overlap for during). This file
+ * just provides the candidate set.
+ *
+ * Behavior contract:
+ * - No device_id → returns empty sets (no pins applied; byte-identical to
+ *   pre-pin behavior).
+ * - No matching user row for the device_id → returns empty sets.
+ * - User exists, zero non-deleted pins → returns empty sets.
+ *
+ * Notes:
+ * - `formula_pins` is keyed by `user_id`, not `device_id`. We follow the same
+ *   device_id → user_id lookup pattern used by `fetchUserFoodsForBefore`.
+ * - Soft-deleted pins (`is_deleted = true`) are excluded — the partial
+ *   `formula_pins_user_kind` index targets the same predicate.
+ * - `template_kind = 'personal_template'` is reserved for PR 4 and is not
+ *   threaded through the algorithm yet; we ignore those rows here. v1 pin
+ *   policy is system templates only.
+ */
+
+import type { createServiceClient } from "../_shared/supabase-client.ts";
+
+export interface UserPinSets {
+  /** Pinned pre_workout_templates.id values (template_kind = 'pre_system'). */
+  beforePinIds: Set<string>;
+  /** Pinned during_workout_templates.id values (template_kind = 'during_system'). */
+  duringPinIds: Set<string>;
+}
+
+const EMPTY_PINS: UserPinSets = {
+  beforePinIds: new Set(),
+  duringPinIds: new Set(),
+};
+
+export async function fetchUserPinnedTemplateIds(
+  supabase: ReturnType<typeof createServiceClient>,
+  deviceId: string | undefined,
+): Promise<UserPinSets> {
+  if (!deviceId) return EMPTY_PINS;
+
+  // device_id → user_id (same pattern as before-phase-substitution.ts)
+  const { data: userData } = await supabase
+    .from("users")
+    .select("id")
+    .eq("device_id", deviceId)
+    .single();
+
+  const userId = userData?.id;
+  if (!userId) {
+    console.log("[PLAN-V3-PINS] No user found for device_id, no pins applied");
+    return EMPTY_PINS;
+  }
+
+  const { data: pinRows, error } = await supabase
+    .from("formula_pins")
+    .select("template_id, template_kind")
+    .eq("user_id", userId)
+    .eq("is_deleted", false);
+
+  if (error) {
+    console.warn(
+      `[PLAN-V3-PINS] formula_pins query failed: ${error.message} — falling back to empty pins`,
+    );
+    return EMPTY_PINS;
+  }
+
+  const beforePinIds = new Set<string>();
+  const duringPinIds = new Set<string>();
+
+  for (const row of pinRows ?? []) {
+    const kind = (row as { template_kind?: string }).template_kind;
+    const id = (row as { template_id?: string }).template_id;
+    if (!id) continue;
+    if (kind === "pre_system") beforePinIds.add(id);
+    else if (kind === "during_system") duringPinIds.add(id);
+    // 'personal_template' is reserved for PR 4 — ignored here on purpose.
+  }
+
+  console.log(
+    `[PLAN-V3-PINS] Loaded pins for user: before=${beforePinIds.size}, during=${duringPinIds.size}`,
+  );
+
+  return { beforePinIds, duringPinIds };
+}

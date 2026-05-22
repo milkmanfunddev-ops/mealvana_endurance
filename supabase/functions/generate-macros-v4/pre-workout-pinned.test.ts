@@ -321,22 +321,24 @@ Deno.test('no-pin parity: empty pinnedTemplateIds set yields no pin_decision fie
 Deno.test('no-pin parity: identical results with and without empty Set passed', () => {
   // Stronger parity check: the algorithm output must be byte-identical
   // (apart from pin_decision presence) between the two calling conventions.
-  const gel = makeTopUpTemplate({
-    id: 'gel-1',
-    name: 'Energy Gel',
-    component_food_names: ['energy_gel'],
-  });
-  const chews = makeTopUpTemplate({
-    id: 'chews-1',
-    name: 'Energy Chews',
-    component_food_names: ['energy_chews'],
-  });
-
+  // The algorithm sorts template arrays in place, so fixtures must be
+  // rebuilt per call to keep state isolated across the two invocations.
   const mkArgs = () => ({
     targets: TOP_UP_TARGETS,
     hoursBefore: 0.5,
     diet: 'none',
-    foodTemplates: [gel, chews],
+    foodTemplates: [
+      makeTopUpTemplate({
+        id: 'gel-1',
+        name: 'Energy Gel',
+        component_food_names: ['energy_gel'],
+      }),
+      makeTopUpTemplate({
+        id: 'chews-1',
+        name: 'Energy Chews',
+        component_food_names: ['energy_chews'],
+      }),
+    ],
     drinkTemplates: [],
     electrolyteTemplates: [],
     liked: [],

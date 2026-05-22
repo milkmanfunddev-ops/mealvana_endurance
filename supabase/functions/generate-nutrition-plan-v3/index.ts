@@ -55,6 +55,7 @@ import {
   validatePhaseResultAgainstTargets,
 } from "./validation.ts";
 import { handleBrickPlan } from "./brick-handler.ts";
+import { fetchUserPinnedTemplateIds } from "./pins.ts";
 
 // ============================================================================
 // Timing Helpers
@@ -136,7 +137,11 @@ serve(async (req) => {
       );
     }
 
-    // Brick workouts: route to dedicated handler
+    // Brick workouts: route to dedicated handler.
+    // NOTE: Formula Kit pins are NOT plumbed through the brick handler in
+    // v1 (substep 5b). Single-activity workouts are the main pin use case;
+    // brick pin support is deferred. Brick plans run with byte-identical
+    // pre-pin behavior.
     if (activityType === "brick") {
       const response = await timeAsync(
         "brick_total",
@@ -150,11 +155,28 @@ serve(async (req) => {
       return response;
     }
 
+    // Fetch Formula Kit pins for this user (Before + During). When the user
+    // has no pins (or no row for this device), both Sets are empty and
+    // behavior is byte-identical to pre-pin v3. Errors inside the fetcher
+    // already degrade to empty sets, so plan generation is never blocked
+    // by a pins-query failure. Formula Kit PR 2 substep 5b.
+    const userPins = await timeAsync(
+      "fetch_user_pins",
+      () => fetchUserPinnedTemplateIds(supabase, input.device_id),
+    );
+
     // Generate all phases
     const [beforeResult, duringPhaseResult, afterPhaseResult] = await Promise
       .all([
         // Before: Algorithm C
-        timeAsync("before_phase", () => generateBeforePhaseV3(supabase, input)),
+        timeAsync(
+          "before_phase",
+          () =>
+            generateBeforePhaseV3(supabase, {
+              ...input,
+              pinned_food_template_ids: userPins.beforePinIds,
+            }),
+        ),
 
         // During: template solver → rule solver → LP fallback
         input.macro_targets.during_run
@@ -173,6 +195,7 @@ serve(async (req) => {
                 input.dietary_preference,
                 input.gut_training_level,
                 input.duration_minutes,
+                userPins.duringPinIds,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
@@ -267,6 +290,9 @@ serve(async (req) => {
       duringPhaseResult.shortfalls.length > 0
     ) {
       duringResponse.shortfalls = duringPhaseResult.shortfalls;
+    }
+    if (duringPhaseResult.pin_decision) {
+      duringResponse.pin_decision = duringPhaseResult.pin_decision;
     }
 
     // Build the after response so post-workout template metadata + shortfalls
