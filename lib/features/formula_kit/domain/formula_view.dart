@@ -12,6 +12,7 @@ class BeforeFormulaView {
     required this.name,
     required this.subPhase,
     required this.digestionSpeed,
+    required this.templateType,
     required this.componentDisplayStrings,
     required this.allergens,
     required this.excludedDiets,
@@ -29,6 +30,15 @@ class BeforeFormulaView {
   final String name;
   final BeforeSubPhase? subPhase;
   final String digestionSpeed;
+
+  /// `pre_workout_templates.template_type` — one of `food`, `drink`,
+  /// `electrolyte`. PR 2 pin toggle is V1-scoped to food templates only;
+  /// drink/electrolyte cards hide the pin affordance entirely.
+  final String templateType;
+
+  /// Whether this template is eligible for pinning under the V1 policy.
+  /// Currently equivalent to `templateType == 'food'`; widens in later PRs.
+  bool get isPinnable => templateType == 'food';
 
   /// Per-component display strings already including quantity + unit + name,
   /// e.g. `["1 Banana", "1 cup Blueberries", "1 cup Milk"]`. Built by the

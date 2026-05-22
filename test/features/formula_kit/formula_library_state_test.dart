@@ -12,6 +12,7 @@ BeforeFormulaView _before({
   required String id,
   BeforeSubPhase? subPhase,
   String digestionSpeed = 'medium',
+  String templateType = 'food',
   List<String> allergens = const [],
   List<String> excludedDiets = const [],
 }) {
@@ -20,6 +21,7 @@ BeforeFormulaView _before({
     name: 'Test $id',
     subPhase: subPhase,
     digestionSpeed: digestionSpeed,
+    templateType: templateType,
     componentDisplayStrings: const ['1 cup Oats'],
     allergens: allergens,
     excludedDiets: excludedDiets,

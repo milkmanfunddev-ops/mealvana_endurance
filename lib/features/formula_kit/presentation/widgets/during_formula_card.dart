@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 import '../../domain/formula_view.dart';
+import 'pin_toggle.dart';
 
 /// List card for a During formula. Mirrors the design's `DuringCard` —
 /// formula string, components, activity + duration tags.
@@ -27,12 +28,27 @@ class DuringFormulaCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                formula.formula,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurface,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      formula.formula,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  // During templates are all food templates by design — no
+                  // template_type gating needed here.
+                  PinToggleDuring(
+                    key: ValueKey(
+                      'formula_kit.during_card_pin_${formula.id}',
+                    ),
+                    formula: formula,
+                    source: 'card',
+                  ),
+                ],
               ),
               const SizedBox(height: AppSpacing.sm),
               Wrap(

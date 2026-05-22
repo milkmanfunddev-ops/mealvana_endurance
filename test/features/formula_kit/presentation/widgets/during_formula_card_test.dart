@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/features/formula_kit/application/formula_pin_controller.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/formula_view.dart';
 import 'package:mealvana_endurance/features/formula_kit/presentation/widgets/during_formula_card.dart';
 
@@ -25,8 +29,32 @@ DuringFormulaView _fixture({
   );
 }
 
-Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: child));
+/// Stub controller returns an empty pin set so card widgets render the
+/// "unpinned" affordance without touching repositories / Drift.
+class _StubPinController extends FormulaPinController {
+  _StubPinController({Set<String> pinned = const <String>{}})
+      : _pinned = pinned;
+
+  final Set<String> _pinned;
+
+  @override
+  FutureOr<FormulaPinState> build() async {
+    return FormulaPinState(pinnedTemplateIds: _pinned);
+  }
+}
+
+Widget _wrap(
+  Widget child, {
+  Set<String> pinned = const <String>{},
+}) {
+  return ProviderScope(
+    overrides: [
+      formulaPinControllerProvider.overrideWith(
+        () => _StubPinController(pinned: pinned),
+      ),
+    ],
+    child: MaterialApp(home: Scaffold(body: child)),
+  );
 }
 
 void main() {

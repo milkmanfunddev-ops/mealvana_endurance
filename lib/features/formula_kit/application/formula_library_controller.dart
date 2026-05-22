@@ -430,6 +430,24 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     );
   }
 
+  /// Toggle the "pinned only" view in the AppBar. Stacks with the existing
+  /// chip / dietary filters — see [FormulaFilterState.pinnedOnly] for the
+  /// composition rule. Fires `pinned_filter_toggled` with the post-toggle
+  /// state so we can see how often users reach for it.
+  Future<void> togglePinnedOnly({required int pinnedCount}) async {
+    final current = state.value;
+    if (current == null) return;
+    final next = !current.filter.pinnedOnly;
+    state = AsyncData(
+      current.copyWith(filter: current.filter.copyWith(pinnedOnly: next)),
+    );
+    await _track('pinned_filter_toggled', {
+      'phase': current.filter.phase.analyticsValue,
+      'active': next,
+      'pinned_count': pinnedCount,
+    });
+  }
+
   /// Fire the entry-point analytics event. Called by the screen on mount.
   Future<void> trackLibraryOpened({required String source}) async {
     await _track('formula_library_opened', {'source': source});
@@ -487,6 +505,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       subPhase: BeforeSubPhase.fromTimeWindow(e.timeWindow),
       // Lowercase to match FormulaDigestionSpeed.storageValue (`fast`/`medium`).
       digestionSpeed: e.digestionSpeed.toLowerCase(),
+      templateType: e.templateType,
       componentDisplayStrings: componentDisplayStrings,
       allergens: _decodeStringArray(e.allergens),
       excludedDiets: _decodeStringArray(e.excludedDiets),

@@ -8,6 +8,7 @@ import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 import '../../application/formula_library_controller.dart';
 import '../../domain/formula_phase.dart';
 import '../../domain/formula_view.dart';
+import '../widgets/pin_toggle.dart';
 
 /// Read-only detail view for a system formula (PR 1).
 ///
@@ -90,25 +91,45 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     AsyncValue<FormulaLibraryState> asyncState,
   ) {
     String title = 'Formula';
+    BeforeFormulaView? beforeFormula;
+    DuringFormulaView? duringFormula;
     asyncState.whenData((state) {
       if (widget.phase == FormulaPhase.before) {
-        final f = state.beforeFormulas
+        beforeFormula = state.beforeFormulas
             .cast<BeforeFormulaView?>()
             .firstWhere(
               (f) => f?.id == widget.id,
               orElse: () => null,
             );
-        if (f != null) title = f.name;
+        if (beforeFormula != null) title = beforeFormula!.name;
       } else {
-        final f = state.duringFormulas
+        duringFormula = state.duringFormulas
             .cast<DuringFormulaView?>()
             .firstWhere(
               (f) => f?.id == widget.id,
               orElse: () => null,
             );
-        if (f != null) title = f.formula;
+        if (duringFormula != null) title = duringFormula!.formula;
       }
     });
+
+    // V1: only food templates are pinnable. Before drink/electrolyte cards
+    // hide the toggle; During templates are all food by design.
+    Widget? pinAction;
+    if (beforeFormula != null && beforeFormula!.isPinnable) {
+      pinAction = PinToggleBefore(
+        key: ValueKey('formula_kit.detail_pin_${beforeFormula!.id}'),
+        formula: beforeFormula!,
+        source: 'detail',
+      );
+    } else if (duringFormula != null) {
+      pinAction = PinToggleDuring(
+        key: ValueKey('formula_kit.detail_pin_${duringFormula!.id}'),
+        formula: duringFormula!,
+        source: 'detail',
+      );
+    }
+
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -122,6 +143,14 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
         ),
         overflow: TextOverflow.ellipsis,
       ),
+      actions: pinAction == null
+          ? null
+          : [
+              Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.sm),
+                child: pinAction,
+              ),
+            ],
     );
   }
 }

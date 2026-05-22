@@ -4,7 +4,7 @@
 
 ## Status — 2026-05-22
 
-**PR 1 complete. PR 2 substeps 1–3 landed; substep 4 deferred. Substep 5 (edge function v4) is now UNBLOCKED — `formula_pins` is live on dev + prod (applied by hand via DataGrip on 2026-05-22; the `supabase db push` workflow is retired, see "Schema management — actual workflow" below). `custom_foods` was REVERTED as a duplicate of `user_foods` (Formula Kit reuses `user_foods`; PR 4 will not create a `custom_foods` table). Drift schema is now `schemaVersion = 11` after a develop merge resolved a version collision. Next active work is substep 5 (edge function v4) OR substep 8 (UX pin toggle) — either is now executable.**
+**PR 1 complete. PR 2 substeps 1–3 + 8 landed; substep 4 deferred. Substep 5 (edge function v4) is now UNBLOCKED — `formula_pins` is live on dev + prod (applied by hand via DataGrip on 2026-05-22; the `supabase db push` workflow is retired, see "Schema management — actual workflow" below). `custom_foods` was REVERTED as a duplicate of `user_foods` (Formula Kit reuses `user_foods`; PR 4 will not create a `custom_foods` table). Drift schema is now `schemaVersion = 11` after a develop merge resolved a version collision. Substep 8 (UX pin toggle) is complete: `FormulaPinController` + `PinToggleBefore` / `PinToggleDuring` widgets wired into library cards and detail screen AppBar with V1 food-template gating, plus a "Pinned only" AppBar filter on `FormulaLibraryScreen` (stacks with chip + dietary filters per Q3a; differentiated empty states for no-pins vs. pins-filtered-out). Next active work is substep 5 (edge function v4) or substep 9 (activity-detail banner).**
 
 ### Plan revision — 2026-05-22: schema applied, custom_foods reverted, workflow changed
 

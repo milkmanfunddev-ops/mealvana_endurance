@@ -35,7 +35,7 @@ final class FormulaLibraryControllerProvider
 }
 
 String _$formulaLibraryControllerHash() =>
-    r'bd349af09701ddf8443147570923b39260b58b44';
+    r'e1daa5f35be9e4402668b2f9f554bce3abdd008a';
 
 abstract class _$FormulaLibraryController
     extends $AsyncNotifier<FormulaLibraryState> {

@@ -1,11 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:mealvana_endurance/features/formula_kit/application/formula_pin_controller.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/before_sub_phase.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/formula_view.dart';
 import 'package:mealvana_endurance/features/formula_kit/presentation/widgets/before_formula_card.dart';
+import 'package:mealvana_endurance/features/formula_kit/presentation/widgets/pin_toggle.dart';
 
 BeforeFormulaView _fixture({
+  String id = 'fixture',
   String name = 'Oatmeal & Banana',
+  String templateType = 'food',
   List<String> components = const [
     '1 cup Oats',
     '1 Banana',
@@ -19,10 +27,11 @@ BeforeFormulaView _fixture({
   BeforeSubPhase? subPhase = BeforeSubPhase.meal,
 }) {
   return BeforeFormulaView(
-    id: 'fixture',
+    id: id,
     name: name,
     subPhase: subPhase,
     digestionSpeed: 'medium',
+    templateType: templateType,
     componentDisplayStrings: components,
     allergens: const [],
     excludedDiets: const [],
@@ -36,8 +45,42 @@ BeforeFormulaView _fixture({
   );
 }
 
-Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: child));
+/// Stub controller returns an empty pin set so card widgets render the
+/// "unpinned" affordance without touching repositories / Drift.
+class _StubPinController extends FormulaPinController {
+  _StubPinController({Set<String> pinned = const <String>{}})
+      : _pinned = pinned;
+
+  final Set<String> _pinned;
+
+  @override
+  FutureOr<FormulaPinState> build() async {
+    return FormulaPinState(pinnedTemplateIds: _pinned);
+  }
+}
+
+/// `find.byIcon` requires `IconData`, but FontAwesome glyphs are typed as
+/// `FaIconData`. Match by the glyph's codepoint, which is preserved across
+/// the IconData / FaIconData boundary.
+Finder _thumbtackFinder() {
+  return find.byWidgetPredicate(
+    (w) => w is FaIcon &&
+        w.icon?.codePoint == FontAwesomeIcons.thumbtack.codePoint,
+  );
+}
+
+Widget _wrap(
+  Widget child, {
+  Set<String> pinned = const <String>{},
+}) {
+  return ProviderScope(
+    overrides: [
+      formulaPinControllerProvider.overrideWith(
+        () => _StubPinController(pinned: pinned),
+      ),
+    ],
+    child: MaterialApp(home: Scaffold(body: child)),
+  );
 }
 
 void main() {
@@ -110,6 +153,41 @@ void main() {
       await tester.tap(find.byType(BeforeFormulaCard));
       await tester.pump();
       expect(taps, 1);
+    });
+
+    testWidgets('shows pin affordance for food templates', (tester) async {
+      await tester.pumpWidget(_wrap(
+        BeforeFormulaCard(
+          formula: _fixture(templateType: 'food'),
+          onTap: () {},
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.byType(PinToggleBefore), findsOneWidget);
+      expect(_thumbtackFinder(), findsOneWidget);
+    });
+
+    testWidgets('hides pin affordance for drink templates', (tester) async {
+      await tester.pumpWidget(_wrap(
+        BeforeFormulaCard(
+          formula: _fixture(templateType: 'drink'),
+          onTap: () {},
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(_thumbtackFinder(), findsNothing);
+    });
+
+    testWidgets('hides pin affordance for electrolyte templates',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        BeforeFormulaCard(
+          formula: _fixture(templateType: 'electrolyte'),
+          onTap: () {},
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(_thumbtackFinder(), findsNothing);
     });
   });
 }

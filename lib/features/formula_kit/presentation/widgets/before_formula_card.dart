@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 import '../../domain/formula_view.dart';
+import 'pin_toggle.dart';
 
 /// List card for a Before formula. Mirrors the design's `BeforeCard` —
 /// title, components subtitle, macros pill row, timing window pill.
@@ -43,6 +44,18 @@ class BeforeFormulaCard extends StatelessWidget {
                     bg: AppColors.orange.withValues(alpha: 0.15),
                     fg: AppColors.orange,
                   ),
+                  // Pin toggle: V1 supports food templates only (drink /
+                  // electrolyte cards intentionally render no affordance).
+                  if (formula.isPinnable) ...[
+                    const SizedBox(width: AppSpacing.xs),
+                    PinToggleBefore(
+                      key: ValueKey(
+                        'formula_kit.before_card_pin_${formula.id}',
+                      ),
+                      formula: formula,
+                      source: 'card',
+                    ),
+                  ],
                 ],
               ),
               if (formula.componentDisplayStrings.isNotEmpty) ...[

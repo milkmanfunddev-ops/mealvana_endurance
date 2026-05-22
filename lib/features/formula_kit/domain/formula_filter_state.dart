@@ -33,6 +33,7 @@ class FormulaFilterState {
     this.duringGutLevel,
     this.activeAllergyFilters = const {},
     this.activeDietFilters = const {},
+    this.pinnedOnly = false,
   });
 
   final FormulaPhase phase;
@@ -55,6 +56,12 @@ class FormulaFilterState {
   /// appears in its `excluded_diets`.
   final Set<DietaryPreference> activeDietFilters;
 
+  /// When `true`, the library shows only formulas the user has pinned (still
+  /// scoped to the active [phase] and gated by the other chip / dietary
+  /// filters — pinned-only stacks, it doesn't override). Driven by the
+  /// AppBar pin toggle.
+  final bool pinnedOnly;
+
   int get activeChipFilterCount {
     if (phase == FormulaPhase.before) {
       return beforeSubPhase == null ? 0 : 1;
@@ -72,6 +79,7 @@ class FormulaFilterState {
     DuringGutLevel? Function()? duringGutLevel,
     Set<Allergy>? activeAllergyFilters,
     Set<DietaryPreference>? activeDietFilters,
+    bool? pinnedOnly,
   }) {
     return FormulaFilterState(
       phase: phase ?? this.phase,
@@ -89,6 +97,7 @@ class FormulaFilterState {
       activeAllergyFilters:
           activeAllergyFilters ?? this.activeAllergyFilters,
       activeDietFilters: activeDietFilters ?? this.activeDietFilters,
+      pinnedOnly: pinnedOnly ?? this.pinnedOnly,
     );
   }
 
@@ -102,7 +111,8 @@ class FormulaFilterState {
         other.duringDuration == duringDuration &&
         other.duringGutLevel == duringGutLevel &&
         setEquals(other.activeAllergyFilters, activeAllergyFilters) &&
-        setEquals(other.activeDietFilters, activeDietFilters);
+        setEquals(other.activeDietFilters, activeDietFilters) &&
+        other.pinnedOnly == pinnedOnly;
   }
 
   @override
@@ -115,5 +125,6 @@ class FormulaFilterState {
         duringGutLevel,
         Object.hashAllUnordered(activeAllergyFilters),
         Object.hashAllUnordered(activeDietFilters),
+        pinnedOnly,
       );
 }

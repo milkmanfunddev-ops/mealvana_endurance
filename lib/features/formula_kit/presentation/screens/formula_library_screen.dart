@@ -7,9 +7,11 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 
 import '../../application/formula_library_controller.dart';
+import '../../application/formula_pin_controller.dart';
 import '../../domain/before_sub_phase.dart';
 import '../../domain/during_filter_options.dart';
 import '../../domain/formula_phase.dart';
+import '../../domain/formula_view.dart';
 import '../widgets/before_formula_card.dart';
 import '../widgets/collapsible_header.dart';
 import '../widgets/during_formula_card.dart';
@@ -70,6 +72,8 @@ class _FormulaLibraryScreenState extends ConsumerState<FormulaLibraryScreen> {
           ),
         ),
         actions: [
+          const _PinnedOnlyButton(),
+          const SizedBox(width: AppSpacing.xs),
           _MoreFiltersButton(activeCount: moreFilterCount),
           const SizedBox(width: AppSpacing.xs),
         ],
@@ -147,9 +151,37 @@ class _BodyState extends ConsumerState<_Body> {
     final controller = ref.read(formulaLibraryControllerProvider.notifier);
     final phase = state.filter.phase;
 
+    // Pinned-only stacks on top of the controller's chip/dietary filters
+    // (Q3a from design). We do the pin filtering here so the controller stays
+    // decoupled from the pin store — the screen composes both providers.
+    final pinIds = ref.watch(formulaPinControllerProvider).maybeWhen(
+          data: (s) => s.pinnedTemplateIds,
+          orElse: () => const <String>{},
+        );
+    final pinnedOnly = state.filter.pinnedOnly;
+
+    final visibleBefore = pinnedOnly
+        ? state.filteredBeforeFormulas
+            .where((f) => pinIds.contains(f.id))
+            .toList()
+        : state.filteredBeforeFormulas;
+    final visibleDuring = pinnedOnly
+        ? state.filteredDuringFormulas
+            .where((f) => pinIds.contains(f.id))
+            .toList()
+        : state.filteredDuringFormulas;
+
+    // Pin counts per phase from the *unfiltered* lists, used by empty-state
+    // copy to differentiate "you have no pins" from "your pins don't match
+    // these filters."
+    final pinnedBeforeCount =
+        state.beforeFormulas.where((f) => pinIds.contains(f.id)).length;
+    final pinnedDuringCount =
+        state.duringFormulas.where((f) => pinIds.contains(f.id)).length;
+
     final visibleCount = phase == FormulaPhase.before
-        ? state.filteredBeforeFormulas.length
-        : state.filteredDuringFormulas.length;
+        ? visibleBefore.length
+        : visibleDuring.length;
     final totalCount = phase == FormulaPhase.before
         ? state.beforeFormulas.length
         : state.duringFormulas.length;
@@ -217,8 +249,16 @@ class _BodyState extends ConsumerState<_Body> {
           child: NotificationListener<ScrollNotification>(
             onNotification: _onScroll,
             child: phase == FormulaPhase.before
-                ? _BeforeList(formulas: state.filteredBeforeFormulas)
-                : _DuringList(formulas: state.filteredDuringFormulas),
+                ? _BeforeList(
+                    formulas: visibleBefore,
+                    pinnedOnly: pinnedOnly,
+                    pinnedInPhaseCount: pinnedBeforeCount,
+                  )
+                : _DuringList(
+                    formulas: visibleDuring,
+                    pinnedOnly: pinnedOnly,
+                    pinnedInPhaseCount: pinnedDuringCount,
+                  ),
           ),
         ),
       ],
@@ -227,16 +267,23 @@ class _BodyState extends ConsumerState<_Body> {
 }
 
 class _BeforeList extends StatelessWidget {
-  const _BeforeList({required this.formulas});
+  const _BeforeList({
+    required this.formulas,
+    required this.pinnedOnly,
+    required this.pinnedInPhaseCount,
+  });
 
-  final List<dynamic> formulas;
+  final List<BeforeFormulaView> formulas;
+  final bool pinnedOnly;
+  final int pinnedInPhaseCount;
 
   @override
   Widget build(BuildContext context) {
     if (formulas.isEmpty) {
-      return const _EmptyState(
-        key: ValueKey('formula_kit.before_empty_state'),
-        message: 'No Before formulas match your filters.',
+      return _LibraryEmptyState(
+        phase: FormulaPhase.before,
+        pinnedOnly: pinnedOnly,
+        pinnedInPhaseCount: pinnedInPhaseCount,
       );
     }
     return ListView.separated(
@@ -264,16 +311,23 @@ class _BeforeList extends StatelessWidget {
 }
 
 class _DuringList extends StatelessWidget {
-  const _DuringList({required this.formulas});
+  const _DuringList({
+    required this.formulas,
+    required this.pinnedOnly,
+    required this.pinnedInPhaseCount,
+  });
 
-  final List<dynamic> formulas;
+  final List<DuringFormulaView> formulas;
+  final bool pinnedOnly;
+  final int pinnedInPhaseCount;
 
   @override
   Widget build(BuildContext context) {
     if (formulas.isEmpty) {
-      return const _EmptyState(
-        key: ValueKey('formula_kit.during_empty_state'),
-        message: 'No During formulas match your filters.',
+      return _LibraryEmptyState(
+        phase: FormulaPhase.during,
+        pinnedOnly: pinnedOnly,
+        pinnedInPhaseCount: pinnedInPhaseCount,
       );
     }
     return ListView.separated(
@@ -300,10 +354,81 @@ class _DuringList extends StatelessWidget {
   }
 }
 
+/// Empty-state router. Differentiates:
+///   - pinned-only with **no pins at all** in this phase → onboarding nudge
+///     ("Tap the thumbtack to pin one")
+///   - pinned-only with pins but **none match active filters** → action to
+///     clear the chip + dietary filters while keeping pinned-only on
+///   - normal filter no-match → original copy
+class _LibraryEmptyState extends ConsumerWidget {
+  const _LibraryEmptyState({
+    required this.phase,
+    required this.pinnedOnly,
+    required this.pinnedInPhaseCount,
+  });
+
+  final FormulaPhase phase;
+  final bool pinnedOnly;
+  final int pinnedInPhaseCount;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final phaseLabel = phase == FormulaPhase.before ? 'Before' : 'During';
+
+    if (pinnedOnly && pinnedInPhaseCount == 0) {
+      return _EmptyState(
+        key: ValueKey('formula_kit.${phase.analyticsValue}_empty_no_pins'),
+        icon: FontAwesomeIcons.thumbtack,
+        message:
+            'No pinned $phaseLabel formulas yet. Tap the thumbtack on any '
+            '$phaseLabel formula to pin it for plan generation.',
+      );
+    }
+    if (pinnedOnly && pinnedInPhaseCount > 0) {
+      return _EmptyState(
+        key: ValueKey(
+          'formula_kit.${phase.analyticsValue}_empty_pins_filtered',
+        ),
+        icon: FontAwesomeIcons.filter,
+        message:
+            'You have $pinnedInPhaseCount pinned $phaseLabel '
+            '${pinnedInPhaseCount == 1 ? 'formula' : 'formulas'}, but none '
+            'match these filters.',
+        action: TextButton(
+          key: ValueKey(
+            'formula_kit.${phase.analyticsValue}_empty_clear_filters',
+          ),
+          onPressed: () {
+            final controller =
+                ref.read(formulaLibraryControllerProvider.notifier);
+            controller.clearPhaseChipFilters();
+            controller.clearMoreFilters();
+          },
+          child: const Text('Clear filters'),
+        ),
+      );
+    }
+    return _EmptyState(
+      key: ValueKey('formula_kit.${phase.analyticsValue}_empty_state'),
+      icon: FontAwesomeIcons.filter,
+      message: 'No $phaseLabel formulas match your filters.',
+    );
+  }
+}
+
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({super.key, required this.message});
+  const _EmptyState({
+    super.key,
+    required this.message,
+    this.icon = FontAwesomeIcons.filter,
+    this.action,
+  });
 
   final String message;
+  // Typed as FaIconData (not IconData) because FaIcon's `icon` param rejects
+  // plain IconData. We don't need to mix in Material icons here.
+  final FaIconData icon;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -315,7 +440,7 @@ class _EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             FaIcon(
-              FontAwesomeIcons.filter,
+              icon,
               size: 32,
               color: scheme.onSurfaceVariant,
             ),
@@ -327,7 +452,76 @@ class _EmptyState extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
+            if (action != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              action!,
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// AppBar trailing action that toggles "pinned only" view. Mirrors the
+/// thumbtack glyph on cards: orange when active, muted when not. Tapping
+/// shows only formulas the user has pinned (still scoped to phase + other
+/// active filters per Q3a — pinned-only stacks, doesn't override).
+class _PinnedOnlyButton extends ConsumerWidget {
+  const _PinnedOnlyButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final isActive = ref
+        .watch(formulaLibraryControllerProvider)
+        .maybeWhen(
+          data: (s) => s.filter.pinnedOnly,
+          orElse: () => false,
+        );
+    final pinnedCount = ref.watch(formulaPinControllerProvider).maybeWhen(
+          data: (s) => s.pinnedTemplateIds.length,
+          orElse: () => 0,
+        );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+      child: Material(
+        color: isActive
+            ? AppColors.orange.withValues(alpha: 0.18)
+            : scheme.surfaceContainerHighest,
+        borderRadius: AppRadius.circularRadius,
+        child: InkWell(
+          key: const ValueKey('formula_kit.pinned_only_button'),
+          borderRadius: AppRadius.circularRadius,
+          onTap: () => ref
+              .read(formulaLibraryControllerProvider.notifier)
+              .togglePinnedOnly(pinnedCount: pinnedCount),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 6,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FaIcon(
+                  FontAwesomeIcons.thumbtack,
+                  size: 14,
+                  color: isActive ? AppColors.orange : scheme.onSurface,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Pinned',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isActive ? AppColors.orange : scheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
