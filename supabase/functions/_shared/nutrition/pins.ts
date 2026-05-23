@@ -1,16 +1,23 @@
 /**
- * Pin Fetcher — Formula Kit PR 2 substep 5b
+ * Pin Fetcher — Formula Kit PR 2 substep 5
  *
  * Reads the user's active formula pins from `formula_pins` and returns them
- * split by template kind. The orchestrator threads these Sets into the
- * shared pre-workout and during-workout selectors so an in-scope pin can
- * override normal candidate selection (locked policy 2026-05-21, revised
- * 2026-05-22 — pins bypass allergen/diet/dislike/gut-training filters and
- * the [min_servings, max_servings] scale clamp).
+ * split by template kind. Orchestrators thread these Sets into the shared
+ * pre-workout and during-workout selectors so an in-scope pin can override
+ * normal candidate selection (locked policy 2026-05-21, revised 2026-05-22 —
+ * pins bypass allergen/diet/dislike/gut-training filters and the
+ * [min_servings, max_servings] scale clamp).
  *
  * Pin scope check itself happens inside the algorithm (time_window match for
  * before; activity_type × duration_bracket overlap for during). This file
  * just provides the candidate set.
+ *
+ * Used by both `generate-macros-v4` (before-phase selection happens there) and
+ * `generate-nutrition-plan-v3` (during-phase selection, plus before-phase
+ * fallback when the client doesn't pass pre_run_selections). Originally lived
+ * in `generate-nutrition-plan-v3/pins.ts` in 5b; moved to `_shared/nutrition/`
+ * in the 5b-followup once we discovered before-phase selection happens in
+ * macros-v4, not plan-v3.
  *
  * Behavior contract:
  * - No device_id → returns empty sets (no pins applied; byte-identical to
@@ -28,7 +35,7 @@
  *   policy is system templates only.
  */
 
-import type { createServiceClient } from "../_shared/supabase-client.ts";
+import type { createServiceClient } from "../supabase-client.ts";
 
 export interface UserPinSets {
   /** Pinned pre_workout_templates.id values (template_kind = 'pre_system'). */
@@ -57,7 +64,7 @@ export async function fetchUserPinnedTemplateIds(
 
   const userId = userData?.id;
   if (!userId) {
-    console.log("[PLAN-V3-PINS] No user found for device_id, no pins applied");
+    console.log("[PINS] No user found for device_id, no pins applied");
     return EMPTY_PINS;
   }
 
@@ -69,7 +76,7 @@ export async function fetchUserPinnedTemplateIds(
 
   if (error) {
     console.warn(
-      `[PLAN-V3-PINS] formula_pins query failed: ${error.message} — falling back to empty pins`,
+      `[PINS] formula_pins query failed: ${error.message} — falling back to empty pins`,
     );
     return EMPTY_PINS;
   }
@@ -87,7 +94,7 @@ export async function fetchUserPinnedTemplateIds(
   }
 
   console.log(
-    `[PLAN-V3-PINS] Loaded pins for user: before=${beforePinIds.size}, during=${duringPinIds.size}`,
+    `[PINS] Loaded pins for user: before=${beforePinIds.size}, during=${duringPinIds.size}`,
   );
 
   return { beforePinIds, duringPinIds };

@@ -62,6 +62,9 @@ class MacroGenerationService {
       intensity: intensity,
       indoorOutdoor: indoorOutdoor,
     );
+    // device_id is read by the edge function to look up active formula pins
+    // (Formula Kit PR 2 substep 5b-followup, 2026-05-22).
+    requestData['device_id'] = deviceId;
 
     final macroTargets = await _callGenerateMacrosEdgeFunction(
       requestData: requestData,
@@ -125,6 +128,9 @@ class MacroGenerationService {
       isFasted: isFasted,
       intensity: intensity,
     );
+    // device_id is read by the edge function to look up active formula pins
+    // (Formula Kit PR 2 substep 5b-followup, 2026-05-22).
+    requestData['device_id'] = deviceId;
     DebugLogger.info(
       '🚴 MACRO SERVICE: Request data built, calling edge function...',
     );
@@ -190,6 +196,9 @@ class MacroGenerationService {
       waterTempC: waterTempC,
       intensity: intensity,
     );
+    // device_id is read by the edge function to look up active formula pins
+    // (Formula Kit PR 2 substep 5b-followup, 2026-05-22).
+    requestData['device_id'] = deviceId;
     DebugLogger.info(
       '🏊 MACRO SERVICE: Request data built, calling edge function...',
     );

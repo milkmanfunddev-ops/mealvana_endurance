@@ -622,6 +622,13 @@ export interface MacroInputV4 {
   liked_foods?: string[];
   disliked_foods?: string[];
   allergies?: string[];
+  /**
+   * Device identifier used to look up the user's active formula pins from
+   * `formula_pins`. Optional — when absent, byte-identical pre-pin behavior
+   * (no pin override). See `_shared/nutrition/pins.ts`. Formula Kit PR 2
+   * substep 5b-followup (2026-05-22).
+   */
+  device_id?: string;
 }
 
 /**
@@ -658,6 +665,14 @@ export async function calculateMacrosV4(
     drink: PreWorkoutTemplate[];
     electrolyte: PreWorkoutTemplate[];
   },
+  /**
+   * Set of pre_workout_template ids the user has actively pinned. When
+   * supplied + non-empty + a pin's `time_window` matches a sub-phase,
+   * candidate selection is overridden for that phase (see substep 5a in
+   * `pre-workout.ts`). Optional — empty/undefined yields byte-identical
+   * pre-pin behavior.
+   */
+  beforePinIds?: Set<string>,
 ) {
   const weightKg = toKg(input.weight, input.weight_unit);
   const activityType = input.activity_type || "running";
@@ -751,6 +766,7 @@ export async function calculateMacrosV4(
     input.liked_foods ?? [],
     input.disliked_foods ?? [],
     input.allergies ?? [],
+    beforePinIds,
   );
 
   // === DURING-WORKOUT (V3 unchanged) ===

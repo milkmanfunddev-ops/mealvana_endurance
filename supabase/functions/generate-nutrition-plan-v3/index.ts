@@ -55,7 +55,7 @@ import {
   validatePhaseResultAgainstTargets,
 } from "./validation.ts";
 import { handleBrickPlan } from "./brick-handler.ts";
-import { fetchUserPinnedTemplateIds } from "./pins.ts";
+import { fetchUserPinnedTemplateIds } from "../_shared/nutrition/pins.ts";
 
 // ============================================================================
 // Timing Helpers
