@@ -28,6 +28,7 @@ import {
 } from "../_shared/nutrition/template-food-queries.ts";
 import { generateDuringPhaseRuleBased } from "../_shared/nutrition/during-rule-solver.ts";
 import {
+  type DuringWorkoutTemplate,
   generateDuringPhaseTemplate,
   type GutTrainingLevel,
   selectTemplateCandidates,
@@ -239,6 +240,31 @@ export async function postProcessDuringPhase(
 // ============================================================================
 
 /**
+ * Collect the set of component food names belonging to pinned templates.
+ *
+ * Honor-pin policy (Formula Kit PR 2 5c): foods in this set must bypass the
+ * dislike/allergen/diet filters in `getTemplateFoodsForDuringWithConstraints`
+ * so that the pinned template's components remain available to the solver.
+ * Filtering them out at the food-loading layer leaves the template-selection
+ * layer with a pinned template whose components are absent from
+ * `foodsByName`, causing the solver to silently substitute or zero them.
+ */
+function derivePinnedComponentNames(
+  templates: DuringWorkoutTemplate[],
+  pinnedTemplateIds?: Set<string>,
+): Set<string> {
+  if (!pinnedTemplateIds || pinnedTemplateIds.size === 0) return new Set();
+  const names = new Set<string>();
+  for (const t of templates) {
+    if (!pinnedTemplateIds.has(t.id)) continue;
+    for (const name of t.component_food_names ?? []) {
+      names.add(name);
+    }
+  }
+  return names;
+}
+
+/**
  * Generate during-phase food selection using deterministic rules.
  * Swimming returns empty immediately. Run/bike use the rule solver.
  * No server-side by-hour apportionment (client creates empty buckets).
@@ -300,24 +326,31 @@ export async function generateDuringPhase(
   if (gutTrainingLevel && durationMinutes && durationMinutes > 0) {
     try {
       const templateQueryStart = performance.now();
-      const [templates, constrainedFoods] = await Promise.all([
-        getDuringWorkoutTemplates(supabase),
-        getTemplateFoodsForDuringWithConstraints(
-          supabase,
-          activityType,
-          likedFoods,
-          willingToTryFoods,
-          dislikedFoods,
-          deviceId,
-          allergies,
-          dietaryPreference,
-        ),
-      ]);
+      // Load templates first so we can derive pinned-component names before
+      // querying foods. The foods query needs to know which foods to bypass
+      // dislike/allergen/diet filters for (honor-pin policy, PR 2 5c).
+      const templates = await getDuringWorkoutTemplates(supabase);
+      const pinnedComponentNames = derivePinnedComponentNames(
+        templates,
+        pinnedTemplateIds,
+      );
+      const constrainedFoods = await getTemplateFoodsForDuringWithConstraints(
+        supabase,
+        activityType,
+        likedFoods,
+        willingToTryFoods,
+        dislikedFoods,
+        deviceId,
+        allergies,
+        dietaryPreference,
+        pinnedComponentNames,
+      );
       console.log(
         `[PLAN-V3-TIMING] during_template_queries completed in ${
           elapsed(templateQueryStart)
         }ms ` +
-          `(templates=${templates.length}, foods=${constrainedFoods.length})`,
+          `(templates=${templates.length}, foods=${constrainedFoods.length}, ` +
+          `pinnedComponents=${pinnedComponentNames.size})`,
       );
 
       if (templates.length > 0 && constrainedFoods.length > 0) {

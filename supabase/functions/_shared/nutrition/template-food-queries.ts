@@ -916,6 +916,12 @@ export async function getTemplateFoodsForDuringWithConstraints(
   deviceId?: string,
   allergies?: string[],
   dietaryPreference?: string,
+  /** Food names that are components of the user's pinned during-templates.
+   * Per the honor-pin policy, these foods bypass dislike / allergen / diet
+   * filters so the pinned template can be assembled even when its ingredients
+   * conflict with the user's general preferences. Empty/undefined preserves
+   * pre-pin behavior. Formula Kit PR 2 substep 5c. */
+  pinnedComponentNames?: Set<string>,
 ): Promise<FoodWithConstraints[]> {
   const likedSet = buildPreferenceSet(likedFoods);
   const willTrySet = buildPreferenceSet(willingToTryFoods);
@@ -968,6 +974,14 @@ export async function getTemplateFoodsForDuringWithConstraints(
 
       const isEssential = f.is_essential === true;
       const isElectrolyte = f.is_electrolyte === true;
+      // Honor-pin bypass: foods that are components of an in-scope pinned
+      // template skip dislike/allergen/diet filters. Without this, a user who
+      // pins a template containing a generally-disliked or allergen-bearing
+      // food (e.g. stroopwafel marked disliked) would have that component
+      // silently stripped from the food pool, and the template solver would
+      // produce an output that omits the pinned hero food. See PR 2 5c.
+      const isPinnedComponent =
+        pinnedComponentNames?.has(f.name as string) ?? false;
 
       // Disliked filter. Essentials bypass for hydration safety, but electrolyte
       // products do NOT — user preference for capsules/powders/drinks dominates.
@@ -975,10 +989,13 @@ export async function getTemplateFoodsForDuringWithConstraints(
         f as { id?: string; name?: string; display_name?: string | null },
         dislikedSet,
       );
-      if (isDisliked && !(isEssential && !isElectrolyte)) return false;
+      if (
+        isDisliked && !isPinnedComponent &&
+        !(isEssential && !isElectrolyte)
+      ) return false;
 
       // Allergen filter
-      if (allergiesLower.length > 0 && !isEssential) {
+      if (allergiesLower.length > 0 && !isEssential && !isPinnedComponent) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
         if (
           foodAllergens.some((a) =>
@@ -988,7 +1005,7 @@ export async function getTemplateFoodsForDuringWithConstraints(
       }
 
       // Diet filter
-      if (dietPrefLower && !isEssential) {
+      if (dietPrefLower && !isEssential && !isPinnedComponent) {
         // Allergen-based diet filtering
         const dietExcludedAllergens: string[] = [];
         if (dietPrefLower === "gluten-free" || dietPrefLower === "all-free") {
