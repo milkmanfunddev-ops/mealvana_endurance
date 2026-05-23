@@ -302,6 +302,7 @@ export async function generateDuringPhase(
       ? {
         used_pin: false,
         pinned_template_id: null,
+        pinned_template_name: null,
         fallthrough_reason: "no_pin_for_scope",
       }
       : undefined;
@@ -384,6 +385,7 @@ export async function generateDuringPhase(
             duringPinDecision = {
               used_pin: true,
               pinned_template_id: first.id,
+              pinned_template_name: first.name,
               fallthrough_reason: null,
             };
           }

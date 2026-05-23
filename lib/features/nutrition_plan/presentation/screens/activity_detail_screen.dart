@@ -21,6 +21,9 @@ import '../../../coach_mode/presentation/providers/coach_activity_detail_control
 import '../providers/activity_detail_state.dart';
 import '../widgets/stale_plan_warning.dart';
 import '../widgets/low_fuel_risk_badge.dart';
+import '../../../formula_kit/presentation/widgets/pin_status_banner.dart';
+import '../../../formula_kit/domain/pin_decision.dart';
+import '../../domain/plan_section.dart';
 import '../../../personal_templates/presentation/widgets/save_template_dialog.dart';
 import '../../../personal_templates/presentation/providers/personal_templates_controller.dart';
 import '../widgets/fuel_log/fuel_log_section_widget.dart';
@@ -76,6 +79,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
   int _fuelLogRating = 0;
   int? _fuelLogNutritionRating;
   String? _fuelLogNotes;
+
+  /// Activity IDs for which we've already emitted `pin_status_banner_shown`.
+  /// Prevents re-firing the analytics event on rebuilds. Cleared with State.
+  /// Formula Kit PR 2 substep 9.
+  final Set<String> _pinBannerShownForActivities = <String>{};
 
   @override
   void initState() {
@@ -313,6 +321,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
             // Top spacing when hero is hidden
             if (_heroFadeOut.value <= 0.01)
               const SizedBox(height: AppSpacing.sm),
+
+            // Pin status banner (Formula Kit PR 2 substep 9). Visible only
+            // when the plan was generated with pins supplied — the algorithm
+            // attaches PinDecision to each affected phase / sub-phase.
+            if (_extrasFadeOut.value > 0.01)
+              FadeTransition(
+                opacity: _extrasFadeOut,
+                child: _buildPinStatusBanner(context, state),
+              ),
 
             // Stale plan warning (hidden during fuel log)
             if (activity.needsNutritionRefresh == true &&
@@ -1318,6 +1335,133 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
           'Failed to delete activity. Please try again.',
         );
       }
+    }
+  }
+
+  /// Build the Formula Kit pin status banner shown above StalePlanWarning.
+  /// Returns SizedBox.shrink when there are no pin decisions to surface.
+  /// Formula Kit PR 2 substep 9.
+  Widget _buildPinStatusBanner(
+    BuildContext context,
+    ActivityDetailState state,
+  ) {
+    final plan = state.nutritionPlan;
+    if (plan == null) return const SizedBox.shrink();
+
+    final rows = _collectPinBannerRows(plan.sections);
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    // Fire `pin_status_banner_shown` once per activity per State instance.
+    final activityId = state.activity?.id;
+    if (activityId != null &&
+        !_pinBannerShownForActivities.contains(activityId)) {
+      _pinBannerShownForActivities.add(activityId);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final controller = ref.read(
+          activityDetailControllerProvider(
+            activityId: widget.activityId,
+            isNewActivity: widget.isNewActivity,
+          ).notifier,
+        );
+        controller.trackEvent('pin_status_banner_shown', {
+          'activity_id': activityId,
+          'rows': rows.length,
+          'honored_count':
+              rows.where((r) => r.decision.usedPin).length,
+        });
+      });
+    }
+
+    return PinStatusBanner(
+      rows: rows,
+      onExpanded: () {
+        final controller = ref.read(
+          activityDetailControllerProvider(
+            activityId: widget.activityId,
+            isNewActivity: widget.isNewActivity,
+          ).notifier,
+        );
+        controller.trackEvent('pin_status_banner_expanded', {
+          'activity_id': activityId,
+          'rows': rows.length,
+        });
+      },
+      onFormulaLibraryTapped: () {
+        final controller = ref.read(
+          activityDetailControllerProvider(
+            activityId: widget.activityId,
+            isNewActivity: widget.isNewActivity,
+          ).notifier,
+        );
+        controller.trackEvent('pin_status_banner_formula_library_tapped', {
+          'activity_id': activityId,
+        });
+        // push (not go) so back returns to this activity detail screen.
+        context.push('/settings/food-preferences/formula-library');
+      },
+    );
+  }
+
+  /// Walk the plan and pull out every phase / sub-phase that carries a
+  /// non-null [PinDecision]. Order matches user-facing flow: Before
+  /// sub-phases (meal → snack → top-off) then During.
+  List<PinStatusBannerRow> _collectPinBannerRows(List<PlanSection> sections) {
+    final rows = <PinStatusBannerRow>[];
+    for (final section in sections) {
+      // Before-phase sub-phases each carry their own decision.
+      if (section.subPhases != null) {
+        for (final sub in section.subPhases!) {
+          final decision = sub.pinDecision;
+          if (decision != null) {
+            rows.add(
+              PinStatusBannerRow(
+                label: _subPhaseLabel(sub.subPhaseType),
+                decision: decision,
+              ),
+            );
+          }
+        }
+      }
+      // During section carries its decision at the section level.
+      if (section.pinDecision != null) {
+        rows.add(
+          PinStatusBannerRow(
+            label: _sectionLabel(section.id),
+            decision: section.pinDecision!,
+          ),
+        );
+      }
+    }
+    return rows;
+  }
+
+  String _subPhaseLabel(String subPhaseType) {
+    switch (subPhaseType) {
+      case 'meal':
+        return 'Meal';
+      case 'snack':
+        return 'Snack';
+      case 'top_up':
+        return 'Top-Off';
+      default:
+        return subPhaseType;
+    }
+  }
+
+  String _sectionLabel(String sectionId) {
+    switch (sectionId) {
+      case 'during_run':
+      case 'during':
+        return 'During';
+      case 'before_run':
+      case 'before':
+        return 'Before';
+      case 'after_run':
+      case 'after':
+        return 'After';
+      default:
+        return sectionId;
     }
   }
 }

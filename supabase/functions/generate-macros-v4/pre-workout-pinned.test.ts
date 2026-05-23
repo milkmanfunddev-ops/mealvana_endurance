@@ -127,6 +127,11 @@ Deno.test('pin override: pinned template wins even when its component is dislike
   assertEquals(topUp.primary?.id, 'gel-1', 'pinned gel should win despite dislike');
   assertEquals(topUp.pin_decision?.used_pin, true);
   assertEquals(topUp.pin_decision?.pinned_template_id, 'gel-1');
+  assertEquals(
+    topUp.pin_decision?.pinned_template_name,
+    'Energy Gel',
+    'pinned_template_name must be populated for client banner display (PR 2 substep 9)',
+  );
 });
 
 Deno.test('pin override: pinned template wins even when its excluded_diets matches user diet', () => {
@@ -232,6 +237,11 @@ Deno.test('pin scope: pin for meal time_window does NOT fire when running top_up
   assertEquals(topUp.primary?.id, 'gel-1', 'pin should NOT fire, normal top_up template selected');
   assertEquals(topUp.pin_decision?.used_pin, false);
   assertEquals(topUp.pin_decision?.fallthrough_reason, 'no_pin_for_scope');
+  assertEquals(
+    topUp.pin_decision?.pinned_template_name,
+    null,
+    'pinned_template_name must be null on fallthrough (PR 2 substep 9)',
+  );
 });
 
 Deno.test('pin scope: pinsActive but no pin for ANY scope → fallthrough_reason on all phases', () => {

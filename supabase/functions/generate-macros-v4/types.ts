@@ -168,6 +168,10 @@ export interface PreWorkoutPhaseResult {
   pin_decision?: {
     used_pin: boolean;
     pinned_template_id: string | null;
+    /** Template display name when `used_pin = true`, otherwise null. Lets the
+     * client render the pinned formula's label in the activity-detail pin
+     * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
+    pinned_template_name: string | null;
     fallthrough_reason: 'no_pin_for_scope' | null;
   };
 }

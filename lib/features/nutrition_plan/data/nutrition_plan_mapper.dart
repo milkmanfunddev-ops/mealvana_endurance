@@ -3,6 +3,7 @@ import '../domain/nutrition_plan.dart';
 import '../domain/food_item_data.dart';
 import '../domain/time_slot_assignment.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
+import 'package:mealvana_endurance/features/formula_kit/domain/pin_decision.dart';
 
 /// Mapper for converting NutritionPlan to/from JSON formats
 /// Handles Edge Function JSON and Supabase database JSON formats
@@ -137,7 +138,7 @@ class NutritionPlanMapper {
             if (plan['during'] is Map) {
               final duringMap = plan['during'] as Map<String, dynamic>;
               final duringFoods = duringMap['foods'] as List<dynamic>? ?? [];
-              final section = PlanSection.fromEdgeFunctionJson(
+              var section = PlanSection.fromEdgeFunctionJson(
                 'during_run',
                 duringFoods,
               );
@@ -145,12 +146,20 @@ class NutritionPlanMapper {
               final byHourJson =
                   duringMap['by_hour_data'] as Map<String, dynamic>?;
               if (byHourJson != null) {
-                parsedSections.add(
-                  section.copyWith(byHourData: ByHourData.fromJson(byHourJson)),
+                section = section.copyWith(
+                  byHourData: ByHourData.fromJson(byHourJson),
                 );
-              } else {
-                parsedSections.add(section);
               }
+              // Parse pin_decision telemetry (Formula Kit PR 2 substep 9).
+              // Present only when pins were supplied to the algorithm.
+              final pinDecisionJson =
+                  duringMap['pin_decision'] as Map<String, dynamic>?;
+              if (pinDecisionJson != null) {
+                section = section.copyWith(
+                  pinDecision: PinDecision.fromJson(pinDecisionJson),
+                );
+              }
+              parsedSections.add(section);
             } else if (plan['during'] is List) {
               // Backward compat: plain array of food items
               parsedSections.add(
