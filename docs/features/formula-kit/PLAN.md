@@ -16,6 +16,16 @@ While deploying substep 7 edge functions to dev, `supabase functions deploy gene
 
 **Prevention:** added `scripts/deploy_dev.sh` and `scripts/deploy_prod.sh` wrappers that read the target ref from `.env.dev.local` / `.env.prod.local` and pass `--project-ref` explicitly, so deploys are independent of whatever `supabase/.temp/project-ref` currently points to. `deploy_prod.sh` requires an interactive `yes` confirmation. Use the wrappers, not raw `supabase functions deploy`. Known follow-up: `supabase/.temp/project-ref` is tracked in git and currently points at prod — should likely move to `.gitignore` so the floating-link state stops drifting into commits.
 
+### Plan revision — 2026-05-24: substep 7 smoke-tested on dev, follow-ups deferred
+
+Verified substep 7 wire end-to-end on dev by reading persisted plan blobs from `activities.nutrition_plan_data` (two fresh plans generated on Rad ~21:15 / 21:17 CDT 2026-05-23). Both Before and During phases emit `pin_decision` with `pin_set_size` populated by the edge function (`pinnedForPhase.length` for pre-workout, `pinInScopeCount` for during). Earlier `pin_set_size: 0` seen in simulator analytics was a stale pre-deploy plan generated against the old edge function — `PinDecision.pinSetSize` defaulted to 0 via the legacy-payload path in `pin_decision.dart:77`. Working as designed.
+
+**Deferred to next session (do NOT block PR 2 landing on these):**
+
+1. **Normalize `phase` value to `before` / `during`** in the substep 7 analytics emit. Decision made: substep 8 events use `before` / `during`, but substep 7 currently emits the section IDs `before_run` / `during_run` (per `_trackPinDecisions` in `macro_targets_controller.dart`). Normalize at the emit site so substep 7 and 8 events join cleanly in Mixpanel. Update `analytics_events.dart` docstring accordingly. Add a unit-test case in `pin_analytics_test.dart`.
+2. **Casing inconsistency in persisted blob (informational, predates substep 7).** `detailedMacroTargets.preRunSelections[].pin_decision` is snake_case (preserved from edge fn wire) while `sections[].pinDecision` is camelCase (re-serialized by client model). Inner keys are snake_case in both. `PinDecision.fromJson` already accepts both top-level names via dual lookup at lines 68–79. Not a bug, but worth noting if anyone reads the blob raw and is confused.
+3. **`supabase/.temp/project-ref` gitignore** (carried from 2026-05-23 revision above).
+
 ### Plan revision — 2026-05-22: schema applied, custom_foods reverted, workflow changed
 
 Lee did a substantial db-cleanup pass on 2026-05-22 (`b2f86b4f`, `2ca58e95`) that materially affects this plan. Summary of what changed and how it propagates:
