@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/macro_targets_controller.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_events.dart';
 
 import '../../../helpers/fakes/recording_analytics_tracker.dart';
@@ -94,6 +95,27 @@ void main() {
 
       final props = tracker.events.single.properties!;
       expect(props.containsKey('sub_phase'), isFalse);
+    });
+  });
+
+  // Substep 7 deferred follow-up (#19): the controller emits pin events using
+  // the normalized analytics phase vocabulary, not the raw plan section IDs.
+  // Locking this in keeps substep 7 (`plan_used_pin` / `plan_pin_fallthrough`)
+  // events joinable with substep 8 events in Mixpanel.
+  group('MacroTargetsController.phaseForSectionId', () {
+    test('maps section IDs → analytics phase vocabulary', () {
+      expect(MacroTargetsController.phaseForSectionId('before_run'), 'before');
+      expect(MacroTargetsController.phaseForSectionId('during_run'), 'during');
+      expect(MacroTargetsController.phaseForSectionId('after_run'), 'after');
+    });
+
+    test('passes unknown section IDs through unchanged (future sections)', () {
+      // Future brick sub-sections or new phases shouldn't silently lose
+      // their phase tag — pass through is the conservative default.
+      expect(
+        MacroTargetsController.phaseForSectionId('brick_bike'),
+        'brick_bike',
+      );
     });
   });
 }

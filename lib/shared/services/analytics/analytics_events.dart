@@ -374,7 +374,7 @@ extension AnalyticsEvents on AnalyticsTracker {
     required String activityId,
     required String templateId,
     required String templateName,
-    required String phase, // 'before' | 'during'
+    required String phase, // 'before' | 'during' | 'after'
     String? subPhase, // 'meal' | 'snack' | 'top_up' (Before only)
     required int pinSetSize,
   }) {

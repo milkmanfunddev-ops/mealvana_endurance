@@ -2095,13 +2095,14 @@ class MacroTargetsController extends _$MacroTargetsController {
     required String deviceId,
   }) async {
     for (final section in plan.sections) {
+      final phase = _phaseForSectionId(section.id);
       final sectionDecision = section.pinDecision;
       if (sectionDecision != null) {
         await _emitPinEvent(
           decision: sectionDecision,
           activityId: activityId,
           deviceId: deviceId,
-          phase: section.id,
+          phase: phase,
           subPhase: null,
         );
       }
@@ -2115,10 +2116,32 @@ class MacroTargetsController extends _$MacroTargetsController {
           decision: subDecision,
           activityId: activityId,
           deviceId: deviceId,
-          phase: section.id,
+          phase: phase,
           subPhase: sub.subPhaseType,
         );
       }
+    }
+  }
+
+  /// Normalizes plan section IDs (`before_run` / `during_run` / `after_run`)
+  /// to the analytics phase vocabulary (`before` / `during` / `after`) so
+  /// substep 7 events join cleanly with substep 8 events in Mixpanel.
+  /// Unknown IDs are passed through unchanged so future sections (e.g. brick
+  /// sub-sections) don't silently lose their phase tag.
+  @visibleForTesting
+  static String phaseForSectionId(String sectionId) =>
+      _phaseForSectionId(sectionId);
+
+  static String _phaseForSectionId(String sectionId) {
+    switch (sectionId) {
+      case 'before_run':
+        return 'before';
+      case 'during_run':
+        return 'during';
+      case 'after_run':
+        return 'after';
+      default:
+        return sectionId;
     }
   }
 
