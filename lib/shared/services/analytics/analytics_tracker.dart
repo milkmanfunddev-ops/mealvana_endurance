@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mixpanel_flutter/mixpanel_flutter.dart';
 
@@ -257,8 +258,18 @@ class NoopAnalyticsTracker implements AnalyticsTracker {
   @override
   Future<void> timeEvent(String eventName) async {}
 
+  /// Dev-only echo: NoopAnalyticsTracker is the tracker returned in dev mode
+  /// (see [analyticsTrackerProvider]). The Mixpanel tracker has its own echo
+  /// guarded by `devModeEnabled`, but in dev we never instantiate it — so
+  /// without this echo here, engineers have no way to verify event payloads
+  /// from the simulator console. Guarded by `kDebugMode` so release builds
+  /// using the noop (e.g. tests) stay silent.
   @override
-  Future<void> track(String eventName, {Map<String, dynamic>? properties}) async {}
+  Future<void> track(String eventName, {Map<String, dynamic>? properties}) async {
+    if (kDebugMode) {
+      debugPrint('📊 [ANALYTICS] $eventName ${properties ?? const {}}');
+    }
+  }
 }
 
 /// Provider exposing the default analytics tracker.

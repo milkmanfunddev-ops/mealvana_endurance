@@ -175,6 +175,34 @@ function mapActivityTypeForTemplate(activityType: ActivityType): string[] {
  * - +5 for each willing-to-try food in component_food_names
  * - Ties broken by template_number (lower = simpler = preferred)
  */
+/**
+ * Returns the subset of `templates` that are active, pinned, AND in scope for
+ * the given workout (activity_type × duration_bracket), sorted by
+ * template_number. Shared between the pin-override path inside
+ * `selectTemplateCandidates` and the `pin_set_size` analytics field surfaced
+ * on `pin_decision`. Returns [] when no pins match scope.
+ *
+ * Formula Kit PR 2 substep 7.
+ */
+export function filterPinnedTemplatesInScope(
+  templates: DuringWorkoutTemplate[],
+  activityType: ActivityType,
+  durationMinutes: number,
+  pinnedTemplateIds: Set<string>,
+): DuringWorkoutTemplate[] {
+  const mappedActivities = mapActivityTypeForTemplate(activityType);
+  const durationBracket = getDurationBracket(durationMinutes);
+  return templates
+    .filter(
+      (t) =>
+        t.is_active &&
+        pinnedTemplateIds.has(t.id) &&
+        t.activity_types.some((at) => mappedActivities.includes(at)) &&
+        t.duration_brackets.includes(durationBracket),
+    )
+    .sort((a, b) => a.template_number - b.template_number);
+}
+
 export function selectTemplateCandidates(
   templates: DuringWorkoutTemplate[],
   activityType: ActivityType,
@@ -219,15 +247,12 @@ export function selectTemplateCandidates(
   // the normal candidate-selection path (no fallthrough_reason returned here
   // — that's surfaced by the caller).
   if (pinnedTemplateIds !== undefined && pinnedTemplateIds.size > 0) {
-    const pinnedInScope = templates
-      .filter(
-        (t) =>
-          t.is_active &&
-          pinnedTemplateIds.has(t.id) &&
-          t.activity_types.some((at) => mappedActivities.includes(at)) &&
-          t.duration_brackets.includes(durationBracket),
-      )
-      .sort((a, b) => a.template_number - b.template_number);
+    const pinnedInScope = filterPinnedTemplatesInScope(
+      templates,
+      activityType,
+      durationMinutes,
+      pinnedTemplateIds,
+    );
     if (pinnedInScope.length > 0) {
       console.log(
         `[DURING-TEMPLATE] Pin override active: ${pinnedInScope.length} pinned template(s) in scope ` +

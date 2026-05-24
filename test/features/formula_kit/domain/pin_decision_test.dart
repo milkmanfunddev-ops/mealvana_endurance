@@ -45,6 +45,29 @@ void main() {
         expect(decision.pinnedTemplateId, 'tpl-abc');
         expect(decision.pinnedTemplateName, isNull);
       });
+
+      test('parses pin_set_size from snake_case', () {
+        final decision = PinDecision.fromJson({
+          'used_pin': true,
+          'pinned_template_id': 'tpl-abc',
+          'pinned_template_name': 'Bagel + Jam',
+          'fallthrough_reason': null,
+          'pin_set_size': 3,
+        });
+        expect(decision.pinSetSize, 3);
+      });
+
+      test('legacy payload without pin_set_size defaults to 0', () {
+        // Substep 7 added pin_set_size; plans persisted under substep 9 (or
+        // earlier) won't have it. Parser must default to 0, not throw.
+        final decision = PinDecision.fromJson({
+          'used_pin': true,
+          'pinned_template_id': 'tpl-abc',
+          'pinned_template_name': 'Bagel + Jam',
+          'fallthrough_reason': null,
+        });
+        expect(decision.pinSetSize, 0);
+      });
     });
 
     group('fromJson — persisted shape (camelCase)', () {
@@ -92,12 +115,14 @@ void main() {
           pinnedTemplateId: 'tpl-abc',
           pinnedTemplateName: 'Bagel + Jam',
           fallthroughReason: null,
+          pinSetSize: 2,
         );
         final json = decision.toJson();
         expect(json['used_pin'], isTrue);
         expect(json['pinned_template_id'], 'tpl-abc');
         expect(json['pinned_template_name'], 'Bagel + Jam');
         expect(json['fallthrough_reason'], isNull);
+        expect(json['pin_set_size'], 2);
       });
 
       test('fallthrough_reason serializes wire value, not enum name', () {

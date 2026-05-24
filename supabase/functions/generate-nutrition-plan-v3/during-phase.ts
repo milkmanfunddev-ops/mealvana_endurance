@@ -29,6 +29,7 @@ import {
 import { generateDuringPhaseRuleBased } from "../_shared/nutrition/during-rule-solver.ts";
 import {
   type DuringWorkoutTemplate,
+  filterPinnedTemplatesInScope,
   generateDuringPhaseTemplate,
   type GutTrainingLevel,
   selectTemplateCandidates,
@@ -297,6 +298,9 @@ export async function generateDuringPhase(
   // pins were supplied (byte-identical to pre-pin v3).
   const pinsSupplied = pinnedTemplateIds !== undefined &&
     pinnedTemplateIds.size > 0;
+  // `pinInScopeCount` is refined once templates load (see below). At init we
+  // don't yet know how many pins match scope — treat as 0 until we do.
+  let pinInScopeCount = 0;
   let duringPinDecision: LPPhaseResult["pin_decision"] | undefined =
     pinsSupplied
       ? {
@@ -304,6 +308,7 @@ export async function generateDuringPhase(
         pinned_template_id: null,
         pinned_template_name: null,
         fallthrough_reason: "no_pin_for_scope",
+        pin_set_size: 0,
       }
       : undefined;
 
@@ -331,6 +336,20 @@ export async function generateDuringPhase(
       // querying foods. The foods query needs to know which foods to bypass
       // dislike/allergen/diet filters for (honor-pin policy, PR 2 5c).
       const templates = await getDuringWorkoutTemplates(supabase);
+      // Compute in-scope pin count for analytics (pin_set_size). Mirrors the
+      // scope filter used by `selectTemplateCandidates`. Updated lazily here
+      // because we need templates loaded first. Formula Kit PR 2 substep 7.
+      if (pinsSupplied) {
+        pinInScopeCount = filterPinnedTemplatesInScope(
+          templates,
+          activityType,
+          durationMinutes,
+          pinnedTemplateIds!,
+        ).length;
+        if (duringPinDecision) {
+          duringPinDecision = { ...duringPinDecision, pin_set_size: pinInScopeCount };
+        }
+      }
       const pinnedComponentNames = derivePinnedComponentNames(
         templates,
         pinnedTemplateIds,
@@ -387,6 +406,7 @@ export async function generateDuringPhase(
               pinned_template_id: first.id,
               pinned_template_name: first.name,
               fallthrough_reason: null,
+              pin_set_size: pinInScopeCount,
             };
           }
         }

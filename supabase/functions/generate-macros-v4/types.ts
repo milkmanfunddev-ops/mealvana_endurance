@@ -173,6 +173,11 @@ export interface PreWorkoutPhaseResult {
      * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
     pinned_template_name: string | null;
     fallthrough_reason: 'no_pin_for_scope' | null;
+    /** Count of in-scope pinned candidates the algorithm saw for this phase
+     * after scope-matching. Drives `plan_used_pin` / `plan_pin_fallthrough`
+     * analytics. 0 when pins were supplied but none matched scope.
+     * Formula Kit PR 2 substep 7. */
+    pin_set_size: number;
   };
 }
 

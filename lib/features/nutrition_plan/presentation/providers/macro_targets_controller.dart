@@ -19,6 +19,7 @@ import '../../application/brick_macro_service.dart';
 import '../../application/nutrition_plan_service.dart';
 import '../../application/draft_activity_cleanup_service.dart';
 import '../../domain/nutrition_plan.dart';
+import '../../../formula_kit/domain/pin_decision.dart';
 import '../../../activities/domain/brick_metadata.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../../shared/domain/activity_type.dart';
@@ -1908,6 +1909,18 @@ class MacroTargetsController extends _$MacroTargetsController {
           },
         );
 
+        // Formula Kit PR 2 substep 7: fire one pin-outcome event per phase /
+        // sub-phase that carried a pin_decision. No-op when pins were not
+        // supplied to the algorithm (pin_decision absent on all sections).
+        if (currentStateValue?.activityId != null &&
+            currentStateValue!.activityId!.isNotEmpty) {
+          await _trackPinDecisions(
+            plan: nutritionPlan,
+            activityId: currentStateValue.activityId!,
+            deviceId: userProfile?.id ?? 'unknown',
+          );
+        }
+
         // activityId should ALWAYS exist now (created during macro generation as draft)
         String? finalActivityId = currentStateValue?.activityId;
 
@@ -2070,6 +2083,81 @@ class MacroTargetsController extends _$MacroTargetsController {
 
     // Return the activityId from the successful updated state
     return createPlanResult.value?.activityId;
+  }
+
+  /// Walks the generated plan and fires one `plan_used_pin` /
+  /// `plan_pin_fallthrough` analytics event per phase / sub-phase that
+  /// carried a [PinDecision]. Today only During sits at the section level;
+  /// Before pins live on each [BeforeSubPhase]. Formula Kit PR 2 substep 7.
+  Future<void> _trackPinDecisions({
+    required NutritionPlan plan,
+    required String activityId,
+    required String deviceId,
+  }) async {
+    for (final section in plan.sections) {
+      final sectionDecision = section.pinDecision;
+      if (sectionDecision != null) {
+        await _emitPinEvent(
+          decision: sectionDecision,
+          activityId: activityId,
+          deviceId: deviceId,
+          phase: section.id,
+          subPhase: null,
+        );
+      }
+
+      final subPhases = section.subPhases;
+      if (subPhases == null) continue;
+      for (final sub in subPhases) {
+        final subDecision = sub.pinDecision;
+        if (subDecision == null) continue;
+        await _emitPinEvent(
+          decision: subDecision,
+          activityId: activityId,
+          deviceId: deviceId,
+          phase: section.id,
+          subPhase: sub.subPhaseType,
+        );
+      }
+    }
+  }
+
+  Future<void> _emitPinEvent({
+    required PinDecision decision,
+    required String activityId,
+    required String deviceId,
+    required String phase,
+    required String? subPhase,
+  }) async {
+    if (decision.usedPin) {
+      final id = decision.pinnedTemplateId;
+      final name = decision.pinnedTemplateName;
+      // Defensive: edge fn guarantees id+name when used_pin=true, but a
+      // legacy persisted plan from before substep 9 may lack the name.
+      if (id == null || name == null) return;
+      await _analytics.trackPlanUsedPin(
+        deviceId: deviceId,
+        activityId: activityId,
+        templateId: id,
+        templateName: name,
+        phase: phase,
+        subPhase: subPhase,
+        pinSetSize: decision.pinSetSize,
+      );
+      return;
+    }
+    final reason = decision.fallthroughReason?.wireValue;
+    // No fall-through reason → pins weren't supplied for this phase. Skip
+    // silently rather than emitting a noise event.
+    if (reason == null) return;
+    await _analytics.trackPlanPinFallthrough(
+      deviceId: deviceId,
+      activityId: activityId,
+      phase: phase,
+      subPhase: subPhase,
+      reason: reason,
+      pinSetSize: decision.pinSetSize,
+    );
   }
 
   Future<void> _verifyCoachRemotePlanVisibility({

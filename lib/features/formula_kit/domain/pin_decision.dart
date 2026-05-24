@@ -37,6 +37,7 @@ class PinDecision {
     required this.pinnedTemplateId,
     required this.pinnedTemplateName,
     required this.fallthroughReason,
+    this.pinSetSize = 0,
   });
 
   /// True iff the algorithm selected a pinned template for this phase. When
@@ -56,6 +57,12 @@ class PinDecision {
   /// Why a pin did not fire. Null when [usedPin] is true.
   final PinFallthroughReason? fallthroughReason;
 
+  /// Count of in-scope pinned candidates the algorithm saw for this phase.
+  /// 0 when pins were supplied but none matched scope. Drives the
+  /// `plan_used_pin` / `plan_pin_fallthrough` analytics payload. Defaults to
+  /// 0 for plans persisted before substep 7 (legacy `pin_decision` shape).
+  final int pinSetSize;
+
   factory PinDecision.fromJson(Map<String, dynamic> json) {
     return PinDecision(
       usedPin: json['used_pin'] as bool? ?? json['usedPin'] as bool? ?? false,
@@ -67,6 +74,9 @@ class PinDecision {
         json['fallthrough_reason'] as String? ??
             json['fallthroughReason'] as String?,
       ),
+      pinSetSize: (json['pin_set_size'] as num?)?.toInt() ??
+          (json['pinSetSize'] as num?)?.toInt() ??
+          0,
     );
   }
 
@@ -76,11 +86,13 @@ class PinDecision {
       'pinned_template_id': pinnedTemplateId,
       'pinned_template_name': pinnedTemplateName,
       'fallthrough_reason': fallthroughReason?.wireValue,
+      'pin_set_size': pinSetSize,
     };
   }
 
   @override
   String toString() =>
       'PinDecision(usedPin: $usedPin, id: $pinnedTemplateId, '
-      'name: $pinnedTemplateName, fallthrough: $fallthroughReason)';
+      'name: $pinnedTemplateName, fallthrough: $fallthroughReason, '
+      'setSize: $pinSetSize)';
 }

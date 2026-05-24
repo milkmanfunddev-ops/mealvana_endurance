@@ -929,6 +929,7 @@ export function selectPreWorkoutFoods(
             pinned_template_id: null,
             pinned_template_name: null,
             fallthrough_reason: 'no_pin_for_scope' as const,
+            pin_set_size: pinnedForPhase.length,
           },
         }),
       });
@@ -1022,12 +1023,14 @@ export function selectPreWorkoutFoods(
               pinned_template_id: pick.template.id,
               pinned_template_name: pick.template.name,
               fallthrough_reason: null,
+              pin_set_size: pinnedForPhase.length,
             }
           : {
               used_pin: false,
               pinned_template_id: null,
               pinned_template_name: null,
               fallthrough_reason: 'no_pin_for_scope' as const,
+              pin_set_size: pinnedForPhase.length,
             },
       }),
     });
