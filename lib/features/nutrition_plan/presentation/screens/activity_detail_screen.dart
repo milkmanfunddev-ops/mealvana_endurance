@@ -22,14 +22,13 @@ import '../providers/activity_detail_state.dart';
 import '../widgets/stale_plan_warning.dart';
 import '../widgets/low_fuel_risk_badge.dart';
 import '../../../formula_kit/presentation/widgets/pin_status_banner.dart';
-import '../../../formula_kit/domain/pin_decision.dart';
-import '../../domain/plan_section.dart';
 import '../../../personal_templates/presentation/widgets/save_template_dialog.dart';
 import '../../../personal_templates/presentation/providers/personal_templates_controller.dart';
 import '../widgets/fuel_log/fuel_log_section_widget.dart';
 import '../widgets/fuel_log/fuel_log_feedback_section.dart';
 import '../widgets/fuel_log/fuel_log_success_overlay.dart';
 import '../utils/activity_detail_helpers.dart';
+import '../utils/pin_banner_rows_builder.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 
@@ -1348,10 +1347,13 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     final plan = state.nutritionPlan;
     if (plan == null) return const SizedBox.shrink();
 
-    final rows = _collectPinBannerRows(plan.sections);
-    if (rows.isEmpty) return const SizedBox.shrink();
+    final bannerData = collectPinBannerRows(plan.sections);
+    if (!bannerData.shouldRender) return const SizedBox.shrink();
+    final rows = bannerData.rows;
 
     // Fire `pin_status_banner_shown` once per activity per State instance.
+    // `mode` tags the event so we can split funnel metrics between onboarding
+    // (discovery surface) vs status (telemetry surface).
     final activityId = state.activity?.id;
     if (activityId != null &&
         !_pinBannerShownForActivities.contains(activityId)) {
@@ -1366,6 +1368,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         );
         controller.trackEvent('pin_status_banner_shown', {
           'activity_id': activityId,
+          'mode': bannerData.isOnboarding ? 'onboarding' : 'status',
           'rows': rows.length,
           'honored_count':
               rows.where((r) => r.decision.usedPin).length,
@@ -1375,6 +1378,7 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
 
     return PinStatusBanner(
       rows: rows,
+      isOnboarding: bannerData.isOnboarding,
       onExpanded: () {
         final controller = ref.read(
           activityDetailControllerProvider(
@@ -1403,67 +1407,9 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
     );
   }
 
-  /// Walk the plan and pull out every phase / sub-phase that carries a
-  /// non-null [PinDecision]. Order matches user-facing flow: Before
-  /// sub-phases (meal → snack → top-off) then During.
-  List<PinStatusBannerRow> _collectPinBannerRows(List<PlanSection> sections) {
-    final rows = <PinStatusBannerRow>[];
-    for (final section in sections) {
-      // Before-phase sub-phases each carry their own decision.
-      if (section.subPhases != null) {
-        for (final sub in section.subPhases!) {
-          final decision = sub.pinDecision;
-          if (decision != null) {
-            rows.add(
-              PinStatusBannerRow(
-                label: _subPhaseLabel(sub.subPhaseType),
-                decision: decision,
-              ),
-            );
-          }
-        }
-      }
-      // During section carries its decision at the section level.
-      if (section.pinDecision != null) {
-        rows.add(
-          PinStatusBannerRow(
-            label: _sectionLabel(section.id),
-            decision: section.pinDecision!,
-          ),
-        );
-      }
-    }
-    return rows;
-  }
-
-  String _subPhaseLabel(String subPhaseType) {
-    switch (subPhaseType) {
-      case 'meal':
-        return 'Meal';
-      case 'snack':
-        return 'Snack';
-      case 'top_up':
-        return 'Top-Off';
-      default:
-        return subPhaseType;
-    }
-  }
-
-  String _sectionLabel(String sectionId) {
-    switch (sectionId) {
-      case 'during_run':
-      case 'during':
-        return 'During';
-      case 'before_run':
-      case 'before':
-        return 'Before';
-      case 'after_run':
-      case 'after':
-        return 'After';
-      default:
-        return sectionId;
-    }
-  }
+  // Pin banner row collection moved to `utils/pin_banner_rows_builder.dart`
+  // so the synthesis rule (substep 11 polish) is unit-testable without
+  // mounting the full activity detail screen.
 }
 
 /// A simple toggle chip used in the Planned/Actual segmented control.

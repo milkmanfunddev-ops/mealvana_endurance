@@ -26,6 +26,31 @@ Verified substep 7 wire end-to-end on dev by reading persisted plan blobs from `
 2. **Casing inconsistency in persisted blob (informational, predates substep 7).** `detailedMacroTargets.preRunSelections[].pin_decision` is snake_case (preserved from edge fn wire) while `sections[].pinDecision` is camelCase (re-serialized by client model). Inner keys are snake_case in both. `PinDecision.fromJson` already accepts both top-level names via dual lookup at lines 68–79. Not a bug, but worth noting if anyone reads the blob raw and is confused.
 3. **`supabase/.temp/project-ref` gitignore** (carried from 2026-05-23 revision above).
 
+**Must-fix during substep 11 (blocks PR 2 landing):**
+
+- **milkmanfunddev-ops/mealvana_endurance#32 — cross-device pin sync gap.** ✅ _Fixed 2026-05-24 (two-part fix)._ Discovered mid-smoke-test of substep 8 scenarios: a pin made on Rad last night was honored by the edge function on the simulator today, but invisible in the simulator's Library UI. Root cause: `FormulaLibraryController.build()` synced three repos on load but skipped `formula_pins`. Neither Drift nor Supabase nor the repo was broken — a missing `syncFromRemote` call. Fix part 1: added `pinsRepo.isStale()` + `pinsRepo.syncFromRemote(userId)` alongside the other three syncs (`formula_library_controller.dart:179-207`).
+
+  **Fix part 2 (caught during substep 11 smoke verification 2026-05-24):** fresh-install sim showed 0/0 pins despite Supabase having 5 active. The ★ icon state is driven by `FormulaPinController` (not `FormulaLibraryController`) — these are two separate controllers that each read the pins repo independently and Riverpod doesn't guarantee build order. `FormulaPinController.build()` was racing ahead of `FormulaLibraryController`'s sync, reading an empty Drift cache, and caching the empty state. Workaround was navigating away from Library and back (autoDispose tore down the stale state, rebuild saw the now-populated Drift) — but that's not what a real user does. Fix: added the same `isStale()` + `syncFromRemote()` gate to `FormulaPinController.build()` (`formula_pin_controller.dart:62-84`). Idempotent — SharedPreferences-backed timestamp is shared across all readers of the pins repo, so the second controller's check is a no-op when the first has already synced. Verified by fresh-install smoke: opens Library, sees 2 Before + 4 During matching Supabase, no tab tricks needed.
+
+  **Class-of-bug lesson:** any controller that reads a `SyncableRepository`'s data on `build()` needs its own `isStale() + syncFromRemote()` gate — relying on a sibling controller to have synced first is racy. Audited the other Formula Kit repos (`pre_workout_templates`, `during_workout_templates`, `template_foods`) — only `FormulaLibraryController` reads them, so they're safe. Worth checking other features the next time we touch them.
+
+  **No controller-level regression test added** — sync correctness is exercised by `formula_pins_repository_test.dart` (dirty-preserve + tombstone propagation). A controller test would require mocking 4+ repos for a one-line wiring change; high cost, low signal. Decision documented inline in both controllers. Workaround applied during testing: soft-deleted the orphan pin row in Supabase via Management API.
+
+**PinStatusBanner V1 polish (substep 11):** _Shipped 2026-05-24_
+
+Found mid-smoke-test on scenario 4 (no-pin-for-scope fallthrough). When the user had Before pins but no During pins, the banner showed Snack + Top-Off rows but no During row — because the edge function only emits `pin_decision` on the During section when `pinsSupplied` (≥1 During pin). For users with mixed pin state across phases, the banner read as incomplete.
+
+1. **Client-side synthesis of missing pinnable rows.** `_collectPinBannerRows` (`activity_detail_screen.dart:1409`) is now two-pass:
+   - Pass 1: scan plan for ANY real `PinDecision`. If zero, return `const []` so the banner stays hidden (user has no pins — banner adds no value).
+   - Pass 2: walk all pinnable phases present in the plan (Before sub_phases ∈ {meal, snack, top_up}, During section). Real decisions render as-is; phases the edge function didn't emit a decision for get a synthesized `PinDecision(usedPin: false, pinSetSize: 0, fallthroughReason: noPinForScope)`. Server-side broader emit considered and deferred — client synthesis covers the UX without an edge fn change.
+
+2. **Two-state copy rule for non-honored rows** (`pin_status_banner.dart:_buildRow`):
+   - `pin_set_size == 0` → **"No pin found"** (user has no pins matching this scope — Meal/Snack/Top-Off/During).
+   - `pin_set_size > 0 && !usedPin` → **"Pins fell through"** (pins existed but none was selected).
+   - In V1 the only fallthrough reason is `no_pin_for_scope`, so almost every non-honored row renders as "No pin found"; the second branch is wired forward-compat for future fallthrough reasons (allergen, season, etc.) and becomes load-bearing without a code change. Synthesized rows always fall into bucket 1 (pinSetSize == 0).
+
+3. **CTA copy change.** `pin_status_banner.dart` text "Browse Formula Library" → "Pin your favorite formula" (the `Icons.arrow_forward` already follows the label, so the in-product render is "Pin your favorite formula →"). Analytics event name `pin_status_banner_formula_library_tapped` kept stable.
+
 ### Plan revision — 2026-05-22: schema applied, custom_foods reverted, workflow changed
 
 Lee did a substantial db-cleanup pass on 2026-05-22 (`b2f86b4f`, `2ca58e95`) that materially affects this plan. Summary of what changed and how it propagates:
@@ -145,7 +170,7 @@ PR phasing has shifted: new PR 2 is Pins. Old PR 2–5 each move up by one. Favo
 8. **UX (i)** — pin toggle on `FormulaLibraryScreen` cards + Before/During detail screens. State in `FormulaLibraryController` + new `FormulaPinController`.
 9. **UX (iii)** ✅ — `activity_detail_screen` banner. Shipped as `PinStatusBanner` (combined collapsible, V3 design): header summary + per-phase rows (meal/snack/top-off/during) showing honored template name or fallthrough state, plus "Browse Formula Library" CTA (pushes route — back returns to activity). `PinDecision` attached per-result on `BeforeSubPhase`/`PlanSection`; wire shape extended with `pinned_template_name` so the banner doesn't need a separate template lookup. Forward-compat decoder (`PinFallthroughReason.fromWireValue` → null on unknown). Analytics: `pin_status_banner_shown` (once per activity, post-frame), `pin_status_banner_expanded` (one-shot), `pin_status_banner_formula_library_tapped`.
 10. **Client cutover** — N/A under Option B. The edge-function endpoint name stays `generate-nutrition-plan-v3`; pin awareness is additive in the same function. Client doesn't need to repoint. Old app versions on old binaries naturally don't send pins (the table is server-side; pin-fetcher returns empty sets if device has no user row) and get byte-identical pre-pin output.
-11. **Tests** — `formula_pins_repository_test`, `client_plan_service_pinned_template_test`, edge function pin-path test, UI tests for pin toggle + banner states.
+11. **Tests** — `formula_pins_repository_test`, `client_plan_service_pinned_template_test`, edge function pin-path test, UI tests for pin toggle + banner states. **Must also fix milkmanfunddev-ops/mealvana_endurance#32 (cross-device pin sync gap):** `FormulaLibraryController.build()` syncs `template_foods` / `pre_workout_templates` / `during_workout_templates` from Supabase on load but never calls `formulaPinsRepository.syncFromRemote(userId)` — pins made on Device A are honored by the edge function but invisible in Device B's Library UI. One-liner fix in `formula_library_controller.dart` + regression test for the cross-device path. Same architectural shape as #31. Blocks PR 2 landing because multi-pin-per-scope is a locked V1 design choice and silently broken by this bug.
 12. **Status update + memory update** — refresh this Status section, refresh `project_formula_kit.md` memory.
 
 **Out of scope for PR 2 (deferred):**

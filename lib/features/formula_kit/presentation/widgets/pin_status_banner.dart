@@ -34,16 +34,25 @@ class PinStatusBanner extends StatefulWidget {
   const PinStatusBanner({
     super.key,
     required this.rows,
+    this.isOnboarding = false,
     this.onExpanded,
     this.onFormulaLibraryTapped,
   });
 
   /// All phase rows with a non-null [PinDecision], in display order.
-  /// Must be non-empty — caller filters before mounting.
+  /// Empty when [isOnboarding] is true; non-empty otherwise (caller filters
+  /// the Hidden state before mounting).
   final List<PinStatusBannerRow> rows;
 
+  /// When true, the banner renders the zero-pin onboarding state: a
+  /// discovery prompt with a CTA into the Formula Library, no row list.
+  /// Collapsible like Status mode (header only by default; tap to reveal
+  /// subtext + CTA). [rows] is ignored (and expected empty).
+  final bool isOnboarding;
+
   /// Fired the first time the user expands the banner. Owner emits the
-  /// `pin_status_banner_expanded` analytics event.
+  /// `pin_status_banner_expanded` analytics event. Fires in both Status
+  /// and Onboarding modes.
   final VoidCallback? onExpanded;
 
   /// Fired when the user taps "Browse Formula Library →". Owner emits the
@@ -138,6 +147,115 @@ class _PinStatusBannerState extends State<PinStatusBanner>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isOnboarding) {
+      return _buildOnboardingBanner(context);
+    }
+    return _buildStatusBanner(context);
+  }
+
+  /// Zero-pin onboarding variant: discovery prompt + CTA. Collapsible —
+  /// default state shows just the header row to keep the activity-detail
+  /// screen compact; expanding reveals the subtext + CTA.
+  Widget _buildOnboardingBanner(BuildContext context) {
+    // Use the neutral accent (electrolyte teal) — onboarding isn't a
+    // warning state.
+    const accent = AppColors.electrolyte;
+    return Container(
+      key: const ValueKey('pin_status_banner.onboarding'),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(
+          color: accent.withValues(alpha: 0.35),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header (tappable to expand/collapse)
+          InkWell(
+            key: const ValueKey('pin_status_banner.onboarding_header'),
+            onTap: _toggleExpanded,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.push_pin_outlined,
+                    color: accent,
+                    size: 22,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Pin formulas you love',
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  RotationTransition(
+                    turns: Tween<double>(begin: 0.0, end: 0.5).animate(
+                      _chevronController,
+                    ),
+                    child: Icon(
+                      Icons.expand_more,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      size: 22,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expanded body — subtext + CTA
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: _expanded
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      0,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Divider(
+                          color: accent.withValues(alpha: 0.25),
+                          height: 1,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          "We'll use them whenever they fit your activity.",
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _buildFormulaLibraryCta(),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Status variant (existing): collapsible header + per-phase row list + CTA.
+  Widget _buildStatusBanner(BuildContext context) {
     final accent = _accentColor;
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -246,9 +364,17 @@ class _PinStatusBannerState extends State<PinStatusBanner>
     final honored = row.decision.usedPin;
     final rowColor =
         honored ? AppColors.electrolyte : AppColors.warning;
+    // Two-state copy for non-honored rows:
+    //   pin_set_size == 0 → user has no pins for this scope → "No pin found"
+    //   pin_set_size  > 0 → pins existed but none selected → "Pins fell through"
+    // In V1 the only fallthrough reason is `no_pin_for_scope`, so almost every
+    // non-honored row renders as "No pin found"; the second branch is wired
+    // forward-compat for future fallthrough reasons (allergen, season, etc.).
     final templateLabel = honored
         ? (row.decision.pinnedTemplateName ?? 'Pinned formula')
-        : 'No pin matched';
+        : (row.decision.pinSetSize > 0
+            ? 'Pins fell through'
+            : 'No pin found');
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
@@ -313,7 +439,7 @@ class _PinStatusBannerState extends State<PinStatusBanner>
             ),
             const SizedBox(width: AppSpacing.xs),
             Text(
-              'Browse Formula Library',
+              'Pin your favorite formula',
               style: AppTextStyles.buttonPrimary.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 14,

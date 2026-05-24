@@ -59,6 +59,27 @@ class FormulaPinController extends _$FormulaPinController {
       return FormulaPinState.empty;
     }
 
+    // On-demand sync (#32 follow-up): this controller drives the ★ icon
+    // state for every formula card; on a fresh install (or any state where
+    // Drift hasn't been populated yet) we must pull from Supabase before
+    // reading. Without this gate, the controller returns an empty pin set
+    // and every card renders unpinned even when the user has pins in
+    // Supabase.
+    //
+    // The original #32 fix added the same gate to FormulaLibraryController,
+    // but Riverpod builds these two controllers independently — the screen
+    // watches both. Whichever builds first wins, and FormulaPinController
+    // was racing ahead of FormulaLibraryController's sync. The gate is
+    // idempotent (SharedPreferences-backed timestamp shared across all
+    // readers of the pins repo), so adding it here costs nothing when
+    // FormulaLibraryController has already synced.
+    //
+    // Caught during the 2026-05-24 smoke test: fresh sim install showed
+    // 0/0 pinned despite Supabase having 5 active pins for the user.
+    if (await pinsRepo.isStale()) {
+      await pinsRepo.syncFromRemote(userId);
+    }
+
     final activePins = await pinsRepo.getActivePinsForUser(userId);
     return FormulaPinState(
       pinnedTemplateIds: {for (final p in activePins) p.templateId},

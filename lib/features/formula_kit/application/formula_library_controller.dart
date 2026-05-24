@@ -11,6 +11,7 @@ import '../../nutrition_plan/domain/food_item_data.dart';
 import '../../onboarding/domain/allergy.dart';
 import '../../onboarding/domain/dietary_preference.dart';
 import '../data/during_workout_templates_repository.dart';
+import '../data/formula_pins_repository.dart';
 import '../data/pre_workout_templates_repository.dart';
 import '../domain/before_sub_phase.dart';
 import '../domain/during_filter_options.dart';
@@ -166,6 +167,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     final preWorkoutRepo = ref.read(preWorkoutTemplatesRepositoryProvider);
     final duringRepo = ref.read(duringWorkoutTemplatesRepositoryProvider);
     final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
+    final pinsRepo = ref.read(formulaPinsRepositoryProvider);
     final userRepo = await ref.read(userRepositoryProvider.future);
     final logger = ref.read(appExternalDepsProvider).logger;
 
@@ -174,6 +176,20 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     // template_foods is required so we can render component display strings
     // like "1 cup Blueberries" by joining pre_workout_templates.component_*
     // columns with template_foods.serving_unit / display_name(_plural).
+    //
+    // formula_pins is synced here too (#32): pins are server-authoritative for
+    // cross-device visibility — a pin made on Device A must show as pinned in
+    // the Library on Device B. Same shape as #31; skipping this call meant
+    // the edge function honored the pin (it reads Supabase directly) while
+    // the Library UI showed the formula as unpinned.
+    //
+    // No standalone regression test for this wiring (substep 11 decision):
+    // the sync correctness is exercised by `formula_pins_repository_test.dart`
+    // (dirty-preserve + tombstone propagation). A controller-level test would
+    // require mocking 4+ repos for a one-line wiring change — high cost, low
+    // signal. If anyone removes this call again, the failure mode is the same
+    // user-visible bug (#32) and will surface in smoke testing. Future adds to
+    // this build() should follow the same isStale() + syncFromRemote() pattern.
     final user = await userRepo.getCurrentUser();
     final userId = user?.id;
     if (userId != null) {
@@ -185,6 +201,9 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       }
       if (await duringRepo.isStale()) {
         await duringRepo.syncFromRemote(userId);
+      }
+      if (await pinsRepo.isStale()) {
+        await pinsRepo.syncFromRemote(userId);
       }
     } else {
       logger.warning(
