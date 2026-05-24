@@ -196,6 +196,14 @@ serve(async (req) => {
                 input.gut_training_level,
                 input.duration_minutes,
                 userPins.duringPinIds,
+                // `pinsActive` = true when the user has any pin anywhere
+                // (Before or During). Drives `pin_decision` emission on
+                // the During section even when the user has zero
+                // During-scope pins, so the activity-detail banner can
+                // render a row for the During phase. Without this, the
+                // scenario-4 bug (Before-only pinned → banner skips
+                // During) returns. Formula Kit PR 2 #18.
+                userPins.beforePinIds.size + userPins.duringPinIds.size > 0,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),

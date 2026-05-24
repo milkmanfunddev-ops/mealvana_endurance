@@ -40,6 +40,44 @@ import { validatePhaseResultAgainstTargets } from "./validation.ts";
 import { generateLPPhase } from "./lp-phase.ts";
 
 // ============================================================================
+// Pin telemetry helpers
+// ============================================================================
+
+/**
+ * Build the initial `pin_decision` skeleton for the During section.
+ *
+ * Contract (Formula Kit PR 2 #18):
+ *   - `pinsSupplied === true` → emit `{ used_pin: false, no_pin_for_scope,
+ *     pin_set_size: 0 }`. The skeleton is refined to `used_pin: true` (and
+ *     a real `pin_set_size`) downstream if a pinned template fires.
+ *   - `pinsSupplied === false` → return `undefined`. The result is then
+ *     spread conditionally so `pin_decision` is omitted from the wire
+ *     response — byte-identical to pre-pin v3 behavior.
+ *
+ * The key behaviour this locks in is the scenario-4 fix: when the user has
+ * pins in OTHER scopes (e.g. Before) but zero pins for the During scope,
+ * `pinsSupplied` is still true (driven by the orchestrator-level
+ * `pinsActive` flag) and the During section emits an honest "no pin for
+ * scope" decision instead of silently omitting `pin_decision`. Without
+ * this, the activity-detail banner would show only Before rows and
+ * silently skip the During row.
+ *
+ * Exported only for unit testing.
+ */
+export function initialDuringPinDecision(
+  pinsSupplied: boolean,
+): LPPhaseResult["pin_decision"] | undefined {
+  if (!pinsSupplied) return undefined;
+  return {
+    used_pin: false,
+    pinned_template_id: null,
+    pinned_template_name: null,
+    fallthrough_reason: "no_pin_for_scope",
+    pin_set_size: 0,
+  };
+}
+
+// ============================================================================
 // During Phase Post-Processing (Two-Pass Approach)
 // ============================================================================
 
@@ -287,6 +325,15 @@ export async function generateDuringPhase(
    * bypasses all preference / diet / gut-training filters. Empty/undefined
    * for pre-pin behavior. Formula Kit PR 2 substep 5b. */
   pinnedTemplateIds?: Set<string>,
+  /** Whether the user has any pins at all (across any scope). When true,
+   * the During section emits `pin_decision` even if `pinnedTemplateIds`
+   * for THIS scope is empty — so the client can show a row reading "No
+   * pin found" for the During phase. Without this, a user who has only
+   * Before pins would get a silently-missing During pin_decision (the
+   * scenario-4 bug from 2026-05-24 smoke testing). When omitted, falls
+   * back to the pre-#18 behavior (derive from local set size) so brick
+   * handler and other callers stay unchanged. Formula Kit PR 2 #18. */
+  pinsActive?: boolean,
 ): Promise<LPPhaseResult> {
   const phaseStart = performance.now();
   const elapsed = (start: number) => Math.round(performance.now() - start);
@@ -296,21 +343,13 @@ export async function generateDuringPhase(
   // didn't apply to this workout. Refined to `used_pin: true` below if the
   // template selector returns a pinned template. Omitted entirely when no
   // pins were supplied (byte-identical to pre-pin v3).
-  const pinsSupplied = pinnedTemplateIds !== undefined &&
-    pinnedTemplateIds.size > 0;
+  const pinsSupplied = pinsActive ??
+    (pinnedTemplateIds !== undefined && pinnedTemplateIds.size > 0);
   // `pinInScopeCount` is refined once templates load (see below). At init we
   // don't yet know how many pins match scope — treat as 0 until we do.
   let pinInScopeCount = 0;
   let duringPinDecision: LPPhaseResult["pin_decision"] | undefined =
-    pinsSupplied
-      ? {
-        used_pin: false,
-        pinned_template_id: null,
-        pinned_template_name: null,
-        fallthrough_reason: "no_pin_for_scope",
-        pin_set_size: 0,
-      }
-      : undefined;
+    initialDuringPinDecision(pinsSupplied);
 
   // Swimming: no during-phase nutrition
   if (activityType === "swimming") {
