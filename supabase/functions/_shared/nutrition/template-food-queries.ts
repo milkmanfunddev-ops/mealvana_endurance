@@ -95,6 +95,13 @@ export async function getTemplateFoodsForPhase(
   allowNonDefaultDuring: boolean = false,
   allergies?: string[],
   dietaryPreference?: string,
+  /** Food names that are components of the user's in-scope pinned templates.
+   * Per the honor-pin policy, these foods bypass dislike / allergen / diet
+   * filters so the pinned template can be rendered even when its ingredients
+   * conflict with the user's general preferences. Empty/undefined preserves
+   * pre-pin behavior. Formula Kit PR 3 (After-phase parity with the During
+   * `getTemplateFoodsForDuringWithConstraints` pattern, PR 2 5c). */
+  pinnedComponentNames?: Set<string>,
 ): Promise<Food[]> {
   const likedSet = buildPreferenceSet(likedFoods);
   const willTrySet = buildPreferenceSet(willingToTryFoods);
@@ -293,12 +300,23 @@ export async function getTemplateFoodsForPhase(
       const isImportedUserFood = isUserFood &&
         (userFoodProductType == null || userFoodProductType === "import");
       const isElectrolyte = f.is_electrolyte === true;
+      // Honor-pin bypass: foods that are components of an in-scope pinned
+      // template skip dislike/allergen/diet filters. Without this, a user who
+      // pins a template containing a generally-disliked or allergen-bearing
+      // food (e.g. chocolate milk marked disliked) would have that component
+      // silently stripped from the food pool, and the template renderer would
+      // return null → fall back to LP. See #35 / PR 3 substep 9 follow-up.
+      const isPinnedComponent =
+        pinnedComponentNames?.has(f.name as string) ?? false;
 
       // Filter disliked foods. Essentials (e.g. water/salt) bypass this so the
       // solver always has a fallback for safety-critical hydration. Electrolyte
       // *products* (capsules, drinks, powders) get NO essential-bypass — user
       // preference dominates so we don't ship a plan featuring foods they hate.
-      if (isDisliked && !(isEssential && !isElectrolyte)) {
+      if (
+        isDisliked && !isPinnedComponent &&
+        !(isEssential && !isElectrolyte)
+      ) {
         console.log(
           `[TMPL-FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`,
         );
@@ -307,7 +325,10 @@ export async function getTemplateFoodsForPhase(
 
       // Allergen filtering — exclude template foods whose allergens overlap with user's allergies
       // Essential foods (water, salt) and user-created foods bypass allergen filtering
-      if (allergiesLower.length > 0 && !isUserFood && !isEssential) {
+      if (
+        allergiesLower.length > 0 && !isUserFood && !isEssential &&
+        !isPinnedComponent
+      ) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
         const hasAllergen = foodAllergens.some((a: string) =>
           allergiesLower.includes(a.toLowerCase())
@@ -323,7 +344,7 @@ export async function getTemplateFoodsForPhase(
       }
 
       // Allergen-based diet filtering (for -free diets like gluten-free, dairy-free, peanut-free)
-      if (dietPrefLower && !isUserFood && !isEssential) {
+      if (dietPrefLower && !isUserFood && !isEssential && !isPinnedComponent) {
         const dietExcludedAllergens: string[] = [];
         if (dietPrefLower === "gluten-free" || dietPrefLower === "all-free") {
           dietExcludedAllergens.push("gluten");
@@ -352,7 +373,7 @@ export async function getTemplateFoodsForPhase(
       }
 
       // Dietary preference filtering — exclude foods whose excluded_diets contains user's dietary preference
-      if (dietPrefLower && !isUserFood && !isEssential) {
+      if (dietPrefLower && !isUserFood && !isEssential && !isPinnedComponent) {
         const excludedDiets = (f.excluded_diets as string[] | null) ?? [];
         const isDietExcluded = excludedDiets.some((d: string) =>
           d.toLowerCase() === dietPrefLower

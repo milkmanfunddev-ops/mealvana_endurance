@@ -1,10 +1,18 @@
 /// Reason a pin was supplied but did not fire for a given phase / sub-phase.
 ///
-/// Today only [noPinForScope] exists (pinsActive but no in-scope pin matched
-/// this workout's activity × duration_bracket × time_window). Reserved as an
-/// enum so future fall-through reasons can be added without breaking parsers.
+/// - [noPinForScope] — pinsActive but no in-scope pin matched this workout's
+///   activity × duration_bracket × time_window.
+/// - [pinnedTemplateUnrenderable] — in-scope pin was selected by the solver
+///   but the renderer returned null (e.g. a required component food was
+///   missing from the loaded food pool). Option A guard added for After in
+///   PR 3 #35 follow-up so the wire never claims `usedPin: true` while the
+///   section actually served LP foods.
+///
+/// Reserved as an enum so future fall-through reasons can be added without
+/// breaking parsers.
 enum PinFallthroughReason {
-  noPinForScope('no_pin_for_scope');
+  noPinForScope('no_pin_for_scope'),
+  pinnedTemplateUnrenderable('pinned_template_unrenderable');
 
   const PinFallthroughReason(this.wireValue);
 

@@ -32,6 +32,7 @@ import {
 } from "../_shared/nutrition/template-food-queries.ts";
 import {
   filterPinnedPostTemplatesInScope,
+  type PostWorkoutTemplate,
   renderPostTemplatePortion,
   selectPostWorkoutTemplateCandidates,
 } from "../_shared/nutrition/post-template-solver.ts";
@@ -63,6 +64,40 @@ export function initialAfterPinDecision(
     fallthrough_reason: "no_pin_for_scope",
     pin_set_size: 0,
   };
+}
+
+/**
+ * Collect the set of component food names belonging to pinned post-workout
+ * templates.
+ *
+ * Honor-pin policy (PR 3 #35 fix, parity with During PR 2 5c): foods in this
+ * set bypass the dislike / allergen / diet filters in
+ * `getTemplateFoodsForPhase` so the pinned template's components remain
+ * available to the renderer. Without this, a user who pins Chocolate Milk
+ * Solo while also disliking `chocolate_milk` would have chocolate milk
+ * stripped from the food pool, `renderPostTemplatePortion` would return
+ * null (component missing from foodsByName), and the plan would fall
+ * through to LP — while the pin_decision wire still claimed honored.
+ *
+ * Iterates ALL active templates and filters by pinnedTemplateIds rather
+ * than restricting to in-scope pins, mirroring during-phase. Over-inclusive
+ * is harmless here: foods only needed by an out-of-scope pin (e.g. a
+ * cycling-only pin during a running plan) just won't be selected by the
+ * solver because that template won't be a candidate anyway.
+ */
+export function derivePinnedPostComponentNames(
+  templates: PostWorkoutTemplate[],
+  pinnedTemplateIds: Set<string> | undefined,
+): Set<string> {
+  const names = new Set<string>();
+  if (!pinnedTemplateIds || pinnedTemplateIds.size === 0) return names;
+  for (const t of templates) {
+    if (!pinnedTemplateIds.has(t.id)) continue;
+    for (const name of t.component_food_names ?? []) {
+      names.add(name);
+    }
+  }
+  return names;
 }
 
 /**
@@ -122,25 +157,34 @@ export async function generateAfterPhase(
 
   try {
     const queryStart = performance.now();
-    const [templates, afterFoods] = await Promise.all([
-      getPostWorkoutTemplates(supabase),
-      getTemplateFoodsForPhase(
-        supabase,
-        "after",
-        activityType,
-        likedFoods,
-        willingToTryFoods,
-        dislikedFoods,
-        deviceId,
-        false,
-        allergies,
-        dietaryPreference,
-      ),
-    ]);
+    // Templates must load before foods: we need to know which templates the
+    // user pinned so we can pre-compute pinned component names and pass them
+    // to the food loader for filter bypass (#35 fix). The cost of going
+    // sequential is one extra round-trip vs the prior Promise.all; the
+    // correctness win is that pinned templates' components survive
+    // dislike/allergen/diet filtering.
+    const templates = await getPostWorkoutTemplates(supabase);
+    const pinnedComponentNames = derivePinnedPostComponentNames(
+      templates,
+      afterPinnedTemplateIds,
+    );
+    const afterFoods = await getTemplateFoodsForPhase(
+      supabase,
+      "after",
+      activityType,
+      likedFoods,
+      willingToTryFoods,
+      dislikedFoods,
+      deviceId,
+      false,
+      allergies,
+      dietaryPreference,
+      pinnedComponentNames,
+    );
     console.log(
       `[PLAN-V3-TIMING] after_template_queries completed in ${
         elapsed(queryStart)
-      }ms (templates=${templates.length}, foods=${afterFoods.length})`,
+      }ms (templates=${templates.length}, foods=${afterFoods.length}, pinnedComponents=${pinnedComponentNames.size})`,
     );
 
     if (templates.length > 0 && afterFoods.length > 0) {
@@ -169,11 +213,13 @@ export async function generateAfterPhase(
       const foodsByName: Map<string, Food> = buildFoodMap(afterFoods);
 
       // No liked/willing/disliked scoring — the algorithm ranks purely by
-      // selection_priority + random. (Disliked foods are already excluded
-      // upstream in getTemplateFoodsForPhase, so any template whose components
-      // depend on a disliked food won't survive the food-availability filter
-      // here.) When an in-scope pin exists, the selector returns the pinned
-      // set unconditionally — bypassing diet/allergen/availability filters.
+      // selection_priority + random. Disliked foods are excluded upstream in
+      // getTemplateFoodsForPhase EXCEPT for components of pinned templates,
+      // which bypass dislike/allergen/diet filters via pinnedComponentNames
+      // (PR 3 #35 fix). Non-pinned templates whose components depend on a
+      // disliked food still won't survive the food-availability filter. When
+      // an in-scope pin exists, the selector returns the pinned set
+      // unconditionally and its components have already been loaded.
       const candidates = selectPostWorkoutTemplateCandidates(
         templates,
         activityType,
@@ -249,6 +295,29 @@ export async function generateAfterPhase(
               travel_friendliness: rendered.travel_friendliness,
             },
             ...(afterPinDecision && { pin_decision: afterPinDecision }),
+          };
+        }
+
+        // Option A guard: render returned null after the selector said "pin
+        // wins". Without this, the wire would claim `used_pin: true` while
+        // the section actually served LP foods — exactly the inconsistency
+        // that surfaced in the 2026-05-26 smoke test (Chocolate Milk Solo
+        // pinned, banner said honored, section showed LP output). Downgrade
+        // to `used_pin: false` with `pinned_template_unrenderable` so the
+        // wire reflects reality. Option B (food-load bypass) should make
+        // this unreachable; this stays as belt-and-braces.
+        if (afterPinDecision?.used_pin === true) {
+          console.log(
+            `[PLAN-V3] Pin override selected ${
+              candidates[0]?.template_number
+            } (${candidates[0]?.name}) but render returned null — downgrading pin_decision.used_pin to false (pinned_template_unrenderable)`,
+          );
+          afterPinDecision = {
+            used_pin: false,
+            pinned_template_id: null,
+            pinned_template_name: null,
+            fallthrough_reason: "pinned_template_unrenderable",
+            pin_set_size: afterPinDecision.pin_set_size,
           };
         }
 
