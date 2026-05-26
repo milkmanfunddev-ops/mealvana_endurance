@@ -285,7 +285,8 @@ class FormulaLibraryController extends _$FormulaLibraryController {
 
   // ── State mutations ────────────────────────────────────────────────────
 
-  /// Switch between the Before / During tabs. Fires `formula_phase_switched`.
+  /// Switch between the Before / During / After tabs. Fires
+  /// `formula_phase_switched` with `from` + `to` phase analytics values.
   Future<void> setPhase(FormulaPhase next) async {
     final current = state.value;
     if (current == null || current.filter.phase == next) return;
