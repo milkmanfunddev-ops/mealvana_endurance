@@ -205,6 +205,7 @@ class FormulaPinController extends _$FormulaPinController {
     return switch (kind) {
       TemplateKind.preSystem => FormulaPhase.before,
       TemplateKind.duringSystem => FormulaPhase.during,
+      TemplateKind.postSystem => FormulaPhase.after,
     };
   }
 

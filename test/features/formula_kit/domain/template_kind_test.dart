@@ -4,11 +4,11 @@ import 'package:mealvana_endurance/shared/database/app_database.dart';
 
 /// Forward-compat tests for [TemplateKind] and [FormulaPin.fromDriftEntry].
 ///
-/// PR 3 widens the `template_kind` CHECK constraint to include `'post_system'`.
-/// Old binaries running the PR 2 enum must NOT crash when reading rows whose
-/// wire value they don't recognize. They should decode to null and be skipped
-/// at the repository layer. These tests lock in that contract so future enum
-/// widenings (e.g. `personal_template` in PR 5) inherit the same tolerance.
+/// PR 3 substep 1 made [TemplateKind.fromWireValue] return null on unknown
+/// inputs; substep 3 widened the enum with `postSystem`. The "unknown wire
+/// value" tests below use a stand-in (`'personal_template'`) that future PR 5
+/// will likely turn into a real case. These tests lock in the contract so
+/// future enum widenings inherit the same tolerance.
 void main() {
   group('TemplateKind.fromWireValue', () {
     test('returns enum for pre_system', () {
@@ -25,10 +25,18 @@ void main() {
       );
     });
 
+    test('returns enum for post_system', () {
+      expect(
+        TemplateKind.fromWireValue('post_system'),
+        TemplateKind.postSystem,
+      );
+    });
+
     test('returns null for unknown wire value (forward-compat)', () {
-      // Simulates a PR 2 binary reading a PR 3 `post_system` row written by
-      // a newer client. Old binary must tolerate the unknown value, not crash.
-      expect(TemplateKind.fromWireValue('post_system'), isNull);
+      // Simulates a PR 3 binary reading a future `personal_template` row
+      // written by a PR 5+ client. Old binary must tolerate the unknown
+      // value, not crash.
+      expect(TemplateKind.fromWireValue('personal_template'), isNull);
     });
 
     test('returns null for unrelated string', () {
@@ -67,11 +75,12 @@ void main() {
     });
 
     test('returns null for a row with an unknown kind', () {
-      // PR 2 binary reading a PR 3 row. The repository's _decodePinEntries
-      // helper skips + logs these; the algorithm sees a smaller pin set and
-      // falls through gracefully rather than crashing on launch.
+      // PR 3 binary reading a future PR 5 row. The repository's
+      // _decodePinEntries helper skips + logs these; the algorithm sees a
+      // smaller pin set and falls through gracefully rather than crashing
+      // on launch.
       final pin = FormulaPin.fromDriftEntry(
-        buildEntry(templateKind: 'post_system'),
+        buildEntry(templateKind: 'personal_template'),
       );
       expect(pin, isNull);
     });

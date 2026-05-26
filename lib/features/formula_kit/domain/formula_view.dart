@@ -105,3 +105,82 @@ class DuringFormulaView {
 
   FormulaPhase get phase => FormulaPhase.during;
 }
+
+/// Immutable view model for an After-phase formula card. Derived from
+/// `post_workout_templates` rows (v2 Notion-imported, mirrored to Drift in
+/// PR 3 substep 2). Used by the library list, the after-tab chip filter,
+/// and the read-only after detail screen.
+///
+/// Standard portion only — there is no scaling target for recovery in V1
+/// (see PLAN.md PR 3 "Locked scope"). Quantity stepper is intentionally
+/// omitted on the detail screen.
+@immutable
+class AfterFormulaView {
+  const AfterFormulaView({
+    required this.id,
+    required this.templateNumber,
+    required this.name,
+    required this.formula,
+    required this.activityTypes,
+    required this.componentFoodNames,
+    required this.carbSources,
+    required this.allergens,
+    required this.excludedDiets,
+    required this.selectionPriority,
+    this.portions,
+    this.travelFriendliness,
+    this.flavorProfile,
+    this.prepEffort,
+    this.proteinAnchor,
+    this.targetCarbProteinRatio,
+    this.notes,
+  });
+
+  final String id;
+  final int templateNumber;
+  final String name;
+
+  /// Compact formula string, e.g. `2 cups chocolate milk`.
+  final String formula;
+
+  final List<String> activityTypes;
+  final List<String> componentFoodNames;
+  final List<String> carbSources;
+  final List<String> allergens;
+  final List<String> excludedDiets;
+
+  /// Tie-breaker for the after-phase solver's non-pin fallthrough. Higher
+  /// values win when multiple templates pass filters.
+  final int selectionPriority;
+
+  /// Human-readable portion description (e.g. `2 cups`). Surfaces in the
+  /// detail screen's Components / Portions section.
+  final String? portions;
+
+  /// Primary PR 3 filter axis: `'in_bag'` | `'cooler_friendly'` | `'home_only'`.
+  /// Persisted as a raw string here; the typed enum lives with the filter
+  /// state in substep 5 (`TravelFriendliness`).
+  final String? travelFriendliness;
+
+  /// Sensory dimension: `'sweet_creamy'` | `'sweet_crunchy'` | `'savory_salty'`
+  /// | `'warm_comforting'` | `'mixed'`. Used for V2 re-rolls.
+  final String? flavorProfile;
+
+  /// Prep effort: `'grab_and_go'` | `'assemble'` | `'cook'`.
+  final String? prepEffort;
+
+  /// Primary protein category (Notion taxonomy). Surfaced as a chip on the
+  /// after card.
+  final String? proteinAnchor;
+
+  /// Human-readable carb:protein ratio (e.g. `~3:1`).
+  final String? targetCarbProteinRatio;
+
+  final String? notes;
+
+  /// Whether this template is eligible for pinning. All post templates are
+  /// pinnable in V1 (no `template_type` segmentation like Before).
+  bool get isPinnable => true;
+
+  FormulaPhase get phase => FormulaPhase.after;
+}

@@ -5,18 +5,19 @@ import '../../../shared/database/app_database.dart';
 /// Polymorphic ref for [FormulaPin.templateKind].
 ///
 /// Mirrors the `template_kind` CHECK constraint on the Supabase
-/// `formula_pins` table. PR 3 widens this with `postSystem` when After-phase
-/// pins ship; PR 5 will widen it again with `personalTemplate` when personal
+/// `formula_pins` table. PR 3 added [postSystem] when After-phase pins
+/// shipped; PR 5 will widen it again with `personalTemplate` when personal
 /// formulas become pinnable.
 ///
 /// Forward-compat: [fromWireValue] returns `null` for unknown values rather
 /// than throwing. Old binaries must tolerate new wire values written by
-/// newer clients (e.g. PR 2 binary reading a PR 3 `post_system` pin on
-/// launch must not crash). Callers should skip rows that decode to null
-/// and surface the unknown value to Sentry as a breadcrumb.
+/// newer clients (e.g. a binary built before PR 5 reading a `personal_template`
+/// pin on launch must not crash). Callers should skip rows that decode to
+/// null and surface the unknown value to Sentry as a breadcrumb.
 enum TemplateKind {
   preSystem('pre_system'),
-  duringSystem('during_system');
+  duringSystem('during_system'),
+  postSystem('post_system');
 
   const TemplateKind(this.wireValue);
 
