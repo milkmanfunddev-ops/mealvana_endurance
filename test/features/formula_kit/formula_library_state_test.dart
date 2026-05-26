@@ -69,6 +69,7 @@ void main() {
           _before(id: 'b'),
         ],
         duringFormulas: const [],
+        afterFormulas: const [],
         userDiets: const [],
         userAllergies: const [],
       );
@@ -84,6 +85,7 @@ void main() {
           _before(id: 'topup', subPhase: BeforeSubPhase.topUp),
         ],
         duringFormulas: const [],
+        afterFormulas: const [],
         userDiets: const [],
         userAllergies: const [],
       );
@@ -100,6 +102,7 @@ void main() {
           _before(id: 'slow', digestionSpeed: 'slow'),
         ],
         duringFormulas: const [],
+        afterFormulas: const [],
         userDiets: const [],
         userAllergies: const [],
       );
@@ -120,6 +123,7 @@ void main() {
           ),
         ],
         duringFormulas: const [],
+        afterFormulas: const [],
         userDiets: const [DietaryPreference.vegan],
         userAllergies: const [],
       );
@@ -140,6 +144,7 @@ void main() {
           ),
         ],
         duringFormulas: const [],
+        afterFormulas: const [],
         userDiets: const [],
         userAllergies: const [Allergy.peanuts],
       );
@@ -161,6 +166,7 @@ void main() {
           _before(id: 'has-dairy', allergens: const ['Dairy', 'Gluten']),
         ],
         duringFormulas: const [],
+        afterFormulas: const [],
         userDiets: const [],
         userAllergies: const [Allergy.dairy],
       );
@@ -177,6 +183,7 @@ void main() {
           _before(id: 'not-vegan', excludedDiets: const ['Vegan']),
         ],
         duringFormulas: const [],
+        afterFormulas: const [],
         userDiets: const [DietaryPreference.vegan],
         userAllergies: const [],
       );
@@ -198,6 +205,7 @@ void main() {
           _before(id: 'has-nuts', allergens: [Allergy.peanuts.dbValue]),
         ],
         duringFormulas: const [],
+        afterFormulas: const [],
         userDiets: const [],
         userAllergies: const [Allergy.dairy, Allergy.peanuts],
       );
@@ -224,6 +232,7 @@ void main() {
           ),
         ],
         duringFormulas: const [],
+        afterFormulas: const [],
         userDiets: const [DietaryPreference.vegan],
         userAllergies: const [Allergy.peanuts],
       );
@@ -247,6 +256,7 @@ void main() {
             activityTypes: const ['running', 'cycling'],
           ),
         ],
+        afterFormulas: const [],
         userDiets: const [],
         userAllergies: const [],
       );
@@ -268,6 +278,7 @@ void main() {
           _during(id: 'short', durationBrackets: const ['< 90 min']),
           _during(id: 'long', durationBrackets: const ['> 240 min']),
         ],
+        afterFormulas: const [],
         userDiets: const [],
         userAllergies: const [],
       );
@@ -285,6 +296,7 @@ void main() {
           _during(id: 'low', gutTrainingLevels: const ['low']),
           _during(id: 'high', gutTrainingLevels: const ['high']),
         ],
+        afterFormulas: const [],
         userDiets: const [],
         userAllergies: const [],
       );
@@ -316,6 +328,7 @@ void main() {
             durationBrackets: const ['> 240 min'],
           ),
         ],
+        afterFormulas: const [],
         userDiets: const [],
         userAllergies: const [],
       );
