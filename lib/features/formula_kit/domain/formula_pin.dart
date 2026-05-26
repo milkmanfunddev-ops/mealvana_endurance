@@ -5,8 +5,15 @@ import '../../../shared/database/app_database.dart';
 /// Polymorphic ref for [FormulaPin.templateKind].
 ///
 /// Mirrors the `template_kind` CHECK constraint on the Supabase
-/// `formula_pins` table. PR 4 will widen this with `personalTemplate`
-/// when personal formulas become pinnable.
+/// `formula_pins` table. PR 3 widens this with `postSystem` when After-phase
+/// pins ship; PR 5 will widen it again with `personalTemplate` when personal
+/// formulas become pinnable.
+///
+/// Forward-compat: [fromWireValue] returns `null` for unknown values rather
+/// than throwing. Old binaries must tolerate new wire values written by
+/// newer clients (e.g. PR 2 binary reading a PR 3 `post_system` pin on
+/// launch must not crash). Callers should skip rows that decode to null
+/// and surface the unknown value to Sentry as a breadcrumb.
 enum TemplateKind {
   preSystem('pre_system'),
   duringSystem('during_system');
@@ -16,13 +23,12 @@ enum TemplateKind {
   /// String stored in Drift + Supabase.
   final String wireValue;
 
-  static TemplateKind fromWireValue(String value) {
-    return TemplateKind.values.firstWhere(
-      (k) => k.wireValue == value,
-      orElse: () => throw ArgumentError(
-        'Unknown TemplateKind wire value: $value',
-      ),
-    );
+  static TemplateKind? fromWireValue(String? value) {
+    if (value == null) return null;
+    for (final k in TemplateKind.values) {
+      if (k.wireValue == value) return k;
+    }
+    return null;
   }
 }
 
@@ -63,12 +69,19 @@ class FormulaPin {
   /// Drift-only timestamp set when local row was last mutated.
   final DateTime? localUpdatedAt;
 
-  factory FormulaPin.fromDriftEntry(FormulaPinEntry entry) {
+  /// Decode a Drift row into a [FormulaPin].
+  ///
+  /// Returns `null` if [FormulaPinEntry.templateKind] holds a wire value this
+  /// binary doesn't recognize (forward-compat — see [TemplateKind.fromWireValue]).
+  /// Callers should skip null results and log the unknown wire value.
+  static FormulaPin? fromDriftEntry(FormulaPinEntry entry) {
+    final kind = TemplateKind.fromWireValue(entry.templateKind);
+    if (kind == null) return null;
     return FormulaPin(
       id: entry.id,
       userId: entry.userId,
       templateId: entry.templateId,
-      templateKind: TemplateKind.fromWireValue(entry.templateKind),
+      templateKind: kind,
       createdAt: entry.createdAt,
       updatedAt: entry.updatedAt,
       isDeleted: entry.isDeleted,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -197,21 +198,31 @@ class FormulaPinsRepository with SyncableRepository {
         data: {'count': dirtyRecords.length},
       );
 
-      final pinsToUpload = dirtyRecords
-          .map((record) => FormulaPin.fromDriftEntry(record).toSupabaseJson())
-          .toList();
+      final decodedPins = _decodePinEntries(dirtyRecords);
+
+      if (decodedPins.isEmpty) {
+        // Every dirty row had an unrecognized template_kind (forward-compat
+        // skip). Nothing safe to upload; leave dirty flags set so a newer
+        // binary can retry.
+        return UploadResult.nothingToUpload();
+      }
+
+      final pinsToUpload =
+          decodedPins.map((pin) => pin.toSupabaseJson()).toList();
 
       await _supabase
           .from('formula_pins')
           .upsert(pinsToUpload, onConflict: 'id');
 
-      // Clear dirty flags
+      // Clear dirty flags only for rows we actually uploaded. Rows skipped
+      // due to unknown template_kind keep their dirty flag so a newer binary
+      // can retry.
       await _database.batch((batch) {
-        for (final record in dirtyRecords) {
+        for (final pin in decodedPins) {
           batch.update(
             _database.formulaPinsTable,
             const FormulaPinsTableCompanion(needsUpload: Value(false)),
-            where: (t) => t.id.equals(record.id),
+            where: (t) => t.id.equals(pin.id),
           );
         }
       });
@@ -219,10 +230,10 @@ class FormulaPinsRepository with SyncableRepository {
       _logger.info(
         'Successfully uploaded dirty formula pins',
         context: 'FORMULA_PINS_REPOSITORY',
-        data: {'count': dirtyRecords.length},
+        data: {'count': decodedPins.length},
       );
 
-      return UploadResult.successful(dirtyRecords.length);
+      return UploadResult.successful(decodedPins.length);
     } catch (e, stackTrace) {
       _logger.error(
         'Failed to upload dirty formula pins',
@@ -255,7 +266,7 @@ class FormulaPinsRepository with SyncableRepository {
     query.orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
 
     final entries = await query.get();
-    return entries.map(FormulaPin.fromDriftEntry).toList();
+    return _decodePinEntries(entries);
   }
 
   /// Whether an active pin exists for the given user + template + kind.
@@ -293,7 +304,15 @@ class FormulaPinsRepository with SyncableRepository {
           )
           ..limit(1))
         .getSingleOrNull();
-    return row == null ? null : FormulaPin.fromDriftEntry(row);
+    if (row == null) return null;
+    final pin = FormulaPin.fromDriftEntry(row);
+    if (pin == null) {
+      // The query filtered on `kind.wireValue`, so the row's wire value
+      // must equal a known enum value — reaching here would mean DB
+      // corruption or an unexpected schema drift. Log + skip.
+      _logUnknownTemplateKind(row);
+    }
+    return pin;
   }
 
   // ========================================================================
@@ -444,6 +463,45 @@ class FormulaPinsRepository with SyncableRepository {
       isDeleted: Value(json['is_deleted'] as bool? ?? false),
       needsUpload: const Value(false),
       localUpdatedAt: Value(DateTime.now()),
+    );
+  }
+
+  /// Decode a batch of Drift rows into [FormulaPin]s, skipping (and logging)
+  /// any rows whose `template_kind` doesn't match this binary's
+  /// [TemplateKind] enum. This is the forward-compat path: a newer client
+  /// may have written a wire value (e.g. `post_system` from PR 3) that this
+  /// binary doesn't recognize. Skipping is safer than crashing.
+  List<FormulaPin> _decodePinEntries(Iterable<FormulaPinEntry> entries) {
+    final result = <FormulaPin>[];
+    for (final entry in entries) {
+      final pin = FormulaPin.fromDriftEntry(entry);
+      if (pin == null) {
+        _logUnknownTemplateKind(entry);
+        continue;
+      }
+      result.add(pin);
+    }
+    return result;
+  }
+
+  void _logUnknownTemplateKind(FormulaPinEntry entry) {
+    _logger.warning(
+      'Skipping formula pin with unknown template_kind',
+      context: 'FORMULA_PINS_REPOSITORY',
+      data: {
+        'pin_id': entry.id,
+        'template_kind': entry.templateKind,
+      },
+    );
+    unawaited(
+      _sentry.captureMessage(
+        'Skipped formula pin with unknown template_kind',
+        level: SentryLevel.warning,
+        tags: {
+          'pin_id': entry.id,
+          'template_kind': entry.templateKind,
+        },
+      ),
     );
   }
 }
