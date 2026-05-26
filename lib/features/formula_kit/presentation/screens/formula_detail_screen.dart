@@ -473,11 +473,6 @@ class _AfterDetailBody extends StatelessWidget {
             spacing: AppSpacing.xs,
             runSpacing: AppSpacing.xs,
             children: [
-              if (formula.portions != null && formula.portions!.isNotEmpty)
-                _InfoPill(
-                  label: formula.portions!,
-                  color: AppColors.orange,
-                ),
               if (formula.travelFriendliness != null &&
                   formula.travelFriendliness!.isNotEmpty)
                 _InfoPill(
@@ -496,55 +491,40 @@ class _AfterDetailBody extends StatelessWidget {
                   label: _humanize(formula.flavorProfile!),
                   color: AppColors.electrolyte,
                 ),
-              if (formula.proteinAnchor != null &&
-                  formula.proteinAnchor!.isNotEmpty)
-                _InfoPill(
-                  label: _humanize(formula.proteinAnchor!),
-                  color: AppColors.orange,
-                ),
-              if (formula.targetCarbProteinRatio != null &&
-                  formula.targetCarbProteinRatio!.isNotEmpty)
-                _InfoPill(
-                  label: 'C:P ${formula.targetCarbProteinRatio}',
-                  color: AppColors.orange,
-                ),
             ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _MacrosCard(
+            calories: formula.totalCalories,
+            carbs: formula.totalCarbsG,
+            protein: formula.totalProteinG,
+            fat: formula.totalFatG,
+            sodium: formula.totalSodiumMg,
+            fluid: formula.totalFluidMl,
           ),
           const SizedBox(height: AppSpacing.md),
           _SectionLabel(text: 'Components'),
           const SizedBox(height: AppSpacing.xs),
-          BaseCard(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    formula.componentFoodNames.isEmpty
-                        ? formula.formula
-                        : formula.componentFoodNames
-                            .map(_humanize)
-                            .join(', '),
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: scheme.onSurface,
-                    ),
+          if (formula.componentDisplayStrings.isEmpty)
+            BaseCard(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  formula.formula.isEmpty
+                      ? 'No components listed.'
+                      : formula.formula,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
-                  if (formula.formula.isNotEmpty &&
-                      formula.componentFoodNames.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      formula.formula,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontSize: 13,
-                        fontStyle: FontStyle.italic,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
+                ),
               ),
-            ),
-          ),
+            )
+          else
+            for (var i = 0; i < formula.componentDisplayStrings.length;
+                i++) ...[
+              if (i > 0) const SizedBox(height: AppSpacing.xs),
+              _ComponentRow(label: formula.componentDisplayStrings[i]),
+            ],
           if (formula.notes != null && formula.notes!.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             _SectionLabel(text: 'Notes'),

@@ -5,10 +5,9 @@ import '../../domain/after_filter_options.dart';
 import '../../domain/formula_view.dart';
 import 'pin_toggle.dart';
 
-/// List card for an After formula. Mirrors `BeforeFormulaCard` visually
-/// (name + components subtitle + pill row + pin toggle) but the pill row
-/// surfaces the After-specific dimensions: portions, travel friendliness,
-/// and protein anchor.
+/// List card for an After formula. Spare by design: name + travel-friendliness
+/// pill + pin toggle in the header row, and an optional C:P ratio meta pill
+/// below. Detail screen carries the macros, components, and full taxonomy.
 ///
 /// Pin toggle is always rendered — every after template is pinnable in V1
 /// (`AfterFormulaView.isPinnable` is hard-coded `true`).
@@ -61,35 +60,19 @@ class AfterFormulaCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (formula.formula.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  formula.formula,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontSize: 13,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: [
-                  if (formula.portions != null && formula.portions!.isNotEmpty)
-                    _MetaPill(label: formula.portions!),
-                  if (formula.targetCarbProteinRatio != null &&
-                      formula.targetCarbProteinRatio!.isNotEmpty)
+              if (formula.targetCarbProteinRatio != null &&
+                  formula.targetCarbProteinRatio!.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
                     _MetaPill(
                       label: 'C:P ${formula.targetCarbProteinRatio}',
                     ),
-                  if (formula.proteinAnchor != null &&
-                      formula.proteinAnchor!.isNotEmpty)
-                    _MetaPill(label: _humanize(formula.proteinAnchor!)),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -97,14 +80,6 @@ class AfterFormulaCard extends StatelessWidget {
     );
   }
 
-  String _humanize(String raw) {
-    if (raw.isEmpty) return raw;
-    return raw
-        .split('_')
-        .where((s) => s.isNotEmpty)
-        .map((s) => '${s[0].toUpperCase()}${s.substring(1)}')
-        .join(' ');
-  }
 }
 
 class _Pill extends StatelessWidget {

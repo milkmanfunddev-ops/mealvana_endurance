@@ -114,22 +114,22 @@ class FormulaLibraryState {
   }
 
   /// After list with dietary + travel-friendliness filters applied. The
-  /// multi-select travel chip row acts as an inclusion set: a template
-  /// passes when its `travelFriendliness` is in the set. Templates with no
-  /// `travelFriendliness` value are always shown (nothing to filter on) —
-  /// matches the docstring on
-  /// [FormulaFilterState.afterTravelFriendliness].
+  /// travel-friendliness chip is single-select — null means no filter,
+  /// otherwise the list is narrowed to templates whose `travelFriendliness`
+  /// matches. Templates with no `travelFriendliness` value are always shown
+  /// (nothing to filter on).
   List<AfterFormulaView> get filteredAfterFormulas {
-    final allow = filter.afterTravelFriendliness;
+    final selected = filter.afterTravelFriendliness;
     return afterFormulas.where((f) {
       if (!_passesDietary(f.allergens, f.excludedDiets)) {
         return false;
       }
+      if (selected == null) return true;
       final tf = f.travelFriendliness;
       if (tf == null) return true;
       final parsed = TravelFriendliness.fromStorageValue(tf);
       if (parsed == null) return true;
-      return allow.contains(parsed);
+      return parsed == selected;
     }).toList();
   }
 
@@ -257,7 +257,8 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     final beforeViews =
         beforeEntries.map((e) => _mapBefore(e, templateFoodsByName)).toList();
     final duringViews = duringEntries.map(_mapDuring).toList();
-    final afterViews = afterEntries.map(_mapAfter).toList();
+    final afterViews =
+        afterEntries.map((e) => _mapAfter(e, templateFoodsByName)).toList();
 
     final userDiets = user?.dietaryPreference == null
         ? const <DietaryPreference>[]
@@ -434,38 +435,32 @@ class FormulaLibraryController extends _$FormulaLibraryController {
           beforeSubPhase: filter.phase == FormulaPhase.before ? () => null : null,
           duringActivity: filter.phase == FormulaPhase.during ? () => null : null,
           duringDuration: filter.phase == FormulaPhase.during ? () => null : null,
-          afterTravelFriendliness: filter.phase == FormulaPhase.after
-              ? FormulaFilterState.defaultAfterTravelFriendliness
-              : null,
+          afterTravelFriendliness:
+              filter.phase == FormulaPhase.after ? () => null : null,
         ),
       ),
     );
   }
 
-  /// Toggle whether a specific [TravelFriendliness] bucket is included in the
-  /// After chip-row filter. Multi-select: adding/removing a value flips its
-  /// chip's presence in the active set. Fires `formula_filter_applied` with
-  /// the value's storage key and the full filter state for downstream funnel
-  /// analysis.
+  /// Toggle the After travel-friendliness chip. Single-select: tapping the
+  /// active value clears the filter (returns to "show all"), tapping any
+  /// other value selects it exclusively. Fires `formula_filter_applied`
+  /// with the value's storage key when a value is set.
   Future<void> toggleAfterTravelFriendliness(TravelFriendliness value) async {
     final current = state.value;
     if (current == null) return;
     final next =
-        Set<TravelFriendliness>.from(current.filter.afterTravelFriendliness);
-    final isNowActive = !next.contains(value);
-    if (isNowActive) {
-      next.add(value);
-    } else {
-      next.remove(value);
-    }
+        current.filter.afterTravelFriendliness == value ? null : value;
     final nextFilter =
-        current.filter.copyWith(afterTravelFriendliness: next);
+        current.filter.copyWith(afterTravelFriendliness: () => next);
     state = AsyncData(current.copyWith(filter: nextFilter));
-    await _trackFilterApplied(
-      'travel_friendliness',
-      value.storageValue,
-      nextFilter,
-    );
+    if (next != null) {
+      await _trackFilterApplied(
+        'travel_friendliness',
+        next.storageValue,
+        nextFilter,
+      );
+    }
   }
 
   /// Toggle whether a specific allergy is being filtered against. When the
@@ -691,18 +686,63 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     );
   }
 
-  AfterFormulaView _mapAfter(PostWorkoutTemplateEntry e) {
+  AfterFormulaView _mapAfter(
+    PostWorkoutTemplateEntry e,
+    Map<String, TemplateFoodEntry> templateFoodsByName,
+  ) {
+    final componentNames = _decodeStringArray(e.componentFoodNames);
+    // `default_servings` shape mirrors pre_workout_templates.component_quantities:
+    // `{"cottage_cheese": 1, "applesauce": 1}`. Reuse the same JSON decoder.
+    final defaultServings = _decodeQuantityMap(e.defaultServings);
+
+    final componentDisplayStrings = componentNames
+        .map(
+          (n) => _buildComponentDisplayString(
+            componentName: n,
+            proportion: defaultServings[n.toLowerCase()] ?? 1,
+            templateFoodsByName: templateFoodsByName,
+          ),
+        )
+        .toList();
+
+    // Aggregate macros by summing per-component (template_foods macros ×
+    // default servings count). When a component has no matching template_foods
+    // row, contribute zero — UI surfaces it as "0g" rather than crashing.
+    var carbs = 0.0;
+    var protein = 0.0;
+    var fat = 0.0;
+    var sodium = 0.0;
+    var fluid = 0.0;
+    for (final name in componentNames) {
+      final qty = (defaultServings[name.toLowerCase()] ?? 1).toDouble();
+      final tf = templateFoodsByName[name.toLowerCase()];
+      if (tf == null) continue;
+      carbs += tf.carbsG * qty;
+      protein += tf.proteinG * qty;
+      fat += tf.fatG * qty;
+      sodium += tf.sodiumMg * qty;
+      fluid += (tf.fluidMl ?? 0) * qty;
+    }
+    final calories = ((carbs * 4) + (protein * 4) + (fat * 9)).round();
+
     return AfterFormulaView(
       id: e.id,
       templateNumber: e.templateNumber,
       name: e.name,
       formula: e.formula,
       activityTypes: _decodeStringArray(e.activityTypes),
-      componentFoodNames: _decodeStringArray(e.componentFoodNames),
+      componentFoodNames: componentNames,
+      componentDisplayStrings: componentDisplayStrings,
       carbSources: _decodeStringArray(e.carbSources),
       allergens: _decodeStringArray(e.allergens),
       excludedDiets: _decodeStringArray(e.excludedDiets),
       selectionPriority: e.selectionPriority,
+      totalCarbsG: carbs,
+      totalProteinG: protein,
+      totalFatG: fat,
+      totalSodiumMg: sodium,
+      totalFluidMl: fluid,
+      totalCalories: calories,
       portions: e.portions,
       travelFriendliness: e.travelFriendliness,
       flavorProfile: e.flavorProfile,

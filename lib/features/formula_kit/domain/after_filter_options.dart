@@ -3,10 +3,9 @@
 /// `post_workout_templates.travel_friendliness`.
 ///
 /// Filter semantics (see `FormulaFilterState.afterTravelFriendliness`):
-///   - Set contains all three values → no filter (everything passes)
-///   - Set is a strict subset → only post templates whose
-///     `travel_friendliness` is in the set are shown
-///   - Empty set → nothing passes
+///   - `null` → no filter (everything passes)
+///   - A value → only post templates whose `travel_friendliness` matches
+///     are shown (templates with null travel_friendliness still pass)
 enum TravelFriendliness {
   inBag,
   coolerFriendly,

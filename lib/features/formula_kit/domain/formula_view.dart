@@ -123,10 +123,17 @@ class AfterFormulaView {
     required this.formula,
     required this.activityTypes,
     required this.componentFoodNames,
+    required this.componentDisplayStrings,
     required this.carbSources,
     required this.allergens,
     required this.excludedDiets,
     required this.selectionPriority,
+    required this.totalCarbsG,
+    required this.totalProteinG,
+    required this.totalFatG,
+    required this.totalSodiumMg,
+    required this.totalFluidMl,
+    required this.totalCalories,
     this.portions,
     this.travelFriendliness,
     this.flavorProfile,
@@ -145,9 +152,29 @@ class AfterFormulaView {
 
   final List<String> activityTypes;
   final List<String> componentFoodNames;
+
+  /// Per-component display strings already including quantity + unit + name,
+  /// e.g. `["1 cup Cottage Cheese", "1 cup Applesauce"]`. Built by the
+  /// controller by joining `post_workout_templates.default_servings` with
+  /// `template_foods.serving_unit` / `display_name(_plural)`. Rendered as
+  /// individual rows in the detail screen's Components section (mirrors
+  /// the Before detail layout).
+  final List<String> componentDisplayStrings;
+
   final List<String> carbSources;
   final List<String> allergens;
   final List<String> excludedDiets;
+
+  /// Aggregated macros for the canonical single portion — sum of each
+  /// component's per-serving macros from `template_foods` multiplied by its
+  /// `default_servings` count. Zero when no matching `template_foods` row is
+  /// found.
+  final double totalCarbsG;
+  final double totalProteinG;
+  final double totalFatG;
+  final double totalSodiumMg;
+  final double totalFluidMl;
+  final int totalCalories;
 
   /// Tie-breaker for the after-phase solver's non-pin fallthrough. Higher
   /// values win when multiple templates pass filters.

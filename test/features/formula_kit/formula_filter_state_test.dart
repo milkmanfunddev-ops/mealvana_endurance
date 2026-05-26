@@ -17,12 +17,8 @@ void main() {
       expect(state.duringActivity, isNull);
       expect(state.duringDuration, isNull);
       expect(state.duringGutLevel, isNull);
-      // After multi-select defaults to all three buckets selected (no filter).
-      expect(
-        state.afterTravelFriendliness,
-        FormulaFilterState.defaultAfterTravelFriendliness,
-      );
-      expect(state.afterTravelFriendliness.length, 3);
+      // After travel chip is single-select; null = no filter (show all).
+      expect(state.afterTravelFriendliness, isNull);
       expect(state.activeAllergyFilters, isEmpty);
       expect(state.activeDietFilters, isEmpty);
       expect(state.activeChipFilterCount, 0);
@@ -44,29 +40,21 @@ void main() {
       expect(during.activeChipFilterCount, 2);
     });
 
-    test('activeChipFilterCount on After phase — 0 when default, 1 when narrowed',
-        () {
-      const allThree = FormulaFilterState(phase: FormulaPhase.after);
-      expect(allThree.activeChipFilterCount, 0);
+    test('activeChipFilterCount on After phase — 0 when null, 1 when set', () {
+      const unset = FormulaFilterState(phase: FormulaPhase.after);
+      expect(unset.activeChipFilterCount, 0);
 
-      const narrowed = FormulaFilterState(
+      const selected = FormulaFilterState(
         phase: FormulaPhase.after,
-        afterTravelFriendliness: {TravelFriendliness.inBag},
+        afterTravelFriendliness: TravelFriendliness.inBag,
       );
-      expect(narrowed.activeChipFilterCount, 1);
-
-      // Toggling all three off is still "1 chip active" (user has filtered).
-      const empty = FormulaFilterState(
-        phase: FormulaPhase.after,
-        afterTravelFriendliness: <TravelFriendliness>{},
-      );
-      expect(empty.activeChipFilterCount, 1);
+      expect(selected.activeChipFilterCount, 1);
     });
 
     test('Before/During ignore afterTravelFriendliness for chip count', () {
       const before = FormulaFilterState(
         phase: FormulaPhase.before,
-        afterTravelFriendliness: {TravelFriendliness.inBag},
+        afterTravelFriendliness: TravelFriendliness.inBag,
       );
       expect(before.activeChipFilterCount, 0);
     });

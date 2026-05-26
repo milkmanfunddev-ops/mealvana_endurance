@@ -11,7 +11,6 @@ import '../../application/formula_pin_controller.dart';
 import '../../domain/after_filter_options.dart';
 import '../../domain/before_sub_phase.dart';
 import '../../domain/during_filter_options.dart';
-import '../../domain/formula_filter_state.dart';
 import '../../domain/formula_phase.dart';
 import '../../domain/formula_view.dart';
 import '../widgets/after_formula_card.dart';
@@ -148,15 +147,11 @@ class _BodyState extends ConsumerState<_Body> {
         if (f.duringDuration != null) f.duringDuration!.displayLabel,
       ];
     }
-    // After: surface the included travel buckets when narrowed (i.e. the
-    // multi-select is a strict subset of the default all-three).
-    final isDefault = f.afterTravelFriendliness.length ==
-            FormulaFilterState.defaultAfterTravelFriendliness.length &&
-        f.afterTravelFriendliness.containsAll(
-          FormulaFilterState.defaultAfterTravelFriendliness,
-        );
-    if (isDefault) return const [];
-    return f.afterTravelFriendliness.map((t) => t.displayLabel).toList();
+    // After: single-select chip — surface the active value when set.
+    return [
+      if (f.afterTravelFriendliness != null)
+        f.afterTravelFriendliness!.displayLabel,
+    ];
   }
 
   @override
@@ -270,7 +265,7 @@ class _BodyState extends ConsumerState<_Body> {
                     'formula_kit.chip.after_travel_friendliness.${v.name}',
                   ),
                   isSelected: (v) =>
-                      state.filter.afterTravelFriendliness.contains(v),
+                      state.filter.afterTravelFriendliness == v,
                   onToggled: controller.toggleAfterTravelFriendliness,
                 ),
               const SizedBox(height: AppSpacing.sm),
@@ -588,29 +583,15 @@ class _PinnedOnlyButton extends ConsumerWidget {
           onTap: () => ref
               .read(formulaLibraryControllerProvider.notifier)
               .togglePinnedOnly(pinnedCount: pinnedCount),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: 6,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FaIcon(
-                  FontAwesomeIcons.thumbtack,
-                  size: 14,
-                  color: isActive ? AppColors.orange : scheme.onSurface,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Pinned',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isActive ? AppColors.orange : scheme.onSurface,
-                  ),
-                ),
-              ],
+          child: SizedBox(
+            width: 36,
+            height: 36,
+            child: Center(
+              child: FaIcon(
+                FontAwesomeIcons.thumbtack,
+                size: 16,
+                color: isActive ? AppColors.orange : scheme.onSurface,
+              ),
             ),
           ),
         ),
@@ -641,50 +622,41 @@ class _MoreFiltersButton extends StatelessWidget {
           key: const ValueKey('formula_kit.more_filters_button'),
           borderRadius: AppRadius.circularRadius,
           onTap: () => MoreFiltersSheet.show(context),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: 6,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          child: SizedBox(
+            width: 36,
+            height: 36,
+            child: Stack(
+              alignment: Alignment.center,
               children: [
                 FaIcon(
                   FontAwesomeIcons.sliders,
-                  size: 14,
+                  size: 16,
                   color: hasActive ? AppColors.orange : scheme.onSurface,
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Filters',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: hasActive ? AppColors.orange : scheme.onSurface,
-                  ),
-                ),
-                if (hasActive) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    key: const ValueKey('formula_kit.more_filters_badge'),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.orange,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '$activeCount',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.blackberry,
+                if (hasActive)
+                  Positioned(
+                    top: 2,
+                    right: 2,
+                    child: Container(
+                      key: const ValueKey('formula_kit.more_filters_badge'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.orange,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$activeCount',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.blackberry,
+                        ),
                       ),
                     ),
                   ),
-                ],
               ],
             ),
           ),

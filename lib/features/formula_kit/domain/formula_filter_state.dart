@@ -32,20 +32,11 @@ class FormulaFilterState {
     this.duringActivity,
     this.duringDuration,
     this.duringGutLevel,
-    this.afterTravelFriendliness = defaultAfterTravelFriendliness,
+    this.afterTravelFriendliness,
     this.activeAllergyFilters = const {},
     this.activeDietFilters = const {},
     this.pinnedOnly = false,
   });
-
-  /// Default value for [afterTravelFriendliness] — all three travel buckets
-  /// selected, i.e. no filter active. The After chip row is a multi-select
-  /// rather than the Before/During single-select pattern.
-  static const Set<TravelFriendliness> defaultAfterTravelFriendliness = {
-    TravelFriendliness.inBag,
-    TravelFriendliness.coolerFriendly,
-    TravelFriendliness.homeOnly,
-  };
 
   final FormulaPhase phase;
 
@@ -59,11 +50,11 @@ class FormulaFilterState {
   final DuringGutLevel? duringGutLevel;
 
   // ---- After-only fields ----
-  /// Multi-select set of travel buckets to include. Defaults to all three
-  /// (see [defaultAfterTravelFriendliness]); the user removes a bucket by
-  /// toggling its chip off. Templates whose `travelFriendliness` is null
-  /// are always shown (no scoped value to filter on).
-  final Set<TravelFriendliness> afterTravelFriendliness;
+  /// Single-select travel-friendliness chip. `null` means no filter
+  /// (everything passes); a value narrows the list to templates whose
+  /// `travelFriendliness` matches. Templates whose `travelFriendliness`
+  /// is null are always shown (nothing to filter on).
+  final TravelFriendliness? afterTravelFriendliness;
 
   // ---- Cross-phase: dietary filters ----
   /// Allergies that are currently being filtered out. Formulas whose allergens
@@ -88,14 +79,8 @@ class FormulaFilterState {
       return (duringActivity == null ? 0 : 1) +
           (duringDuration == null ? 0 : 1);
     }
-    // After: travel-friendliness is a single multi-select chip row; counts as
-    // "active" whenever the user has narrowed away from the all-three default.
-    return setEquals(
-      afterTravelFriendliness,
-      defaultAfterTravelFriendliness,
-    )
-        ? 0
-        : 1;
+    // After: single-select chip — active when a value is set.
+    return afterTravelFriendliness == null ? 0 : 1;
   }
 
   FormulaFilterState copyWith({
@@ -105,7 +90,7 @@ class FormulaFilterState {
     DuringActivity? Function()? duringActivity,
     DuringDuration? Function()? duringDuration,
     DuringGutLevel? Function()? duringGutLevel,
-    Set<TravelFriendliness>? afterTravelFriendliness,
+    TravelFriendliness? Function()? afterTravelFriendliness,
     Set<Allergy>? activeAllergyFilters,
     Set<DietaryPreference>? activeDietFilters,
     bool? pinnedOnly,
@@ -123,8 +108,9 @@ class FormulaFilterState {
           duringDuration != null ? duringDuration() : this.duringDuration,
       duringGutLevel:
           duringGutLevel != null ? duringGutLevel() : this.duringGutLevel,
-      afterTravelFriendliness:
-          afterTravelFriendliness ?? this.afterTravelFriendliness,
+      afterTravelFriendliness: afterTravelFriendliness != null
+          ? afterTravelFriendliness()
+          : this.afterTravelFriendliness,
       activeAllergyFilters:
           activeAllergyFilters ?? this.activeAllergyFilters,
       activeDietFilters: activeDietFilters ?? this.activeDietFilters,
@@ -141,7 +127,7 @@ class FormulaFilterState {
         other.duringActivity == duringActivity &&
         other.duringDuration == duringDuration &&
         other.duringGutLevel == duringGutLevel &&
-        setEquals(other.afterTravelFriendliness, afterTravelFriendliness) &&
+        other.afterTravelFriendliness == afterTravelFriendliness &&
         setEquals(other.activeAllergyFilters, activeAllergyFilters) &&
         setEquals(other.activeDietFilters, activeDietFilters) &&
         other.pinnedOnly == pinnedOnly;
@@ -155,7 +141,7 @@ class FormulaFilterState {
         duringActivity,
         duringDuration,
         duringGutLevel,
-        Object.hashAllUnordered(afterTravelFriendliness),
+        afterTravelFriendliness,
         Object.hashAllUnordered(activeAllergyFilters),
         Object.hashAllUnordered(activeDietFilters),
         pinnedOnly,
