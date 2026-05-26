@@ -197,13 +197,15 @@ serve(async (req) => {
                 input.duration_minutes,
                 userPins.duringPinIds,
                 // `pinsActive` = true when the user has any pin anywhere
-                // (Before or During). Drives `pin_decision` emission on
-                // the During section even when the user has zero
-                // During-scope pins, so the activity-detail banner can
+                // (Before, During, or After). Drives `pin_decision`
+                // emission on the During section even when the user has
+                // zero During-scope pins, so the activity-detail banner can
                 // render a row for the During phase. Without this, the
                 // scenario-4 bug (Before-only pinned → banner skips
-                // During) returns. Formula Kit PR 2 #18.
-                userPins.beforePinIds.size + userPins.duringPinIds.size > 0,
+                // During) returns. Formula Kit PR 2 #18, extended to
+                // include After in PR 3 substep 7.
+                userPins.beforePinIds.size + userPins.duringPinIds.size +
+                      userPins.afterPinIds.size > 0,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
@@ -223,6 +225,12 @@ serve(async (req) => {
                 input.device_id,
                 input.allergies,
                 input.dietary_preference,
+                userPins.afterPinIds,
+                // Same all-scopes pinsActive flag as During — keeps the
+                // banner row-consistent when the user has pins only in
+                // other scopes. Formula Kit PR 3 substep 7.
+                userPins.beforePinIds.size + userPins.duringPinIds.size +
+                      userPins.afterPinIds.size > 0,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
