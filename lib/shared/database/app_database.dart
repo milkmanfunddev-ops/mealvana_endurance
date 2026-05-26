@@ -33,6 +33,7 @@ import 'tables/template_foods_table.dart';
 import 'tables/templates_table.dart';
 import 'tables/during_workout_templates_table.dart';
 import 'tables/pre_workout_templates_table.dart';
+import 'tables/post_workout_templates_table.dart';
 import 'tables/tp_writeback_table.dart';
 import 'tables/personal_templates_table.dart';
 import 'tables/formula_pins_table.dart';
@@ -114,6 +115,7 @@ part 'app_database.g.dart';
     TemplatesTable,
     DuringWorkoutTemplatesTable,
     PreWorkoutTemplatesTable,
+    PostWorkoutTemplatesTable,
 
     // TrainingPeaks write-back tracking
     TpWritebackTable,
@@ -158,6 +160,11 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
+  /// Schema version 12: Adds post_workout_templates table (read-only mirror
+  /// of Supabase post-workout formula catalog, v2 Notion shape). Backs the
+  /// Formula Kit After-phase library + pin support (PR 3). Includes the
+  /// `travel_friendliness` filter axis and `selection_priority` tie-breaker
+  /// used by the after-phase solver.
   /// Schema version 11: Adds formula_pins table (user pins for Formula Kit
   /// algorithm signal). Soft-deleted via `is_deleted` boolean to let unpin
   /// events propagate across devices via the existing upsert-only sync.
@@ -183,7 +190,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
