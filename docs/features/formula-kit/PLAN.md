@@ -2,9 +2,11 @@
 
 > **Branch:** all work lands on a new branch — `feat/formula-kit`, branched from `origin/develop`. We'll create and switch to it as the first step on plan acceptance.
 
-## Status — 2026-05-24
+## Status — 2026-05-26
 
-**PR 1 complete. PR 2 substeps 1–3, 5 (a/b/b-followup/c), 7, 8, 9, 11 landed; substep 4 deferred; substep 6 superseded (no-pin parity proven at unit level by `pre-workout-pinned.test.ts` + `during-template-pinned.test.ts`); substep 10 N/A under Option B (additive in-place in `generate-nutrition-plan-v3`). Only substep 12 (this status update + memory refresh, in progress) remains before opening PR 2.**
+**PR 1 complete. PR 2 substantively done** (substeps 1–3, 5 a/b/b-followup/c, 7, 8, 9, 11 landed; 4 deferred; 6 superseded; 10 N/A under Option B; 12 = status + memory refresh, shipped as `f292cc10` 2026-05-24). PR 2 merged to `develop` (`5a5145c3`, --no-ff). Codemagic dev-ios build `6a15b4c5707ffe0c01b7682f` green (all 13 steps, artifact published).
+
+**PR 3 inserted between PR 2 and personalization (planning landed 2026-05-26).** After-phase parity: extend Browse + Detail + Pins to `post_workout_templates`. Locked scope: filter by `travel_friendliness` only, standard portion (no scaling), pins in scope ("set it and forget it"), no brick-specific UI. Original PR 3–6 renumbered to PR 4–7. **Substep 1 (`TemplateKind.fromWireValue` crash-safety) is load-bearing** — it must ship to prod via a TestFlight cycle before the substep-2 CHECK widening can run on prod, otherwise old binaries crash reading new `'post_system'` pins.
 
 **Substep 11 shipped 2026-05-24** as a cluster of fixes + polish:
 - **PinStatusBanner V1 polish** — client-side synthesis of missing pinnable rows so users with mixed pin state across phases see all rows; two-state copy rule ("No pin found" when `pin_set_size == 0`, "Pins fell through" otherwise — forward-compat for V2 fallthrough reasons); CTA "Pin your favorite formula".
@@ -73,10 +75,10 @@ Lee did a substantial db-cleanup pass on 2026-05-22 (`b2f86b4f`, `2ca58e95`) tha
 - `custom_foods` table was applied 2026-05-22 then immediately reverted — it duplicated `user_foods` (which already stores user-created foods with macros, soft-delete, offline sync, and is wired into the app). Formula Kit reuses `user_foods` going forward.
 - `personal_templates.custom_food_ids` now references `user_foods.id` (column comment updated in DataGrip).
 - If formula components later need allergen/diet/caffeine filtering on user-created foods, add those columns to `user_foods` additively rather than creating a parallel table.
-- PR 4 substeps that previously created `custom_foods` table + repo are dropped. The architecture diagram + Drift schema additions + Supabase additions sections below still mention `custom_foods`; they are stale and should be read with this revision overlay. Not deleting them inline since the doc is the running record — propagate when PR 4 actually starts.
+- PR 5 substeps that previously created `custom_foods` table + repo are dropped. The architecture diagram + Drift schema additions + Supabase additions sections below still mention `custom_foods`; they are stale and should be read with this revision overlay. Not deleting them inline since the doc is the running record — propagate when PR 5 actually starts.
 
-**PR 4 prerequisite added: `TemplateKind.fromWireValue` crash-safety.**
-- Today the enum decoder throws `ArgumentError` on unknown wire values (`lib/features/formula_kit/domain/formula_pin.dart:21`). When PR 4 widens `template_kind` to include `'personal_template'`, old app binaries still on the V1 enum will crash reading new pins. Must be made tolerant (return null, filter out, log) before the PR 4 schema widening ships.
+**PR 5 prerequisite added: `TemplateKind.fromWireValue` crash-safety.**
+- Today the enum decoder throws `ArgumentError` on unknown wire values (`lib/features/formula_kit/domain/formula_pin.dart:21`). When PR 5 widens `template_kind` to include `'personal_template'`, old app binaries still on the V1 enum will crash reading new pins. Must be made tolerant (return null, filter out, log) before the PR 5 schema widening ships.
 - Tracked in `docs/database/REFACTOR_PLAN_2026-05-22.md` "Deferred code fixes."
 
 **Drift schema version is now 11 (not 10).**
@@ -153,7 +155,7 @@ PR phasing has shifted: new PR 2 is Pins. Old PR 2–5 each move up by one. Favo
 **Scope decisions (locked):**
 - **UX = single-tap toggle.** No scope picker. Scope (sub_phase for Before, activity_type × duration_bracket for During) is inherited from the template's existing metadata.
 - **Multiple pins per scope allowed.** Algorithm picks best from pinned set by carb proximity.
-- **V1 = system templates only, food templates only.** Personal templates become pinnable in PR 4. Drink/electrolyte templates (`template_type != 'food'`) are not pinnable — they're algorithm internals consumed by the edge function's stacking pass, not a user-facing formula choice.
+- **V1 = system templates only, food templates only.** Personal templates become pinnable in PR 5. Drink/electrolyte templates (`template_type != 'food'`) are not pinnable — they're algorithm internals consumed by the edge function's stacking pass, not a user-facing formula choice.
 - **Storage = Drift + Supabase.** Both client-side (`client_plan_service`) and server-side (`generate-nutrition-plan-v*`) need to read pins. Drift-only is not an option.
 - **Pin honoring policy (locked 2026-05-21).** An in-scope pin is honored unconditionally:
   - Skip allergen, diet, and dislike filters. The pin is the user's explicit override; if their profile no longer matches, we surface the food anyway and rely on a V2 advisory pill (see "Deferred client-side work") to warn them visually.
@@ -183,10 +185,43 @@ PR phasing has shifted: new PR 2 is Pins. Old PR 2–5 each move up by one. Favo
 12. ⏳ **Status update + memory update** — refresh this Status section, refresh `project_formula_kit.md` memory. _In progress 2026-05-24._
 
 **Out of scope for PR 2 (deferred):**
-- Pinning personal formulas (depends on PR 4).
+- Pinning personal formulas (depends on PR 5).
 - Workout-settings management surface (V2 if power users ask).
-- Coach insight reading pins as context (folded into PR 5 coach insight scope).
+- Coach insight reading pins as context (folded into PR 6 coach insight scope).
 - Plan-time formula picker ("use this formula for this specific workout") — V3+.
+
+### Next up — PR 3: After-phase parity (browse + pin), planned, not started
+
+**Goal:** The Formula Library covers all three phases (Before / During / After). Users can browse `post_workout_templates`, view detail, and pin a post-workout formula. The plan-generation algorithm gains a simple after-phase solver that prefers pinned post templates and falls through to `selection_priority` order. After Lee + Sunshine review on 2026-05-26, this PR was inserted between PR 2 and the original PR 3 so personalization work begins on a complete browse+pin surface.
+
+**Scope decisions (locked):**
+- **Filter axis = `travel_friendliness` only.** Three values: `in_bag`, `cooler_friendly`, `home_only`. No flavor/effort/protein chips in V1. Default state = all three visible.
+- **Standard portion, no scaling target.** Unlike Before/During, after-phase recovery doesn't carry an algorithmic carb/calorie target the user has to hit. The template's `default_servings` is the recommendation. No quantity stepper. No scale clamp.
+- **Pins in scope ("set it and forget it").** Single-tap pin toggle on After cards + detail screen. New `template_kind` wire value `'post_system'`. Existing pin honor policy applies (skip allergen/dislike/diet filters when pinned).
+- **No brick-specific surface.** Bricks don't change the after-phase recommendation set in V1. After-phase pin is global to the user.
+- **Algorithm = simple.** When an in-scope post pin exists, return the pinned template. Otherwise return the highest `selection_priority` template that passes filters. No carb proximity scoring, no scaling, no stacking.
+- **System templates only in V1.** Mirrors PR 2's V1 cut. Personal post templates are out of scope (and out of scope for the foreseeable future — there is no design).
+
+**Substeps (in order, each is a commit):**
+
+1. **`TemplateKind.fromWireValue` crash-safety** — replace throwing `firstWhere` with null-return; update call sites to filter unknown values out (skip the row, log to Sentry). Required *before* substep 2 ships because widening the CHECK to include `'post_system'` would crash any prod binary still on the PR 2 enum reading new pins on launch. Backfill forward-compat tests in `pin_decision_test.dart` (or a new `template_kind_test.dart`).
+2. **Schema** — Supabase migration widens `formula_pins.template_kind` CHECK to include `'post_system'` (applied via DataGrip per current workflow, not `db push`). Drift mirror of `post_workout_templates` v2 columns (`travel_friendliness`, `flavor_profile`, `prep_effort`, `protein_anchor`, `carb_sources`, `portions`, `selection_priority`, `default_servings`). Schema bump v11 → v12 + codegen. Existing `_archived/20260518100000_post_workout_templates_v2_notion.sql` already created the table on dev; this substep adds the Drift mirror + the CHECK widening migration. **Roll-out gate:** ship substep 1 to dev → wait one TestFlight cycle → then run the CHECK widening migration on prod (so prod binaries can read new pins).
+3. **Domain** — extend `FormulaPhase` enum with `after` case (`analyticsValue: 'after'`, `displayLabel: 'After'`). Add `PostWorkoutTemplate` domain model (mirrors `DuringWorkoutTemplate` shape). Add `AfterFormulaView` for the library + detail screens. Extend `TemplateKind` enum with `postSystem('post_system')` — relies on substep 1's tolerance fix.
+4. **Repository** — `PostWorkoutTemplatesRepository` mirroring the during-templates repo pattern (`SyncableRepository`, `isStale()`, `syncFromRemote()`, Supabase read-only fetch). Register in `sync_dependency_graph` after `during_workout_templates`. No new sync handler needed (read-only catalog table).
+5. **Filter state** — `afterTravelFriendliness: Set<TravelFriendliness>` on `FormulaLibraryController`. Persisted in controller state, defaults to all-three. Distinct from Before/During filter state to keep concerns isolated.
+6. **UI browse** — add After tab to `formula_library_screen` (third phase tab). New `AfterFormulaCard` widget (mirrors `BeforeFormulaCard` visual hierarchy, surfaces travel_friendliness chip + protein_anchor). New chip row for travel filter. New `after_formula_detail_screen.dart` (read-only — portions list, no quantity stepper).
+7. **Edge function pin support** — new `after-phase.ts` solver in `_shared/nutrition/`. Pin-aware: if a post pin exists in scope, return it; otherwise return highest `selection_priority` row matching the user's filters. Add `post-template-solver.ts` for the non-pin path. Wire into `generate-nutrition-plan-v3` (the live entry point — same shape as Before/During plumbing in PR 2's 5b-followup). Emit `pin_decision` for the after row on the response.
+8. **Pin UX (After)** — pin toggle on `AfterFormulaCard` + after detail screen. Either extend the existing `PinToggle` to handle `TemplateKind.postSystem` or add an `AfterPinToggle` variant. Pin write goes through `FormulaPinsRepository` (no changes needed — table already supports it once substep 2 widens the CHECK).
+9. **Banner row (After)** — add an After row to `PinStatusBanner`. Same Hidden / Onboarding / Status state machine. Emits the same `pin_status_banner_*` events as Before/During (just with `phase: 'after'`).
+10. **Telemetry** — add `phase: 'after'` to existing `formula_pinned` / `formula_unpinned` / `plan_used_pin` / `plan_pin_fallthrough` events (no new event names). New `pin_decision` reason `no_post_template_matches_filters` for the rare case where every template fails the user's filters. Library browse events extend to After tab (`formula_library_tab_selected { phase: 'after' }`).
+11. **Tests + smoke** — `post_workout_templates_repository_test`, `after_phase_solver_test` (edge function, parity + pin path), UI tests for After tab + pin toggle, integration test for the full pin → activity-detail-banner round trip. Live smoke on dev: pin a post template, complete a workout, verify the recovery card matches the pin.
+12. **Prod rollout + status + memory** — run substep 2's CHECK widening migration on prod via DataGrip (after substep 1 has been in prod for one TestFlight cycle). Refresh PLAN.md status. Refresh `project_formula_kit.md` memory. Update the 7-PR phasing summary.
+
+**Out of scope for PR 3 (deferred):**
+- Personal post-workout templates (no design exists; not planned).
+- Brick-specific after-phase recommendations (V2 if data shows brick athletes want different recovery).
+- After-phase scaling / quantity stepper (no algorithmic target to hit; reconsider only if athletes ask for it).
+- Coach insight on the After tab (folded into PR 6).
 
 ### Blocker — dev Supabase migration history out of sync (issue #29) — BYPASSED 2026-05-22
 
@@ -237,7 +272,7 @@ These are independent of Formula Kit but were uncovered while smoke-testing it:
 
 ### Dev Mixpanel project — open question
 
-The dev Mixpanel token (`df6e8dd4f3dc1363fa194a156298b16c` in `.env.dev.local`) is not surfacing events on any Mixpanel board Sunshine has access to. Could be: (a) token belongs to a project that was deleted, (b) project exists but Sunshine doesn't have viewer access, (c) project was never created. Not blocking PR 1 — the debug log gives parallel observability. Worth investigating before we start relying on dev Mixpanel for funnel work in PR 4+.
+The dev Mixpanel token (`df6e8dd4f3dc1363fa194a156298b16c` in `.env.dev.local`) is not surfacing events on any Mixpanel board Sunshine has access to. Could be: (a) token belongs to a project that was deleted, (b) project exists but Sunshine doesn't have viewer access, (c) project was never created. Not blocking PR 1 — the debug log gives parallel observability. Worth investigating before we start relying on dev Mixpanel for funnel work in PR 5+.
 
 ## Context
 
@@ -274,7 +309,8 @@ Reasoning: Settings is the right home for "manage your preferences." The signal 
 
 - **PR 1**: Standalone settings surface, no algorithm coupling. ✅ Shipped.
 - **PR 2**: Pins become a first-class algorithm input. Both `client_plan_service._tryTemplateBasedBefore()` and the new `generate-nutrition-plan-v4` edge function check pins for the matching scope before falling through to the existing scoring algorithm.
-- **PR 3–6**: Personalize, swap, create, coach — all build on the same Settings surface. Personal formulas become pinnable in PR 4.
+- **PR 3**: After-phase parity — extend browse + pin machinery to `post_workout_templates`. Still no algorithm change for Before/During; adds a small after-phase solver to v4 that's pin-aware with selection_priority fallthrough.
+- **PR 4–6**: Personalize, swap, create, coach — all build on the same Settings surface. Personal formulas become pinnable in PR 5.
 - **V3+ (out of scope)**: Plan-time formula picker in New Activity flow ("use this formula for this specific workout") — distinct from pins, which apply across many workouts.
 
 This is what the user reads from the algorithm change: pins say "these are my long-standing preferences for this kind of workout." The plan-time picker (someday) would say "for this particular workout, use this one regardless."
@@ -313,18 +349,19 @@ git checkout -b feat/formula-kit origin/develop
 
 ## Scope (recommended phasing — revised 2026-05-20)
 
-Formula Kit ships across **6 PRs**. New PR 2 (Pins) inserted ahead of personalization. All later PRs shift up one. Favorites removed (pins serve the user-need).
+Formula Kit ships across **7 PRs**. New PR 2 (Pins) inserted ahead of personalization. New PR 3 (After-phase parity) inserted ahead of personalization to round out browse+pin coverage of all three phases. All later PRs shift up. Favorites removed (pins serve the user-need).
 
 | PR | Slice | Approx scope |
 |----|-------|--------------|
 | **PR 1** | V1 Browse + Detail (read-only) ✅ Done | Library screen, phase tabs, filter chips, collapsible header, detail view with components. No personalization. |
-| **PR 2** | **NEW — Pin a formula as algorithm signal** | Single-tap pin toggle on cards/detail. Pins drive plan generation: matching pinned templates considered first, fall through to existing algorithm. New `formula_pins` table (Supabase + Drift). New `generate-nutrition-plan-v4` edge function. Transparent fit-failure banner on activity detail. System templates only in V1. |
-| **PR 3** | V3 iter 1 — "Make this mine" edit state (Before only) | Edit-state UI on Before detail, quantity stepper, placeholder swap sheet, real-time macro recompute. |
-| **PR 4** | V3 iter 2 — Real Swap sheet + Your formulas + persistence + During edit + **legacy personal_templates UI deprecation** + **personal formulas become pinnable** | Real swap sheet, Your Formulas section, Drift+Supabase persistence via evolved `personal_templates`, During edit variant. Remove old "My Templates" UI. Extend `formula_pins.template_kind` to include `'personal_template'`. |
-| **PR 5** | Coach insight + Add Food | AI-coach guidance panel (multi-mode edge function), Add Food button. Coach insight reads pins as part of structured context. |
-| **PR 6** | Create-from-scratch | New formula from blank, "+ New" entry on Your Formulas. Final polish (during-card descriptors). |
+| **PR 2** | Pin a formula as algorithm signal ✅ Substantively done | Single-tap pin toggle on cards/detail. Pins drive plan generation: matching pinned templates considered first, fall through to existing algorithm. New `formula_pins` table (Supabase + Drift). New `generate-nutrition-plan-v4` edge function. Transparent fit-failure banner on activity detail. System templates only in V1. |
+| **PR 3** | **NEW — After-phase parity (browse + pin)** | Extend Browse + Detail + Pins to the After phase. `post_workout_templates` (v2 Notion-imported) get a Drift mirror, repository, After tab in the library, AfterFormulaCard, detail screen. Filter is `travel_friendliness` only (in_bag / cooler_friendly / home_only) — standard portion, no scaling target. Pins are in scope (post_system pin kind). Edge function gains a simple after-phase solver that prefers pinned templates and falls through to selection_priority order. No brick-specific UI. |
+| **PR 4** | V3 iter 1 — "Make this mine" edit state (Before only) | Edit-state UI on Before detail, quantity stepper, placeholder swap sheet, real-time macro recompute. |
+| **PR 5** | V3 iter 2 — Real Swap sheet + Your formulas + persistence + During edit + **legacy personal_templates UI deprecation** + **personal formulas become pinnable** | Real swap sheet, Your Formulas section, Drift+Supabase persistence via evolved `personal_templates`, During edit variant. Remove old "My Templates" UI. Extend `formula_pins.template_kind` to include `'personal_template'`. |
+| **PR 6** | Coach insight + Add Food | AI-coach guidance panel (multi-mode edge function), Add Food button. Coach insight reads pins as part of structured context. |
+| **PR 7** | Create-from-scratch | New formula from blank, "+ New" entry on Your Formulas. Final polish (during-card descriptors). |
 
-PR 1 shipped on its own. PR 2 is the first PR that touches plan generation — it's the riskiest in terms of prod impact, isolated for that reason.
+PR 1 shipped on its own. PR 2 is the first PR that touches plan generation — it's the riskiest in terms of prod impact, isolated for that reason. PR 3 extends the same browse + pin machinery to the After phase, so the full library matches the IMG_7922 design before personalization work begins.
 
 ## Architecture
 
@@ -391,9 +428,9 @@ lib/shared/database/tables/
 - `durations` — nullable JSON array (During only)
 - `gut_training` — nullable (During only)
 - `custom_food_ids` — nullable JSON array (links to `custom_foods` rows used as components)
-- ~~`is_pinned_to_workout`~~ — **SUPERSEDED by `formula_pins` table (PR 2).** Originally reserved for V4 plan-time picker; that feature is now distinct from pins. If a plan-time picker ships later, it'll use its own column or join table — do not add `is_pinned_to_workout` in the PR 4 migration.
+- ~~`is_pinned_to_workout`~~ — **SUPERSEDED by `formula_pins` table (PR 2).** Originally reserved for V4 plan-time picker; that feature is now distinct from pins. If a plan-time picker ships later, it'll use its own column or join table — do not add `is_pinned_to_workout` in the PR 5 migration.
 
-Old `personal_templates` UI surface continues to work unchanged during PR 2 — the backfill maps every existing row to `provenance = legacy_plan` so nothing breaks. Legacy UI entry points removed in PR 3.
+Old `personal_templates` UI surface continues to work unchanged during PR 2 — the backfill maps every existing row to `provenance = legacy_plan` so nothing breaks. Legacy UI entry points removed in PR 4.
 
 `personal_templates` (the formulas backbone), `custom_foods`, and `formula_pins` all sync to Supabase via the standard offline-first pattern. Pins specifically must sync because both the client (`client_plan_service`) and the edge function (`generate-nutrition-plan-v4`) read them — Drift-only would prevent the server-side path from honoring pins.
 
@@ -414,16 +451,16 @@ State this conflict policy explicitly in the new `custom_foods_repository.dart` 
 ```
 supabase/migrations/
 ├── 2026MMDDhhmmss_formula_pins.sql                              # NEW (PR 2) — user-owned, RLS scoped to owner
-├── 2026MMDDhhmmss_personal_templates_formula_kit_columns.sql   # ALTER TABLE — add columns + backfill (PR 4)
-├── 2026MMDDhhmmss_custom_foods.sql                              # user-owned, RLS scoped to owner (PR 4)
-└── 2026MMDDhhmmss_llm_usage.sql                                 # token usage log (see Coach Insight section) (PR 5)
+├── 2026MMDDhhmmss_personal_templates_formula_kit_columns.sql   # ALTER TABLE — add columns + backfill (PR 5)
+├── 2026MMDDhhmmss_custom_foods.sql                              # user-owned, RLS scoped to owner (PR 5)
+└── 2026MMDDhhmmss_llm_usage.sql                                 # token usage log (see Coach Insight section) (PR 6)
 
 supabase/functions/
 ├── generate-nutrition-plan-v4/                                   # NEW (PR 2) — near-copy of v3 with pin-check; v3 stays alive for old clients
-└── ai-coach/                                                     # NEW (PR 5) — multi-mode edge function (insight, chat-future)
+└── ai-coach/                                                     # NEW (PR 6) — multi-mode edge function (insight, chat-future)
 ```
 
-The `personal_templates_formula_kit_columns.sql` migration (PR 4):
+The `personal_templates_formula_kit_columns.sql` migration (PR 5):
 1. Adds the new columns described above to `personal_templates`.
 2. Backfills every existing row with `provenance = 'legacy_plan'`, `phase = NULL`.
 3. Adds CHECK constraint validating provenance + phase combinations (e.g., `forked_formula` requires `phase NOT NULL` and `source_template_id NOT NULL`).
@@ -446,11 +483,11 @@ create unique index formula_pins_active_unique
 create index formula_pins_user_kind on formula_pins (user_id, template_kind) where not is_deleted;
 -- RLS: user can read/write only their own pins
 ```
-Note: `template_kind` is intentionally text, not an FK to either templates table — polymorphic ref. The check constraint can be widened to `('pre_system', 'during_system', 'personal_template')` in PR 4 when personal formulas become pinnable.
+Note: `template_kind` is intentionally text, not an FK to either templates table — polymorphic ref. The check constraint can be widened to `('pre_system', 'during_system', 'personal_template')` in PR 5 when personal formulas become pinnable.
 
 ### Reused components (do not rebuild)
 
-- **Swap sheet pattern** — `lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart` is the existing source-of-truth for IMG_7922's pattern. Refactor it so Formula Kit can call into the same sheet (with mode=`swap` | `add_food`) rather than building a parallel sheet. If refactor scope is too big in PR 3, build a feature-local sheet and unify later.
+- **Swap sheet pattern** — `lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart` is the existing source-of-truth for IMG_7922's pattern. Refactor it so Formula Kit can call into the same sheet (with mode=`swap` | `add_food`) rather than building a parallel sheet. If refactor scope is too big in PR 4, build a feature-local sheet and unify later.
 - **Templates repository** — `lib/features/nutrition_plan/data/templates_repository.dart` already reads pre_workout_templates from Drift with on-demand sync. Extend (don't replace) to add during_workout_templates.
 - **Personal templates pattern** — `lib/features/personal_templates/` has the precedent for user-owned templates that sync to Supabase. Follow the same offline-first + `needsUpload` flag pattern.
 - **Food preferences** — `lib/features/food_preferences/` for allergen + dietary filters in More Filters sheet. The filter state must respect the same `excluded_diets`/`allergens` schema that templates already encode.
@@ -470,7 +507,7 @@ The design uses Claude to generate ~15-28 word coach-tone guidance based on curr
 }
 ```
 
-**Coach insight uses pre-computed structured context injection — NOT live tool calling.** All algorithmic outputs (solid:liquid ratio, fiber load, estimated digestion speed, etc.) are computed *inside the edge function* before the LLM call, and injected into the prompt as a structured nutrition state block. The LLM never makes tool calls in `insight` mode. Tool-calling support stays in the envelope (the `tools` array) for future `chat` mode but is unused in PR 4.
+**Coach insight uses pre-computed structured context injection — NOT live tool calling.** All algorithmic outputs (solid:liquid ratio, fiber load, estimated digestion speed, etc.) are computed *inside the edge function* before the LLM call, and injected into the prompt as a structured nutrition state block. The LLM never makes tool calls in `insight` mode. Tool-calling support stays in the envelope (the `tools` array) for future `chat` mode but is unused in PR 5.
 
 **Edge function responsibilities for `mode: "insight"`:**
 1. Receive draft components (food id + quantity) + phase + workout duration + user dietary context.
@@ -496,9 +533,9 @@ id | user_id | function | mode | model | input_tokens | output_tokens | cost_usd
 - Index on `(model, created_at)` for cost-by-model reporting.
 - Indexed for analytics SQL but no Supabase realtime / no app-side reads — write-only from edge functions.
 
-### PR 4 prerequisite — coach insight prompt template
+### PR 5 prerequisite — coach insight prompt template
 
-Before PR 4 implementation, ship this prompt design (it's part of PR 4's scope but called out as a prerequisite for clarity):
+Before PR 5 implementation, ship this prompt design (it's part of PR 5's scope but called out as a prerequisite for clarity):
 
 **System prompt (draft):**
 ```
@@ -571,14 +608,14 @@ Fire from controllers (FOA: not from screens). Add the events listed below in th
 | `plan_pin_fallthrough` | `{ pin_set_size: <int>, reason: 'scale_out_of_range' \| 'allergen' \| 'dislike' \| 'gut_train_mismatch' \| 'all_pins_failed_fit', fallback_template_id: <string> }` | client + edge fn v4 |
 | `pin_status_banner_tapped` | `{ template_id, banner_state: 'using_pin' \| 'pin_fallback' }` | `activity_detail_screen` |
 
-**PR 3 — Make this mine (Before):**
+**PR 4 — Make this mine (Before):**
 | Event | Payload |
 |---|---|
 | `make_this_mine_tapped` | `{ source_template_id: <string>, phase: 'before' }` |
 | `personal_formula_saved` | `{ provenance: 'forked_formula', source_template_id: <string>, phase: 'before', component_count: <int>, edit_duration_sec: <int> }` |
 | `personal_formula_edit_cancelled` | `{ source_template_id: <string>, phase: 'before' }` |
 
-**PR 4 — Swap sheet + Your formulas + During edit + pinnable personal formulas:**
+**PR 5 — Swap sheet + Your formulas + During edit + pinnable personal formulas:**
 | Event | Payload |
 |---|---|
 | `formula_swap_opened` | `{ phase, component_id, source: 'edit' \| 'add_food' }` |
@@ -588,14 +625,14 @@ Fire from controllers (FOA: not from screens). Add the events listed below in th
 | `personal_formula_saved` | (extend with `phase: 'during'` rows) |
 | `formula_pinned` | (extend with `template_kind: 'personal_template'`) |
 
-**PR 5 — Coach insight + Add Food:**
+**PR 6 — Coach insight + Add Food:**
 | Event | Payload |
 |---|---|
 | `coach_insight_generated` | `{ phase, mode: 'insight', cached: bool, latency_ms: <int>, input_tokens: <int>, output_tokens: <int>, pinned_context_count: <int> }` |
 | `coach_insight_refresh_tapped` | `{ phase }` |
 | `add_food_tapped` | `{ phase, draft_component_count: <int>, surface: 'formula_kit' }` (note: name collides with existing nutrition-plan event — qualify with `surface`) |
 
-**PR 6 — Create-from-scratch:**
+**PR 7 — Create-from-scratch:**
 | Event | Payload |
 |---|---|
 | `formula_created_from_scratch` | `{ phase, sub_phase \| activities, component_count }` |
@@ -621,26 +658,26 @@ End-to-end test plan, per slice:
 - **Old client safety:** bump app version on simulator A (calls v4) and keep simulator B on prior version (still calls v3) → confirm both produce valid plans, A honors pins, B unaffected.
 - Run `flutter test test/features/formula_kit/` (incl. new `formula_pins_repository_test`, `client_plan_service_pinned_template_test`).
 
-**PR 3 (Make this mine):**
+**PR 4 (Make this mine):**
 - On a Before template detail, tap "Make this mine".
 - Tweak quantities, watch macros tween. Save. Confirm a Personal formula appears.
 - Verify offline-first: enable airplane mode mid-edit, save, re-enable network, confirm sync.
 
-**PR 4 (real swap + persistence + During + personal pinning):**
+**PR 5 (real swap + persistence + During + personal pinning):**
 - Open swap sheet, add a custom food, save. Confirm it appears in My Foods on next open.
 - Pull-to-refresh / quit app / relaunch — confirm everything persists from Drift and reconciles with Supabase.
 - Verify During edit variant has no quantity stepper (per spec).
 - Pin a personal formula → confirm `formula_pins.template_kind = 'personal_template'` row created → confirm algorithm honors it.
 - Run integration tests via Patrol (if the patrol branch has merged by then) or via existing integration_test harness.
 
-**PR 5 (insight + add food):**
+**PR 6 (insight + add food):**
 - Confirm Coach insight panel renders shimmer → returns text from edge function in <2s.
 - Test edge function via `supabase functions invoke ai-coach --body '{"mode":"insight","context":{...}}'`.
 - Verify `llm_usage` table has a new row with non-zero input/output tokens after each call.
 - Add Food button opens swap sheet in add mode; selecting appends component.
 - Confirm coach insight prompt receives `pinned_template_ids[]` in structured context.
 
-**PR 6 (create-from-scratch):**
+**PR 7 (create-from-scratch):**
 - Create from scratch, confirm validation (toasts on muted Save), save, confirm landing on detail.
 
 ## Risks & open questions
@@ -650,8 +687,8 @@ End-to-end test plan, per slice:
 3. **Coach insight cost monitoring.** No per-user rate limiting (intentional — foundational metrics first). Monitor `llm_usage` table for outliers; if any user generates >100 insights/day, that's a signal to revisit. Cost itself is bounded by Haiku pricing × short prompts × short outputs.
 4. **PR 2 edge-function risk.** This is the first PR that modifies plan generation. Mitigation: new `generate-nutrition-plan-v4/` directory (don't touch v3); pin-aware behavior is strictly additive (no-pins users get identical output to v3); client gates v3→v4 via app version (old binaries keep calling v3). Always run the v3↔v4 parity test on fixture users with zero pins before merging.
 5. **Pinned formula no longer fits user's diet.** Per the honor-pin policy locked 2026-05-21, pins are NOT auto-fallen-through on allergen/diet/dislike conflict — the user's explicit pin wins over their stored profile. The original concern ("the pin will fall through every time") no longer applies. The safety net is the V2 advisory pill (see "Deferred client-side work") that visually flags the conflict in the UI. Auto-pruning pins on dietary changes remains an open V2 question, but is lower priority now that the conflict is surfaced rather than silently dropped.
-6. **Pin a personal formula that gets deleted.** PR 4 cleanup: when a personal_templates row is hard-deleted, cascade-delete its pin rows (FK to `personal_templates.id` with `on delete cascade` for the personal-kind subset, OR soft-delete via `is_deleted` on the pin row at the application layer).
-7. **Migration backfill correctness.** The `provenance = 'legacy_plan'` backfill (PR 4) must run after the column is added but before any client reads the new column. Test on a Supabase branch first.
+6. **Pin a personal formula that gets deleted.** PR 5 cleanup: when a personal_templates row is hard-deleted, cascade-delete its pin rows (FK to `personal_templates.id` with `on delete cascade` for the personal-kind subset, OR soft-delete via `is_deleted` on the pin row at the application layer).
+7. **Migration backfill correctness.** The `provenance = 'legacy_plan'` backfill (PR 5) must run after the column is added but before any client reads the new column. Test on a Supabase branch first.
 
 ## Critical files to read before PR 1
 
