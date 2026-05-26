@@ -178,6 +178,59 @@ export async function getTemplateFoodsForPhase(
     );
   }
 
+  // STEP 1b: SQL-widening for pinned-component foods that sit outside the
+  // phase's category/activity scope. Without this, in-Deno filters at STEP 4
+  // can't bypass dislike/allergen/diet — because the rows never made it past
+  // the categories/activity_types WHERE clause above. Example: an After
+  // template "Yogurt + Berries + Granola" where Berries sits in `before_run`
+  // category — the main query for `after_run` never returned Berries, so the
+  // honor-pin bypass had nothing to bypass and the template renderer dropped
+  // the missing component silently. See PR 3 #35 follow-up #2 (sibling guard
+  // in renderPostTemplatePortion).
+  if (pinnedComponentNames && pinnedComponentNames.size > 0) {
+    const existingNames = new Set(
+      templateFoods.map((f) => f.name as string),
+    );
+    const missingPinnedNames = [...pinnedComponentNames].filter(
+      (n) => !existingNames.has(n),
+    );
+    if (missingPinnedNames.length > 0) {
+      let extraData: Record<string, unknown>[] | null = null;
+      let extraError: { message?: string } | null = null;
+      {
+        const { data, error } = await supabase
+          .from("template_foods")
+          .select(selectWithDefaultDuring)
+          .eq("is_active", true)
+          .in("name", missingPinnedNames);
+        extraData = data as Record<string, unknown>[] | null;
+        extraError = error;
+      }
+      if (extraError && extraError.message?.includes("default_during")) {
+        const fallback = await supabase
+          .from("template_foods")
+          .select(selectWithoutDefaultDuring)
+          .eq("is_active", true)
+          .in("name", missingPinnedNames);
+        extraData = fallback.data as Record<string, unknown>[] | null;
+        extraError = fallback.error;
+      }
+      if (extraError) {
+        console.log(
+          `[TMPL-FOODS-${phase.toUpperCase()}] Error widening fetch for pinned components:`,
+          extraError,
+        );
+      } else if (extraData && extraData.length > 0) {
+        console.log(
+          `[TMPL-FOODS-${phase.toUpperCase()}] Widening: fetched ${extraData.length} pinned-component foods out of phase/activity scope (${
+            missingPinnedNames.join(", ")
+          })`,
+        );
+        templateFoods = templateFoods.concat(extraData);
+      }
+    }
+  }
+
   // STEP 2: Get user foods for this phase (same as food-queries.ts)
   let userFoods: Record<string, unknown>[] = [];
   if (deviceId) {
@@ -958,9 +1011,7 @@ export async function getTemplateFoodsForDuringWithConstraints(
     }, activity: ${activityType}`,
   );
 
-  const { data, error } = await supabase
-    .from("template_foods")
-    .select(`
+  const constraintColumns = `
       id, name, display_name, display_name_plural, image_address, description,
       calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
       serving_amount, serving_size, serving_unit, serving_qualifier,
@@ -971,7 +1022,11 @@ export async function getTemplateFoodsForDuringWithConstraints(
       allergens, excluded_diets,
       max_per_hr_low, max_per_hr_moderate, max_per_hr_high, min_increment,
       sodium_top_up_eligible
-    `)
+    `;
+
+  const { data, error } = await supabase
+    .from("template_foods")
+    .select(constraintColumns)
     .eq("is_active", true)
     .filter("categories", "ov", categoryFilter)
     .or(activityFilter);
@@ -981,10 +1036,45 @@ export async function getTemplateFoodsForDuringWithConstraints(
     return [];
   }
 
-  const templateFoods = (data ?? []) as Record<string, unknown>[];
+  let templateFoods = (data ?? []) as Record<string, unknown>[];
   console.log(
     `[TMPL-FOODS-DURING-CONSTRAINTS] Found ${templateFoods.length} template foods`,
   );
+
+  // SQL-widening for pinned-component foods that sit outside the during
+  // category/activity scope (mirrors getTemplateFoodsForPhase). The in-Deno
+  // filter bypass below only helps if the row actually made it into the
+  // query result. See PR 3 #35 follow-up #2.
+  if (pinnedComponentNames && pinnedComponentNames.size > 0) {
+    const existingNames = new Set(
+      templateFoods.map((f) => f.name as string),
+    );
+    const missingPinnedNames = [...pinnedComponentNames].filter(
+      (n) => !existingNames.has(n),
+    );
+    if (missingPinnedNames.length > 0) {
+      const { data: extraData, error: extraError } = await supabase
+        .from("template_foods")
+        .select(constraintColumns)
+        .eq("is_active", true)
+        .in("name", missingPinnedNames);
+      if (extraError) {
+        console.log(
+          "[TMPL-FOODS-DURING-CONSTRAINTS] Error widening fetch for pinned components:",
+          extraError,
+        );
+      } else if (extraData && extraData.length > 0) {
+        console.log(
+          `[TMPL-FOODS-DURING-CONSTRAINTS] Widening: fetched ${extraData.length} pinned-component foods out of during/activity scope (${
+            missingPinnedNames.join(", ")
+          })`,
+        );
+        templateFoods = templateFoods.concat(
+          extraData as Record<string, unknown>[],
+        );
+      }
+    }
+  }
 
   const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
   const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";

@@ -35,6 +35,7 @@ import { describe, it } from "https://deno.land/std@0.168.0/testing/bdd.ts";
 import {
   filterPinnedPostTemplatesInScope,
   type PostWorkoutTemplate,
+  renderPostTemplatePortion,
   selectPostWorkoutTemplateCandidates,
 } from "../_shared/nutrition/post-template-solver.ts";
 import type { Food } from "../_shared/nutrition/types.ts";
@@ -416,5 +417,61 @@ describe("selectPostWorkoutTemplateCandidates pin override", () => {
       new Set([a.id, b.id]),
     );
     assertEquals(candidatesB[0].id, b.id);
+  });
+});
+
+// ===========================================================================
+// renderPostTemplatePortion missing-component hard fail (PR 3 #35 follow-up #2)
+// ===========================================================================
+
+describe("renderPostTemplatePortion missing components", () => {
+  // Sibling guard for the SQL-widening fetch in template-food-queries.ts:
+  // even after the widening, if a pinned template's component food doesn't
+  // exist in template_foods AT ALL (or was deactivated), the renderer must
+  // refuse to ship an incomplete portion. The Option A guard at the caller
+  // then downgrades pin_decision.used_pin to `pinned_template_unrenderable`.
+  //
+  // Pre-fix bug: the renderer silently skipped missing components and
+  // reported success with whatever it found — so a pinned
+  // "Yogurt + Berries + Granola" template that only resolved Yogurt would
+  // ship 1/3 components with `result=success` and `used_pin: true` on the
+  // wire while serving an incomplete portion to the user.
+
+  const yogurtBerryGranola = makeTemplate({
+    template_number: 9,
+    name: "Yogurt + Berries + Granola",
+    component_food_names: ["greek_yogurt", "blueberry", "granola"],
+    default_servings: { greek_yogurt: 1, blueberry: 0.5, granola: 0.25 },
+  });
+
+  it("returns null when ANY component is missing from foodsByName", () => {
+    // Only yogurt is in the pool; blueberry + granola are missing (e.g.
+    // because they sit in the before_run category and the SQL widening
+    // didn't catch them).
+    const yogurt = makeFood({ id: "f-yogurt", name: "greek_yogurt" });
+    const foods = foodsMap([yogurt]);
+    const result = renderPostTemplatePortion(yogurtBerryGranola, foods);
+    assertEquals(result, null);
+  });
+
+  it("returns null even when 2 of 3 components are present", () => {
+    // Belt-and-braces: confirm the hard-fail rule isn't a "majority wins"
+    // — even one missing component fails the render.
+    const yogurt = makeFood({ id: "f-yogurt", name: "greek_yogurt" });
+    const berry = makeFood({ id: "f-berry", name: "blueberry" });
+    const foods = foodsMap([yogurt, berry]);
+    const result = renderPostTemplatePortion(yogurtBerryGranola, foods);
+    assertEquals(result, null);
+  });
+
+  it("renders all components when every required food is present", () => {
+    const yogurt = makeFood({ id: "f-yogurt", name: "greek_yogurt" });
+    const berry = makeFood({ id: "f-berry", name: "blueberry" });
+    const granola = makeFood({ id: "f-granola", name: "granola" });
+    const foods = foodsMap([yogurt, berry, granola]);
+    const result = renderPostTemplatePortion(yogurtBerryGranola, foods);
+    assert(result !== null);
+    assertEquals(result.foods.length, 3);
+    assertEquals(result.template_id, yogurtBerryGranola.id);
   });
 });

@@ -396,12 +396,34 @@ export function renderPostTemplatePortion(
     : template.component_food_names;
 
   const results: FoodResult[] = [];
+  const missing: string[] = [];
   for (const name of foodNames) {
     const food = foodsByName.get(name);
-    if (!food) continue;
+    if (!food) {
+      missing.push(name);
+      continue;
+    }
     const qty = servings[name] ?? 1;
     if (qty <= 0) continue;
     results.push(buildFoodResult(food, qty));
+  }
+
+  // Hard fail on any missing component: shipping an incomplete plan would
+  // silently drop pinned ingredients (e.g. a Yogurt + Berries + Granola
+  // template that only renders Yogurt because Berries/Granola sit in a
+  // different category at the SQL level). The non-pin path already guarantees
+  // every required food is present via the candidate filter at line 296-307,
+  // so this only fires under pin override — and the caller's Option A guard
+  // downgrades pin_decision.used_pin to `pinned_template_unrenderable`.
+  // See PR 3 #35 follow-up #2 (sibling of the SQL-widening fetch in
+  // template-food-queries.ts).
+  if (missing.length > 0) {
+    console.log(
+      `[POST-TEMPLATE] Template ${template.template_number} (${template.name}) missing components: ${
+        missing.join(", ")
+      } — returning null so caller can downgrade pin_decision`,
+    );
+    return null;
   }
 
   if (results.length === 0) return null;
