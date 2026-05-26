@@ -510,6 +510,34 @@ export async function generateDuringPhase(
             };
           }
 
+          // Option A guard (parity with after-phase commit aa652f11):
+          // pin override selected a template but `generateDuringPhaseTemplate`
+          // returned null for every candidate (validation failed). Without
+          // this the wire would claim `used_pin: true` while the section
+          // actually served rule-solver or LP foods — exactly the kind of
+          // banner/data inconsistency that surfaced for After in the
+          // 2026-05-26 Chocolate Milk Solo smoke test. Downgrade to
+          // `used_pin: false` with `pinned_template_unrenderable` so the
+          // wire reflects reality. Option B food-load bypass via
+          // pinnedComponentNames should make this unreachable in practice;
+          // this stays as belt-and-braces.
+          if (duringPinDecision?.used_pin === true) {
+            console.log(
+              `[PLAN-V3] Pin override selected ${
+                templateCandidates[0]?.template_number
+              } (${
+                templateCandidates[0]?.name
+              }) but generateDuringPhaseTemplate returned null for all ${triedTemplates} candidates — downgrading pin_decision.used_pin to false (pinned_template_unrenderable)`,
+            );
+            duringPinDecision = {
+              used_pin: false,
+              pinned_template_id: null,
+              pinned_template_name: null,
+              fallthrough_reason: "pinned_template_unrenderable",
+              pin_set_size: duringPinDecision.pin_set_size,
+            };
+          }
+
           console.log(
             "[PLAN-V3] Template solver returned null for all candidates (validation failed), falling back to rule solver",
           );
