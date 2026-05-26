@@ -175,6 +175,34 @@ function mapActivityTypeForTemplate(activityType: ActivityType): string[] {
  * - +5 for each willing-to-try food in component_food_names
  * - Ties broken by template_number (lower = simpler = preferred)
  */
+/**
+ * Returns the subset of `templates` that are active, pinned, AND in scope for
+ * the given workout (activity_type × duration_bracket), sorted by
+ * template_number. Shared between the pin-override path inside
+ * `selectTemplateCandidates` and the `pin_set_size` analytics field surfaced
+ * on `pin_decision`. Returns [] when no pins match scope.
+ *
+ * Formula Kit PR 2 substep 7.
+ */
+export function filterPinnedTemplatesInScope(
+  templates: DuringWorkoutTemplate[],
+  activityType: ActivityType,
+  durationMinutes: number,
+  pinnedTemplateIds: Set<string>,
+): DuringWorkoutTemplate[] {
+  const mappedActivities = mapActivityTypeForTemplate(activityType);
+  const durationBracket = getDurationBracket(durationMinutes);
+  return templates
+    .filter(
+      (t) =>
+        t.is_active &&
+        pinnedTemplateIds.has(t.id) &&
+        t.activity_types.some((at) => mappedActivities.includes(at)) &&
+        t.duration_brackets.includes(durationBracket),
+    )
+    .sort((a, b) => a.template_number - b.template_number);
+}
+
 export function selectTemplateCandidates(
   templates: DuringWorkoutTemplate[],
   activityType: ActivityType,
@@ -186,6 +214,17 @@ export function selectTemplateCandidates(
   dislikedFoods?: Set<string>,
   allergies?: string[],
   dietaryPreference?: string,
+  /**
+   * Set of during_workout_template ids the user has actively pinned. When a
+   * pinned template matches the current activity_type × duration_bracket
+   * scope, it overrides candidate selection: allergen / diet / gut-training /
+   * food-availability / preference filters are all bypassed for this call.
+   * Per locked Formula Kit policy (2026-05-21, revised 2026-05-22): in-scope
+   * pins are honored unconditionally — pins even bypass gut training.
+   * When undefined or empty, behavior is byte-identical to pre-pin v3.
+   * Formula Kit PR 2 substep 5a.
+   */
+  pinnedTemplateIds?: Set<string>,
 ): DuringWorkoutTemplate[] {
   const mappedActivities = mapActivityTypeForTemplate(activityType);
   const durationBracket = getDurationBracket(durationMinutes);
@@ -198,6 +237,30 @@ export function selectTemplateCandidates(
     }), ` +
       `duration=${durationMinutes}min (bracket=${durationBracket}), gut=${gutTrainingLevel}`,
   );
+
+  // Pin override: when the user has pins matching this workout's scope
+  // (activity_type × duration_bracket), they take over candidate selection —
+  // bypassing allergen / diet / gut-training / food-availability filters and
+  // the preference-score sort. Multiple pinned templates are returned in
+  // template_number order so the caller's solver-retry loop tries them
+  // deterministically. When zero pins match this scope, we fall through to
+  // the normal candidate-selection path (no fallthrough_reason returned here
+  // — that's surfaced by the caller).
+  if (pinnedTemplateIds !== undefined && pinnedTemplateIds.size > 0) {
+    const pinnedInScope = filterPinnedTemplatesInScope(
+      templates,
+      activityType,
+      durationMinutes,
+      pinnedTemplateIds,
+    );
+    if (pinnedInScope.length > 0) {
+      console.log(
+        `[DURING-TEMPLATE] Pin override active: ${pinnedInScope.length} pinned template(s) in scope ` +
+          `(activity=${activityType}, duration=${durationBracket}), bypassing all filters`,
+      );
+      return pinnedInScope;
+    }
+  }
 
   type ScoredTemplate = { template: DuringWorkoutTemplate; score: number };
   const candidates: ScoredTemplate[] = [];

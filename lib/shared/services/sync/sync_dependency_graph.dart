@@ -22,7 +22,10 @@ class SyncDependencyGraph {
     'coach_messages': ['coach_athlete_relationships'],
     'template_foods': [],
     'templates': ['template_foods'],
+    'during_workout_templates': ['template_foods'],
+    'pre_workout_templates': ['template_foods'],
     'personal_templates': ['users'],
+    'formula_pins': ['users'],
   };
 
   static List<String> dependenciesFor(String repositoryKey) {

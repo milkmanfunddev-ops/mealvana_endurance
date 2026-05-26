@@ -21429,7 +21429,7 @@ class Integration extends DataClass implements Insertable<Integration> {
   final String id;
   final String userId;
 
-  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin'
+  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin', 'vdot'
   final String provider;
   final String accessToken;
   final String? refreshToken;
@@ -27864,6 +27864,2410 @@ class TemplatesTableCompanion extends UpdateCompanion<TemplateEntry> {
   }
 }
 
+class $DuringWorkoutTemplatesTableTable extends DuringWorkoutTemplatesTable
+    with
+        TableInfo<
+          $DuringWorkoutTemplatesTableTable,
+          DuringWorkoutTemplateEntry
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DuringWorkoutTemplatesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _templateNumberMeta = const VerificationMeta(
+    'templateNumber',
+  );
+  @override
+  late final GeneratedColumn<int> templateNumber = GeneratedColumn<int>(
+    'template_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _formulaMeta = const VerificationMeta(
+    'formula',
+  );
+  @override
+  late final GeneratedColumn<String> formula = GeneratedColumn<String>(
+    'formula',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _foodFormMeta = const VerificationMeta(
+    'foodForm',
+  );
+  @override
+  late final GeneratedColumn<String> foodForm = GeneratedColumn<String>(
+    'food_form',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activityTypesMeta = const VerificationMeta(
+    'activityTypes',
+  );
+  @override
+  late final GeneratedColumn<String> activityTypes = GeneratedColumn<String>(
+    'activity_types',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _durationBracketsMeta = const VerificationMeta(
+    'durationBrackets',
+  );
+  @override
+  late final GeneratedColumn<String> durationBrackets = GeneratedColumn<String>(
+    'duration_brackets',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _gutTrainingLevelsMeta = const VerificationMeta(
+    'gutTrainingLevels',
+  );
+  @override
+  late final GeneratedColumn<String> gutTrainingLevels =
+      GeneratedColumn<String>(
+        'gut_training_levels',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  static const VerificationMeta _componentFoodNamesMeta =
+      const VerificationMeta('componentFoodNames');
+  @override
+  late final GeneratedColumn<String> componentFoodNames =
+      GeneratedColumn<String>(
+        'component_food_names',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  static const VerificationMeta _componentCarbRatiosMeta =
+      const VerificationMeta('componentCarbRatios');
+  @override
+  late final GeneratedColumn<String> componentCarbRatios =
+      GeneratedColumn<String>(
+        'component_carb_ratios',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _primaryToSecondaryRatioMeta =
+      const VerificationMeta('primaryToSecondaryRatio');
+  @override
+  late final GeneratedColumn<String> primaryToSecondaryRatio =
+      GeneratedColumn<String>(
+        'primary_to_secondary_ratio',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _allergensMeta = const VerificationMeta(
+    'allergens',
+  );
+  @override
+  late final GeneratedColumn<String> allergens = GeneratedColumn<String>(
+    'allergens',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _excludedDietsMeta = const VerificationMeta(
+    'excludedDiets',
+  );
+  @override
+  late final GeneratedColumn<String> excludedDiets = GeneratedColumn<String>(
+    'excluded_diets',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    templateNumber,
+    name,
+    formula,
+    foodForm,
+    activityTypes,
+    durationBrackets,
+    gutTrainingLevels,
+    componentFoodNames,
+    componentCarbRatios,
+    primaryToSecondaryRatio,
+    allergens,
+    excludedDiets,
+    notes,
+    isActive,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'during_workout_templates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DuringWorkoutTemplateEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('template_number')) {
+      context.handle(
+        _templateNumberMeta,
+        templateNumber.isAcceptableOrUnknown(
+          data['template_number']!,
+          _templateNumberMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_templateNumberMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('formula')) {
+      context.handle(
+        _formulaMeta,
+        formula.isAcceptableOrUnknown(data['formula']!, _formulaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_formulaMeta);
+    }
+    if (data.containsKey('food_form')) {
+      context.handle(
+        _foodFormMeta,
+        foodForm.isAcceptableOrUnknown(data['food_form']!, _foodFormMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_foodFormMeta);
+    }
+    if (data.containsKey('activity_types')) {
+      context.handle(
+        _activityTypesMeta,
+        activityTypes.isAcceptableOrUnknown(
+          data['activity_types']!,
+          _activityTypesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('duration_brackets')) {
+      context.handle(
+        _durationBracketsMeta,
+        durationBrackets.isAcceptableOrUnknown(
+          data['duration_brackets']!,
+          _durationBracketsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('gut_training_levels')) {
+      context.handle(
+        _gutTrainingLevelsMeta,
+        gutTrainingLevels.isAcceptableOrUnknown(
+          data['gut_training_levels']!,
+          _gutTrainingLevelsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('component_food_names')) {
+      context.handle(
+        _componentFoodNamesMeta,
+        componentFoodNames.isAcceptableOrUnknown(
+          data['component_food_names']!,
+          _componentFoodNamesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('component_carb_ratios')) {
+      context.handle(
+        _componentCarbRatiosMeta,
+        componentCarbRatios.isAcceptableOrUnknown(
+          data['component_carb_ratios']!,
+          _componentCarbRatiosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('primary_to_secondary_ratio')) {
+      context.handle(
+        _primaryToSecondaryRatioMeta,
+        primaryToSecondaryRatio.isAcceptableOrUnknown(
+          data['primary_to_secondary_ratio']!,
+          _primaryToSecondaryRatioMeta,
+        ),
+      );
+    }
+    if (data.containsKey('allergens')) {
+      context.handle(
+        _allergensMeta,
+        allergens.isAcceptableOrUnknown(data['allergens']!, _allergensMeta),
+      );
+    }
+    if (data.containsKey('excluded_diets')) {
+      context.handle(
+        _excludedDietsMeta,
+        excludedDiets.isAcceptableOrUnknown(
+          data['excluded_diets']!,
+          _excludedDietsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DuringWorkoutTemplateEntry map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DuringWorkoutTemplateEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      templateNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}template_number'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      formula: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}formula'],
+      )!,
+      foodForm: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}food_form'],
+      )!,
+      activityTypes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_types'],
+      )!,
+      durationBrackets: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}duration_brackets'],
+      )!,
+      gutTrainingLevels: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gut_training_levels'],
+      )!,
+      componentFoodNames: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}component_food_names'],
+      )!,
+      componentCarbRatios: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}component_carb_ratios'],
+      ),
+      primaryToSecondaryRatio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}primary_to_secondary_ratio'],
+      ),
+      allergens: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}allergens'],
+      )!,
+      excludedDiets: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}excluded_diets'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DuringWorkoutTemplatesTableTable createAlias(String alias) {
+    return $DuringWorkoutTemplatesTableTable(attachedDatabase, alias);
+  }
+}
+
+class DuringWorkoutTemplateEntry extends DataClass
+    implements Insertable<DuringWorkoutTemplateEntry> {
+  /// UUID primary key (matches Supabase id).
+  final String id;
+
+  /// Monotonic display/order number (matches Supabase template_number).
+  final int templateNumber;
+
+  /// Display name (e.g., 'Gel + Water (Running)').
+  final String name;
+
+  /// Short formula string (e.g., 'Gel + Water + Sports Drink').
+  final String formula;
+
+  /// Food form bucket (e.g., 'Gel', 'Liquid + Gel/Chew', 'Solid + Liquid').
+  final String foodForm;
+
+  /// JSON array of activity types this template applies to.
+  /// e.g. `["running", "cycling"]`.
+  final String activityTypes;
+
+  /// JSON array of duration brackets.
+  /// e.g. `["90-150 min", "150-240 min"]`.
+  final String durationBrackets;
+
+  /// JSON array of gut-training levels this template targets.
+  /// e.g. `["low", "moderate", "high"]`.
+  final String gutTrainingLevels;
+
+  /// JSON array of `template_foods.name` values that compose this formula.
+  final String componentFoodNames;
+
+  /// JSON object mapping component food name → carb ratio.
+  /// e.g. `{"energy_gel": 0.7, "sports_drink": 0.3}`. Nullable.
+  final String? componentCarbRatios;
+
+  /// Unit ratio for triple-source templates (e.g., "1:1"). Nullable.
+  final String? primaryToSecondaryRatio;
+
+  /// JSON array of allergens. e.g. `["gluten", "dairy"]`.
+  final String allergens;
+
+  /// JSON array of diets that should exclude this template.
+  /// e.g. `["vegan"]`.
+  final String excludedDiets;
+  final String? notes;
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const DuringWorkoutTemplateEntry({
+    required this.id,
+    required this.templateNumber,
+    required this.name,
+    required this.formula,
+    required this.foodForm,
+    required this.activityTypes,
+    required this.durationBrackets,
+    required this.gutTrainingLevels,
+    required this.componentFoodNames,
+    this.componentCarbRatios,
+    this.primaryToSecondaryRatio,
+    required this.allergens,
+    required this.excludedDiets,
+    this.notes,
+    required this.isActive,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['template_number'] = Variable<int>(templateNumber);
+    map['name'] = Variable<String>(name);
+    map['formula'] = Variable<String>(formula);
+    map['food_form'] = Variable<String>(foodForm);
+    map['activity_types'] = Variable<String>(activityTypes);
+    map['duration_brackets'] = Variable<String>(durationBrackets);
+    map['gut_training_levels'] = Variable<String>(gutTrainingLevels);
+    map['component_food_names'] = Variable<String>(componentFoodNames);
+    if (!nullToAbsent || componentCarbRatios != null) {
+      map['component_carb_ratios'] = Variable<String>(componentCarbRatios);
+    }
+    if (!nullToAbsent || primaryToSecondaryRatio != null) {
+      map['primary_to_secondary_ratio'] = Variable<String>(
+        primaryToSecondaryRatio,
+      );
+    }
+    map['allergens'] = Variable<String>(allergens);
+    map['excluded_diets'] = Variable<String>(excludedDiets);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['is_active'] = Variable<bool>(isActive);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  DuringWorkoutTemplatesTableCompanion toCompanion(bool nullToAbsent) {
+    return DuringWorkoutTemplatesTableCompanion(
+      id: Value(id),
+      templateNumber: Value(templateNumber),
+      name: Value(name),
+      formula: Value(formula),
+      foodForm: Value(foodForm),
+      activityTypes: Value(activityTypes),
+      durationBrackets: Value(durationBrackets),
+      gutTrainingLevels: Value(gutTrainingLevels),
+      componentFoodNames: Value(componentFoodNames),
+      componentCarbRatios: componentCarbRatios == null && nullToAbsent
+          ? const Value.absent()
+          : Value(componentCarbRatios),
+      primaryToSecondaryRatio: primaryToSecondaryRatio == null && nullToAbsent
+          ? const Value.absent()
+          : Value(primaryToSecondaryRatio),
+      allergens: Value(allergens),
+      excludedDiets: Value(excludedDiets),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      isActive: Value(isActive),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory DuringWorkoutTemplateEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DuringWorkoutTemplateEntry(
+      id: serializer.fromJson<String>(json['id']),
+      templateNumber: serializer.fromJson<int>(json['templateNumber']),
+      name: serializer.fromJson<String>(json['name']),
+      formula: serializer.fromJson<String>(json['formula']),
+      foodForm: serializer.fromJson<String>(json['foodForm']),
+      activityTypes: serializer.fromJson<String>(json['activityTypes']),
+      durationBrackets: serializer.fromJson<String>(json['durationBrackets']),
+      gutTrainingLevels: serializer.fromJson<String>(json['gutTrainingLevels']),
+      componentFoodNames: serializer.fromJson<String>(
+        json['componentFoodNames'],
+      ),
+      componentCarbRatios: serializer.fromJson<String?>(
+        json['componentCarbRatios'],
+      ),
+      primaryToSecondaryRatio: serializer.fromJson<String?>(
+        json['primaryToSecondaryRatio'],
+      ),
+      allergens: serializer.fromJson<String>(json['allergens']),
+      excludedDiets: serializer.fromJson<String>(json['excludedDiets']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'templateNumber': serializer.toJson<int>(templateNumber),
+      'name': serializer.toJson<String>(name),
+      'formula': serializer.toJson<String>(formula),
+      'foodForm': serializer.toJson<String>(foodForm),
+      'activityTypes': serializer.toJson<String>(activityTypes),
+      'durationBrackets': serializer.toJson<String>(durationBrackets),
+      'gutTrainingLevels': serializer.toJson<String>(gutTrainingLevels),
+      'componentFoodNames': serializer.toJson<String>(componentFoodNames),
+      'componentCarbRatios': serializer.toJson<String?>(componentCarbRatios),
+      'primaryToSecondaryRatio': serializer.toJson<String?>(
+        primaryToSecondaryRatio,
+      ),
+      'allergens': serializer.toJson<String>(allergens),
+      'excludedDiets': serializer.toJson<String>(excludedDiets),
+      'notes': serializer.toJson<String?>(notes),
+      'isActive': serializer.toJson<bool>(isActive),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  DuringWorkoutTemplateEntry copyWith({
+    String? id,
+    int? templateNumber,
+    String? name,
+    String? formula,
+    String? foodForm,
+    String? activityTypes,
+    String? durationBrackets,
+    String? gutTrainingLevels,
+    String? componentFoodNames,
+    Value<String?> componentCarbRatios = const Value.absent(),
+    Value<String?> primaryToSecondaryRatio = const Value.absent(),
+    String? allergens,
+    String? excludedDiets,
+    Value<String?> notes = const Value.absent(),
+    bool? isActive,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => DuringWorkoutTemplateEntry(
+    id: id ?? this.id,
+    templateNumber: templateNumber ?? this.templateNumber,
+    name: name ?? this.name,
+    formula: formula ?? this.formula,
+    foodForm: foodForm ?? this.foodForm,
+    activityTypes: activityTypes ?? this.activityTypes,
+    durationBrackets: durationBrackets ?? this.durationBrackets,
+    gutTrainingLevels: gutTrainingLevels ?? this.gutTrainingLevels,
+    componentFoodNames: componentFoodNames ?? this.componentFoodNames,
+    componentCarbRatios: componentCarbRatios.present
+        ? componentCarbRatios.value
+        : this.componentCarbRatios,
+    primaryToSecondaryRatio: primaryToSecondaryRatio.present
+        ? primaryToSecondaryRatio.value
+        : this.primaryToSecondaryRatio,
+    allergens: allergens ?? this.allergens,
+    excludedDiets: excludedDiets ?? this.excludedDiets,
+    notes: notes.present ? notes.value : this.notes,
+    isActive: isActive ?? this.isActive,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  DuringWorkoutTemplateEntry copyWithCompanion(
+    DuringWorkoutTemplatesTableCompanion data,
+  ) {
+    return DuringWorkoutTemplateEntry(
+      id: data.id.present ? data.id.value : this.id,
+      templateNumber: data.templateNumber.present
+          ? data.templateNumber.value
+          : this.templateNumber,
+      name: data.name.present ? data.name.value : this.name,
+      formula: data.formula.present ? data.formula.value : this.formula,
+      foodForm: data.foodForm.present ? data.foodForm.value : this.foodForm,
+      activityTypes: data.activityTypes.present
+          ? data.activityTypes.value
+          : this.activityTypes,
+      durationBrackets: data.durationBrackets.present
+          ? data.durationBrackets.value
+          : this.durationBrackets,
+      gutTrainingLevels: data.gutTrainingLevels.present
+          ? data.gutTrainingLevels.value
+          : this.gutTrainingLevels,
+      componentFoodNames: data.componentFoodNames.present
+          ? data.componentFoodNames.value
+          : this.componentFoodNames,
+      componentCarbRatios: data.componentCarbRatios.present
+          ? data.componentCarbRatios.value
+          : this.componentCarbRatios,
+      primaryToSecondaryRatio: data.primaryToSecondaryRatio.present
+          ? data.primaryToSecondaryRatio.value
+          : this.primaryToSecondaryRatio,
+      allergens: data.allergens.present ? data.allergens.value : this.allergens,
+      excludedDiets: data.excludedDiets.present
+          ? data.excludedDiets.value
+          : this.excludedDiets,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DuringWorkoutTemplateEntry(')
+          ..write('id: $id, ')
+          ..write('templateNumber: $templateNumber, ')
+          ..write('name: $name, ')
+          ..write('formula: $formula, ')
+          ..write('foodForm: $foodForm, ')
+          ..write('activityTypes: $activityTypes, ')
+          ..write('durationBrackets: $durationBrackets, ')
+          ..write('gutTrainingLevels: $gutTrainingLevels, ')
+          ..write('componentFoodNames: $componentFoodNames, ')
+          ..write('componentCarbRatios: $componentCarbRatios, ')
+          ..write('primaryToSecondaryRatio: $primaryToSecondaryRatio, ')
+          ..write('allergens: $allergens, ')
+          ..write('excludedDiets: $excludedDiets, ')
+          ..write('notes: $notes, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    templateNumber,
+    name,
+    formula,
+    foodForm,
+    activityTypes,
+    durationBrackets,
+    gutTrainingLevels,
+    componentFoodNames,
+    componentCarbRatios,
+    primaryToSecondaryRatio,
+    allergens,
+    excludedDiets,
+    notes,
+    isActive,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DuringWorkoutTemplateEntry &&
+          other.id == this.id &&
+          other.templateNumber == this.templateNumber &&
+          other.name == this.name &&
+          other.formula == this.formula &&
+          other.foodForm == this.foodForm &&
+          other.activityTypes == this.activityTypes &&
+          other.durationBrackets == this.durationBrackets &&
+          other.gutTrainingLevels == this.gutTrainingLevels &&
+          other.componentFoodNames == this.componentFoodNames &&
+          other.componentCarbRatios == this.componentCarbRatios &&
+          other.primaryToSecondaryRatio == this.primaryToSecondaryRatio &&
+          other.allergens == this.allergens &&
+          other.excludedDiets == this.excludedDiets &&
+          other.notes == this.notes &&
+          other.isActive == this.isActive &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DuringWorkoutTemplatesTableCompanion
+    extends UpdateCompanion<DuringWorkoutTemplateEntry> {
+  final Value<String> id;
+  final Value<int> templateNumber;
+  final Value<String> name;
+  final Value<String> formula;
+  final Value<String> foodForm;
+  final Value<String> activityTypes;
+  final Value<String> durationBrackets;
+  final Value<String> gutTrainingLevels;
+  final Value<String> componentFoodNames;
+  final Value<String?> componentCarbRatios;
+  final Value<String?> primaryToSecondaryRatio;
+  final Value<String> allergens;
+  final Value<String> excludedDiets;
+  final Value<String?> notes;
+  final Value<bool> isActive;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const DuringWorkoutTemplatesTableCompanion({
+    this.id = const Value.absent(),
+    this.templateNumber = const Value.absent(),
+    this.name = const Value.absent(),
+    this.formula = const Value.absent(),
+    this.foodForm = const Value.absent(),
+    this.activityTypes = const Value.absent(),
+    this.durationBrackets = const Value.absent(),
+    this.gutTrainingLevels = const Value.absent(),
+    this.componentFoodNames = const Value.absent(),
+    this.componentCarbRatios = const Value.absent(),
+    this.primaryToSecondaryRatio = const Value.absent(),
+    this.allergens = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DuringWorkoutTemplatesTableCompanion.insert({
+    required String id,
+    required int templateNumber,
+    required String name,
+    required String formula,
+    required String foodForm,
+    this.activityTypes = const Value.absent(),
+    this.durationBrackets = const Value.absent(),
+    this.gutTrainingLevels = const Value.absent(),
+    this.componentFoodNames = const Value.absent(),
+    this.componentCarbRatios = const Value.absent(),
+    this.primaryToSecondaryRatio = const Value.absent(),
+    this.allergens = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       templateNumber = Value(templateNumber),
+       name = Value(name),
+       formula = Value(formula),
+       foodForm = Value(foodForm);
+  static Insertable<DuringWorkoutTemplateEntry> custom({
+    Expression<String>? id,
+    Expression<int>? templateNumber,
+    Expression<String>? name,
+    Expression<String>? formula,
+    Expression<String>? foodForm,
+    Expression<String>? activityTypes,
+    Expression<String>? durationBrackets,
+    Expression<String>? gutTrainingLevels,
+    Expression<String>? componentFoodNames,
+    Expression<String>? componentCarbRatios,
+    Expression<String>? primaryToSecondaryRatio,
+    Expression<String>? allergens,
+    Expression<String>? excludedDiets,
+    Expression<String>? notes,
+    Expression<bool>? isActive,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (templateNumber != null) 'template_number': templateNumber,
+      if (name != null) 'name': name,
+      if (formula != null) 'formula': formula,
+      if (foodForm != null) 'food_form': foodForm,
+      if (activityTypes != null) 'activity_types': activityTypes,
+      if (durationBrackets != null) 'duration_brackets': durationBrackets,
+      if (gutTrainingLevels != null) 'gut_training_levels': gutTrainingLevels,
+      if (componentFoodNames != null)
+        'component_food_names': componentFoodNames,
+      if (componentCarbRatios != null)
+        'component_carb_ratios': componentCarbRatios,
+      if (primaryToSecondaryRatio != null)
+        'primary_to_secondary_ratio': primaryToSecondaryRatio,
+      if (allergens != null) 'allergens': allergens,
+      if (excludedDiets != null) 'excluded_diets': excludedDiets,
+      if (notes != null) 'notes': notes,
+      if (isActive != null) 'is_active': isActive,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DuringWorkoutTemplatesTableCompanion copyWith({
+    Value<String>? id,
+    Value<int>? templateNumber,
+    Value<String>? name,
+    Value<String>? formula,
+    Value<String>? foodForm,
+    Value<String>? activityTypes,
+    Value<String>? durationBrackets,
+    Value<String>? gutTrainingLevels,
+    Value<String>? componentFoodNames,
+    Value<String?>? componentCarbRatios,
+    Value<String?>? primaryToSecondaryRatio,
+    Value<String>? allergens,
+    Value<String>? excludedDiets,
+    Value<String?>? notes,
+    Value<bool>? isActive,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return DuringWorkoutTemplatesTableCompanion(
+      id: id ?? this.id,
+      templateNumber: templateNumber ?? this.templateNumber,
+      name: name ?? this.name,
+      formula: formula ?? this.formula,
+      foodForm: foodForm ?? this.foodForm,
+      activityTypes: activityTypes ?? this.activityTypes,
+      durationBrackets: durationBrackets ?? this.durationBrackets,
+      gutTrainingLevels: gutTrainingLevels ?? this.gutTrainingLevels,
+      componentFoodNames: componentFoodNames ?? this.componentFoodNames,
+      componentCarbRatios: componentCarbRatios ?? this.componentCarbRatios,
+      primaryToSecondaryRatio:
+          primaryToSecondaryRatio ?? this.primaryToSecondaryRatio,
+      allergens: allergens ?? this.allergens,
+      excludedDiets: excludedDiets ?? this.excludedDiets,
+      notes: notes ?? this.notes,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (templateNumber.present) {
+      map['template_number'] = Variable<int>(templateNumber.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (formula.present) {
+      map['formula'] = Variable<String>(formula.value);
+    }
+    if (foodForm.present) {
+      map['food_form'] = Variable<String>(foodForm.value);
+    }
+    if (activityTypes.present) {
+      map['activity_types'] = Variable<String>(activityTypes.value);
+    }
+    if (durationBrackets.present) {
+      map['duration_brackets'] = Variable<String>(durationBrackets.value);
+    }
+    if (gutTrainingLevels.present) {
+      map['gut_training_levels'] = Variable<String>(gutTrainingLevels.value);
+    }
+    if (componentFoodNames.present) {
+      map['component_food_names'] = Variable<String>(componentFoodNames.value);
+    }
+    if (componentCarbRatios.present) {
+      map['component_carb_ratios'] = Variable<String>(
+        componentCarbRatios.value,
+      );
+    }
+    if (primaryToSecondaryRatio.present) {
+      map['primary_to_secondary_ratio'] = Variable<String>(
+        primaryToSecondaryRatio.value,
+      );
+    }
+    if (allergens.present) {
+      map['allergens'] = Variable<String>(allergens.value);
+    }
+    if (excludedDiets.present) {
+      map['excluded_diets'] = Variable<String>(excludedDiets.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DuringWorkoutTemplatesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('templateNumber: $templateNumber, ')
+          ..write('name: $name, ')
+          ..write('formula: $formula, ')
+          ..write('foodForm: $foodForm, ')
+          ..write('activityTypes: $activityTypes, ')
+          ..write('durationBrackets: $durationBrackets, ')
+          ..write('gutTrainingLevels: $gutTrainingLevels, ')
+          ..write('componentFoodNames: $componentFoodNames, ')
+          ..write('componentCarbRatios: $componentCarbRatios, ')
+          ..write('primaryToSecondaryRatio: $primaryToSecondaryRatio, ')
+          ..write('allergens: $allergens, ')
+          ..write('excludedDiets: $excludedDiets, ')
+          ..write('notes: $notes, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PreWorkoutTemplatesTableTable extends PreWorkoutTemplatesTable
+    with TableInfo<$PreWorkoutTemplatesTableTable, PreWorkoutTemplateEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PreWorkoutTemplatesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _baseCategoryMeta = const VerificationMeta(
+    'baseCategory',
+  );
+  @override
+  late final GeneratedColumn<String> baseCategory = GeneratedColumn<String>(
+    'base_category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timeWindowMeta = const VerificationMeta(
+    'timeWindow',
+  );
+  @override
+  late final GeneratedColumn<String> timeWindow = GeneratedColumn<String>(
+    'time_window',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _digestionSpeedMeta = const VerificationMeta(
+    'digestionSpeed',
+  );
+  @override
+  late final GeneratedColumn<String> digestionSpeed = GeneratedColumn<String>(
+    'digestion_speed',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _allergensMeta = const VerificationMeta(
+    'allergens',
+  );
+  @override
+  late final GeneratedColumn<String> allergens = GeneratedColumn<String>(
+    'allergens',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _servingUnitMeta = const VerificationMeta(
+    'servingUnit',
+  );
+  @override
+  late final GeneratedColumn<String> servingUnit = GeneratedColumn<String>(
+    'serving_unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _minServingsMeta = const VerificationMeta(
+    'minServings',
+  );
+  @override
+  late final GeneratedColumn<double> minServings = GeneratedColumn<double>(
+    'min_servings',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _maxServingsMeta = const VerificationMeta(
+    'maxServings',
+  );
+  @override
+  late final GeneratedColumn<double> maxServings = GeneratedColumn<double>(
+    'max_servings',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _plusBananaMeta = const VerificationMeta(
+    'plusBanana',
+  );
+  @override
+  late final GeneratedColumn<bool> plusBanana = GeneratedColumn<bool>(
+    'plus_banana',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("plus_banana" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _plusSportsDrinkMeta = const VerificationMeta(
+    'plusSportsDrink',
+  );
+  @override
+  late final GeneratedColumn<bool> plusSportsDrink = GeneratedColumn<bool>(
+    'plus_sports_drink',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("plus_sports_drink" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _carbsPerServingMeta = const VerificationMeta(
+    'carbsPerServing',
+  );
+  @override
+  late final GeneratedColumn<double> carbsPerServing = GeneratedColumn<double>(
+    'carbs_per_serving',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _proteinPerServingMeta = const VerificationMeta(
+    'proteinPerServing',
+  );
+  @override
+  late final GeneratedColumn<double> proteinPerServing =
+      GeneratedColumn<double>(
+        'protein_per_serving',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _fatPerServingMeta = const VerificationMeta(
+    'fatPerServing',
+  );
+  @override
+  late final GeneratedColumn<double> fatPerServing = GeneratedColumn<double>(
+    'fat_per_serving',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sodiumMgMeta = const VerificationMeta(
+    'sodiumMg',
+  );
+  @override
+  late final GeneratedColumn<double> sodiumMg = GeneratedColumn<double>(
+    'sodium_mg',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fluidMlMeta = const VerificationMeta(
+    'fluidMl',
+  );
+  @override
+  late final GeneratedColumn<double> fluidMl = GeneratedColumn<double>(
+    'fluid_ml',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _templateTypeMeta = const VerificationMeta(
+    'templateType',
+  );
+  @override
+  late final GeneratedColumn<String> templateType = GeneratedColumn<String>(
+    'template_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _componentFoodNamesMeta =
+      const VerificationMeta('componentFoodNames');
+  @override
+  late final GeneratedColumn<String> componentFoodNames =
+      GeneratedColumn<String>(
+        'component_food_names',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  static const VerificationMeta _componentQuantitiesMeta =
+      const VerificationMeta('componentQuantities');
+  @override
+  late final GeneratedColumn<String> componentQuantities =
+      GeneratedColumn<String>(
+        'component_quantities',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _excludedDietsMeta = const VerificationMeta(
+    'excludedDiets',
+  );
+  @override
+  late final GeneratedColumn<String> excludedDiets = GeneratedColumn<String>(
+    'excluded_diets',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    baseCategory,
+    timeWindow,
+    digestionSpeed,
+    allergens,
+    servingUnit,
+    minServings,
+    maxServings,
+    plusBanana,
+    plusSportsDrink,
+    notes,
+    isActive,
+    carbsPerServing,
+    proteinPerServing,
+    fatPerServing,
+    sodiumMg,
+    fluidMl,
+    templateType,
+    componentFoodNames,
+    componentQuantities,
+    excludedDiets,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pre_workout_templates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PreWorkoutTemplateEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('base_category')) {
+      context.handle(
+        _baseCategoryMeta,
+        baseCategory.isAcceptableOrUnknown(
+          data['base_category']!,
+          _baseCategoryMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_baseCategoryMeta);
+    }
+    if (data.containsKey('time_window')) {
+      context.handle(
+        _timeWindowMeta,
+        timeWindow.isAcceptableOrUnknown(data['time_window']!, _timeWindowMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timeWindowMeta);
+    }
+    if (data.containsKey('digestion_speed')) {
+      context.handle(
+        _digestionSpeedMeta,
+        digestionSpeed.isAcceptableOrUnknown(
+          data['digestion_speed']!,
+          _digestionSpeedMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_digestionSpeedMeta);
+    }
+    if (data.containsKey('allergens')) {
+      context.handle(
+        _allergensMeta,
+        allergens.isAcceptableOrUnknown(data['allergens']!, _allergensMeta),
+      );
+    }
+    if (data.containsKey('serving_unit')) {
+      context.handle(
+        _servingUnitMeta,
+        servingUnit.isAcceptableOrUnknown(
+          data['serving_unit']!,
+          _servingUnitMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_servingUnitMeta);
+    }
+    if (data.containsKey('min_servings')) {
+      context.handle(
+        _minServingsMeta,
+        minServings.isAcceptableOrUnknown(
+          data['min_servings']!,
+          _minServingsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_minServingsMeta);
+    }
+    if (data.containsKey('max_servings')) {
+      context.handle(
+        _maxServingsMeta,
+        maxServings.isAcceptableOrUnknown(
+          data['max_servings']!,
+          _maxServingsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_maxServingsMeta);
+    }
+    if (data.containsKey('plus_banana')) {
+      context.handle(
+        _plusBananaMeta,
+        plusBanana.isAcceptableOrUnknown(data['plus_banana']!, _plusBananaMeta),
+      );
+    }
+    if (data.containsKey('plus_sports_drink')) {
+      context.handle(
+        _plusSportsDrinkMeta,
+        plusSportsDrink.isAcceptableOrUnknown(
+          data['plus_sports_drink']!,
+          _plusSportsDrinkMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('carbs_per_serving')) {
+      context.handle(
+        _carbsPerServingMeta,
+        carbsPerServing.isAcceptableOrUnknown(
+          data['carbs_per_serving']!,
+          _carbsPerServingMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_carbsPerServingMeta);
+    }
+    if (data.containsKey('protein_per_serving')) {
+      context.handle(
+        _proteinPerServingMeta,
+        proteinPerServing.isAcceptableOrUnknown(
+          data['protein_per_serving']!,
+          _proteinPerServingMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_proteinPerServingMeta);
+    }
+    if (data.containsKey('fat_per_serving')) {
+      context.handle(
+        _fatPerServingMeta,
+        fatPerServing.isAcceptableOrUnknown(
+          data['fat_per_serving']!,
+          _fatPerServingMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fatPerServingMeta);
+    }
+    if (data.containsKey('sodium_mg')) {
+      context.handle(
+        _sodiumMgMeta,
+        sodiumMg.isAcceptableOrUnknown(data['sodium_mg']!, _sodiumMgMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sodiumMgMeta);
+    }
+    if (data.containsKey('fluid_ml')) {
+      context.handle(
+        _fluidMlMeta,
+        fluidMl.isAcceptableOrUnknown(data['fluid_ml']!, _fluidMlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fluidMlMeta);
+    }
+    if (data.containsKey('template_type')) {
+      context.handle(
+        _templateTypeMeta,
+        templateType.isAcceptableOrUnknown(
+          data['template_type']!,
+          _templateTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_templateTypeMeta);
+    }
+    if (data.containsKey('component_food_names')) {
+      context.handle(
+        _componentFoodNamesMeta,
+        componentFoodNames.isAcceptableOrUnknown(
+          data['component_food_names']!,
+          _componentFoodNamesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('component_quantities')) {
+      context.handle(
+        _componentQuantitiesMeta,
+        componentQuantities.isAcceptableOrUnknown(
+          data['component_quantities']!,
+          _componentQuantitiesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('excluded_diets')) {
+      context.handle(
+        _excludedDietsMeta,
+        excludedDiets.isAcceptableOrUnknown(
+          data['excluded_diets']!,
+          _excludedDietsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PreWorkoutTemplateEntry map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PreWorkoutTemplateEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      baseCategory: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}base_category'],
+      )!,
+      timeWindow: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}time_window'],
+      )!,
+      digestionSpeed: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}digestion_speed'],
+      )!,
+      allergens: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}allergens'],
+      )!,
+      servingUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serving_unit'],
+      )!,
+      minServings: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}min_servings'],
+      )!,
+      maxServings: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}max_servings'],
+      )!,
+      plusBanana: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}plus_banana'],
+      )!,
+      plusSportsDrink: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}plus_sports_drink'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      carbsPerServing: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}carbs_per_serving'],
+      )!,
+      proteinPerServing: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}protein_per_serving'],
+      )!,
+      fatPerServing: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fat_per_serving'],
+      )!,
+      sodiumMg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sodium_mg'],
+      )!,
+      fluidMl: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fluid_ml'],
+      )!,
+      templateType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}template_type'],
+      )!,
+      componentFoodNames: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}component_food_names'],
+      )!,
+      componentQuantities: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}component_quantities'],
+      ),
+      excludedDiets: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}excluded_diets'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PreWorkoutTemplatesTableTable createAlias(String alias) {
+    return $PreWorkoutTemplatesTableTable(attachedDatabase, alias);
+  }
+}
+
+class PreWorkoutTemplateEntry extends DataClass
+    implements Insertable<PreWorkoutTemplateEntry> {
+  final String id;
+  final String name;
+
+  /// e.g. 'Bagel', 'Oats / Granola', 'Hydration'.
+  final String baseCategory;
+
+  /// Timing label, e.g. '< 30 min', '30-90 min', '1.5-3 hours'.
+  final String timeWindow;
+
+  /// Digestion speed bucket as stored in Supabase, e.g. 'Fast', 'Medium'.
+  final String digestionSpeed;
+
+  /// JSON array of allergens, e.g. `["gluten", "dairy"]`.
+  final String allergens;
+  final String servingUnit;
+  final double minServings;
+  final double maxServings;
+  final bool plusBanana;
+  final bool plusSportsDrink;
+  final String? notes;
+  final bool isActive;
+  final double carbsPerServing;
+  final double proteinPerServing;
+  final double fatPerServing;
+  final double sodiumMg;
+  final double fluidMl;
+
+  /// e.g. 'food', 'drink', 'electrolyte'.
+  final String templateType;
+
+  /// JSON array of component food names referenced by this template.
+  final String componentFoodNames;
+
+  /// JSON object mapping component name → quantity. Stored verbatim.
+  final String? componentQuantities;
+
+  /// JSON array of diets that should exclude this template.
+  final String excludedDiets;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const PreWorkoutTemplateEntry({
+    required this.id,
+    required this.name,
+    required this.baseCategory,
+    required this.timeWindow,
+    required this.digestionSpeed,
+    required this.allergens,
+    required this.servingUnit,
+    required this.minServings,
+    required this.maxServings,
+    required this.plusBanana,
+    required this.plusSportsDrink,
+    this.notes,
+    required this.isActive,
+    required this.carbsPerServing,
+    required this.proteinPerServing,
+    required this.fatPerServing,
+    required this.sodiumMg,
+    required this.fluidMl,
+    required this.templateType,
+    required this.componentFoodNames,
+    this.componentQuantities,
+    required this.excludedDiets,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['base_category'] = Variable<String>(baseCategory);
+    map['time_window'] = Variable<String>(timeWindow);
+    map['digestion_speed'] = Variable<String>(digestionSpeed);
+    map['allergens'] = Variable<String>(allergens);
+    map['serving_unit'] = Variable<String>(servingUnit);
+    map['min_servings'] = Variable<double>(minServings);
+    map['max_servings'] = Variable<double>(maxServings);
+    map['plus_banana'] = Variable<bool>(plusBanana);
+    map['plus_sports_drink'] = Variable<bool>(plusSportsDrink);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['is_active'] = Variable<bool>(isActive);
+    map['carbs_per_serving'] = Variable<double>(carbsPerServing);
+    map['protein_per_serving'] = Variable<double>(proteinPerServing);
+    map['fat_per_serving'] = Variable<double>(fatPerServing);
+    map['sodium_mg'] = Variable<double>(sodiumMg);
+    map['fluid_ml'] = Variable<double>(fluidMl);
+    map['template_type'] = Variable<String>(templateType);
+    map['component_food_names'] = Variable<String>(componentFoodNames);
+    if (!nullToAbsent || componentQuantities != null) {
+      map['component_quantities'] = Variable<String>(componentQuantities);
+    }
+    map['excluded_diets'] = Variable<String>(excludedDiets);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PreWorkoutTemplatesTableCompanion toCompanion(bool nullToAbsent) {
+    return PreWorkoutTemplatesTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      baseCategory: Value(baseCategory),
+      timeWindow: Value(timeWindow),
+      digestionSpeed: Value(digestionSpeed),
+      allergens: Value(allergens),
+      servingUnit: Value(servingUnit),
+      minServings: Value(minServings),
+      maxServings: Value(maxServings),
+      plusBanana: Value(plusBanana),
+      plusSportsDrink: Value(plusSportsDrink),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      isActive: Value(isActive),
+      carbsPerServing: Value(carbsPerServing),
+      proteinPerServing: Value(proteinPerServing),
+      fatPerServing: Value(fatPerServing),
+      sodiumMg: Value(sodiumMg),
+      fluidMl: Value(fluidMl),
+      templateType: Value(templateType),
+      componentFoodNames: Value(componentFoodNames),
+      componentQuantities: componentQuantities == null && nullToAbsent
+          ? const Value.absent()
+          : Value(componentQuantities),
+      excludedDiets: Value(excludedDiets),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PreWorkoutTemplateEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PreWorkoutTemplateEntry(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      baseCategory: serializer.fromJson<String>(json['baseCategory']),
+      timeWindow: serializer.fromJson<String>(json['timeWindow']),
+      digestionSpeed: serializer.fromJson<String>(json['digestionSpeed']),
+      allergens: serializer.fromJson<String>(json['allergens']),
+      servingUnit: serializer.fromJson<String>(json['servingUnit']),
+      minServings: serializer.fromJson<double>(json['minServings']),
+      maxServings: serializer.fromJson<double>(json['maxServings']),
+      plusBanana: serializer.fromJson<bool>(json['plusBanana']),
+      plusSportsDrink: serializer.fromJson<bool>(json['plusSportsDrink']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      carbsPerServing: serializer.fromJson<double>(json['carbsPerServing']),
+      proteinPerServing: serializer.fromJson<double>(json['proteinPerServing']),
+      fatPerServing: serializer.fromJson<double>(json['fatPerServing']),
+      sodiumMg: serializer.fromJson<double>(json['sodiumMg']),
+      fluidMl: serializer.fromJson<double>(json['fluidMl']),
+      templateType: serializer.fromJson<String>(json['templateType']),
+      componentFoodNames: serializer.fromJson<String>(
+        json['componentFoodNames'],
+      ),
+      componentQuantities: serializer.fromJson<String?>(
+        json['componentQuantities'],
+      ),
+      excludedDiets: serializer.fromJson<String>(json['excludedDiets']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'baseCategory': serializer.toJson<String>(baseCategory),
+      'timeWindow': serializer.toJson<String>(timeWindow),
+      'digestionSpeed': serializer.toJson<String>(digestionSpeed),
+      'allergens': serializer.toJson<String>(allergens),
+      'servingUnit': serializer.toJson<String>(servingUnit),
+      'minServings': serializer.toJson<double>(minServings),
+      'maxServings': serializer.toJson<double>(maxServings),
+      'plusBanana': serializer.toJson<bool>(plusBanana),
+      'plusSportsDrink': serializer.toJson<bool>(plusSportsDrink),
+      'notes': serializer.toJson<String?>(notes),
+      'isActive': serializer.toJson<bool>(isActive),
+      'carbsPerServing': serializer.toJson<double>(carbsPerServing),
+      'proteinPerServing': serializer.toJson<double>(proteinPerServing),
+      'fatPerServing': serializer.toJson<double>(fatPerServing),
+      'sodiumMg': serializer.toJson<double>(sodiumMg),
+      'fluidMl': serializer.toJson<double>(fluidMl),
+      'templateType': serializer.toJson<String>(templateType),
+      'componentFoodNames': serializer.toJson<String>(componentFoodNames),
+      'componentQuantities': serializer.toJson<String?>(componentQuantities),
+      'excludedDiets': serializer.toJson<String>(excludedDiets),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PreWorkoutTemplateEntry copyWith({
+    String? id,
+    String? name,
+    String? baseCategory,
+    String? timeWindow,
+    String? digestionSpeed,
+    String? allergens,
+    String? servingUnit,
+    double? minServings,
+    double? maxServings,
+    bool? plusBanana,
+    bool? plusSportsDrink,
+    Value<String?> notes = const Value.absent(),
+    bool? isActive,
+    double? carbsPerServing,
+    double? proteinPerServing,
+    double? fatPerServing,
+    double? sodiumMg,
+    double? fluidMl,
+    String? templateType,
+    String? componentFoodNames,
+    Value<String?> componentQuantities = const Value.absent(),
+    String? excludedDiets,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => PreWorkoutTemplateEntry(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    baseCategory: baseCategory ?? this.baseCategory,
+    timeWindow: timeWindow ?? this.timeWindow,
+    digestionSpeed: digestionSpeed ?? this.digestionSpeed,
+    allergens: allergens ?? this.allergens,
+    servingUnit: servingUnit ?? this.servingUnit,
+    minServings: minServings ?? this.minServings,
+    maxServings: maxServings ?? this.maxServings,
+    plusBanana: plusBanana ?? this.plusBanana,
+    plusSportsDrink: plusSportsDrink ?? this.plusSportsDrink,
+    notes: notes.present ? notes.value : this.notes,
+    isActive: isActive ?? this.isActive,
+    carbsPerServing: carbsPerServing ?? this.carbsPerServing,
+    proteinPerServing: proteinPerServing ?? this.proteinPerServing,
+    fatPerServing: fatPerServing ?? this.fatPerServing,
+    sodiumMg: sodiumMg ?? this.sodiumMg,
+    fluidMl: fluidMl ?? this.fluidMl,
+    templateType: templateType ?? this.templateType,
+    componentFoodNames: componentFoodNames ?? this.componentFoodNames,
+    componentQuantities: componentQuantities.present
+        ? componentQuantities.value
+        : this.componentQuantities,
+    excludedDiets: excludedDiets ?? this.excludedDiets,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  PreWorkoutTemplateEntry copyWithCompanion(
+    PreWorkoutTemplatesTableCompanion data,
+  ) {
+    return PreWorkoutTemplateEntry(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      baseCategory: data.baseCategory.present
+          ? data.baseCategory.value
+          : this.baseCategory,
+      timeWindow: data.timeWindow.present
+          ? data.timeWindow.value
+          : this.timeWindow,
+      digestionSpeed: data.digestionSpeed.present
+          ? data.digestionSpeed.value
+          : this.digestionSpeed,
+      allergens: data.allergens.present ? data.allergens.value : this.allergens,
+      servingUnit: data.servingUnit.present
+          ? data.servingUnit.value
+          : this.servingUnit,
+      minServings: data.minServings.present
+          ? data.minServings.value
+          : this.minServings,
+      maxServings: data.maxServings.present
+          ? data.maxServings.value
+          : this.maxServings,
+      plusBanana: data.plusBanana.present
+          ? data.plusBanana.value
+          : this.plusBanana,
+      plusSportsDrink: data.plusSportsDrink.present
+          ? data.plusSportsDrink.value
+          : this.plusSportsDrink,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      carbsPerServing: data.carbsPerServing.present
+          ? data.carbsPerServing.value
+          : this.carbsPerServing,
+      proteinPerServing: data.proteinPerServing.present
+          ? data.proteinPerServing.value
+          : this.proteinPerServing,
+      fatPerServing: data.fatPerServing.present
+          ? data.fatPerServing.value
+          : this.fatPerServing,
+      sodiumMg: data.sodiumMg.present ? data.sodiumMg.value : this.sodiumMg,
+      fluidMl: data.fluidMl.present ? data.fluidMl.value : this.fluidMl,
+      templateType: data.templateType.present
+          ? data.templateType.value
+          : this.templateType,
+      componentFoodNames: data.componentFoodNames.present
+          ? data.componentFoodNames.value
+          : this.componentFoodNames,
+      componentQuantities: data.componentQuantities.present
+          ? data.componentQuantities.value
+          : this.componentQuantities,
+      excludedDiets: data.excludedDiets.present
+          ? data.excludedDiets.value
+          : this.excludedDiets,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PreWorkoutTemplateEntry(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('baseCategory: $baseCategory, ')
+          ..write('timeWindow: $timeWindow, ')
+          ..write('digestionSpeed: $digestionSpeed, ')
+          ..write('allergens: $allergens, ')
+          ..write('servingUnit: $servingUnit, ')
+          ..write('minServings: $minServings, ')
+          ..write('maxServings: $maxServings, ')
+          ..write('plusBanana: $plusBanana, ')
+          ..write('plusSportsDrink: $plusSportsDrink, ')
+          ..write('notes: $notes, ')
+          ..write('isActive: $isActive, ')
+          ..write('carbsPerServing: $carbsPerServing, ')
+          ..write('proteinPerServing: $proteinPerServing, ')
+          ..write('fatPerServing: $fatPerServing, ')
+          ..write('sodiumMg: $sodiumMg, ')
+          ..write('fluidMl: $fluidMl, ')
+          ..write('templateType: $templateType, ')
+          ..write('componentFoodNames: $componentFoodNames, ')
+          ..write('componentQuantities: $componentQuantities, ')
+          ..write('excludedDiets: $excludedDiets, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    name,
+    baseCategory,
+    timeWindow,
+    digestionSpeed,
+    allergens,
+    servingUnit,
+    minServings,
+    maxServings,
+    plusBanana,
+    plusSportsDrink,
+    notes,
+    isActive,
+    carbsPerServing,
+    proteinPerServing,
+    fatPerServing,
+    sodiumMg,
+    fluidMl,
+    templateType,
+    componentFoodNames,
+    componentQuantities,
+    excludedDiets,
+    createdAt,
+    updatedAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PreWorkoutTemplateEntry &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.baseCategory == this.baseCategory &&
+          other.timeWindow == this.timeWindow &&
+          other.digestionSpeed == this.digestionSpeed &&
+          other.allergens == this.allergens &&
+          other.servingUnit == this.servingUnit &&
+          other.minServings == this.minServings &&
+          other.maxServings == this.maxServings &&
+          other.plusBanana == this.plusBanana &&
+          other.plusSportsDrink == this.plusSportsDrink &&
+          other.notes == this.notes &&
+          other.isActive == this.isActive &&
+          other.carbsPerServing == this.carbsPerServing &&
+          other.proteinPerServing == this.proteinPerServing &&
+          other.fatPerServing == this.fatPerServing &&
+          other.sodiumMg == this.sodiumMg &&
+          other.fluidMl == this.fluidMl &&
+          other.templateType == this.templateType &&
+          other.componentFoodNames == this.componentFoodNames &&
+          other.componentQuantities == this.componentQuantities &&
+          other.excludedDiets == this.excludedDiets &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PreWorkoutTemplatesTableCompanion
+    extends UpdateCompanion<PreWorkoutTemplateEntry> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String> baseCategory;
+  final Value<String> timeWindow;
+  final Value<String> digestionSpeed;
+  final Value<String> allergens;
+  final Value<String> servingUnit;
+  final Value<double> minServings;
+  final Value<double> maxServings;
+  final Value<bool> plusBanana;
+  final Value<bool> plusSportsDrink;
+  final Value<String?> notes;
+  final Value<bool> isActive;
+  final Value<double> carbsPerServing;
+  final Value<double> proteinPerServing;
+  final Value<double> fatPerServing;
+  final Value<double> sodiumMg;
+  final Value<double> fluidMl;
+  final Value<String> templateType;
+  final Value<String> componentFoodNames;
+  final Value<String?> componentQuantities;
+  final Value<String> excludedDiets;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PreWorkoutTemplatesTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.baseCategory = const Value.absent(),
+    this.timeWindow = const Value.absent(),
+    this.digestionSpeed = const Value.absent(),
+    this.allergens = const Value.absent(),
+    this.servingUnit = const Value.absent(),
+    this.minServings = const Value.absent(),
+    this.maxServings = const Value.absent(),
+    this.plusBanana = const Value.absent(),
+    this.plusSportsDrink = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.carbsPerServing = const Value.absent(),
+    this.proteinPerServing = const Value.absent(),
+    this.fatPerServing = const Value.absent(),
+    this.sodiumMg = const Value.absent(),
+    this.fluidMl = const Value.absent(),
+    this.templateType = const Value.absent(),
+    this.componentFoodNames = const Value.absent(),
+    this.componentQuantities = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PreWorkoutTemplatesTableCompanion.insert({
+    required String id,
+    required String name,
+    required String baseCategory,
+    required String timeWindow,
+    required String digestionSpeed,
+    this.allergens = const Value.absent(),
+    required String servingUnit,
+    required double minServings,
+    required double maxServings,
+    this.plusBanana = const Value.absent(),
+    this.plusSportsDrink = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.isActive = const Value.absent(),
+    required double carbsPerServing,
+    required double proteinPerServing,
+    required double fatPerServing,
+    required double sodiumMg,
+    required double fluidMl,
+    required String templateType,
+    this.componentFoodNames = const Value.absent(),
+    this.componentQuantities = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       baseCategory = Value(baseCategory),
+       timeWindow = Value(timeWindow),
+       digestionSpeed = Value(digestionSpeed),
+       servingUnit = Value(servingUnit),
+       minServings = Value(minServings),
+       maxServings = Value(maxServings),
+       carbsPerServing = Value(carbsPerServing),
+       proteinPerServing = Value(proteinPerServing),
+       fatPerServing = Value(fatPerServing),
+       sodiumMg = Value(sodiumMg),
+       fluidMl = Value(fluidMl),
+       templateType = Value(templateType);
+  static Insertable<PreWorkoutTemplateEntry> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? baseCategory,
+    Expression<String>? timeWindow,
+    Expression<String>? digestionSpeed,
+    Expression<String>? allergens,
+    Expression<String>? servingUnit,
+    Expression<double>? minServings,
+    Expression<double>? maxServings,
+    Expression<bool>? plusBanana,
+    Expression<bool>? plusSportsDrink,
+    Expression<String>? notes,
+    Expression<bool>? isActive,
+    Expression<double>? carbsPerServing,
+    Expression<double>? proteinPerServing,
+    Expression<double>? fatPerServing,
+    Expression<double>? sodiumMg,
+    Expression<double>? fluidMl,
+    Expression<String>? templateType,
+    Expression<String>? componentFoodNames,
+    Expression<String>? componentQuantities,
+    Expression<String>? excludedDiets,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (baseCategory != null) 'base_category': baseCategory,
+      if (timeWindow != null) 'time_window': timeWindow,
+      if (digestionSpeed != null) 'digestion_speed': digestionSpeed,
+      if (allergens != null) 'allergens': allergens,
+      if (servingUnit != null) 'serving_unit': servingUnit,
+      if (minServings != null) 'min_servings': minServings,
+      if (maxServings != null) 'max_servings': maxServings,
+      if (plusBanana != null) 'plus_banana': plusBanana,
+      if (plusSportsDrink != null) 'plus_sports_drink': plusSportsDrink,
+      if (notes != null) 'notes': notes,
+      if (isActive != null) 'is_active': isActive,
+      if (carbsPerServing != null) 'carbs_per_serving': carbsPerServing,
+      if (proteinPerServing != null) 'protein_per_serving': proteinPerServing,
+      if (fatPerServing != null) 'fat_per_serving': fatPerServing,
+      if (sodiumMg != null) 'sodium_mg': sodiumMg,
+      if (fluidMl != null) 'fluid_ml': fluidMl,
+      if (templateType != null) 'template_type': templateType,
+      if (componentFoodNames != null)
+        'component_food_names': componentFoodNames,
+      if (componentQuantities != null)
+        'component_quantities': componentQuantities,
+      if (excludedDiets != null) 'excluded_diets': excludedDiets,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PreWorkoutTemplatesTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String>? baseCategory,
+    Value<String>? timeWindow,
+    Value<String>? digestionSpeed,
+    Value<String>? allergens,
+    Value<String>? servingUnit,
+    Value<double>? minServings,
+    Value<double>? maxServings,
+    Value<bool>? plusBanana,
+    Value<bool>? plusSportsDrink,
+    Value<String?>? notes,
+    Value<bool>? isActive,
+    Value<double>? carbsPerServing,
+    Value<double>? proteinPerServing,
+    Value<double>? fatPerServing,
+    Value<double>? sodiumMg,
+    Value<double>? fluidMl,
+    Value<String>? templateType,
+    Value<String>? componentFoodNames,
+    Value<String?>? componentQuantities,
+    Value<String>? excludedDiets,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return PreWorkoutTemplatesTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      baseCategory: baseCategory ?? this.baseCategory,
+      timeWindow: timeWindow ?? this.timeWindow,
+      digestionSpeed: digestionSpeed ?? this.digestionSpeed,
+      allergens: allergens ?? this.allergens,
+      servingUnit: servingUnit ?? this.servingUnit,
+      minServings: minServings ?? this.minServings,
+      maxServings: maxServings ?? this.maxServings,
+      plusBanana: plusBanana ?? this.plusBanana,
+      plusSportsDrink: plusSportsDrink ?? this.plusSportsDrink,
+      notes: notes ?? this.notes,
+      isActive: isActive ?? this.isActive,
+      carbsPerServing: carbsPerServing ?? this.carbsPerServing,
+      proteinPerServing: proteinPerServing ?? this.proteinPerServing,
+      fatPerServing: fatPerServing ?? this.fatPerServing,
+      sodiumMg: sodiumMg ?? this.sodiumMg,
+      fluidMl: fluidMl ?? this.fluidMl,
+      templateType: templateType ?? this.templateType,
+      componentFoodNames: componentFoodNames ?? this.componentFoodNames,
+      componentQuantities: componentQuantities ?? this.componentQuantities,
+      excludedDiets: excludedDiets ?? this.excludedDiets,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (baseCategory.present) {
+      map['base_category'] = Variable<String>(baseCategory.value);
+    }
+    if (timeWindow.present) {
+      map['time_window'] = Variable<String>(timeWindow.value);
+    }
+    if (digestionSpeed.present) {
+      map['digestion_speed'] = Variable<String>(digestionSpeed.value);
+    }
+    if (allergens.present) {
+      map['allergens'] = Variable<String>(allergens.value);
+    }
+    if (servingUnit.present) {
+      map['serving_unit'] = Variable<String>(servingUnit.value);
+    }
+    if (minServings.present) {
+      map['min_servings'] = Variable<double>(minServings.value);
+    }
+    if (maxServings.present) {
+      map['max_servings'] = Variable<double>(maxServings.value);
+    }
+    if (plusBanana.present) {
+      map['plus_banana'] = Variable<bool>(plusBanana.value);
+    }
+    if (plusSportsDrink.present) {
+      map['plus_sports_drink'] = Variable<bool>(plusSportsDrink.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (carbsPerServing.present) {
+      map['carbs_per_serving'] = Variable<double>(carbsPerServing.value);
+    }
+    if (proteinPerServing.present) {
+      map['protein_per_serving'] = Variable<double>(proteinPerServing.value);
+    }
+    if (fatPerServing.present) {
+      map['fat_per_serving'] = Variable<double>(fatPerServing.value);
+    }
+    if (sodiumMg.present) {
+      map['sodium_mg'] = Variable<double>(sodiumMg.value);
+    }
+    if (fluidMl.present) {
+      map['fluid_ml'] = Variable<double>(fluidMl.value);
+    }
+    if (templateType.present) {
+      map['template_type'] = Variable<String>(templateType.value);
+    }
+    if (componentFoodNames.present) {
+      map['component_food_names'] = Variable<String>(componentFoodNames.value);
+    }
+    if (componentQuantities.present) {
+      map['component_quantities'] = Variable<String>(componentQuantities.value);
+    }
+    if (excludedDiets.present) {
+      map['excluded_diets'] = Variable<String>(excludedDiets.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PreWorkoutTemplatesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('baseCategory: $baseCategory, ')
+          ..write('timeWindow: $timeWindow, ')
+          ..write('digestionSpeed: $digestionSpeed, ')
+          ..write('allergens: $allergens, ')
+          ..write('servingUnit: $servingUnit, ')
+          ..write('minServings: $minServings, ')
+          ..write('maxServings: $maxServings, ')
+          ..write('plusBanana: $plusBanana, ')
+          ..write('plusSportsDrink: $plusSportsDrink, ')
+          ..write('notes: $notes, ')
+          ..write('isActive: $isActive, ')
+          ..write('carbsPerServing: $carbsPerServing, ')
+          ..write('proteinPerServing: $proteinPerServing, ')
+          ..write('fatPerServing: $fatPerServing, ')
+          ..write('sodiumMg: $sodiumMg, ')
+          ..write('fluidMl: $fluidMl, ')
+          ..write('templateType: $templateType, ')
+          ..write('componentFoodNames: $componentFoodNames, ')
+          ..write('componentQuantities: $componentQuantities, ')
+          ..write('excludedDiets: $excludedDiets, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TpWritebackTableTable extends TpWritebackTable
     with TableInfo<$TpWritebackTableTable, TpWritebackEntry> {
   @override
@@ -29522,6 +31926,591 @@ class PersonalTemplatesTableCompanion
           ..write('brickSegmentOrder: $brickSegmentOrder, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $FormulaPinsTableTable extends FormulaPinsTable
+    with TableInfo<$FormulaPinsTableTable, FormulaPinEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FormulaPinsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _templateIdMeta = const VerificationMeta(
+    'templateId',
+  );
+  @override
+  late final GeneratedColumn<String> templateId = GeneratedColumn<String>(
+    'template_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _templateKindMeta = const VerificationMeta(
+    'templateKind',
+  );
+  @override
+  late final GeneratedColumn<String> templateKind = GeneratedColumn<String>(
+    'template_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    templateId,
+    templateKind,
+    createdAt,
+    updatedAt,
+    isDeleted,
+    needsUpload,
+    localUpdatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'formula_pins';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FormulaPinEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('template_id')) {
+      context.handle(
+        _templateIdMeta,
+        templateId.isAcceptableOrUnknown(data['template_id']!, _templateIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_templateIdMeta);
+    }
+    if (data.containsKey('template_kind')) {
+      context.handle(
+        _templateKindMeta,
+        templateKind.isAcceptableOrUnknown(
+          data['template_kind']!,
+          _templateKindMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_templateKindMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FormulaPinEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FormulaPinEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      templateId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}template_id'],
+      )!,
+      templateKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}template_kind'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
+    );
+  }
+
+  @override
+  $FormulaPinsTableTable createAlias(String alias) {
+    return $FormulaPinsTableTable(attachedDatabase, alias);
+  }
+}
+
+class FormulaPinEntry extends DataClass implements Insertable<FormulaPinEntry> {
+  final String id;
+  final String userId;
+  final String templateId;
+
+  /// Polymorphic ref: 'pre_system' | 'during_system'.
+  /// PR 4 adds 'personal_template' when personal formulas become pinnable.
+  final String templateKind;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isDeleted;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
+  const FormulaPinEntry({
+    required this.id,
+    required this.userId,
+    required this.templateId,
+    required this.templateKind,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.isDeleted,
+    this.needsUpload,
+    this.localUpdatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['template_id'] = Variable<String>(templateId);
+    map['template_kind'] = Variable<String>(templateKind);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
+    return map;
+  }
+
+  FormulaPinsTableCompanion toCompanion(bool nullToAbsent) {
+    return FormulaPinsTableCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      templateId: Value(templateId),
+      templateKind: Value(templateKind),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      isDeleted: Value(isDeleted),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
+    );
+  }
+
+  factory FormulaPinEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FormulaPinEntry(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      templateId: serializer.fromJson<String>(json['templateId']),
+      templateKind: serializer.fromJson<String>(json['templateKind']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'templateId': serializer.toJson<String>(templateId),
+      'templateKind': serializer.toJson<String>(templateKind),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+    };
+  }
+
+  FormulaPinEntry copyWith({
+    String? id,
+    String? userId,
+    String? templateId,
+    String? templateKind,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? isDeleted,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
+  }) => FormulaPinEntry(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    templateId: templateId ?? this.templateId,
+    templateKind: templateKind ?? this.templateKind,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    isDeleted: isDeleted ?? this.isDeleted,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
+  );
+  FormulaPinEntry copyWithCompanion(FormulaPinsTableCompanion data) {
+    return FormulaPinEntry(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      templateId: data.templateId.present
+          ? data.templateId.value
+          : this.templateId,
+      templateKind: data.templateKind.present
+          ? data.templateKind.value
+          : this.templateKind,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FormulaPinEntry(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('templateId: $templateId, ')
+          ..write('templateKind: $templateKind, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    templateId,
+    templateKind,
+    createdAt,
+    updatedAt,
+    isDeleted,
+    needsUpload,
+    localUpdatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FormulaPinEntry &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.templateId == this.templateId &&
+          other.templateKind == this.templateKind &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.isDeleted == this.isDeleted &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
+}
+
+class FormulaPinsTableCompanion extends UpdateCompanion<FormulaPinEntry> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> templateId;
+  final Value<String> templateKind;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> isDeleted;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
+  final Value<int> rowid;
+  const FormulaPinsTableCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.templateId = const Value.absent(),
+    this.templateKind = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  FormulaPinsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String userId,
+    required String templateId,
+    required String templateKind,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.isDeleted = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       templateId = Value(templateId),
+       templateKind = Value(templateKind),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<FormulaPinEntry> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? templateId,
+    Expression<String>? templateKind,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? isDeleted,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (templateId != null) 'template_id': templateId,
+      if (templateKind != null) 'template_kind': templateKind,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  FormulaPinsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<String>? templateId,
+    Value<String>? templateKind,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<bool>? isDeleted,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
+    Value<int>? rowid,
+  }) {
+    return FormulaPinsTableCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      templateId: templateId ?? this.templateId,
+      templateKind: templateKind ?? this.templateKind,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (templateId.present) {
+      map['template_id'] = Variable<String>(templateId.value);
+    }
+    if (templateKind.present) {
+      map['template_kind'] = Variable<String>(templateKind.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FormulaPinsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('templateId: $templateId, ')
+          ..write('templateKind: $templateKind, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isDeleted: $isDeleted, ')
           ..write('needsUpload: $needsUpload, ')
           ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('rowid: $rowid')
@@ -31590,11 +34579,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TemplateFoodsTableTable templateFoodsTable =
       $TemplateFoodsTableTable(this);
   late final $TemplatesTableTable templatesTable = $TemplatesTableTable(this);
+  late final $DuringWorkoutTemplatesTableTable duringWorkoutTemplatesTable =
+      $DuringWorkoutTemplatesTableTable(this);
+  late final $PreWorkoutTemplatesTableTable preWorkoutTemplatesTable =
+      $PreWorkoutTemplatesTableTable(this);
   late final $TpWritebackTableTable tpWritebackTable = $TpWritebackTableTable(
     this,
   );
   late final $PersonalTemplatesTableTable personalTemplatesTable =
       $PersonalTemplatesTableTable(this);
+  late final $FormulaPinsTableTable formulaPinsTable = $FormulaPinsTableTable(
+    this,
+  );
   late final $AthletePairingCodesTableTable athletePairingCodesTable =
       $AthletePairingCodesTableTable(this);
   late final $CoachPairingCodesTableTable coachPairingCodesTable =
@@ -31636,8 +34632,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     coachMessagesTable,
     templateFoodsTable,
     templatesTable,
+    duringWorkoutTemplatesTable,
+    preWorkoutTemplatesTable,
     tpWritebackTable,
     personalTemplatesTable,
+    formulaPinsTable,
     athletePairingCodesTable,
     coachPairingCodesTable,
     dailyMacroTargetsTable,
@@ -43723,6 +46722,1079 @@ typedef $$TemplatesTableTableProcessedTableManager =
       TemplateEntry,
       PrefetchHooks Function()
     >;
+typedef $$DuringWorkoutTemplatesTableTableCreateCompanionBuilder =
+    DuringWorkoutTemplatesTableCompanion Function({
+      required String id,
+      required int templateNumber,
+      required String name,
+      required String formula,
+      required String foodForm,
+      Value<String> activityTypes,
+      Value<String> durationBrackets,
+      Value<String> gutTrainingLevels,
+      Value<String> componentFoodNames,
+      Value<String?> componentCarbRatios,
+      Value<String?> primaryToSecondaryRatio,
+      Value<String> allergens,
+      Value<String> excludedDiets,
+      Value<String?> notes,
+      Value<bool> isActive,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$DuringWorkoutTemplatesTableTableUpdateCompanionBuilder =
+    DuringWorkoutTemplatesTableCompanion Function({
+      Value<String> id,
+      Value<int> templateNumber,
+      Value<String> name,
+      Value<String> formula,
+      Value<String> foodForm,
+      Value<String> activityTypes,
+      Value<String> durationBrackets,
+      Value<String> gutTrainingLevels,
+      Value<String> componentFoodNames,
+      Value<String?> componentCarbRatios,
+      Value<String?> primaryToSecondaryRatio,
+      Value<String> allergens,
+      Value<String> excludedDiets,
+      Value<String?> notes,
+      Value<bool> isActive,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$DuringWorkoutTemplatesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $DuringWorkoutTemplatesTableTable> {
+  $$DuringWorkoutTemplatesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get templateNumber => $composableBuilder(
+    column: $table.templateNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get formula => $composableBuilder(
+    column: $table.formula,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get foodForm => $composableBuilder(
+    column: $table.foodForm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activityTypes => $composableBuilder(
+    column: $table.activityTypes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get durationBrackets => $composableBuilder(
+    column: $table.durationBrackets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gutTrainingLevels => $composableBuilder(
+    column: $table.gutTrainingLevels,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get componentFoodNames => $composableBuilder(
+    column: $table.componentFoodNames,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get componentCarbRatios => $composableBuilder(
+    column: $table.componentCarbRatios,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get primaryToSecondaryRatio => $composableBuilder(
+    column: $table.primaryToSecondaryRatio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DuringWorkoutTemplatesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $DuringWorkoutTemplatesTableTable> {
+  $$DuringWorkoutTemplatesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get templateNumber => $composableBuilder(
+    column: $table.templateNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get formula => $composableBuilder(
+    column: $table.formula,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get foodForm => $composableBuilder(
+    column: $table.foodForm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityTypes => $composableBuilder(
+    column: $table.activityTypes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get durationBrackets => $composableBuilder(
+    column: $table.durationBrackets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gutTrainingLevels => $composableBuilder(
+    column: $table.gutTrainingLevels,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get componentFoodNames => $composableBuilder(
+    column: $table.componentFoodNames,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get componentCarbRatios => $composableBuilder(
+    column: $table.componentCarbRatios,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get primaryToSecondaryRatio => $composableBuilder(
+    column: $table.primaryToSecondaryRatio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DuringWorkoutTemplatesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DuringWorkoutTemplatesTableTable> {
+  $$DuringWorkoutTemplatesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get templateNumber => $composableBuilder(
+    column: $table.templateNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get formula =>
+      $composableBuilder(column: $table.formula, builder: (column) => column);
+
+  GeneratedColumn<String> get foodForm =>
+      $composableBuilder(column: $table.foodForm, builder: (column) => column);
+
+  GeneratedColumn<String> get activityTypes => $composableBuilder(
+    column: $table.activityTypes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get durationBrackets => $composableBuilder(
+    column: $table.durationBrackets,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get gutTrainingLevels => $composableBuilder(
+    column: $table.gutTrainingLevels,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get componentFoodNames => $composableBuilder(
+    column: $table.componentFoodNames,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get componentCarbRatios => $composableBuilder(
+    column: $table.componentCarbRatios,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get primaryToSecondaryRatio => $composableBuilder(
+    column: $table.primaryToSecondaryRatio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get allergens =>
+      $composableBuilder(column: $table.allergens, builder: (column) => column);
+
+  GeneratedColumn<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$DuringWorkoutTemplatesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DuringWorkoutTemplatesTableTable,
+          DuringWorkoutTemplateEntry,
+          $$DuringWorkoutTemplatesTableTableFilterComposer,
+          $$DuringWorkoutTemplatesTableTableOrderingComposer,
+          $$DuringWorkoutTemplatesTableTableAnnotationComposer,
+          $$DuringWorkoutTemplatesTableTableCreateCompanionBuilder,
+          $$DuringWorkoutTemplatesTableTableUpdateCompanionBuilder,
+          (
+            DuringWorkoutTemplateEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $DuringWorkoutTemplatesTableTable,
+              DuringWorkoutTemplateEntry
+            >,
+          ),
+          DuringWorkoutTemplateEntry,
+          PrefetchHooks Function()
+        > {
+  $$DuringWorkoutTemplatesTableTableTableManager(
+    _$AppDatabase db,
+    $DuringWorkoutTemplatesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DuringWorkoutTemplatesTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$DuringWorkoutTemplatesTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$DuringWorkoutTemplatesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> templateNumber = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> formula = const Value.absent(),
+                Value<String> foodForm = const Value.absent(),
+                Value<String> activityTypes = const Value.absent(),
+                Value<String> durationBrackets = const Value.absent(),
+                Value<String> gutTrainingLevels = const Value.absent(),
+                Value<String> componentFoodNames = const Value.absent(),
+                Value<String?> componentCarbRatios = const Value.absent(),
+                Value<String?> primaryToSecondaryRatio = const Value.absent(),
+                Value<String> allergens = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DuringWorkoutTemplatesTableCompanion(
+                id: id,
+                templateNumber: templateNumber,
+                name: name,
+                formula: formula,
+                foodForm: foodForm,
+                activityTypes: activityTypes,
+                durationBrackets: durationBrackets,
+                gutTrainingLevels: gutTrainingLevels,
+                componentFoodNames: componentFoodNames,
+                componentCarbRatios: componentCarbRatios,
+                primaryToSecondaryRatio: primaryToSecondaryRatio,
+                allergens: allergens,
+                excludedDiets: excludedDiets,
+                notes: notes,
+                isActive: isActive,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int templateNumber,
+                required String name,
+                required String formula,
+                required String foodForm,
+                Value<String> activityTypes = const Value.absent(),
+                Value<String> durationBrackets = const Value.absent(),
+                Value<String> gutTrainingLevels = const Value.absent(),
+                Value<String> componentFoodNames = const Value.absent(),
+                Value<String?> componentCarbRatios = const Value.absent(),
+                Value<String?> primaryToSecondaryRatio = const Value.absent(),
+                Value<String> allergens = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DuringWorkoutTemplatesTableCompanion.insert(
+                id: id,
+                templateNumber: templateNumber,
+                name: name,
+                formula: formula,
+                foodForm: foodForm,
+                activityTypes: activityTypes,
+                durationBrackets: durationBrackets,
+                gutTrainingLevels: gutTrainingLevels,
+                componentFoodNames: componentFoodNames,
+                componentCarbRatios: componentCarbRatios,
+                primaryToSecondaryRatio: primaryToSecondaryRatio,
+                allergens: allergens,
+                excludedDiets: excludedDiets,
+                notes: notes,
+                isActive: isActive,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DuringWorkoutTemplatesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DuringWorkoutTemplatesTableTable,
+      DuringWorkoutTemplateEntry,
+      $$DuringWorkoutTemplatesTableTableFilterComposer,
+      $$DuringWorkoutTemplatesTableTableOrderingComposer,
+      $$DuringWorkoutTemplatesTableTableAnnotationComposer,
+      $$DuringWorkoutTemplatesTableTableCreateCompanionBuilder,
+      $$DuringWorkoutTemplatesTableTableUpdateCompanionBuilder,
+      (
+        DuringWorkoutTemplateEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $DuringWorkoutTemplatesTableTable,
+          DuringWorkoutTemplateEntry
+        >,
+      ),
+      DuringWorkoutTemplateEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$PreWorkoutTemplatesTableTableCreateCompanionBuilder =
+    PreWorkoutTemplatesTableCompanion Function({
+      required String id,
+      required String name,
+      required String baseCategory,
+      required String timeWindow,
+      required String digestionSpeed,
+      Value<String> allergens,
+      required String servingUnit,
+      required double minServings,
+      required double maxServings,
+      Value<bool> plusBanana,
+      Value<bool> plusSportsDrink,
+      Value<String?> notes,
+      Value<bool> isActive,
+      required double carbsPerServing,
+      required double proteinPerServing,
+      required double fatPerServing,
+      required double sodiumMg,
+      required double fluidMl,
+      required String templateType,
+      Value<String> componentFoodNames,
+      Value<String?> componentQuantities,
+      Value<String> excludedDiets,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$PreWorkoutTemplatesTableTableUpdateCompanionBuilder =
+    PreWorkoutTemplatesTableCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String> baseCategory,
+      Value<String> timeWindow,
+      Value<String> digestionSpeed,
+      Value<String> allergens,
+      Value<String> servingUnit,
+      Value<double> minServings,
+      Value<double> maxServings,
+      Value<bool> plusBanana,
+      Value<bool> plusSportsDrink,
+      Value<String?> notes,
+      Value<bool> isActive,
+      Value<double> carbsPerServing,
+      Value<double> proteinPerServing,
+      Value<double> fatPerServing,
+      Value<double> sodiumMg,
+      Value<double> fluidMl,
+      Value<String> templateType,
+      Value<String> componentFoodNames,
+      Value<String?> componentQuantities,
+      Value<String> excludedDiets,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$PreWorkoutTemplatesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PreWorkoutTemplatesTableTable> {
+  $$PreWorkoutTemplatesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get baseCategory => $composableBuilder(
+    column: $table.baseCategory,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timeWindow => $composableBuilder(
+    column: $table.timeWindow,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get digestionSpeed => $composableBuilder(
+    column: $table.digestionSpeed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get servingUnit => $composableBuilder(
+    column: $table.servingUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get minServings => $composableBuilder(
+    column: $table.minServings,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get maxServings => $composableBuilder(
+    column: $table.maxServings,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get plusBanana => $composableBuilder(
+    column: $table.plusBanana,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get plusSportsDrink => $composableBuilder(
+    column: $table.plusSportsDrink,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get carbsPerServing => $composableBuilder(
+    column: $table.carbsPerServing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get proteinPerServing => $composableBuilder(
+    column: $table.proteinPerServing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fatPerServing => $composableBuilder(
+    column: $table.fatPerServing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sodiumMg => $composableBuilder(
+    column: $table.sodiumMg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fluidMl => $composableBuilder(
+    column: $table.fluidMl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get templateType => $composableBuilder(
+    column: $table.templateType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get componentFoodNames => $composableBuilder(
+    column: $table.componentFoodNames,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get componentQuantities => $composableBuilder(
+    column: $table.componentQuantities,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PreWorkoutTemplatesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PreWorkoutTemplatesTableTable> {
+  $$PreWorkoutTemplatesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get baseCategory => $composableBuilder(
+    column: $table.baseCategory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timeWindow => $composableBuilder(
+    column: $table.timeWindow,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get digestionSpeed => $composableBuilder(
+    column: $table.digestionSpeed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get servingUnit => $composableBuilder(
+    column: $table.servingUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get minServings => $composableBuilder(
+    column: $table.minServings,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get maxServings => $composableBuilder(
+    column: $table.maxServings,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get plusBanana => $composableBuilder(
+    column: $table.plusBanana,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get plusSportsDrink => $composableBuilder(
+    column: $table.plusSportsDrink,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get carbsPerServing => $composableBuilder(
+    column: $table.carbsPerServing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get proteinPerServing => $composableBuilder(
+    column: $table.proteinPerServing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fatPerServing => $composableBuilder(
+    column: $table.fatPerServing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sodiumMg => $composableBuilder(
+    column: $table.sodiumMg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fluidMl => $composableBuilder(
+    column: $table.fluidMl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get templateType => $composableBuilder(
+    column: $table.templateType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get componentFoodNames => $composableBuilder(
+    column: $table.componentFoodNames,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get componentQuantities => $composableBuilder(
+    column: $table.componentQuantities,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PreWorkoutTemplatesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PreWorkoutTemplatesTableTable> {
+  $$PreWorkoutTemplatesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get baseCategory => $composableBuilder(
+    column: $table.baseCategory,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get timeWindow => $composableBuilder(
+    column: $table.timeWindow,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get digestionSpeed => $composableBuilder(
+    column: $table.digestionSpeed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get allergens =>
+      $composableBuilder(column: $table.allergens, builder: (column) => column);
+
+  GeneratedColumn<String> get servingUnit => $composableBuilder(
+    column: $table.servingUnit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get minServings => $composableBuilder(
+    column: $table.minServings,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get maxServings => $composableBuilder(
+    column: $table.maxServings,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get plusBanana => $composableBuilder(
+    column: $table.plusBanana,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get plusSportsDrink => $composableBuilder(
+    column: $table.plusSportsDrink,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<double> get carbsPerServing => $composableBuilder(
+    column: $table.carbsPerServing,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get proteinPerServing => $composableBuilder(
+    column: $table.proteinPerServing,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get fatPerServing => $composableBuilder(
+    column: $table.fatPerServing,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sodiumMg =>
+      $composableBuilder(column: $table.sodiumMg, builder: (column) => column);
+
+  GeneratedColumn<double> get fluidMl =>
+      $composableBuilder(column: $table.fluidMl, builder: (column) => column);
+
+  GeneratedColumn<String> get templateType => $composableBuilder(
+    column: $table.templateType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get componentFoodNames => $composableBuilder(
+    column: $table.componentFoodNames,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get componentQuantities => $composableBuilder(
+    column: $table.componentQuantities,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$PreWorkoutTemplatesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PreWorkoutTemplatesTableTable,
+          PreWorkoutTemplateEntry,
+          $$PreWorkoutTemplatesTableTableFilterComposer,
+          $$PreWorkoutTemplatesTableTableOrderingComposer,
+          $$PreWorkoutTemplatesTableTableAnnotationComposer,
+          $$PreWorkoutTemplatesTableTableCreateCompanionBuilder,
+          $$PreWorkoutTemplatesTableTableUpdateCompanionBuilder,
+          (
+            PreWorkoutTemplateEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $PreWorkoutTemplatesTableTable,
+              PreWorkoutTemplateEntry
+            >,
+          ),
+          PreWorkoutTemplateEntry,
+          PrefetchHooks Function()
+        > {
+  $$PreWorkoutTemplatesTableTableTableManager(
+    _$AppDatabase db,
+    $PreWorkoutTemplatesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PreWorkoutTemplatesTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$PreWorkoutTemplatesTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PreWorkoutTemplatesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> baseCategory = const Value.absent(),
+                Value<String> timeWindow = const Value.absent(),
+                Value<String> digestionSpeed = const Value.absent(),
+                Value<String> allergens = const Value.absent(),
+                Value<String> servingUnit = const Value.absent(),
+                Value<double> minServings = const Value.absent(),
+                Value<double> maxServings = const Value.absent(),
+                Value<bool> plusBanana = const Value.absent(),
+                Value<bool> plusSportsDrink = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<double> carbsPerServing = const Value.absent(),
+                Value<double> proteinPerServing = const Value.absent(),
+                Value<double> fatPerServing = const Value.absent(),
+                Value<double> sodiumMg = const Value.absent(),
+                Value<double> fluidMl = const Value.absent(),
+                Value<String> templateType = const Value.absent(),
+                Value<String> componentFoodNames = const Value.absent(),
+                Value<String?> componentQuantities = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PreWorkoutTemplatesTableCompanion(
+                id: id,
+                name: name,
+                baseCategory: baseCategory,
+                timeWindow: timeWindow,
+                digestionSpeed: digestionSpeed,
+                allergens: allergens,
+                servingUnit: servingUnit,
+                minServings: minServings,
+                maxServings: maxServings,
+                plusBanana: plusBanana,
+                plusSportsDrink: plusSportsDrink,
+                notes: notes,
+                isActive: isActive,
+                carbsPerServing: carbsPerServing,
+                proteinPerServing: proteinPerServing,
+                fatPerServing: fatPerServing,
+                sodiumMg: sodiumMg,
+                fluidMl: fluidMl,
+                templateType: templateType,
+                componentFoodNames: componentFoodNames,
+                componentQuantities: componentQuantities,
+                excludedDiets: excludedDiets,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required String baseCategory,
+                required String timeWindow,
+                required String digestionSpeed,
+                Value<String> allergens = const Value.absent(),
+                required String servingUnit,
+                required double minServings,
+                required double maxServings,
+                Value<bool> plusBanana = const Value.absent(),
+                Value<bool> plusSportsDrink = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                required double carbsPerServing,
+                required double proteinPerServing,
+                required double fatPerServing,
+                required double sodiumMg,
+                required double fluidMl,
+                required String templateType,
+                Value<String> componentFoodNames = const Value.absent(),
+                Value<String?> componentQuantities = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PreWorkoutTemplatesTableCompanion.insert(
+                id: id,
+                name: name,
+                baseCategory: baseCategory,
+                timeWindow: timeWindow,
+                digestionSpeed: digestionSpeed,
+                allergens: allergens,
+                servingUnit: servingUnit,
+                minServings: minServings,
+                maxServings: maxServings,
+                plusBanana: plusBanana,
+                plusSportsDrink: plusSportsDrink,
+                notes: notes,
+                isActive: isActive,
+                carbsPerServing: carbsPerServing,
+                proteinPerServing: proteinPerServing,
+                fatPerServing: fatPerServing,
+                sodiumMg: sodiumMg,
+                fluidMl: fluidMl,
+                templateType: templateType,
+                componentFoodNames: componentFoodNames,
+                componentQuantities: componentQuantities,
+                excludedDiets: excludedDiets,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PreWorkoutTemplatesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PreWorkoutTemplatesTableTable,
+      PreWorkoutTemplateEntry,
+      $$PreWorkoutTemplatesTableTableFilterComposer,
+      $$PreWorkoutTemplatesTableTableOrderingComposer,
+      $$PreWorkoutTemplatesTableTableAnnotationComposer,
+      $$PreWorkoutTemplatesTableTableCreateCompanionBuilder,
+      $$PreWorkoutTemplatesTableTableUpdateCompanionBuilder,
+      (
+        PreWorkoutTemplateEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $PreWorkoutTemplatesTableTable,
+          PreWorkoutTemplateEntry
+        >,
+      ),
+      PreWorkoutTemplateEntry,
+      PrefetchHooks Function()
+    >;
 typedef $$TpWritebackTableTableCreateCompanionBuilder =
     TpWritebackTableCompanion Function({
       Value<String> id,
@@ -44497,6 +48569,296 @@ typedef $$PersonalTemplatesTableTableProcessedTableManager =
         >,
       ),
       PersonalTemplateEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$FormulaPinsTableTableCreateCompanionBuilder =
+    FormulaPinsTableCompanion Function({
+      Value<String> id,
+      required String userId,
+      required String templateId,
+      required String templateKind,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<bool> isDeleted,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+typedef $$FormulaPinsTableTableUpdateCompanionBuilder =
+    FormulaPinsTableCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<String> templateId,
+      Value<String> templateKind,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool> isDeleted,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+
+class $$FormulaPinsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $FormulaPinsTableTable> {
+  $$FormulaPinsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get templateId => $composableBuilder(
+    column: $table.templateId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get templateKind => $composableBuilder(
+    column: $table.templateKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$FormulaPinsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $FormulaPinsTableTable> {
+  $$FormulaPinsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get templateId => $composableBuilder(
+    column: $table.templateId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get templateKind => $composableBuilder(
+    column: $table.templateKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$FormulaPinsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FormulaPinsTableTable> {
+  $$FormulaPinsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get templateId => $composableBuilder(
+    column: $table.templateId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get templateKind => $composableBuilder(
+    column: $table.templateKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$FormulaPinsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FormulaPinsTableTable,
+          FormulaPinEntry,
+          $$FormulaPinsTableTableFilterComposer,
+          $$FormulaPinsTableTableOrderingComposer,
+          $$FormulaPinsTableTableAnnotationComposer,
+          $$FormulaPinsTableTableCreateCompanionBuilder,
+          $$FormulaPinsTableTableUpdateCompanionBuilder,
+          (
+            FormulaPinEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $FormulaPinsTableTable,
+              FormulaPinEntry
+            >,
+          ),
+          FormulaPinEntry,
+          PrefetchHooks Function()
+        > {
+  $$FormulaPinsTableTableTableManager(
+    _$AppDatabase db,
+    $FormulaPinsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FormulaPinsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FormulaPinsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FormulaPinsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> templateId = const Value.absent(),
+                Value<String> templateKind = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FormulaPinsTableCompanion(
+                id: id,
+                userId: userId,
+                templateId: templateId,
+                templateKind: templateKind,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                isDeleted: isDeleted,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                required String userId,
+                required String templateId,
+                required String templateKind,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<bool> isDeleted = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => FormulaPinsTableCompanion.insert(
+                id: id,
+                userId: userId,
+                templateId: templateId,
+                templateKind: templateKind,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                isDeleted: isDeleted,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$FormulaPinsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FormulaPinsTableTable,
+      FormulaPinEntry,
+      $$FormulaPinsTableTableFilterComposer,
+      $$FormulaPinsTableTableOrderingComposer,
+      $$FormulaPinsTableTableAnnotationComposer,
+      $$FormulaPinsTableTableCreateCompanionBuilder,
+      $$FormulaPinsTableTableUpdateCompanionBuilder,
+      (
+        FormulaPinEntry,
+        BaseReferences<_$AppDatabase, $FormulaPinsTableTable, FormulaPinEntry>,
+      ),
+      FormulaPinEntry,
       PrefetchHooks Function()
     >;
 typedef $$AthletePairingCodesTableTableCreateCompanionBuilder =
@@ -45575,6 +49937,17 @@ class $AppDatabaseManager {
       $$TemplateFoodsTableTableTableManager(_db, _db.templateFoodsTable);
   $$TemplatesTableTableTableManager get templatesTable =>
       $$TemplatesTableTableTableManager(_db, _db.templatesTable);
+  $$DuringWorkoutTemplatesTableTableTableManager
+  get duringWorkoutTemplatesTable =>
+      $$DuringWorkoutTemplatesTableTableTableManager(
+        _db,
+        _db.duringWorkoutTemplatesTable,
+      );
+  $$PreWorkoutTemplatesTableTableTableManager get preWorkoutTemplatesTable =>
+      $$PreWorkoutTemplatesTableTableTableManager(
+        _db,
+        _db.preWorkoutTemplatesTable,
+      );
   $$TpWritebackTableTableTableManager get tpWritebackTable =>
       $$TpWritebackTableTableTableManager(_db, _db.tpWritebackTable);
   $$PersonalTemplatesTableTableTableManager get personalTemplatesTable =>
@@ -45582,6 +49955,8 @@ class $AppDatabaseManager {
         _db,
         _db.personalTemplatesTable,
       );
+  $$FormulaPinsTableTableTableManager get formulaPinsTable =>
+      $$FormulaPinsTableTableTableManager(_db, _db.formulaPinsTable);
   $$AthletePairingCodesTableTableTableManager get athletePairingCodesTable =>
       $$AthletePairingCodesTableTableTableManager(
         _db,

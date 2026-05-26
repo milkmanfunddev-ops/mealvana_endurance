@@ -52,6 +52,11 @@ interface BeforePhaseInput {
   willing_to_try_foods?: string[];
   allergies?: string[];
   device_id?: string;
+  /** Pre-workout template ids the user has actively pinned. When in scope
+   * (template.time_window matches a sub_phase's window), bypasses all
+   * preference / diet / scale-clamp filters. Optional; omit or pass empty
+   * Set for pre-pin behavior. Formula Kit PR 2 substep 5b. */
+  pinned_food_template_ids?: Set<string>;
 }
 
 function inferMealType(hoursBefore: number, isFasted: boolean): string {
@@ -186,6 +191,7 @@ export async function generateBeforePhaseV3(
       input.liked_foods ?? [],
       input.disliked_foods ?? [],
       input.allergies,
+      input.pinned_food_template_ids,
     );
   }
 

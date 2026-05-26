@@ -397,7 +397,9 @@ class UserProfile {
       // Dietary preference and allergies (synced to Supabase)
       // Convert 'none' to null since Supabase dietary_preference_enum doesn't include 'none'
       'dietary_preference': dietaryPreference?.dbValue == 'none' ? null : dietaryPreference?.dbValue,
-      'allergies': Allergy.toDbArray(allergies),
+      // Supabase column is `allergy_enum[]` — must send a JSON array, not the
+      // PG-literal string `"{dairy}"` (PostgREST silently drops that form).
+      'allergies': Allergy.toJsonList(allergies),
       // Sharing preferences
       'sender_name': senderName,
       // User identity

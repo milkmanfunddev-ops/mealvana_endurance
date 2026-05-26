@@ -75,6 +75,9 @@ class BrickMacroService {
         preActivityMinutes: preActivityMinutes,
         overrides: overrides,
       );
+      // device_id is read by the edge function to look up active formula pins
+      // (Formula Kit PR 2 substep 5b-followup, 2026-05-22).
+      requestData['device_id'] = deviceId;
 
       DebugLogger.info(
         '🧱 BRICK MACRO SERVICE: Calling generate-macros edge function...',

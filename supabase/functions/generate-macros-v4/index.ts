@@ -37,6 +37,8 @@ import {
   selectPreWorkoutFoods,
 } from "./pre-workout.ts";
 import { classifyEnvironment } from "../_shared/nutrition/sweat-hydration.ts";
+import { fetchUserPinnedTemplateIds } from "../_shared/nutrition/pins.ts";
+import { createServiceClient } from "../_shared/supabase-client.ts";
 
 // ============================================================================
 // EDGE FUNCTION HANDLER
@@ -117,6 +119,16 @@ serve(async (req: Request) => {
       `📦 Loaded templates: ${templates.food.length} food, ${templates.drink.length} drink, ${templates.electrolyte.length} electrolyte`,
     );
 
+    // Load the user's active formula pins (before-phase scope). Used to
+    // override candidate selection in `selectPreWorkoutFoods`. Empty when
+    // device_id is absent or the user has no active pins — yields byte-
+    // identical pre-pin behavior. Formula Kit PR 2 substep 5b-followup.
+    const supabaseForPins = createServiceClient();
+    const userPins = await fetchUserPinnedTemplateIds(
+      supabaseForPins,
+      input.device_id,
+    );
+
     // Calculate macros
     if (activityType === "brick") {
       const weightKg = toKg(input.weight, input.weight_unit);
@@ -164,6 +176,7 @@ serve(async (req: Request) => {
         input.liked_foods ?? [],
         input.disliked_foods ?? [],
         input.allergies ?? [],
+        userPins.beforePinIds,
       );
 
       const brickMacros = calculateBrickMacrosV4(input, preTargets);
@@ -186,7 +199,7 @@ serve(async (req: Request) => {
       return jsonResponse({ success: true, macros: brickMacrosWithSelections });
     }
 
-    const macros = await calculateMacrosV4(input, templates);
+    const macros = await calculateMacrosV4(input, templates, userPins.beforePinIds);
 
     console.log("✅ V4 macros calculated successfully:", {
       activity_type: macros.activity_type,

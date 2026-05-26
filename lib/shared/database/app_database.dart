@@ -31,8 +31,11 @@ import 'tables/coach_athlete_relationships_table.dart';
 import 'tables/coach_messages_table.dart';
 import 'tables/template_foods_table.dart';
 import 'tables/templates_table.dart';
+import 'tables/during_workout_templates_table.dart';
+import 'tables/pre_workout_templates_table.dart';
 import 'tables/tp_writeback_table.dart';
 import 'tables/personal_templates_table.dart';
+import 'tables/formula_pins_table.dart';
 import 'tables/athlete_pairing_codes_table.dart';
 import 'tables/coach_pairing_codes_table.dart';
 import 'tables/daily_macro_targets_table.dart';
@@ -109,12 +112,17 @@ part 'app_database.g.dart';
     // Template system tables (read-only reference data)
     TemplateFoodsTable,
     TemplatesTable,
+    DuringWorkoutTemplatesTable,
+    PreWorkoutTemplatesTable,
 
     // TrainingPeaks write-back tracking
     TpWritebackTable,
 
     // Personal nutrition plan templates
     PersonalTemplatesTable,
+
+    // Formula Kit pins (user preference signal for plan generation)
+    FormulaPinsTable,
 
     // Pairing codes for coach connections
     AthletePairingCodesTable,
@@ -150,7 +158,21 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 7: Adds activities.garmin_device_name (Garmin brand-compliant
+  /// Schema version 11: Adds formula_pins table (user pins for Formula Kit
+  /// algorithm signal). Soft-deleted via `is_deleted` boolean to let unpin
+  /// events propagate across devices via the existing upsert-only sync.
+  /// Matches the user_foods soft-delete convention.
+  /// v10 added pre_workout_templates table (read-only mirror of
+  /// Supabase pre-workout formula catalog). Replaces the legacy `templates`
+  /// table for Before-phase formulas in Formula Kit.
+  /// v9 added during_workout_templates table (read-only mirror of
+  /// Supabase during-workout formula catalog) to back the Formula Kit browse UI.
+  /// v8 added needs_upload column to integrations so OAuth tokens are
+  /// mirrored to Supabase and survive Drift schema resyncs / reinstalls.
+  /// (v8 also includes 'vdot' in the integrations.provider CHECK and
+  /// 'requires_reauth' in the last_sync_status CHECK — added 2026-05-18,
+  /// before v8 shipped.)
+  /// v7 added activities.garmin_device_name (Garmin brand-compliant
   /// attribution), sweat profile fields on users (sweat_sodium,
   /// known_sweat_rate_ml_per_hour, known_sodium_concentration_mg_per_liter,
   /// sweat_test_date, sweat_test_source) for hydration/sodium transparency, and
@@ -161,12 +183,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  /// v8 added needs_upload column to integrations so OAuth tokens are
-  /// mirrored to Supabase and survive Drift schema resyncs / reinstalls.
-  /// (v8 also includes 'vdot' in the integrations.provider CHECK and
-  /// 'requires_reauth' in the last_sync_status CHECK — added 2026-05-18,
-  /// before v8 shipped.)
-  int get schemaVersion => 8;
+  int get schemaVersion => 11;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -227,6 +244,25 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             'ALTER TABLE integrations ADD COLUMN needs_upload INTEGER NOT NULL DEFAULT 1',
           );
+        }
+
+        // v9: Create during_workout_templates table (read-only mirror).
+        // Guarded by version comparison; CREATE TABLE IF NOT EXISTS for
+        // idempotency in case the table was previously created at runtime.
+        if (from < 9) {
+          await m.createTable(duringWorkoutTemplatesTable);
+        }
+
+        // v10: Create pre_workout_templates table (read-only mirror).
+        if (from < 10) {
+          await m.createTable(preWorkoutTemplatesTable);
+        }
+
+        // v11: Create formula_pins table (Formula Kit pins — user
+        // preference signal for plan generation). Soft-delete via
+        // is_deleted column.
+        if (from < 11) {
+          await m.createTable(formulaPinsTable);
         }
       },
 

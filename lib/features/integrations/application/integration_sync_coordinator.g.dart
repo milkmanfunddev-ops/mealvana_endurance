@@ -10,8 +10,8 @@ part of 'integration_sync_coordinator.dart';
 // ignore_for_file: type=lint, type=warning
 /// Lightweight coordinator for integration staleness checks and dedup.
 ///
-/// Purpose-built for external provider sync (Final Surge, Training Peaks).
-/// NOT part of the SyncCoordinator dependency graph because integration
+/// Purpose-built for external provider sync (Final Surge, Training Peaks,
+/// V.O2). NOT part of the SyncCoordinator dependency graph because integration
 /// sync has no dirty-record upload concept.
 ///
 /// Design:
@@ -26,8 +26,8 @@ const integrationSyncCoordinatorProvider =
 
 /// Lightweight coordinator for integration staleness checks and dedup.
 ///
-/// Purpose-built for external provider sync (Final Surge, Training Peaks).
-/// NOT part of the SyncCoordinator dependency graph because integration
+/// Purpose-built for external provider sync (Final Surge, Training Peaks,
+/// V.O2). NOT part of the SyncCoordinator dependency graph because integration
 /// sync has no dirty-record upload concept.
 ///
 /// Design:
@@ -39,8 +39,8 @@ final class IntegrationSyncCoordinatorProvider
     extends $NotifierProvider<IntegrationSyncCoordinator, void> {
   /// Lightweight coordinator for integration staleness checks and dedup.
   ///
-  /// Purpose-built for external provider sync (Final Surge, Training Peaks).
-  /// NOT part of the SyncCoordinator dependency graph because integration
+  /// Purpose-built for external provider sync (Final Surge, Training Peaks,
+  /// V.O2). NOT part of the SyncCoordinator dependency graph because integration
   /// sync has no dirty-record upload concept.
   ///
   /// Design:
@@ -76,12 +76,12 @@ final class IntegrationSyncCoordinatorProvider
 }
 
 String _$integrationSyncCoordinatorHash() =>
-    r'a148d8cf32c1eff8168b0ac24bf8f2f3da35bd44';
+    r'461786d561f15a681372a9c438e046fd3b1529b0';
 
 /// Lightweight coordinator for integration staleness checks and dedup.
 ///
-/// Purpose-built for external provider sync (Final Surge, Training Peaks).
-/// NOT part of the SyncCoordinator dependency graph because integration
+/// Purpose-built for external provider sync (Final Surge, Training Peaks,
+/// V.O2). NOT part of the SyncCoordinator dependency graph because integration
 /// sync has no dirty-record upload concept.
 ///
 /// Design:

@@ -87,6 +87,10 @@ yarn-error.log*
 .npm
 .eslintcache
 
+# Supabase CLI scratch state (project-ref, version pins) — env-specific,
+# rewritten by `supabase link` etc. and should not be source-controlled.
+supabase/.temp/
+
 # Local testing and development
 test/local_edge_functions/node_modules/
 test/local_edge_functions/package-lock.json

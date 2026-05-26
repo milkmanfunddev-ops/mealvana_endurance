@@ -138,4 +138,25 @@ export interface LPPhaseResult {
    * Empty/absent when the plan fully satisfies all targets. Issue #14 / #15.
    */
   shortfalls?: PhaseShortfall[];
+  /**
+   * Pin honoring telemetry for the during phase. Present only when pins were
+   * supplied to the algorithm. `used_pin = true` means the selected during
+   * template was driven by a user pin (all preference / diet / gut-training
+   * filters bypassed). `fallthrough_reason = 'no_pin_for_scope'` means pins
+   * were supplied but none matched this workout's activity × duration scope.
+   * Omitted when no pins were supplied. Formula Kit PR 2 substep 5b.
+   */
+  pin_decision?: {
+    used_pin: boolean;
+    pinned_template_id: string | null;
+    /** Template display name when `used_pin = true`, otherwise null. Lets the
+     * client render the pinned formula's label in the activity-detail pin
+     * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
+    pinned_template_name: string | null;
+    fallthrough_reason: "no_pin_for_scope" | null;
+    /** Count of in-scope pinned candidates the algorithm saw for this phase.
+     * Drives `plan_used_pin` / `plan_pin_fallthrough` analytics. 0 when pins
+     * were supplied but none matched scope. Formula Kit PR 2 substep 7. */
+    pin_set_size: number;
+  };
 }

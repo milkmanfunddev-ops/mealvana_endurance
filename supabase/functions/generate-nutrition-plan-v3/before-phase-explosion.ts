@@ -322,5 +322,8 @@ export function phaseResultToSubPhaseResult(
     ...(phaseResult.shortfalls && phaseResult.shortfalls.length > 0 && {
       shortfalls: phaseResult.shortfalls,
     }),
+    ...(phaseResult.pin_decision && {
+      pin_decision: phaseResult.pin_decision,
+    }),
   };
 }

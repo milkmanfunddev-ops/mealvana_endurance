@@ -158,6 +158,27 @@ export interface PreWorkoutPhaseResult {
   /** Per-macro shortfalls when preferences eliminated all viable options
    * for this phase. Issue #15. */
   shortfalls?: PreWorkoutShortfall[];
+  /** Pin honoring telemetry. Populated only when `pinnedTemplateIds` was
+   * passed into `selectPreWorkoutFoods`. `used_pin = true` means the primary
+   * selection for this phase was driven by a user pin (all preference / diet
+   * / scale-clamp filters were bypassed). `fallthrough_reason = 'no_pin_for_scope'`
+   * means pins were passed in but none matched this sub_phase's time_window.
+   * Field is omitted entirely when no pins were supplied — keeps no-pin
+   * behavior byte-identical to pre-pin v3. Formula Kit PR 2 substep 5a. */
+  pin_decision?: {
+    used_pin: boolean;
+    pinned_template_id: string | null;
+    /** Template display name when `used_pin = true`, otherwise null. Lets the
+     * client render the pinned formula's label in the activity-detail pin
+     * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
+    pinned_template_name: string | null;
+    fallthrough_reason: 'no_pin_for_scope' | null;
+    /** Count of in-scope pinned candidates the algorithm saw for this phase
+     * after scope-matching. Drives `plan_used_pin` / `plan_pin_fallthrough`
+     * analytics. 0 when pins were supplied but none matched scope.
+     * Formula Kit PR 2 substep 7. */
+    pin_set_size: number;
+  };
 }
 
 // ============================================================================

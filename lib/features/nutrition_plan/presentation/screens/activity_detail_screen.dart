@@ -21,12 +21,14 @@ import '../../../coach_mode/presentation/providers/coach_activity_detail_control
 import '../providers/activity_detail_state.dart';
 import '../widgets/stale_plan_warning.dart';
 import '../widgets/low_fuel_risk_badge.dart';
+import '../../../formula_kit/presentation/widgets/pin_status_banner.dart';
 import '../../../personal_templates/presentation/widgets/save_template_dialog.dart';
 import '../../../personal_templates/presentation/providers/personal_templates_controller.dart';
 import '../widgets/fuel_log/fuel_log_section_widget.dart';
 import '../widgets/fuel_log/fuel_log_feedback_section.dart';
 import '../widgets/fuel_log/fuel_log_success_overlay.dart';
 import '../utils/activity_detail_helpers.dart';
+import '../utils/pin_banner_rows_builder.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution.dart';
 
@@ -76,6 +78,11 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
   int _fuelLogRating = 0;
   int? _fuelLogNutritionRating;
   String? _fuelLogNotes;
+
+  /// Activity IDs for which we've already emitted `pin_status_banner_shown`.
+  /// Prevents re-firing the analytics event on rebuilds. Cleared with State.
+  /// Formula Kit PR 2 substep 9.
+  final Set<String> _pinBannerShownForActivities = <String>{};
 
   @override
   void initState() {
@@ -313,6 +320,15 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
             // Top spacing when hero is hidden
             if (_heroFadeOut.value <= 0.01)
               const SizedBox(height: AppSpacing.sm),
+
+            // Pin status banner (Formula Kit PR 2 substep 9). Visible only
+            // when the plan was generated with pins supplied — the algorithm
+            // attaches PinDecision to each affected phase / sub-phase.
+            if (_extrasFadeOut.value > 0.01)
+              FadeTransition(
+                opacity: _extrasFadeOut,
+                child: _buildPinStatusBanner(context, state),
+              ),
 
             // Stale plan warning (hidden during fuel log)
             if (activity.needsNutritionRefresh == true &&
@@ -1320,6 +1336,80 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
       }
     }
   }
+
+  /// Build the Formula Kit pin status banner shown above StalePlanWarning.
+  /// Returns SizedBox.shrink when there are no pin decisions to surface.
+  /// Formula Kit PR 2 substep 9.
+  Widget _buildPinStatusBanner(
+    BuildContext context,
+    ActivityDetailState state,
+  ) {
+    final plan = state.nutritionPlan;
+    if (plan == null) return const SizedBox.shrink();
+
+    final bannerData = collectPinBannerRows(plan.sections);
+    if (!bannerData.shouldRender) return const SizedBox.shrink();
+    final rows = bannerData.rows;
+
+    // Fire `pin_status_banner_shown` once per activity per State instance.
+    // `mode` tags the event so we can split funnel metrics between onboarding
+    // (discovery surface) vs status (telemetry surface).
+    final activityId = state.activity?.id;
+    if (activityId != null &&
+        !_pinBannerShownForActivities.contains(activityId)) {
+      _pinBannerShownForActivities.add(activityId);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final controller = ref.read(
+          activityDetailControllerProvider(
+            activityId: widget.activityId,
+            isNewActivity: widget.isNewActivity,
+          ).notifier,
+        );
+        controller.trackEvent('pin_status_banner_shown', {
+          'activity_id': activityId,
+          'mode': bannerData.isOnboarding ? 'onboarding' : 'status',
+          'rows': rows.length,
+          'honored_count':
+              rows.where((r) => r.decision.usedPin).length,
+        });
+      });
+    }
+
+    return PinStatusBanner(
+      rows: rows,
+      isOnboarding: bannerData.isOnboarding,
+      onExpanded: () {
+        final controller = ref.read(
+          activityDetailControllerProvider(
+            activityId: widget.activityId,
+            isNewActivity: widget.isNewActivity,
+          ).notifier,
+        );
+        controller.trackEvent('pin_status_banner_expanded', {
+          'activity_id': activityId,
+          'rows': rows.length,
+        });
+      },
+      onFormulaLibraryTapped: () {
+        final controller = ref.read(
+          activityDetailControllerProvider(
+            activityId: widget.activityId,
+            isNewActivity: widget.isNewActivity,
+          ).notifier,
+        );
+        controller.trackEvent('pin_status_banner_formula_library_tapped', {
+          'activity_id': activityId,
+        });
+        // push (not go) so back returns to this activity detail screen.
+        context.push('/settings/food-preferences/formula-library');
+      },
+    );
+  }
+
+  // Pin banner row collection moved to `utils/pin_banner_rows_builder.dart`
+  // so the synthesis rule (substep 11 polish) is unit-testable without
+  // mounting the full activity detail screen.
 }
 
 /// A simple toggle chip used in the Planned/Actual segmented control.

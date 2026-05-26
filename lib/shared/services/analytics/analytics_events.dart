@@ -360,7 +360,60 @@ extension AnalyticsEvents on AnalyticsTracker {
     });
   }
 
-  // 8. Activity Viewing Events
+  // 8. Formula Kit (pin) plan-outcome events
+  //
+  // Fired client-side after a plan generation completes, one event per phase
+  // / sub-phase that carried a pin_decision. `pin_set_size` is the count of
+  // in-scope candidates the algorithm saw for that phase (not total user
+  // pins). Source attribution intentionally omitted — pins fire independent
+  // of how the user authored them. See Formula Kit PR 2 substep 7.
+
+  /// Fired when the algorithm honored a pinned template for a phase.
+  Future<void> trackPlanUsedPin({
+    required String deviceId,
+    required String activityId,
+    required String templateId,
+    required String templateName,
+    required String phase, // 'before' | 'during' | 'after'
+    String? subPhase, // 'meal' | 'snack' | 'top_up' (Before only)
+    required int pinSetSize,
+  }) {
+    return track('plan_used_pin', properties: {
+      'device_id': deviceId,
+      'activity_id': activityId,
+      'template_id': templateId,
+      'template_name': templateName,
+      'phase': phase,
+      if (subPhase != null) 'sub_phase': subPhase,
+      'pin_set_size': pinSetSize,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Fired when pins were supplied but no in-scope pin matched the phase.
+  /// `reason` is the wire value from PinFallthroughReason (e.g.
+  /// 'no_pin_for_scope') so the server can add new reasons without a client
+  /// release.
+  Future<void> trackPlanPinFallthrough({
+    required String deviceId,
+    required String activityId,
+    required String phase,
+    String? subPhase,
+    required String reason,
+    required int pinSetSize,
+  }) {
+    return track('plan_pin_fallthrough', properties: {
+      'device_id': deviceId,
+      'activity_id': activityId,
+      'phase': phase,
+      if (subPhase != null) 'sub_phase': subPhase,
+      'reason': reason,
+      'pin_set_size': pinSetSize,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+
+  // 9. Activity Viewing Events
 
   /// Track when user views/taps on an activity
   /// Includes synced workout information to identify activities from integrations

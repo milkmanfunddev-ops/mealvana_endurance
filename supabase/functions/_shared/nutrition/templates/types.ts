@@ -124,6 +124,24 @@ export interface SubPhaseResult {
   /** Per-macro shortfalls when preferences eliminated viable options for
    * this sub-phase. Empty/absent on a clean fit. */
   shortfalls?: SubPhaseShortfall[];
+  /** Pin honoring telemetry. Populated only when pins were supplied to the
+   * algorithm. Mirrors PreWorkoutPhaseResult.pin_decision; carried into the
+   * SubPhaseResult so the response surfaces it per phase. Formula Kit PR 2
+   * substep 5b. */
+  pin_decision?: {
+    used_pin: boolean;
+    pinned_template_id: string | null;
+    /** Template display name when `used_pin = true`, otherwise null. Lets the
+     * client render the pinned formula's label in the activity-detail pin
+     * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
+    pinned_template_name: string | null;
+    fallthrough_reason: 'no_pin_for_scope' | null;
+    /** Count of in-scope pinned candidates the algorithm saw for this phase
+     * after scope-matching (sub_phase / activity_type × duration). Drives
+     * the `plan_used_pin` / `plan_pin_fallthrough` analytics payload. 0 when
+     * pins were supplied but none matched scope. Formula Kit PR 2 substep 7. */
+    pin_set_size: number;
+  };
 }
 
 // ============================================================================
