@@ -13,6 +13,7 @@ import '../../onboarding/domain/dietary_preference.dart';
 import '../data/during_workout_templates_repository.dart';
 import '../data/formula_pins_repository.dart';
 import '../data/pre_workout_templates_repository.dart';
+import '../domain/after_filter_options.dart';
 import '../domain/before_sub_phase.dart';
 import '../domain/during_filter_options.dart';
 import '../domain/formula_filter_state.dart';
@@ -388,8 +389,9 @@ class FormulaLibraryController extends _$FormulaLibraryController {
   }
 
   /// Clear all phase chip filters (Timing for Before; Activity + Duration
-  /// for During). Sheet-level filters (digestion / gut / ignore-diet) are
-  /// left intact.
+  /// for During; Travel friendliness for After — resets to the all-three
+  /// default). Sheet-level filters (digestion / gut / ignore-diet) are left
+  /// intact.
   void clearPhaseChipFilters() {
     final current = state.value;
     if (current == null) return;
@@ -400,8 +402,37 @@ class FormulaLibraryController extends _$FormulaLibraryController {
           beforeSubPhase: filter.phase == FormulaPhase.before ? () => null : null,
           duringActivity: filter.phase == FormulaPhase.during ? () => null : null,
           duringDuration: filter.phase == FormulaPhase.during ? () => null : null,
+          afterTravelFriendliness: filter.phase == FormulaPhase.after
+              ? FormulaFilterState.defaultAfterTravelFriendliness
+              : null,
         ),
       ),
+    );
+  }
+
+  /// Toggle whether a specific [TravelFriendliness] bucket is included in the
+  /// After chip-row filter. Multi-select: adding/removing a value flips its
+  /// chip's presence in the active set. Fires `formula_filter_applied` with
+  /// the value's storage key and the full filter state for downstream funnel
+  /// analysis.
+  Future<void> toggleAfterTravelFriendliness(TravelFriendliness value) async {
+    final current = state.value;
+    if (current == null) return;
+    final next =
+        Set<TravelFriendliness>.from(current.filter.afterTravelFriendliness);
+    final isNowActive = !next.contains(value);
+    if (isNowActive) {
+      next.add(value);
+    } else {
+      next.remove(value);
+    }
+    final nextFilter =
+        current.filter.copyWith(afterTravelFriendliness: next);
+    state = AsyncData(current.copyWith(filter: nextFilter));
+    await _trackFilterApplied(
+      'travel_friendliness',
+      value.storageValue,
+      nextFilter,
     );
   }
 
