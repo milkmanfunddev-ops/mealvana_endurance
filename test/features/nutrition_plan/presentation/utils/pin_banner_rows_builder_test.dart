@@ -4,12 +4,13 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/plan_section.d
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/utils/pin_banner_rows_builder.dart';
 
 // Locks in the three-state synthesis rule for the activity-detail pin
-// banner (Formula Kit PR 2 substep 11 polish). See
-// `docs/features/formula-kit/PLAN.md` → "PinStatusBanner V1 polish".
+// banner (Formula Kit PR 2 substep 11 polish; extended for After in PR 3
+// substep 9). See `docs/features/formula-kit/PLAN.md` → "PinStatusBanner
+// V1 polish".
 //
 // The rule, in short:
 //   - If the plan has no pinnable phases at all (short walk, no
-//     Before/During) → return Hidden. Banner stays off-screen.
+//     Before/During/After) → return Hidden. Banner stays off-screen.
 //   - If the plan has pinnable phases but ZERO real PinDecisions →
 //     return Onboarding. Banner becomes a discovery prompt for users
 //     who haven't engaged with pins yet.
@@ -17,6 +18,7 @@ import 'package:mealvana_endurance/features/nutrition_plan/presentation/utils/pi
 //     (Status mode):
 //       * Pinnable sub_phases (meal / snack / top_up) on Before sections
 //       * The During section itself
+//       * The After section itself
 //     Real decisions render as-is; missing ones get a synthesized
 //     `PinDecision(usedPin: false, pinSetSize: 0, fallthroughReason:
 //     noPinForScope)` so the banner is honest about every place a pin
@@ -59,10 +61,11 @@ PlanSection _duringSection({PinDecision? pin}) => PlanSection(
       pinDecision: pin,
     );
 
-PlanSection _afterSection() => PlanSection(
+PlanSection _afterSection({PinDecision? pin}) => PlanSection(
       id: 'after_run',
       title: 'After Run',
       foodItems: const [],
+      pinDecision: pin,
     );
 
 void main() {
@@ -71,12 +74,6 @@ void main() {
       final data = collectPinBannerRows(const []);
       expect(data.rows, isEmpty);
       expect(data.isOnboarding, isFalse);
-      expect(data.shouldRender, isFalse);
-    });
-
-    test('plan with only an After section returns Hidden', () {
-      // Pins don't apply to After. No pinnable phases → banner stays off.
-      final data = collectPinBannerRows([_afterSection()]);
       expect(data.shouldRender, isFalse);
     });
 
@@ -128,14 +125,26 @@ void main() {
       expect(data.isOnboarding, isTrue);
       expect(data.rows, isEmpty);
     });
+
+    test('plan with only an After section → Onboarding', () {
+      // After is pinnable in PR 3 substep 9. An After-only plan with no
+      // real decision should now surface the discovery prompt rather than
+      // stay hidden.
+      final data = collectPinBannerRows([_afterSection()]);
+      expect(data.isOnboarding, isTrue);
+      expect(data.rows, isEmpty);
+    });
   });
 
   group('collectPinBannerRows — Status mode (pass-through real decisions)',
       () {
-    test('emits one row per real decision, Before sub-phases then During', () {
+    test(
+        'emits one row per real decision, Before sub-phases then During '
+        'then After', () {
       final mealPin = _honored(name: 'Bagel + Jam');
       final snackPin = _honored(name: 'OJ + Toast');
       final duringPin = _honored(name: 'Sports Drink');
+      final afterPin = _honored(name: 'Chocolate Milk');
 
       final sections = [
         _beforeSection(subs: [
@@ -144,17 +153,19 @@ void main() {
           _sub('top_up', pin: _fallthroughNoScope),
         ]),
         _duringSection(pin: duringPin),
+        _afterSection(pin: afterPin),
       ];
 
       final data = collectPinBannerRows(sections);
 
       expect(data.isOnboarding, isFalse);
       expect(data.rows.map((r) => r.label).toList(),
-          ['Meal', 'Snack', 'Top-Off', 'During']);
+          ['Meal', 'Snack', 'Top-Off', 'During', 'After']);
       expect(data.rows[0].decision, same(mealPin));
       expect(data.rows[1].decision, same(snackPin));
       expect(data.rows[2].decision, same(_fallthroughNoScope));
       expect(data.rows[3].decision, same(duringPin));
+      expect(data.rows[4].decision, same(afterPin));
     });
   });
 
@@ -188,7 +199,7 @@ void main() {
 
     test(
         'plan with only one real Before pin (snack) synthesizes the other '
-        'three pinnable phases', () {
+        'four pinnable phases', () {
       final snackPin = _honored();
       final sections = [
         _beforeSection(subs: [
@@ -197,13 +208,14 @@ void main() {
           _sub('top_up'),
         ]),
         _duringSection(),
+        _afterSection(),
       ];
 
       final data = collectPinBannerRows(sections);
 
       expect(data.isOnboarding, isFalse);
       expect(data.rows.map((r) => r.label).toList(),
-          ['Meal', 'Snack', 'Top-Off', 'During']);
+          ['Meal', 'Snack', 'Top-Off', 'During', 'After']);
       expect(data.rows[0].decision.usedPin, isFalse,
           reason: 'Meal synthesized — no real decision');
       expect(data.rows[1].decision, same(snackPin),
@@ -212,6 +224,31 @@ void main() {
           reason: 'Top-Off synthesized');
       expect(data.rows[3].decision.usedPin, isFalse,
           reason: 'During synthesized');
+      expect(data.rows[4].decision.usedPin, isFalse,
+          reason: 'After synthesized');
+    });
+
+    test(
+        'After section with real decision renders, missing During gets '
+        'synthesized between Before and After', () {
+      // Mirrors the scenario-4 synthesis case but in reverse: pin lives on
+      // After, During is silent and must be filled in.
+      final afterPin = _honored(name: 'Greek Yogurt + Berries');
+      final sections = [
+        _beforeSection(subs: [_sub('meal', pin: _fallthroughNoScope)]),
+        _duringSection(),
+        _afterSection(pin: afterPin),
+      ];
+
+      final data = collectPinBannerRows(sections);
+
+      expect(data.isOnboarding, isFalse);
+      expect(data.rows.map((r) => r.label).toList(),
+          ['Meal', 'During', 'After']);
+      expect(data.rows[1].decision.usedPin, isFalse);
+      expect(data.rows[1].decision.fallthroughReason,
+          PinFallthroughReason.noPinForScope);
+      expect(data.rows[2].decision, same(afterPin));
     });
 
     test('unknown sub_phase types are skipped (not synthesized)', () {
@@ -231,10 +268,11 @@ void main() {
     });
   });
 
-  group('collectPinBannerRows — non-pinnable sections excluded', () {
-    test('After section is never synthesized', () {
-      // Pins only fire on Before/During. An After section without a decision
-      // must not get a synthesized row.
+  group('collectPinBannerRows — After section synthesis (PR 3 substep 9)', () {
+    test('After section without a decision IS synthesized', () {
+      // PR 3 substep 9: After is pinnable. An After section without a
+      // decision must now get a synthesized "No pin found" row, matching
+      // the During behavior.
       final mealPin = _honored();
       final sections = [
         _beforeSection(subs: [_sub('meal', pin: mealPin)]),
@@ -243,7 +281,29 @@ void main() {
 
       final data = collectPinBannerRows(sections);
 
-      expect(data.rows.map((r) => r.label).toList(), ['Meal']);
+      expect(data.rows.map((r) => r.label).toList(), ['Meal', 'After']);
+      expect(data.rows[1].decision.usedPin, isFalse);
+      expect(data.rows[1].decision.pinSetSize, 0);
+      expect(data.rows[1].decision.fallthroughReason,
+          PinFallthroughReason.noPinForScope);
+    });
+
+    test("section id 'after' (not 'after_run') is recognized as pinnable",
+        () {
+      // Alias coverage parallel to the During alias test below.
+      final mealPin = _honored();
+      final sections = [
+        _beforeSection(subs: [_sub('meal', pin: mealPin)]),
+        PlanSection(
+          id: 'after',
+          title: 'After',
+          foodItems: const [],
+        ),
+      ];
+
+      final data = collectPinBannerRows(sections);
+
+      expect(data.rows.map((r) => r.label).toList(), ['Meal', 'After']);
     });
   });
 

@@ -327,6 +327,9 @@ serve(async (req) => {
     ) {
       afterResponse.shortfalls = afterPhaseResult.shortfalls;
     }
+    if (afterPhaseResult.pin_decision) {
+      afterResponse.pin_decision = afterPhaseResult.pin_decision;
+    }
 
     const response: Record<string, unknown> = {
       success: true,
@@ -340,6 +343,12 @@ serve(async (req) => {
         after_metadata: afterResponse.template_metadata ?? null,
         ...(afterResponse.shortfalls
           ? { after_shortfalls: afterResponse.shortfalls }
+          : {}),
+        // Formula Kit PR 3 substep 9: After-phase pin telemetry rides as a
+        // sibling key (same pattern as after_metadata) instead of nesting
+        // under `after`, which older clients read as a flat array.
+        ...(afterResponse.pin_decision
+          ? { after_pin_decision: afterResponse.pin_decision }
           : {}),
       },
       macro_targets: {

@@ -171,13 +171,23 @@ class NutritionPlanMapper {
             }
 
             // Parse "after" section
+            // Foods ride under `after` as a flat list (older-client contract);
+            // the pin_decision telemetry rides as a sibling key
+            // `after_pin_decision` — see generate-nutrition-plan-v3/index.ts.
+            // Formula Kit PR 3 substep 9.
             if (plan['after'] is List) {
-              parsedSections.add(
-                PlanSection.fromEdgeFunctionJson(
-                  'after_run',
-                  plan['after'] as List<dynamic>,
-                ),
+              var afterSection = PlanSection.fromEdgeFunctionJson(
+                'after_run',
+                plan['after'] as List<dynamic>,
               );
+              final afterPinDecisionJson =
+                  plan['after_pin_decision'] as Map<String, dynamic>?;
+              if (afterPinDecisionJson != null) {
+                afterSection = afterSection.copyWith(
+                  pinDecision: PinDecision.fromJson(afterPinDecisionJson),
+                );
+              }
+              parsedSections.add(afterSection);
             }
 
             // Apply per-phase targets from macro_targets (snake_case from V2 edge function)
