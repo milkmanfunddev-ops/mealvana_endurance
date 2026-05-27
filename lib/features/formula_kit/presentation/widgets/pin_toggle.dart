@@ -79,6 +79,36 @@ class PinToggleDuring extends ConsumerWidget {
   }
 }
 
+class PinToggleAfter extends ConsumerWidget {
+  const PinToggleAfter({
+    super.key,
+    required this.formula,
+    required this.source,
+  });
+
+  final AfterFormulaView formula;
+  final String source;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _PinIconButton(
+      isPinned: ref.watch(formulaPinControllerProvider).maybeWhen(
+            data: (s) => s.pinnedTemplateIds.contains(formula.id),
+            orElse: () => false,
+          ),
+      onTap: () async {
+        try {
+          await ref
+              .read(formulaPinControllerProvider.notifier)
+              .toggleAfter(formula: formula, source: source);
+        } catch (e) {
+          if (context.mounted) _showError(context, e);
+        }
+      },
+    );
+  }
+}
+
 class _PinIconButton extends StatelessWidget {
   const _PinIconButton({required this.isPinned, required this.onTap});
 

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/features/formula_kit/domain/after_filter_options.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/before_sub_phase.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/during_filter_options.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/formula_filter_state.dart';
@@ -16,6 +17,8 @@ void main() {
       expect(state.duringActivity, isNull);
       expect(state.duringDuration, isNull);
       expect(state.duringGutLevel, isNull);
+      // After travel chip is single-select; null = no filter (show all).
+      expect(state.afterTravelFriendliness, isNull);
       expect(state.activeAllergyFilters, isEmpty);
       expect(state.activeDietFilters, isEmpty);
       expect(state.activeChipFilterCount, 0);
@@ -35,6 +38,25 @@ void main() {
         duringDuration: DuringDuration.ninetyTo150,
       );
       expect(during.activeChipFilterCount, 2);
+    });
+
+    test('activeChipFilterCount on After phase — 0 when null, 1 when set', () {
+      const unset = FormulaFilterState(phase: FormulaPhase.after);
+      expect(unset.activeChipFilterCount, 0);
+
+      const selected = FormulaFilterState(
+        phase: FormulaPhase.after,
+        afterTravelFriendliness: TravelFriendliness.inBag,
+      );
+      expect(selected.activeChipFilterCount, 1);
+    });
+
+    test('Before/During ignore afterTravelFriendliness for chip count', () {
+      const before = FormulaFilterState(
+        phase: FormulaPhase.before,
+        afterTravelFriendliness: TravelFriendliness.inBag,
+      );
+      expect(before.activeChipFilterCount, 0);
     });
 
     test('copyWith with no args returns an equal-but-not-same instance', () {
@@ -128,6 +150,23 @@ void main() {
       expect(DuringDuration.ninetyTo150.storageValue, '90-150 min');
       expect(DuringDuration.oneFiftyTo240.storageValue, '150-240 min');
       expect(DuringDuration.over240.storageValue, '> 240 min');
+    });
+  });
+
+  group('TravelFriendliness storage mapping', () {
+    test('storage values use snake_case for the post_workout_templates column',
+        () {
+      expect(TravelFriendliness.inBag.storageValue, 'in_bag');
+      expect(TravelFriendliness.coolerFriendly.storageValue, 'cooler_friendly');
+      expect(TravelFriendliness.homeOnly.storageValue, 'home_only');
+    });
+
+    test('fromStorageValue is the inverse of storageValue', () {
+      for (final v in TravelFriendliness.values) {
+        expect(TravelFriendliness.fromStorageValue(v.storageValue), v);
+      }
+      expect(TravelFriendliness.fromStorageValue('unknown'), isNull);
+      expect(TravelFriendliness.fromStorageValue(null), isNull);
     });
   });
 

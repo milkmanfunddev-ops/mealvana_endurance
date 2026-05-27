@@ -673,6 +673,14 @@ class AppRouter {
                 phase: FormulaPhase.during,
               ),
             ),
+            GoRoute(
+              path: 'after/:id',
+              name: 'settings-formula-detail-after',
+              builder: (context, state) => FormulaDetailScreen(
+                id: state.pathParameters['id']!,
+                phase: FormulaPhase.after,
+              ),
+            ),
           ],
         ),
 

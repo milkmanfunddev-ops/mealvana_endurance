@@ -12,7 +12,9 @@ import '../../onboarding/domain/allergy.dart';
 import '../../onboarding/domain/dietary_preference.dart';
 import '../data/during_workout_templates_repository.dart';
 import '../data/formula_pins_repository.dart';
+import '../data/post_workout_templates_repository.dart';
 import '../data/pre_workout_templates_repository.dart';
+import '../domain/after_filter_options.dart';
 import '../domain/before_sub_phase.dart';
 import '../domain/during_filter_options.dart';
 import '../domain/formula_filter_state.dart';
@@ -37,6 +39,7 @@ class FormulaLibraryState {
     required this.filter,
     required this.beforeFormulas,
     required this.duringFormulas,
+    required this.afterFormulas,
     required this.userDiets,
     required this.userAllergies,
   });
@@ -44,6 +47,7 @@ class FormulaLibraryState {
   final FormulaFilterState filter;
   final List<BeforeFormulaView> beforeFormulas;
   final List<DuringFormulaView> duringFormulas;
+  final List<AfterFormulaView> afterFormulas;
 
   /// Always derived from the current `UserProfile.dietaryPreference`. A
   /// single-select preference; modelled as a list to keep the matching code
@@ -55,6 +59,7 @@ class FormulaLibraryState {
     FormulaFilterState? filter,
     List<BeforeFormulaView>? beforeFormulas,
     List<DuringFormulaView>? duringFormulas,
+    List<AfterFormulaView>? afterFormulas,
     List<DietaryPreference>? userDiets,
     List<Allergy>? userAllergies,
   }) {
@@ -62,6 +67,7 @@ class FormulaLibraryState {
       filter: filter ?? this.filter,
       beforeFormulas: beforeFormulas ?? this.beforeFormulas,
       duringFormulas: duringFormulas ?? this.duringFormulas,
+      afterFormulas: afterFormulas ?? this.afterFormulas,
       userDiets: userDiets ?? this.userDiets,
       userAllergies: userAllergies ?? this.userAllergies,
     );
@@ -104,6 +110,26 @@ class FormulaLibraryState {
         return false;
       }
       return true;
+    }).toList();
+  }
+
+  /// After list with dietary + travel-friendliness filters applied. The
+  /// travel-friendliness chip is single-select — null means no filter,
+  /// otherwise the list is narrowed to templates whose `travelFriendliness`
+  /// matches. Templates with no `travelFriendliness` value are always shown
+  /// (nothing to filter on).
+  List<AfterFormulaView> get filteredAfterFormulas {
+    final selected = filter.afterTravelFriendliness;
+    return afterFormulas.where((f) {
+      if (!_passesDietary(f.allergens, f.excludedDiets)) {
+        return false;
+      }
+      if (selected == null) return true;
+      final tf = f.travelFriendliness;
+      if (tf == null) return true;
+      final parsed = TravelFriendliness.fromStorageValue(tf);
+      if (parsed == null) return true;
+      return parsed == selected;
     }).toList();
   }
 
@@ -166,6 +192,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
   FutureOr<FormulaLibraryState> build() async {
     final preWorkoutRepo = ref.read(preWorkoutTemplatesRepositoryProvider);
     final duringRepo = ref.read(duringWorkoutTemplatesRepositoryProvider);
+    final postRepo = ref.read(postWorkoutTemplatesRepositoryProvider);
     final templateFoodsRepo = ref.read(templateFoodsRepositoryProvider);
     final pinsRepo = ref.read(formulaPinsRepositoryProvider);
     final userRepo = await ref.read(userRepositoryProvider.future);
@@ -202,6 +229,9 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       if (await duringRepo.isStale()) {
         await duringRepo.syncFromRemote(userId);
       }
+      if (await postRepo.isStale()) {
+        await postRepo.syncFromRemote(userId);
+      }
       if (await pinsRepo.isStale()) {
         await pinsRepo.syncFromRemote(userId);
       }
@@ -215,6 +245,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
 
     final beforeEntries = await preWorkoutRepo.getAll();
     final duringEntries = await duringRepo.getAll();
+    final afterEntries = await postRepo.getAll();
     final templateFoods = await templateFoodsRepo.getAllTemplateFoods();
 
     // Index template foods by their machine name (lowercased) so _mapBefore
@@ -226,6 +257,8 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     final beforeViews =
         beforeEntries.map((e) => _mapBefore(e, templateFoodsByName)).toList();
     final duringViews = duringEntries.map(_mapDuring).toList();
+    final afterViews =
+        afterEntries.map((e) => _mapAfter(e, templateFoodsByName)).toList();
 
     final userDiets = user?.dietaryPreference == null
         ? const <DietaryPreference>[]
@@ -244,6 +277,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       ),
       beforeFormulas: beforeViews,
       duringFormulas: duringViews,
+      afterFormulas: afterViews,
       userDiets: userDiets,
       userAllergies: userAllergies,
     );
@@ -251,7 +285,8 @@ class FormulaLibraryController extends _$FormulaLibraryController {
 
   // ── State mutations ────────────────────────────────────────────────────
 
-  /// Switch between the Before / During tabs. Fires `formula_phase_switched`.
+  /// Switch between the Before / During / After tabs. Fires
+  /// `formula_phase_switched` with `from` + `to` phase analytics values.
   Future<void> setPhase(FormulaPhase next) async {
     final current = state.value;
     if (current == null || current.filter.phase == next) return;
@@ -388,8 +423,9 @@ class FormulaLibraryController extends _$FormulaLibraryController {
   }
 
   /// Clear all phase chip filters (Timing for Before; Activity + Duration
-  /// for During). Sheet-level filters (digestion / gut / ignore-diet) are
-  /// left intact.
+  /// for During; Travel friendliness for After — resets to the all-three
+  /// default). Sheet-level filters (digestion / gut / ignore-diet) are left
+  /// intact.
   void clearPhaseChipFilters() {
     final current = state.value;
     if (current == null) return;
@@ -400,9 +436,32 @@ class FormulaLibraryController extends _$FormulaLibraryController {
           beforeSubPhase: filter.phase == FormulaPhase.before ? () => null : null,
           duringActivity: filter.phase == FormulaPhase.during ? () => null : null,
           duringDuration: filter.phase == FormulaPhase.during ? () => null : null,
+          afterTravelFriendliness:
+              filter.phase == FormulaPhase.after ? () => null : null,
         ),
       ),
     );
+  }
+
+  /// Toggle the After travel-friendliness chip. Single-select: tapping the
+  /// active value clears the filter (returns to "show all"), tapping any
+  /// other value selects it exclusively. Fires `formula_filter_applied`
+  /// with the value's storage key when a value is set.
+  Future<void> toggleAfterTravelFriendliness(TravelFriendliness value) async {
+    final current = state.value;
+    if (current == null) return;
+    final next =
+        current.filter.afterTravelFriendliness == value ? null : value;
+    final nextFilter =
+        current.filter.copyWith(afterTravelFriendliness: () => next);
+    state = AsyncData(current.copyWith(filter: nextFilter));
+    if (next != null) {
+      await _trackFilterApplied(
+        'travel_friendliness',
+        next.storageValue,
+        nextFilter,
+      );
+    }
   }
 
   /// Toggle whether a specific allergy is being filtered against. When the
@@ -624,6 +683,73 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       excludedDiets: _decodeStringArray(e.excludedDiets),
       componentCarbRatios: ratios,
       primaryToSecondaryRatio: e.primaryToSecondaryRatio,
+      notes: e.notes,
+    );
+  }
+
+  AfterFormulaView _mapAfter(
+    PostWorkoutTemplateEntry e,
+    Map<String, TemplateFoodEntry> templateFoodsByName,
+  ) {
+    final componentNames = _decodeStringArray(e.componentFoodNames);
+    // `default_servings` shape mirrors pre_workout_templates.component_quantities:
+    // `{"cottage_cheese": 1, "applesauce": 1}`. Reuse the same JSON decoder.
+    final defaultServings = _decodeQuantityMap(e.defaultServings);
+
+    final componentDisplayStrings = componentNames
+        .map(
+          (n) => _buildComponentDisplayString(
+            componentName: n,
+            proportion: defaultServings[n.toLowerCase()] ?? 1,
+            templateFoodsByName: templateFoodsByName,
+          ),
+        )
+        .toList();
+
+    // Aggregate macros by summing per-component (template_foods macros ×
+    // default servings count). When a component has no matching template_foods
+    // row, contribute zero — UI surfaces it as "0g" rather than crashing.
+    var carbs = 0.0;
+    var protein = 0.0;
+    var fat = 0.0;
+    var sodium = 0.0;
+    var fluid = 0.0;
+    for (final name in componentNames) {
+      final qty = (defaultServings[name.toLowerCase()] ?? 1).toDouble();
+      final tf = templateFoodsByName[name.toLowerCase()];
+      if (tf == null) continue;
+      carbs += tf.carbsG * qty;
+      protein += tf.proteinG * qty;
+      fat += tf.fatG * qty;
+      sodium += tf.sodiumMg * qty;
+      fluid += (tf.fluidMl ?? 0) * qty;
+    }
+    final calories = ((carbs * 4) + (protein * 4) + (fat * 9)).round();
+
+    return AfterFormulaView(
+      id: e.id,
+      templateNumber: e.templateNumber,
+      name: e.name,
+      formula: e.formula,
+      activityTypes: _decodeStringArray(e.activityTypes),
+      componentFoodNames: componentNames,
+      componentDisplayStrings: componentDisplayStrings,
+      carbSources: _decodeStringArray(e.carbSources),
+      allergens: _decodeStringArray(e.allergens),
+      excludedDiets: _decodeStringArray(e.excludedDiets),
+      selectionPriority: e.selectionPriority,
+      totalCarbsG: carbs,
+      totalProteinG: protein,
+      totalFatG: fat,
+      totalSodiumMg: sodium,
+      totalFluidMl: fluid,
+      totalCalories: calories,
+      portions: e.portions,
+      travelFriendliness: e.travelFriendliness,
+      flavorProfile: e.flavorProfile,
+      prepEffort: e.prepEffort,
+      proteinAnchor: e.proteinAnchor,
+      targetCarbProteinRatio: e.targetCarbProteinRatio,
       notes: e.notes,
     );
   }

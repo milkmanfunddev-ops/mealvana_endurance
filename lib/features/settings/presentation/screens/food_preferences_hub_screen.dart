@@ -134,13 +134,13 @@ class FoodPreferencesHubScreen extends ConsumerWidget {
 
                 const SizedBox(height: AppSpacing.sm),
 
-                // Formula Library — browse Before/During nutrition formulas.
+                // Formula Library — browse Before/During/After nutrition formulas.
                 _buildHubTile(
                   context: context,
                   ref: ref,
                   icon: FontAwesomeIcons.flask.data,
                   title: 'Formula Library',
-                  subtitle: 'Browse Before & During formulas',
+                  subtitle: 'Browse Before & During & After formulas',
                   route: '/settings/food-preferences/formula-library',
                   analyticsEvent: 'settings_formula_library_tapped',
                 ),

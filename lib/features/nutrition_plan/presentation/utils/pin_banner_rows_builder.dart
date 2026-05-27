@@ -55,13 +55,17 @@ class PinBannerData {
 ///    noPinForScope)` so the banner is honest about every place a pin
 ///    could have applied.
 ///
-/// Pinnable phases: Before sub_phases ∈ {meal, snack, top_up} and the
-/// During section. Order matches user-facing flow.
+/// Pinnable phases: Before sub_phases ∈ {meal, snack, top_up}, the During
+/// section, and the After section. Order matches user-facing flow.
 PinBannerData collectPinBannerRows(List<PlanSection> sections) {
   bool isPinnableSubPhase(String type) =>
       type == 'meal' || type == 'snack' || type == 'top_up';
 
   bool isDuringSection(String id) => id == 'during_run' || id == 'during';
+
+  // Formula Kit PR 3 substep 9 — After is pinnable now that post-workout
+  // recovery templates support pins (post_system kind).
+  bool isAfterSection(String id) => id == 'after_run' || id == 'after';
 
   bool hasAnyRealDecision = false;
   bool hasAnyPinnablePhase = false;
@@ -74,7 +78,7 @@ PinBannerData collectPinBannerRows(List<PlanSection> sections) {
         if (sub.pinDecision != null) hasAnyRealDecision = true;
       }
     }
-    if (isDuringSection(section.id)) {
+    if (isDuringSection(section.id) || isAfterSection(section.id)) {
       hasAnyPinnablePhase = true;
     }
     if (section.pinDecision != null) hasAnyRealDecision = true;
@@ -117,7 +121,7 @@ PinBannerData collectPinBannerRows(List<PlanSection> sections) {
         }
       }
     }
-    // During section carries its decision at the section level.
+    // During / After sections carry their decision at the section level.
     if (section.pinDecision != null) {
       rows.add(
         PinStatusBannerRow(
@@ -125,7 +129,7 @@ PinBannerData collectPinBannerRows(List<PlanSection> sections) {
           decision: section.pinDecision!,
         ),
       );
-    } else if (isDuringSection(section.id)) {
+    } else if (isDuringSection(section.id) || isAfterSection(section.id)) {
       rows.add(
         PinStatusBannerRow(
           label: sectionLabel(section.id),

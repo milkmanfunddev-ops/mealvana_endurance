@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../onboarding/domain/allergy.dart';
 import '../../onboarding/domain/dietary_preference.dart';
+import 'after_filter_options.dart';
 import 'before_sub_phase.dart';
 import 'during_filter_options.dart';
 import 'formula_phase.dart';
@@ -31,6 +32,7 @@ class FormulaFilterState {
     this.duringActivity,
     this.duringDuration,
     this.duringGutLevel,
+    this.afterTravelFriendliness,
     this.activeAllergyFilters = const {},
     this.activeDietFilters = const {},
     this.pinnedOnly = false,
@@ -46,6 +48,13 @@ class FormulaFilterState {
   final DuringActivity? duringActivity;
   final DuringDuration? duringDuration;
   final DuringGutLevel? duringGutLevel;
+
+  // ---- After-only fields ----
+  /// Single-select travel-friendliness chip. `null` means no filter
+  /// (everything passes); a value narrows the list to templates whose
+  /// `travelFriendliness` matches. Templates whose `travelFriendliness`
+  /// is null are always shown (nothing to filter on).
+  final TravelFriendliness? afterTravelFriendliness;
 
   // ---- Cross-phase: dietary filters ----
   /// Allergies that are currently being filtered out. Formulas whose allergens
@@ -66,8 +75,12 @@ class FormulaFilterState {
     if (phase == FormulaPhase.before) {
       return beforeSubPhase == null ? 0 : 1;
     }
-    return (duringActivity == null ? 0 : 1) +
-        (duringDuration == null ? 0 : 1);
+    if (phase == FormulaPhase.during) {
+      return (duringActivity == null ? 0 : 1) +
+          (duringDuration == null ? 0 : 1);
+    }
+    // After: single-select chip — active when a value is set.
+    return afterTravelFriendliness == null ? 0 : 1;
   }
 
   FormulaFilterState copyWith({
@@ -77,6 +90,7 @@ class FormulaFilterState {
     DuringActivity? Function()? duringActivity,
     DuringDuration? Function()? duringDuration,
     DuringGutLevel? Function()? duringGutLevel,
+    TravelFriendliness? Function()? afterTravelFriendliness,
     Set<Allergy>? activeAllergyFilters,
     Set<DietaryPreference>? activeDietFilters,
     bool? pinnedOnly,
@@ -94,6 +108,9 @@ class FormulaFilterState {
           duringDuration != null ? duringDuration() : this.duringDuration,
       duringGutLevel:
           duringGutLevel != null ? duringGutLevel() : this.duringGutLevel,
+      afterTravelFriendliness: afterTravelFriendliness != null
+          ? afterTravelFriendliness()
+          : this.afterTravelFriendliness,
       activeAllergyFilters:
           activeAllergyFilters ?? this.activeAllergyFilters,
       activeDietFilters: activeDietFilters ?? this.activeDietFilters,
@@ -110,6 +127,7 @@ class FormulaFilterState {
         other.duringActivity == duringActivity &&
         other.duringDuration == duringDuration &&
         other.duringGutLevel == duringGutLevel &&
+        other.afterTravelFriendliness == afterTravelFriendliness &&
         setEquals(other.activeAllergyFilters, activeAllergyFilters) &&
         setEquals(other.activeDietFilters, activeDietFilters) &&
         other.pinnedOnly == pinnedOnly;
@@ -123,6 +141,7 @@ class FormulaFilterState {
         duringActivity,
         duringDuration,
         duringGutLevel,
+        afterTravelFriendliness,
         Object.hashAllUnordered(activeAllergyFilters),
         Object.hashAllUnordered(activeDietFilters),
         pinnedOnly,

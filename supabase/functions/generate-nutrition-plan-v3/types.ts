@@ -153,7 +153,18 @@ export interface LPPhaseResult {
      * client render the pinned formula's label in the activity-detail pin
      * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
     pinned_template_name: string | null;
-    fallthrough_reason: "no_pin_for_scope" | null;
+    /** `no_pin_for_scope` — pins supplied but none matched this scope.
+     * `pinned_template_unrenderable` — pin was in scope and selected,
+     * but the renderer returned null (e.g. a required component food
+     * was missing from the food pool). Option A guard so the wire never
+     * claims `used_pin: true` while the section served LP foods. Should
+     * be unreachable in practice for After once pinnedComponentNames
+     * bypass at food-load is in place (PR 3 #35 fix). Formula Kit PR 3
+     * substep 9 follow-up. */
+    fallthrough_reason:
+      | "no_pin_for_scope"
+      | "pinned_template_unrenderable"
+      | null;
     /** Count of in-scope pinned candidates the algorithm saw for this phase.
      * Drives `plan_used_pin` / `plan_pin_fallthrough` analytics. 0 when pins
      * were supplied but none matched scope. Formula Kit PR 2 substep 7. */

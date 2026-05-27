@@ -8,10 +8,12 @@ import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 
 import '../../application/formula_library_controller.dart';
 import '../../application/formula_pin_controller.dart';
+import '../../domain/after_filter_options.dart';
 import '../../domain/before_sub_phase.dart';
 import '../../domain/during_filter_options.dart';
 import '../../domain/formula_phase.dart';
 import '../../domain/formula_view.dart';
+import '../widgets/after_formula_card.dart';
 import '../widgets/before_formula_card.dart';
 import '../widgets/collapsible_header.dart';
 import '../widgets/during_formula_card.dart';
@@ -139,9 +141,16 @@ class _BodyState extends ConsumerState<_Body> {
         if (f.beforeSubPhase != null) f.beforeSubPhase!.displayLabel,
       ];
     }
+    if (f.phase == FormulaPhase.during) {
+      return [
+        if (f.duringActivity != null) f.duringActivity!.displayLabel,
+        if (f.duringDuration != null) f.duringDuration!.displayLabel,
+      ];
+    }
+    // After: single-select chip — surface the active value when set.
     return [
-      if (f.duringActivity != null) f.duringActivity!.displayLabel,
-      if (f.duringDuration != null) f.duringDuration!.displayLabel,
+      if (f.afterTravelFriendliness != null)
+        f.afterTravelFriendliness!.displayLabel,
     ];
   }
 
@@ -170,6 +179,11 @@ class _BodyState extends ConsumerState<_Body> {
             .where((f) => pinIds.contains(f.id))
             .toList()
         : state.filteredDuringFormulas;
+    final visibleAfter = pinnedOnly
+        ? state.filteredAfterFormulas
+            .where((f) => pinIds.contains(f.id))
+            .toList()
+        : state.filteredAfterFormulas;
 
     // Pin counts per phase from the *unfiltered* lists, used by empty-state
     // copy to differentiate "you have no pins" from "your pins don't match
@@ -178,13 +192,19 @@ class _BodyState extends ConsumerState<_Body> {
         state.beforeFormulas.where((f) => pinIds.contains(f.id)).length;
     final pinnedDuringCount =
         state.duringFormulas.where((f) => pinIds.contains(f.id)).length;
+    final pinnedAfterCount =
+        state.afterFormulas.where((f) => pinIds.contains(f.id)).length;
 
-    final visibleCount = phase == FormulaPhase.before
-        ? visibleBefore.length
-        : visibleDuring.length;
-    final totalCount = phase == FormulaPhase.before
-        ? state.beforeFormulas.length
-        : state.duringFormulas.length;
+    final visibleCount = switch (phase) {
+      FormulaPhase.before => visibleBefore.length,
+      FormulaPhase.during => visibleDuring.length,
+      FormulaPhase.after => visibleAfter.length,
+    };
+    final totalCount = switch (phase) {
+      FormulaPhase.before => state.beforeFormulas.length,
+      FormulaPhase.during => state.duringFormulas.length,
+      FormulaPhase.after => state.afterFormulas.length,
+    };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -211,7 +231,7 @@ class _BodyState extends ConsumerState<_Body> {
                   isSelected: (v) => state.filter.beforeSubPhase == v,
                   onToggled: controller.toggleBeforeSubPhase,
                 )
-              else ...[
+              else if (phase == FormulaPhase.during) ...[
                 FilterChipRow<DuringActivity>(
                   key: const ValueKey('formula_kit.chip_row.during_activity'),
                   options: DuringActivity.values,
@@ -231,7 +251,23 @@ class _BodyState extends ConsumerState<_Body> {
                   isSelected: (v) => state.filter.duringDuration == v,
                   onToggled: controller.toggleDuringDuration,
                 ),
-              ],
+              ] else
+                // Multi-select chip row: tapping toggles a value's membership
+                // in the active set. Defaults to all three included (no
+                // filter); see `FormulaFilterState.afterTravelFriendliness`.
+                FilterChipRow<TravelFriendliness>(
+                  key: const ValueKey(
+                    'formula_kit.chip_row.after_travel_friendliness',
+                  ),
+                  options: TravelFriendliness.values,
+                  labelOf: (v) => v.displayLabel,
+                  keyOf: (v) => ValueKey(
+                    'formula_kit.chip.after_travel_friendliness.${v.name}',
+                  ),
+                  isSelected: (v) =>
+                      state.filter.afterTravelFriendliness == v,
+                  onToggled: controller.toggleAfterTravelFriendliness,
+                ),
               const SizedBox(height: AppSpacing.sm),
             ],
           ),
@@ -248,17 +284,23 @@ class _BodyState extends ConsumerState<_Body> {
         Expanded(
           child: NotificationListener<ScrollNotification>(
             onNotification: _onScroll,
-            child: phase == FormulaPhase.before
-                ? _BeforeList(
-                    formulas: visibleBefore,
-                    pinnedOnly: pinnedOnly,
-                    pinnedInPhaseCount: pinnedBeforeCount,
-                  )
-                : _DuringList(
-                    formulas: visibleDuring,
-                    pinnedOnly: pinnedOnly,
-                    pinnedInPhaseCount: pinnedDuringCount,
-                  ),
+            child: switch (phase) {
+              FormulaPhase.before => _BeforeList(
+                  formulas: visibleBefore,
+                  pinnedOnly: pinnedOnly,
+                  pinnedInPhaseCount: pinnedBeforeCount,
+                ),
+              FormulaPhase.during => _DuringList(
+                  formulas: visibleDuring,
+                  pinnedOnly: pinnedOnly,
+                  pinnedInPhaseCount: pinnedDuringCount,
+                ),
+              FormulaPhase.after => _AfterList(
+                  formulas: visibleAfter,
+                  pinnedOnly: pinnedOnly,
+                  pinnedInPhaseCount: pinnedAfterCount,
+                ),
+            },
           ),
         ),
       ],
@@ -354,6 +396,50 @@ class _DuringList extends StatelessWidget {
   }
 }
 
+class _AfterList extends StatelessWidget {
+  const _AfterList({
+    required this.formulas,
+    required this.pinnedOnly,
+    required this.pinnedInPhaseCount,
+  });
+
+  final List<AfterFormulaView> formulas;
+  final bool pinnedOnly;
+  final int pinnedInPhaseCount;
+
+  @override
+  Widget build(BuildContext context) {
+    if (formulas.isEmpty) {
+      return _LibraryEmptyState(
+        phase: FormulaPhase.after,
+        pinnedOnly: pinnedOnly,
+        pinnedInPhaseCount: pinnedInPhaseCount,
+      );
+    }
+    return ListView.separated(
+      key: const ValueKey('formula_kit.after_list'),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.xxxl,
+      ),
+      itemCount: formulas.length,
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+      itemBuilder: (context, i) {
+        final f = formulas[i];
+        return AfterFormulaCard(
+          key: ValueKey('formula_kit.after_card_${f.id}'),
+          formula: f,
+          onTap: () => context.push(
+            '/settings/food-preferences/formula-library/after/${f.id}',
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Empty-state router. Differentiates:
 ///   - pinned-only with **no pins at all** in this phase → onboarding nudge
 ///     ("Tap the thumbtack to pin one")
@@ -373,7 +459,7 @@ class _LibraryEmptyState extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final phaseLabel = phase == FormulaPhase.before ? 'Before' : 'During';
+    final phaseLabel = phase.displayLabel;
 
     if (pinnedOnly && pinnedInPhaseCount == 0) {
       return _EmptyState(
@@ -497,29 +583,15 @@ class _PinnedOnlyButton extends ConsumerWidget {
           onTap: () => ref
               .read(formulaLibraryControllerProvider.notifier)
               .togglePinnedOnly(pinnedCount: pinnedCount),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: 6,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FaIcon(
-                  FontAwesomeIcons.thumbtack,
-                  size: 14,
-                  color: isActive ? AppColors.orange : scheme.onSurface,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Pinned',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isActive ? AppColors.orange : scheme.onSurface,
-                  ),
-                ),
-              ],
+          child: SizedBox(
+            width: 36,
+            height: 36,
+            child: Center(
+              child: FaIcon(
+                FontAwesomeIcons.thumbtack,
+                size: 16,
+                color: isActive ? AppColors.orange : scheme.onSurface,
+              ),
             ),
           ),
         ),
@@ -550,50 +622,41 @@ class _MoreFiltersButton extends StatelessWidget {
           key: const ValueKey('formula_kit.more_filters_button'),
           borderRadius: AppRadius.circularRadius,
           onTap: () => MoreFiltersSheet.show(context),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: 6,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          child: SizedBox(
+            width: 36,
+            height: 36,
+            child: Stack(
+              alignment: Alignment.center,
               children: [
                 FaIcon(
                   FontAwesomeIcons.sliders,
-                  size: 14,
+                  size: 16,
                   color: hasActive ? AppColors.orange : scheme.onSurface,
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Filters',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: hasActive ? AppColors.orange : scheme.onSurface,
-                  ),
-                ),
-                if (hasActive) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    key: const ValueKey('formula_kit.more_filters_badge'),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.orange,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '$activeCount',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.blackberry,
+                if (hasActive)
+                  Positioned(
+                    top: 2,
+                    right: 2,
+                    child: Container(
+                      key: const ValueKey('formula_kit.more_filters_badge'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.orange,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$activeCount',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.blackberry,
+                        ),
                       ),
                     ),
                   ),
-                ],
               ],
             ),
           ),

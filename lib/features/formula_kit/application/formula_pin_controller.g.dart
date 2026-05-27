@@ -61,7 +61,7 @@ final class FormulaPinControllerProvider
 }
 
 String _$formulaPinControllerHash() =>
-    r'd9407f745c7205a5b4e96e2eb59a871943b224f4';
+    r'ad7a82f0e6777a0f55c20f461166fae3469d9dc8';
 
 /// Owns the active-pin set for the current user. Card / detail widgets read
 /// `pinnedTemplateIds.contains(id)` to render the icon state; `togglePin`

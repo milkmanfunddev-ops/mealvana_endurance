@@ -62,24 +62,34 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
         ),
         error: (e, _) => _ErrorView(message: e.toString()),
         data: (state) {
-          if (widget.phase == FormulaPhase.before) {
-            final formula = state.beforeFormulas
-                .cast<BeforeFormulaView?>()
-                .firstWhere(
-                  (f) => f?.id == widget.id,
-                  orElse: () => null,
-                );
-            if (formula == null) return const _NotFoundView();
-            return _BeforeDetailBody(formula: formula);
-          } else {
-            final formula = state.duringFormulas
-                .cast<DuringFormulaView?>()
-                .firstWhere(
-                  (f) => f?.id == widget.id,
-                  orElse: () => null,
-                );
-            if (formula == null) return const _NotFoundView();
-            return _DuringDetailBody(formula: formula);
+          switch (widget.phase) {
+            case FormulaPhase.before:
+              final formula = state.beforeFormulas
+                  .cast<BeforeFormulaView?>()
+                  .firstWhere(
+                    (f) => f?.id == widget.id,
+                    orElse: () => null,
+                  );
+              if (formula == null) return const _NotFoundView();
+              return _BeforeDetailBody(formula: formula);
+            case FormulaPhase.during:
+              final formula = state.duringFormulas
+                  .cast<DuringFormulaView?>()
+                  .firstWhere(
+                    (f) => f?.id == widget.id,
+                    orElse: () => null,
+                  );
+              if (formula == null) return const _NotFoundView();
+              return _DuringDetailBody(formula: formula);
+            case FormulaPhase.after:
+              final formula = state.afterFormulas
+                  .cast<AfterFormulaView?>()
+                  .firstWhere(
+                    (f) => f?.id == widget.id,
+                    orElse: () => null,
+                  );
+              if (formula == null) return const _NotFoundView();
+              return _AfterDetailBody(formula: formula);
           }
         },
       ),
@@ -93,28 +103,38 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     String title = 'Formula';
     BeforeFormulaView? beforeFormula;
     DuringFormulaView? duringFormula;
+    AfterFormulaView? afterFormula;
     asyncState.whenData((state) {
-      if (widget.phase == FormulaPhase.before) {
-        beforeFormula = state.beforeFormulas
-            .cast<BeforeFormulaView?>()
-            .firstWhere(
-              (f) => f?.id == widget.id,
-              orElse: () => null,
-            );
-        if (beforeFormula != null) title = beforeFormula!.name;
-      } else {
-        duringFormula = state.duringFormulas
-            .cast<DuringFormulaView?>()
-            .firstWhere(
-              (f) => f?.id == widget.id,
-              orElse: () => null,
-            );
-        if (duringFormula != null) title = duringFormula!.formula;
+      switch (widget.phase) {
+        case FormulaPhase.before:
+          beforeFormula = state.beforeFormulas
+              .cast<BeforeFormulaView?>()
+              .firstWhere(
+                (f) => f?.id == widget.id,
+                orElse: () => null,
+              );
+          if (beforeFormula != null) title = beforeFormula!.name;
+        case FormulaPhase.during:
+          duringFormula = state.duringFormulas
+              .cast<DuringFormulaView?>()
+              .firstWhere(
+                (f) => f?.id == widget.id,
+                orElse: () => null,
+              );
+          if (duringFormula != null) title = duringFormula!.formula;
+        case FormulaPhase.after:
+          afterFormula = state.afterFormulas
+              .cast<AfterFormulaView?>()
+              .firstWhere(
+                (f) => f?.id == widget.id,
+                orElse: () => null,
+              );
+          if (afterFormula != null) title = afterFormula!.name;
       }
     });
 
     // V1: only food templates are pinnable. Before drink/electrolyte cards
-    // hide the toggle; During templates are all food by design.
+    // hide the toggle; During and After templates are all food by design.
     Widget? pinAction;
     if (beforeFormula != null && beforeFormula!.isPinnable) {
       pinAction = PinToggleBefore(
@@ -126,6 +146,12 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
       pinAction = PinToggleDuring(
         key: ValueKey('formula_kit.detail_pin_${duringFormula!.id}'),
         formula: duringFormula!,
+        source: 'detail',
+      );
+    } else if (afterFormula != null) {
+      pinAction = PinToggleAfter(
+        key: ValueKey('formula_kit.detail_pin_${afterFormula!.id}'),
+        formula: afterFormula!,
         source: 'detail',
       );
     }
@@ -413,6 +439,128 @@ class _DuringDetailBody extends StatelessWidget {
       'triathlon_transition' => 'Tri — Transition',
       _ => raw.isEmpty ? raw : '${raw[0].toUpperCase()}${raw.substring(1)}',
     };
+  }
+}
+
+// ─── After body ───────────────────────────────────────────────────────────
+
+/// Read-only detail body for an After-phase formula. Unlike Before/During,
+/// the After phase has no body-size scaling target — a template represents
+/// a single canonical portion. We surface the portion description, Notion
+/// taxonomy chips (travel / prep / flavor / protein anchor / carb:protein
+/// ratio), the formula's component foods, and dietary tags. No macros card
+/// (post_workout_templates does not store macros directly in V1) and no
+/// quantity stepper.
+class _AfterDetailBody extends StatelessWidget {
+  const _AfterDetailBody({required this.formula});
+
+  final AfterFormulaView formula;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return AdaptiveScrollableBody(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.xxxl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              if (formula.travelFriendliness != null &&
+                  formula.travelFriendliness!.isNotEmpty)
+                _InfoPill(
+                  label: _humanize(formula.travelFriendliness!),
+                  color: AppColors.electrolyte,
+                ),
+              if (formula.prepEffort != null &&
+                  formula.prepEffort!.isNotEmpty)
+                _InfoPill(
+                  label: _humanize(formula.prepEffort!),
+                  color: AppColors.electrolyte,
+                ),
+              if (formula.flavorProfile != null &&
+                  formula.flavorProfile!.isNotEmpty)
+                _InfoPill(
+                  label: _humanize(formula.flavorProfile!),
+                  color: AppColors.electrolyte,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _MacrosCard(
+            calories: formula.totalCalories,
+            carbs: formula.totalCarbsG,
+            protein: formula.totalProteinG,
+            fat: formula.totalFatG,
+            sodium: formula.totalSodiumMg,
+            fluid: formula.totalFluidMl,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _SectionLabel(text: 'Components'),
+          const SizedBox(height: AppSpacing.xs),
+          if (formula.componentDisplayStrings.isEmpty)
+            BaseCard(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  formula.formula.isEmpty
+                      ? 'No components listed.'
+                      : formula.formula,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            )
+          else
+            for (var i = 0; i < formula.componentDisplayStrings.length;
+                i++) ...[
+              if (i > 0) const SizedBox(height: AppSpacing.xs),
+              _ComponentRow(label: formula.componentDisplayStrings[i]),
+            ],
+          if (formula.notes != null && formula.notes!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            _SectionLabel(text: 'Notes'),
+            const SizedBox(height: AppSpacing.xs),
+            BaseCard(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  formula.notes!,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ],
+          if (formula.allergens.isNotEmpty ||
+              formula.excludedDiets.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            _DietTags(
+              allergens: formula.allergens,
+              excludedDiets: formula.excludedDiets,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _humanize(String raw) {
+    if (raw.isEmpty) return raw;
+    return raw
+        .split('_')
+        .where((s) => s.isNotEmpty)
+        .map((s) => '${s[0].toUpperCase()}${s.substring(1)}')
+        .join(' ');
   }
 }
 

@@ -30268,6 +30268,1316 @@ class PreWorkoutTemplatesTableCompanion
   }
 }
 
+class $PostWorkoutTemplatesTableTable extends PostWorkoutTemplatesTable
+    with TableInfo<$PostWorkoutTemplatesTableTable, PostWorkoutTemplateEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PostWorkoutTemplatesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _templateNumberMeta = const VerificationMeta(
+    'templateNumber',
+  );
+  @override
+  late final GeneratedColumn<int> templateNumber = GeneratedColumn<int>(
+    'template_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _formulaMeta = const VerificationMeta(
+    'formula',
+  );
+  @override
+  late final GeneratedColumn<String> formula = GeneratedColumn<String>(
+    'formula',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _portionsMeta = const VerificationMeta(
+    'portions',
+  );
+  @override
+  late final GeneratedColumn<String> portions = GeneratedColumn<String>(
+    'portions',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _activityTypesMeta = const VerificationMeta(
+    'activityTypes',
+  );
+  @override
+  late final GeneratedColumn<String> activityTypes = GeneratedColumn<String>(
+    'activity_types',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _componentFoodNamesMeta =
+      const VerificationMeta('componentFoodNames');
+  @override
+  late final GeneratedColumn<String> componentFoodNames =
+      GeneratedColumn<String>(
+        'component_food_names',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  static const VerificationMeta _componentRatiosMeta = const VerificationMeta(
+    'componentRatios',
+  );
+  @override
+  late final GeneratedColumn<String> componentRatios = GeneratedColumn<String>(
+    'component_ratios',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _defaultServingsMeta = const VerificationMeta(
+    'defaultServings',
+  );
+  @override
+  late final GeneratedColumn<String> defaultServings = GeneratedColumn<String>(
+    'default_servings',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _targetCarbProteinRatioMeta =
+      const VerificationMeta('targetCarbProteinRatio');
+  @override
+  late final GeneratedColumn<String> targetCarbProteinRatio =
+      GeneratedColumn<String>(
+        'target_carb_protein_ratio',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _travelFriendlinessMeta =
+      const VerificationMeta('travelFriendliness');
+  @override
+  late final GeneratedColumn<String> travelFriendliness =
+      GeneratedColumn<String>(
+        'travel_friendliness',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _flavorProfileMeta = const VerificationMeta(
+    'flavorProfile',
+  );
+  @override
+  late final GeneratedColumn<String> flavorProfile = GeneratedColumn<String>(
+    'flavor_profile',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _prepEffortMeta = const VerificationMeta(
+    'prepEffort',
+  );
+  @override
+  late final GeneratedColumn<String> prepEffort = GeneratedColumn<String>(
+    'prep_effort',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _proteinAnchorMeta = const VerificationMeta(
+    'proteinAnchor',
+  );
+  @override
+  late final GeneratedColumn<String> proteinAnchor = GeneratedColumn<String>(
+    'protein_anchor',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _carbSourcesMeta = const VerificationMeta(
+    'carbSources',
+  );
+  @override
+  late final GeneratedColumn<String> carbSources = GeneratedColumn<String>(
+    'carb_sources',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _selectionPriorityMeta = const VerificationMeta(
+    'selectionPriority',
+  );
+  @override
+  late final GeneratedColumn<int> selectionPriority = GeneratedColumn<int>(
+    'selection_priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _allergensMeta = const VerificationMeta(
+    'allergens',
+  );
+  @override
+  late final GeneratedColumn<String> allergens = GeneratedColumn<String>(
+    'allergens',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _excludedDietsMeta = const VerificationMeta(
+    'excludedDiets',
+  );
+  @override
+  late final GeneratedColumn<String> excludedDiets = GeneratedColumn<String>(
+    'excluded_diets',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    templateNumber,
+    name,
+    formula,
+    portions,
+    activityTypes,
+    componentFoodNames,
+    componentRatios,
+    defaultServings,
+    targetCarbProteinRatio,
+    travelFriendliness,
+    flavorProfile,
+    prepEffort,
+    proteinAnchor,
+    carbSources,
+    selectionPriority,
+    allergens,
+    excludedDiets,
+    notes,
+    isActive,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'post_workout_templates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PostWorkoutTemplateEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('template_number')) {
+      context.handle(
+        _templateNumberMeta,
+        templateNumber.isAcceptableOrUnknown(
+          data['template_number']!,
+          _templateNumberMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_templateNumberMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('formula')) {
+      context.handle(
+        _formulaMeta,
+        formula.isAcceptableOrUnknown(data['formula']!, _formulaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_formulaMeta);
+    }
+    if (data.containsKey('portions')) {
+      context.handle(
+        _portionsMeta,
+        portions.isAcceptableOrUnknown(data['portions']!, _portionsMeta),
+      );
+    }
+    if (data.containsKey('activity_types')) {
+      context.handle(
+        _activityTypesMeta,
+        activityTypes.isAcceptableOrUnknown(
+          data['activity_types']!,
+          _activityTypesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('component_food_names')) {
+      context.handle(
+        _componentFoodNamesMeta,
+        componentFoodNames.isAcceptableOrUnknown(
+          data['component_food_names']!,
+          _componentFoodNamesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('component_ratios')) {
+      context.handle(
+        _componentRatiosMeta,
+        componentRatios.isAcceptableOrUnknown(
+          data['component_ratios']!,
+          _componentRatiosMeta,
+        ),
+      );
+    }
+    if (data.containsKey('default_servings')) {
+      context.handle(
+        _defaultServingsMeta,
+        defaultServings.isAcceptableOrUnknown(
+          data['default_servings']!,
+          _defaultServingsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('target_carb_protein_ratio')) {
+      context.handle(
+        _targetCarbProteinRatioMeta,
+        targetCarbProteinRatio.isAcceptableOrUnknown(
+          data['target_carb_protein_ratio']!,
+          _targetCarbProteinRatioMeta,
+        ),
+      );
+    }
+    if (data.containsKey('travel_friendliness')) {
+      context.handle(
+        _travelFriendlinessMeta,
+        travelFriendliness.isAcceptableOrUnknown(
+          data['travel_friendliness']!,
+          _travelFriendlinessMeta,
+        ),
+      );
+    }
+    if (data.containsKey('flavor_profile')) {
+      context.handle(
+        _flavorProfileMeta,
+        flavorProfile.isAcceptableOrUnknown(
+          data['flavor_profile']!,
+          _flavorProfileMeta,
+        ),
+      );
+    }
+    if (data.containsKey('prep_effort')) {
+      context.handle(
+        _prepEffortMeta,
+        prepEffort.isAcceptableOrUnknown(data['prep_effort']!, _prepEffortMeta),
+      );
+    }
+    if (data.containsKey('protein_anchor')) {
+      context.handle(
+        _proteinAnchorMeta,
+        proteinAnchor.isAcceptableOrUnknown(
+          data['protein_anchor']!,
+          _proteinAnchorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('carb_sources')) {
+      context.handle(
+        _carbSourcesMeta,
+        carbSources.isAcceptableOrUnknown(
+          data['carb_sources']!,
+          _carbSourcesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('selection_priority')) {
+      context.handle(
+        _selectionPriorityMeta,
+        selectionPriority.isAcceptableOrUnknown(
+          data['selection_priority']!,
+          _selectionPriorityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('allergens')) {
+      context.handle(
+        _allergensMeta,
+        allergens.isAcceptableOrUnknown(data['allergens']!, _allergensMeta),
+      );
+    }
+    if (data.containsKey('excluded_diets')) {
+      context.handle(
+        _excludedDietsMeta,
+        excludedDiets.isAcceptableOrUnknown(
+          data['excluded_diets']!,
+          _excludedDietsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PostWorkoutTemplateEntry map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PostWorkoutTemplateEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      templateNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}template_number'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      formula: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}formula'],
+      )!,
+      portions: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}portions'],
+      ),
+      activityTypes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_types'],
+      )!,
+      componentFoodNames: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}component_food_names'],
+      )!,
+      componentRatios: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}component_ratios'],
+      ),
+      defaultServings: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}default_servings'],
+      )!,
+      targetCarbProteinRatio: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_carb_protein_ratio'],
+      ),
+      travelFriendliness: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}travel_friendliness'],
+      ),
+      flavorProfile: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}flavor_profile'],
+      ),
+      prepEffort: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prep_effort'],
+      ),
+      proteinAnchor: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}protein_anchor'],
+      ),
+      carbSources: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}carb_sources'],
+      )!,
+      selectionPriority: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}selection_priority'],
+      )!,
+      allergens: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}allergens'],
+      )!,
+      excludedDiets: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}excluded_diets'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PostWorkoutTemplatesTableTable createAlias(String alias) {
+    return $PostWorkoutTemplatesTableTable(attachedDatabase, alias);
+  }
+}
+
+class PostWorkoutTemplateEntry extends DataClass
+    implements Insertable<PostWorkoutTemplateEntry> {
+  /// UUID primary key (matches Supabase id).
+  final String id;
+
+  /// Monotonic display/order number (matches Supabase template_number).
+  final int templateNumber;
+
+  /// Display name (e.g., 'Chocolate Milk Solo').
+  final String name;
+
+  /// Short formula string (e.g., '2 cups chocolate milk').
+  final String formula;
+
+  /// Human-readable portion description shown to the athlete. Nullable.
+  final String? portions;
+
+  /// JSON array of activity types this template applies to.
+  /// e.g. `["running", "cycling", "swimming", "triathlon", "brick"]`.
+  final String activityTypes;
+
+  /// JSON array of `template_foods.name` values that compose this formula.
+  final String componentFoodNames;
+
+  /// JSON object mapping component food name → ratio share of the formula.
+  /// e.g. `{"chocolate_milk": 1.0}`. Nullable.
+  final String? componentRatios;
+
+  /// JSON object mapping food name → serving count in that food's catalog
+  /// serving size. Defines the canonical single portion for this template.
+  /// e.g. `{"toaster_waffle": 1, "banana": 1}`.
+  final String defaultServings;
+
+  /// Human-readable carb:protein ratio (e.g., '~3:1'). Nullable.
+  final String? targetCarbProteinRatio;
+
+  /// Where the template can be eaten: 'in_bag' | 'cooler_friendly' |
+  /// 'home_only'. Primary PR 3 filter axis. Nullable in source schema.
+  final String? travelFriendliness;
+
+  /// Sensory dimension: 'sweet_creamy' | 'sweet_crunchy' | 'savory_salty' |
+  /// 'warm_comforting' | 'mixed'. Used for V2 re-rolls. Nullable.
+  final String? flavorProfile;
+
+  /// Prep effort: 'grab_and_go' | 'assemble' | 'cook'. Nullable.
+  final String? prepEffort;
+
+  /// Primary protein category (Notion taxonomy): 'whey_shake' | 'plant_shake'
+  /// | 'yogurt' | 'cottage_cheese' | 'chocolate_milk' | 'smoothie' | 'egg' |
+  /// 'nut_butter' | 'deli_cheese'. Nullable.
+  final String? proteinAnchor;
+
+  /// JSON array of carb source tags (snake_case subset of Notion taxonomy).
+  final String carbSources;
+
+  /// Tie breaker for template selection. Higher = preferred when scores tie.
+  /// Used by the PR 3 after-phase solver's non-pin fallthrough.
+  final int selectionPriority;
+
+  /// JSON array of allergens. e.g. `["dairy", "gluten"]`.
+  final String allergens;
+
+  /// JSON array of diets that should exclude this template.
+  /// e.g. `["vegan"]`.
+  final String excludedDiets;
+  final String? notes;
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const PostWorkoutTemplateEntry({
+    required this.id,
+    required this.templateNumber,
+    required this.name,
+    required this.formula,
+    this.portions,
+    required this.activityTypes,
+    required this.componentFoodNames,
+    this.componentRatios,
+    required this.defaultServings,
+    this.targetCarbProteinRatio,
+    this.travelFriendliness,
+    this.flavorProfile,
+    this.prepEffort,
+    this.proteinAnchor,
+    required this.carbSources,
+    required this.selectionPriority,
+    required this.allergens,
+    required this.excludedDiets,
+    this.notes,
+    required this.isActive,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['template_number'] = Variable<int>(templateNumber);
+    map['name'] = Variable<String>(name);
+    map['formula'] = Variable<String>(formula);
+    if (!nullToAbsent || portions != null) {
+      map['portions'] = Variable<String>(portions);
+    }
+    map['activity_types'] = Variable<String>(activityTypes);
+    map['component_food_names'] = Variable<String>(componentFoodNames);
+    if (!nullToAbsent || componentRatios != null) {
+      map['component_ratios'] = Variable<String>(componentRatios);
+    }
+    map['default_servings'] = Variable<String>(defaultServings);
+    if (!nullToAbsent || targetCarbProteinRatio != null) {
+      map['target_carb_protein_ratio'] = Variable<String>(
+        targetCarbProteinRatio,
+      );
+    }
+    if (!nullToAbsent || travelFriendliness != null) {
+      map['travel_friendliness'] = Variable<String>(travelFriendliness);
+    }
+    if (!nullToAbsent || flavorProfile != null) {
+      map['flavor_profile'] = Variable<String>(flavorProfile);
+    }
+    if (!nullToAbsent || prepEffort != null) {
+      map['prep_effort'] = Variable<String>(prepEffort);
+    }
+    if (!nullToAbsent || proteinAnchor != null) {
+      map['protein_anchor'] = Variable<String>(proteinAnchor);
+    }
+    map['carb_sources'] = Variable<String>(carbSources);
+    map['selection_priority'] = Variable<int>(selectionPriority);
+    map['allergens'] = Variable<String>(allergens);
+    map['excluded_diets'] = Variable<String>(excludedDiets);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['is_active'] = Variable<bool>(isActive);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PostWorkoutTemplatesTableCompanion toCompanion(bool nullToAbsent) {
+    return PostWorkoutTemplatesTableCompanion(
+      id: Value(id),
+      templateNumber: Value(templateNumber),
+      name: Value(name),
+      formula: Value(formula),
+      portions: portions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(portions),
+      activityTypes: Value(activityTypes),
+      componentFoodNames: Value(componentFoodNames),
+      componentRatios: componentRatios == null && nullToAbsent
+          ? const Value.absent()
+          : Value(componentRatios),
+      defaultServings: Value(defaultServings),
+      targetCarbProteinRatio: targetCarbProteinRatio == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetCarbProteinRatio),
+      travelFriendliness: travelFriendliness == null && nullToAbsent
+          ? const Value.absent()
+          : Value(travelFriendliness),
+      flavorProfile: flavorProfile == null && nullToAbsent
+          ? const Value.absent()
+          : Value(flavorProfile),
+      prepEffort: prepEffort == null && nullToAbsent
+          ? const Value.absent()
+          : Value(prepEffort),
+      proteinAnchor: proteinAnchor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(proteinAnchor),
+      carbSources: Value(carbSources),
+      selectionPriority: Value(selectionPriority),
+      allergens: Value(allergens),
+      excludedDiets: Value(excludedDiets),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      isActive: Value(isActive),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PostWorkoutTemplateEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PostWorkoutTemplateEntry(
+      id: serializer.fromJson<String>(json['id']),
+      templateNumber: serializer.fromJson<int>(json['templateNumber']),
+      name: serializer.fromJson<String>(json['name']),
+      formula: serializer.fromJson<String>(json['formula']),
+      portions: serializer.fromJson<String?>(json['portions']),
+      activityTypes: serializer.fromJson<String>(json['activityTypes']),
+      componentFoodNames: serializer.fromJson<String>(
+        json['componentFoodNames'],
+      ),
+      componentRatios: serializer.fromJson<String?>(json['componentRatios']),
+      defaultServings: serializer.fromJson<String>(json['defaultServings']),
+      targetCarbProteinRatio: serializer.fromJson<String?>(
+        json['targetCarbProteinRatio'],
+      ),
+      travelFriendliness: serializer.fromJson<String?>(
+        json['travelFriendliness'],
+      ),
+      flavorProfile: serializer.fromJson<String?>(json['flavorProfile']),
+      prepEffort: serializer.fromJson<String?>(json['prepEffort']),
+      proteinAnchor: serializer.fromJson<String?>(json['proteinAnchor']),
+      carbSources: serializer.fromJson<String>(json['carbSources']),
+      selectionPriority: serializer.fromJson<int>(json['selectionPriority']),
+      allergens: serializer.fromJson<String>(json['allergens']),
+      excludedDiets: serializer.fromJson<String>(json['excludedDiets']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'templateNumber': serializer.toJson<int>(templateNumber),
+      'name': serializer.toJson<String>(name),
+      'formula': serializer.toJson<String>(formula),
+      'portions': serializer.toJson<String?>(portions),
+      'activityTypes': serializer.toJson<String>(activityTypes),
+      'componentFoodNames': serializer.toJson<String>(componentFoodNames),
+      'componentRatios': serializer.toJson<String?>(componentRatios),
+      'defaultServings': serializer.toJson<String>(defaultServings),
+      'targetCarbProteinRatio': serializer.toJson<String?>(
+        targetCarbProteinRatio,
+      ),
+      'travelFriendliness': serializer.toJson<String?>(travelFriendliness),
+      'flavorProfile': serializer.toJson<String?>(flavorProfile),
+      'prepEffort': serializer.toJson<String?>(prepEffort),
+      'proteinAnchor': serializer.toJson<String?>(proteinAnchor),
+      'carbSources': serializer.toJson<String>(carbSources),
+      'selectionPriority': serializer.toJson<int>(selectionPriority),
+      'allergens': serializer.toJson<String>(allergens),
+      'excludedDiets': serializer.toJson<String>(excludedDiets),
+      'notes': serializer.toJson<String?>(notes),
+      'isActive': serializer.toJson<bool>(isActive),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PostWorkoutTemplateEntry copyWith({
+    String? id,
+    int? templateNumber,
+    String? name,
+    String? formula,
+    Value<String?> portions = const Value.absent(),
+    String? activityTypes,
+    String? componentFoodNames,
+    Value<String?> componentRatios = const Value.absent(),
+    String? defaultServings,
+    Value<String?> targetCarbProteinRatio = const Value.absent(),
+    Value<String?> travelFriendliness = const Value.absent(),
+    Value<String?> flavorProfile = const Value.absent(),
+    Value<String?> prepEffort = const Value.absent(),
+    Value<String?> proteinAnchor = const Value.absent(),
+    String? carbSources,
+    int? selectionPriority,
+    String? allergens,
+    String? excludedDiets,
+    Value<String?> notes = const Value.absent(),
+    bool? isActive,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => PostWorkoutTemplateEntry(
+    id: id ?? this.id,
+    templateNumber: templateNumber ?? this.templateNumber,
+    name: name ?? this.name,
+    formula: formula ?? this.formula,
+    portions: portions.present ? portions.value : this.portions,
+    activityTypes: activityTypes ?? this.activityTypes,
+    componentFoodNames: componentFoodNames ?? this.componentFoodNames,
+    componentRatios: componentRatios.present
+        ? componentRatios.value
+        : this.componentRatios,
+    defaultServings: defaultServings ?? this.defaultServings,
+    targetCarbProteinRatio: targetCarbProteinRatio.present
+        ? targetCarbProteinRatio.value
+        : this.targetCarbProteinRatio,
+    travelFriendliness: travelFriendliness.present
+        ? travelFriendliness.value
+        : this.travelFriendliness,
+    flavorProfile: flavorProfile.present
+        ? flavorProfile.value
+        : this.flavorProfile,
+    prepEffort: prepEffort.present ? prepEffort.value : this.prepEffort,
+    proteinAnchor: proteinAnchor.present
+        ? proteinAnchor.value
+        : this.proteinAnchor,
+    carbSources: carbSources ?? this.carbSources,
+    selectionPriority: selectionPriority ?? this.selectionPriority,
+    allergens: allergens ?? this.allergens,
+    excludedDiets: excludedDiets ?? this.excludedDiets,
+    notes: notes.present ? notes.value : this.notes,
+    isActive: isActive ?? this.isActive,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  PostWorkoutTemplateEntry copyWithCompanion(
+    PostWorkoutTemplatesTableCompanion data,
+  ) {
+    return PostWorkoutTemplateEntry(
+      id: data.id.present ? data.id.value : this.id,
+      templateNumber: data.templateNumber.present
+          ? data.templateNumber.value
+          : this.templateNumber,
+      name: data.name.present ? data.name.value : this.name,
+      formula: data.formula.present ? data.formula.value : this.formula,
+      portions: data.portions.present ? data.portions.value : this.portions,
+      activityTypes: data.activityTypes.present
+          ? data.activityTypes.value
+          : this.activityTypes,
+      componentFoodNames: data.componentFoodNames.present
+          ? data.componentFoodNames.value
+          : this.componentFoodNames,
+      componentRatios: data.componentRatios.present
+          ? data.componentRatios.value
+          : this.componentRatios,
+      defaultServings: data.defaultServings.present
+          ? data.defaultServings.value
+          : this.defaultServings,
+      targetCarbProteinRatio: data.targetCarbProteinRatio.present
+          ? data.targetCarbProteinRatio.value
+          : this.targetCarbProteinRatio,
+      travelFriendliness: data.travelFriendliness.present
+          ? data.travelFriendliness.value
+          : this.travelFriendliness,
+      flavorProfile: data.flavorProfile.present
+          ? data.flavorProfile.value
+          : this.flavorProfile,
+      prepEffort: data.prepEffort.present
+          ? data.prepEffort.value
+          : this.prepEffort,
+      proteinAnchor: data.proteinAnchor.present
+          ? data.proteinAnchor.value
+          : this.proteinAnchor,
+      carbSources: data.carbSources.present
+          ? data.carbSources.value
+          : this.carbSources,
+      selectionPriority: data.selectionPriority.present
+          ? data.selectionPriority.value
+          : this.selectionPriority,
+      allergens: data.allergens.present ? data.allergens.value : this.allergens,
+      excludedDiets: data.excludedDiets.present
+          ? data.excludedDiets.value
+          : this.excludedDiets,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PostWorkoutTemplateEntry(')
+          ..write('id: $id, ')
+          ..write('templateNumber: $templateNumber, ')
+          ..write('name: $name, ')
+          ..write('formula: $formula, ')
+          ..write('portions: $portions, ')
+          ..write('activityTypes: $activityTypes, ')
+          ..write('componentFoodNames: $componentFoodNames, ')
+          ..write('componentRatios: $componentRatios, ')
+          ..write('defaultServings: $defaultServings, ')
+          ..write('targetCarbProteinRatio: $targetCarbProteinRatio, ')
+          ..write('travelFriendliness: $travelFriendliness, ')
+          ..write('flavorProfile: $flavorProfile, ')
+          ..write('prepEffort: $prepEffort, ')
+          ..write('proteinAnchor: $proteinAnchor, ')
+          ..write('carbSources: $carbSources, ')
+          ..write('selectionPriority: $selectionPriority, ')
+          ..write('allergens: $allergens, ')
+          ..write('excludedDiets: $excludedDiets, ')
+          ..write('notes: $notes, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    templateNumber,
+    name,
+    formula,
+    portions,
+    activityTypes,
+    componentFoodNames,
+    componentRatios,
+    defaultServings,
+    targetCarbProteinRatio,
+    travelFriendliness,
+    flavorProfile,
+    prepEffort,
+    proteinAnchor,
+    carbSources,
+    selectionPriority,
+    allergens,
+    excludedDiets,
+    notes,
+    isActive,
+    createdAt,
+    updatedAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PostWorkoutTemplateEntry &&
+          other.id == this.id &&
+          other.templateNumber == this.templateNumber &&
+          other.name == this.name &&
+          other.formula == this.formula &&
+          other.portions == this.portions &&
+          other.activityTypes == this.activityTypes &&
+          other.componentFoodNames == this.componentFoodNames &&
+          other.componentRatios == this.componentRatios &&
+          other.defaultServings == this.defaultServings &&
+          other.targetCarbProteinRatio == this.targetCarbProteinRatio &&
+          other.travelFriendliness == this.travelFriendliness &&
+          other.flavorProfile == this.flavorProfile &&
+          other.prepEffort == this.prepEffort &&
+          other.proteinAnchor == this.proteinAnchor &&
+          other.carbSources == this.carbSources &&
+          other.selectionPriority == this.selectionPriority &&
+          other.allergens == this.allergens &&
+          other.excludedDiets == this.excludedDiets &&
+          other.notes == this.notes &&
+          other.isActive == this.isActive &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PostWorkoutTemplatesTableCompanion
+    extends UpdateCompanion<PostWorkoutTemplateEntry> {
+  final Value<String> id;
+  final Value<int> templateNumber;
+  final Value<String> name;
+  final Value<String> formula;
+  final Value<String?> portions;
+  final Value<String> activityTypes;
+  final Value<String> componentFoodNames;
+  final Value<String?> componentRatios;
+  final Value<String> defaultServings;
+  final Value<String?> targetCarbProteinRatio;
+  final Value<String?> travelFriendliness;
+  final Value<String?> flavorProfile;
+  final Value<String?> prepEffort;
+  final Value<String?> proteinAnchor;
+  final Value<String> carbSources;
+  final Value<int> selectionPriority;
+  final Value<String> allergens;
+  final Value<String> excludedDiets;
+  final Value<String?> notes;
+  final Value<bool> isActive;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PostWorkoutTemplatesTableCompanion({
+    this.id = const Value.absent(),
+    this.templateNumber = const Value.absent(),
+    this.name = const Value.absent(),
+    this.formula = const Value.absent(),
+    this.portions = const Value.absent(),
+    this.activityTypes = const Value.absent(),
+    this.componentFoodNames = const Value.absent(),
+    this.componentRatios = const Value.absent(),
+    this.defaultServings = const Value.absent(),
+    this.targetCarbProteinRatio = const Value.absent(),
+    this.travelFriendliness = const Value.absent(),
+    this.flavorProfile = const Value.absent(),
+    this.prepEffort = const Value.absent(),
+    this.proteinAnchor = const Value.absent(),
+    this.carbSources = const Value.absent(),
+    this.selectionPriority = const Value.absent(),
+    this.allergens = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PostWorkoutTemplatesTableCompanion.insert({
+    required String id,
+    required int templateNumber,
+    required String name,
+    required String formula,
+    this.portions = const Value.absent(),
+    this.activityTypes = const Value.absent(),
+    this.componentFoodNames = const Value.absent(),
+    this.componentRatios = const Value.absent(),
+    this.defaultServings = const Value.absent(),
+    this.targetCarbProteinRatio = const Value.absent(),
+    this.travelFriendliness = const Value.absent(),
+    this.flavorProfile = const Value.absent(),
+    this.prepEffort = const Value.absent(),
+    this.proteinAnchor = const Value.absent(),
+    this.carbSources = const Value.absent(),
+    this.selectionPriority = const Value.absent(),
+    this.allergens = const Value.absent(),
+    this.excludedDiets = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       templateNumber = Value(templateNumber),
+       name = Value(name),
+       formula = Value(formula);
+  static Insertable<PostWorkoutTemplateEntry> custom({
+    Expression<String>? id,
+    Expression<int>? templateNumber,
+    Expression<String>? name,
+    Expression<String>? formula,
+    Expression<String>? portions,
+    Expression<String>? activityTypes,
+    Expression<String>? componentFoodNames,
+    Expression<String>? componentRatios,
+    Expression<String>? defaultServings,
+    Expression<String>? targetCarbProteinRatio,
+    Expression<String>? travelFriendliness,
+    Expression<String>? flavorProfile,
+    Expression<String>? prepEffort,
+    Expression<String>? proteinAnchor,
+    Expression<String>? carbSources,
+    Expression<int>? selectionPriority,
+    Expression<String>? allergens,
+    Expression<String>? excludedDiets,
+    Expression<String>? notes,
+    Expression<bool>? isActive,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (templateNumber != null) 'template_number': templateNumber,
+      if (name != null) 'name': name,
+      if (formula != null) 'formula': formula,
+      if (portions != null) 'portions': portions,
+      if (activityTypes != null) 'activity_types': activityTypes,
+      if (componentFoodNames != null)
+        'component_food_names': componentFoodNames,
+      if (componentRatios != null) 'component_ratios': componentRatios,
+      if (defaultServings != null) 'default_servings': defaultServings,
+      if (targetCarbProteinRatio != null)
+        'target_carb_protein_ratio': targetCarbProteinRatio,
+      if (travelFriendliness != null) 'travel_friendliness': travelFriendliness,
+      if (flavorProfile != null) 'flavor_profile': flavorProfile,
+      if (prepEffort != null) 'prep_effort': prepEffort,
+      if (proteinAnchor != null) 'protein_anchor': proteinAnchor,
+      if (carbSources != null) 'carb_sources': carbSources,
+      if (selectionPriority != null) 'selection_priority': selectionPriority,
+      if (allergens != null) 'allergens': allergens,
+      if (excludedDiets != null) 'excluded_diets': excludedDiets,
+      if (notes != null) 'notes': notes,
+      if (isActive != null) 'is_active': isActive,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PostWorkoutTemplatesTableCompanion copyWith({
+    Value<String>? id,
+    Value<int>? templateNumber,
+    Value<String>? name,
+    Value<String>? formula,
+    Value<String?>? portions,
+    Value<String>? activityTypes,
+    Value<String>? componentFoodNames,
+    Value<String?>? componentRatios,
+    Value<String>? defaultServings,
+    Value<String?>? targetCarbProteinRatio,
+    Value<String?>? travelFriendliness,
+    Value<String?>? flavorProfile,
+    Value<String?>? prepEffort,
+    Value<String?>? proteinAnchor,
+    Value<String>? carbSources,
+    Value<int>? selectionPriority,
+    Value<String>? allergens,
+    Value<String>? excludedDiets,
+    Value<String?>? notes,
+    Value<bool>? isActive,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return PostWorkoutTemplatesTableCompanion(
+      id: id ?? this.id,
+      templateNumber: templateNumber ?? this.templateNumber,
+      name: name ?? this.name,
+      formula: formula ?? this.formula,
+      portions: portions ?? this.portions,
+      activityTypes: activityTypes ?? this.activityTypes,
+      componentFoodNames: componentFoodNames ?? this.componentFoodNames,
+      componentRatios: componentRatios ?? this.componentRatios,
+      defaultServings: defaultServings ?? this.defaultServings,
+      targetCarbProteinRatio:
+          targetCarbProteinRatio ?? this.targetCarbProteinRatio,
+      travelFriendliness: travelFriendliness ?? this.travelFriendliness,
+      flavorProfile: flavorProfile ?? this.flavorProfile,
+      prepEffort: prepEffort ?? this.prepEffort,
+      proteinAnchor: proteinAnchor ?? this.proteinAnchor,
+      carbSources: carbSources ?? this.carbSources,
+      selectionPriority: selectionPriority ?? this.selectionPriority,
+      allergens: allergens ?? this.allergens,
+      excludedDiets: excludedDiets ?? this.excludedDiets,
+      notes: notes ?? this.notes,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (templateNumber.present) {
+      map['template_number'] = Variable<int>(templateNumber.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (formula.present) {
+      map['formula'] = Variable<String>(formula.value);
+    }
+    if (portions.present) {
+      map['portions'] = Variable<String>(portions.value);
+    }
+    if (activityTypes.present) {
+      map['activity_types'] = Variable<String>(activityTypes.value);
+    }
+    if (componentFoodNames.present) {
+      map['component_food_names'] = Variable<String>(componentFoodNames.value);
+    }
+    if (componentRatios.present) {
+      map['component_ratios'] = Variable<String>(componentRatios.value);
+    }
+    if (defaultServings.present) {
+      map['default_servings'] = Variable<String>(defaultServings.value);
+    }
+    if (targetCarbProteinRatio.present) {
+      map['target_carb_protein_ratio'] = Variable<String>(
+        targetCarbProteinRatio.value,
+      );
+    }
+    if (travelFriendliness.present) {
+      map['travel_friendliness'] = Variable<String>(travelFriendliness.value);
+    }
+    if (flavorProfile.present) {
+      map['flavor_profile'] = Variable<String>(flavorProfile.value);
+    }
+    if (prepEffort.present) {
+      map['prep_effort'] = Variable<String>(prepEffort.value);
+    }
+    if (proteinAnchor.present) {
+      map['protein_anchor'] = Variable<String>(proteinAnchor.value);
+    }
+    if (carbSources.present) {
+      map['carb_sources'] = Variable<String>(carbSources.value);
+    }
+    if (selectionPriority.present) {
+      map['selection_priority'] = Variable<int>(selectionPriority.value);
+    }
+    if (allergens.present) {
+      map['allergens'] = Variable<String>(allergens.value);
+    }
+    if (excludedDiets.present) {
+      map['excluded_diets'] = Variable<String>(excludedDiets.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PostWorkoutTemplatesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('templateNumber: $templateNumber, ')
+          ..write('name: $name, ')
+          ..write('formula: $formula, ')
+          ..write('portions: $portions, ')
+          ..write('activityTypes: $activityTypes, ')
+          ..write('componentFoodNames: $componentFoodNames, ')
+          ..write('componentRatios: $componentRatios, ')
+          ..write('defaultServings: $defaultServings, ')
+          ..write('targetCarbProteinRatio: $targetCarbProteinRatio, ')
+          ..write('travelFriendliness: $travelFriendliness, ')
+          ..write('flavorProfile: $flavorProfile, ')
+          ..write('prepEffort: $prepEffort, ')
+          ..write('proteinAnchor: $proteinAnchor, ')
+          ..write('carbSources: $carbSources, ')
+          ..write('selectionPriority: $selectionPriority, ')
+          ..write('allergens: $allergens, ')
+          ..write('excludedDiets: $excludedDiets, ')
+          ..write('notes: $notes, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TpWritebackTableTable extends TpWritebackTable
     with TableInfo<$TpWritebackTableTable, TpWritebackEntry> {
   @override
@@ -34583,6 +35893,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $DuringWorkoutTemplatesTableTable(this);
   late final $PreWorkoutTemplatesTableTable preWorkoutTemplatesTable =
       $PreWorkoutTemplatesTableTable(this);
+  late final $PostWorkoutTemplatesTableTable postWorkoutTemplatesTable =
+      $PostWorkoutTemplatesTableTable(this);
   late final $TpWritebackTableTable tpWritebackTable = $TpWritebackTableTable(
     this,
   );
@@ -34634,6 +35946,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     templatesTable,
     duringWorkoutTemplatesTable,
     preWorkoutTemplatesTable,
+    postWorkoutTemplatesTable,
     tpWritebackTable,
     personalTemplatesTable,
     formulaPinsTable,
@@ -47795,6 +49108,574 @@ typedef $$PreWorkoutTemplatesTableTableProcessedTableManager =
       PreWorkoutTemplateEntry,
       PrefetchHooks Function()
     >;
+typedef $$PostWorkoutTemplatesTableTableCreateCompanionBuilder =
+    PostWorkoutTemplatesTableCompanion Function({
+      required String id,
+      required int templateNumber,
+      required String name,
+      required String formula,
+      Value<String?> portions,
+      Value<String> activityTypes,
+      Value<String> componentFoodNames,
+      Value<String?> componentRatios,
+      Value<String> defaultServings,
+      Value<String?> targetCarbProteinRatio,
+      Value<String?> travelFriendliness,
+      Value<String?> flavorProfile,
+      Value<String?> prepEffort,
+      Value<String?> proteinAnchor,
+      Value<String> carbSources,
+      Value<int> selectionPriority,
+      Value<String> allergens,
+      Value<String> excludedDiets,
+      Value<String?> notes,
+      Value<bool> isActive,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$PostWorkoutTemplatesTableTableUpdateCompanionBuilder =
+    PostWorkoutTemplatesTableCompanion Function({
+      Value<String> id,
+      Value<int> templateNumber,
+      Value<String> name,
+      Value<String> formula,
+      Value<String?> portions,
+      Value<String> activityTypes,
+      Value<String> componentFoodNames,
+      Value<String?> componentRatios,
+      Value<String> defaultServings,
+      Value<String?> targetCarbProteinRatio,
+      Value<String?> travelFriendliness,
+      Value<String?> flavorProfile,
+      Value<String?> prepEffort,
+      Value<String?> proteinAnchor,
+      Value<String> carbSources,
+      Value<int> selectionPriority,
+      Value<String> allergens,
+      Value<String> excludedDiets,
+      Value<String?> notes,
+      Value<bool> isActive,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$PostWorkoutTemplatesTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PostWorkoutTemplatesTableTable> {
+  $$PostWorkoutTemplatesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get templateNumber => $composableBuilder(
+    column: $table.templateNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get formula => $composableBuilder(
+    column: $table.formula,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get portions => $composableBuilder(
+    column: $table.portions,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activityTypes => $composableBuilder(
+    column: $table.activityTypes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get componentFoodNames => $composableBuilder(
+    column: $table.componentFoodNames,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get componentRatios => $composableBuilder(
+    column: $table.componentRatios,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get defaultServings => $composableBuilder(
+    column: $table.defaultServings,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetCarbProteinRatio => $composableBuilder(
+    column: $table.targetCarbProteinRatio,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get travelFriendliness => $composableBuilder(
+    column: $table.travelFriendliness,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get flavorProfile => $composableBuilder(
+    column: $table.flavorProfile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prepEffort => $composableBuilder(
+    column: $table.prepEffort,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get proteinAnchor => $composableBuilder(
+    column: $table.proteinAnchor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get carbSources => $composableBuilder(
+    column: $table.carbSources,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get selectionPriority => $composableBuilder(
+    column: $table.selectionPriority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PostWorkoutTemplatesTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PostWorkoutTemplatesTableTable> {
+  $$PostWorkoutTemplatesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get templateNumber => $composableBuilder(
+    column: $table.templateNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get formula => $composableBuilder(
+    column: $table.formula,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get portions => $composableBuilder(
+    column: $table.portions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityTypes => $composableBuilder(
+    column: $table.activityTypes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get componentFoodNames => $composableBuilder(
+    column: $table.componentFoodNames,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get componentRatios => $composableBuilder(
+    column: $table.componentRatios,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get defaultServings => $composableBuilder(
+    column: $table.defaultServings,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetCarbProteinRatio => $composableBuilder(
+    column: $table.targetCarbProteinRatio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get travelFriendliness => $composableBuilder(
+    column: $table.travelFriendliness,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get flavorProfile => $composableBuilder(
+    column: $table.flavorProfile,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get prepEffort => $composableBuilder(
+    column: $table.prepEffort,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get proteinAnchor => $composableBuilder(
+    column: $table.proteinAnchor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get carbSources => $composableBuilder(
+    column: $table.carbSources,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get selectionPriority => $composableBuilder(
+    column: $table.selectionPriority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get allergens => $composableBuilder(
+    column: $table.allergens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PostWorkoutTemplatesTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PostWorkoutTemplatesTableTable> {
+  $$PostWorkoutTemplatesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get templateNumber => $composableBuilder(
+    column: $table.templateNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get formula =>
+      $composableBuilder(column: $table.formula, builder: (column) => column);
+
+  GeneratedColumn<String> get portions =>
+      $composableBuilder(column: $table.portions, builder: (column) => column);
+
+  GeneratedColumn<String> get activityTypes => $composableBuilder(
+    column: $table.activityTypes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get componentFoodNames => $composableBuilder(
+    column: $table.componentFoodNames,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get componentRatios => $composableBuilder(
+    column: $table.componentRatios,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get defaultServings => $composableBuilder(
+    column: $table.defaultServings,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get targetCarbProteinRatio => $composableBuilder(
+    column: $table.targetCarbProteinRatio,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get travelFriendliness => $composableBuilder(
+    column: $table.travelFriendliness,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get flavorProfile => $composableBuilder(
+    column: $table.flavorProfile,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get prepEffort => $composableBuilder(
+    column: $table.prepEffort,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get proteinAnchor => $composableBuilder(
+    column: $table.proteinAnchor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get carbSources => $composableBuilder(
+    column: $table.carbSources,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get selectionPriority => $composableBuilder(
+    column: $table.selectionPriority,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get allergens =>
+      $composableBuilder(column: $table.allergens, builder: (column) => column);
+
+  GeneratedColumn<String> get excludedDiets => $composableBuilder(
+    column: $table.excludedDiets,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$PostWorkoutTemplatesTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PostWorkoutTemplatesTableTable,
+          PostWorkoutTemplateEntry,
+          $$PostWorkoutTemplatesTableTableFilterComposer,
+          $$PostWorkoutTemplatesTableTableOrderingComposer,
+          $$PostWorkoutTemplatesTableTableAnnotationComposer,
+          $$PostWorkoutTemplatesTableTableCreateCompanionBuilder,
+          $$PostWorkoutTemplatesTableTableUpdateCompanionBuilder,
+          (
+            PostWorkoutTemplateEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $PostWorkoutTemplatesTableTable,
+              PostWorkoutTemplateEntry
+            >,
+          ),
+          PostWorkoutTemplateEntry,
+          PrefetchHooks Function()
+        > {
+  $$PostWorkoutTemplatesTableTableTableManager(
+    _$AppDatabase db,
+    $PostWorkoutTemplatesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PostWorkoutTemplatesTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$PostWorkoutTemplatesTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PostWorkoutTemplatesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> templateNumber = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> formula = const Value.absent(),
+                Value<String?> portions = const Value.absent(),
+                Value<String> activityTypes = const Value.absent(),
+                Value<String> componentFoodNames = const Value.absent(),
+                Value<String?> componentRatios = const Value.absent(),
+                Value<String> defaultServings = const Value.absent(),
+                Value<String?> targetCarbProteinRatio = const Value.absent(),
+                Value<String?> travelFriendliness = const Value.absent(),
+                Value<String?> flavorProfile = const Value.absent(),
+                Value<String?> prepEffort = const Value.absent(),
+                Value<String?> proteinAnchor = const Value.absent(),
+                Value<String> carbSources = const Value.absent(),
+                Value<int> selectionPriority = const Value.absent(),
+                Value<String> allergens = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PostWorkoutTemplatesTableCompanion(
+                id: id,
+                templateNumber: templateNumber,
+                name: name,
+                formula: formula,
+                portions: portions,
+                activityTypes: activityTypes,
+                componentFoodNames: componentFoodNames,
+                componentRatios: componentRatios,
+                defaultServings: defaultServings,
+                targetCarbProteinRatio: targetCarbProteinRatio,
+                travelFriendliness: travelFriendliness,
+                flavorProfile: flavorProfile,
+                prepEffort: prepEffort,
+                proteinAnchor: proteinAnchor,
+                carbSources: carbSources,
+                selectionPriority: selectionPriority,
+                allergens: allergens,
+                excludedDiets: excludedDiets,
+                notes: notes,
+                isActive: isActive,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int templateNumber,
+                required String name,
+                required String formula,
+                Value<String?> portions = const Value.absent(),
+                Value<String> activityTypes = const Value.absent(),
+                Value<String> componentFoodNames = const Value.absent(),
+                Value<String?> componentRatios = const Value.absent(),
+                Value<String> defaultServings = const Value.absent(),
+                Value<String?> targetCarbProteinRatio = const Value.absent(),
+                Value<String?> travelFriendliness = const Value.absent(),
+                Value<String?> flavorProfile = const Value.absent(),
+                Value<String?> prepEffort = const Value.absent(),
+                Value<String?> proteinAnchor = const Value.absent(),
+                Value<String> carbSources = const Value.absent(),
+                Value<int> selectionPriority = const Value.absent(),
+                Value<String> allergens = const Value.absent(),
+                Value<String> excludedDiets = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PostWorkoutTemplatesTableCompanion.insert(
+                id: id,
+                templateNumber: templateNumber,
+                name: name,
+                formula: formula,
+                portions: portions,
+                activityTypes: activityTypes,
+                componentFoodNames: componentFoodNames,
+                componentRatios: componentRatios,
+                defaultServings: defaultServings,
+                targetCarbProteinRatio: targetCarbProteinRatio,
+                travelFriendliness: travelFriendliness,
+                flavorProfile: flavorProfile,
+                prepEffort: prepEffort,
+                proteinAnchor: proteinAnchor,
+                carbSources: carbSources,
+                selectionPriority: selectionPriority,
+                allergens: allergens,
+                excludedDiets: excludedDiets,
+                notes: notes,
+                isActive: isActive,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PostWorkoutTemplatesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PostWorkoutTemplatesTableTable,
+      PostWorkoutTemplateEntry,
+      $$PostWorkoutTemplatesTableTableFilterComposer,
+      $$PostWorkoutTemplatesTableTableOrderingComposer,
+      $$PostWorkoutTemplatesTableTableAnnotationComposer,
+      $$PostWorkoutTemplatesTableTableCreateCompanionBuilder,
+      $$PostWorkoutTemplatesTableTableUpdateCompanionBuilder,
+      (
+        PostWorkoutTemplateEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $PostWorkoutTemplatesTableTable,
+          PostWorkoutTemplateEntry
+        >,
+      ),
+      PostWorkoutTemplateEntry,
+      PrefetchHooks Function()
+    >;
 typedef $$TpWritebackTableTableCreateCompanionBuilder =
     TpWritebackTableCompanion Function({
       Value<String> id,
@@ -49947,6 +51828,11 @@ class $AppDatabaseManager {
       $$PreWorkoutTemplatesTableTableTableManager(
         _db,
         _db.preWorkoutTemplatesTable,
+      );
+  $$PostWorkoutTemplatesTableTableTableManager get postWorkoutTemplatesTable =>
+      $$PostWorkoutTemplatesTableTableTableManager(
+        _db,
+        _db.postWorkoutTemplatesTable,
       );
   $$TpWritebackTableTableTableManager get tpWritebackTable =>
       $$TpWritebackTableTableTableManager(_db, _db.tpWritebackTable);

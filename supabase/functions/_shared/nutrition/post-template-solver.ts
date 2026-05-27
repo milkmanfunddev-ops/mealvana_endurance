@@ -9,6 +9,15 @@
  * likely to actually eat.
  *
  * Algorithm:
+ *   0. Pin override (Formula Kit PR 3 substep 7). When the user has pins:
+ *        - 1 in-scope pin → return that pin.
+ *        - >1 in-scope pin → rank by `selection_priority` DESC (higher wins);
+ *          when all pinned candidates share the same priority (or all are
+ *          null) the tie is broken randomly.
+ *        - 0 in-scope pins → fall through to the non-pin path below.
+ *      Pin override bypasses allergen / diet / food-availability filters per
+ *      locked Formula Kit policy. `selection_priority` is ONLY consulted
+ *      inside the pin override — it does not influence the non-pin path.
  *   1. Filter templates by allergens and dietary exclusions. Skip templates
  *      whose component foods aren't in the available pool (post-filter).
  *   2. Rank by Travel: in_bag > cooler_friendly > home_only.
@@ -84,6 +93,14 @@ function prepRank(value: string | null | undefined): number {
   return idx === -1 ? PREP_ORDER.length : idx;
 }
 
+/** Treat null/undefined `selection_priority` as the lowest possible rank so
+ * templates with an explicit priority always sort above unmarked ones. Used
+ * only inside the pin-override path to disambiguate among multiple in-scope
+ * pinned templates. */
+function priorityRank(value: number | null | undefined): number {
+  return value ?? Number.NEGATIVE_INFINITY;
+}
+
 // ============================================================================
 // Activity Type Mapping
 // ============================================================================
@@ -112,13 +129,50 @@ function mapActivityTypeForTemplate(activityType: ActivityType): string[] {
 // ============================================================================
 
 /**
+ * Returns the subset of `templates` that are active, pinned, AND in scope for
+ * the given workout (activity_type overlap). Mirrors
+ * `filterPinnedTemplatesInScope` from the during-template solver but drops the
+ * duration-bracket check — post templates have no duration brackets. Shared
+ * between the pin-override path inside `selectPostWorkoutTemplateCandidates`
+ * and the `pin_set_size` analytics field on `pin_decision`. Returns [] when no
+ * pins match scope.
+ *
+ * Formula Kit PR 3 substep 7.
+ */
+export function filterPinnedPostTemplatesInScope(
+  templates: PostWorkoutTemplate[],
+  activityType: ActivityType,
+  pinnedTemplateIds: Set<string>,
+): PostWorkoutTemplate[] {
+  const mappedActivities = mapActivityTypeForTemplate(activityType);
+  return templates
+    .filter(
+      (t) =>
+        t.is_active &&
+        pinnedTemplateIds.has(t.id) &&
+        // Empty activity_types is treated as universal, same as the non-pin
+        // filter path below.
+        (t.activity_types.length === 0 ||
+          t.activity_types.some((at) => mappedActivities.includes(at))),
+    )
+    .sort((a, b) => a.template_number - b.template_number);
+}
+
+/**
  * Filter and rank templates for the athlete. Returns the templates in priority
  * order — caller can pick `[0]` or sample from a top-N if it needs variety.
  *
- * The ranking is strictly deterministic per (travel, prep). A `random` source
- * is used only to break a final tie between otherwise identical-rank templates,
- * so the same athlete asking on the same day might see a different pick than
- * yesterday but the algorithm itself is reproducible given a seed.
+ * Pin override: when `pinnedTemplateIds` contains any in-scope pin, the
+ * pinned set is returned with allergen / diet / food-availability filters
+ * bypassed. A single in-scope pin is returned as-is. When multiple pins are
+ * in scope they are ranked by `selection_priority` DESC, with `random` used
+ * to break ties across pinned candidates sharing the same priority (covers
+ * the all-null case → fully random pick among the pinned set).
+ *
+ * Non-pin path: byte-identical to the pre-pin algorithm — rank by Travel
+ * Friendliness, tie-break by Prep Effort, then a final random pick across
+ * the contiguous top-(travel, prep) block. `selection_priority` is NOT used
+ * outside the pin override.
  */
 export function selectPostWorkoutTemplateCandidates(
   templates: PostWorkoutTemplate[],
@@ -127,6 +181,15 @@ export function selectPostWorkoutTemplateCandidates(
   allergies?: string[],
   dietaryPreference?: string,
   random: () => number = Math.random,
+  /**
+   * Set of post_workout_templates.id values the user has actively pinned.
+   * When any pinned template matches the current activity scope, it overrides
+   * candidate selection — allergen / diet / food-availability filters are all
+   * bypassed for that call. Per locked Formula Kit pin policy: in-scope pins
+   * are honored unconditionally. When undefined or empty, behavior is
+   * byte-identical to pre-pin v3. Formula Kit PR 3 substep 7.
+   */
+  pinnedTemplateIds?: Set<string>,
 ): PostWorkoutTemplate[] {
   const mappedActivities = mapActivityTypeForTemplate(activityType);
   const allergiesLower = (allergies ?? []).map((a) => a.toLowerCase());
@@ -137,8 +200,62 @@ export function selectPostWorkoutTemplateCandidates(
       mappedActivities.join(",")
     }), diet=${dietaryPreference ?? "none"}, allergies=${
       allergiesLower.join(",") || "none"
-    }`,
+    }, pins=${pinnedTemplateIds?.size ?? 0}`,
   );
+
+  // STEP 0 — pin override. If the user has any in-scope post pin, hand back
+  // the pinned set immediately, bypassing diet / allergen / food-availability
+  // filters per locked Formula Kit policy.
+  //
+  // Disambiguation when multiple pins are in scope: rank by selection_priority
+  // DESC; random tiebreak across the top-priority block (so when every pinned
+  // template shares a null/equal priority, the pick is fully random — matching
+  // the user-confirmed spec for substep 7).
+  if (pinnedTemplateIds !== undefined && pinnedTemplateIds.size > 0) {
+    const pinnedInScope = filterPinnedPostTemplatesInScope(
+      templates,
+      activityType,
+      pinnedTemplateIds,
+    );
+    if (pinnedInScope.length === 1) {
+      console.log(
+        `[POST-TEMPLATE] Pin override active: 1 pinned template in scope ` +
+          `(activity=${activityType}), bypassing all filters`,
+      );
+      return pinnedInScope;
+    }
+    if (pinnedInScope.length > 1) {
+      pinnedInScope.sort((a, b) => {
+        const priorityDiff = priorityRank(b.selection_priority) -
+          priorityRank(a.selection_priority);
+        if (priorityDiff !== 0) return priorityDiff;
+        return a.template_number - b.template_number;
+      });
+      const topPriority = priorityRank(pinnedInScope[0].selection_priority);
+      let tieEnd = 1;
+      while (
+        tieEnd < pinnedInScope.length &&
+        priorityRank(pinnedInScope[tieEnd].selection_priority) === topPriority
+      ) {
+        tieEnd++;
+      }
+      if (tieEnd > 1) {
+        const pick = Math.floor(random() * tieEnd);
+        if (pick !== 0) {
+          [pinnedInScope[0], pinnedInScope[pick]] = [
+            pinnedInScope[pick],
+            pinnedInScope[0],
+          ];
+        }
+      }
+      console.log(
+        `[POST-TEMPLATE] Pin override active: ${pinnedInScope.length} pinned templates in scope ` +
+          `(activity=${activityType}), bypassing all filters; selection_priority=${topPriority}, ` +
+          `tie_block=${tieEnd}, picked ${pinnedInScope[0].template_number} (${pinnedInScope[0].name})`,
+      );
+      return pinnedInScope;
+    }
+  }
 
   // STEP 1 — filter
   const survivors: PostWorkoutTemplate[] = [];
@@ -199,7 +316,7 @@ export function selectPostWorkoutTemplateCandidates(
 
   // STEP 2/3 — sort by travel rank, then prep rank, then template_number as a
   // stable secondary key (so repeated runs are deterministic up to the final
-  // random tiebreak).
+  // random tiebreak). Identical to the pre-pin algorithm.
   survivors.sort((a, b) => {
     const travelDiff = travelRank(a.travel_friendliness) -
       travelRank(b.travel_friendliness);
@@ -246,6 +363,7 @@ export function selectPostWorkoutTemplate(
   allergies?: string[],
   dietaryPreference?: string,
   random: () => number = Math.random,
+  pinnedTemplateIds?: Set<string>,
 ): PostWorkoutTemplate | null {
   const candidates = selectPostWorkoutTemplateCandidates(
     templates,
@@ -254,6 +372,7 @@ export function selectPostWorkoutTemplate(
     allergies,
     dietaryPreference,
     random,
+    pinnedTemplateIds,
   );
   return candidates[0] ?? null;
 }
@@ -277,12 +396,34 @@ export function renderPostTemplatePortion(
     : template.component_food_names;
 
   const results: FoodResult[] = [];
+  const missing: string[] = [];
   for (const name of foodNames) {
     const food = foodsByName.get(name);
-    if (!food) continue;
+    if (!food) {
+      missing.push(name);
+      continue;
+    }
     const qty = servings[name] ?? 1;
     if (qty <= 0) continue;
     results.push(buildFoodResult(food, qty));
+  }
+
+  // Hard fail on any missing component: shipping an incomplete plan would
+  // silently drop pinned ingredients (e.g. a Yogurt + Berries + Granola
+  // template that only renders Yogurt because Berries/Granola sit in a
+  // different category at the SQL level). The non-pin path already guarantees
+  // every required food is present via the candidate filter at line 296-307,
+  // so this only fires under pin override — and the caller's Option A guard
+  // downgrades pin_decision.used_pin to `pinned_template_unrenderable`.
+  // See PR 3 #35 follow-up #2 (sibling of the SQL-widening fetch in
+  // template-food-queries.ts).
+  if (missing.length > 0) {
+    console.log(
+      `[POST-TEMPLATE] Template ${template.template_number} (${template.name}) missing components: ${
+        missing.join(", ")
+      } — returning null so caller can downgrade pin_decision`,
+    );
+    return null;
   }
 
   if (results.length === 0) return null;

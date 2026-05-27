@@ -201,10 +201,26 @@ class FormulaPinController extends _$FormulaPinController {
     );
   }
 
+  /// Convenience for After card / detail — extracts scope metadata from an
+  /// [AfterFormulaView] and delegates to [togglePin]. After templates have no
+  /// duration / sub-phase axis, so only `activities` is passed through.
+  Future<void> toggleAfter({
+    required AfterFormulaView formula,
+    required String source,
+  }) async {
+    await togglePin(
+      templateId: formula.id,
+      kind: TemplateKind.postSystem,
+      source: source,
+      activities: formula.activityTypes,
+    );
+  }
+
   FormulaPhase _phaseForKind(TemplateKind kind) {
     return switch (kind) {
       TemplateKind.preSystem => FormulaPhase.before,
       TemplateKind.duringSystem => FormulaPhase.during,
+      TemplateKind.postSystem => FormulaPhase.after,
     };
   }
 
