@@ -185,6 +185,15 @@ class FoodPreferencesDao extends DatabaseAccessor<AppDatabase>
     return results.map((r) => r.foodName).toList();
   }
 
+  /// Get willing-to-try foods for a user
+  Future<List<String>> getWillingToTryFoods(String userId) async {
+    final query = select(foodPreferencesTable)
+      ..where((f) =>
+          f.userId.equals(userId) & f.preference.equals('willing_to_try'));
+    final results = await query.get();
+    return results.map((r) => r.foodName).toList();
+  }
+
   /// Remove food preferences by source
   ///
   /// Used when allergies or dietary preferences are removed to undo auto-avoids

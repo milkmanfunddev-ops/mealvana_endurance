@@ -1,1333 +1,1697 @@
-react-dom_client.js?v=ff481ee5:14338 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
-client:510 [tanstack-router] These exports from "/Users/leemartin/development/mealplanning_prototype/packages/web/src/routes/plan.a.tsx" will not be code-split and will increase your bundle size:
-- VariantACalendar
-For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
-(anonymous) @ client:510
-(anonymous) @ plan.a.tsx:4
-react-dom_client.js?v=ff481ee5:2968 Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+## Log 1
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3] After-phase foods: Whey Protein Shake (RTD)(carbs=9,protein=30,qty=1), Water(carbs=0,protein=0,qty=3)
 
-- A server/client branch `if (typeof window !== 'undefined')`.
-- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
-- Date formatting in a user's locale which doesn't match the server.
-- External changing data without sending a snapshot of it along with the HTML.
-- Invalid HTML tag nesting.
 
-It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
 
-https://react.dev/link/hydration-mismatch
+---
 
-  ...
-    <MatchInnerImpl matchId="__root__/">
-      <RootComponent>
-        <html lang="en" suppressHydrationWarning={true}>
-          <head>
-          <body className="bg-backgro...">
-            <J attribute="class" defaultTheme="dark" enableSystem={true}>
-              <V attribute="class" defaultTheme="dark" enableSystem={true}>
-                <script>
-                <AppShell>
-                  <div className="min-h-scre...">
-                    <AppHeader>
-                      <header className="sticky top...">
-                        <a>
-                        <div>
-                        <div className="flex items...">
-                          <ThemeToggle>
-                            <_c variant="ghost" size="icon" onClick={function onClick} aria-label="Switch to ..." ...>
-                              <button
-                                ref={null}
-                                className={"inline-flex items-center justify-center gap-2 whitespace-nowrap focus-vis..."}
-                                disabled={undefined}
-                                onClick={function onClick}
-+                               aria-label="Switch to light mode"
--                               aria-label="Switch to dark mode"
-                              >
-                                <Sun size={16} className="transition...">
-                                  <svg
-                                    ref={null}
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width={16}
-                                    height={16}
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth={2}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-+                                   className="lucide lucide-sun transition-transform duration-150 hover:rotate-12"
--                                   className="lucide lucide-moon transition-transform duration-150 hover:-rotate-12"
-                                    aria-hidden="true"
-                                  >
-+                                   <circle cx="12" cy="12" r="4">
--                                   <path
--                                     d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268..."
--                                   >
-                                    ...
-                          ...
-                    ...
-                ...
-            ...
+## Log 2
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3-TIMING] validation completed in 0ms
 
-    at throwOnHydrationMismatch (react-dom_client.js?v=ff481ee5:2968:51)
-    at beginWork (react-dom_client.js?v=ff481ee5:6200:914)
-    at runWithFiberInDEV (react-dom_client.js?v=ff481ee5:851:66)
-    at performUnitOfWork (react-dom_client.js?v=ff481ee5:8429:92)
-    at workLoopConcurrentByScheduler (react-dom_client.js?v=ff481ee5:8425:55)
-    at renderRootConcurrent (react-dom_client.js?v=ff481ee5:8408:64)
-    at performWorkOnRoot (react-dom_client.js?v=ff481ee5:7957:145)
-    at performWorkOnRootViaSchedulerTask (react-dom_client.js?v=ff481ee5:9059:4)
-    at MessagePort.performWorkUntilDeadline (react-dom_client.js?v=ff481ee5:36:38)
-throwOnHydrationMismatch @ react-dom_client.js?v=ff481ee5:2968
-beginWork @ react-dom_client.js?v=ff481ee5:6200
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<circle>
-exports.createElement @ react.js?v=ff481ee5:606
-(anonymous) @ lucide-react.js?v=ff481ee5:93
-(anonymous) @ lucide-react.js?v=ff481ee5:93
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateForwardRef @ react-dom_client.js?v=ff481ee5:5396
-beginWork @ react-dom_client.js?v=ff481ee5:6204
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<ForwardRef>
-exports.createElement @ react.js?v=ff481ee5:606
-Sun @ lucide-react.js?v=ff481ee5:103
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateForwardRef @ react-dom_client.js?v=ff481ee5:5396
-beginWork @ react-dom_client.js?v=ff481ee5:6204
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Sun>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-(anonymous) @ theme-toggle.tsx:28
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<ThemeToggle>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-(anonymous) @ app-header.tsx:53
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<AppHeader>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-AppShell @ __root.tsx:28
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<AppShell>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-RootComponent @ __root.tsx:40
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<RootComponent>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-(anonymous) @ Match.js?v=ff481ee5:200
-mountMemo @ react-dom_client.js?v=ff481ee5:4931
-useMemo @ react-dom_client.js?v=ff481ee5:13024
-exports.useMemo @ react.js?v=ff481ee5:736
-MatchInnerImpl @ Match.js?v=ff481ee5:198
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4213
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchInnerImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchView @ Match.js?v=ff481ee5:102
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchView>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchImpl @ Match.js?v=ff481ee5:46
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchesInner @ Matches.js?v=ff481ee5:33
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchesInner>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-Matches @ Matches.js?v=ff481ee5:24
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Matches>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-RouterProvider @ RouterProvider.js?v=ff481ee5:41
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<RouterProvider>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-children @ StartClient.js?v=ff481ee5:10
-AwaitInner @ awaited.js?v=ff481ee5:28
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<AwaitInner>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-Await @ awaited.js?v=ff481ee5:19
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Await>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-StartClient @ StartClient.js?v=ff481ee5:8
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopConcurrentByScheduler @ react-dom_client.js?v=ff481ee5:8425
-renderRootConcurrent @ react-dom_client.js?v=ff481ee5:8408
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<StartClient>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-(anonymous) @ client.tsx:9
-exports.startTransition @ react.js?v=ff481ee5:682
-(anonymous) @ client.tsx:5
-use-coach-chat.ts:244 Uncaught TypeError: append is not a function
-    at use-coach-chat.ts:244:7
-    at plan.e.tsx:105:5
-    at onClick (message-part-chips.tsx:30:26)
-    at executeDispatch (react-dom_client.js?v=ff481ee5:9141:5)
-    at runWithFiberInDEV (react-dom_client.js?v=ff481ee5:851:66)
-    at processDispatchQueue (react-dom_client.js?v=ff481ee5:9167:27)
-    at react-dom_client.js?v=ff481ee5:9454:5
-    at batchedUpdates$1 (react-dom_client.js?v=ff481ee5:2044:12)
-    at dispatchEventForPluginEventSystem (react-dom_client.js?v=ff481ee5:9240:4)
-    at dispatchEvent (react-dom_client.js?v=ff481ee5:11319:29)
-(anonymous) @ use-coach-chat.ts:244
-(anonymous) @ plan.e.tsx:105
-(anonymous) @ message-part-chips.tsx:30
-executeDispatch @ react-dom_client.js?v=ff481ee5:9141
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-processDispatchQueue @ react-dom_client.js?v=ff481ee5:9167
-(anonymous) @ react-dom_client.js?v=ff481ee5:9454
-batchedUpdates$1 @ react-dom_client.js?v=ff481ee5:2044
-dispatchEventForPluginEventSystem @ react-dom_client.js?v=ff481ee5:9240
-dispatchEvent @ react-dom_client.js?v=ff481ee5:11319
-dispatchDiscreteEvent @ react-dom_client.js?v=ff481ee5:11301
-<button>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-(anonymous) @ message-part-chips.tsx:27
-(anonymous) @ message-part-chips.tsx:26
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MessagePartChips>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-JadeRow @ message-list.tsx:119
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<JadeRow>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-(anonymous) @ message-list.tsx:229
-(anonymous) @ message-list.tsx:226
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MessageList>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-VariantECoach @ plan.e.tsx:160
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<VariantECoach>
-exports.createElement @ react.js?v=ff481ee5:606
-Lazy @ lazyRouteComponent.js?v=ff481ee5:45
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Lazy>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-(anonymous) @ Match.js?v=ff481ee5:200
-mountMemo @ react-dom_client.js?v=ff481ee5:4931
-useMemo @ react-dom_client.js?v=ff481ee5:13024
-exports.useMemo @ react.js?v=ff481ee5:736
-MatchInnerImpl @ Match.js?v=ff481ee5:198
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4213
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchInnerImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchView @ Match.js?v=ff481ee5:102
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchView>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchImpl @ Match.js?v=ff481ee5:46
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-OutletImpl @ Match.js?v=ff481ee5:286
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<OutletImpl>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-AppShell @ __root.tsx:30
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<AppShell>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-RootComponent @ __root.tsx:40
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<RootComponent>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-(anonymous) @ Match.js?v=ff481ee5:200
-mountMemo @ react-dom_client.js?v=ff481ee5:4931
-useMemo @ react-dom_client.js?v=ff481ee5:13024
-exports.useMemo @ react.js?v=ff481ee5:736
-MatchInnerImpl @ Match.js?v=ff481ee5:198
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4213
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchInnerImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchView @ Match.js?v=ff481ee5:102
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchView>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchImpl @ Match.js?v=ff481ee5:46
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchesInner @ Matches.js?v=ff481ee5:33
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchesInner>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-Matches @ Matches.js?v=ff481ee5:24
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Matches>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-RouterProvider @ RouterProvider.js?v=ff481ee5:41
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<RouterProvider>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-children @ StartClient.js?v=ff481ee5:10
-AwaitInner @ awaited.js?v=ff481ee5:28
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<AwaitInner>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-Await @ awaited.js?v=ff481ee5:19
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Await>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-StartClient @ StartClient.js?v=ff481ee5:8
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<StartClient>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-(anonymous) @ client.tsx:9
-exports.startTransition @ react.js?v=ff481ee5:682
-(anonymous) @ client.tsx:5
-use-coach-chat.ts:244 Uncaught TypeError: append is not a function
-    at use-coach-chat.ts:244:7
-    at plan.e.tsx:105:5
-    at onClick (message-part-chips.tsx:30:26)
-    at executeDispatch (react-dom_client.js?v=ff481ee5:9141:5)
-    at runWithFiberInDEV (react-dom_client.js?v=ff481ee5:851:66)
-    at processDispatchQueue (react-dom_client.js?v=ff481ee5:9167:27)
-    at react-dom_client.js?v=ff481ee5:9454:5
-    at batchedUpdates$1 (react-dom_client.js?v=ff481ee5:2044:12)
-    at dispatchEventForPluginEventSystem (react-dom_client.js?v=ff481ee5:9240:4)
-    at dispatchEvent (react-dom_client.js?v=ff481ee5:11319:29)
-(anonymous) @ use-coach-chat.ts:244
-(anonymous) @ plan.e.tsx:105
-(anonymous) @ message-part-chips.tsx:30
-executeDispatch @ react-dom_client.js?v=ff481ee5:9141
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-processDispatchQueue @ react-dom_client.js?v=ff481ee5:9167
-(anonymous) @ react-dom_client.js?v=ff481ee5:9454
-batchedUpdates$1 @ react-dom_client.js?v=ff481ee5:2044
-dispatchEventForPluginEventSystem @ react-dom_client.js?v=ff481ee5:9240
-dispatchEvent @ react-dom_client.js?v=ff481ee5:11319
-dispatchDiscreteEvent @ react-dom_client.js?v=ff481ee5:11301
-<button>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-(anonymous) @ message-part-chips.tsx:27
-(anonymous) @ message-part-chips.tsx:26
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MessagePartChips>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-JadeRow @ message-list.tsx:119
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<JadeRow>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-(anonymous) @ message-list.tsx:229
-(anonymous) @ message-list.tsx:226
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MessageList>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-VariantECoach @ plan.e.tsx:160
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<VariantECoach>
-exports.createElement @ react.js?v=ff481ee5:606
-Lazy @ lazyRouteComponent.js?v=ff481ee5:45
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Lazy>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-(anonymous) @ Match.js?v=ff481ee5:200
-mountMemo @ react-dom_client.js?v=ff481ee5:4931
-useMemo @ react-dom_client.js?v=ff481ee5:13024
-exports.useMemo @ react.js?v=ff481ee5:736
-MatchInnerImpl @ Match.js?v=ff481ee5:198
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4213
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchInnerImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchView @ Match.js?v=ff481ee5:102
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchView>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchImpl @ Match.js?v=ff481ee5:46
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-OutletImpl @ Match.js?v=ff481ee5:286
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<OutletImpl>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-AppShell @ __root.tsx:30
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<AppShell>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-RootComponent @ __root.tsx:40
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<RootComponent>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-(anonymous) @ Match.js?v=ff481ee5:200
-mountMemo @ react-dom_client.js?v=ff481ee5:4931
-useMemo @ react-dom_client.js?v=ff481ee5:13024
-exports.useMemo @ react.js?v=ff481ee5:736
-MatchInnerImpl @ Match.js?v=ff481ee5:198
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4213
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchInnerImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchView @ Match.js?v=ff481ee5:102
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchView>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchImpl @ Match.js?v=ff481ee5:46
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchesInner @ Matches.js?v=ff481ee5:33
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchesInner>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-Matches @ Matches.js?v=ff481ee5:24
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Matches>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-RouterProvider @ RouterProvider.js?v=ff481ee5:41
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<RouterProvider>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-children @ StartClient.js?v=ff481ee5:10
-AwaitInner @ awaited.js?v=ff481ee5:28
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<AwaitInner>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-Await @ awaited.js?v=ff481ee5:19
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Await>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-StartClient @ StartClient.js?v=ff481ee5:8
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<StartClient>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-(anonymous) @ client.tsx:9
-exports.startTransition @ react.js?v=ff481ee5:682
-(anonymous) @ client.tsx:5
-use-coach-chat.ts:244 Uncaught TypeError: append is not a function
-    at use-coach-chat.ts:244:7
-    at plan.e.tsx:101:5
-    at jade-composer.tsx:57:5
-    at executeDispatch (react-dom_client.js?v=ff481ee5:9141:5)
-    at runWithFiberInDEV (react-dom_client.js?v=ff481ee5:851:66)
-    at processDispatchQueue (react-dom_client.js?v=ff481ee5:9167:27)
-    at react-dom_client.js?v=ff481ee5:9454:5
-    at batchedUpdates$1 (react-dom_client.js?v=ff481ee5:2044:12)
-    at dispatchEventForPluginEventSystem (react-dom_client.js?v=ff481ee5:9240:4)
-    at dispatchEvent (react-dom_client.js?v=ff481ee5:11319:29)
-(anonymous) @ use-coach-chat.ts:244
-(anonymous) @ plan.e.tsx:101
-(anonymous) @ jade-composer.tsx:57
-executeDispatch @ react-dom_client.js?v=ff481ee5:9141
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-processDispatchQueue @ react-dom_client.js?v=ff481ee5:9167
-(anonymous) @ react-dom_client.js?v=ff481ee5:9454
-batchedUpdates$1 @ react-dom_client.js?v=ff481ee5:2044
-dispatchEventForPluginEventSystem @ react-dom_client.js?v=ff481ee5:9240
-dispatchEvent @ react-dom_client.js?v=ff481ee5:11319
-dispatchDiscreteEvent @ react-dom_client.js?v=ff481ee5:11301
-<button>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-(anonymous) @ jade-composer.tsx:169
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<JadeComposer>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-VariantECoach @ plan.e.tsx:172
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<VariantECoach>
-exports.createElement @ react.js?v=ff481ee5:606
-Lazy @ lazyRouteComponent.js?v=ff481ee5:45
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Lazy>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-(anonymous) @ Match.js?v=ff481ee5:200
-mountMemo @ react-dom_client.js?v=ff481ee5:4931
-useMemo @ react-dom_client.js?v=ff481ee5:13024
-exports.useMemo @ react.js?v=ff481ee5:736
-MatchInnerImpl @ Match.js?v=ff481ee5:198
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4213
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchInnerImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchView @ Match.js?v=ff481ee5:102
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchView>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchImpl @ Match.js?v=ff481ee5:46
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-OutletImpl @ Match.js?v=ff481ee5:286
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<OutletImpl>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-AppShell @ __root.tsx:30
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<AppShell>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-RootComponent @ __root.tsx:40
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<RootComponent>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-(anonymous) @ Match.js?v=ff481ee5:200
-mountMemo @ react-dom_client.js?v=ff481ee5:4931
-useMemo @ react-dom_client.js?v=ff481ee5:13024
-exports.useMemo @ react.js?v=ff481ee5:736
-MatchInnerImpl @ Match.js?v=ff481ee5:198
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4213
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchInnerImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchView @ Match.js?v=ff481ee5:102
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchView>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchImpl @ Match.js?v=ff481ee5:46
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-updateSimpleMemoComponent @ react-dom_client.js?v=ff481ee5:5432
-updateMemoComponent @ react-dom_client.js?v=ff481ee5:5407
-beginWork @ react-dom_client.js?v=ff481ee5:6210
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchImpl>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-MatchesInner @ Matches.js?v=ff481ee5:33
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<MatchesInner>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-Matches @ Matches.js?v=ff481ee5:24
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Matches>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-RouterProvider @ RouterProvider.js?v=ff481ee5:41
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<RouterProvider>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-children @ StartClient.js?v=ff481ee5:10
-AwaitInner @ awaited.js?v=ff481ee5:28
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<AwaitInner>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-Await @ awaited.js?v=ff481ee5:19
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<Await>
-exports.jsx @ react_jsx-runtime.js?v=ff481ee5:193
-StartClient @ StartClient.js?v=ff481ee5:8
-react_stack_bottom_frame @ react-dom_client.js?v=ff481ee5:12868
-renderWithHooksAgain @ react-dom_client.js?v=ff481ee5:4268
-renderWithHooks @ react-dom_client.js?v=ff481ee5:4219
-updateFunctionComponent @ react-dom_client.js?v=ff481ee5:5569
-beginWork @ react-dom_client.js?v=ff481ee5:6140
-runWithFiberInDEV @ react-dom_client.js?v=ff481ee5:851
-performUnitOfWork @ react-dom_client.js?v=ff481ee5:8429
-workLoopSync @ react-dom_client.js?v=ff481ee5:8325
-renderRootSync @ react-dom_client.js?v=ff481ee5:8309
-performWorkOnRoot @ react-dom_client.js?v=ff481ee5:7994
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=ff481ee5:9059
-performWorkUntilDeadline @ react-dom_client.js?v=ff481ee5:36
-<StartClient>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=ff481ee5:193
-(anonymous) @ client.tsx:9
-exports.startTransition @ react.js?v=ff481ee5:682
-(anonymous) @ client.tsx:5
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 3
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3] Before phase out of range (non-fatal): carbs=60.0 not in [100.0, 128.0]; sodium=465 not in [100, 200]
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "warning"
+}
+```
+
+---
+
+## Log 4
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3] Plan generated successfully (plan_id=714d3522-b46b-4240-baf1-96474eac5ca2)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 5
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3] During phase LP out of range (non-fatal): carbs=17.7 not in [81.0, 108.0]
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "warning"
+}
+```
+
+---
+
+## Log 6
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3-TIMING] during_lp_fallback completed in 496ms
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 7
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3-TIMING] request_total completed in 1675ms
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 8
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [POST-PROCESS-DURING] Adding 2x "Salt" (780mg sodium)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 9
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3] During phase out of range (non-fatal): carbs=17.7 not in [81.0, 108.0]
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "warning"
+}
+```
+
+---
+
+## Log 10
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3-TIMING] during_phase_total completed in 1479ms (path=lp)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 11
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3] during: keeping original result (sanitized retry not better).
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "warning"
+}
+```
+
+---
+
+## Log 12
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3] After phase out of range (non-fatal): carbs=9.0 not in [61.0, 91.0]; sodium=200 not in [210, 390]
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "warning"
+}
+```
+
+---
+
+## Log 13
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3] Plan result: before_subphases=snack,top_up, during_foods=1, after_foods=2
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 14
+**Timestamp:** 2026-05-28T19:26:42.361Z
+**Message:** [PLAN-V3-TIMING] during_phase completed in 1479ms
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 15
+**Timestamp:** 2026-05-28T19:26:42.360Z
+**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: electrolyte_drink_mix
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 16
+**Timestamp:** 2026-05-28T19:26:42.360Z
+**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: electrolyte_tablet
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 17
+**Timestamp:** 2026-05-28T19:26:42.360Z
+**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: pickle_juice_shot
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 18
+**Timestamp:** 2026-05-28T19:26:42.360Z
+**Message:** [TMPL-ELECTROLYTES] Found 8 electrolyte items
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 19
+**Timestamp:** 2026-05-28T19:26:42.360Z
+**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: sports_drink
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 20
+**Timestamp:** 2026-05-28T19:26:42.360Z
+**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: electrolyte_capsule
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 21
+**Timestamp:** 2026-05-28T19:26:42.360Z
+**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: electrolyte_packet
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 22
+**Timestamp:** 2026-05-28T19:26:42.360Z
+**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: high_sodium_electrolyte_mix
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 23
+**Timestamp:** 2026-05-28T19:26:41.874Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: oatmeal (id: b954fa74-4de5-4e76-8ab5-966a1b92d1cb)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 24
+**Timestamp:** 2026-05-28T19:26:41.874Z
+**Message:** [TMPL-FILTER-DIET] Excluding food for diet 'vegetarian': deli_turkey (excluded_diets: vegan,vegetarian)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 25
+**Timestamp:** 2026-05-28T19:26:41.874Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: applesauce (id: b51acae0-d708-4090-83c0-b9b270500cb0)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 26
+**Timestamp:** 2026-05-28T19:26:41.874Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: bagel_large (id: 6fc0a1d0-1877-48ef-a6bf-07296d6947d3)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 27
+**Timestamp:** 2026-05-28T19:26:41.874Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: cream_cheese (id: e8678771-683b-4477-8d4d-012ed33554cd)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 28
+**Timestamp:** 2026-05-28T19:26:41.874Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: honey (id: 6e86dd85-506c-4157-84a8-4e44b5eeb4d4)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 29
+**Timestamp:** 2026-05-28T19:26:41.874Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: mixed_berries (id: 05f6647c-646d-434a-8223-67bd51de9b2e)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 30
+**Timestamp:** 2026-05-28T19:26:41.874Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: jam (id: 37b98830-2d22-402f-8254-6cdfc579c89d)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 31
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: banana (id: 2a376d78-d356-45cc-8619-910d0fe7e02f)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 32
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: pretzels (id: 8ac09937-f522-44aa-894e-c45482a35993)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 33
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: high_sodium_electrolyte_mix (id: 26179502-1c7c-40cf-92c9-978a84dc7a22)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 34
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: pickle_juice_shot (id: 657b7dd0-244d-464e-a5a8-65fbe838dd0a)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 35
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: protein_shake (id: 8e7d500e-8796-45ed-8d34-ecb2aa0358d6)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 36
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_drink_mix (id: 19e70c02-06f2-4d54-8124-ed6efbd0182e)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 37
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_packet (id: 24b28bce-8d0d-4809-bc32-8677bc206c8e)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 38
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: vegan_recovery_protein_drink (id: 683cb910-689d-43b6-9665-234caa0fc335)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 39
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: sweet_potato (id: a4020770-5940-4461-8d08-8ca865750379)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 40
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FOODS-AFTER] Found 0 uncategorized user foods (1 total user foods)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 41
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: chocolate_milk (id: 73ed8835-ca79-4184-94dd-271e22a1f078)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 42
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: coconut_water (id: 7b56b1d6-b77c-4feb-81d6-7f3cfc6b3dfb)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 43
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: plant_protein_shake_rtd (id: 019e33ab-d17b-4873-92cb-3f6d3c8adc3d)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 44
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_tablet (id: 044b8b29-2d6c-48ff-812f-cdb4c35f9c31)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 45
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_capsule (id: dcac7df4-7c48-4a78-800b-da4b2c12fcfe)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 46
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: protein_bar (id: f477c518-1d69-4ffc-a289-ed27f966f67b)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 47
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: sports_drink (id: af14e3c2-ed27-4eea-8052-473fb8dcd23f)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 48
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FOODS-AFTER] Combined 44 template + 1 user = 45 total
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 49
+**Timestamp:** 2026-05-28T19:26:41.873Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: plant_protein_shake (id: 3f72595d-c6d7-4d94-aada-e0517c1cc214)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 50
+**Timestamp:** 2026-05-28T19:26:41.865Z
+**Message:** [TMPL-FOODS-DURING] Filtering template_foods for categories: during_run, activity_type: running, filter: activity_types.is.null,activity_types.ov.{running}
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 51
+**Timestamp:** 2026-05-28T19:26:41.865Z
+**Message:** [PLAN-V3] Generating during phase via LP solver
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 52
+**Timestamp:** 2026-05-28T19:26:41.865Z
+**Message:** [PLAN-V3] During rule-solver out of range (carbs=0.0 not in [81.0, 108.0]; sodium=0 not in [662, 994]). Retrying with LP solver.
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "warning"
+}
+```
+
+---
+
+## Log 53
+**Timestamp:** 2026-05-28T19:26:41.864Z
+**Message:** [PLAN-V3-TIMING] during_rule_solve completed in 1ms
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 54
+**Timestamp:** 2026-05-28T19:26:41.864Z
+**Message:** [DURING-RULES] WARNING: Carb deficit 100% — consider adding more food sources to pool
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 55
+**Timestamp:** 2026-05-28T19:26:41.864Z
+**Message:** [DURING-RULES] Hydration: water x4 = 960ml
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 56
+**Timestamp:** 2026-05-28T19:26:41.864Z
+**Message:** [DURING-RULES] POST-VALIDATION: 2 issue(s): carbs 0% (0g/95g) outside [90%, 110.00000000000001%]; sodium 0% (0mg/828mg) outside [90%, 110.00000000000001%]
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "warning"
+}
+```
+
+---
+
+## Log 57
+**Timestamp:** 2026-05-28T19:26:41.864Z
+**Message:** [DURING-RULES] Final: 1 foods, carbs=0g/95g, sodium=0mg/828mg, fluid=960ml/1004ml
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 58
+**Timestamp:** 2026-05-28T19:26:41.864Z
+**Message:** [DURING-RULES] Pool: 0 primary_carb, 0 sports_drink, 1 bike_solid, 1 hydration, 0 electrolyte
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 59
+**Timestamp:** 2026-05-28T19:26:41.864Z
+**Message:** [DURING-RULES] Targets: carbs=95g, sodium=828mg, fluid=1004ml, sport=running
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 60
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: dates (id: 88343d31-ca35-4f69-8b33-586a788a8d7f)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 61
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: applesauce_pouch (id: 97642f6e-55df-4af5-8e5d-8e34bb9538d7)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 62
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: SiS GO Isotonic Energy Gels — Tropical / Box of 6 (id: 4c339a26-7ae7-4b01-a170-4e1289206a53)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 63
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: banana (id: 2a376d78-d356-45cc-8619-910d0fe7e02f)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 64
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: Gatorade Zero Zero Gatorate Glacier Cherry (id: 3a1ccfcd-8f48-4df3-bfb9-96ef64d05c59)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 65
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: energy_chews (id: e7b370d5-0f15-4950-9314-b3ee2246ab51)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 66
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_tablet (id: 044b8b29-2d6c-48ff-812f-cdb4c35f9c31)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 67
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: pretzels (id: 8ac09937-f522-44aa-894e-c45482a35993)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 68
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: sports_drink (id: af14e3c2-ed27-4eea-8052-473fb8dcd23f)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 69
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_drink_mix (id: 19e70c02-06f2-4d54-8124-ed6efbd0182e)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 70
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: carb_drink_mix (id: ec81833b-c751-41bc-bf82-96f097bf3f2f)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 71
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: energy_chews_mini_pack (id: 28a7cc38-f9c8-40fc-a7ab-534375189769)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 72
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: graham_crackers (id: f5c3185a-08ed-4742-85d3-c906f66a2c5c)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 73
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: fig_bar (id: 811917ac-4a57-4294-81a3-09cbd414de9a)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 74
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [PLAN-V3-TIMING] during_rule_food_query completed in 784ms (foods=2)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 75
+**Timestamp:** 2026-05-28T19:26:41.863Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: stroopwafel (id: 2b29010b-4077-4e6d-b55d-6825b6271991)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 76
+**Timestamp:** 2026-05-28T19:26:41.862Z
+**Message:** [TMPL-FOODS-DURING] Combined 23 template + 3 user = 26 total
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 77
+**Timestamp:** 2026-05-28T19:26:41.862Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_capsule (id: dcac7df4-7c48-4a78-800b-da4b2c12fcfe)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 78
+**Timestamp:** 2026-05-28T19:26:41.862Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: raisins (id: 57a543db-bdd5-419e-8669-ed2ebad9910e)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 79
+**Timestamp:** 2026-05-28T19:26:41.862Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: energy_gel (id: 27f5af16-acbe-4a88-876f-aec17fd12b7c)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 80
+**Timestamp:** 2026-05-28T19:26:41.862Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: pickle_juice_shot (id: 657b7dd0-244d-464e-a5a8-65fbe838dd0a)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 81
+**Timestamp:** 2026-05-28T19:26:41.862Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: high_sodium_electrolyte_mix (id: 26179502-1c7c-40cf-92c9-978a84dc7a22)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 82
+**Timestamp:** 2026-05-28T19:26:41.862Z
+**Message:** [TMPL-FOODS-DURING] Found 0 uncategorized user foods (3 total user foods)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 83
+**Timestamp:** 2026-05-28T19:26:41.862Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: high_carb_drink_mix (id: 7126d4b7-5d46-4d54-b3a7-12a7f9460cc4)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 84
+**Timestamp:** 2026-05-28T19:26:41.862Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: honey (id: 6e86dd85-506c-4157-84a8-4e44b5eeb4d4)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 85
+**Timestamp:** 2026-05-28T19:26:41.862Z
+**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_packet (id: 24b28bce-8d0d-4809-bc32-8677bc206c8e)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 86
+**Timestamp:** 2026-05-28T19:26:41.211Z
+**Message:** [TMPL-FOODS-AFTER] Querying user foods for device_id: e92cb452-0368-4bb3-a888-3e86a65d097f (user_id: e92cb452-0368-4bb3-a888-3e86a65d097f)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 87
+**Timestamp:** 2026-05-28T19:26:41.207Z
+**Message:** [TMPL-FOODS-DURING] Querying user foods for device_id: e92cb452-0368-4bb3-a888-3e86a65d097f (user_id: e92cb452-0368-4bb3-a888-3e86a65d097f)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 88
+**Timestamp:** 2026-05-28T19:26:41.163Z
+**Message:** [TMPL-FOODS-AFTER] Widening: fetched 13 out-of-scope component foods (crackers, jam, peanut_butter, milk, toaster_waffle, cream_cheese, oatmeal, honey, toast, apple, mixed_berries, granola, granola_bar)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 89
+**Timestamp:** 2026-05-28T19:26:41.149Z
+**Message:** [PLAN-V3] snack: 2 foods (exploded), carbs=60g
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 90
+**Timestamp:** 2026-05-28T19:26:41.149Z
+**Message:** [PLAN-V3-TIMING] before_phase completed in 268ms
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 91
+**Timestamp:** 2026-05-28T19:26:41.149Z
+**Message:** [PLAN-V3] top_up: 1 foods (exploded), carbs=0g
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 92
+**Timestamp:** 2026-05-28T19:26:41.148Z
+**Message:** [PLAN-V3-SUBST] Found 1 user foods for before-phase substitution
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 93
+**Timestamp:** 2026-05-28T19:26:41.148Z
+**Message:** [PLAN-V3] Found 0 user food substitutions for before phase
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 94
+**Timestamp:** 2026-05-28T19:26:41.132Z
+**Message:** [TMPL-FOODS-DURING] Found 23 template foods for running
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 95
+**Timestamp:** 2026-05-28T19:26:41.108Z
+**Message:** [TMPL-FOODS-AFTER] Found 31 template foods for running
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 96
+**Timestamp:** 2026-05-28T19:26:41.079Z
+**Message:** [DURING-TEMPLATE] Selecting template: activity=running (mapped=running), duration=108min (bracket=90-150 min), gut=moderate
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 97
+**Timestamp:** 2026-05-28T19:26:41.079Z
+**Message:** [PLAN-V3-TIMING] during_template_select completed in 1ms (candidates=0, selected=none)
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 98
+**Timestamp:** 2026-05-28T19:26:41.079Z
+**Message:** [DURING-TEMPLATE] No matching templates found
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 99
+**Timestamp:** 2026-05-28T19:26:41.079Z
+**Message:** [DURING-TEMPLATE] Skipping template 4 (Chew + Water + Sports Drink): missing foods: energy_chews, sports_drink
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```
+
+---
+
+## Log 100
+**Timestamp:** 2026-05-28T19:26:41.079Z
+**Message:** [DURING-TEMPLATE] Skipping template 2 ((Gel + Water) + Sports Drink): missing foods: energy_gel, sports_drink
+
+
+**Details:**
+```json
+{
+  "event_type": "Log",
+  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
+  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "level": "info"
+}
+```

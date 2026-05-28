@@ -264,13 +264,23 @@ class UserRepository with SyncableRepository {
         needsUpload: needsUpload,
       );
 
-      // Skip immediate Supabase sync if marked for background upload
+      // Skip immediate Supabase sync if explicitly marked for background upload.
+      // Otherwise: write-through to Supabase now, and ONLY if that fails (e.g.
+      // a connection issue) flip the local record to needsUpload=true so the
+      // background sync retries it later. Previously the failure was swallowed
+      // WITHOUT marking the record dirty, so a failed save never reached
+      // Supabase and was never retried.
       if (!needsUpload) {
         try {
           await _upsertUserProfileToSupabase(updatedProfile);
         } catch (e, stackTrace) {
+          // Mark dirty so uploadDirtyRecords() retries this on the next sync.
+          await database.userDao.updateUserProfile(
+            updatedProfile,
+            needsUpload: true,
+          );
           sentry.addBreadcrumb(
-            message: 'Immediate upload failed; record stays dirty for retry',
+            message: 'Immediate upload failed; record marked dirty for retry',
             category: 'sync',
             data: {
               'operation': 'update_profile',
@@ -496,41 +506,73 @@ class UserRepository with SyncableRepository {
     );
   }
 
-  /// Get liked foods for a user.
-  ///
-  /// Reads from local Drift first. If Drift has zero rows for this user
-  /// (post-wipe, fresh install, re-onboarded with different user_id), falls
-  /// back to Supabase via [fetchAndCacheRemoteFoodPreferences] which hydrates
-  /// Drift before returning. This prevents the silent "empty list reaches the
-  /// edge function" failure documented in #23.
-  Future<List<String>> getLikedFoods(String userId) async {
-    final local = await database.foodPreferencesDao.getLikedFoods(userId);
-    if (local.isNotEmpty) return local;
-    await _safeHydrateFoodPreferencesFromRemote(userId);
-    return await database.foodPreferencesDao.getLikedFoods(userId);
-  }
+  /// In-memory throttle so a burst of preference reads during a single plan
+  /// generation (liked + willing + disliked, sometimes across services)
+  /// triggers at most one remote reconcile per user.
+  final Map<String, DateTime> _prefsReconciledAt = {};
+  static const Duration _prefsReconcileTtl = Duration(seconds: 15);
 
-  /// Get disliked foods for a user.
+  /// Make the LOCAL food-preference cache mirror the server before a read.
   ///
-  /// Same Drift-first / Supabase-fallback policy as [getLikedFoods]. See #23.
-  Future<List<String>> getDislikedFoods(String userId) async {
-    final local = await database.foodPreferencesDao.getDislikedFoods(userId);
-    if (local.isNotEmpty) return local;
-    await _safeHydrateFoodPreferencesFromRemote(userId);
-    return await database.foodPreferencesDao.getDislikedFoods(userId);
-  }
-
-  /// Hydrate food_preferences from Supabase when the local Drift cache is
-  /// empty. Failures are swallowed because [fetchAndCacheRemoteFoodPreferences]
-  /// already reports to Sentry on its own error path, and we don't want a
-  /// network blip on plan generation to throw all the way up into the
-  /// pipeline.
-  Future<void> _safeHydrateFoodPreferencesFromRemote(String userId) async {
+  /// Historically these getters were local-first and only hit the server when
+  /// Drift was empty, with a merge-only hydrate. That let STALE local rows
+  /// (e.g. a food the user later changed to "like" remotely, or an avoid set
+  /// from an earlier app version) survive forever and be shipped to the plan
+  /// edge function — producing a disliked list that contradicts the user's own
+  /// likes and collapses the candidate pool to an empty/under-fuelled plan.
+  ///
+  /// We now reconcile from the server (authoritative full snapshot, see
+  /// [fetchAndCacheRemoteFoodPreferences] which REPLACES local on a confirmed
+  /// non-empty fetch). Best-effort: offline / network failure leaves the local
+  /// cache untouched and the read falls back to whatever is cached. Throttled
+  /// to one network round-trip per [_prefsReconcileTtl] per user.
+  Future<void> _reconcileFoodPreferencesIfStale(String userId) async {
+    final last = _prefsReconciledAt[userId];
+    if (last != null &&
+        DateTime.now().difference(last) < _prefsReconcileTtl) {
+      return;
+    }
+    // Stamp first so concurrent/sequential reads in the same plan generation
+    // don't each fire a fetch; clear on failure so a later read can retry.
+    _prefsReconciledAt[userId] = DateTime.now();
     try {
       await fetchAndCacheRemoteFoodPreferences(userId);
     } catch (_) {
+      _prefsReconciledAt.remove(userId);
       // Reported by fetchAndCacheRemoteFoodPreferences via SentryReporter.
     }
+  }
+
+  /// Get liked foods for a user.
+  ///
+  /// Reconciles the local cache against the server first (see
+  /// [_reconcileFoodPreferencesIfStale]) so the plan pipeline never receives a
+  /// stale preference set. Falls back to the local cache when offline.
+  Future<List<String>> getLikedFoods(String userId) async {
+    await _reconcileFoodPreferencesIfStale(userId);
+    return await database.foodPreferencesDao.getLikedFoods(userId);
+  }
+
+  /// Get disliked foods for a user. Same reconcile-then-read policy as
+  /// [getLikedFoods].
+  Future<List<String>> getDislikedFoods(String userId) async {
+    await _reconcileFoodPreferencesIfStale(userId);
+    return await database.foodPreferencesDao.getDislikedFoods(userId);
+  }
+
+  /// Get willing-to-try foods for a user. Same reconcile-then-read policy as
+  /// [getLikedFoods]. (Previously unfetched anywhere, so willing-to-try foods
+  /// never reached the plan edge function.)
+  Future<List<String>> getWillingToTryFoods(String userId) async {
+    await _reconcileFoodPreferencesIfStale(userId);
+    return await database.foodPreferencesDao.getWillingToTryFoods(userId);
+  }
+
+  /// Force a reconcile of the local food-preference cache from the server,
+  /// bypassing the throttle. Useful after the user edits preferences.
+  Future<void> reconcileFoodPreferencesFromRemote(String userId) async {
+    _prefsReconciledAt.remove(userId);
+    await _reconcileFoodPreferencesIfStale(userId);
   }
 
   /// Pull custom foods from Supabase and cache locally
@@ -860,13 +902,19 @@ class UserRepository with SyncableRepository {
         }
       }
 
-      // Use mergeMode to preserve local preferences that server doesn't have
-      // This prevents data loss when server has stale or incomplete data
+      // REPLACE local with the server snapshot (mergeMode: false). The server
+      // is authoritative here, and merging was the bug: it left stale local
+      // rows (e.g. a food now "liked" remotely but still "dislike" locally, or
+      // an avoid set from an older app version) in place, so the plan pipeline
+      // kept shipping a disliked list that contradicted the user's own likes.
+      // The empty-guard above already protects against wiping local when the
+      // server returns nothing due to an RLS/network/timing issue, so reaching
+      // here means we have a real, non-empty server snapshot to mirror.
       await saveFoodPreferences(
         userId,
         preferences,
         sliderLevels: sliderLevels.isEmpty ? null : sliderLevels,
-        mergeMode: true, // Merge with existing local data instead of replacing
+        mergeMode: false, // Replace local cache with the authoritative server set
       );
       return preferences;
     } catch (e, stackTrace) {

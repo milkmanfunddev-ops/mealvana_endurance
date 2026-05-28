@@ -540,6 +540,12 @@ class BrickMacroService {
       payload['disliked_foods'] = dislikedFoods;
     }
 
+    final willingToTryFoods =
+        await authService.getWillingToTryFoods(userProfile.id);
+    if (willingToTryFoods.isNotEmpty) {
+      payload['willing_to_try_foods'] = willingToTryFoods;
+    }
+
     return payload;
   }
 

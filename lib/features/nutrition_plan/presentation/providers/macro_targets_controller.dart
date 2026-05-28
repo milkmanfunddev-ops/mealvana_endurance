@@ -1876,6 +1876,9 @@ class MacroTargetsController extends _$MacroTargetsController {
         final dislikedFoods = activityOwnerUserId.isNotEmpty
             ? await _authService.getDislikedFoods(activityOwnerUserId)
             : <String>[];
+        final willingToTryFoods = activityOwnerUserId.isNotEmpty
+            ? await _authService.getWillingToTryFoods(activityOwnerUserId)
+            : <String>[];
 
         // Try V2 template-based generation, falls back to V1 internally
         final nutritionPlan = await nutritionPlanService
@@ -1889,6 +1892,7 @@ class MacroTargetsController extends _$MacroTargetsController {
               allergies: allergies,
               likedFoods: likedFoods,
               dislikedFoods: dislikedFoods,
+              willingToTryFoods: willingToTryFoods,
               durationMinutes: resolvedDurationMinutes,
               gutTrainingLevel: userProfile?.gutTraining.name,
             );

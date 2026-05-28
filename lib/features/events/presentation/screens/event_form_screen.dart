@@ -904,8 +904,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                                   width: 2,
                                 ),
                               ),
-                              prefixIcon: FaIcon(
-                                FontAwesomeIcons.locationDot,
+                              prefixIcon: Icon(
+                                FontAwesomeIcons.locationDot.data,
                                 size: AppIconSizes.sm,
                                 color: AppColors.electrolyte,
                               ),
@@ -1361,8 +1361,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                                   width: 2,
                                 ),
                               ),
-                              prefixIcon: FaIcon(
-                                FontAwesomeIcons.link,
+                              prefixIcon: Icon(
+                                FontAwesomeIcons.link.data,
                                 size: AppIconSizes.sm,
                                 color: AppColors.electrolyte,
                               ),
@@ -1408,8 +1408,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                                   width: 2,
                                 ),
                               ),
-                              prefixIcon: FaIcon(
-                                FontAwesomeIcons.hashtag,
+                              prefixIcon: Icon(
+                                FontAwesomeIcons.hashtag.data,
                                 size: AppIconSizes.sm,
                                 color: AppColors.electrolyte,
                               ),
