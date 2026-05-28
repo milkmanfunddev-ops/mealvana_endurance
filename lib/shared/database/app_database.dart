@@ -160,20 +160,22 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
-  /// Schema version 12: Adds post_workout_templates table (read-only mirror
-  /// of Supabase post-workout formula catalog, v2 Notion shape). Backs the
-  /// Formula Kit After-phase library + pin support (PR 3). Includes the
-  /// `travel_friendliness` filter axis and `selection_priority` tie-breaker
-  /// used by the after-phase solver.
-  /// Schema version 11: Adds formula_pins table (user pins for Formula Kit
-  /// algorithm signal). Soft-deleted via `is_deleted` boolean to let unpin
-  /// events propagate across devices via the existing upsert-only sync.
-  /// Matches the user_foods soft-delete convention.
-  /// v10 added pre_workout_templates table (read-only mirror of
-  /// Supabase pre-workout formula catalog). Replaces the legacy `templates`
-  /// table for Before-phase formulas in Formula Kit.
-  /// v9 added during_workout_templates table (read-only mirror of
-  /// Supabase during-workout formula catalog) to back the Formula Kit browse UI.
+  /// Schema version 9: Formula Kit local tables — a single consolidated bump
+  /// from the last released schema (v8). Adds four tables that were developed
+  /// across unreleased intermediate versions on the feat/formula-kit branch;
+  /// since none of those interim versions ever shipped, they collapse into
+  /// one v9 migration:
+  ///   • during_workout_templates — read-only During-phase formula catalog
+  ///   • pre_workout_templates    — read-only Before-phase formula catalog
+  ///     (replaces the legacy `templates` table for Before formulas)
+  ///   • post_workout_templates   — read-only After-phase formula catalog
+  ///     (v2 Notion shape; `travel_friendliness` filter + `selection_priority`)
+  ///   • formula_pins             — user pin signal for plan generation,
+  ///     soft-deleted via `is_deleted` so unpin propagates across devices
+  ///     (matches the user_foods soft-delete convention)
+  /// NOTE: the matching `app_config` schema version on Supabase (read by
+  /// VersionCheckService as latest/current_schema_version) must be set to 9
+  /// when this ships, or existing v8 clients won't migrate consistently.
   /// v8 added needs_upload column to integrations so OAuth tokens are
   /// mirrored to Supabase and survive Drift schema resyncs / reinstalls.
   /// (v8 also includes 'vdot' in the integrations.provider CHECK and
@@ -190,7 +192,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 12;
+  int get schemaVersion => 9;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -253,22 +255,21 @@ class AppDatabase extends _$AppDatabase {
           );
         }
 
-        // v9: Create during_workout_templates table (read-only mirror).
-        // Guarded by version comparison; CREATE TABLE IF NOT EXISTS for
-        // idempotency in case the table was previously created at runtime.
+        // v9: Formula Kit local tables — a single consolidated step from the
+        // last released schema (v8). Creates all four mirrors/pin tables for a
+        // user upgrading from v8: the during/pre/post workout template mirrors
+        // plus formula_pins. These were developed across unreleased interim
+        // versions (during=9, pre=10, formula_pins=11, post=12 on the feature
+        // branch); none shipped, so they collapse into one step. None of them
+        // reference each other via FK locally, so creation order is for
+        // readability only. (Previously post_workout_templates was added to
+        // the @DriftDatabase table set + the schemaVersion bump but never to
+        // this ladder, so upgrading users hit the schema-integrity safety net
+        // and were force-wiped — folding it in here is the fix.)
         if (from < 9) {
           await m.createTable(duringWorkoutTemplatesTable);
-        }
-
-        // v10: Create pre_workout_templates table (read-only mirror).
-        if (from < 10) {
           await m.createTable(preWorkoutTemplatesTable);
-        }
-
-        // v11: Create formula_pins table (Formula Kit pins — user
-        // preference signal for plan generation). Soft-delete via
-        // is_deleted column.
-        if (from < 11) {
+          await m.createTable(postWorkoutTemplatesTable);
           await m.createTable(formulaPinsTable);
         }
       },

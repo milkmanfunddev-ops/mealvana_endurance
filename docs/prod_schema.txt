@@ -1659,17 +1659,17 @@ grant delete, insert, references, select, trigger, truncate, update on catalog_s
 
 create table personal_templates
 (
-    id                        uuid                     default gen_random_uuid() not null
+    id                        uuid                     default gen_random_uuid()   not null
         primary key,
-    user_id                   uuid                                               not null
+    user_id                   uuid                                                 not null
         references ??? ()
         on delete cascade,
-    name                      text                                               not null,
-    activity_type             text                                               not null,
+    name                      text                                                 not null,
+    activity_type             text                                                 not null,
     original_duration_minutes integer,
     original_distance         numeric(8, 2),
     original_activity_title   text,
-    plan_data                 jsonb                                              not null,
+    plan_data                 jsonb                                                not null,
     total_carbs_g             integer,
     total_protein_g           integer,
     total_fat_g               integer,
@@ -1678,7 +1678,28 @@ create table personal_templates
     total_calories            integer,
     brick_segment_order       text[],
     created_at                timestamp with time zone default now(),
-    updated_at                timestamp with time zone default now()
+    updated_at                timestamp with time zone default now(),
+    provenance                text                     default 'legacy_plan'::text not null
+        constraint personal_templates_provenance_check
+            check (provenance = ANY
+                   (ARRAY ['legacy_plan'::text, 'forked_formula'::text, 'from_scratch_formula'::text])),
+    phase                     text
+        constraint personal_templates_phase_check
+            check ((phase IS NULL) OR (phase = ANY (ARRAY ['before'::text, 'during'::text]))),
+    source_template_id        uuid,
+    sub_phase                 text,
+    digest_speed              text,
+    activities                jsonb,
+    durations                 jsonb,
+    gut_training              text,
+    custom_food_ids           jsonb,
+    constraint personal_templates_provenance_phase_check
+        check (
+            CASE provenance
+                WHEN 'forked_formula'::text THEN ((phase IS NOT NULL) AND (source_template_id IS NOT NULL))
+                WHEN 'from_scratch_formula'::text THEN (phase IS NOT NULL)
+                ELSE true
+                END)
 );
 
 alter table personal_templates
@@ -1689,6 +1710,9 @@ create index idx_personal_templates_user
 
 create index idx_personal_templates_sport
     on personal_templates (user_id, activity_type);
+
+create index idx_personal_templates_provenance_phase
+    on personal_templates (user_id, provenance, phase);
 
 grant delete, insert, references, select, trigger, truncate, update on personal_templates to anon;
 
@@ -2185,6 +2209,39 @@ grant delete, insert, references, select, trigger, truncate, update on post_work
 grant delete, insert, references, select, trigger, truncate, update on post_workout_templates to authenticated;
 
 grant delete, insert, references, select, trigger, truncate, update on post_workout_templates to service_role;
+
+create table formula_pins
+(
+    id            uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id       uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    template_id   uuid                                               not null,
+    template_kind text                                               not null
+        constraint formula_pins_template_kind_check
+            check (template_kind = ANY (ARRAY ['pre_system'::text, 'during_system'::text])),
+    created_at    timestamp with time zone default now()             not null,
+    updated_at    timestamp with time zone default now()             not null,
+    is_deleted    boolean                  default false             not null
+);
+
+alter table formula_pins
+    owner to postgres;
+
+create unique index formula_pins_active_unique
+    on formula_pins (user_id, template_id, template_kind)
+    where (NOT is_deleted);
+
+create index formula_pins_user_kind
+    on formula_pins (user_id, template_kind)
+    where (NOT is_deleted);
+
+grant delete, insert, references, select, trigger, truncate, update on formula_pins to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on formula_pins to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on formula_pins to service_role;
 
 create materialized view catalog_items as
 SELECT v.id,
@@ -3507,6 +3564,32 @@ grant execute on function is_approved_coach(uuid) to anon;
 grant execute on function is_approved_coach(uuid) to authenticated;
 
 grant execute on function is_approved_coach(uuid) to service_role;
+
+create function formula_pins_set_updated_at() returns trigger
+    language plpgsql
+as
+$$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
+
+alter function formula_pins_set_updated_at() owner to postgres;
+
+grant execute on function formula_pins_set_updated_at() to anon;
+
+grant execute on function formula_pins_set_updated_at() to authenticated;
+
+grant execute on function formula_pins_set_updated_at() to service_role;
+
+create function custom_foods_set_updated_at() returns trigger
+    language plpgsql
+as
+$$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$;
+
+alter function custom_foods_set_updated_at() owner to postgres;
+
+grant execute on function custom_foods_set_updated_at() to anon;
+
+grant execute on function custom_foods_set_updated_at() to authenticated;
+
+grant execute on function custom_foods_set_updated_at() to service_role;
 
 create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
 

@@ -50,17 +50,23 @@ export interface UserPinSets {
   afterPinIds: Set<string>;
 }
 
-const EMPTY_PINS: UserPinSets = {
-  beforePinIds: new Set(),
-  duringPinIds: new Set(),
-  afterPinIds: new Set(),
-};
+/** Return a fresh set of empty pin sets. Never share a single mutable
+ * instance across requests — Deno keeps modules alive between invocations,
+ * so a singleton with mutable `Set` fields would leak `.add()` mutations
+ * across concurrent users. */
+function emptyPins(): UserPinSets {
+  return {
+    beforePinIds: new Set(),
+    duringPinIds: new Set(),
+    afterPinIds: new Set(),
+  };
+}
 
 export async function fetchUserPinnedTemplateIds(
   supabase: ReturnType<typeof createServiceClient>,
   deviceId: string | undefined,
 ): Promise<UserPinSets> {
-  if (!deviceId) return EMPTY_PINS;
+  if (!deviceId) return emptyPins();
 
   // device_id → user_id (same pattern as before-phase-substitution.ts)
   const { data: userData } = await supabase
@@ -72,7 +78,7 @@ export async function fetchUserPinnedTemplateIds(
   const userId = userData?.id;
   if (!userId) {
     console.log("[PINS] No user found for device_id, no pins applied");
-    return EMPTY_PINS;
+    return emptyPins();
   }
 
   const { data: pinRows, error } = await supabase
@@ -85,7 +91,7 @@ export async function fetchUserPinnedTemplateIds(
     console.warn(
       `[PINS] formula_pins query failed: ${error.message} — falling back to empty pins`,
     );
-    return EMPTY_PINS;
+    return emptyPins();
   }
 
   const beforePinIds = new Set<string>();

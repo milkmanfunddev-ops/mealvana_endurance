@@ -68,14 +68,20 @@ class VdotOAuthService {
       options: const FlutterWebAuth2Options(preferEphemeral: false),
     );
 
-    final callbackUri = Uri.parse(result);
-    final returnedState = callbackUri.queryParameters['state'];
-    final code = callbackUri.queryParameters['code'];
+    // VDOT is a custom (.NET) OAuth server and its authorization codes can
+    // contain a literal '+' in the redirect URL. `Uri.queryParameters` decodes
+    // with x-www-form-urlencoded rules, which turns '+' into a space and
+    // silently corrupts the code — VDOT then rejects the token exchange with
+    // `invalid_code` (HTTP 400). Parse the raw query ourselves so the code
+    // reaches the token endpoint byte-for-byte intact.
+    final params = _parseCallbackParams(result);
+    final returnedState = params['state'];
+    final code = params['code'];
 
     if (kDebugMode) {
       print('📥 [vdot] Callback received');
       print('   Raw: $result');
-      print('   Query params: ${callbackUri.queryParameters}');
+      print('   Parsed params: $params');
       print('   Sent state:     $state');
       print('   Returned state: ${returnedState ?? "(omitted)"}');
     }
@@ -89,8 +95,8 @@ class VdotOAuthService {
     }
 
     if (code == null || code.isEmpty) {
-      final error = callbackUri.queryParameters['error'];
-      final description = callbackUri.queryParameters['error_description'];
+      final error = params['error'];
+      final description = params['error_description'];
       throw VdotOAuthException(
         description ?? error ?? 'No authorization code received',
       );
@@ -139,6 +145,37 @@ class VdotOAuthService {
     final random = Random.secure();
     final values = List<int>.generate(32, (_) => random.nextInt(256));
     return values.map((v) => v.toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  /// Parse the OAuth callback's query parameters from the raw redirect URL.
+  ///
+  /// Unlike `Uri.queryParameters`, this does NOT apply the
+  /// `application/x-www-form-urlencoded` rule that decodes '+' as a space.
+  /// VDOT places literal '+' characters inside its (base64-style)
+  /// authorization codes, and the standard getter would corrupt them. Each
+  /// component is decoded with `Uri.decodeComponent`, which resolves %XX
+  /// escapes but leaves '+' untouched. OAuth codes never contain real spaces,
+  /// so preserving '+' is strictly safer.
+  static Map<String, String> _parseCallbackParams(String redirectUrl) {
+    final params = <String, String>{};
+    final queryStart = redirectUrl.indexOf('?');
+    if (queryStart == -1) return params;
+    var query = redirectUrl.substring(queryStart + 1);
+    final fragmentStart = query.indexOf('#');
+    if (fragmentStart != -1) query = query.substring(0, fragmentStart);
+    for (final pair in query.split('&')) {
+      if (pair.isEmpty) continue;
+      final eq = pair.indexOf('=');
+      final rawKey = eq == -1 ? pair : pair.substring(0, eq);
+      final rawValue = eq == -1 ? '' : pair.substring(eq + 1);
+      try {
+        params[Uri.decodeComponent(rawKey)] = Uri.decodeComponent(rawValue);
+      } catch (_) {
+        // Malformed percent-encoding — keep the raw text rather than throwing.
+        params[rawKey] = rawValue;
+      }
+    }
+    return params;
   }
 }
 

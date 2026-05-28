@@ -138,7 +138,7 @@ class MoreFiltersSheet extends ConsumerWidget {
                               ],
                             ),
                           )
-                        else
+                        else if (phase == FormulaPhase.during)
                           _Section(
                             label: 'Gut training level',
                             child: _ChipWrap(
@@ -156,7 +156,8 @@ class MoreFiltersSheet extends ConsumerWidget {
                               ],
                             ),
                           ),
-                        const SizedBox(height: AppSpacing.lg),
+                        if (phase != FormulaPhase.after)
+                          const SizedBox(height: AppSpacing.lg),
                         _Section(
                           label: 'Hide formulas with',
                           child: _ChipWrap(

@@ -364,17 +364,20 @@ class _PinStatusBannerState extends State<PinStatusBanner>
     final honored = row.decision.usedPin;
     final rowColor =
         honored ? AppColors.electrolyte : AppColors.warning;
-    // Two-state copy for non-honored rows:
-    //   pin_set_size == 0 → user has no pins for this scope → "No pin found"
-    //   pin_set_size  > 0 → pins existed but none selected → "Pins fell through"
-    // In V1 the only fallthrough reason is `no_pin_for_scope`, so almost every
-    // non-honored row renders as "No pin found"; the second branch is wired
-    // forward-compat for future fallthrough reasons (allergen, season, etc.).
+    // Non-honored row copy is a three-way:
+    //   reason == pinnedTemplateUnrenderable → pin matched scope but a required
+    //     ingredient was missing from the food pool (PR 3 #35 guard).
+    //   pin_set_size  > 0                    → pins existed in scope, but the
+    //     solver still picked a non-pinned candidate.
+    //   pin_set_size == 0                    → user has no pins for this scope.
     final templateLabel = honored
         ? (row.decision.pinnedTemplateName ?? 'Pinned formula')
-        : (row.decision.pinSetSize > 0
-            ? 'Pins fell through'
-            : 'No pin found');
+        : (row.decision.fallthroughReason ==
+                PinFallthroughReason.pinnedTemplateUnrenderable
+            ? 'Pin ingredient unavailable'
+            : row.decision.pinSetSize > 0
+                ? 'Pins fell through'
+                : 'No pin found');
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),

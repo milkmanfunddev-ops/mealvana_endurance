@@ -102,6 +102,15 @@ export async function getTemplateFoodsForPhase(
    * pre-pin behavior. Formula Kit PR 3 (After-phase parity with the During
    * `getTemplateFoodsForDuringWithConstraints` pattern, PR 2 5c). */
   pinnedComponentNames?: Set<string>,
+  /** Additional component food names that must be pulled into the SQL fetch
+   * even when they sit outside the phase's category/activity scope, WITHOUT
+   * any filter bypass — they still face dislike/allergen/diet filtering at
+   * STEP 4. Used by the after-phase no-pin path so pantry foods referenced
+   * by post-workout templates (peanut_butter, jam, milk, granola, etc.) are
+   * available to the template renderer even when their `template_foods.
+   * categories` only includes `before_run`. Fixes #36 — the no-pin half of
+   * the architectural gap addressed for the pin path by PR 3 #35. */
+  extraComponentNames?: Set<string>,
 ): Promise<Food[]> {
   const likedSet = buildPreferenceSet(likedFoods);
   const willTrySet = buildPreferenceSet(willingToTryFoods);
@@ -178,23 +187,31 @@ export async function getTemplateFoodsForPhase(
     );
   }
 
-  // STEP 1b: SQL-widening for pinned-component foods that sit outside the
-  // phase's category/activity scope. Without this, in-Deno filters at STEP 4
-  // can't bypass dislike/allergen/diet — because the rows never made it past
-  // the categories/activity_types WHERE clause above. Example: an After
-  // template "Yogurt + Berries + Granola" where Berries sits in `before_run`
-  // category — the main query for `after_run` never returned Berries, so the
-  // honor-pin bypass had nothing to bypass and the template renderer dropped
-  // the missing component silently. See PR 3 #35 follow-up #2 (sibling guard
-  // in renderPostTemplatePortion).
-  if (pinnedComponentNames && pinnedComponentNames.size > 0) {
+  // STEP 1b: SQL-widening for component foods that sit outside the phase's
+  // category/activity scope. Without this, the categorically-filtered fetch
+  // above misses pantry foods (e.g. Berries categorized only as `before_run`
+  // but used by After templates), the template renderer sees missing
+  // components, and either drops the template silently or — for pinned
+  // templates — the honor-pin bypass at STEP 4 has nothing to bypass.
+  //
+  // Two sets of names get widened in:
+  //   - `pinnedComponentNames` — components of in-scope pinned templates.
+  //     These additionally bypass dislike/allergen/diet at STEP 4.
+  //   - `extraComponentNames`  — any component the caller wants reachable
+  //     even when out of scope (e.g. all post-template components in the
+  //     no-pin After path). Still subject to STEP 4 filters.
+  // Fixes PR 3 #35 (pin half) and #36 (no-pin half).
+  const widenNames = new Set<string>();
+  for (const n of pinnedComponentNames ?? []) widenNames.add(n);
+  for (const n of extraComponentNames ?? []) widenNames.add(n);
+  if (widenNames.size > 0) {
     const existingNames = new Set(
       templateFoods.map((f) => f.name as string),
     );
-    const missingPinnedNames = [...pinnedComponentNames].filter(
+    const missingWidenNames = [...widenNames].filter(
       (n) => !existingNames.has(n),
     );
-    if (missingPinnedNames.length > 0) {
+    if (missingWidenNames.length > 0) {
       let extraData: Record<string, unknown>[] | null = null;
       let extraError: { message?: string } | null = null;
       {
@@ -202,7 +219,7 @@ export async function getTemplateFoodsForPhase(
           .from("template_foods")
           .select(selectWithDefaultDuring)
           .eq("is_active", true)
-          .in("name", missingPinnedNames);
+          .in("name", missingWidenNames);
         extraData = data as Record<string, unknown>[] | null;
         extraError = error;
       }
@@ -211,19 +228,19 @@ export async function getTemplateFoodsForPhase(
           .from("template_foods")
           .select(selectWithoutDefaultDuring)
           .eq("is_active", true)
-          .in("name", missingPinnedNames);
+          .in("name", missingWidenNames);
         extraData = fallback.data as Record<string, unknown>[] | null;
         extraError = fallback.error;
       }
       if (extraError) {
         console.log(
-          `[TMPL-FOODS-${phase.toUpperCase()}] Error widening fetch for pinned components:`,
+          `[TMPL-FOODS-${phase.toUpperCase()}] Error widening fetch for out-of-scope components:`,
           extraError,
         );
       } else if (extraData && extraData.length > 0) {
         console.log(
-          `[TMPL-FOODS-${phase.toUpperCase()}] Widening: fetched ${extraData.length} pinned-component foods out of phase/activity scope (${
-            missingPinnedNames.join(", ")
+          `[TMPL-FOODS-${phase.toUpperCase()}] Widening: fetched ${extraData.length} out-of-scope component foods (${
+            missingWidenNames.join(", ")
           })`,
         );
         templateFoods = templateFoods.concat(extraData);

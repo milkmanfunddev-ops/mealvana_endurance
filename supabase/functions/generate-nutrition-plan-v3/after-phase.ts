@@ -101,6 +101,33 @@ export function derivePinnedPostComponentNames(
 }
 
 /**
+ * Union of all component food names across the active post-workout templates.
+ *
+ * Used to widen the no-pin After SQL fetch so pantry foods that some post
+ * templates depend on (e.g. peanut_butter, jam, milk, granola, mixed_berries)
+ * are reachable even when their `template_foods.categories` only includes
+ * `before_run`. These widened foods are still subject to dislike / allergen /
+ * diet filters at STEP 4 — they only bypass the category WHERE clause, not
+ * the user-preference filter chain.
+ *
+ * Without this, templates like "PB+J on Whole Wheat" or "Yogurt + Berries +
+ * Granola" silently lose components in the no-pin path and either render
+ * partially or fall through to LP. Fixes #36 (companion to PR 3 #35 which
+ * handled the pin-path widening only).
+ */
+export function deriveAllPostComponentNames(
+  templates: PostWorkoutTemplate[],
+): Set<string> {
+  const names = new Set<string>();
+  for (const t of templates) {
+    for (const name of t.component_food_names ?? []) {
+      names.add(name);
+    }
+  }
+  return names;
+}
+
+/**
  * Pick + render a post-workout recovery template.
  *
  * `targets` is accepted to keep the function signature aligned with the other
@@ -168,6 +195,11 @@ export async function generateAfterPhase(
       templates,
       afterPinnedTemplateIds,
     );
+    // Widen the no-pin path too: pull in every post-template component name
+    // even when the row lives in `before_run` category. Pin-path bypass at
+    // STEP 4 is unchanged — extra names face full dislike/allergen/diet
+    // filtering. Fixes #36.
+    const extraComponentNames = deriveAllPostComponentNames(templates);
     const afterFoods = await getTemplateFoodsForPhase(
       supabase,
       "after",
@@ -180,11 +212,12 @@ export async function generateAfterPhase(
       allergies,
       dietaryPreference,
       pinnedComponentNames,
+      extraComponentNames,
     );
     console.log(
       `[PLAN-V3-TIMING] after_template_queries completed in ${
         elapsed(queryStart)
-      }ms (templates=${templates.length}, foods=${afterFoods.length}, pinnedComponents=${pinnedComponentNames.size})`,
+      }ms (templates=${templates.length}, foods=${afterFoods.length}, pinnedComponents=${pinnedComponentNames.size}, extraComponents=${extraComponentNames.size})`,
     );
 
     if (templates.length > 0 && afterFoods.length > 0) {

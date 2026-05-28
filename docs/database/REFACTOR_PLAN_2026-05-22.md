@@ -33,7 +33,10 @@ lower-risk plan.
 ## ✅ Done (verified: 0 analyzer errors, 48/48 formula-kit tests)
 
 - Merged `origin/develop` into `feat/formula-kit`; reconciled the Drift
-  schema-version collision (now `schemaVersion = 11`).
+  schema-version collision (was `schemaVersion = 11` at the time of this
+  note; **superseded 2026-05-27** by the v12→v9 consolidation that folds the
+  four Formula Kit table additions into a single `from < 9` migration step
+  off the last released v8 — see `lib/shared/database/app_database.dart`).
 - Deleted dead Dart: `llm_nutrition_plan_service.dart`,
   `bulk_nutrition_plan_service.dart` (+`.g.dart`). (Safe — repo-only; shipped
   apps carry their own copy.)

@@ -42,6 +42,38 @@ class VdotApiClient {
   String get _basicAuthHeader =>
       'Basic ${base64Encode(utf8.encode('$_clientId:$_clientSecret'))}';
 
+  /// Pull a human-readable reason out of an error response body.
+  ///
+  /// VDOT's token endpoint is a custom (.NET) service that returns
+  /// `{"status":"NOK","error":"invalid_code", ...}` rather than RFC 6749's
+  /// `{"error":"...","error_description":"..."}`. We fold whichever field is
+  /// present into the thrown exception's message so the real reason is visible
+  /// in release builds too — `VdotApiException.toString()` only appends the raw
+  /// body in debug mode.
+  static String _extractErrorReason(String body) {
+    if (body.isEmpty) return 'empty response body';
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        for (final key in const [
+          'error_description',
+          'error',
+          'message',
+          'status',
+        ]) {
+          final value = decoded[key];
+          if (value is String && value.isNotEmpty) return value;
+        }
+      }
+    } catch (_) {
+      // Non-JSON body (e.g. an HTML error page) — fall through to raw text.
+    }
+    final collapsed = body.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return collapsed.length > 200
+        ? '${collapsed.substring(0, 200)}…'
+        : collapsed;
+  }
+
   /// Exchange an authorization code for an access + refresh token.
   ///
   /// [redirectUri] must match the value used in the authorize request.
@@ -73,7 +105,7 @@ class VdotApiClient {
 
     if (response.statusCode != 200) {
       throw VdotApiException(
-        'Token exchange failed',
+        'Token exchange failed: ${_extractErrorReason(response.body)}',
         statusCode: response.statusCode,
         body: response.body,
       );

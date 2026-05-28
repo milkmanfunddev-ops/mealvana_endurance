@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -58,6 +59,20 @@ class FormulaPinsRepository with SyncableRepository {
   final AppLogger _logger;
   final SentryReporter _sentry;
 
+  /// SharedPreferences key for the "we've confirmed remote has zero pins"
+  /// sentinel. When set, [isStale] falls through to time-based staleness even
+  /// when the local active-pin cache is empty. Cleared on any local pin
+  /// write, and rewritten by every successful [syncFromRemote].
+  static const _confirmedEmptyPrefsKey = 'formula_pins_confirmed_empty';
+
+  /// In-flight [syncFromRemote] future, used to coalesce concurrent callers.
+  /// `FormulaLibraryController` and `FormulaPinController` both call this on
+  /// `build()` and Riverpod has no guaranteed ordering — without this the two
+  /// would race a duplicate Supabase round-trip + double `setLastSyncTime`
+  /// write. Cleared in the `finally` of the originating call so retries are
+  /// possible after failure.
+  Future<SyncResult>? _inflightSync;
+
   static const _uuid = Uuid();
 
   // ========================================================================
@@ -71,8 +86,66 @@ class FormulaPinsRepository with SyncableRepository {
   List<String> get dependencies =>
       SyncDependencyGraph.dependenciesFor(repositoryKey);
 
+  /// Force a sync when there are no active local pins **and** we haven't
+  /// already confirmed that the remote is empty.
+  ///
+  /// Unlike the read-only catalog mirrors (pre/during/post templates), an
+  /// empty `formula_pins` cache is ambiguous on first read — it can mean
+  /// "never synced" OR "this user genuinely has no pins". We err toward
+  /// correctness on first contact: with zero active local pins we force a
+  /// sync so a pin created on another device shows up promptly (the #32
+  /// cross-device gap, where a sibling controller's recent-but-empty sync
+  /// timestamp suppressed the fetch).
+  ///
+  /// Once a sync has confirmed the remote also has zero pins, the
+  /// [_confirmedEmptyPrefsKey] sentinel is set and subsequent [isStale]
+  /// calls fall through to standard time-based staleness — otherwise a
+  /// genuinely pin-less user would fire one Supabase round-trip per
+  /// controller rebuild forever. The sentinel is cleared on any local pin
+  /// write and rewritten by every successful sync.
+  @override
+  Future<bool> isStale() async {
+    final activeLocal = await (_database.select(_database.formulaPinsTable)
+          ..where((tbl) => tbl.isDeleted.equals(false)))
+        .get();
+    if (activeLocal.isEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      final confirmedEmpty = prefs.getBool(_confirmedEmptyPrefsKey) ?? false;
+      if (confirmedEmpty) {
+        return super.isStale();
+      }
+      _logger.info(
+        'Forcing sync - no active local formula pins and remote not yet confirmed empty',
+        context: 'FORMULA_PINS_REPOSITORY',
+      );
+      return true;
+    }
+    return super.isStale();
+  }
+
   @override
   Future<SyncResult> syncFromRemote(String userId) async {
+    // Coalesce concurrent callers (FormulaLibraryController and
+    // FormulaPinController both call this on build).
+    final inflight = _inflightSync;
+    if (inflight != null) {
+      _logger.debug(
+        'syncFromRemote: coalescing into in-flight sync',
+        context: 'FORMULA_PINS_REPOSITORY',
+        data: {'userId': userId},
+      );
+      return inflight;
+    }
+    final future = _syncFromRemoteImpl(userId);
+    _inflightSync = future;
+    try {
+      return await future;
+    } finally {
+      _inflightSync = null;
+    }
+  }
+
+  Future<SyncResult> _syncFromRemoteImpl(String userId) async {
     try {
       _logger.info(
         'Syncing formula pins from Supabase',
@@ -91,6 +164,7 @@ class FormulaPinsRepository with SyncableRepository {
       final syncedCount = await upsertRemotePinsPreservingDirty(remotePins);
 
       await setLastSyncTime(DateTime.now());
+      await _refreshConfirmedEmptySentinel();
 
       _logger.info(
         'Successfully synced formula pins from Supabase',
@@ -109,6 +183,27 @@ class FormulaPinsRepository with SyncableRepository {
       );
       return SyncResult.failed(e.toString());
     }
+  }
+
+  /// Set the confirmed-empty sentinel iff there are zero active local pins
+  /// after a successful sync; clear it otherwise. Run after every sync so
+  /// the sentinel tracks the latest remote-side truth.
+  Future<void> _refreshConfirmedEmptySentinel() async {
+    final activeCount = (await (_database.select(_database.formulaPinsTable)
+              ..where((tbl) => tbl.isDeleted.equals(false)))
+            .get())
+        .length;
+    final prefs = await SharedPreferences.getInstance();
+    if (activeCount == 0) {
+      await prefs.setBool(_confirmedEmptyPrefsKey, true);
+    } else {
+      await prefs.remove(_confirmedEmptyPrefsKey);
+    }
+  }
+
+  Future<void> _clearConfirmedEmptySentinel() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_confirmedEmptyPrefsKey);
   }
 
   /// Applies a batch of remote pin rows to Drift, skipping any local row
@@ -353,6 +448,10 @@ class FormulaPinsRepository with SyncableRepository {
     await _database
         .into(_database.formulaPinsTable)
         .insert(pin.toDriftCompanion());
+
+    // Local-active count just became non-zero — invalidate the
+    // confirmed-empty sentinel so isStale() doesn't gate behind it.
+    await _clearConfirmedEmptySentinel();
 
     _logger.info(
       'Pinned formula',

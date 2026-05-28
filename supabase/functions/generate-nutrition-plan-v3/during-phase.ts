@@ -279,7 +279,8 @@ export async function postProcessDuringPhase(
 // ============================================================================
 
 /**
- * Collect the set of component food names belonging to pinned templates.
+ * Collect the set of component food names belonging to pinned templates
+ * **that are in scope for this workout**.
  *
  * Honor-pin policy (Formula Kit PR 2 5c): foods in this set must bypass the
  * dislike/allergen/diet filters in `getTemplateFoodsForDuringWithConstraints`
@@ -287,15 +288,23 @@ export async function postProcessDuringPhase(
  * Filtering them out at the food-loading layer leaves the template-selection
  * layer with a pinned template whose components are absent from
  * `foodsByName`, causing the solver to silently substitute or zero them.
+ *
+ * Scope tightening (2026-05-28): the caller passes `inScopeTemplates` —
+ * templates already filtered by activity × duration_bracket via
+ * `filterPinnedTemplatesInScope`. Earlier versions of this function
+ * iterated over **all** pinned ids regardless of scope, which would bypass
+ * dislike/allergen filters for, e.g., cycling-only components when the
+ * current workout was a run. The During food query applies sport-specific
+ * scoping so polluting the pool with out-of-scope components is a real
+ * issue; the after-phase analog is safer because post templates have no
+ * duration brackets.
  */
 function derivePinnedComponentNames(
-  templates: DuringWorkoutTemplate[],
-  pinnedTemplateIds?: Set<string>,
+  inScopeTemplates: DuringWorkoutTemplate[],
 ): Set<string> {
-  if (!pinnedTemplateIds || pinnedTemplateIds.size === 0) return new Set();
+  if (inScopeTemplates.length === 0) return new Set();
   const names = new Set<string>();
-  for (const t of templates) {
-    if (!pinnedTemplateIds.has(t.id)) continue;
+  for (const t of inScopeTemplates) {
     for (const name of t.component_food_names ?? []) {
       names.add(name);
     }
@@ -378,21 +387,28 @@ export async function generateDuringPhase(
       // Compute in-scope pin count for analytics (pin_set_size). Mirrors the
       // scope filter used by `selectTemplateCandidates`. Updated lazily here
       // because we need templates loaded first. Formula Kit PR 2 substep 7.
-      if (pinsSupplied) {
-        pinInScopeCount = filterPinnedTemplatesInScope(
+      //
+      // We reuse the same `pinnedInScope` list to derive component-name bypass
+      // for the food loader (PR 2 5c) — scope-tightened 2026-05-28 so a
+      // cycling pin doesn't leak its components past dislike/allergen filters
+      // on a running workout. Out-of-scope pinned templates simply aren't
+      // candidates for this generation, so their components have no business
+      // bypassing the food-pool filters either.
+      const pinnedInScope = pinsSupplied
+        ? filterPinnedTemplatesInScope(
           templates,
           activityType,
           durationMinutes,
-          pinnedTemplateIds!,
-        ).length;
+          pinnedTemplateIds ?? new Set(),
+        )
+        : [];
+      if (pinsSupplied) {
+        pinInScopeCount = pinnedInScope.length;
         if (duringPinDecision) {
           duringPinDecision = { ...duringPinDecision, pin_set_size: pinInScopeCount };
         }
       }
-      const pinnedComponentNames = derivePinnedComponentNames(
-        templates,
-        pinnedTemplateIds,
-      );
+      const pinnedComponentNames = derivePinnedComponentNames(pinnedInScope);
       const constrainedFoods = await getTemplateFoodsForDuringWithConstraints(
         supabase,
         activityType,
@@ -439,7 +455,7 @@ export async function generateDuringPhase(
         // If no pin fired, the `no_pin_for_scope` default stays in place.
         if (pinsSupplied) {
           const first = templateCandidates[0];
-          if (first !== undefined && pinnedTemplateIds!.has(first.id)) {
+          if (first !== undefined && (pinnedTemplateIds?.has(first.id) ?? false)) {
             duringPinDecision = {
               used_pin: true,
               pinned_template_id: first.id,

@@ -19,8 +19,8 @@ class FormulaPinsTable extends Table {
   TextColumn get userId => text().named('user_id')();
   TextColumn get templateId => text().named('template_id')();
 
-  /// Polymorphic ref: 'pre_system' | 'during_system'.
-  /// PR 4 adds 'personal_template' when personal formulas become pinnable.
+  /// Polymorphic ref: 'pre_system' | 'during_system' | 'post_system'.
+  /// PR 5 adds 'personal_template' when personal formulas become pinnable.
   TextColumn get templateKind => text().named('template_kind')();
 
   DateTimeColumn get createdAt => dateTime().named('created_at')();
