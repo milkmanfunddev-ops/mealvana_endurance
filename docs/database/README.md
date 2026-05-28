@@ -4,7 +4,11 @@
 - App uses local-first data architecture:
   - Local DB: Drift/SQLite in app runtime
   - Cloud DB: Supabase/PostgreSQL for sync + shared backend state
-- Drift schema version in code is `6` (`AppDatabase.schemaVersion`).
+- Drift schema version in code is `9` (`AppDatabase.schemaVersion`). v9 is the
+  consolidated Formula Kit bump from the last released schema (v8), folding
+  four tables — `during_workout_templates`, `pre_workout_templates`,
+  `post_workout_templates`, `formula_pins` — into one migration step. Earlier
+  interim numbers (v9 / v10 / v11 / v12 on the feature branch) never shipped.
 - Drift table set in code currently includes 24 tables (declared in `app_database.dart`).
 - Database connection is platform-specific:
   - Native: `connection_native.dart`

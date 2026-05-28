@@ -17,7 +17,7 @@ void main() {
       final db = AppDatabase.memory();
 
       // Just opening the database should work without error
-      expect(db.schemaVersion, 2);
+      expect(db.schemaVersion, 9);
 
       // Verify we can query the database
       final users = await db.select(db.userProfilesTable).get();
@@ -169,7 +169,7 @@ void main() {
     test('stepByStep migration includes from1To2', () {
       // Verify the migration strategy is set up correctly
       final db = AppDatabase.memory();
-      expect(db.schemaVersion, 2);
+      expect(db.schemaVersion, 9);
       expect(db.migration, test_pkg.isNotNull);
       db.close();
     });

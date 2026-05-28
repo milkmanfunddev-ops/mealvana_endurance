@@ -18,7 +18,7 @@
  *     supabase/functions/generate-macros-v4/pre-workout-sodium-scoring.test.ts
  */
 
-import { assert } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
+import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
 import { pickBestFormula } from './pre-workout-scoring.ts';
 import type { PlanState, ScoredFormula, PreWorkoutTemplate } from './types.ts';
 
@@ -100,81 +100,77 @@ Deno.test('Pass 1 does NOT prefer high-sodium candidate when carb fit is identic
   // Two candidates with IDENTICAL carb / protein delivery (both close the carb
   // gap perfectly), differing only in sodium content. Before #25 fix, the
   // high-sodium one would win consistently because it closed the 450 mg
-  // session sodium gap. After the fix, both should be equally likely.
-  const potatoSalt = makeScored(
+  // session sodium gap. After the fix, scoring must be sodium-blind for Pass 1.
+  //
+  // Verification strategy: under the #33 fix `pickBestFormula` is deterministic
+  // (lexicographic id tie-break, no randomness), so we can no longer assert
+  // "both win sometimes" via random trials. Instead we swap which candidate
+  // carries the high sodium — if sodiumErr were still part of the score, the
+  // winner would change. Sodium-blind scoring keeps the winner stable.
+  const potatoSaltHigh = makeScored(
     makeTemplate({ id: 'potato-salt', name: 'Potato + Salt', sodium_mg: 300 }),
-    2,    // servings
-    60,   // carbs (exactly hits carb target)
-    10,   // protein
-    600,  // sodium — exactly at sodium_high
-    0,    // fluid
-    0,    // gap (perfect carb fit)
+    2, 60, 10, 600, 0, 0,
   );
-  const oatmeal = makeScored(
+  const oatmealLow = makeScored(
     makeTemplate({ id: 'oatmeal', name: 'Oatmeal' }),
-    2,
-    60,
-    10,
-    10,   // sodium — far below sodium_target (was penalized 0.98 under old scoring)
-    0,
-    0,
+    2, 60, 10, 10, 0, 0,
   );
+  const winnerHighOnPotato = pickBestFormula([potatoSaltHigh, oatmealLow], makeState(), 60);
 
-  let potatoWins = 0;
-  let oatmealWins = 0;
-  const trials = 200;
-  for (let i = 0; i < trials; i++) {
-    const winner = pickBestFormula([potatoSalt, oatmeal], makeState(), 60);
-    if (winner.template.id === 'potato-salt') potatoWins++;
-    else if (winner.template.id === 'oatmeal') oatmealWins++;
-  }
-
-  // With sodiumErr removed, baseScore is identical for both → uniform random.
-  // Each should win roughly 50% of the time. Set thresholds wide enough that
-  // randomness alone can't fail the test (binomial 200 trials, p=0.5: each
-  // side ≥ 30 with ~vanishing failure probability).
-  assert(
-    potatoWins >= 30,
-    `expected high-sodium candidate to win sometimes (got ${potatoWins}/${trials}) — sodiumErr may still be active`,
+  const potatoSaltLow = makeScored(
+    makeTemplate({ id: 'potato-salt', name: 'Potato + Salt', sodium_mg: 5 }),
+    2, 60, 10, 10, 0, 0,
   );
-  assert(
-    oatmealWins >= 30,
-    `expected low-sodium candidate to win sometimes (got ${oatmealWins}/${trials}) — sodiumErr may still be active. ` +
-    `Under old scoring this would have been close to 0/${trials}.`,
+  const oatmealHigh = makeScored(
+    makeTemplate({ id: 'oatmeal', name: 'Oatmeal' }),
+    2, 60, 10, 600, 0, 0,
+  );
+  const winnerHighOnOatmeal = pickBestFormula([potatoSaltLow, oatmealHigh], makeState(), 60);
+
+  assertEquals(
+    winnerHighOnPotato.template.id,
+    winnerHighOnOatmeal.template.id,
+    `Winner changed when sodium was swapped between candidates — sodiumErr is still ` +
+    `influencing Pass 1 scoring (got '${winnerHighOnPotato.template.id}' with high-sodium ` +
+    `potato, '${winnerHighOnOatmeal.template.id}' with high-sodium oatmeal)`,
   );
 });
 
 Deno.test('Pass 1 does NOT prefer high-fluid candidate when carb fit is identical (#25, fluid symmetry)', () => {
-  // Same shape as above, but for fluidErr (the other gap-closer we stripped).
-  const sportsDrinkHeavy = makeScored(
-    makeTemplate({ id: 'sd-heavy', name: 'Sports Drink Heavy', fluid_ml: 300 }),
-    2,
-    60,
-    10,
-    0,
-    600, // fluid — far above fluid_target (300)
-    0,
+  // Same shape as the sodium variant: swap which candidate carries the
+  // high-fluid value. Under the fix the winner must stay stable (fluid-blind
+  // scoring). Pre-#33 this used random trials; that no longer applies under
+  // deterministic tie-break.
+  //
+  // Both fluid values stay at or below `fluid_high = 500` so the intentional
+  // `fluidOverPenalty` (a safety guard for the fallback path, kept by design)
+  // doesn't fire and confound the assertion — we are only testing for residual
+  // fluidErr / fluid-gap-closing terms in Pass 1 baseScore.
+  const sdHeavyHighFluid = makeScored(
+    makeTemplate({ id: 'sd-heavy', name: 'Sports Drink Heavy', fluid_ml: 250 }),
+    2, 60, 10, 0, 500, 0,
   );
-  const drySnack = makeScored(
+  const drySnackLowFluid = makeScored(
     makeTemplate({ id: 'dry-snack', name: 'Dry Snack' }),
-    2,
-    60,
-    10,
-    0,
-    0, // fluid — none. Old scoring would penalize this for fluidErr near 1.0.
-    0,
+    2, 60, 10, 0, 0, 0,
   );
+  const winnerHighOnSd = pickBestFormula([sdHeavyHighFluid, drySnackLowFluid], makeState(), 60);
 
-  let dryWins = 0;
-  const trials = 200;
-  for (let i = 0; i < trials; i++) {
-    const winner = pickBestFormula([sportsDrinkHeavy, drySnack], makeState(), 60);
-    if (winner.template.id === 'dry-snack') dryWins++;
-  }
+  const sdHeavyLowFluid = makeScored(
+    makeTemplate({ id: 'sd-heavy', name: 'Sports Drink Heavy', fluid_ml: 0 }),
+    2, 60, 10, 0, 0, 0,
+  );
+  const drySnackHighFluid = makeScored(
+    makeTemplate({ id: 'dry-snack', name: 'Dry Snack' }),
+    2, 60, 10, 0, 500, 0,
+  );
+  const winnerHighOnDry = pickBestFormula([sdHeavyLowFluid, drySnackHighFluid], makeState(), 60);
 
-  assert(
-    dryWins >= 30,
-    `expected dry low-fluid candidate to win sometimes (got ${dryWins}/${trials}) — fluidErr may still be active`,
+  assertEquals(
+    winnerHighOnSd.template.id,
+    winnerHighOnDry.template.id,
+    `Winner changed when fluid was swapped between candidates — fluidErr is still ` +
+    `influencing Pass 1 scoring`,
   );
 });
 

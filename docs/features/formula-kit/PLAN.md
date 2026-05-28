@@ -82,6 +82,8 @@ Lee did a substantial db-cleanup pass on 2026-05-22 (`b2f86b4f`, `2ca58e95`) tha
 **Drift schema version is now 11 (not 10).**
 - The develop merge that came in with `b2f86b4f` raised the schema version past what PR 2 originally bumped. Substep 1's "v9→v10" in this doc is historically accurate but the actual current version is `schemaVersion = 11`. Any future schema bump increments from 11.
 
+**Superseded 2026-05-27 — consolidated to `schemaVersion = 9`.** None of the v9 / v10 / v11 / v12 interim bumps ever shipped (last released schema was v8). On `feat/formula-kit` the four Formula Kit tables — `during_workout_templates`, `pre_workout_templates`, `post_workout_templates`, `formula_pins` — were folded into a single `if (from < 9)` migration block off v8, and `schemaVersion` was set back to `9`. The previous ladder skipped `postWorkoutTemplatesTable` creation, which force-wiped v11 users on upgrade. See `lib/shared/database/app_database.dart:onUpgrade` for the current ladder.
+
 **Substep 5 is now executable.** It still requires writing the edge function — schema being live is the necessary precondition, not the work itself.
 
 ## Schema management — actual workflow (effective 2026-05-22)

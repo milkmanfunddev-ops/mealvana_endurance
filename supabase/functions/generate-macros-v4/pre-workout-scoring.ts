@@ -22,8 +22,6 @@ import {
   ADDON_GAP_THRESHOLD,
   DIVERSITY_BAND,
   DIVERSITY_FLOOR,
-  RANDOM_PICK_MARGIN,
-  RANDOM_PICK_LIMIT,
   normalizeToken,
 } from './pre-workout-constants.ts';
 
@@ -33,14 +31,6 @@ import {
 
 function snapToHalf(value: number): number {
   return Math.round(value * 2) / 2;
-}
-
-/** Cryptographically secure random integer in [0, max). */
-function secureRandomInt(max: number): number {
-  if (max <= 1) return 0;
-  const array = new Uint32Array(1);
-  crypto.getRandomValues(array);
-  return array[0] % max;
 }
 
 function wouldExceedHighs(
@@ -284,10 +274,20 @@ export function pickBestFormula(
     scoredPool.push({ candidate, score: baseScore });
   }
 
-  scoredPool.sort((a, b) => a.score - b.score);
-  const bestScore = scoredPool[0].score;
-  const margin = Math.max(0.03, bestScore * RANDOM_PICK_MARGIN);
-  const randomPool = scoredPool.filter((c) => c.score <= bestScore + margin)
-    .slice(0, RANDOM_PICK_LIMIT);
-  return randomPool[secureRandomInt(randomPool.length)].candidate;
+  // Sort by score ascending; break ties deterministically by template id.
+  // The original implementation kept the top-N within RANDOM_PICK_MARGIN of
+  // the best score and picked one at random for "slight variety among
+  // near-equal safe candidates." That randomization made byte-identical
+  // inputs produce different outputs — caught as the #33 test flake in
+  // pre-workout-pinned.test.ts, but the same nondeterminism leaks to users
+  // (two replays of the same workout could pick different templates).
+  // PreWorkoutTemplate has no selection_priority column, so we use the
+  // UUID id as the deterministic secondary key. Variety still comes from
+  // upstream — different workouts yield different scores naturally.
+  scoredPool.sort((a, b) => {
+    const dScore = a.score - b.score;
+    if (dScore !== 0) return dScore;
+    return a.candidate.template.id.localeCompare(b.candidate.template.id);
+  });
+  return scoredPool[0].candidate;
 }
