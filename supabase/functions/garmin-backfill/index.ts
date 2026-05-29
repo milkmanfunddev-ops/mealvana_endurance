@@ -31,6 +31,13 @@ import { errorResponse, successResponse } from '../_shared/responses.ts';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY =
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const GARMIN_CLIENT_ID = Deno.env.get('GARMIN_CLIENT_ID') ?? '';
+const GARMIN_CLIENT_SECRET = Deno.env.get('GARMIN_CLIENT_SECRET') ?? '';
+const GARMIN_TOKEN_URL =
+  'https://diauth.garmin.com/di-oauth2-service/oauth/token';
+// Refresh slightly ahead of expiry so an in-flight backfill never races a
+// token that dies mid-request.
+const TOKEN_REFRESH_SKEW_MS = 5 * 60 * 1000;
 
 /**
  * Maps our internal summary-type identifiers to Garmin's backfill path
@@ -81,6 +88,97 @@ async function requireUser(req: Request) {
   return { user, response: null };
 }
 
+/**
+ * Returns a valid Garmin access token, refreshing it via the refresh_token
+ * grant when the stored one is expired (or about to expire). Garmin's backfill
+ * endpoint rejects a stale token with "Token is not active", so without this
+ * every backfill after the access token's lifetime fails. The refreshed token
+ * is persisted back to `garmin_user_mappings` so subsequent calls reuse it.
+ *
+ * Falls back to the existing token (and lets Garmin surface the error) when we
+ * have no refresh_token or the refresh call itself fails — this never throws,
+ * so a refresh hiccup degrades gracefully instead of breaking the whole call.
+ */
+async function ensureFreshGarminToken(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  mapping: {
+    access_token: string;
+    refresh_token: string | null;
+    token_expires_at: string | null;
+  },
+  userId: string,
+): Promise<string> {
+  const expiresAtMs = mapping.token_expires_at
+    ? Date.parse(mapping.token_expires_at)
+    : 0;
+  const stillValid = expiresAtMs > 0 &&
+    expiresAtMs - TOKEN_REFRESH_SKEW_MS > Date.now();
+  if (stillValid) return mapping.access_token;
+
+  if (!mapping.refresh_token) {
+    console.warn(
+      '[garmin-backfill] Token expired with no refresh_token; using stale token',
+    );
+    return mapping.access_token;
+  }
+
+  try {
+    const resp = await fetch(GARMIN_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: mapping.refresh_token,
+        client_id: GARMIN_CLIENT_ID,
+        client_secret: GARMIN_CLIENT_SECRET,
+      }),
+    });
+
+    if (!resp.ok) {
+      console.error(
+        `[garmin-backfill] Token refresh failed (${resp.status}):`,
+        await resp.text(),
+      );
+      return mapping.access_token;
+    }
+
+    const json = await resp.json();
+    const newAccessToken = json.access_token as string | undefined;
+    if (!newAccessToken) {
+      console.error('[garmin-backfill] Token refresh missing access_token');
+      return mapping.access_token;
+    }
+    const newRefreshToken =
+      (json.refresh_token as string | undefined) ?? mapping.refresh_token;
+    const expiresInSec = (json.expires_in as number | undefined) ?? 3600;
+    const newExpiresAt = new Date(Date.now() + expiresInSec * 1000)
+      .toISOString();
+
+    const { error: updateErr } = await supabase
+      .from('garmin_user_mappings')
+      .update({
+        access_token: newAccessToken,
+        refresh_token: newRefreshToken,
+        token_expires_at: newExpiresAt,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId);
+
+    if (updateErr) {
+      console.error(
+        '[garmin-backfill] Failed to persist refreshed token:',
+        updateErr,
+      );
+    }
+
+    return newAccessToken;
+  } catch (err) {
+    console.error('[garmin-backfill] Token refresh error:', err);
+    return mapping.access_token;
+  }
+}
+
 serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -126,7 +224,7 @@ serve(async (req: Request) => {
 
     const { data: mapping, error: mappingErr } = await supabase
       .from('garmin_user_mappings')
-      .select('garmin_user_id, access_token, token_expires_at')
+      .select('garmin_user_id, access_token, refresh_token, token_expires_at')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -140,6 +238,14 @@ serve(async (req: Request) => {
         404,
       );
     }
+
+    // Refresh the Garmin OAuth token if needed so the backfill request isn't
+    // rejected with "Token is not active".
+    const accessToken = await ensureFreshGarminToken(
+      supabase,
+      mapping,
+      user.id,
+    );
 
     // Garmin's backfill takes a window in UNIX seconds. We request whole-day
     // boundaries so we don't accidentally split a measurement record.
@@ -163,7 +269,7 @@ serve(async (req: Request) => {
         const resp = await fetch(url, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${mapping.access_token}`,
+            Authorization: `Bearer ${accessToken}`,
             'Content-Length': '0',
           },
         });

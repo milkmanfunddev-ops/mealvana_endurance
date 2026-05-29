@@ -209,12 +209,28 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Shared across both manual and automatic sync paths.
   final Set<String> _syncingProviders = {};
 
-  /// Session-scoped flag: have we already kicked a Garmin backfill on this
+  /// Instance-scoped flag: have we already kicked a Garmin backfill on this
   /// controller instance? Garmin's Health API is push-only, so on app open
   /// we proactively ask Garmin to re-push the last 90 days of body comp +
-  /// user metrics — but only once per session so we don't hammer their API
-  /// across every controller rebuild.
+  /// user metrics.
+  ///
+  /// This flag alone is NOT enough: this controller is `@riverpod`
+  /// (autoDispose), so every rebuild after disposal — and every hot restart —
+  /// creates a fresh instance with the flag reset to false. Left unguarded,
+  /// that fires a fresh backfill (2 Garmin requests) on each rebuild and trips
+  /// Garmin's "100 requests / minute" rate limit. The durable guard is the
+  /// persisted cooldown timestamp below ([_shouldTriggerGarminBackfill]).
   bool _garminBackfillTriggeredThisSession = false;
+
+  /// SharedPreferences key prefix (suffixed with the user ID) recording the
+  /// last time we auto-triggered a Garmin backfill. Survives controller
+  /// rebuilds and hot restarts so the cooldown actually holds.
+  static const _garminBackfillLastAtKeyPrefix = 'garmin_backfill_last_at_';
+
+  /// Minimum spacing between automatic Garmin backfills. Body comp / user
+  /// metrics change slowly and a 90-day backfill is heavy, so once every few
+  /// hours is plenty. The manual "refresh from Garmin" path is not throttled.
+  static const _garminBackfillCooldown = Duration(hours: 6);
 
   String? _currentUserId;
 
@@ -307,8 +323,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     // it because Garmin replies 202 and the data lands later via webhook.
     if (isGarminActive &&
         !_garminBackfillTriggeredThisSession &&
-        !_isUsingTempUserId) {
+        !_isUsingTempUserId &&
+        _shouldTriggerGarminBackfill()) {
       _garminBackfillTriggeredThisSession = true;
+      // Stamp the cooldown immediately (before the async work) so concurrent
+      // rebuilds and hot restarts within the window don't each fire again.
+      unawaited(_markGarminBackfillTriggered());
       Future<void>(() async {
         await triggerGarminBackfill();
       });
@@ -326,6 +346,32 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       isVdotConnected: vdotIntegration?.isActive ?? false,
       vdotAthleteName: vdotIntegration?.providerAthleteName,
       vdotLastSyncAt: vdotIntegration?.lastSyncAt,
+    );
+  }
+
+  /// Whether enough time has passed since the last automatic Garmin backfill
+  /// to fire another one. Backed by a persisted timestamp so the cooldown
+  /// survives controller disposal/rebuild and hot restarts (see
+  /// [_garminBackfillTriggeredThisSession] for why an in-memory flag isn't
+  /// sufficient).
+  bool _shouldTriggerGarminBackfill() {
+    final userId = _currentUserId;
+    if (userId == null) return false;
+    final prefs = ref.read(sharedPreferencesProvider);
+    final lastMs = prefs.getInt('$_garminBackfillLastAtKeyPrefix$userId');
+    if (lastMs == null) return true;
+    final last = DateTime.fromMillisecondsSinceEpoch(lastMs);
+    return DateTime.now().difference(last) >= _garminBackfillCooldown;
+  }
+
+  /// Persist the current time as the last automatic Garmin backfill timestamp.
+  Future<void> _markGarminBackfillTriggered() async {
+    final userId = _currentUserId;
+    if (userId == null) return;
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setInt(
+      '$_garminBackfillLastAtKeyPrefix$userId',
+      DateTime.now().millisecondsSinceEpoch,
     );
   }
 
