@@ -12,10 +12,13 @@ import 'vdot_transformer.dart';
 /// Syncs planned/completed workouts from V.O2 (VDOT) into the local
 /// activities table.
 ///
-/// MANUAL SYNC ONLY (mirrors the FinalSurge / TrainingPeaks pattern):
-/// - User taps "Sync Now"
-/// - Initial sync at the end of OAuth in onboarding
-/// - No background polling
+/// Mirrors the FinalSurge / TrainingPeaks sync pattern — both manual and
+/// automatic paths are supported:
+/// - Manual: user taps "Sync Now" → ConnectTrainingController.importVdotWorkouts
+/// - Manual: initial sync at the end of OAuth in onboarding
+/// - Automatic: IntegrationSyncCoordinator triggers a sync when the
+///   activities screen loads or the user pulls to refresh, subject to a
+///   4-hour staleness window (same mechanism as FinalSurge and TrainingPeaks)
 ///
 /// Token refresh:
 /// - Proactively refreshes within 5 minutes of expiration
@@ -46,12 +49,13 @@ class VdotSyncService {
 
   /// Sync workouts from `today - lookbackDays` through `today + lookaheadDays`.
   ///
-  /// VDOT's date-range endpoint caps at 60 days, so we chunk the window into
-  /// 60-day requests if needed.
+  /// Defaults to a 14-day lookback and 45-day lookahead (matching the
+  /// TrainingPeaks window). VDOT's date-range endpoint caps at 60 days, so
+  /// the window is automatically chunked into 60-day requests if needed.
   Future<VdotSyncResult> syncWorkouts(
     String userId, {
-    int lookbackDays = 7,
-    int lookaheadDays = 14,
+    int lookbackDays = 14,
+    int lookaheadDays = 45,
   }) async {
     final integrationRecord =
         await _integrationsRepository.getIntegration(userId, _provider);

@@ -947,8 +947,39 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectVdot();
 
-    if (success && context.mounted) {
-      MealvanaSnackbar.showSuccess(context, 'V.O2 connected!');
+    if (!success || !context.mounted) return;
+
+    MealvanaSnackbar.showSuccess(
+      context,
+      'V.O2 connected! Importing workouts...',
+    );
+
+    final result = await controller.importVdotWorkouts();
+    if (!context.mounted) return;
+
+    final state = ref.read(connectTrainingControllerProvider).value;
+    final message = buildWorkoutSyncMessage(
+      newCount: result.newWorkouts,
+      updatedCount: result.updated,
+      deletedCount: result.deleted,
+      unchangedCount: result.skipped,
+    );
+
+    if (result.success && result.hasChanges) {
+      MealvanaSnackbar.showSuccess(context, message);
+    } else if (!result.success || state?.errorMessage != null) {
+      MealvanaSnackbar.showError(
+        context,
+        'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+      );
+    } else {
+      MealvanaSnackbar.showInfo(context, message);
+    }
+
+    if (mounted && result.success && state?.errorMessage == null) {
+      setState(() {
+        _vdotSynced = true;
+      });
     }
   }
 

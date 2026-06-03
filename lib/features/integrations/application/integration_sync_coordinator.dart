@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../activities/data/activities_repository.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../presentation/providers/connect_training_controller.dart';
@@ -208,6 +209,40 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
       // Success: update timestamp, clear failure tracking
       await _setLastSyncTime(provider, DateTime.now());
       _lastFailedAttempt.remove(provider);
+
+      // Immediately push freshly-synced dirty activities to Supabase.
+      // Only applies to client-side-writing providers; Garmin is push-only
+      // and writes nothing locally.
+      if (provider == 'final_surge' ||
+          provider == 'training_peaks' ||
+          provider == 'vdot') {
+        try {
+          final uploadResult = await ref
+              .read(activitiesRepositoryProvider)
+              .uploadDirtyRecords(userId);
+          if (kDebugMode) {
+            if (uploadResult.success) {
+              print(
+                  '☁️  Integration sync uploaded ${uploadResult.count} dirty records for $provider');
+            } else {
+              print(
+                  '⚠️  Integration sync upload had no records or failed for $provider: ${uploadResult.error}');
+            }
+          }
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Post-sync upload of dirty activities failed for $provider (best-effort)',
+            context: 'INTEGRATION_SYNC',
+            error: e,
+            stackTrace: stackTrace,
+            data: {'userId': userId, 'provider': provider},
+          );
+          if (kDebugMode) {
+            print(
+                '⚠️  Integration sync upload failed for $provider (best-effort): $e');
+          }
+        }
+      }
 
       if (kDebugMode) {
         print('✅ Integration sync complete for $provider');
