@@ -20,6 +20,7 @@ import '../../../events/presentation/providers/events_controller.dart'
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/garmin_oauth_service.dart';
+import '../../application/integration_sync_coordinator.dart';
 import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
 import '../../application/vdot_oauth_service.dart';
@@ -598,6 +599,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             '[syncGarmin] backfill HTTP ${response.status}: ${response.data}',
           );
         }
+        if (_isTransientBackfillFailure(response.status, '${response.data}')) {
+          await _scheduleGarminBackfillRetrySoon();
+        }
         return false;
       }
 
@@ -629,11 +633,62 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
       return true;
     } catch (e, st) {
+      // Garmin's backfill API is frequently flaky: it returns 502 (Bad gateway)
+      // and 429-style "rate limit quota violation" responses that are transient
+      // and self-heal. Treat those calmly — they're expected, not a code fault —
+      // and let the next app session retry soon instead of blocking for the full
+      // cooldown (the data never got queued, so waiting 6h would needlessly delay
+      // the user's weight/body-fat backfill). Genuinely unexpected errors keep
+      // the full stack trace.
+      final transient = _isTransientBackfillFailure(null, '$e');
       if (kDebugMode) {
-        print('[syncGarmin] backfill invoke failed: $e\n$st');
+        if (transient) {
+          print(
+            '[syncGarmin] backfill temporarily unavailable '
+            '(Garmin 502/rate-limit) — will retry next session: $e',
+          );
+        } else {
+          print('[syncGarmin] backfill invoke failed: $e\n$st');
+        }
+      }
+      if (transient) {
+        await _scheduleGarminBackfillRetrySoon();
       }
       return false;
     }
+  }
+
+  /// Whether a failed Garmin backfill is a transient/server-side condition
+  /// (gateway 502, 503, or 429 rate-limit) worth retrying soon rather than a
+  /// hard failure. Matched on status when available, else the error text.
+  bool _isTransientBackfillFailure(int? status, String message) {
+    if (status == 502 || status == 503 || status == 429) return true;
+    final m = message.toLowerCase();
+    return m.contains('502') ||
+        m.contains('503') ||
+        m.contains('429') ||
+        m.contains('bad gateway') ||
+        m.contains('rate limit') ||
+        m.contains('too many request');
+  }
+
+  /// Roll the persisted backfill cooldown back so the next app session retries
+  /// after a short delay (~30 min) instead of waiting the full cooldown. Used
+  /// only on transient failures — the in-session guard
+  /// ([_garminBackfillTriggeredThisSession]) still prevents re-firing within
+  /// the current session, so this can't spam Garmin.
+  Future<void> _scheduleGarminBackfillRetrySoon() async {
+    final userId = _currentUserId;
+    if (userId == null) return;
+    const retryDelay = Duration(minutes: 30);
+    if (retryDelay >= _garminBackfillCooldown) return;
+    final prefs = ref.read(sharedPreferencesProvider);
+    final retryAt =
+        DateTime.now().subtract(_garminBackfillCooldown - retryDelay);
+    await prefs.setInt(
+      '$_garminBackfillLastAtKeyPrefix$userId',
+      retryAt.millisecondsSinceEpoch,
+    );
   }
 
   Future<bool> connectVdot() async {
@@ -767,6 +822,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           }
         }
       }
+
+      // Record this manual sync in the coordinator's staleness clock BEFORE
+      // invalidating providers below — otherwise the activities controller
+      // rebuilds, calls ensureIntegrationsSynced, sees vdot as stale, and runs
+      // an immediate duplicate full sync.
+      await ref
+          .read(integrationSyncCoordinatorProvider.notifier)
+          .markProviderSynced('vdot');
 
       state = AsyncData(state.value!.copyWith(importProgress: 0.8));
       _invalidateCalendar();
@@ -969,6 +1032,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       } else if (eventData != null && eventData.isNotEmpty) {
         savedEventsCount = await _saveTrainingPeaksEvents(eventData);
       }
+
+      // Record this manual sync in the coordinator's staleness clock BEFORE
+      // invalidating providers — otherwise the activities controller rebuilds,
+      // calls ensureIntegrationsSynced, sees this provider as stale, and runs
+      // an immediate duplicate full sync.
+      await ref
+          .read(integrationSyncCoordinatorProvider.notifier)
+          .markProviderSynced(providerId);
 
       // Invalidate calendar to refresh UI
       state = AsyncData(state.value!.copyWith(importProgress: 0.8));

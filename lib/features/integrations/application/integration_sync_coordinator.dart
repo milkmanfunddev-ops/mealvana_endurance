@@ -267,6 +267,20 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
     }
   }
 
+  /// Record that [provider] was just synced through another path (e.g. the
+  /// manual "Sync Now" / connect flow in ConnectTrainingController, which calls
+  /// the sync service directly rather than going through this coordinator).
+  ///
+  /// Without this, a manual sync leaves the coordinator's staleness clock
+  /// untouched, so the very next `ensureIntegrationsSynced` (triggered when the
+  /// manual sync invalidates the calendar/activities providers and they
+  /// rebuild) sees the provider as stale and runs a full SECOND sync back to
+  /// back. Stamping the timestamp here makes that follow-up sync skip.
+  Future<void> markProviderSynced(String provider) async {
+    await _setLastSyncTime(provider, DateTime.now());
+    _lastFailedAttempt.remove(provider);
+  }
+
   /// Get the last sync time from SharedPreferences
   Future<DateTime?> _getLastSyncTime(String provider) async {
     final prefs = await SharedPreferences.getInstance();
