@@ -540,6 +540,7 @@ class _BeforeEditBody extends StatelessWidget {
               canRemove: draft.length > 1,
               qtyMin: qtyMin,
               qtyStep: qtyStep,
+              showSwipeHint: i == 0,
               onToggle: () => onToggle(i),
               onQuantityChanged: (v) => onQuantityChanged(i, v),
               onSwap: () => onSwap(i),
@@ -559,7 +560,12 @@ class _BeforeEditBody extends StatelessWidget {
 /// Delete / swipe-left to Swap (mirroring the workout fuel-plan edit pattern).
 /// Expanded it reveals the orange quantity stepper, a live Nutrition Facts
 /// panel, and (when more than one component remains) a "Remove food item" link.
-class _EditComponentRow extends StatelessWidget {
+///
+/// When [showSwipeHint] is true, the row plays a one-time nudge on first build
+/// (left to flash Swap, right to flash Delete, then settle) so the otherwise
+/// hidden swipe gestures are discoverable. The parent enables it for the first
+/// row only.
+class _EditComponentRow extends StatefulWidget {
   const _EditComponentRow({
     required this.component,
     required this.expanded,
@@ -570,6 +576,7 @@ class _EditComponentRow extends StatelessWidget {
     required this.onQuantityChanged,
     required this.onSwap,
     required this.onRemove,
+    this.showSwipeHint = false,
   });
 
   final BeforeComponent component;
@@ -581,16 +588,71 @@ class _EditComponentRow extends StatelessWidget {
   final void Function(double quantity) onQuantityChanged;
   final VoidCallback onSwap;
   final VoidCallback onRemove;
+  final bool showSwipeHint;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+  State<_EditComponentRow> createState() => _EditComponentRowState();
+}
 
-    final card = BaseCard(
+class _EditComponentRowState extends State<_EditComponentRow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _hintController;
+  late final Animation<double> _hintOffset;
+  bool _hasPlayedHint = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _hintController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2600),
+    );
+    _hintOffset = TweenSequence<double>([
+      // Slide left to flash the Swap action.
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: -72.0)
+            .chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 22,
+      ),
+      TweenSequenceItem(tween: ConstantTween(-72.0), weight: 14),
+      // Slide right to flash the Delete action.
+      TweenSequenceItem(
+        tween: Tween(begin: -72.0, end: 72.0)
+            .chain(CurveTween(curve: Curves.easeInOutCubic)),
+        weight: 26,
+      ),
+      TweenSequenceItem(tween: ConstantTween(72.0), weight: 14),
+      // Settle back to rest.
+      TweenSequenceItem(
+        tween: Tween(begin: 72.0, end: 0.0)
+            .chain(CurveTween(curve: Curves.easeInCubic)),
+        weight: 24,
+      ),
+    ]).animate(_hintController);
+
+    if (widget.showSwipeHint) _playHint();
+  }
+
+  void _playHint() {
+    if (_hasPlayedHint) return;
+    _hasPlayedHint = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _hintController.forward(from: 0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _hintController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildCard(BuildContext context, ColorScheme scheme) {
+    return BaseCard(
       child: Column(
         children: [
           InkWell(
-            onTap: onToggle,
+            onTap: widget.onToggle,
             borderRadius: AppRadius.cardRadius,
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -616,7 +678,7 @@ class _EditComponentRow extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      _componentLabel(component),
+                      _componentLabel(widget.component),
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
                         color: scheme.onSurface,
@@ -624,7 +686,7 @@ class _EditComponentRow extends StatelessWidget {
                     ),
                   ),
                   AnimatedRotation(
-                    turns: expanded ? 0.5 : 0,
+                    turns: widget.expanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 180),
                     child: FaIcon(
                       FontAwesomeIcons.chevronDown,
@@ -636,7 +698,7 @@ class _EditComponentRow extends StatelessWidget {
               ),
             ),
           ),
-          if (expanded)
+          if (widget.expanded)
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
@@ -660,10 +722,10 @@ class _EditComponentRow extends StatelessWidget {
                         ),
                       ),
                       _QtyStepper(
-                        value: component.quantity,
-                        min: qtyMin,
-                        step: qtyStep,
-                        onChanged: onQuantityChanged,
+                        value: widget.component.quantity,
+                        min: widget.qtyMin,
+                        step: widget.qtyStep,
+                        onChanged: widget.onQuantityChanged,
                       ),
                     ],
                   ),
@@ -676,12 +738,12 @@ class _EditComponentRow extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  _ComponentNutritionFacts(component: component),
-                  if (canRemove) ...[
+                  _ComponentNutritionFacts(component: widget.component),
+                  if (widget.canRemove) ...[
                     const SizedBox(height: AppSpacing.md),
                     Center(
                       child: InkWell(
-                        onTap: onRemove,
+                        onTap: widget.onRemove,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -709,12 +771,18 @@ class _EditComponentRow extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final card = _buildCard(context, scheme);
 
     // Swipe-right reveals Delete (dragonfruit); swipe-left reveals Swap
     // (electrolyte). confirmDismiss never lets the tile actually dismiss —
     // the parent owns draft state and rebuilds, matching the fuel-plan flow.
     return Dismissible(
-      key: ValueKey('edit_${component.foodKey}'),
+      key: ValueKey('edit_${widget.component.foodKey}'),
       background: const _SwipeAction(
         color: AppColors.dragonfruit,
         alignment: Alignment.centerLeft,
@@ -731,14 +799,56 @@ class _EditComponentRow extends StatelessWidget {
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
-          if (canRemove) onRemove();
+          if (widget.canRemove) widget.onRemove();
           return false;
         }
         if (direction == DismissDirection.endToStart) {
-          onSwap();
+          widget.onSwap();
           return false;
         }
         return false;
+      },
+      child: _hasPlayedHint ? _buildHinted(card) : card,
+    );
+  }
+
+  /// Wraps [card] so the one-time hint can flash the swipe backgrounds behind
+  /// it as it nudges left then right. Only built once the hint has started.
+  Widget _buildHinted(Widget card) {
+    return AnimatedBuilder(
+      animation: _hintOffset,
+      builder: (context, child) {
+        final offset = _hintOffset.value;
+        return ClipRRect(
+          borderRadius: AppRadius.cardRadius,
+          child: Stack(
+            children: [
+              // Swap flashes on the right as the card slides left.
+              if (offset < 0)
+                const Positioned.fill(
+                  child: _SwipeAction(
+                    color: AppColors.electrolyte,
+                    alignment: Alignment.centerRight,
+                    icon: FontAwesomeIcons.arrowRightArrowLeft,
+                    label: 'Swap',
+                    iconLeading: false,
+                  ),
+                ),
+              // Delete flashes on the left as the card slides right.
+              if (offset > 0)
+                const Positioned.fill(
+                  child: _SwipeAction(
+                    color: AppColors.dragonfruit,
+                    alignment: Alignment.centerLeft,
+                    icon: FontAwesomeIcons.trash,
+                    label: 'Delete',
+                    iconLeading: true,
+                  ),
+                ),
+              Transform.translate(offset: Offset(offset, 0), child: child),
+            ],
+          ),
+        );
       },
       child: card,
     );
