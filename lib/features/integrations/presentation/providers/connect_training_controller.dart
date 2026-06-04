@@ -269,6 +269,25 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     final candidateRealUserId = user?.id ?? resolvedUserIdFromAuth;
     var useRealUserId = user?.onboardingCompleted == true;
 
+    // If the user already has a REAL (non-anonymous) Supabase session, use their
+    // real user id for onboarding data too — don't fall back to a throwaway temp
+    // id. The temp id is only meant for truly anonymous onboarding (no session),
+    // where the temp->real migration at sign-in later rebases the data. For an
+    // already-signed-in user that migration has already run, so temp-id data
+    // never gets rebased: integration upserts fail the `integrations` RLS/FK
+    // (user_id must equal auth.uid) and imported activities stay invisible
+    // because the rest of the app reads under the real id. (Root cause of the
+    // 42501 "violates row-level security" upload error + missing imported
+    // workouts during onboarding.)
+    final isAnonymousSession =
+        supabaseClient.auth.currentUser?.isAnonymous ?? false;
+    if (!useRealUserId &&
+        candidateRealUserId != null &&
+        currentAuthUserId != null &&
+        !isAnonymousSession) {
+      useRealUserId = true;
+    }
+
     // If onboarding flag is false/missing but integrations already exist for this
     // user, prefer real ID so connection state remains stable across sessions.
     if (!useRealUserId && candidateRealUserId != null) {
