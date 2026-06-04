@@ -363,7 +363,7 @@ Formula Kit ships across **7 PRs**. New PR 2 (Pins) inserted ahead of personaliz
 | **PR 1** | V1 Browse + Detail (read-only) ✅ Done | Library screen, phase tabs, filter chips, collapsible header, detail view with components. No personalization. |
 | **PR 2** | Pin a formula as algorithm signal ✅ Substantively done | Single-tap pin toggle on cards/detail. Pins drive plan generation: matching pinned templates considered first, fall through to existing algorithm. New `formula_pins` table (Supabase + Drift). New `generate-nutrition-plan-v4` edge function. Transparent fit-failure banner on activity detail. System templates only in V1. |
 | **PR 3** | **NEW — After-phase parity (browse + pin)** | Extend Browse + Detail + Pins to the After phase. `post_workout_templates` (v2 Notion-imported) get a Drift mirror, repository, After tab in the library, AfterFormulaCard, detail screen. Filter is `travel_friendliness` only (in_bag / cooler_friendly / home_only) — standard portion, no scaling target. Pins are in scope (post_system pin kind). Edge function gains a simple after-phase solver that prefers pinned templates and falls through to selection_priority order. No brick-specific UI. |
-| **PR 4** | V3 iter 1 — "Make this mine" edit state (Before only) | Edit-state UI on Before detail, quantity stepper, placeholder swap sheet, real-time macro recompute. |
+| **PR 4** | V3 iter 1 — "Make this mine" edit state (Before only) ✅ Done | Edit-state UI on Before detail. Per-component expandable rows mirror the workout fuel-plan edit pattern: compact orange quantity stepper pill, live per-component **Nutrition Facts** panel, centered "Remove food item" link, and swipe-right → **Delete** / swipe-left → **Swap** (`Dismissible`). Live whole-formula macro recompute. **UI-only — no persistence**: Save fires analytics + success toast then reverts to read mode; Swap/Add-Food open a "coming soon" placeholder. Real swap + persistence land in PR 5. |
 | **PR 5** | V3 iter 2 — Real Swap sheet + Your formulas + persistence + During edit + **legacy personal_templates UI deprecation** + **personal formulas become pinnable** | Real swap sheet, Your Formulas section, Drift+Supabase persistence via evolved `personal_templates`, During edit variant. Remove old "My Templates" UI. Extend `formula_pins.template_kind` to include `'personal_template'`. |
 | **PR 6** | Coach insight + Add Food | AI-coach guidance panel (multi-mode edge function), Add Food button. Coach insight reads pins as part of structured context. |
 | **PR 7** | Create-from-scratch | New formula from blank, "+ New" entry on Your Formulas. Final polish (during-card descriptors). |
@@ -665,10 +665,13 @@ End-to-end test plan, per slice:
 - **Old client safety:** bump app version on simulator A (calls v4) and keep simulator B on prior version (still calls v3) → confirm both produce valid plans, A honors pins, B unaffected.
 - Run `flutter test test/features/formula_kit/` (incl. new `formula_pins_repository_test`, `client_plan_service_pinned_template_test`).
 
-**PR 4 (Make this mine):**
-- On a Before template detail, tap "Make this mine".
-- Tweak quantities, watch macros tween. Save. Confirm a Personal formula appears.
-- Verify offline-first: enable airplane mode mid-edit, save, re-enable network, confirm sync.
+**PR 4 (Make this mine) — UI-only, no persistence:**
+- On a Before template detail, tap "+ Make this mine" → app bar swaps to Cancel / Save, an "Editing" pill appears.
+- Expand a component row → adjust the orange quantity stepper → watch the per-component Nutrition Facts and the whole-formula macros card recompute live.
+- Swipe a row right → Delete reveal (dragonfruit); swipe left → Swap reveal (electrolyte). Confirm Delete is blocked when only one component remains. Swap opens the "coming soon" sheet.
+- Tap Save → success toast fires, view returns to read mode showing the **original** (unedited) values — expected, since persistence is deferred to PR 5. Cancel discards cleanly.
+- Confirm `make_this_mine_tapped`, `personal_formula_saved`, `personal_formula_edit_cancelled` analytics fire as expected.
+- (Persistence, offline-first sync, and a real Personal formula appearing are PR 5 verification items.)
 
 **PR 5 (real swap + persistence + During + personal pinning):**
 - Open swap sheet, add a custom food, save. Confirm it appears in My Foods on next open.

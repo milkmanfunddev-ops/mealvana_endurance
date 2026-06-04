@@ -555,9 +555,10 @@ class _BeforeEditBody extends StatelessWidget {
 }
 
 /// Expandable component row used only in the Before edit state. Collapsed it
-/// shows the food chip + live label + chevron; expanded it reveals the
-/// quantity stepper, a Swap button, and (when more than one component remains)
-/// a Remove link.
+/// shows the food chip + live label + chevron, and supports swipe-right to
+/// Delete / swipe-left to Swap (mirroring the workout fuel-plan edit pattern).
+/// Expanded it reveals the orange quantity stepper, a live Nutrition Facts
+/// panel, and (when more than one component remains) a "Remove food item" link.
 class _EditComponentRow extends StatelessWidget {
   const _EditComponentRow({
     required this.component,
@@ -584,7 +585,8 @@ class _EditComponentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return BaseCard(
+
+    final card = BaseCard(
       child: Column(
         children: [
           InkWell(
@@ -643,43 +645,102 @@ class _EditComponentRow extends StatelessWidget {
                 AppSpacing.md,
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Divider(height: AppSpacing.md, color: scheme.outlineVariant),
-                  _SectionLabel(text: 'Quantity'),
-                  const SizedBox(height: AppSpacing.sm),
-                  KylePlusMinusDecimalControl(
-                    value: component.quantity,
-                    min: qtyMin,
-                    step: qtyStep,
-                    decimalPlaces: 1,
-                    unit: component.servingUnit,
-                    onChanged: onQuantityChanged,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
+                  // Quantity: label on the left, compact orange stepper pill
+                  // on the right (matches the fuel-plan edit control).
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: _SwapButton(onPressed: onSwap)),
-                      if (canRemove) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        TextButton(
-                          onPressed: onRemove,
-                          child: Text(
-                            'Remove',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.dragonfruit,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
+                      Text(
+                        'Quantity',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: scheme.onSurfaceVariant,
                         ),
-                      ],
+                      ),
+                      _QtyStepper(
+                        value: component.quantity,
+                        min: qtyMin,
+                        step: qtyStep,
+                        onChanged: onQuantityChanged,
+                      ),
                     ],
                   ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Nutrition Facts',
+                    style: AppTextStyles.smallLabel.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _ComponentNutritionFacts(component: component),
+                  if (canRemove) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    Center(
+                      child: InkWell(
+                        onTap: onRemove,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const FaIcon(
+                              FontAwesomeIcons.trash,
+                              size: 14,
+                              color: AppColors.dragonfruit,
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              'Remove food item',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.dragonfruit,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
         ],
       ),
+    );
+
+    // Swipe-right reveals Delete (dragonfruit); swipe-left reveals Swap
+    // (electrolyte). confirmDismiss never lets the tile actually dismiss —
+    // the parent owns draft state and rebuilds, matching the fuel-plan flow.
+    return Dismissible(
+      key: ValueKey('edit_${component.foodKey}'),
+      background: const _SwipeAction(
+        color: AppColors.dragonfruit,
+        alignment: Alignment.centerLeft,
+        icon: FontAwesomeIcons.trash,
+        label: 'Delete',
+        iconLeading: true,
+      ),
+      secondaryBackground: const _SwipeAction(
+        color: AppColors.electrolyte,
+        alignment: Alignment.centerRight,
+        icon: FontAwesomeIcons.arrowRightArrowLeft,
+        label: 'Swap',
+        iconLeading: false,
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          if (canRemove) onRemove();
+          return false;
+        }
+        if (direction == DismissDirection.endToStart) {
+          onSwap();
+          return false;
+        }
+        return false;
+      },
+      child: card,
     );
   }
 }
@@ -788,42 +849,170 @@ class _SavePillButton extends StatelessWidget {
 }
 
 /// Electrolyte "Swap" button inside an expanded component row.
-class _SwapButton extends StatelessWidget {
-  const _SwapButton({required this.onPressed});
+/// Compact orange-bordered quantity stepper pill (minus / value / plus),
+/// mirroring the workout fuel-plan edit control. Decrement is guarded at [min].
+class _QtyStepper extends StatelessWidget {
+  const _QtyStepper({
+    required this.value,
+    required this.min,
+    required this.step,
+    required this.onChanged,
+  });
 
-  final VoidCallback onPressed;
+  final double value;
+  final double min;
+  final double step;
+  final void Function(double quantity) onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.electrolyte,
-      borderRadius: AppRadius.circularRadius,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: AppRadius.circularRadius,
-        child: Container(
-          height: 40,
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const FaIcon(
-                FontAwesomeIcons.rightLeft,
-                size: 13,
-                color: AppColors.blackberry,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                'Swap',
-                style: AppTextStyles.buttonPrimary.copyWith(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.blackberry,
-                ),
-              ),
-            ],
+    final scheme = Theme.of(context).colorScheme;
+    final canDecrement = value - step >= min - 1e-9;
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.orange, width: 2),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: const FaIcon(
+              FontAwesomeIcons.minus,
+              size: 14,
+              color: AppColors.orange,
+            ),
+            onPressed: canDecrement ? () => onChanged(value - step) : null,
+          ),
+          Text(
+            _formatQuantity(value),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: scheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            icon: const FaIcon(
+              FontAwesomeIcons.plus,
+              size: 14,
+              color: AppColors.orange,
+            ),
+            onPressed: () => onChanged(value + step),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Live per-component Nutrition Facts panel shown in the expanded edit row.
+/// Recomputes from the component's per-serving macros × current quantity.
+class _ComponentNutritionFacts extends StatelessWidget {
+  const _ComponentNutritionFacts({required this.component});
+
+  final BeforeComponent component;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final q = component.quantity;
+    final carbs = component.carbsPerServing * q;
+    final protein = component.proteinPerServing * q;
+    final fat = component.fatPerServing * q;
+    final calories = ((carbs * 4) + (protein * 4) + (fat * 9)).round();
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: AppRadius.smRadius,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _NutritionStat(value: '$calories', label: 'CALORIES'),
+          _NutritionStat(value: '${carbs.round()}g', label: 'CARBS'),
+          _NutritionStat(value: '${protein.round()}g', label: 'PROTEIN'),
+          _NutritionStat(value: '${fat.round()}g', label: 'FAT'),
+        ],
+      ),
+    );
+  }
+}
+
+class _NutritionStat extends StatelessWidget {
+  const _NutritionStat({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Text(
+          value,
+          style: AppTextStyles.dataNumber.copyWith(
+            color: scheme.onSurface,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
         ),
+        const SizedBox(height: AppSpacing.xxs),
+        Text(
+          label,
+          style: AppTextStyles.smallLabel.copyWith(
+            color: scheme.onSurfaceVariant,
+            fontSize: 9,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Full-bleed swipe-action background (Delete / Swap) revealed behind an
+/// edit component row as it is dragged.
+class _SwipeAction extends StatelessWidget {
+  const _SwipeAction({
+    required this.color,
+    required this.alignment,
+    required this.icon,
+    required this.label,
+    required this.iconLeading,
+  });
+
+  final Color color;
+  final Alignment alignment;
+  final FaIconData icon;
+  final String label;
+  final bool iconLeading;
+
+  @override
+  Widget build(BuildContext context) {
+    final iconWidget = FaIcon(icon, color: Colors.white, size: 18);
+    final text = Text(
+      label,
+      style: AppTextStyles.bodyMedium.copyWith(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+    return Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: AppRadius.cardRadius,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: iconLeading
+            ? [iconWidget, const SizedBox(width: AppSpacing.sm), text]
+            : [text, const SizedBox(width: AppSpacing.sm), iconWidget],
       ),
     );
   }
