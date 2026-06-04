@@ -544,6 +544,43 @@ class FormulaLibraryController extends _$FormulaLibraryController {
     });
   }
 
+  /// User tapped "Make this mine" to enter the edit state on a system formula.
+  Future<void> trackMakeThisMineTapped({
+    required String templateId,
+    required FormulaPhase phase,
+  }) async {
+    await _track('make_this_mine_tapped', {
+      'template_id': templateId,
+      'phase': phase.analyticsValue,
+    });
+  }
+
+  /// User saved an edited formula. In PR 4 this is UI-only (no persistence
+  /// yet — that lands in PR 5); the event still captures the edit intent and
+  /// shape so we can size the personal-formula funnel.
+  Future<void> trackPersonalFormulaSaved({
+    required FormulaPhase phase,
+    required int componentCount,
+    required int editDurationSec,
+    String provenance = 'forked_formula',
+  }) async {
+    await _track('personal_formula_saved', {
+      'provenance': provenance,
+      'phase': phase.analyticsValue,
+      'component_count': componentCount,
+      'edit_duration_sec': editDurationSec,
+    });
+  }
+
+  /// User cancelled out of the edit state without saving.
+  Future<void> trackPersonalFormulaEditCancelled({
+    required FormulaPhase phase,
+  }) async {
+    await _track('personal_formula_edit_cancelled', {
+      'phase': phase.analyticsValue,
+    });
+  }
+
   // ── Mapping helpers ────────────────────────────────────────────────────
 
   BeforeFormulaView _mapBefore(
@@ -576,6 +613,25 @@ class FormulaLibraryController extends _$FormulaLibraryController {
         )
         .toList();
 
+    // Structured per-component data for the PR 4 edit state. Mirrors the
+    // display-string list (same order/length) but keeps food identity and
+    // per-serving macros so the editor can recompute totals live.
+    final components = componentNames.map((n) {
+      final tf = templateFoodsByName[n.toLowerCase()];
+      return BeforeComponent(
+        foodKey: n,
+        displayName: tf?.displayName,
+        displayNamePlural: tf?.displayNamePlural,
+        servingUnit: tf?.servingUnit,
+        quantity: (componentQuantities[n.toLowerCase()] ?? 1).toDouble(),
+        carbsPerServing: tf?.carbsG ?? 0,
+        proteinPerServing: tf?.proteinG ?? 0,
+        fatPerServing: tf?.fatG ?? 0,
+        sodiumMgPerServing: tf?.sodiumMg ?? 0,
+        fluidMlPerServing: tf?.fluidMl ?? 0,
+      );
+    }).toList();
+
     return BeforeFormulaView(
       id: e.id,
       name: e.name,
@@ -585,6 +641,7 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       digestionSpeed: e.digestionSpeed.toLowerCase(),
       templateType: e.templateType,
       componentDisplayStrings: componentDisplayStrings,
+      components: components,
       allergens: _decodeStringArray(e.allergens),
       excludedDiets: _decodeStringArray(e.excludedDiets),
       totalCarbsG: carbs,

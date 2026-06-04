@@ -33,6 +33,7 @@ BeforeFormulaView _fixture({
     digestionSpeed: 'medium',
     templateType: templateType,
     componentDisplayStrings: components,
+    components: const [],
     allergens: const [],
     excludedDiets: const [],
     totalCarbsG: carbs,

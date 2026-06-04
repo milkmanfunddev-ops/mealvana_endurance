@@ -3,6 +3,67 @@ import 'package:flutter/foundation.dart';
 import 'before_sub_phase.dart';
 import 'formula_phase.dart';
 
+/// A single editable component of a Before-phase formula.
+///
+/// Carries the structured data the controller already has on hand (food
+/// identity + per-serving macros + servings count) so the PR 4 "Make this
+/// mine" edit state can recompute the formula's macros live as the user
+/// adjusts quantities — without a second query. In read mode the detail
+/// screen still renders [BeforeFormulaView.componentDisplayStrings]; these
+/// structured components only drive the edit state.
+@immutable
+class BeforeComponent {
+  const BeforeComponent({
+    required this.foodKey,
+    required this.displayName,
+    required this.displayNamePlural,
+    required this.servingUnit,
+    required this.quantity,
+    required this.carbsPerServing,
+    required this.proteinPerServing,
+    required this.fatPerServing,
+    required this.sodiumMgPerServing,
+    required this.fluidMlPerServing,
+  });
+
+  /// Machine identifier from `component_food_names` (e.g. `medjool_dates`).
+  /// Stable across quantity edits; used as the row key.
+  final String foodKey;
+
+  /// Human display name from `template_foods`; null when no matching row
+  /// exists (the UI falls back to a humanised [foodKey]).
+  final String? displayName;
+  final String? displayNamePlural;
+
+  /// Serving unit label (e.g. `cup`, `tbsp`); null for count-based foods.
+  final String? servingUnit;
+
+  /// Number of servings of this component in the formula. The only field the
+  /// edit-state stepper mutates.
+  final double quantity;
+
+  // Per-single-serving macros, straight from `template_foods`. Zero when no
+  // matching row exists.
+  final double carbsPerServing;
+  final double proteinPerServing;
+  final double fatPerServing;
+  final double sodiumMgPerServing;
+  final double fluidMlPerServing;
+
+  BeforeComponent copyWith({double? quantity}) => BeforeComponent(
+        foodKey: foodKey,
+        displayName: displayName,
+        displayNamePlural: displayNamePlural,
+        servingUnit: servingUnit,
+        quantity: quantity ?? this.quantity,
+        carbsPerServing: carbsPerServing,
+        proteinPerServing: proteinPerServing,
+        fatPerServing: fatPerServing,
+        sodiumMgPerServing: sodiumMgPerServing,
+        fluidMlPerServing: fluidMlPerServing,
+      );
+}
+
 /// Immutable view model for a Before-phase formula card. Derived from
 /// `templates` rows where `phase = 'before'`.
 @immutable
@@ -14,6 +75,7 @@ class BeforeFormulaView {
     required this.digestionSpeed,
     required this.templateType,
     required this.componentDisplayStrings,
+    required this.components,
     required this.allergens,
     required this.excludedDiets,
     required this.totalCarbsG,
@@ -47,6 +109,12 @@ class BeforeFormulaView {
   /// [FoodItemData.buildDisplayQuantity]. Rendered as-is in the list card
   /// subtitle and the detail "Components" section.
   final List<String> componentDisplayStrings;
+
+  /// Structured per-component data (food identity + per-serving macros +
+  /// servings count) used exclusively by the PR 4 edit state to recompute
+  /// macros live. Parallel to [componentDisplayStrings] (same order, same
+  /// length). Read mode does not touch this.
+  final List<BeforeComponent> components;
   final List<String> allergens;
   final List<String> excludedDiets;
   final double totalCarbsG;

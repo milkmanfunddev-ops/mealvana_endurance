@@ -1,0 +1,290 @@
+/* ============================================================
+   Mealvana Endurance — Foundations
+   Colors, typography and semantic tokens for the brand.
+   ============================================================ */
+
+/* ---------- Fonts ---------- */
+@font-face {
+  font-family: "Apercu";
+  src: url("fonts/Apercu-Regular.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Apercu";
+  src: url("fonts/Apercu-Italic.otf") format("opentype");
+  font-weight: 400; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Apercu";
+  src: url("fonts/Apercu-Light.otf") format("opentype");
+  font-weight: 300; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Apercu";
+  src: url("fonts/Apercu-Medium.otf") format("opentype");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Apercu";
+  src: url("fonts/Apercu-Bold.otf") format("opentype");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Apercu";
+  src: url("fonts/Apercu-BoldItalic.otf") format("opentype");
+  font-weight: 700; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Apercu Mono";
+  src: url("fonts/Apercu-Mono.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Compadre";
+  src: url("fonts/Compadre-Regular.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Compadre Wide";
+  src: url("fonts/Compadre-Wide.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Compadre Narrow";
+  src: url("fonts/Compadre-Narrow.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Compadre Extended";
+  src: url("fonts/Compadre-Extended.otf") format("opentype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Sansita";
+  src: url("fonts/Sansita-Bold.ttf") format("truetype");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Sansita";
+  src: url("fonts/Sansita-BoldItalic.ttf") format("truetype");
+  font-weight: 700; font-style: italic; font-display: swap;
+}
+
+/* ---------- Brand tokens ---------- */
+:root {
+  /* Core palette (sRGB values pulled directly from Figma + app) */
+  --me-blackberry:        rgb(56, 22, 51);     /* primary dark */
+  --me-blackberry-light:  rgb(82, 40, 75);
+  --me-blackberry-dark:   rgb(38, 14, 34);
+  --me-cream:             rgb(248, 246, 235);  /* primary light */
+  --me-cream-dark:        rgb(235, 232, 216);
+  --me-orange:            rgb(247, 139, 20);   /* primary CTA / accent */
+  --me-orange-light:      rgb(251, 167, 72);
+  --me-orange-dark:       rgb(214, 115, 8);
+  --me-electrolyte:       rgb(28, 249, 207);   /* icon-chip background, success */
+  --me-dragonfruit:       rgb(220, 37, 151);   /* warning / tertiary emphasis */
+  --me-inactive:          rgb(117, 77, 111);   /* muted text, inactive nav */
+  --me-hairline:          rgb(198, 195, 178);  /* borders on cream bg */
+
+  /* Surfaces */
+  --me-bg-light:          var(--me-cream);
+  --me-bg-light-alt:      var(--me-cream-dark);
+  --me-bg-dark:           var(--me-blackberry);
+  --me-bg-dark-alt:       var(--me-blackberry-light);
+  --me-surface-card:      var(--me-cream);
+  --me-surface-card-dark: var(--me-blackberry-light);
+
+  /* Foreground text */
+  --me-fg-on-light:       var(--me-blackberry);
+  --me-fg-on-light-muted: var(--me-inactive);
+  --me-fg-on-dark:        var(--me-cream);
+  --me-fg-on-dark-muted:  rgba(248, 246, 235, 0.6);
+
+  /* Semantic */
+  --me-accent:            var(--me-orange);
+  --me-success:           var(--me-electrolyte);
+  --me-warning:           var(--me-dragonfruit);
+  --me-link:              var(--me-orange);
+
+  /* Nutrition data colors (from web app globals.css) */
+  --me-carbs:             oklch(0.84 0.15 85);
+  --me-protein:           oklch(0.52 0.22 340);
+  --me-fats:              oklch(0.50 0.18 260);
+
+  /* Type families */
+  --me-font-display:  "Sansita", Georgia, serif;       /* page & section titles */
+  --me-font-ui:       "Compadre", Georgia, serif;      /* subtitles, descriptors, food titles */
+  --me-font-body:     "Apercu", ui-sans-serif, system-ui, sans-serif; /* long-form, data */
+  --me-font-mono:     "Apercu Mono", ui-monospace, monospace;
+
+  /* Radii */
+  --me-radius-xs:   4px;
+  --me-radius-sm:   8px;
+  --me-radius-md:   15px;   /* default card radius */
+  --me-radius-lg:   25px;
+  --me-radius-pill: 100px;  /* all buttons are pills */
+
+  /* Spacing scale (based on a 4px grid; 17px gutters on mobile screens) */
+  --me-space-0: 0;
+  --me-space-1: 4px;
+  --me-space-2: 8px;
+  --me-space-3: 12px;
+  --me-space-4: 16px;
+  --me-space-5: 17px;    /* screen gutter */
+  --me-space-6: 20px;
+  --me-space-7: 24px;
+  --me-space-8: 32px;
+  --me-space-9: 40px;
+  --me-space-10: 48px;
+  --me-space-12: 64px;
+
+  /* Elevation */
+  --me-shadow-xs:   0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+  --me-shadow-sm:   0px 2px 6px 0px rgba(16, 24, 40, 0.08);
+  --me-shadow-md:   0px 8px 20px -4px rgba(16, 24, 40, 0.12);
+  --me-shadow-lg:   0px 18px 40px -12px rgba(56, 22, 51, 0.25);
+  --me-shadow-glow: 0px 0px 40px 0px rgba(247, 139, 20, 0.25);
+
+  /* Borders */
+  --me-border-thin:   1px solid var(--me-blackberry);
+  --me-border-hair:   1px solid var(--me-hairline);
+  --me-border-orange: 1px solid var(--me-orange);
+  --me-border-dragon: 1px solid var(--me-dragonfruit);
+
+  /* Motion */
+  --me-ease-out:  cubic-bezier(0.2, 0.8, 0.2, 1);
+  --me-ease-in:   cubic-bezier(0.5, 0, 0.75, 0);
+  --me-duration-fast:   120ms;
+  --me-duration-base:   220ms;
+  --me-duration-slow:   420ms;
+}
+
+/* ---------- Base type ---------- */
+html { font-family: var(--me-font-body); color: var(--me-fg-on-light); }
+body { background: var(--me-bg-light); }
+
+/* Role-based type tokens. Use these directly in HTML/JSX. */
+.me-page-title,
+h1.me {
+  font-family: var(--me-font-display);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.1;
+  color: var(--me-fg-on-light);
+  letter-spacing: -0.01em;
+}
+
+.me-section-title,
+h2.me {
+  font-family: var(--me-font-display);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.15;
+  color: var(--me-fg-on-light);
+}
+
+.me-screen-title,
+h3.me {
+  font-family: var(--me-font-display);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.1;
+  color: var(--me-fg-on-light);
+  text-align: center;
+}
+
+.me-eyebrow {
+  font-family: var(--me-font-body);
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--me-inactive);
+}
+
+.me-subtitle,
+.me-food-title {
+  font-family: var(--me-font-ui);
+  font-size: 16px;
+  line-height: 1.25;
+  color: var(--me-fg-on-light);
+}
+
+.me-activity-title {
+  font-family: var(--me-font-ui);
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--me-fg-on-light);
+}
+
+.me-body {
+  font-family: var(--me-font-body);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--me-fg-on-light);
+}
+
+.me-body-sm {
+  font-family: var(--me-font-body);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--me-fg-on-light);
+}
+
+.me-caption {
+  font-family: var(--me-font-body);
+  font-weight: 400;
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--me-inactive);
+}
+
+.me-data {
+  font-family: var(--me-font-body);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--me-fg-on-light);
+  font-variant-numeric: tabular-nums;
+}
+
+.me-data-xl {
+  font-family: var(--me-font-display);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--me-fg-on-light);
+  font-variant-numeric: tabular-nums;
+}
+
+.me-mono,
+code.me {
+  font-family: var(--me-font-mono);
+  font-size: 12px;
+  color: var(--me-fg-on-light);
+}
+
+.me-button-label {
+  font-family: var(--me-font-display);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+/* Dark-surface variants (just override color) */
+.on-dark .me-page-title,
+.on-dark .me-section-title,
+.on-dark .me-screen-title,
+.on-dark .me-subtitle,
+.on-dark .me-food-title,
+.on-dark .me-activity-title,
+.on-dark .me-body,
+.on-dark .me-body-sm,
+.on-dark .me-data,
+.on-dark .me-data-xl { color: var(--me-fg-on-dark); }
+.on-dark .me-caption,
+.on-dark .me-eyebrow { color: var(--me-fg-on-dark-muted); }

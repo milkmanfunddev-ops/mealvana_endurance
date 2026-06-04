@@ -291,13 +291,13 @@ The dev Mixpanel token (`df6e8dd4f3dc1363fa194a156298b16c` in `.env.dev.local`) 
 
 ## Source material
 
-- **Design bundle:** `/tmp/formula-kit/formula-library-remix-remix/`
+- **Design bundle:** `docs/features/formula-kit/design/formula-library-v3/` (re-fetched from claude.ai/design after the original `/tmp` copy was lost; this is now the canonical in-repo home)
   - `README.md` — design handoff guide
-  - `chats/chat1-5.md` — five chat transcripts capturing intent and iteration
+  - `chats/` — chat transcripts capturing intent and iteration
   - `project/Formula Kit.html` — primary file (standalone offline bundle, the user had this open at handoff)
   - `project/*.jsx` — modular source (app, browser, detail, edit, create, swap, insight, ui, data, tweaks-panel)
   - `project/colors_and_type.css` — Mealvana design tokens
-  - `project/screenshots/` — V3 state references
+  - `docs/features/formula-kit/design/formula_details.PNG` — read-state detail screenshot reference
 - **Design system reference:** Mealvana Endurance design system at `/projects/c4ad6c0d-189d-4886-888d-d30addf0dfcf/` (referenced in chats but already encoded in current Flutter app)
 
 ## Entry point (decided)
@@ -704,7 +704,7 @@ End-to-end test plan, per slice:
 - `lib/features/personal_templates/data/personal_templates_repository.dart` — precedent for user-owned + Supabase-synced data.
 - `lib/features/nutrition_plan/presentation/screens/swap_food_screen.dart` — what to reuse / refactor for the design's Swap sheet.
 - `supabase/migrations/20260406320000_during_workout_templates_complete.sql` — during-template schema (only on develop).
-- `/tmp/formula-kit/formula-library-remix-remix/project/Formula Kit.html` — pixel reference for every PR.
+- `docs/features/formula-kit/design/formula-library-v3/project/Formula Kit.html` — pixel reference for every PR.
 
 ## Deferred client-side work
 

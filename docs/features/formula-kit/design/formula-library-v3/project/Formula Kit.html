@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Formula Kit — Mealvana Endurance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="colors_and_type.css">
+  <style>
+    html, body, #root { margin: 0; padding: 0; min-height: 100vh; }
+    body { background: #1a0a17; }
+    button { font-family: inherit; }
+    /* Hide scrollbars on chip rows */
+    div::-webkit-scrollbar { display: none; }
+    @keyframes fk-toast {
+      from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    @keyframes fk-slide-up {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes fk-fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fk-shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    @keyframes fk-new-card-pulse {
+      0% { background-color: rgba(247,139,20,0.06); box-shadow: 0 0 0 0 rgba(247,139,20,0); }
+      30% { background-color: rgba(247,139,20,0.22); box-shadow: 0 0 0 6px rgba(247,139,20,0.15); }
+      100% { background-color: rgba(247,139,20,0.06); box-shadow: 0 0 0 0 rgba(247,139,20,0); }
+    }
+    @keyframes fk-star-pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <template id="__bundler_thumbnail" data-bg-color="#381633">
+    <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1200" height="800" fill="#381633"/>
+      <g transform="translate(420 180)">
+        <rect width="360" height="440" rx="44" fill="#52284b" stroke="#f8f6eb" stroke-opacity="0.12" stroke-width="2"/>
+        <text x="180" y="78" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="32" fill="#f8f6eb">Formula Kit</text>
+        <rect x="30" y="120" width="300" height="44" rx="22" fill="#000" fill-opacity="0.25"/>
+        <rect x="34" y="124" width="96" height="36" rx="18" fill="#f8f6eb"/>
+        <text x="82" y="148" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="14" fill="#381633">Before</text>
+        <text x="180" y="148" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="14" fill="#f8f6eb" opacity="0.7">During</text>
+        <text x="278" y="148" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="14" fill="#f8f6eb" opacity="0.7">After</text>
+        <rect x="30" y="190" width="300" height="100" rx="16" fill="#f8f6eb" fill-opacity="0.05" stroke="#f78b14" stroke-width="2"/>
+        <circle cx="50" cy="210" r="6" fill="#f78b14"/>
+        <text x="64" y="215" font-family="sans-serif" font-size="11" fill="#f78b14" letter-spacing="1.5">BEFORE</text>
+        <text x="46" y="248" font-family="Georgia, serif" font-weight="700" font-size="20" fill="#f8f6eb">Classic Oats</text>
+        <text x="46" y="276" font-family="Georgia, serif" font-size="13" fill="#f8f6eb" opacity="0.7">Oatmeal · Banana · Honey</text>
+        <rect x="30" y="306" width="300" height="80" rx="16" fill="#f8f6eb" fill-opacity="0.04"/>
+        <text x="46" y="338" font-family="Georgia, serif" font-weight="700" font-size="18" fill="#f8f6eb">Bagel + PB</text>
+        <text x="46" y="362" font-family="Georgia, serif" font-size="13" fill="#f8f6eb" opacity="0.7">Bagel · Peanut butter</text>
+      </g>
+    </svg>
+  </template>
+  <div id="root"></div>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="ui.jsx"></script>
+  <script type="text/babel" src="browser.jsx"></script>
+  <script type="text/babel" src="edit.jsx"></script>
+  <script type="text/babel" src="swap.jsx"></script>
+  <script type="text/babel" src="insight.jsx"></script>
+  <script type="text/babel" src="detail.jsx"></script>
+  <script type="text/babel" src="create.jsx"></script>
+  <script type="text/babel" src="app.jsx"></script>
+</body>
+</html>

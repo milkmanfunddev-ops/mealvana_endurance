@@ -23,6 +23,7 @@ BeforeFormulaView _before({
     digestionSpeed: digestionSpeed,
     templateType: templateType,
     componentDisplayStrings: const ['1 cup Oats'],
+    components: const [],
     allergens: allergens,
     excludedDiets: excludedDiets,
     totalCarbsG: 40,
