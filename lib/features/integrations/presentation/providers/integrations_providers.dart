@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart'
-    show TargetPlatform, defaultTargetPlatform, kIsWeb;
+    show TargetPlatform, defaultTargetPlatform, kDebugMode, kIsWeb;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -427,6 +427,19 @@ const _vdotRedirectUri = '$_baseCallbackScheme://callback';
 @Riverpod(keepAlive: true)
 VdotApiClient vdotApiClient(Ref ref) {
   final config = ref.watch(appConfigProvider);
+  if (kDebugMode) {
+    // Diagnostic: confirm the VDOT secret actually loaded from the bundled .env
+    // asset for THIS build. `invalid_payload` from the token endpoint means an
+    // empty client_secret reached the server — almost always a stale/empty .env
+    // asset (the file bundles at build time; an incremental build can ship a
+    // stale asset even when the Dart code is current). `client_secret len 0`
+    // here is the smoking gun → `flutter clean` + rebuild. Lengths only — never
+    // log the secret value.
+    print('🔑 [vdot] AppConfig creds at client build: '
+        'client_id="${config.vdotClientId}" (len ${config.vdotClientId.length}), '
+        'client_secret len ${config.vdotClientSecret.length}, '
+        'authBase=${config.vdotAuthBaseUrl}');
+  }
   return VdotApiClient(
     clientId: config.vdotClientId,
     clientSecret: config.vdotClientSecret,

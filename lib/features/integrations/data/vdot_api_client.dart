@@ -81,6 +81,32 @@ class VdotApiClient {
     String code, {
     required String redirectUri,
   }) async {
+    // VDOT's token endpoint validates the request body before it even looks at
+    // the code: a missing/empty client_id or client_secret comes back as
+    // `invalid_payload` (HTTP 400), NOT `invalid_code`. The most common way to
+    // hit that is a build where the .env secret never loaded — `client_id`
+    // silently falls back to its literal default ('mealvana') while
+    // `client_secret` falls back to '' (see AppConfig.fromEnv). Fail loudly
+    // here with an actionable message instead of letting the server return an
+    // opaque `invalid_payload`.
+    if (_clientId.isEmpty || _clientSecret.isEmpty) {
+      throw VdotApiException(
+        'VDOT credentials are not loaded (client_id '
+        '${_clientId.isEmpty ? "empty" : "present"}, client_secret '
+        '${_clientSecret.isEmpty ? "EMPTY" : "present"}). The token exchange '
+        'would fail with `invalid_payload`. Check that VDOT_CLIENT_ID / '
+        'VDOT_CLIENT_SECRET are set in the active .env file and do a clean '
+        'rebuild — .env values are bundled as assets at build time, so a hot '
+        'reload will not pick up a newly-added secret.',
+      );
+    }
+
+    if (kDebugMode) {
+      // Lengths only — never log the secret value itself.
+      print('🔑 [vdot] Token exchange creds: client_id="$_clientId" '
+          '(len ${_clientId.length}), client_secret len ${_clientSecret.length}');
+    }
+
     final response = await _httpClient.post(
       Uri.parse('$_authBaseUrl/oauth/token'),
       headers: {
@@ -104,8 +130,18 @@ class VdotApiClient {
     }
 
     if (response.statusCode != 200) {
+      final reason = _extractErrorReason(response.body);
+      // `invalid_payload` from VDOT means a required body field (grant_type /
+      // client_id / client_secret) was missing or empty, OR the body was sent
+      // as JSON instead of x-www-form-urlencoded — it is NOT about the code
+      // itself (that surfaces as `invalid_code`). Annotate so the cause is
+      // obvious in logs/Sentry without re-deriving it each time.
+      final hint = reason.contains('invalid_payload')
+          ? ' (missing/empty client_id or client_secret, or wrong body '
+              'content-type — see VdotApiClient)'
+          : '';
       throw VdotApiException(
-        'Token exchange failed: ${_extractErrorReason(response.body)}',
+        'Token exchange failed: $reason$hint',
         statusCode: response.statusCode,
         body: response.body,
       );
@@ -124,10 +160,33 @@ class VdotApiClient {
     String refreshToken, {
     String? expiredAccessToken,
   }) async {
+    // Same guard as exchangeCodeForToken: VDOT validates the body before it
+    // looks at the token. A missing/empty client_id or client_secret comes
+    // back as `invalid_payload` (HTTP 400) — the usual cause is a build where
+    // the .env secret never loaded. Fail loudly here instead of letting the
+    // refresh silently fail and force a needless re-auth.
+    if (_clientId.isEmpty || _clientSecret.isEmpty) {
+      throw VdotApiException(
+        'VDOT credentials are not loaded (client_id '
+        '${_clientId.isEmpty ? "empty" : "present"}, client_secret '
+        '${_clientSecret.isEmpty ? "EMPTY" : "present"}). The token refresh '
+        'would fail with `invalid_payload`. Check that VDOT_CLIENT_ID / '
+        'VDOT_CLIENT_SECRET are set in the active .env file and do a clean '
+        'rebuild — .env values are bundled as assets at build time.',
+      );
+    }
     try {
+      // VDOT's custom .NET token endpoint IGNORES the Basic auth header and
+      // reads the credentials from the form body (proven against the live
+      // endpoint: a refresh with creds only in Basic auth returns
+      // `invalid_payload`, while creds in the body are accepted). Mirror
+      // exchangeCodeForToken and send them in the body — the Basic header is
+      // kept defensively for tolerant servers.
       final body = <String, String>{
         'grant_type': 'refresh_token',
         'refresh_token': refreshToken,
+        'client_id': _clientId,
+        'client_secret': _clientSecret,
       };
       if (expiredAccessToken != null && expiredAccessToken.isNotEmpty) {
         body['token'] = expiredAccessToken;
