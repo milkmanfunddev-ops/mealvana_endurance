@@ -33507,8 +33507,8 @@ class FormulaPinEntry extends DataClass implements Insertable<FormulaPinEntry> {
   final String userId;
   final String templateId;
 
-  /// Polymorphic ref: 'pre_system' | 'during_system'.
-  /// PR 4 adds 'personal_template' when personal formulas become pinnable.
+  /// Polymorphic ref: 'pre_system' | 'during_system' | 'post_system'.
+  /// PR 5 adds 'personal_template' when personal formulas become pinnable.
   final String templateKind;
   final DateTime createdAt;
   final DateTime updatedAt;
