@@ -26,6 +26,7 @@ class SyncDependencyGraph {
     'post_workout_templates': ['template_foods'],
     'pre_workout_templates': ['template_foods'],
     'personal_templates': ['users'],
+    'personal_formulas': ['users'],
     'formula_pins': ['users'],
   };
 

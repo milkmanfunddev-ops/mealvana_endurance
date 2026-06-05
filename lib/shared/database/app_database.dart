@@ -36,6 +36,7 @@ import 'tables/pre_workout_templates_table.dart';
 import 'tables/post_workout_templates_table.dart';
 import 'tables/tp_writeback_table.dart';
 import 'tables/personal_templates_table.dart';
+import 'tables/personal_formulas_table.dart';
 import 'tables/formula_pins_table.dart';
 import 'tables/athlete_pairing_codes_table.dart';
 import 'tables/coach_pairing_codes_table.dart';
@@ -123,6 +124,9 @@ part 'app_database.g.dart';
     // Personal nutrition plan templates
     PersonalTemplatesTable,
 
+    // Formula Kit personal formulas (user-forked Before/During formulas)
+    PersonalFormulasTable,
+
     // Formula Kit pins (user preference signal for plan generation)
     FormulaPinsTable,
 
@@ -160,6 +164,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
+  /// Schema version 10: Formula Kit personal formulas (PR 5). Adds the
+  /// `personal_formulas` table — a user's edited/forked Before/During formula
+  /// saved via "Make this mine". Local-first with `needs_upload` dirty tracking
+  /// and soft-delete via `is_deleted`, mirrored to the Supabase
+  /// `personal_formulas` table. The matching `app_config` current_schema_version
+  /// on Supabase must be set to 10 when this ships, or v9 clients won't migrate
+  /// consistently.
+  ///
   /// Schema version 9: Formula Kit local tables — a single consolidated bump
   /// from the last released schema (v8). Adds four tables that were developed
   /// across unreleased intermediate versions on the feat/formula-kit branch;
@@ -192,7 +204,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -271,6 +283,13 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(preWorkoutTemplatesTable);
           await m.createTable(postWorkoutTemplatesTable);
           await m.createTable(formulaPinsTable);
+        }
+
+        // v10: Formula Kit personal formulas (PR 5). User-forked Before/During
+        // formulas saved via "Make this mine". No local FKs, so creation order
+        // is independent.
+        if (from < 10) {
+          await m.createTable(personalFormulasTable);
         }
       },
 

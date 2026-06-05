@@ -7,6 +7,7 @@ import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 
 import '../../../nutrition_plan/domain/food_item_data.dart';
 import '../../application/formula_library_controller.dart';
+import '../../application/personal_formula_controller.dart';
 import '../../domain/formula_phase.dart';
 import '../../domain/formula_view.dart';
 import '../widgets/pin_toggle.dart';
@@ -44,6 +45,7 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
   static const double _qtyMin = 0.5;
 
   bool _editing = false;
+  bool _saving = false;
   List<BeforeComponent>? _draft;
   int? _expandedIdx;
   DateTime? _editStartedAt;
@@ -72,24 +74,59 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     });
   }
 
-  void _saveEdit() {
+  Future<void> _saveEdit(BeforeFormulaView source) async {
     final draft = _draft;
-    if (draft == null) return;
+    if (draft == null || _saving) return;
+    setState(() => _saving = true);
+
     final durationSec = _editStartedAt == null
         ? 0
         : DateTime.now().difference(_editStartedAt!).inSeconds;
-    ref.read(formulaLibraryControllerProvider.notifier).trackPersonalFormulaSaved(
-          phase: FormulaPhase.before,
-          componentCount: draft.length,
-          editDurationSec: durationSec,
+
+    // The `finally` is the load-bearing part: `_saving` is reset on every exit
+    // path — success, null result, or an unexpected throw — so the Save pill
+    // can never get stranded spinning.
+    try {
+      final saved = await ref
+          .read(personalFormulaControllerProvider.notifier)
+          .saveBeforeEdit(source: source, draft: draft);
+
+      if (!mounted) return;
+
+      if (saved == null) {
+        MealvanaSnackbar.showError(
+          context,
+          "Couldn't save your formula. Please try again.",
         );
-    MealvanaSnackbar.showSuccess(context, 'Saved to your formulas');
-    setState(() {
-      _editing = false;
-      _draft = null;
-      _expandedIdx = null;
-      _editStartedAt = null;
-    });
+        return;
+      }
+
+      ref
+          .read(formulaLibraryControllerProvider.notifier)
+          .trackPersonalFormulaSaved(
+            phase: FormulaPhase.before,
+            componentCount: draft.length,
+            editDurationSec: durationSec,
+          );
+      MealvanaSnackbar.showSuccess(context, 'Saved to your formulas');
+      setState(() {
+        _editing = false;
+        _draft = null;
+        _expandedIdx = null;
+        _editStartedAt = null;
+      });
+    } catch (_) {
+      // saveBeforeEdit guards its own failures, so this is a defensive net for
+      // anything unexpected on the UI side. The controller logs the root cause.
+      if (mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          "Couldn't save your formula. Please try again.",
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   void _setQuantity(int index, double quantity) {
@@ -203,6 +240,9 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
   ) {
     // Edit state replaces the whole header: Cancel · "Edit" · Save.
     if (_editing) {
+      final source = asyncState.asData?.value.beforeFormulas
+          .cast<BeforeFormulaView?>()
+          .firstWhere((f) => f?.id == widget.id, orElse: () => null);
       return AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -235,7 +275,8 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
             padding: const EdgeInsets.only(right: AppSpacing.md),
             child: _SavePillButton(
               key: const ValueKey('formula_kit.edit_save'),
-              onPressed: _saveEdit,
+              saving: _saving,
+              onPressed: source == null ? null : () => _saveEdit(source),
             ),
           ),
         ],
@@ -927,30 +968,47 @@ class _MakeMineButton extends StatelessWidget {
 
 /// Orange Save pill shown in the edit-state app bar.
 class _SavePillButton extends StatelessWidget {
-  const _SavePillButton({super.key, required this.onPressed});
+  const _SavePillButton({
+    super.key,
+    required this.onPressed,
+    this.saving = false,
+  });
 
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final bool saving;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.orange,
-      borderRadius: AppRadius.circularRadius,
-      child: InkWell(
-        onTap: onPressed,
+    return Opacity(
+      opacity: onPressed == null ? 0.5 : 1,
+      child: Material(
+        color: AppColors.orange,
         borderRadius: AppRadius.circularRadius,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: 8,
-          ),
-          child: Text(
-            'Save',
-            style: AppTextStyles.buttonPrimary.copyWith(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: AppColors.blackberry,
+        child: InkWell(
+          onTap: saving ? null : onPressed,
+          borderRadius: AppRadius.circularRadius,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: 8,
             ),
+            child: saving
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.blackberry,
+                    ),
+                  )
+                : Text(
+                    'Save',
+                    style: AppTextStyles.buttonPrimary.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.blackberry,
+                    ),
+                  ),
           ),
         ),
       ),
