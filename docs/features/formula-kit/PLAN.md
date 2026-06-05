@@ -17,6 +17,27 @@
 
 Pre-existing test flake (no-pin parity tie-break in `pre-workout-pinned.test.ts:331`) filed as milkmanfunddev-ops/mealvana_endurance#33 — predates #18, not blocking. Pre-existing food-preferences UI/DB mismatch tracked separately as #30 (does NOT affect honor-pin, which reads DB truth).
 
+### Plan revision — 2026-06-04: PR 5a — "Make this mine" Before save (persistence slice) landed
+
+PR 5 is being delivered in slices. **PR 5a (the Before save path) is substantively complete** and pushed as `c514f1b6` (feat) + `64984dbc` (chore deps), branch `fix/vdot-sync-parity`. This is the first time a forked formula actually persists — PR 4 was UI-only (Save reverted to read mode).
+
+**What landed:**
+- **Domain** — `PersonalFormula` + `PersonalFormulaComponent` (`domain/personal_formula.dart`). `fromBeforeComponent` copies identity + per-serving macros + quantity; `userFoodId` stays null until the swap-to-user-food work in PR 5b. `toSupabaseJson` emits snake_case, components as a JSONB list, `sub_phase` via `BeforeSubPhase.storageValue`, and excludes Drift-only sync columns.
+- **Data** — `PersonalFormulasRepository` (offline-first, mirrors the `formula_pins` pattern): local-first write flagged `needs_upload=true`, `unawaited` best-effort upload, soft-delete via `is_deleted`, and `upsertRemotePreservingDirty` (the `@visibleForTesting` merge path) skips locally-dirty rows. New `personal_formulas` Drift table (generated table is the bulk of the `app_database.g.dart` diff — a +1,911-line net add; the larger churn is a git alignment artifact, not a reformat).
+- **Application** — `PersonalFormulaController` with `saveBeforeEdit`. **Marked `@Riverpod(keepAlive: true)`** — see crash note below.
+- **Tests (19, all green)** — `personal_formula_test.dart` (domain round-trips + `toSupabaseJson`), `personal_formulas_repository_test.dart` (local-first save, in-place update, soft-delete, dirty-preserve, phase/user scoping, unknown-phase forward-compat), and `formula_detail_save_flow_test.dart` (spinner/in-flight, success → snackbar + exit edit, failure → snackbar + stay in edit, thrown-save-never-strands-spinner regression).
+
+**Root-cause crash fixed — disposed Ref on save.** The save failed in-app with "Cannot use the Ref of personalFormulaControllerProvider after it has been disposed." The detail screen only `ref.read`s the controller (never `ref.watch`), so under the default `autoDispose` it had no listeners and was torn down during the first `await` in `saveBeforeEdit`; the resumed post-`await` `ref.read(...repository)` / `state =` then threw. Fix: `@Riverpod(keepAlive: true)` (session-scoped owner of the user's saved formulas) + regen. The generic failed-save toast had been masking this.
+
+**Deferred to PR 5b (NOT regressions):**
+- **"Your Formulas" display surface.** PR 5a wires only the save path — a saved fork persists but isn't yet shown. The original template + the forked copy (linked by `sourceTemplateId`) coexist; surfacing them is PR 5b.
+- **Real Swap sheet, custom foods, During edit variant, personal-formula pinning** — remaining PR 5 scope.
+
+**Open items:**
+- **`apply_all.sql` Section 4 (personal_formulas table) still needs applying to dev** (and to prod with the PR 5 release).
+- **Lockfile hygiene (`64984dbc`).** `pubspec.yaml` matches origin yet the committed lock couldn't satisfy it, so any `flutter pub get` force-resolves it forward (analyzer 7.6→8.4, `_fe_analyzer_shared` 85→91, drift_dev, build_runner, riverpod_generator). Isolated into its own `chore(deps)` commit to keep PR 5a clean; message relayed to Lee to confirm origin of the drift.
+- **Stale drift schema snapshots** (`schema_versions.dart` only has Schema2/Schema3 vs runtime schemaVersion 10) — filed as milkmanfunddev-ops/mealvana_endurance#37, assigned to Lee (`lbm54`); awaiting his delete-vs-regenerate call. Independent of PR 5a.
+
 ### Plan revision — 2026-05-23: substep 7 prod-deploy mishap → wrapper scripts added
 
 While deploying substep 7 edge functions to dev, `supabase functions deploy generate-macros-v4` and `... generate-nutrition-plan-v3` were run with `supabase/.temp/project-ref` pointing at **prod** (`wvmvsodrvbkxfydabqed`), not dev (`vlmtsdzpnjnavdgytcmi`). The functions deployed to prod.
@@ -364,7 +385,7 @@ Formula Kit ships across **7 PRs**. New PR 2 (Pins) inserted ahead of personaliz
 | **PR 2** | Pin a formula as algorithm signal ✅ Substantively done | Single-tap pin toggle on cards/detail. Pins drive plan generation: matching pinned templates considered first, fall through to existing algorithm. New `formula_pins` table (Supabase + Drift). New `generate-nutrition-plan-v4` edge function. Transparent fit-failure banner on activity detail. System templates only in V1. |
 | **PR 3** | **NEW — After-phase parity (browse + pin)** | Extend Browse + Detail + Pins to the After phase. `post_workout_templates` (v2 Notion-imported) get a Drift mirror, repository, After tab in the library, AfterFormulaCard, detail screen. Filter is `travel_friendliness` only (in_bag / cooler_friendly / home_only) — standard portion, no scaling target. Pins are in scope (post_system pin kind). Edge function gains a simple after-phase solver that prefers pinned templates and falls through to selection_priority order. No brick-specific UI. |
 | **PR 4** | V3 iter 1 — "Make this mine" edit state (Before only) ✅ Done | Edit-state UI on Before detail. Per-component expandable rows mirror the workout fuel-plan edit pattern: compact orange quantity stepper pill, live per-component **Nutrition Facts** panel, centered "Remove food item" link, and swipe-right → **Delete** / swipe-left → **Swap** (`Dismissible`). Live whole-formula macro recompute. **UI-only — no persistence**: Save fires analytics + success toast then reverts to read mode; Swap/Add-Food open a "coming soon" placeholder. Real swap + persistence land in PR 5. |
-| **PR 5** | V3 iter 2 — Real Swap sheet + Your formulas + persistence + During edit + **legacy personal_templates UI deprecation** + **personal formulas become pinnable** | Real swap sheet, Your Formulas section, Drift+Supabase persistence via evolved `personal_templates`, During edit variant. Remove old "My Templates" UI. Extend `formula_pins.template_kind` to include `'personal_template'`. |
+| **PR 5** | V3 iter 2 — Real Swap sheet + Your formulas + persistence + During edit + **legacy personal_templates UI deprecation** + **personal formulas become pinnable** — _**5a (Before save persistence) ✅ done** `c514f1b6`; 5b+ in progress_ | Real swap sheet, Your Formulas section, Drift+Supabase persistence (new `personal_formulas` table), During edit variant. Remove old "My Templates" UI. Extend `formula_pins.template_kind` to include `'personal_template'`. **5a shipped:** offline-first save of a forked Before formula (domain + repo + controller + table + 19 tests). **5b+ remaining:** Your Formulas display surface, real swap sheet, custom foods, During edit, personal-formula pinning. |
 | **PR 6** | Coach insight + Add Food | AI-coach guidance panel (multi-mode edge function), Add Food button. Coach insight reads pins as part of structured context. |
 | **PR 7** | Create-from-scratch | New formula from blank, "+ New" entry on Your Formulas. Final polish (during-card descriptors). |
 
@@ -674,6 +695,9 @@ End-to-end test plan, per slice:
 - (Persistence, offline-first sync, and a real Personal formula appearing are PR 5 verification items.)
 
 **PR 5 (real swap + persistence + During + personal pinning):**
+
+_PR 5a (Before save persistence) — landed `c514f1b6`. Verified by 19 automated tests; the manual items below (swap sheet, My Foods, During, personal pinning) are PR 5b+ and not yet exercisable in-app._
+- Tap Save on a Before edit → forked formula persists offline-first (Drift `needs_upload=true`), success snackbar, exit edit mode. (PR 5a — covered by `formula_detail_save_flow_test.dart` + `personal_formulas_repository_test.dart`.)
 - Open swap sheet, add a custom food, save. Confirm it appears in My Foods on next open.
 - Pull-to-refresh / quit app / relaunch — confirm everything persists from Drift and reconciles with Supabase.
 - Verify During edit variant has no quantity stepper (per spec).
