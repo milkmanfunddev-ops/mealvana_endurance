@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 import '../../application/formula_pin_controller.dart';
+import '../../domain/formula_phase.dart';
 import '../../domain/formula_view.dart';
 
 /// Single-tap pin toggle for a system formula. Used on library cards and
@@ -101,6 +102,45 @@ class PinToggleAfter extends ConsumerWidget {
           await ref
               .read(formulaPinControllerProvider.notifier)
               .toggleAfter(formula: formula, source: source);
+        } catch (e) {
+          if (context.mounted) _showError(context, e);
+        }
+      },
+    );
+  }
+}
+
+/// Pin toggle for a user-authored personal formula. Unlike the system
+/// variants, the phase is carried explicitly (it lives on the formula, not on
+/// the [TemplateKind]) so it can flow into the analytics payload.
+class PinTogglePersonalFormula extends ConsumerWidget {
+  const PinTogglePersonalFormula({
+    super.key,
+    required this.formulaId,
+    required this.phase,
+    required this.source,
+  });
+
+  final String formulaId;
+  final FormulaPhase phase;
+  final String source;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _PinIconButton(
+      isPinned: ref.watch(formulaPinControllerProvider).maybeWhen(
+            data: (s) => s.pinnedTemplateIds.contains(formulaId),
+            orElse: () => false,
+          ),
+      onTap: () async {
+        try {
+          await ref
+              .read(formulaPinControllerProvider.notifier)
+              .togglePersonalFormula(
+                formulaId: formulaId,
+                phase: phase,
+                source: source,
+              );
         } catch (e) {
           if (context.mounted) _showError(context, e);
         }

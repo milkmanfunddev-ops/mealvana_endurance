@@ -19,4 +19,18 @@ enum FormulaPhase {
         FormulaPhase.during => 'During',
         FormulaPhase.after => 'After',
       };
+
+  /// String persisted in Drift + Supabase (`phase` column). Equals
+  /// [analyticsValue]; named separately so storage intent reads clearly at
+  /// call sites.
+  String get wireValue => analyticsValue;
+
+  /// Decode a persisted `phase` value. Returns `null` for unknown/null input
+  /// so callers can skip and log rather than crash (forward-compat).
+  static FormulaPhase? fromWireValue(String? value) {
+    for (final p in FormulaPhase.values) {
+      if (p.wireValue == value) return p;
+    }
+    return null;
+  }
 }

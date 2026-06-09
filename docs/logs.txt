@@ -1,99 +1,94 @@
 ## Log 1
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3] After-phase foods: Whey Protein Shake (RTD)(carbs=9,protein=30,qty=1), Water(carbs=0,protein=0,qty=3)
-
+**Timestamp:** 2026-05-29T14:13:10.368Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "5ba17a22-7dc5-4f7a-b209-277d21dee42a",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 2
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3-TIMING] validation completed in 0ms
-
+**Timestamp:** 2026-05-29T14:13:09.074Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "8373c6cd-dad8-468e-88b1-58f04a12af8c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 3
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3] Before phase out of range (non-fatal): carbs=60.0 not in [100.0, 128.0]; sodium=465 not in [100, 200]
-
+**Timestamp:** 2026-05-29T14:13:08.625Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "warning"
+  "event_type": "Shutdown",
+  "execution_id": "067e3094-1c89-4eb7-b7db-52f576b234db",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 4
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3] Plan generated successfully (plan_id=714d3522-b46b-4240-baf1-96474eac5ca2)
-
+**Timestamp:** 2026-05-29T14:12:52.758Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "adf81476-696f-4dc7-858d-2c3b7c2accf5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 5
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3] During phase LP out of range (non-fatal): carbs=17.7 not in [81.0, 108.0]
-
+**Timestamp:** 2026-05-29T14:12:24.664Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "warning"
+  "event_type": "Shutdown",
+  "execution_id": "d76062a4-8c7e-4ecb-a2f6-a3b2bbb0302c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 6
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3-TIMING] during_lp_fallback completed in 496ms
+**Timestamp:** 2026-05-29T14:11:55.615Z
+**Message:** [garmin-push] Processing complete: {"epochs":{"processed":6,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "5ba17a22-7dc5-4f7a-b209-277d21dee42a",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -101,16 +96,16 @@
 ---
 
 ## Log 7
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3-TIMING] request_total completed in 1675ms
+**Timestamp:** 2026-05-29T14:11:55.339Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "5ba17a22-7dc5-4f7a-b209-277d21dee42a",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -118,16 +113,16 @@
 ---
 
 ## Log 8
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [POST-PROCESS-DURING] Adding 2x "Salt" (780mg sodium)
+**Timestamp:** 2026-05-29T14:11:55.339Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e7413-ccce-7e46-bfc0-cd1a133c4485","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a036174e2a8e4de3-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"2235","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e7413-ccce-7e46-bfc0-cd1a133c4485","traceparent":"00-019e7413ccce7e46bfc0cd1a133c4485-121629d308973f63-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a199eab-16e5a55942da50c6145b727a","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.148","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "5ba17a22-7dc5-4f7a-b209-277d21dee42a",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -135,84 +130,83 @@
 ---
 
 ## Log 9
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3] During phase out of range (non-fatal): carbs=17.7 not in [81.0, 108.0]
+**Timestamp:** 2026-05-29T14:11:55.336Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "warning"
-}
-```
-
----
-
-## Log 10
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3-TIMING] during_phase_total completed in 1479ms (path=lp)
-
-
-**Details:**
-```json
-{
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "5ba17a22-7dc5-4f7a-b209-277d21dee42a",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
 
 ---
 
+## Log 10
+**Timestamp:** 2026-05-29T14:11:55.321Z
+**Message:** booted (time: 37ms)
+
+**Details:**
+```json
+{
+  "event_type": "Boot",
+  "execution_id": "5ba17a22-7dc5-4f7a-b209-277d21dee42a",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
+}
+```
+
+---
+
 ## Log 11
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3] during: keeping original result (sanitized retry not better).
+**Timestamp:** 2026-05-29T14:11:54.161Z
+**Message:** [garmin-push] Processing complete: {"stressDetails":{"processed":1,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "warning"
+  "execution_id": "8373c6cd-dad8-468e-88b1-58f04a12af8c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "info"
 }
 ```
 
 ---
 
 ## Log 12
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3] After phase out of range (non-fatal): carbs=9.0 not in [61.0, 91.0]; sodium=200 not in [210, 390]
+**Timestamp:** 2026-05-29T14:11:54.042Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e7413-c7b8-78ed-8f8f-9cb853d80605","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a03617460b5dd196-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"4636","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e7413-c7b8-78ed-8f8f-9cb853d80605","traceparent":"00-019e7413c7b878ed8f8f9cb853d80605-d99d5e2a5996b35e-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a199ea9-572c289e46c85b2e0a6666ae","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.106","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "warning"
+  "execution_id": "8373c6cd-dad8-468e-88b1-58f04a12af8c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "info"
 }
 ```
 
 ---
 
 ## Log 13
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3] Plan result: before_subphases=snack,top_up, during_foods=1, after_foods=2
+**Timestamp:** 2026-05-29T14:11:54.042Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "8373c6cd-dad8-468e-88b1-58f04a12af8c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -220,16 +214,16 @@
 ---
 
 ## Log 14
-**Timestamp:** 2026-05-28T19:26:42.361Z
-**Message:** [PLAN-V3-TIMING] during_phase completed in 1479ms
+**Timestamp:** 2026-05-29T14:11:54.038Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "8373c6cd-dad8-468e-88b1-58f04a12af8c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -237,33 +231,32 @@
 ---
 
 ## Log 15
-**Timestamp:** 2026-05-28T19:26:42.360Z
-**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: electrolyte_drink_mix
-
+**Timestamp:** 2026-05-29T14:11:54.024Z
+**Message:** booted (time: 36ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "8373c6cd-dad8-468e-88b1-58f04a12af8c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 16
-**Timestamp:** 2026-05-28T19:26:42.360Z
-**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: electrolyte_tablet
+**Timestamp:** 2026-05-29T14:11:53.636Z
+**Message:** [garmin-push] Processing complete: {"dailies":{"processed":1,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "067e3094-1c89-4eb7-b7db-52f576b234db",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -271,16 +264,16 @@
 ---
 
 ## Log 17
-**Timestamp:** 2026-05-28T19:26:42.360Z
-**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: pickle_juice_shot
+**Timestamp:** 2026-05-29T14:11:53.549Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "067e3094-1c89-4eb7-b7db-52f576b234db",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -288,16 +281,16 @@
 ---
 
 ## Log 18
-**Timestamp:** 2026-05-28T19:26:42.360Z
-**Message:** [TMPL-ELECTROLYTES] Found 8 electrolyte items
+**Timestamp:** 2026-05-29T14:11:53.549Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e7413-c5b1-7bda-9ab0-1a3e5d2cb755","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a0361742c96fd31c-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"24871","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e7413-c5b1-7bda-9ab0-1a3e5d2cb755","traceparent":"00-019e7413c5b17bda9ab01a3e5d2cb755-83b01e02dc7168ff-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a199ea9-4e6845b27e50342d2e5e88ef","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.148","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "067e3094-1c89-4eb7-b7db-52f576b234db",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -305,16 +298,16 @@
 ---
 
 ## Log 19
-**Timestamp:** 2026-05-28T19:26:42.360Z
-**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: sports_drink
+**Timestamp:** 2026-05-29T14:11:53.544Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "067e3094-1c89-4eb7-b7db-52f576b234db",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -322,33 +315,32 @@
 ---
 
 ## Log 20
-**Timestamp:** 2026-05-28T19:26:42.360Z
-**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: electrolyte_capsule
-
+**Timestamp:** 2026-05-29T14:11:53.525Z
+**Message:** booted (time: 51ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "067e3094-1c89-4eb7-b7db-52f576b234db",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 21
-**Timestamp:** 2026-05-28T19:26:42.360Z
-**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: electrolyte_packet
+**Timestamp:** 2026-05-29T14:11:38.349Z
+**Message:** [garmin-push] OneSignal notification sent for activity b94f10fa-e61b-47fe-8f9f-4e8f2a74b153 to user 5c25e7b0-c152-449f-a87f-1c77c6133d15
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "adf81476-696f-4dc7-858d-2c3b7c2accf5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -356,16 +348,16 @@
 ---
 
 ## Log 22
-**Timestamp:** 2026-05-28T19:26:42.360Z
-**Message:** [TMPL-ELECTROLYTES] Excluding disliked electrolyte: high_sodium_electrolyte_mix
+**Timestamp:** 2026-05-29T14:11:38.349Z
+**Message:** [garmin-push] Processing complete: {"activityDetails":{"processed":1,"errors":0,"matched":1,"inserted":0,"skipped":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "adf81476-696f-4dc7-858d-2c3b7c2accf5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -373,16 +365,16 @@
 ---
 
 ## Log 23
-**Timestamp:** 2026-05-28T19:26:41.874Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: oatmeal (id: b954fa74-4de5-4e76-8ab5-966a1b92d1cb)
+**Timestamp:** 2026-05-29T14:11:38.067Z
+**Message:** [garmin-push] Processing complete: {"activities":{"processed":0,"errors":1,"matched":0,"inserted":0,"skipped":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "d76062a4-8c7e-4ecb-a2f6-a3b2bbb0302c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -390,33 +382,38 @@
 ---
 
 ## Log 24
-**Timestamp:** 2026-05-28T19:26:41.874Z
-**Message:** [TMPL-FILTER-DIET] Excluding food for diet 'vegetarian': deli_turkey (excluded_diets: vegan,vegetarian)
+**Timestamp:** 2026-05-29T14:11:38.066Z
+**Message:** [garmin-push] Auto-create insert error: {
+  code: "PGRST204",
+  details: null,
+  hint: null,
+  message: "Could not find the 'needs_upload' column of 'activities' in the schema cache"
+}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "execution_id": "d76062a4-8c7e-4ecb-a2f6-a3b2bbb0302c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "error"
 }
 ```
 
 ---
 
 ## Log 25
-**Timestamp:** 2026-05-28T19:26:41.874Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: applesauce (id: b51acae0-d708-4090-83c0-b9b270500cb0)
+**Timestamp:** 2026-05-29T14:11:38.013Z
+**Message:** [garmin-push] Matched & completed activity b94f10fa-e61b-47fe-8f9f-4e8f2a74b153 from detail push
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "adf81476-696f-4dc7-858d-2c3b7c2accf5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -424,16 +421,16 @@
 ---
 
 ## Log 26
-**Timestamp:** 2026-05-28T19:26:41.874Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: bagel_large (id: 6fc0a1d0-1877-48ef-a6bf-07296d6947d3)
+**Timestamp:** 2026-05-29T14:11:37.703Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "d76062a4-8c7e-4ecb-a2f6-a3b2bbb0302c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -441,16 +438,16 @@
 ---
 
 ## Log 27
-**Timestamp:** 2026-05-28T19:26:41.874Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: cream_cheese (id: e8678771-683b-4477-8d4d-012ed33554cd)
+**Timestamp:** 2026-05-29T14:11:37.703Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e7413-8773-7934-a297-faed2aae7ab7","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a03616dfab2f4dfd-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"384","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e7413-8773-7934-a297-faed2aae7ab7","traceparent":"00-019e741387737934a297faed2aae7ab7-43622bdda25048f9-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a199e99-3480c49d58102df0272f87b6","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.108","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "d76062a4-8c7e-4ecb-a2f6-a3b2bbb0302c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -458,16 +455,16 @@
 ---
 
 ## Log 28
-**Timestamp:** 2026-05-28T19:26:41.874Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: honey (id: 6e86dd85-506c-4157-84a8-4e44b5eeb4d4)
+**Timestamp:** 2026-05-29T14:11:37.698Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "d76062a4-8c7e-4ecb-a2f6-a3b2bbb0302c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -475,16 +472,16 @@
 ---
 
 ## Log 29
-**Timestamp:** 2026-05-28T19:26:41.874Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: mixed_berries (id: 05f6647c-646d-434a-8223-67bd51de9b2e)
+**Timestamp:** 2026-05-29T14:11:37.687Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "adf81476-696f-4dc7-858d-2c3b7c2accf5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -492,16 +489,16 @@
 ---
 
 ## Log 30
-**Timestamp:** 2026-05-28T19:26:41.874Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: jam (id: 37b98830-2d22-402f-8254-6cdfc579c89d)
+**Timestamp:** 2026-05-29T14:11:37.687Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e7413-8782-7366-8b95-fbf32cad9771","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a03616df9d4bd9c6-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"1473","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e7413-8782-7366-8b95-fbf32cad9771","traceparent":"00-019e7413878273668b95fbf32cad9771-bae632614ec3bc26-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a199e99-5a5162cd170991204535dcf9","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.150","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "adf81476-696f-4dc7-858d-2c3b7c2accf5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -509,16 +506,16 @@
 ---
 
 ## Log 31
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: banana (id: 2a376d78-d356-45cc-8619-910d0fe7e02f)
+**Timestamp:** 2026-05-29T14:11:37.683Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "adf81476-696f-4dc7-858d-2c3b7c2accf5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -526,152 +523,144 @@
 ---
 
 ## Log 32
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: pretzels (id: 8ac09937-f522-44aa-894e-c45482a35993)
-
+**Timestamp:** 2026-05-29T14:11:37.677Z
+**Message:** booted (time: 52ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "d76062a4-8c7e-4ecb-a2f6-a3b2bbb0302c",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 33
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: high_sodium_electrolyte_mix (id: 26179502-1c7c-40cf-92c9-978a84dc7a22)
-
+**Timestamp:** 2026-05-29T14:11:37.664Z
+**Message:** booted (time: 48ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "adf81476-696f-4dc7-858d-2c3b7c2accf5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 34
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: pickle_juice_shot (id: 657b7dd0-244d-464e-a5a8-65fbe838dd0a)
-
+**Timestamp:** 2026-05-29T14:02:26.175Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "cf019469-a584-4e39-8c2b-1f29f189f7dc",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 35
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: protein_shake (id: 8e7d500e-8796-45ed-8d34-ecb2aa0358d6)
-
+**Timestamp:** 2026-05-29T14:02:24.257Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "10f73d07-a8a4-4244-8f20-dc5fa3cba5c2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 36
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_drink_mix (id: 19e70c02-06f2-4d54-8124-ed6efbd0182e)
-
+**Timestamp:** 2026-05-29T14:02:23.356Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "5f722034-e5dd-4a51-a906-7c6f94837301",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 37
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_packet (id: 24b28bce-8d0d-4809-bc32-8677bc206c8e)
-
+**Timestamp:** 2026-05-29T14:02:19.451Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "873ab0c7-4318-4273-b2e4-d597a84380d5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 38
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: vegan_recovery_protein_drink (id: 683cb910-689d-43b6-9665-234caa0fc335)
-
+**Timestamp:** 2026-05-29T14:02:17.485Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "1abc863d-748f-4bad-9ecb-53d4192d47a2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 39
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: sweet_potato (id: a4020770-5940-4461-8d08-8ca865750379)
-
+**Timestamp:** 2026-05-29T14:02:17.479Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "60bda59f-a906-4efc-ad66-5e5b8dd70bc8",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 40
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FOODS-AFTER] Found 0 uncategorized user foods (1 total user foods)
+**Timestamp:** 2026-05-29T14:01:11.593Z
+**Message:** [garmin-push] Processing complete: {"epochs":{"processed":15,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "cf019469-a584-4e39-8c2b-1f29f189f7dc",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -679,16 +668,16 @@
 ---
 
 ## Log 41
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: chocolate_milk (id: 73ed8835-ca79-4184-94dd-271e22a1f078)
+**Timestamp:** 2026-05-29T14:01:11.072Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "cf019469-a584-4e39-8c2b-1f29f189f7dc",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -696,16 +685,16 @@
 ---
 
 ## Log 42
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: coconut_water (id: 7b56b1d6-b77c-4feb-81d6-7f3cfc6b3dfb)
+**Timestamp:** 2026-05-29T14:01:11.072Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e7409-f808-73dc-9e78-77c4117555c2","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a03607935da449b1-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"5656","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e7409-f808-73dc-9e78-77c4117555c2","traceparent":"00-019e7409f80873dc9e7877c4117555c2-f8ba14b7b05da4f0-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a199c26-4a985bab437b69072e53aa06","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.110","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "cf019469-a584-4e39-8c2b-1f29f189f7dc",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -713,16 +702,16 @@
 ---
 
 ## Log 43
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: plant_protein_shake_rtd (id: 019e33ab-d17b-4873-92cb-3f6d3c8adc3d)
+**Timestamp:** 2026-05-29T14:01:11.068Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "cf019469-a584-4e39-8c2b-1f29f189f7dc",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -730,33 +719,32 @@
 ---
 
 ## Log 44
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_tablet (id: 044b8b29-2d6c-48ff-812f-cdb4c35f9c31)
-
+**Timestamp:** 2026-05-29T14:01:11.048Z
+**Message:** booted (time: 49ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "cf019469-a584-4e39-8c2b-1f29f189f7dc",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 45
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_capsule (id: dcac7df4-7c48-4a78-800b-da4b2c12fcfe)
+**Timestamp:** 2026-05-29T14:01:09.349Z
+**Message:** [garmin-push] Processing complete: {"dailies":{"processed":2,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "10f73d07-a8a4-4244-8f20-dc5fa3cba5c2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -764,16 +752,16 @@
 ---
 
 ## Log 46
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: protein_bar (id: f477c518-1d69-4ffc-a289-ed27f966f67b)
+**Timestamp:** 2026-05-29T14:01:09.242Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e7409-f0e8-752d-831e-21bb268fc395","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a0360787ec8449b5-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"5423","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e7409-f0e8-752d-831e-21bb268fc395","traceparent":"00-019e7409f0e8752d831e21bb268fc395-5e2b901009a4e0af-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a199c25-0541074020337cd46e244569","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.108","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "10f73d07-a8a4-4244-8f20-dc5fa3cba5c2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -781,16 +769,16 @@
 ---
 
 ## Log 47
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: sports_drink (id: af14e3c2-ed27-4eea-8052-473fb8dcd23f)
+**Timestamp:** 2026-05-29T14:01:09.242Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "10f73d07-a8a4-4244-8f20-dc5fa3cba5c2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -798,16 +786,16 @@
 ---
 
 ## Log 48
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FOODS-AFTER] Combined 44 template + 1 user = 45 total
+**Timestamp:** 2026-05-29T14:01:09.215Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "10f73d07-a8a4-4244-8f20-dc5fa3cba5c2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -815,33 +803,32 @@
 ---
 
 ## Log 49
-**Timestamp:** 2026-05-28T19:26:41.873Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: plant_protein_shake (id: 3f72595d-c6d7-4d94-aada-e0517c1cc214)
-
+**Timestamp:** 2026-05-29T14:01:09.198Z
+**Message:** booted (time: 36ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "10f73d07-a8a4-4244-8f20-dc5fa3cba5c2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 50
-**Timestamp:** 2026-05-28T19:26:41.865Z
-**Message:** [TMPL-FOODS-DURING] Filtering template_foods for categories: during_run, activity_type: running, filter: activity_types.is.null,activity_types.ov.{running}
+**Timestamp:** 2026-05-29T14:01:08.670Z
+**Message:** [garmin-push] Processing complete: {"epochs":{"processed":52,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "5f722034-e5dd-4a51-a906-7c6f94837301",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -849,16 +836,16 @@
 ---
 
 ## Log 51
-**Timestamp:** 2026-05-28T19:26:41.865Z
-**Message:** [PLAN-V3] Generating during phase via LP solver
+**Timestamp:** 2026-05-29T14:01:06.767Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "5f722034-e5dd-4a51-a906-7c6f94837301",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -866,33 +853,33 @@
 ---
 
 ## Log 52
-**Timestamp:** 2026-05-28T19:26:41.865Z
-**Message:** [PLAN-V3] During rule-solver out of range (carbs=0.0 not in [81.0, 108.0]; sodium=0 not in [662, 994]). Retrying with LP solver.
+**Timestamp:** 2026-05-29T14:01:06.766Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e7409-e712-775f-b7f5-2a8c0be49c08","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a03607782d2a4df5-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"19148","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e7409-e712-775f-b7f5-2a8c0be49c08","traceparent":"00-019e7409e712775fb7f52a8c0be49c08-3a58ae6cb1fdc2b1-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a199c22-1a970cbc67dcac0c0229480d","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.148","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "warning"
+  "execution_id": "5f722034-e5dd-4a51-a906-7c6f94837301",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "info"
 }
 ```
 
 ---
 
 ## Log 53
-**Timestamp:** 2026-05-28T19:26:41.864Z
-**Message:** [PLAN-V3-TIMING] during_rule_solve completed in 1ms
+**Timestamp:** 2026-05-29T14:01:06.762Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "5f722034-e5dd-4a51-a906-7c6f94837301",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -900,33 +887,32 @@
 ---
 
 ## Log 54
-**Timestamp:** 2026-05-28T19:26:41.864Z
-**Message:** [DURING-RULES] WARNING: Carb deficit 100% — consider adding more food sources to pool
-
+**Timestamp:** 2026-05-29T14:01:06.742Z
+**Message:** booted (time: 48ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "5f722034-e5dd-4a51-a906-7c6f94837301",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 55
-**Timestamp:** 2026-05-28T19:26:41.864Z
-**Message:** [DURING-RULES] Hydration: water x4 = 960ml
+**Timestamp:** 2026-05-29T14:01:05.827Z
+**Message:** [garmin-push] Processing complete: {"epochs":{"processed":29,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "873ab0c7-4318-4273-b2e4-d597a84380d5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -934,33 +920,33 @@
 ---
 
 ## Log 56
-**Timestamp:** 2026-05-28T19:26:41.864Z
-**Message:** [DURING-RULES] POST-VALIDATION: 2 issue(s): carbs 0% (0g/95g) outside [90%, 110.00000000000001%]; sodium 0% (0mg/828mg) outside [90%, 110.00000000000001%]
+**Timestamp:** 2026-05-29T14:01:04.404Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e7409-de0c-778d-b9c2-3fec92514e53","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a0360769b8f5d1a3-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"10684","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e7409-de0c-778d-b9c2-3fec92514e53","traceparent":"00-019e7409de0c778db9c23fec92514e53-a6a067870552d8d0-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a199c20-5a6530e8201a335b3c745e6b","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.145","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "warning"
+  "execution_id": "873ab0c7-4318-4273-b2e4-d597a84380d5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "info"
 }
 ```
 
 ---
 
 ## Log 57
-**Timestamp:** 2026-05-28T19:26:41.864Z
-**Message:** [DURING-RULES] Final: 1 foods, carbs=0g/95g, sodium=0mg/828mg, fluid=960ml/1004ml
+**Timestamp:** 2026-05-29T14:01:04.404Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "873ab0c7-4318-4273-b2e4-d597a84380d5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -968,16 +954,16 @@
 ---
 
 ## Log 58
-**Timestamp:** 2026-05-28T19:26:41.864Z
-**Message:** [DURING-RULES] Pool: 0 primary_carb, 0 sports_drink, 1 bike_solid, 1 hydration, 0 electrolyte
+**Timestamp:** 2026-05-29T14:01:04.389Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "873ab0c7-4318-4273-b2e4-d597a84380d5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -985,33 +971,32 @@
 ---
 
 ## Log 59
-**Timestamp:** 2026-05-28T19:26:41.864Z
-**Message:** [DURING-RULES] Targets: carbs=95g, sodium=828mg, fluid=1004ml, sport=running
-
+**Timestamp:** 2026-05-29T14:01:04.374Z
+**Message:** booted (time: 36ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "873ab0c7-4318-4273-b2e4-d597a84380d5",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 60
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: dates (id: 88343d31-ca35-4f69-8b33-586a788a8d7f)
+**Timestamp:** 2026-05-29T14:01:03.224Z
+**Message:** [garmin-push] Processing complete: {"activities":{"processed":0,"errors":1,"matched":0,"inserted":0,"skipped":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "60bda59f-a906-4efc-ad66-5e5b8dd70bc8",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1019,50 +1004,60 @@
 ---
 
 ## Log 61
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: applesauce_pouch (id: 97642f6e-55df-4af5-8e5d-8e34bb9538d7)
+**Timestamp:** 2026-05-29T14:01:03.224Z
+**Message:** [garmin-push] Auto-create insert error: {
+  code: "PGRST204",
+  details: null,
+  hint: null,
+  message: "Could not find the 'needs_upload' column of 'activities' in the schema cache"
+}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "execution_id": "60bda59f-a906-4efc-ad66-5e5b8dd70bc8",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "error"
 }
 ```
 
 ---
 
 ## Log 62
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: SiS GO Isotonic Energy Gels — Tropical / Box of 6 (id: 4c339a26-7ae7-4b01-a170-4e1289206a53)
+**Timestamp:** 2026-05-29T14:01:03.222Z
+**Message:** [garmin-push] Auto-create insert error (detail): {
+  code: "PGRST204",
+  details: null,
+  hint: null,
+  message: "Could not find the 'needs_upload' column of 'activities' in the schema cache"
+}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "execution_id": "1abc863d-748f-4bad-9ecb-53d4192d47a2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "error"
 }
 ```
 
 ---
 
 ## Log 63
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: banana (id: 2a376d78-d356-45cc-8619-910d0fe7e02f)
+**Timestamp:** 2026-05-29T14:01:03.222Z
+**Message:** [garmin-push] Processing complete: {"activityDetails":{"processed":0,"errors":1,"matched":0,"inserted":0,"skipped":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "1abc863d-748f-4bad-9ecb-53d4192d47a2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1070,16 +1065,16 @@
 ---
 
 ## Log 64
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: Gatorade Zero Zero Gatorate Glacier Cherry (id: 3a1ccfcd-8f48-4df3-bfb9-96ef64d05c59)
+**Timestamp:** 2026-05-29T14:01:02.498Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "1abc863d-748f-4bad-9ecb-53d4192d47a2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1087,16 +1082,16 @@
 ---
 
 ## Log 65
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: energy_chews (id: e7b370d5-0f15-4950-9314-b3ee2246ab51)
+**Timestamp:** 2026-05-29T14:01:02.498Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e7409-d669-74f5-884b-ca6ea6be0f18","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a036075dab2d1457-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"300959","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e7409-d669-74f5-884b-ca6ea6be0f18","traceparent":"00-019e7409d66974f5884bca6ea6be0f18-0d491220a52912d0-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a199c1e-79e1b6c560a4ba1657f62d24","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.146","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "1abc863d-748f-4bad-9ecb-53d4192d47a2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1104,16 +1099,16 @@
 ---
 
 ## Log 66
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_tablet (id: 044b8b29-2d6c-48ff-812f-cdb4c35f9c31)
+**Timestamp:** 2026-05-29T14:01:02.489Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "60bda59f-a906-4efc-ad66-5e5b8dd70bc8",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1121,16 +1116,16 @@
 ---
 
 ## Log 67
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: pretzels (id: 8ac09937-f522-44aa-894e-c45482a35993)
+**Timestamp:** 2026-05-29T14:01:02.489Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e7409-d637-73df-ba99-cd2b85004365","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a036075dad1eae28-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"889","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e7409-d637-73df-ba99-cd2b85004365","traceparent":"00-019e7409d63773dfba99cd2b85004365-9a92e3bc1bb1e632-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a199c1e-3e60610431b4b5a452623f5f","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.109","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "60bda59f-a906-4efc-ad66-5e5b8dd70bc8",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1138,16 +1133,16 @@
 ---
 
 ## Log 68
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: sports_drink (id: af14e3c2-ed27-4eea-8052-473fb8dcd23f)
+**Timestamp:** 2026-05-29T14:01:02.484Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "60bda59f-a906-4efc-ad66-5e5b8dd70bc8",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1155,16 +1150,16 @@
 ---
 
 ## Log 69
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_drink_mix (id: 19e70c02-06f2-4d54-8124-ed6efbd0182e)
+**Timestamp:** 2026-05-29T14:01:02.483Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "1abc863d-748f-4bad-9ecb-53d4192d47a2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1172,101 +1167,96 @@
 ---
 
 ## Log 70
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: carb_drink_mix (id: ec81833b-c751-41bc-bf82-96f097bf3f2f)
-
+**Timestamp:** 2026-05-29T14:01:02.467Z
+**Message:** booted (time: 43ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "1abc863d-748f-4bad-9ecb-53d4192d47a2",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 71
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: energy_chews_mini_pack (id: 28a7cc38-f9c8-40fc-a7ab-534375189769)
-
+**Timestamp:** 2026-05-29T14:01:02.464Z
+**Message:** booted (time: 57ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "60bda59f-a906-4efc-ad66-5e5b8dd70bc8",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 72
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: graham_crackers (id: f5c3185a-08ed-4742-85d3-c906f66a2c5c)
-
+**Timestamp:** 2026-05-29T13:43:10.065Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "07ec0796-dc0f-4783-a966-f8e8c7ce2735",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 73
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: fig_bar (id: 811917ac-4a57-4294-81a3-09cbd414de9a)
-
+**Timestamp:** 2026-05-29T13:43:09.833Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "e21ffd85-32e2-422f-9e9d-600ecbbb5498",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 74
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [PLAN-V3-TIMING] during_rule_food_query completed in 784ms (foods=2)
-
+**Timestamp:** 2026-05-29T13:43:09.146Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "7c4ad13d-f570-41ea-8a8f-a66b38765075",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 75
-**Timestamp:** 2026-05-28T19:26:41.863Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: stroopwafel (id: 2b29010b-4077-4e6d-b55d-6825b6271991)
+**Timestamp:** 2026-05-29T13:41:55.796Z
+**Message:** [garmin-push] Processing complete: {"epochs":{"processed":4,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "07ec0796-dc0f-4783-a966-f8e8c7ce2735",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1274,16 +1264,16 @@
 ---
 
 ## Log 76
-**Timestamp:** 2026-05-28T19:26:41.862Z
-**Message:** [TMPL-FOODS-DURING] Combined 23 template + 3 user = 26 total
+**Timestamp:** 2026-05-29T13:41:55.291Z
+**Message:** [garmin-push] Processing complete: {"stressDetails":{"processed":1,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "e21ffd85-32e2-422f-9e9d-600ecbbb5498",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1291,16 +1281,16 @@
 ---
 
 ## Log 77
-**Timestamp:** 2026-05-28T19:26:41.862Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_capsule (id: dcac7df4-7c48-4a78-800b-da4b2c12fcfe)
+**Timestamp:** 2026-05-29T13:41:55.077Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "07ec0796-dc0f-4783-a966-f8e8c7ce2735",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1308,16 +1298,16 @@
 ---
 
 ## Log 78
-**Timestamp:** 2026-05-28T19:26:41.862Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: raisins (id: 57a543db-bdd5-419e-8669-ed2ebad9910e)
+**Timestamp:** 2026-05-29T13:41:55.077Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e73f8-5476-75a5-a9a6-6ae17fd3d9e7","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a035eb5a692612c8-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"1514","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e73f8-5476-75a5-a9a6-6ae17fd3d9e7","traceparent":"00-019e73f8547675a5a9a66ae17fd3d9e7-160d4d7a9cfbce0a-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a1997a2-772f58dc6ca511a20db194cc","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.104","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "07ec0796-dc0f-4783-a966-f8e8c7ce2735",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1325,16 +1315,16 @@
 ---
 
 ## Log 79
-**Timestamp:** 2026-05-28T19:26:41.862Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: energy_gel (id: 27f5af16-acbe-4a88-876f-aec17fd12b7c)
+**Timestamp:** 2026-05-29T13:41:55.072Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "07ec0796-dc0f-4783-a966-f8e8c7ce2735",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1342,33 +1332,32 @@
 ---
 
 ## Log 80
-**Timestamp:** 2026-05-28T19:26:41.862Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: pickle_juice_shot (id: 657b7dd0-244d-464e-a5a8-65fbe838dd0a)
-
+**Timestamp:** 2026-05-29T13:41:55.052Z
+**Message:** booted (time: 49ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "07ec0796-dc0f-4783-a966-f8e8c7ce2735",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 81
-**Timestamp:** 2026-05-28T19:26:41.862Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: high_sodium_electrolyte_mix (id: 26179502-1c7c-40cf-92c9-978a84dc7a22)
+**Timestamp:** 2026-05-29T13:41:54.977Z
+**Message:** [garmin-push] Processing complete: {"dailies":{"processed":1,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "7c4ad13d-f570-41ea-8a8f-a66b38765075",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1376,16 +1365,16 @@
 ---
 
 ## Log 82
-**Timestamp:** 2026-05-28T19:26:41.862Z
-**Message:** [TMPL-FOODS-DURING] Found 0 uncategorized user foods (3 total user foods)
+**Timestamp:** 2026-05-29T13:41:54.817Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e73f8-535f-7dc5-901d-bf9301c0bcb6","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a035eb58ac0d585f-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"4418","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e73f8-535f-7dc5-901d-bf9301c0bcb6","traceparent":"00-019e73f8535f7dc5901dbf9301c0bcb6-86db70f9a3a266b8-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a1997a2-5778e8ce64879e552a075562","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.104","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "e21ffd85-32e2-422f-9e9d-600ecbbb5498",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1393,16 +1382,16 @@
 ---
 
 ## Log 83
-**Timestamp:** 2026-05-28T19:26:41.862Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: high_carb_drink_mix (id: 7126d4b7-5d46-4d54-b3a7-12a7f9460cc4)
+**Timestamp:** 2026-05-29T13:41:54.817Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "e21ffd85-32e2-422f-9e9d-600ecbbb5498",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1410,16 +1399,16 @@
 ---
 
 ## Log 84
-**Timestamp:** 2026-05-28T19:26:41.862Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: honey (id: 6e86dd85-506c-4157-84a8-4e44b5eeb4d4)
+**Timestamp:** 2026-05-29T13:41:54.812Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "e21ffd85-32e2-422f-9e9d-600ecbbb5498",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1427,33 +1416,32 @@
 ---
 
 ## Log 85
-**Timestamp:** 2026-05-28T19:26:41.862Z
-**Message:** [TMPL-FILTER-DISLIKED] Excluding disliked food: electrolyte_packet (id: 24b28bce-8d0d-4809-bc32-8677bc206c8e)
-
+**Timestamp:** 2026-05-29T13:41:54.792Z
+**Message:** booted (time: 51ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "e21ffd85-32e2-422f-9e9d-600ecbbb5498",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 86
-**Timestamp:** 2026-05-28T19:26:41.211Z
-**Message:** [TMPL-FOODS-AFTER] Querying user foods for device_id: e92cb452-0368-4bb3-a888-3e86a65d097f (user_id: e92cb452-0368-4bb3-a888-3e86a65d097f)
+**Timestamp:** 2026-05-29T13:41:54.116Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "7c4ad13d-f570-41ea-8a8f-a66b38765075",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1461,16 +1449,16 @@
 ---
 
 ## Log 87
-**Timestamp:** 2026-05-28T19:26:41.207Z
-**Message:** [TMPL-FOODS-DURING] Querying user foods for device_id: e92cb452-0368-4bb3-a888-3e86a65d097f (user_id: e92cb452-0368-4bb3-a888-3e86a65d097f)
+**Timestamp:** 2026-05-29T13:41:54.116Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e73f8-5089-71ae-bc70-44a58b82b044","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a035eb549fe4b622-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"23550","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e73f8-5089-71ae-bc70-44a58b82b044","traceparent":"00-019e73f8508971aebc7044a58b82b044-af24ed5a8cd214ff-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a1997a2-136c9ada526b8512764c4094","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.104","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "7c4ad13d-f570-41ea-8a8f-a66b38765075",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1478,16 +1466,16 @@
 ---
 
 ## Log 88
-**Timestamp:** 2026-05-28T19:26:41.163Z
-**Message:** [TMPL-FOODS-AFTER] Widening: fetched 13 out-of-scope component foods (crackers, jam, peanut_butter, milk, toaster_waffle, cream_cheese, oatmeal, honey, toast, apple, mixed_berries, granola, granola_bar)
+**Timestamp:** 2026-05-29T13:41:54.112Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "7c4ad13d-f570-41ea-8a8f-a66b38765075",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1495,84 +1483,80 @@
 ---
 
 ## Log 89
-**Timestamp:** 2026-05-28T19:26:41.149Z
-**Message:** [PLAN-V3] snack: 2 foods (exploded), carbs=60g
-
+**Timestamp:** 2026-05-29T13:41:54.098Z
+**Message:** booted (time: 36ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "7c4ad13d-f570-41ea-8a8f-a66b38765075",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 90
-**Timestamp:** 2026-05-28T19:26:41.149Z
-**Message:** [PLAN-V3-TIMING] before_phase completed in 268ms
-
+**Timestamp:** 2026-05-29T13:23:19.009Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "8233605e-457f-474c-b102-474d046a9634",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 91
-**Timestamp:** 2026-05-28T19:26:41.149Z
-**Message:** [PLAN-V3] top_up: 1 foods (exploded), carbs=0g
-
+**Timestamp:** 2026-05-29T13:23:17.389Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "26583308-2618-449a-832b-6cd9cad75cae",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 92
-**Timestamp:** 2026-05-28T19:26:41.148Z
-**Message:** [PLAN-V3-SUBST] Found 1 user foods for before-phase substitution
-
+**Timestamp:** 2026-05-29T13:23:16.659Z
+**Message:** shutdown
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Shutdown",
+  "execution_id": "7dcaa1bd-e5d6-40de-b1de-34c0ac7f6dce",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 93
-**Timestamp:** 2026-05-28T19:26:41.148Z
-**Message:** [PLAN-V3] Found 0 user food substitutions for before phase
+**Timestamp:** 2026-05-29T13:22:04.121Z
+**Message:** [garmin-push] Processing complete: {"epochs":{"processed":1,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "8233605e-457f-474c-b102-474d046a9634",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1580,16 +1564,16 @@
 ---
 
 ## Log 94
-**Timestamp:** 2026-05-28T19:26:41.132Z
-**Message:** [TMPL-FOODS-DURING] Found 23 template foods for running
+**Timestamp:** 2026-05-29T13:22:03.922Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e73e6-275b-7021-8f45-2655f6b35c50","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a035ce4568e54e4b-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"383","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e73e6-275b-7021-8f45-2655f6b35c50","traceparent":"00-019e73e6275b70218f452655f6b35c50-cbf8b39e35bfe76b-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a1992fb-1d0201690e366f6d2f116af8","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.145","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "8233605e-457f-474c-b102-474d046a9634",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1597,16 +1581,16 @@
 ---
 
 ## Log 95
-**Timestamp:** 2026-05-28T19:26:41.108Z
-**Message:** [TMPL-FOODS-AFTER] Found 31 template foods for running
+**Timestamp:** 2026-05-29T13:22:03.922Z
+**Message:** [garmin-auth] Expected client ID: "6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6" (length: 36)
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "8233605e-457f-474c-b102-474d046a9634",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1614,16 +1598,16 @@
 ---
 
 ## Log 96
-**Timestamp:** 2026-05-28T19:26:41.079Z
-**Message:** [DURING-TEMPLATE] Selecting template: activity=running (mapped=running), duration=108min (bracket=90-150 min), gut=moderate
+**Timestamp:** 2026-05-29T13:22:03.917Z
+**Message:** Listening on http://localhost:9999/
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "8233605e-457f-474c-b102-474d046a9634",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1631,33 +1615,32 @@
 ---
 
 ## Log 97
-**Timestamp:** 2026-05-28T19:26:41.079Z
-**Message:** [PLAN-V3-TIMING] during_template_select completed in 1ms (candidates=0, selected=none)
-
+**Timestamp:** 2026-05-29T13:22:03.897Z
+**Message:** booted (time: 48ms)
 
 **Details:**
 ```json
 {
-  "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
-  "level": "info"
+  "event_type": "Boot",
+  "execution_id": "8233605e-457f-474c-b102-474d046a9634",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
+  "level": "log"
 }
 ```
 
 ---
 
 ## Log 98
-**Timestamp:** 2026-05-28T19:26:41.079Z
-**Message:** [DURING-TEMPLATE] No matching templates found
+**Timestamp:** 2026-05-29T13:22:02.760Z
+**Message:** [garmin-push] Processing complete: {"stressDetails":{"processed":1,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "7dcaa1bd-e5d6-40de-b1de-34c0ac7f6dce",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1665,16 +1648,16 @@
 ---
 
 ## Log 99
-**Timestamp:** 2026-05-28T19:26:41.079Z
-**Message:** [DURING-TEMPLATE] Skipping template 4 (Chew + Water + Sports Drink): missing foods: energy_chews, sports_drink
+**Timestamp:** 2026-05-29T13:22:02.655Z
+**Message:** [garmin-push] Processing complete: {"dailies":{"processed":1,"errors":0}}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "26583308-2618-449a-832b-6cd9cad75cae",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```
@@ -1682,16 +1665,16 @@
 ---
 
 ## Log 100
-**Timestamp:** 2026-05-28T19:26:41.079Z
-**Message:** [DURING-TEMPLATE] Skipping template 2 ((Gel + Water) + Sports Drink): missing foods: energy_gel, sports_drink
+**Timestamp:** 2026-05-29T13:22:02.218Z
+**Message:** [garmin-auth] POST request, headers: {"accept":"text/plain, application/json, application/*+json, */*","accept-encoding":"gzip","baggage":"sb-request-id=019e73e6-209a-7a17-afc7-b062e579791f","cdn-loop":"cloudflare; loops=1","cf-connecting-ip":"185.207.94.248","cf-ew-via":"15","cf-ipcountry":"US","cf-ray":"a035ce3a9bc909ab-MCI","cf-visitor":"{\"scheme\":\"https\"}","cf-worker":"supabase.co","content-length":"22669","content-type":"application/json;charset=UTF-8","garmin-client-id":"6e904d60-e9d6-48ff-b1e7-3f3e7ff20db6","host":"edge-runtime.supabase.com","sb-request-id":"019e73e6-209a-7a17-afc7-b062e579791f","traceparent":"00-019e73e6209a7a17afc7b062e579791f-f70ab24febc1b002-00","user-agent":"Garmin Health API","x-amzn-trace-id":"Root=1-6a1992fa-4602368b1aed87e03a3c2903","x-forwarded-for":"185.207.94.248,185.207.94.248, 13.248.111.150","x-forwarded-port":"443","x-forwarded-proto":"https"}
 
 
 **Details:**
 ```json
 {
   "event_type": "Log",
-  "execution_id": "cae7c63b-9422-47f9-8e0c-aba44de46a90",
-  "function_id": "385c5165-22ec-49ea-a730-e1de30183f4d",
+  "execution_id": "26583308-2618-449a-832b-6cd9cad75cae",
+  "function_id": "c9dca3d6-123a-4f45-9bb8-480cd7ae21dc",
   "level": "info"
 }
 ```

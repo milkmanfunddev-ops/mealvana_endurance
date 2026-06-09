@@ -299,6 +299,21 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     if (useRealUserId && candidateRealUserId != null) {
       _currentUserId = candidateRealUserId;
       _isUsingTempUserId = false;
+    } else if (currentAuthUserId != null) {
+      // An (anonymous) Supabase session exists — onboarding before the profile
+      // is created/sign-up is completed. Use the anonymous auth.uid rather than
+      // a throwaway client-generated temp UUID. An anonymous session has a real
+      // auth.uid(), so:
+      //   - integration + activity uploads pass RLS (user_id == auth.uid), and
+      //   - the first-class anonymous->real migration at sign-in rebases the
+      //     data (vs. the brittle temp-UUID->real fallback path).
+      // A throwaway temp UUID can NEVER upload (RLS rejects it) and is only
+      // rebased by the temp->real migration, so anything written under it is
+      // invisible everywhere except this device until/unless that migration
+      // runs. Reserve the temp UUID strictly for the genuine no-session case
+      // below.
+      _currentUserId = currentAuthUserId;
+      _isUsingTempUserId = false;
     } else {
       _currentUserId = await _getOrCreateTempUserId();
       _isUsingTempUserId = true;
@@ -824,10 +839,23 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
       // Upload dirty activities to Supabase immediately so duplicates don't
       // appear after logout/relogin/resync (same pattern as FS/TP).
-      if ((result.newWorkouts > 0 || result.updated > 0) && !_isUsingTempUserId) {
+      //
+      // Always attempt the upload for a real (non-temp) user — even when this
+      // sync produced no new/updated workouts. A *previous* sync may have
+      // inserted rows whose upload failed (network/RLS/missing-remote-user),
+      // leaving them dirty. Gating the upload on newWorkouts/updated would never
+      // retry those, stranding them local-only: visible on this device but
+      // missing from Supabase (and therefore from other devices / after a
+      // reinstall). uploadDirtyRecords() pushes ALL dirty rows, so it doubles as
+      // the retry path. (Temp users can't pass RLS, so they're skipped and rely
+      // on the post-sign-in migration + sync to upload.)
+      var uploadFailed = false;
+      if (!_isUsingTempUserId) {
         try {
           final uploadResult =
               await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+          // success covers both a real upload and "nothing to upload" (count 0).
+          uploadFailed = !uploadResult.success;
           if (kDebugMode) {
             if (uploadResult.success) {
               print('☁️ Uploaded ${uploadResult.count} synced VDOT activities');
@@ -836,6 +864,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             }
           }
         } catch (e) {
+          uploadFailed = true;
           if (kDebugMode) {
             print('⚠️ Failed to upload synced VDOT activities: $e');
           }
@@ -846,9 +875,17 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // invalidating providers below — otherwise the activities controller
       // rebuilds, calls ensureIntegrationsSynced, sees vdot as stale, and runs
       // an immediate duplicate full sync.
-      await ref
-          .read(integrationSyncCoordinatorProvider.notifier)
-          .markProviderSynced('vdot');
+      //
+      // EXCEPTION: if the upload failed, deliberately do NOT stamp the clock.
+      // The rows are still dirty; leaving vdot "stale" lets the next
+      // ensureIntegrationsSynced re-run the sync and retry the upload promptly
+      // (instead of waiting out the full staleness window). The coordinator
+      // stamps its own clock once that retry completes, so this can't storm.
+      if (!uploadFailed) {
+        await ref
+            .read(integrationSyncCoordinatorProvider.notifier)
+            .markProviderSynced('vdot');
+      }
 
       state = AsyncData(state.value!.copyWith(importProgress: 0.8));
       _invalidateCalendar();
@@ -860,7 +897,15 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           importProgress: 1.0,
           importedWorkoutsCount: result.newWorkouts,
           isNetworkError: false,
-          clearErrorMessage: true,
+          // Surface an upload failure instead of swallowing it: the workouts
+          // are saved locally but did NOT reach Supabase, so they'd silently go
+          // missing on other devices / after reinstall. Keep it non-alarming —
+          // the retry above will pick them up.
+          errorMessage: uploadFailed
+              ? 'Workouts saved, but syncing to your account didn\'t finish. '
+                  'We\'ll retry automatically.'
+              : null,
+          clearErrorMessage: !uploadFailed,
           vdotLastSyncAt: DateTime.now(),
         ),
       );

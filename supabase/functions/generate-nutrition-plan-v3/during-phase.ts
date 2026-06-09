@@ -35,6 +35,11 @@ import {
   selectTemplateCandidates,
 } from "../_shared/nutrition/during-template-solver.ts";
 import { buildPreferenceSet } from "../_shared/nutrition/food-utils.ts";
+import type { PersonalFormulaPin } from "../_shared/nutrition/pins.ts";
+import {
+  matchPersonalFormulaPin,
+  personalFormulaToFoodResults,
+} from "../_shared/nutrition/personal-formula-pins.ts";
 import type { LPPhaseResult } from "./types.ts";
 import { validatePhaseResultAgainstTargets } from "./validation.ts";
 import { generateLPPhase } from "./lp-phase.ts";
@@ -343,6 +348,9 @@ export async function generateDuringPhase(
    * back to the pre-#18 behavior (derive from local set size) so brick
    * handler and other callers stay unchanged. Formula Kit PR 2 #18. */
   pinsActive?: boolean,
+  /** User's pinned personal formulas (any phase); during-phase ones in scope
+   * are honored before the template solver. Formula Kit personalization. */
+  personalFormulaPins?: PersonalFormulaPin[],
 ): Promise<LPPhaseResult> {
   const phaseStart = performance.now();
   const elapsed = (start: number) => Math.round(performance.now() - start);
@@ -375,6 +383,41 @@ export async function generateDuringPhase(
       gutTrainingLevel ?? "n/a"
     }, duration=${durationMinutes ?? "n/a"}min)`,
   );
+
+  // ---- Pinned personal formula (highest priority) ----
+  // An in-scope pinned personal formula is honored unconditionally, emitting
+  // its self-contained components and bypassing the template solver entirely.
+  if (personalFormulaPins && personalFormulaPins.length > 0) {
+    const match = matchPersonalFormulaPin(
+      personalFormulaPins,
+      "during",
+      activityType,
+      durationMinutes,
+    );
+    if (match) {
+      const foods = personalFormulaToFoodResults(
+        match,
+        "Throughout activity",
+      );
+      if (foods.length > 0) {
+        console.log(
+          `[PLAN-V3] During: honoring pinned personal formula "${match.name}" ` +
+            `(${foods.length} components), bypassing template solver`,
+        );
+        return {
+          foods,
+          by_hour_data: null,
+          pin_decision: {
+            used_pin: true,
+            pinned_template_id: match.id,
+            pinned_template_name: match.name,
+            fallthrough_reason: null,
+            pin_set_size: 1,
+          },
+        };
+      }
+    }
+  }
 
   // ---- Template solver (primary path) ----
   if (gutTrainingLevel && durationMinutes && durationMinutes > 0) {

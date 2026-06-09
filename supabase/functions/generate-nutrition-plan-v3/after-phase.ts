@@ -36,6 +36,11 @@ import {
   renderPostTemplatePortion,
   selectPostWorkoutTemplateCandidates,
 } from "../_shared/nutrition/post-template-solver.ts";
+import type { PersonalFormulaPin } from "../_shared/nutrition/pins.ts";
+import {
+  matchPersonalFormulaPin,
+  personalFormulaToFoodResults,
+} from "../_shared/nutrition/personal-formula-pins.ts";
 import type { LPPhaseResult } from "./types.ts";
 import { generateLPPhase } from "./lp-phase.ts";
 
@@ -161,9 +166,43 @@ export async function generateAfterPhase(
    * (parity with PR 2 #18).
    */
   pinsActive?: boolean,
+  /** User's pinned personal formulas (any phase); after-phase ones in scope
+   * are honored before the template solver. Formula Kit personalization. */
+  personalFormulaPins?: PersonalFormulaPin[],
 ): Promise<LPPhaseResult> {
   const phaseStart = performance.now();
   const elapsed = (start: number) => Math.round(performance.now() - start);
+
+  // ---- Pinned personal formula (highest priority) ----
+  // An in-scope pinned personal formula is honored unconditionally, emitting
+  // its self-contained components and bypassing the template solver.
+  if (personalFormulaPins && personalFormulaPins.length > 0) {
+    const match = matchPersonalFormulaPin(
+      personalFormulaPins,
+      "after",
+      activityType,
+    );
+    if (match) {
+      const foods = personalFormulaToFoodResults(match, "Within 30 minutes");
+      if (foods.length > 0) {
+        console.log(
+          `[PLAN-V3] After: honoring pinned personal formula "${match.name}" ` +
+            `(${foods.length} components), bypassing template solver`,
+        );
+        return {
+          foods,
+          by_hour_data: null,
+          pin_decision: {
+            used_pin: true,
+            pinned_template_id: match.id,
+            pinned_template_name: match.name,
+            fallthrough_reason: null,
+            pin_set_size: 1,
+          },
+        };
+      }
+    }
+  }
 
   // Pin telemetry skeleton. Refined once templates load + candidate selection
   // returns. Omitted entirely when no pins were supplied anywhere (byte-

@@ -6,18 +6,24 @@ import '../../../shared/database/app_database.dart';
 ///
 /// Mirrors the `template_kind` CHECK constraint on the Supabase
 /// `formula_pins` table. PR 3 added [postSystem] when After-phase pins
-/// shipped; PR 5 will widen it again with `personalTemplate` when personal
-/// formulas become pinnable.
+/// shipped; the personalization PR adds [personalFormula] when user-authored
+/// personal formulas become pinnable. The wire value is `personal_formula`
+/// (matching the `personal_formulas` table), NOT `personal_template`.
 ///
 /// Forward-compat: [fromWireValue] returns `null` for unknown values rather
 /// than throwing. Old binaries must tolerate new wire values written by
-/// newer clients (e.g. a binary built before PR 5 reading a `personal_template`
-/// pin on launch must not crash). Callers should skip rows that decode to
-/// null and surface the unknown value to Sentry as a breadcrumb.
+/// newer clients (e.g. a binary built before the personalization PR reading a
+/// `personal_formula` pin on launch must not crash). Callers should skip rows
+/// that decode to null and surface the unknown value to Sentry as a breadcrumb.
 enum TemplateKind {
   preSystem('pre_system'),
   duringSystem('during_system'),
-  postSystem('post_system');
+  postSystem('post_system'),
+
+  /// A user-authored row in `personal_formulas`. Unlike the system kinds, the
+  /// workout phase is NOT implied by the kind — it lives on the formula's
+  /// `phase` column.
+  personalFormula('personal_formula');
 
   const TemplateKind(this.wireValue);
 

@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 
+import '../../../auth/data/user_repository.dart';
 import '../../application/formula_library_controller.dart';
+import '../../application/personal_formulas_controller.dart';
 import '../../domain/formula_phase.dart';
+import '../../domain/formula_pin.dart' show TemplateKind;
 import '../../domain/formula_view.dart';
+import '../../domain/personal_formula.dart';
 import '../widgets/pin_toggle.dart';
 
 /// Read-only detail view for a system formula (PR 1).
@@ -156,6 +161,10 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
       );
     }
 
+    final hasFormula = beforeFormula != null ||
+        duringFormula != null ||
+        afterFormula != null;
+
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -169,14 +178,111 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
         ),
         overflow: TextOverflow.ellipsis,
       ),
-      actions: pinAction == null
-          ? null
-          : [
-              Padding(
-                padding: const EdgeInsets.only(right: AppSpacing.sm),
-                child: pinAction,
-              ),
-            ],
+      actions: [
+        if (hasFormula)
+          TextButton(
+            key: const ValueKey('formula_kit.make_this_mine'),
+            onPressed: () => _makeThisMine(
+              context,
+              ref,
+              before: beforeFormula,
+              during: duringFormula,
+              after: afterFormula,
+            ),
+            child: const Text('Make this mine'),
+          ),
+        if (pinAction != null)
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: pinAction,
+          ),
+      ],
+    );
+  }
+
+  /// Fork a system formula into an editable personal formula. Seeds name,
+  /// phase, scope, totals, and the polymorphic source reference; the user then
+  /// confirms / adjusts the components in the editor.
+  Future<void> _makeThisMine(
+    BuildContext context,
+    WidgetRef ref, {
+    BeforeFormulaView? before,
+    DuringFormulaView? during,
+    AfterFormulaView? after,
+  }) async {
+    final userRepo = await ref.read(userRepositoryProvider.future);
+    final userId = (await userRepo.getCurrentUser())?.id;
+    if (userId == null) return;
+    final now = DateTime.now();
+    PersonalFormula? draft;
+
+    if (before != null) {
+      draft = PersonalFormula(
+        id: '',
+        userId: userId,
+        name: before.name,
+        provenance: FormulaProvenance.forkedFormula,
+        phase: FormulaPhase.before,
+        sourceTemplateId: before.id,
+        sourceTemplateKind: TemplateKind.preSystem,
+        subPhase: before.subPhase?.storageValue,
+        digestSpeed: before.digestionSpeed.toLowerCase().isEmpty
+            ? null
+            : before.digestionSpeed.toLowerCase(),
+        totalCarbsG: before.totalCarbsG.round(),
+        totalProteinG: before.totalProteinG.round(),
+        totalFatG: before.totalFatG.round(),
+        totalSodiumMg: before.totalSodiumMg.round(),
+        totalFluidsMl: before.totalFluidMl.round(),
+        totalCalories: before.totalCalories,
+        createdAt: now,
+        updatedAt: now,
+      );
+    } else if (during != null) {
+      draft = PersonalFormula(
+        id: '',
+        userId: userId,
+        name: during.name,
+        provenance: FormulaProvenance.forkedFormula,
+        phase: FormulaPhase.during,
+        sourceTemplateId: during.id,
+        sourceTemplateKind: TemplateKind.duringSystem,
+        activities: during.activityTypes,
+        durations: during.durationBrackets,
+        createdAt: now,
+        updatedAt: now,
+      );
+    } else if (after != null) {
+      draft = PersonalFormula(
+        id: '',
+        userId: userId,
+        name: after.name,
+        provenance: FormulaProvenance.forkedFormula,
+        phase: FormulaPhase.after,
+        sourceTemplateId: after.id,
+        sourceTemplateKind: TemplateKind.postSystem,
+        activities: after.activityTypes,
+        travelFriendliness: after.travelFriendliness,
+        totalCarbsG: after.totalCarbsG.round(),
+        totalProteinG: after.totalProteinG.round(),
+        totalFatG: after.totalFatG.round(),
+        totalSodiumMg: after.totalSodiumMg.round(),
+        totalFluidsMl: after.totalFluidMl.round(),
+        totalCalories: after.totalCalories,
+        createdAt: now,
+        updatedAt: now,
+      );
+    }
+
+    if (draft == null) return;
+
+    final saved = await ref
+        .read(personalFormulasControllerProvider.notifier)
+        .createFormula(draft);
+    if (saved == null || !context.mounted) return;
+    MealvanaSnackbar.showSuccess(context, 'Added to Your Formulas');
+    context.push(
+      '/settings/food-preferences/formula-library/personal/${saved.id}/edit',
     );
   }
 }

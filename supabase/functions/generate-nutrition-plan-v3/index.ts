@@ -204,6 +204,7 @@ serve(async (req) => {
             generateBeforePhaseV3(supabase, {
               ...input,
               pinned_food_template_ids: userPins.beforePinIds,
+              personal_formula_pins: userPins.personalFormulas,
             }),
         ),
 
@@ -235,6 +236,7 @@ serve(async (req) => {
                 // include After in PR 3 substep 7.
                 userPins.beforePinIds.size + userPins.duringPinIds.size +
                       userPins.afterPinIds.size > 0,
+                userPins.personalFormulas,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
@@ -260,6 +262,7 @@ serve(async (req) => {
                 // other scopes. Formula Kit PR 3 substep 7.
                 userPins.beforePinIds.size + userPins.duringPinIds.size +
                       userPins.afterPinIds.size > 0,
+                userPins.personalFormulas,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),

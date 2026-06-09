@@ -965,13 +965,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       unchangedCount: result.skipped,
     );
 
-    if (result.success && result.hasChanges) {
-      MealvanaSnackbar.showSuccess(context, message);
-    } else if (!result.success || state?.errorMessage != null) {
+    if (!result.success) {
       MealvanaSnackbar.showError(
         context,
         'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
       );
+    } else if (state?.errorMessage != null) {
+      // Synced into the app, but the upload to Supabase didn't finish. Surface
+      // it (instead of a false "success") so the user knows the workouts aren't
+      // backed up yet; the controller retries automatically.
+      MealvanaSnackbar.showWarning(context, state!.errorMessage!);
+    } else if (result.hasChanges) {
+      MealvanaSnackbar.showSuccess(context, message);
     } else {
       MealvanaSnackbar.showInfo(context, message);
     }
@@ -1008,13 +1013,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       unchangedCount: result.skipped,
     );
 
-    if (result.success && result.hasChanges) {
-      MealvanaSnackbar.showSuccess(context, message);
-    } else if (!result.success || state?.errorMessage != null) {
+    if (!result.success) {
       MealvanaSnackbar.showError(
         context,
         'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
       );
+    } else if (state?.errorMessage != null) {
+      // Synced into the app, but the upload to Supabase didn't finish. Surface
+      // it (instead of a false "success") so the user knows the workouts aren't
+      // backed up yet; the controller retries automatically.
+      MealvanaSnackbar.showWarning(context, state!.errorMessage!);
+    } else if (result.hasChanges) {
+      MealvanaSnackbar.showSuccess(context, message);
     } else {
       MealvanaSnackbar.showInfo(context, message);
     }

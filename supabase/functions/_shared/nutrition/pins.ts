@@ -32,12 +32,38 @@
  *   device_id → user_id lookup pattern used by `fetchUserFoodsForBefore`.
  * - Soft-deleted pins (`is_deleted = true`) are excluded — the partial
  *   `formula_pins_user_kind` index targets the same predicate.
- * - `template_kind = 'personal_template'` is reserved for PR 4 and is not
- *   threaded through the algorithm yet; we ignore those rows here. v1 pin
- *   policy is system templates only.
+ * - `template_kind = 'personal_formula'` pins are fetched + resolved here (into
+ *   `personalFormulas`) and honored by the DURING and AFTER phase solvers
+ *   (see `personal-formula-pins.ts`). BEFORE-phase honoring on the edge path is
+ *   not wired yet — the macros-v4 before output is a structured TemplateSelection,
+ *   not a flat food list — so before personal-formula pins take effect via the
+ *   client fallback only for now.
  */
 
 import type { createServiceClient } from "../supabase-client.ts";
+
+/**
+ * A pinned user-authored personal formula (template_kind = 'personal_formula').
+ *
+ * Unlike the system-template pins (which are just IDs into the system template
+ * tables), a personal formula is self-contained: it carries its own phase,
+ * scope, and components. The components array snapshots each food's per-serving
+ * macros at edit time, so the solver can emit a pinned personal formula with no
+ * extra food lookups. Resolved from `personal_formulas` at fetch time.
+ */
+export interface PersonalFormulaPin {
+  id: string;
+  name: string;
+  phase: "before" | "during" | "after";
+  /** during/after activity-type scope (storage values), or null = any. */
+  activities: string[] | null;
+  /** during duration-bracket scope (storage values), or null = any. */
+  durations: string[] | null;
+  /** before sub-phase scope (full_meal | snack | top_up), or null = any. */
+  subPhase: string | null;
+  /** Opaque component objects ({ food_name, quantity, *_per_serving, ... }). */
+  components: Array<Record<string, unknown>>;
+}
 
 export interface UserPinSets {
   /** Pinned pre_workout_templates.id values (template_kind = 'pre_system'). */
@@ -48,6 +74,11 @@ export interface UserPinSets {
    * Added in Formula Kit PR 3 substep 7 — same offline-first repository write
    * path as the other two kinds, just routed to the after-phase solver. */
   afterPinIds: Set<string>;
+  /** Pinned user-authored personal formulas (template_kind = 'personal_formula'),
+   * resolved from `personal_formulas`. Phase-mixed; consumers filter by phase.
+   * Honored by the during + after solvers; before-phase honoring on the edge
+   * path is not wired yet (see header note). */
+  personalFormulas: PersonalFormulaPin[];
 }
 
 /** Return a fresh set of empty pin sets. Never share a single mutable
@@ -59,6 +90,7 @@ function emptyPins(): UserPinSets {
     beforePinIds: new Set(),
     duringPinIds: new Set(),
     afterPinIds: new Set(),
+    personalFormulas: [],
   };
 }
 
@@ -97,6 +129,7 @@ export async function fetchUserPinnedTemplateIds(
   const beforePinIds = new Set<string>();
   const duringPinIds = new Set<string>();
   const afterPinIds = new Set<string>();
+  const personalFormulaIds = new Set<string>();
 
   for (const row of pinRows ?? []) {
     const kind = (row as { template_kind?: string }).template_kind;
@@ -105,12 +138,68 @@ export async function fetchUserPinnedTemplateIds(
     if (kind === "pre_system") beforePinIds.add(id);
     else if (kind === "during_system") duringPinIds.add(id);
     else if (kind === "post_system") afterPinIds.add(id);
-    // 'personal_template' is reserved for PR 4 — ignored here on purpose.
+    else if (kind === "personal_formula") personalFormulaIds.add(id);
   }
 
-  console.log(
-    `[PINS] Loaded pins for user: before=${beforePinIds.size}, during=${duringPinIds.size}, after=${afterPinIds.size}`,
+  const personalFormulas = await resolvePersonalFormulaPins(
+    supabase,
+    personalFormulaIds,
   );
 
-  return { beforePinIds, duringPinIds, afterPinIds };
+  console.log(
+    `[PINS] Loaded pins for user: before=${beforePinIds.size}, during=${duringPinIds.size}, after=${afterPinIds.size}, personal=${personalFormulas.length}`,
+  );
+
+  return { beforePinIds, duringPinIds, afterPinIds, personalFormulas };
+}
+
+/**
+ * Resolve pinned personal-formula IDs into self-contained
+ * [PersonalFormulaPin] objects from `personal_formulas`. Soft-deleted rows are
+ * excluded. Returns [] when there are no personal-formula pins.
+ */
+async function resolvePersonalFormulaPins(
+  supabase: ReturnType<typeof createServiceClient>,
+  ids: Set<string>,
+): Promise<PersonalFormulaPin[]> {
+  if (ids.size === 0) return [];
+
+  const { data, error } = await supabase
+    .from("personal_formulas")
+    .select(
+      "id, name, phase, activities, durations, sub_phase, components, is_deleted",
+    )
+    .in("id", Array.from(ids))
+    .eq("is_deleted", false);
+
+  if (error) {
+    console.warn(
+      `[PINS] personal_formulas query failed: ${error.message} — ignoring personal pins`,
+    );
+    return [];
+  }
+
+  const toStringArray = (v: unknown): string[] | null =>
+    Array.isArray(v) ? v.map((e) => String(e)) : null;
+
+  return (data ?? [])
+    .map((row): PersonalFormulaPin | null => {
+      const r = row as Record<string, unknown>;
+      const phase = r.phase as string | undefined;
+      if (phase !== "before" && phase !== "during" && phase !== "after") {
+        return null; // forward-compat: skip unknown phases
+      }
+      return {
+        id: String(r.id),
+        name: (r.name as string | undefined) ?? "Your formula",
+        phase,
+        activities: toStringArray(r.activities),
+        durations: toStringArray(r.durations),
+        subPhase: (r.sub_phase as string | null) ?? null,
+        components: Array.isArray(r.components)
+          ? (r.components as Array<Record<string, unknown>>)
+          : [],
+      };
+    })
+    .filter((p): p is PersonalFormulaPin => p !== null);
 }

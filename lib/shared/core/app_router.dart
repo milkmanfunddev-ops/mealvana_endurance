@@ -39,7 +39,9 @@ import '../../features/settings/presentation/screens/food_settings_consolidated_
 import '../../features/settings/presentation/screens/food_preferences_hub_screen.dart';
 import '../../features/formula_kit/domain/formula_phase.dart';
 import '../../features/formula_kit/presentation/screens/formula_detail_screen.dart';
+import '../../features/formula_kit/presentation/screens/formula_editor_screen.dart';
 import '../../features/formula_kit/presentation/screens/formula_library_screen.dart';
+import '../../features/formula_kit/presentation/screens/personal_formula_detail_screen.dart';
 import '../../features/settings/presentation/screens/sport_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/personal_templates/presentation/screens/personal_templates_screen.dart';
@@ -681,6 +683,37 @@ class AppRouter {
                 phase: FormulaPhase.after,
               ),
             ),
+            // Personal formulas (create / detail / edit). `create` is
+            // registered before `:id` so the literal segment wins the match.
+            GoRoute(
+              path: 'personal/create',
+              name: 'settings-formula-personal-create',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>?;
+                final phase =
+                    (extra?['phase'] as FormulaPhase?) ?? FormulaPhase.before;
+                return FormulaEditorScreen(formulaId: null, phase: phase);
+              },
+            ),
+            GoRoute(
+              path: 'personal/:id',
+              name: 'settings-formula-personal-detail',
+              builder: (context, state) => PersonalFormulaDetailScreen(
+                id: state.pathParameters['id']!,
+              ),
+              routes: [
+                GoRoute(
+                  path: 'edit',
+                  name: 'settings-formula-personal-edit',
+                  builder: (context, state) => FormulaEditorScreen(
+                    formulaId: state.pathParameters['id'],
+                    // Phase is loaded from the existing formula in the editor
+                    // controller; this default is unused for edit.
+                    phase: FormulaPhase.before,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
 
@@ -701,7 +734,11 @@ class AppRouter {
             final activityId = extra?['activityId'] as String?;
             final isNewActivity = extra?['isNewActivity'] as bool? ?? false;
             final isCoachView = extra?['isCoachView'] as bool? ?? false;
-            if (activityId == null) {
+            // Return-selection mode (e.g. personal-formula editor) reuses this
+            // screen without an activity — it pops a SwapFoodSelection instead.
+            final returnSelection =
+                extra?['returnSelection'] as bool? ?? false;
+            if (activityId == null && !returnSelection) {
               return const Scaffold(
                 body: Center(child: Text('Missing activity')),
               );
@@ -710,9 +747,10 @@ class AppRouter {
               foodToSwapId: extra?['foodToSwapId'] as String?,
               foodToSwapName: extra?['foodToSwapName'] as String?,
               category: extra?['category'] as String? ?? 'before_run',
-              activityId: activityId,
+              activityId: activityId ?? '',
               isNewActivity: isNewActivity,
               isCoachView: isCoachView,
+              returnSelection: returnSelection,
             );
           },
         ),

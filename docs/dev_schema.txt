@@ -26,7 +26,7 @@ create type auth_provider_enum as enum ('anonymous', 'email', 'google', 'apple')
 
 alter type auth_provider_enum owner to postgres;
 
-create type category_enum as enum ('before_run', 'during_run', 'after_run', 'transition');
+create type category_enum as enum ('before_run', 'during_run', 'after_run', 'transition', 'during_bike', 'during_swim');
 
 comment on type category_enum is 'Food category phases for multi-sport workouts. Includes: before, during_run, during_bike, during_swim, after, transition (for brick T1/T2).';
 
@@ -353,79 +353,89 @@ grant delete, insert, references, select, trigger, truncate, update on public_ev
 
 create table users
 (
-    id                                uuid                     default gen_random_uuid()               not null
+    id                                      uuid                     default gen_random_uuid()               not null
         primary key,
-    device_id                         text                                                             not null,
-    created_at                        timestamp with time zone default now(),
-    updated_at                        timestamp with time zone default now(),
-    gender                            gender_enum,
-    birthday                          date,
-    height_feet                       integer,
-    height_inches                     integer,
-    weight_pounds                     numeric(5, 2),
-    runs_with_water_bottle            boolean                  default false,
-    food_preferences                  jsonb                    default '{}'::jsonb,
-    preferred_distance_unit           distance_unit_enum       default 'miles'::distance_unit_enum,
-    preferred_pace_unit               pace_unit_enum           default 'min_per_mile'::pace_unit_enum,
-    gut_training_level                gut_training_enum        default 'moderate'::gut_training_enum,
-    onboarding_completed              boolean                  default false,
-    last_active_at                    timestamp with time zone default now(),
-    app_version                       text,
-    notifications_enabled             boolean                  default false,
-    default_reminder_day              integer                  default 4,
-    default_reminder_hour             integer                  default 17,
-    default_reminder_minute           integer                  default 0,
-    default_reminder_recurring        boolean                  default false,
-    cycling_ftp_watts                 integer,
-    prefers_cycling_power             boolean                  default false,
-    swimming_css_seconds_per_100m     integer,
-    prefers_swimming_pace             boolean                  default false,
-    auth_user_id                      uuid,
-    auth_provider                     auth_provider_enum       default 'anonymous'::auth_provider_enum not null,
-    is_anonymous                      boolean                  default true                            not null,
-    auth_skipped_at                   timestamp with time zone,
-    typical_bike_bottles              integer
+    device_id                               text                                                             not null,
+    created_at                              timestamp with time zone default now(),
+    updated_at                              timestamp with time zone default now(),
+    gender                                  gender_enum,
+    birthday                                date,
+    height_feet                             integer,
+    height_inches                           integer,
+    weight_pounds                           numeric(5, 2),
+    runs_with_water_bottle                  boolean                  default false,
+    food_preferences                        jsonb                    default '{}'::jsonb,
+    preferred_distance_unit                 distance_unit_enum       default 'miles'::distance_unit_enum,
+    preferred_pace_unit                     pace_unit_enum           default 'min_per_mile'::pace_unit_enum,
+    gut_training_level                      gut_training_enum        default 'moderate'::gut_training_enum,
+    onboarding_completed                    boolean                  default false,
+    last_active_at                          timestamp with time zone default now(),
+    app_version                             text,
+    notifications_enabled                   boolean                  default false,
+    default_reminder_day                    integer                  default 4,
+    default_reminder_hour                   integer                  default 17,
+    default_reminder_minute                 integer                  default 0,
+    default_reminder_recurring              boolean                  default false,
+    cycling_ftp_watts                       integer,
+    prefers_cycling_power                   boolean                  default false,
+    swimming_css_seconds_per_100m           integer,
+    prefers_swimming_pace                   boolean                  default false,
+    auth_user_id                            uuid,
+    auth_provider                           auth_provider_enum       default 'anonymous'::auth_provider_enum not null,
+    is_anonymous                            boolean                  default true                            not null,
+    auth_skipped_at                         timestamp with time zone,
+    typical_bike_bottles                    integer
         constraint check_bike_bottles
             check ((typical_bike_bottles IS NULL) OR ((typical_bike_bottles >= 0) AND (typical_bike_bottles <= 6))),
-    has_aero_bottle                   boolean,
-    has_bento_box                     boolean,
-    typical_wetsuit                   boolean,
-    typical_swim_cap_type             text
+    has_aero_bottle                         boolean,
+    has_bento_box                           boolean,
+    typical_wetsuit                         boolean,
+    typical_swim_cap_type                   text
         constraint check_swim_cap_type
             check ((typical_swim_cap_type IS NULL) OR (typical_swim_cap_type = ANY
                                                        (ARRAY ['none'::text, 'latex'::text, 'silicone'::text, 'neoprene'::text]))),
-    gi_sensitivity                    boolean,
-    dietary_preference                dietary_preference_enum,
-    allergies                         allergy_enum[]           default '{}'::allergy_enum[],
-    sweat_rate                        text                     default 'medium'::text                  not null
+    gi_sensitivity                          boolean,
+    dietary_preference                      dietary_preference_enum,
+    allergies                               allergy_enum[]           default '{}'::allergy_enum[],
+    sweat_rate                              text                     default 'medium'::text                  not null
         constraint check_sweat_rate
             check (sweat_rate = ANY (ARRAY ['light'::text, 'medium'::text, 'heavy'::text])),
-    calendar_week_start               text                     default 'monday'::text                  not null
+    calendar_week_start                     text                     default 'monday'::text                  not null
         constraint check_calendar_week_start
             check (calendar_week_start = ANY (ARRAY ['sunday'::text, 'monday'::text])),
-    default_activity_time             text                     default '07:00:00'::text                not null,
-    default_activity_day              text                     default 'saturday'::text                not null
+    default_activity_time                   text                     default '07:00:00'::text                not null,
+    default_activity_day                    text                     default 'saturday'::text                not null
         constraint check_default_activity_day
             check (default_activity_day = ANY
                    (ARRAY ['monday'::text, 'tuesday'::text, 'wednesday'::text, 'thursday'::text, 'friday'::text, 'saturday'::text, 'sunday'::text])),
-    auto_generate_nutrition           boolean                  default true                            not null,
-    completion_reminders              boolean                  default true                            not null,
-    sender_name                       text,
-    first_name                        text,
-    last_name                         text,
-    unit_system                       text                     default 'imperial'::text,
-    default_running_pace_min_per_mile real,
-    default_cycling_speed_mph         real,
-    default_swimming_pace_per_100_sec integer,
-    nutrition_target_overrides        jsonb,
-    email                             text,
-    body_fat_pct                      real,
-    lifestyle                         text                     default 'mixed'::text,
-    typical_weekly_hours              real,
-    carb_cycle_opt_in                 boolean                  default false                           not null,
-    training_phase                    text                     default 'base'::text,
-    weight_pounds_updated_at          timestamp with time zone,
-    body_fat_pct_updated_at           timestamp with time zone
+    auto_generate_nutrition                 boolean                  default true                            not null,
+    completion_reminders                    boolean                  default true                            not null,
+    sender_name                             text,
+    first_name                              text,
+    last_name                               text,
+    unit_system                             text                     default 'imperial'::text,
+    default_running_pace_min_per_mile       real,
+    default_cycling_speed_mph               real,
+    default_swimming_pace_per_100_sec       integer,
+    nutrition_target_overrides              jsonb,
+    email                                   text,
+    body_fat_pct                            real,
+    lifestyle                               text                     default 'mixed'::text,
+    typical_weekly_hours                    real,
+    carb_cycle_opt_in                       boolean                  default false                           not null,
+    training_phase                          text                     default 'base'::text,
+    weight_pounds_updated_at                timestamp with time zone,
+    body_fat_pct_updated_at                 timestamp with time zone,
+    sweat_sodium                            text
+        constraint users_sweat_sodium_check
+            check (sweat_sodium = ANY (ARRAY ['low'::text, 'average'::text, 'high'::text, 'medium'::text])),
+    known_sweat_rate_ml_per_hour            integer,
+    known_sodium_concentration_mg_per_liter integer,
+    sweat_test_date                         timestamp with time zone,
+    sweat_test_source                       text
+        constraint users_sweat_test_source_check
+            check (sweat_test_source = ANY
+                   (ARRAY ['self_calculated'::text, 'commercial_test'::text, 'gatorade_gx'::text, 'estimated'::text, 'other'::text]))
 );
 
 comment on column users.cycling_ftp_watts is 'User default FTP (Functional Threshold Power) in watts';
@@ -568,7 +578,9 @@ create table activities
     tss                            real,
     garmin_summary_id              text,
     garmin_last_synced_at          timestamp with time zone,
-    garmin_device_name             text
+    garmin_device_name             text,
+    needs_upload                   boolean              default false,
+    local_updated_at               timestamp            default CURRENT_TIMESTAMP
 );
 
 comment on table activities is 'User activities including single-sport (run/bike/swim) and multi-sport (brick/triathlon/duathlon). Brick activities store segment details in brick_metadata and link to archived originals via brick_id.';
@@ -625,6 +637,10 @@ comment on column activities.schedule_changed_at is 'Timestamp when schedule cha
 
 comment on column activities.fuel_log_data is 'Actual consumption data logged on activity completion. JSON with items array containing planned vs actual quantities per food.';
 
+comment on column activities.needs_upload is 'Flag indicating record needs upload to Supabase (offline-first sync)';
+
+comment on column activities.local_updated_at is 'Timestamp of last local modification (for conflict resolution)';
+
 alter table activities
     owner to postgres;
 
@@ -668,6 +684,10 @@ create unique index uq_activities_provider_workout
 
 create unique index activities_user_garmin_summary_id_key
     on activities (user_id, garmin_summary_id);
+
+create index idx_activities_needs_upload
+    on activities (needs_upload, user_id)
+    where (needs_upload = true);
 
 grant delete, insert, references, select, trigger, truncate, update on activities to anon;
 
