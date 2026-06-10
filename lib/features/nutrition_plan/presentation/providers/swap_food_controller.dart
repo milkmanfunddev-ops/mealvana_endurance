@@ -43,6 +43,29 @@ class SwapFoodParams {
   final bool isCoachView;
 }
 
+/// Result returned by [SwapFoodScreen] when launched in `returnSelection`
+/// mode (e.g. from the personal-formula editor). Instead of mutating an
+/// activity's nutrition plan, the screen pops with the user's selected food +
+/// quantity so the caller can use it however it wants.
+class SwapFoodSelection {
+  const SwapFoodSelection({
+    required this.food,
+    required this.quantity,
+    required this.isUserFood,
+    this.replacedFoodId,
+  });
+
+  final Food food;
+  final double quantity;
+
+  /// Whether [food] came from the user's own library (`user_foods`) vs the
+  /// system catalog (`template_foods`).
+  final bool isUserFood;
+
+  /// When swapping, the id of the component food being replaced (else null).
+  final String? replacedFoodId;
+}
+
 /// State for the swap food screen.
 ///
 /// Search state (query, catalog results, OFF results) is now managed by the

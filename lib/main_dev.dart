@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'shared/services/app_config.dart';
 import 'shared/services/app_external_deps.dart';
+import 'shared/services/sentry/sentry_provider_observer.dart';
 import 'shared/widgets/root_app_widget.dart';
 
 /// Global navigator key for Sentry feedback widget screenshot capture
@@ -43,6 +44,11 @@ Future<void> main() async {
           options.tracesSampleRate = 1.0; // 100% in development
           options.profilesSampleRate = 0.0; // Disable profiling in debug mode due to crash
           options.debug = true;
+          // Suppress Sentry's warning-level diagnostic chatter (notably the
+          // per-query "[sentry_drift] Active Sentry transaction does not exist"
+          // spam, emitted for every Drift op that runs outside a transaction).
+          // Real errors (error/fatal) still print.
+          options.diagnosticLevel = SentryLevel.error;
         } else {
           options.tracesSampleRate = 0.1; // 10% in production
           options.profilesSampleRate = config.enableSentryProfiling ? 0.1 : 0.0;
@@ -110,10 +116,11 @@ Future<void> main() async {
 
 /// App runner function called after Sentry initialization
 Future<void> _runMealvanaApp(AppConfig config) async {
-  // Initialize Supabase (non-recoverable initialization) using config
+  // Initialize Supabase with SentryHttpClient to instrument network calls.
   await Supabase.initialize(
     url: config.supabaseUrl,
     anonKey: config.supabaseAnonKey,
+    httpClient: SentryHttpClient(),
   );
 
   // Initialize SharedPreferences (non-recoverable, required for app startup)
@@ -127,6 +134,7 @@ Future<void> _runMealvanaApp(AppConfig config) async {
   runApp(
     SentryWidget(
       child: ProviderScope(
+        observers: const [SentryProviderObserver()],
         overrides: [
           // Override appConfigProvider with loaded config
           appConfigProvider.overrideWithValue(config),

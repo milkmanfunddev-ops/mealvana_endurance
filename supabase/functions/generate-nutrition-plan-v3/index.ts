@@ -31,6 +31,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
+import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { handleCors } from "../_shared/cors.ts";
 import {
   errorResponse,
@@ -86,7 +87,11 @@ async function timeAsync<T>(
 // Main Handler
 // ============================================================================
 
-serve(async (req) => {
+// Initialise Sentry once per cold-start. initSentry() is a no-op when
+// SENTRY_DSN is not configured so this never crashes the function.
+initSentry();
+
+serve(withSentry(async (req) => {
   const requestStart = performance.now();
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -119,6 +124,35 @@ serve(async (req) => {
     console.log(
       `[PLAN-V3] Full input: pre_run={carbs_g: ${input.macro_targets?.pre_run?.carbs_g}, protein_g: ${input.macro_targets?.pre_run?.protein_g}, water_ml: ${input.macro_targets?.pre_run?.water_ml}, sodium_mg: ${input.macro_targets?.pre_run?.sodium_mg}}, during_run={carbs_g: ${input.macro_targets?.during_run?.carbs_g}, sodium_mg: ${input.macro_targets?.during_run?.sodium_mg}, water_ml: ${input.macro_targets?.during_run?.water_ml}}, post_run={carbs_g: ${input.macro_targets?.post_run?.carbs_g}, protein_g: ${input.macro_targets?.post_run?.protein_g}, sodium_mg: ${input.macro_targets?.post_run?.sodium_mg}, water_ml: ${input.macro_targets?.post_run?.water_ml}}, duration_minutes=${input.duration_minutes}, gut_training_level=${input.gut_training_level}, dietary_preference=${input.dietary_preference}`,
     );
+    // DIAGNOSTIC: log the full preference payload the client sent. Empty plans
+    // have been traced to a bogus disliked_foods list (foods the user actually
+    // likes arriving as disliked) that collapses the candidate pool. This makes
+    // the exact payload visible so we can confirm the client-side source.
+    const likedIn = input.liked_foods ?? [];
+    const willingIn = input.willing_to_try_foods ?? [];
+    const dislikedIn = input.disliked_foods ?? [];
+    console.log(
+      `[PLAN-V3-PREFS] liked(${likedIn.length})=[${likedIn.join(", ")}] | ` +
+        `willing(${willingIn.length})=[${willingIn.join(", ")}] | ` +
+        `disliked(${dislikedIn.length})=[${dislikedIn.join(", ")}]`,
+    );
+    // Guardrail: a disliked list that overlaps the user's own liked/willing
+    // foods is self-contradictory and a strong signal of a stale/incorrect
+    // client preference cache. Surface it loudly rather than silently shipping
+    // an under-fuelled plan.
+    const likedWillingSet = new Set(
+      [...likedIn, ...willingIn].map((f) => String(f).toLowerCase()),
+    );
+    const contradictory = dislikedIn
+      .map((f) => String(f).toLowerCase())
+      .filter((f) => likedWillingSet.has(f));
+    if (contradictory.length > 0) {
+      console.warn(
+        `[PLAN-V3-PREFS] WARNING: ${contradictory.length} food(s) are marked BOTH disliked and liked/willing — likely a stale client preference cache: [${
+          contradictory.join(", ")
+        }]`,
+      );
+    }
 
     // Adjust band bounds for user-overridden macros so solvers can reach the target
     if (input.macro_targets.pre_run) {
@@ -175,6 +209,7 @@ serve(async (req) => {
             generateBeforePhaseV3(supabase, {
               ...input,
               pinned_food_template_ids: userPins.beforePinIds,
+              personal_formula_pins: userPins.personalFormulas,
             }),
         ),
 
@@ -206,6 +241,7 @@ serve(async (req) => {
                 // include After in PR 3 substep 7.
                 userPins.beforePinIds.size + userPins.duringPinIds.size +
                       userPins.afterPinIds.size > 0,
+                userPins.personalFormulas,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
@@ -231,6 +267,7 @@ serve(async (req) => {
                 // other scopes. Formula Kit PR 3 substep 7.
                 userPins.beforePinIds.size + userPins.duringPinIds.size +
                       userPins.afterPinIds.size > 0,
+                userPins.personalFormulas,
               ),
           )
           : Promise.resolve({ foods: [] } as LPPhaseResult),
@@ -394,4 +431,4 @@ serve(async (req) => {
     );
     return serverError(error, true);
   }
-});
+}));

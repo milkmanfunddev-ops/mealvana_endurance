@@ -117,6 +117,12 @@ class ActivitiesRepository with SyncableRepository {
         stackTrace: stackTrace,
         data: {'userId': userId},
       );
+      await _sentry.reportNetworkError(
+        e,
+        url: 'supabase/activities',
+        method: 'SELECT',
+        stackTrace: stackTrace,
+      );
       return SyncResult.failed(e.toString());
     }
   }
@@ -355,6 +361,12 @@ class ActivitiesRepository with SyncableRepository {
         error: e,
         stackTrace: stackTrace,
         data: {'userId': userId},
+      );
+      await _sentry.reportNetworkError(
+        e,
+        url: 'supabase/activities',
+        method: 'UPSERT',
+        stackTrace: stackTrace,
       );
       return UploadResult.failed(e.toString());
     }

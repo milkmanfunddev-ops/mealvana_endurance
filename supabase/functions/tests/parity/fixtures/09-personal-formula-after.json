@@ -1,0 +1,73 @@
+{
+  "description": "NEW in-flight behavior: athlete with a pinned personal formula for the 'after' phase, scoped to running. Tests personal formula bypasses post-workout template solver.",
+  "athlete": {
+    "weight_kg": 68,
+    "sex": "female"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 90,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 50,
+      "sodium_mg": 700,
+      "water_ml": 800
+    },
+    "post_run": {
+      "carbs_g": 55,
+      "protein_g": 20,
+      "sodium_mg": 650,
+      "water_ml": 600
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": {
+    "afterPinIds": [],
+    "personalFormulas": [
+      {
+        "id": "pf-after-001",
+        "name": "My Recovery Shake",
+        "phase": "after",
+        "activities": ["running"],
+        "durations": null,
+        "subPhase": null,
+        "components": [
+          {
+            "food_id": "protein-shake",
+            "food_name": "Protein Shake",
+            "quantity": 1,
+            "serving_unit": "scoop",
+            "source": "template",
+            "carbs_per_serving": 5,
+            "protein_per_serving": 25,
+            "fat_per_serving": 2,
+            "sodium_mg": 200,
+            "fluid_ml_per_serving": 350,
+            "calories_per_serving": 150
+          },
+          {
+            "food_id": "banana",
+            "food_name": "Banana",
+            "quantity": 2,
+            "serving_unit": "medium",
+            "source": "template",
+            "carbs_per_serving": 27,
+            "protein_per_serving": 1,
+            "fat_per_serving": 0,
+            "sodium_mg": 1,
+            "fluid_ml_per_serving": 30,
+            "calories_per_serving": 105
+          }
+        ]
+      }
+    ]
+  }
+}

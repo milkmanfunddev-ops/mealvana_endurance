@@ -34,6 +34,12 @@ class SwapFoodScreen extends ConsumerStatefulWidget {
   final bool isNewActivity;
   final bool isCoachView;
 
+  /// When true, the screen does NOT write to an activity's nutrition plan on
+  /// confirm. Instead it pops with a [SwapFoodSelection] (food + quantity) for
+  /// the caller to consume — used by the personal-formula editor to reuse this
+  /// full search/scan/import experience. [activityId] is unused in this mode.
+  final bool returnSelection;
+
   const SwapFoodScreen({
     super.key,
     this.foodToSwapId,
@@ -42,6 +48,7 @@ class SwapFoodScreen extends ConsumerStatefulWidget {
     required this.activityId,
     this.isNewActivity = false,
     this.isCoachView = false,
+    this.returnSelection = false,
   });
 
   @override
@@ -296,6 +303,20 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     if (state?.selectedFood == null) return;
 
     final food = state!.selectedFood!;
+
+    // Return-selection mode (e.g. personal-formula editor): pop with the
+    // chosen food + quantity instead of mutating an activity's plan.
+    if (widget.returnSelection) {
+      Navigator.of(context).pop(
+        SwapFoodSelection(
+          food: food,
+          quantity: _selectedQuantity,
+          isUserFood: state.userFoodIds.contains(food.id),
+          replacedFoodId: _isSwapping ? widget.foodToSwapId : null,
+        ),
+      );
+      return;
+    }
 
     // IMPORTANT: Capture references BEFORE async operation to avoid context issues
     // Capture the navigator with rootNavigator to ensure we pop from correct level

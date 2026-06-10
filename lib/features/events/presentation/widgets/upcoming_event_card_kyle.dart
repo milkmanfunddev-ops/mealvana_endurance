@@ -171,6 +171,7 @@ class UpcomingEventCardKyle extends ConsumerWidget {
               Container(
                 width: 36,
                 height: 36,
+                alignment: Alignment.center,
                 decoration: const BoxDecoration(
                   color: AppColors.electrolyte,
                   shape: BoxShape.circle,

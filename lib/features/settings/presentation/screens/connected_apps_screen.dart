@@ -947,8 +947,44 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectVdot();
 
-    if (success && context.mounted) {
-      MealvanaSnackbar.showSuccess(context, 'V.O2 connected!');
+    if (!success || !context.mounted) return;
+
+    MealvanaSnackbar.showSuccess(
+      context,
+      'V.O2 connected! Importing workouts...',
+    );
+
+    final result = await controller.importVdotWorkouts();
+    if (!context.mounted) return;
+
+    final state = ref.read(connectTrainingControllerProvider).value;
+    final message = buildWorkoutSyncMessage(
+      newCount: result.newWorkouts,
+      updatedCount: result.updated,
+      deletedCount: result.deleted,
+      unchangedCount: result.skipped,
+    );
+
+    if (!result.success) {
+      MealvanaSnackbar.showError(
+        context,
+        'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
+      );
+    } else if (state?.errorMessage != null) {
+      // Synced into the app, but the upload to Supabase didn't finish. Surface
+      // it (instead of a false "success") so the user knows the workouts aren't
+      // backed up yet; the controller retries automatically.
+      MealvanaSnackbar.showWarning(context, state!.errorMessage!);
+    } else if (result.hasChanges) {
+      MealvanaSnackbar.showSuccess(context, message);
+    } else {
+      MealvanaSnackbar.showInfo(context, message);
+    }
+
+    if (mounted && result.success && state?.errorMessage == null) {
+      setState(() {
+        _vdotSynced = true;
+      });
     }
   }
 
@@ -977,13 +1013,18 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       unchangedCount: result.skipped,
     );
 
-    if (result.success && result.hasChanges) {
-      MealvanaSnackbar.showSuccess(context, message);
-    } else if (!result.success || state?.errorMessage != null) {
+    if (!result.success) {
       MealvanaSnackbar.showError(
         context,
         'Sync failed: ${state?.errorMessage ?? result.error ?? 'Unknown error'}',
       );
+    } else if (state?.errorMessage != null) {
+      // Synced into the app, but the upload to Supabase didn't finish. Surface
+      // it (instead of a false "success") so the user knows the workouts aren't
+      // backed up yet; the controller retries automatically.
+      MealvanaSnackbar.showWarning(context, state!.errorMessage!);
+    } else if (result.hasChanges) {
+      MealvanaSnackbar.showSuccess(context, message);
     } else {
       MealvanaSnackbar.showInfo(context, message);
     }

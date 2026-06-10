@@ -101,6 +101,7 @@ class FormulaPinController extends _$FormulaPinController {
     String? subPhase,
     List<String>? activities,
     List<String>? durationBrackets,
+    FormulaPhase? phaseOverride,
   }) async {
     final current = state.value;
     if (current == null) return;
@@ -159,7 +160,7 @@ class FormulaPinController extends _$FormulaPinController {
     final payload = <String, dynamic>{
       'template_id': templateId,
       'template_kind': kind.wireValue,
-      'phase': _phaseForKind(kind).analyticsValue,
+      'phase': (phaseOverride ?? _phaseForKind(kind)).analyticsValue,
       'source': source,
     };
     if (subPhase != null) payload['sub_phase'] = subPhase;
@@ -216,11 +217,30 @@ class FormulaPinController extends _$FormulaPinController {
     );
   }
 
+  /// Convenience for a personal-formula card / detail. Unlike the system
+  /// kinds, the phase is carried by the formula (not the kind), so it's passed
+  /// explicitly for the analytics payload.
+  Future<void> togglePersonalFormula({
+    required String formulaId,
+    required FormulaPhase phase,
+    required String source,
+  }) async {
+    await togglePin(
+      templateId: formulaId,
+      kind: TemplateKind.personalFormula,
+      source: source,
+      phaseOverride: phase,
+    );
+  }
+
   FormulaPhase _phaseForKind(TemplateKind kind) {
     return switch (kind) {
       TemplateKind.preSystem => FormulaPhase.before,
       TemplateKind.duringSystem => FormulaPhase.during,
       TemplateKind.postSystem => FormulaPhase.after,
+      // Personal formulas carry their own phase; callers pass phaseOverride.
+      // This fallback is only hit if togglePin is called without an override.
+      TemplateKind.personalFormula => FormulaPhase.before,
     };
   }
 

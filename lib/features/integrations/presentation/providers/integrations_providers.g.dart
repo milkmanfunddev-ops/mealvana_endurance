@@ -1308,7 +1308,7 @@ final class VdotApiClientProvider
   }
 }
 
-String _$vdotApiClientHash() => r'e2d9cdd5402c6543ba6d640c4b9e1de8df4f41db';
+String _$vdotApiClientHash() => r'0f20c651c33bcaafa1a2598fa5ed8fabe6f9d3b6';
 
 /// Provider for the V.O2 OAuth service.
 

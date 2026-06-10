@@ -1,0 +1,33 @@
+{
+  "description": "Ultra-distance athlete (75kg) — 5-hour run, high sweat rate, high sodium loss. Tests fluid/electrolyte stress case at upper duration bracket.",
+  "athlete": {
+    "weight_kg": 75,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 300,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 120,
+      "sodium_mg": 2000,
+      "water_ml": 2500
+    },
+    "post_run": {
+      "carbs_g": 100,
+      "protein_g": 45,
+      "sodium_mg": 1500,
+      "water_ml": 2000
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

@@ -120,6 +120,7 @@ class EventListCard extends StatelessWidget {
             Container(
               width: 56,
               height: 56,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: AppColors.electrolyte.withValues(
                   alpha: isPast ? 0.2 : 0.3,

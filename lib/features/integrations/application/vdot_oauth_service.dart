@@ -107,9 +107,13 @@ class VdotOAuthService {
       redirectUri: _redirectUri,
     );
 
-    // VDOT's token response doesn't include athlete identity. Use the
-    // user's app user_id as the provider_athlete_id placeholder until the
-    // API exposes a profile endpoint we can query.
+    // VDOT's token response and API don't expose a human athlete name — the
+    // access-token JWT only carries a numeric VDOT user id, and there's no
+    // profile endpoint. So mirror the Garmin integration (which also lacks a
+    // real name) and store a static 'V.O2' label rather than leaving the
+    // connected-app card's subtitle blank/null. (Safe re: onboarding name
+    // prefill — that only reads Training Peaks / Final Surge integrations.)
+    // The user's app user_id stands in as the provider_athlete_id placeholder.
     final integration = IntegrationModel(
       userId: userId,
       provider: 'vdot',
@@ -117,6 +121,7 @@ class VdotOAuthService {
       refreshToken: tokenResponse.refreshToken,
       tokenExpiresAt: tokenResponse.expiresAt,
       providerAthleteId: userId,
+      providerAthleteName: 'V.O2',
       isActive: true,
       lastSyncStatus: 'pending',
       createdAt: DateTime.now(),

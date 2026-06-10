@@ -100,10 +100,14 @@ run_test \
   "$SHARED_DIR/during-template-solver.test.ts" \
   --allow-write
 
+# 1g (During Template Migration Catalog) removed 2026-06-09: it asserted the
+# contents of supabase/migrations/20260406320000_during_workout_templates_complete.sql,
+# which was deleted in the Formula Kit DB cleanup (b2f86b4). Catalog now lives in the DB.
+
 run_test \
-  "1g. During Template Migration Catalog (static tests)" \
-  "$SHARED_DIR/during-template-migration.test.ts" \
-  --allow-read
+  "1g. Corpus-Driven Parity Harness (scenario × plan-solver)" \
+  "$SCRIPT_DIR/tests/parity/parity.test.ts" \
+  --allow-read --allow-write
 
 # ─── Section 2: E2E Tests (optional) ───────────────────────────────────────
 

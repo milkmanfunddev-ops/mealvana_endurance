@@ -84,6 +84,7 @@ class FoodSearchBar extends StatelessWidget {
                       child: Container(
                         width: 36,
                         height: 36,
+                        alignment: Alignment.center,
                         decoration: const BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,

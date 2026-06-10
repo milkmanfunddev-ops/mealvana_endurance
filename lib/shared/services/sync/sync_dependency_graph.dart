@@ -27,6 +27,7 @@ class SyncDependencyGraph {
     'pre_workout_templates': ['template_foods'],
     'personal_templates': ['users'],
     'formula_pins': ['users'],
+    'personal_formulas': ['users'],
   };
 
   static List<String> dependenciesFor(String repositoryKey) {

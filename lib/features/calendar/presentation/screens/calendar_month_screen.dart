@@ -541,6 +541,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
                 child: Container(
                   width: 40,
                   height: 40,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: AppColors.orange,
@@ -563,6 +564,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
                 child: Container(
                   width: 40,
                   height: 40,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: AppColors.dragonfruit,
@@ -592,6 +594,7 @@ class _CalendarMonthScreenState extends ConsumerState<CalendarMonthScreen> {
           Container(
             width: 36,
             height: 36,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: AppColors.electrolyte.withOpacity(0.2),
               shape: BoxShape.circle,

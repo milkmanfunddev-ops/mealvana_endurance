@@ -57,6 +57,15 @@ definitions:
         flutter test --machine > test-results/unit-tests.json
       test_report: test-results/unit-tests.json
 
+    - &run_algorithm_tests
+      name: Run nutrition algorithm tests (Deno)
+      script: |
+        if ! command -v deno &> /dev/null; then
+          curl -fsSL https://deno.land/install.sh | sh -s -- --yes
+          export PATH="$HOME/.deno/bin:$PATH"
+        fi
+        bash supabase/functions/run-algorithm-tests.sh
+
     - &run_flutter_analyze
       name: Analyze code
       script: flutter analyze
@@ -1050,6 +1059,7 @@ workflows:
       - *run_flutter_analyze
       - *check_formatting
       - *run_unit_tests
+      - *run_algorithm_tests
 
     artifacts:
       - test-results/**

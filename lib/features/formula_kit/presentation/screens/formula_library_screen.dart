@@ -8,17 +8,20 @@ import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 
 import '../../application/formula_library_controller.dart';
 import '../../application/formula_pin_controller.dart';
+import '../../application/personal_formulas_controller.dart';
 import '../../domain/after_filter_options.dart';
 import '../../domain/before_sub_phase.dart';
 import '../../domain/during_filter_options.dart';
 import '../../domain/formula_phase.dart';
 import '../../domain/formula_view.dart';
+import '../../domain/personal_formula.dart';
 import '../widgets/after_formula_card.dart';
 import '../widgets/before_formula_card.dart';
 import '../widgets/collapsible_header.dart';
 import '../widgets/during_formula_card.dart';
 import '../widgets/filter_chip_row.dart';
 import '../widgets/more_filters_sheet.dart';
+import '../widgets/personal_formula_card.dart';
 import '../widgets/phase_tab_bar.dart';
 
 /// Browse screen for the Formula Library (PR 1 of Formula Kit).
@@ -308,7 +311,190 @@ class _BodyState extends ConsumerState<_Body> {
   }
 }
 
-class _BeforeList extends StatelessWidget {
+/// Leading "Your Formulas" section shared by every phase list — a header with
+/// a "+ New" entry point and the user's personal formulas for [phase], above
+/// the read-only system "Library" section.
+List<Widget> _yourFormulasSection(
+  BuildContext context,
+  WidgetRef ref,
+  FormulaPhase phase,
+) {
+  final scheme = Theme.of(context).colorScheme;
+
+  // Apply the same active chip / pinned-only filters the system lists use, so
+  // "Your Formulas" filters in step with the rest of the screen.
+  final filter = ref.watch(formulaLibraryControllerProvider).value?.filter;
+  final pinIds = ref.watch(formulaPinControllerProvider).maybeWhen(
+        data: (s) => s.pinnedTemplateIds,
+        orElse: () => const <String>{},
+      );
+
+  bool matchesFilter(PersonalFormula f) {
+    if (filter == null) return true;
+    if (filter.pinnedOnly && !pinIds.contains(f.id)) return false;
+    switch (phase) {
+      case FormulaPhase.before:
+        final sp = filter.beforeSubPhase;
+        if (sp != null && f.subPhase != sp.storageValue) return false;
+        final ds = filter.beforeDigestionSpeed;
+        if (ds != null && f.digestSpeed != ds.storageValue) return false;
+      case FormulaPhase.during:
+        final a = filter.duringActivity;
+        if (a != null && !(f.activities?.contains(a.storageValue) ?? false)) {
+          return false;
+        }
+        final d = filter.duringDuration;
+        if (d != null && !(f.durations?.contains(d.storageValue) ?? false)) {
+          return false;
+        }
+        final g = filter.duringGutLevel;
+        if (g != null && f.gutTraining != g.storageValue) return false;
+      case FormulaPhase.after:
+        final t = filter.afterTravelFriendliness;
+        if (t != null && f.travelFriendliness != t.storageValue) return false;
+    }
+    return true;
+  }
+
+  final personal = ref.watch(personalFormulasControllerProvider).maybeWhen(
+        data: (all) => all
+            .where((f) => f.phase == phase)
+            .where(matchesFilter)
+            .toList(growable: false),
+        orElse: () => const <PersonalFormula>[],
+      );
+
+  return [
+    Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Your Formulas',
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: scheme.onSurface,
+            ),
+          ),
+        ),
+        TextButton.icon(
+          key: ValueKey(
+            'formula_kit.your_formulas_new_${phase.analyticsValue}',
+          ),
+          onPressed: () => context.push(
+            '/settings/food-preferences/formula-library/personal/create',
+            extra: {'phase': phase},
+          ),
+          icon: const Icon(Icons.add, size: 18),
+          label: const Text('New'),
+        ),
+      ],
+    ),
+    if (personal.isEmpty)
+      Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: Text(
+          'Build your own ${phase.displayLabel.toLowerCase()} formula and pin '
+          'it so your plans use it.',
+          style: AppTextStyles.bodyMedium
+              .copyWith(color: scheme.onSurfaceVariant),
+        ),
+      )
+    else
+      for (final f in personal)
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+          // Swipe left to delete (with confirm). No overflow/hamburger menu —
+          // tapping the card opens the editor.
+          child: Dismissible(
+            key: ValueKey('formula_kit.personal_dismiss_${f.id}'),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: AppColors.dragonfruit,
+                borderRadius: AppRadius.cardRadius,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    'Delete',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  const Icon(Icons.delete_outline, color: Colors.white),
+                ],
+              ),
+            ),
+            // Confirm + delete via state rebuild; return false so the
+            // Dismissible itself never animates away (avoids double-removal).
+            confirmDismiss: (_) async {
+              await _confirmDeletePersonalFormula(context, ref, f);
+              return false;
+            },
+            child: PersonalFormulaCard(
+              key: ValueKey('formula_kit.personal_card_${f.id}'),
+              formula: f,
+              // Tap opens the editor directly (personal/:id IS the editor now).
+              onTap: () => context.push(
+                '/settings/food-preferences/formula-library/personal/${f.id}',
+              ),
+            ),
+          ),
+        ),
+    const SizedBox(height: AppSpacing.sm),
+    Text(
+      'Library',
+      style: AppTextStyles.sectionTitle.copyWith(color: scheme.onSurface),
+    ),
+    const SizedBox(height: AppSpacing.xs),
+  ];
+}
+
+/// Confirm + delete a personal formula from the Your Formulas list. Shared by
+/// the card overflow menu (and mirrors the detail-screen delete).
+Future<void> _confirmDeletePersonalFormula(
+  BuildContext context,
+  WidgetRef ref,
+  PersonalFormula formula,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Delete formula?'),
+      content: Text('"${formula.name}" will be removed from Your Formulas.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+  await ref
+      .read(personalFormulasControllerProvider.notifier)
+      .deleteFormula(formula.id);
+  if (context.mounted) {
+    MealvanaSnackbar.showSuccess(context, 'Formula deleted');
+  }
+}
+
+const _listPadding = EdgeInsets.fromLTRB(
+  AppSpacing.md,
+  AppSpacing.sm,
+  AppSpacing.md,
+  AppSpacing.xxxl,
+);
+
+class _BeforeList extends ConsumerWidget {
   const _BeforeList({
     required this.formulas,
     required this.pinnedOnly,
@@ -320,39 +506,39 @@ class _BeforeList extends StatelessWidget {
   final int pinnedInPhaseCount;
 
   @override
-  Widget build(BuildContext context) {
-    if (formulas.isEmpty) {
-      return _LibraryEmptyState(
-        phase: FormulaPhase.before,
-        pinnedOnly: pinnedOnly,
-        pinnedInPhaseCount: pinnedInPhaseCount,
-      );
-    }
-    return ListView.separated(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView(
       key: const ValueKey('formula_kit.before_list'),
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        AppSpacing.xxxl,
-      ),
-      itemCount: formulas.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (context, i) {
-        final f = formulas[i];
-        return BeforeFormulaCard(
-          key: ValueKey('formula_kit.before_card_${f.id}'),
-          formula: f,
-          onTap: () => context.push(
-            '/settings/food-preferences/formula-library/before/${f.id}',
-          ),
-        );
-      },
+      padding: _listPadding,
+      children: [
+        ..._yourFormulasSection(context, ref, FormulaPhase.before),
+        if (formulas.isEmpty)
+          SizedBox(
+            height: 320,
+            child: _LibraryEmptyState(
+              phase: FormulaPhase.before,
+              pinnedOnly: pinnedOnly,
+              pinnedInPhaseCount: pinnedInPhaseCount,
+            ),
+          )
+        else
+          for (final f in formulas)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: BeforeFormulaCard(
+                key: ValueKey('formula_kit.before_card_${f.id}'),
+                formula: f,
+                onTap: () => context.push(
+                  '/settings/food-preferences/formula-library/before/${f.id}',
+                ),
+              ),
+            ),
+      ],
     );
   }
 }
 
-class _DuringList extends StatelessWidget {
+class _DuringList extends ConsumerWidget {
   const _DuringList({
     required this.formulas,
     required this.pinnedOnly,
@@ -364,39 +550,39 @@ class _DuringList extends StatelessWidget {
   final int pinnedInPhaseCount;
 
   @override
-  Widget build(BuildContext context) {
-    if (formulas.isEmpty) {
-      return _LibraryEmptyState(
-        phase: FormulaPhase.during,
-        pinnedOnly: pinnedOnly,
-        pinnedInPhaseCount: pinnedInPhaseCount,
-      );
-    }
-    return ListView.separated(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView(
       key: const ValueKey('formula_kit.during_list'),
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        AppSpacing.xxxl,
-      ),
-      itemCount: formulas.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (context, i) {
-        final f = formulas[i];
-        return DuringFormulaCard(
-          key: ValueKey('formula_kit.during_card_${f.id}'),
-          formula: f,
-          onTap: () => context.push(
-            '/settings/food-preferences/formula-library/during/${f.id}',
-          ),
-        );
-      },
+      padding: _listPadding,
+      children: [
+        ..._yourFormulasSection(context, ref, FormulaPhase.during),
+        if (formulas.isEmpty)
+          SizedBox(
+            height: 320,
+            child: _LibraryEmptyState(
+              phase: FormulaPhase.during,
+              pinnedOnly: pinnedOnly,
+              pinnedInPhaseCount: pinnedInPhaseCount,
+            ),
+          )
+        else
+          for (final f in formulas)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: DuringFormulaCard(
+                key: ValueKey('formula_kit.during_card_${f.id}'),
+                formula: f,
+                onTap: () => context.push(
+                  '/settings/food-preferences/formula-library/during/${f.id}',
+                ),
+              ),
+            ),
+      ],
     );
   }
 }
 
-class _AfterList extends StatelessWidget {
+class _AfterList extends ConsumerWidget {
   const _AfterList({
     required this.formulas,
     required this.pinnedOnly,
@@ -408,34 +594,34 @@ class _AfterList extends StatelessWidget {
   final int pinnedInPhaseCount;
 
   @override
-  Widget build(BuildContext context) {
-    if (formulas.isEmpty) {
-      return _LibraryEmptyState(
-        phase: FormulaPhase.after,
-        pinnedOnly: pinnedOnly,
-        pinnedInPhaseCount: pinnedInPhaseCount,
-      );
-    }
-    return ListView.separated(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView(
       key: const ValueKey('formula_kit.after_list'),
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        AppSpacing.xxxl,
-      ),
-      itemCount: formulas.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (context, i) {
-        final f = formulas[i];
-        return AfterFormulaCard(
-          key: ValueKey('formula_kit.after_card_${f.id}'),
-          formula: f,
-          onTap: () => context.push(
-            '/settings/food-preferences/formula-library/after/${f.id}',
-          ),
-        );
-      },
+      padding: _listPadding,
+      children: [
+        ..._yourFormulasSection(context, ref, FormulaPhase.after),
+        if (formulas.isEmpty)
+          SizedBox(
+            height: 320,
+            child: _LibraryEmptyState(
+              phase: FormulaPhase.after,
+              pinnedOnly: pinnedOnly,
+              pinnedInPhaseCount: pinnedInPhaseCount,
+            ),
+          )
+        else
+          for (final f in formulas)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: AfterFormulaCard(
+                key: ValueKey('formula_kit.after_card_${f.id}'),
+                formula: f,
+                onTap: () => context.push(
+                  '/settings/food-preferences/formula-library/after/${f.id}',
+                ),
+              ),
+            ),
+      ],
     );
   }
 }

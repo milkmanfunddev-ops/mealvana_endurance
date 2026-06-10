@@ -523,6 +523,24 @@ class AuthService {
     }
   }
 
+  /// Get willing-to-try foods for a user. See [getLikedFoods] for error
+  /// handling. These were previously never fetched, so the plan edge
+  /// function's `willing_to_try_foods` input was always empty.
+  Future<List<String>> getWillingToTryFoods(String userId) async {
+    try {
+      final userRepo = await _userRepository;
+      return await userRepo.getWillingToTryFoods(userId);
+    } catch (e, stackTrace) {
+      await _sentry.reportDatabaseError(
+        e,
+        operation: 'getWillingToTryFoods',
+        table: 'food_preferences',
+        stackTrace: stackTrace,
+      );
+      return [];
+    }
+  }
+
 
   /// Reset all user data (for testing or re-onboarding)
   Future<void> resetUserData() async {

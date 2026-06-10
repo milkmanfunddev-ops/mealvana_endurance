@@ -348,7 +348,9 @@ export async function getTemplateFoodsForPhase(
   const dietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   // STEP 4: Filter and transform to Food interface
-  return allEntries
+  const totalCandidates = allEntries.length;
+  let dislikeExcludedCount = 0;
+  const filteredFoods = allEntries
     .filter(({ data: f, isUserFood }) => {
       const isDisliked = matchesPreference(
         f as { id?: string; name?: string; display_name?: string | null },
@@ -387,6 +389,7 @@ export async function getTemplateFoodsForPhase(
         isDisliked && !isPinnedComponent &&
         !(isEssential && !isElectrolyte)
       ) {
+        dislikeExcludedCount++;
         console.log(
           `[TMPL-FILTER-DISLIKED] Excluding disliked food: ${f.name} (id: ${f.id})`,
         );
@@ -583,6 +586,21 @@ export async function getTemplateFoodsForPhase(
           : ((f.product_type as string) ?? undefined),
       };
     });
+
+  // Guardrail: if the disliked filter removed most of the candidate pool, the
+  // phase will almost certainly under-fuel (no carb sources survive). This is
+  // the signature of a bad/stale disliked list rather than genuine preference.
+  // Surface it instead of silently returning a near-empty pool.
+  if (totalCandidates > 0 && dislikeExcludedCount / totalCandidates >= 0.5) {
+    console.warn(
+      `[TMPL-FILTER-DISLIKED] WARNING: dislike filter removed ${dislikeExcludedCount}/${totalCandidates} ` +
+        `candidate foods (${Math.round((dislikeExcludedCount / totalCandidates) * 100)}%) for phase=${phase}, ` +
+        `activity=${activityType}. ${filteredFoods.length} foods remain. A disliked list this large usually ` +
+        `indicates a stale client preference cache — verify the [PLAN-V3-PREFS] payload.`,
+    );
+  }
+
+  return filteredFoods;
 }
 
 /**

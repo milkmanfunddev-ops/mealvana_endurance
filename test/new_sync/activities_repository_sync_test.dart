@@ -54,6 +54,15 @@ void main() {
       data: any(named: 'data'),
     )).thenReturn(null);
 
+    when(() => mockSentry.reportNetworkError(
+      any(),
+      url: any(named: 'url'),
+      method: any(named: 'method'),
+      statusCode: any(named: 'statusCode'),
+      timeout: any(named: 'timeout'),
+      stackTrace: any(named: 'stackTrace'),
+    )).thenAnswer((_) async {});
+
     repository = ActivitiesRepository(
       supabase: mockSupabase,
       database: mockDatabase,

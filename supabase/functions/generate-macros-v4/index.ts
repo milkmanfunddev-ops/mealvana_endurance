@@ -16,6 +16,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { corsHeaders, handleCors } from "../_shared/cors.ts";
 import {
   errorResponse,
@@ -44,7 +45,10 @@ import { createServiceClient } from "../_shared/supabase-client.ts";
 // EDGE FUNCTION HANDLER
 // ============================================================================
 
-serve(async (req: Request) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -216,4 +220,4 @@ serve(async (req: Request) => {
     console.error("❌ Error in generate-macros-v4:", error);
     return serverError(error);
   }
-});
+}));

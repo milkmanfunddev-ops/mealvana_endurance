@@ -68,6 +68,7 @@ class _CoachRegistrationScreenState
                 child: Container(
                   width: 80,
                   height: 80,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: AppColors.electrolyte.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
@@ -128,8 +129,8 @@ class _CoachRegistrationScreenState
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        prefixIcon: FaIcon(
-                          FontAwesomeIcons.user,
+                        prefixIcon: Icon(
+                          FontAwesomeIcons.user.data,
                           size: AppIconSizes.controlIcon,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -201,8 +202,8 @@ class _CoachRegistrationScreenState
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        prefixIcon: FaIcon(
-                          FontAwesomeIcons.user,
+                        prefixIcon: Icon(
+                          FontAwesomeIcons.user.data,
                           size: AppIconSizes.controlIcon,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -274,8 +275,8 @@ class _CoachRegistrationScreenState
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
-                        prefixIcon: FaIcon(
-                          FontAwesomeIcons.envelope,
+                        prefixIcon: Icon(
+                          FontAwesomeIcons.envelope.data,
                           size: AppIconSizes.controlIcon,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),

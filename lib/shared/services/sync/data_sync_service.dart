@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../database/app_database.dart';
@@ -123,6 +124,18 @@ class DataSyncService {
         context: 'DATA_SYNC',
         error: e,
         stackTrace: stackTrace,
+      );
+      // Report to Sentry — sync failures are swallowed here so the app can
+      // continue with cached data, but we still want visibility in the
+      // error dashboard (especially for non-timeout, non-network failures).
+      await Sentry.captureException(
+        e,
+        stackTrace: stackTrace,
+        withScope: (scope) {
+          scope.setTag('component', 'sync');
+          scope.setTag('context', 'DATA_SYNC');
+          scope.level = SentryLevel.error;
+        },
       );
       return false;
     }

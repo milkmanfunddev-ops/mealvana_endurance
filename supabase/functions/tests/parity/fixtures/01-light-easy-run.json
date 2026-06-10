@@ -1,0 +1,35 @@
+{
+  "description": "Light athlete (50kg female) — short easy 30-min run. Minimal fueling; tests degenerate low-target case.",
+  "knownFailure": true,
+  "knownFailureReason": "GENUINE ALGORITHM PARITY VIOLATION: Rule solver cannot deliver fluid below its minimum serving floor (1 water serving = 240ml + 1 sports drink serving = 240ml = 480ml min). Small fluid targets (300ml) can never be satisfied because min_servings=1 on all catalog liquids. The solver overshoots fluid by ~60% on short workouts. TODO: Add fractional serving support for fluid items OR gate fluid selection on target size.",
+  "athlete": {
+    "weight_kg": 50,
+    "sex": "female"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 30,
+    "gut_training_level": "low"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 10,
+      "sodium_mg": 200,
+      "water_ml": 300
+    },
+    "post_run": {
+      "carbs_g": 30,
+      "protein_g": 15,
+      "sodium_mg": 250,
+      "water_ml": 350
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

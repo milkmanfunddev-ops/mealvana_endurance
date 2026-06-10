@@ -10,6 +10,12 @@ import '../../../../shared/services/logging_service.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../food_preferences/data/food_preferences_repository.dart';
+import '../../../formula_kit/data/formula_pins_repository.dart';
+import '../../../formula_kit/data/personal_formulas_repository.dart';
+import '../../../formula_kit/domain/formula_macros.dart';
+import '../../../formula_kit/domain/formula_phase.dart';
+import '../../../formula_kit/domain/formula_pin.dart';
+import '../../../formula_kit/domain/personal_formula.dart';
 import '../../data/templates_repository.dart';
 import '../../domain/food_item_data.dart';
 import '../../domain/macro_targets.dart';
@@ -36,6 +42,10 @@ class ClientPlanService {
       _ref.read(clientFoodPoolServiceProvider);
   TemplatesRepository get _templatesRepo =>
       _ref.read(templatesRepositoryProvider);
+  FormulaPinsRepository get _pinsRepo =>
+      _ref.read(formulaPinsRepositoryProvider);
+  PersonalFormulasRepository get _personalFormulasRepo =>
+      _ref.read(personalFormulasRepositoryProvider);
   AppLogger get _logger => _ref.read(appExternalDepsProvider).logger;
 
   /// Generate a complete nutrition plan with real food selections.
@@ -165,13 +175,21 @@ class ClientPlanService {
   // Phase solvers
   // ---------------------------------------------------------------------------
 
-  /// Before phase: try template-based selection, fall back to greedy.
+  /// Before phase: honor a pinned personal formula, else try template-based
+  /// selection, else greedy.
   Future<List<FoodItemData>> _solveBefore({
     required String userId,
     required MacroTargets macroTargets,
     required ActivityType activityType,
     required double timeBeforeRunHours,
   }) async {
+    final pinned = await _tryPinnedPersonalFormula(
+      userId: userId,
+      phase: FormulaPhase.before,
+      activityType: activityType,
+    );
+    if (pinned != null && pinned.isNotEmpty) return pinned;
+
     try {
       // Try template-based first
       final templateResult = await _tryTemplateBasedBefore(
@@ -210,12 +228,20 @@ class ClientPlanService {
     );
   }
 
-  /// During phase: greedy solver focused on carbs + sodium + fluids.
+  /// During phase: honor a pinned personal formula, else greedy solver focused
+  /// on carbs + sodium + fluids.
   Future<List<FoodItemData>> _solveDuring({
     required String userId,
     required MacroTargets macroTargets,
     required ActivityType activityType,
   }) async {
+    final pinned = await _tryPinnedPersonalFormula(
+      userId: userId,
+      phase: FormulaPhase.during,
+      activityType: activityType,
+    );
+    if (pinned != null && pinned.isNotEmpty) return pinned;
+
     return _solvePhase(
       userId: userId,
       phase: 'during',
@@ -228,12 +254,20 @@ class ClientPlanService {
     );
   }
 
-  /// After phase: greedy solver with protein priority.
+  /// After phase: honor a pinned personal formula, else greedy solver with
+  /// protein priority.
   Future<List<FoodItemData>> _solveAfter({
     required String userId,
     required MacroTargets macroTargets,
     required ActivityType activityType,
   }) async {
+    final pinned = await _tryPinnedPersonalFormula(
+      userId: userId,
+      phase: FormulaPhase.after,
+      activityType: activityType,
+    );
+    if (pinned != null && pinned.isNotEmpty) return pinned;
+
     return _solvePhase(
       userId: userId,
       phase: 'after',
@@ -245,6 +279,127 @@ class ClientPlanService {
       ),
       activityType: activityType,
     );
+  }
+
+  /// If the user has a pinned personal formula in scope for [phase], return its
+  /// components as the section's foods (honored unconditionally per the pin
+  /// policy — bypasses the greedy/template path). Returns null when there's no
+  /// matching pin so the caller falls through to normal selection.
+  ///
+  /// Scope: before pins have no activity scope. During/after pins match on
+  /// activity (formula `activities` null/empty = any; multi-sport activities
+  /// match leniently). Duration-bracket matching is intentionally NOT applied
+  /// on the client fallback — the workout duration isn't plumbed here and this
+  /// path runs only when the edge function is unavailable (~1% of generations).
+  Future<List<FoodItemData>?> _tryPinnedPersonalFormula({
+    required String userId,
+    required FormulaPhase phase,
+    required ActivityType activityType,
+  }) async {
+    try {
+      final pins = await _pinsRepo.getActivePinsForUser(
+        userId,
+        kind: TemplateKind.personalFormula,
+      );
+      if (pins.isEmpty) return null;
+      final pinnedIds = {for (final p in pins) p.templateId};
+
+      // Newest-first; pick the first pinned formula in scope.
+      final candidates = await _personalFormulasRepo.getFormulasForUser(
+        userId,
+        phase: phase,
+      );
+      PersonalFormula? match;
+      for (final f in candidates) {
+        if (!pinnedIds.contains(f.id)) continue;
+        if (!_personalFormulaInScope(f, phase, activityType)) continue;
+        match = f;
+        break;
+      }
+      if (match == null) return null;
+
+      final items = _componentsToFoodItems(match);
+      if (items.isEmpty) return null;
+      _logger.info(
+        'Client solver: honoring pinned personal formula "${match.name}" '
+        'for ${phase.wireValue} (${items.length} foods)',
+        context: 'CLIENT_PLAN_SERVICE',
+      );
+      return items;
+    } catch (e) {
+      _logger.warning(
+        'Pinned personal formula lookup failed; falling through',
+        context: 'CLIENT_PLAN_SERVICE',
+        error: e,
+      );
+      return null;
+    }
+  }
+
+  bool _personalFormulaInScope(
+    PersonalFormula formula,
+    FormulaPhase phase,
+    ActivityType activityType,
+  ) {
+    if (phase == FormulaPhase.before) {
+      // Before formulas have no activity scope, but timing is required: an
+      // untagged before formula never fires (mirrors the edge before-phase
+      // overlay, which skips pins without a sub-phase). This client path is the
+      // failure-only fallback and has no sub-phase structure, so a tagged
+      // formula is honored as the whole before section.
+      return formula.subPhase != null;
+    }
+    final activities = formula.activities;
+    if (activities == null || activities.isEmpty) return true; // any
+    if (activities.contains(activityType.dbValue)) return true;
+    // Multi-sport workouts encompass their sub-activities; match leniently.
+    return activityType.isMultiSport;
+  }
+
+  /// Convert a personal formula's components into section food items, using the
+  /// per-serving macros snapshotted on each component (no food lookup needed).
+  List<FoodItemData> _componentsToFoodItems(PersonalFormula formula) {
+    double n(Object? v) => v is num ? v.toDouble() : 0.0;
+    final items = <FoodItemData>[];
+    for (final c in formula.components) {
+      final qty = FormulaMacros.quantityOf(c);
+      final name = FormulaMacros.nameOf(c);
+      final unit = c[FormulaMacros.kServingUnit] as String?;
+      final carbs = (n(c[FormulaMacros.kCarbsPerServing]) * qty).round();
+      final protein = (n(c[FormulaMacros.kProteinPerServing]) * qty).round();
+      final fat = (n(c[FormulaMacros.kFatPerServing]) * qty).round();
+      final sodium = (n(c[FormulaMacros.kSodiumMg]) * qty).round();
+      final fluids = n(c[FormulaMacros.kFluidMlPerServing]) * qty;
+      final calRaw = c[FormulaMacros.kCaloriesPerServing];
+      final calories = calRaw is num
+          ? (calRaw.toDouble() * qty).round()
+          : carbs * 4 + protein * 4 + fat * 9;
+
+      final rawQty = SolverFood.formatQuantity(qty);
+      items.add(
+        FoodItemData(
+          id: (c[FormulaMacros.kFoodId] as String?) ?? name,
+          name: name,
+          quantity: FoodItemData.buildDisplayQuantity(
+            rawQty: rawQty,
+            servingUnit: unit,
+            displayName: name,
+          ),
+          nutritionalInfo: NutritionalInfo(
+            calories: calories,
+            carbs: carbs,
+            protein: protein,
+            fat: fat,
+            sodium: sodium,
+            fluids: fluids,
+          ),
+          displayName: name,
+          servingSize: unit,
+          templateId: formula.id,
+        ),
+      );
+    }
+    return items;
   }
 
   /// Run the greedy solver for a single phase.

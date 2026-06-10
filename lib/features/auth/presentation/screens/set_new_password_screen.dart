@@ -116,8 +116,8 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
                     'auth.email_signup.password_hint',
                     defaultValue: 'At least 8 characters',
                   ),
-                  prefixIcon: FaIcon(
-                    FontAwesomeIcons.lock,
+                  prefixIcon: Icon(
+                    FontAwesomeIcons.lock.data,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -161,8 +161,8 @@ class _SetNewPasswordScreenState extends ConsumerState<SetNewPasswordScreen> {
                     'auth.email_signup.password_confirm_hint',
                     defaultValue: 'Re-enter your password',
                   ),
-                  prefixIcon: FaIcon(
-                    FontAwesomeIcons.lock,
+                  prefixIcon: Icon(
+                    FontAwesomeIcons.lock.data,
                     size: AppIconSizes.controlIcon,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),

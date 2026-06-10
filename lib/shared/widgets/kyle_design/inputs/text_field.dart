@@ -252,8 +252,8 @@ class _KyleSearchFieldState extends ConsumerState<KyleSearchField> {
         hintStyle: AppTextStyles.inputText.copyWith(
           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
         ),
-        prefixIcon: FaIcon(
-          FontAwesomeIcons.magnifyingGlass,
+        prefixIcon: Icon(
+          FontAwesomeIcons.magnifyingGlass.data,
           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           size: AppIconSizes.controlIcon,
         ),

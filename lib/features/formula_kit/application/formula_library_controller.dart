@@ -18,6 +18,7 @@ import '../domain/after_filter_options.dart';
 import '../domain/before_sub_phase.dart';
 import '../domain/during_filter_options.dart';
 import '../domain/formula_filter_state.dart';
+import '../domain/formula_macros.dart';
 import '../domain/formula_phase.dart';
 import '../domain/formula_view.dart';
 
@@ -543,6 +544,92 @@ class FormulaLibraryController extends _$FormulaLibraryController {
       'is_personal': isPersonal,
     });
   }
+
+  // ── Fork support ───────────────────────────────────────────────────────
+
+  /// Build canonical [PersonalFormula.components] for the system formula
+  /// [formulaId] in [phase], so "Make this mine" forks land with the source's
+  /// component rows — each carrying snapshotted per-serving macros (from
+  /// `template_foods`) so the editor rows and edge honoring work without extra
+  /// lookups. Returns an empty list when the template can't be resolved.
+  Future<List<Map<String, dynamic>>> componentsForFork(
+    String formulaId,
+    FormulaPhase phase,
+  ) async {
+    final templateFoods =
+        await ref.read(templateFoodsRepositoryProvider).getAllTemplateFoods();
+    final byName = <String, TemplateFoodEntry>{
+      for (final tf in templateFoods) tf.name.toLowerCase(): tf,
+    };
+
+    List<String> names = const [];
+    Map<String, num> quantities = const {};
+
+    switch (phase) {
+      case FormulaPhase.before:
+        final entries =
+            await ref.read(preWorkoutTemplatesRepositoryProvider).getAll();
+        final e = _firstById(entries, formulaId, (x) => x.id);
+        if (e == null) return const [];
+        names = _decodeStringArray(e.componentFoodNames);
+        quantities = _decodeQuantityMap(e.componentQuantities);
+      case FormulaPhase.during:
+        final entries =
+            await ref.read(duringWorkoutTemplatesRepositoryProvider).getAll();
+        final e = _firstById(entries, formulaId, (x) => x.id);
+        if (e == null) return const [];
+        names = _decodeStringArray(e.componentFoodNames);
+        // During templates carry carb ratios, not serving counts — default to
+        // one serving per component; the user adjusts quantity in the editor.
+      case FormulaPhase.after:
+        final entries =
+            await ref.read(postWorkoutTemplatesRepositoryProvider).getAll();
+        final e = _firstById(entries, formulaId, (x) => x.id);
+        if (e == null) return const [];
+        names = _decodeStringArray(e.componentFoodNames);
+        quantities = _decodeQuantityMap(e.defaultServings);
+    }
+
+    final components = <Map<String, dynamic>>[];
+    for (final name in names) {
+      final tf = byName[name.toLowerCase()];
+      final qty = (quantities[name.toLowerCase()] ?? 1).toDouble();
+      final carbs = tf?.carbsG ?? 0.0;
+      final protein = tf?.proteinG ?? 0.0;
+      final fat = tf?.fatG ?? 0.0;
+      final calories =
+          tf?.calories ?? ((carbs * 4) + (protein * 4) + (fat * 9)).round();
+      components.add(<String, dynamic>{
+        FormulaMacros.kFoodId: tf?.id ?? name,
+        FormulaMacros.kFoodName: tf?.displayName ?? _humanizeName(name),
+        FormulaMacros.kQuantity: qty,
+        FormulaMacros.kServingUnit: tf?.servingUnit,
+        FormulaMacros.kSource: FormulaMacros.sourceTemplate,
+        FormulaMacros.kCarbsPerServing: carbs,
+        FormulaMacros.kProteinPerServing: protein,
+        FormulaMacros.kFatPerServing: fat,
+        FormulaMacros.kSodiumMg: tf?.sodiumMg ?? 0.0,
+        FormulaMacros.kFluidMlPerServing: tf?.fluidMl ?? 0.0,
+        FormulaMacros.kCaloriesPerServing: calories,
+      });
+    }
+    return components;
+  }
+
+  T? _firstById<T>(List<T> items, String id, String Function(T) idOf) {
+    for (final it in items) {
+      if (idOf(it) == id) return it;
+    }
+    return null;
+  }
+
+  /// Humanise a machine component name (`medjool_dates` → `Medjool Dates`) for
+  /// the rare case `template_foods` has no matching row.
+  String _humanizeName(String raw) => raw
+      .split('_')
+      .where((s) => s.isNotEmpty)
+      .map((s) => '${s[0].toUpperCase()}${s.substring(1)}')
+      .join(' ');
 
   // ── Mapping helpers ────────────────────────────────────────────────────
 

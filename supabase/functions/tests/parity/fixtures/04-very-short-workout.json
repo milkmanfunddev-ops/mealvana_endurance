@@ -1,0 +1,33 @@
+{
+  "description": "Very short workout (25 min cycling) — degenerate case where during-phase nutrition is minimal or skipped. Tests zero/near-zero target handling.",
+  "athlete": {
+    "weight_kg": 68,
+    "sex": "female"
+  },
+  "workout": {
+    "activity_type": "cycling",
+    "duration_minutes": 25,
+    "gut_training_level": "low"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 0,
+      "sodium_mg": 100,
+      "water_ml": 200
+    },
+    "post_run": {
+      "carbs_g": 35,
+      "protein_g": 18,
+      "sodium_mg": 300,
+      "water_ml": 400
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}

@@ -201,6 +201,17 @@ class ChangeDetectionService {
       final providerId = localActivity.providerWorkoutId;
       if (providerId == null) continue;
 
+      // Skip activities already soft-deleted from the provider. The local load
+      // (getActivitiesByUserAndProvider -> _loadLocalProviderActivities) filters
+      // only `deletedAt`, NOT `providerDeletedAt`, so rows already soft-deleted
+      // from the provider are still returned here. Without this guard they get
+      // re-flagged for deletion on EVERY sync — re-setting needs_upload,
+      // re-queuing uploads, and re-invalidating the calendar/activities
+      // providers even when nothing changed (symptom: a constant non-zero
+      // "deleted: N" on no-op syncs, e.g. after switching the connected
+      // provider account). The soft-delete is meant to be idempotent.
+      if (localActivity.providerDeletedAt != null) continue;
+
       // DELETED: Workout exists in local but not in remote
       if (!remoteProviderIds.contains(providerId)) {
         deletedActivityIds.add(localActivity.id);

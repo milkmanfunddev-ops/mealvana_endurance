@@ -1,0 +1,59 @@
+{
+  "description": "NEW in-flight behavior: during personal formula is scoped to '>240 min' bracket, but workout is 120 min ('90-150 min'). Formula must NOT fire; algorithm uses normal selection.",
+  "athlete": {
+    "weight_kg": 72,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 120,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 60,
+      "sodium_mg": 900,
+      "water_ml": 900
+    },
+    "post_run": {
+      "carbs_g": 60,
+      "protein_g": 25,
+      "sodium_mg": 700,
+      "water_ml": 650
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": {
+    "personalFormulas": [
+      {
+        "id": "pf-ultra-only",
+        "name": "Ultra Gel Stack",
+        "phase": "during",
+        "activities": ["running"],
+        "durations": ["> 240 min"],
+        "subPhase": null,
+        "components": [
+          {
+            "food_id": "energy-gel",
+            "food_name": "Energy Gel",
+            "quantity": 8,
+            "serving_unit": "gel",
+            "source": "template",
+            "carbs_per_serving": 25,
+            "protein_per_serving": 0,
+            "fat_per_serving": 0,
+            "sodium_mg": 55,
+            "fluid_ml_per_serving": 0,
+            "calories_per_serving": 100
+          }
+        ]
+      }
+    ]
+  }
+}

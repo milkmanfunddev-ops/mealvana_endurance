@@ -37,6 +37,7 @@ import 'tables/post_workout_templates_table.dart';
 import 'tables/tp_writeback_table.dart';
 import 'tables/personal_templates_table.dart';
 import 'tables/formula_pins_table.dart';
+import 'tables/personal_formulas_table.dart';
 import 'tables/athlete_pairing_codes_table.dart';
 import 'tables/coach_pairing_codes_table.dart';
 import 'tables/daily_macro_targets_table.dart';
@@ -126,6 +127,9 @@ part 'app_database.g.dart';
     // Formula Kit pins (user preference signal for plan generation)
     FormulaPinsTable,
 
+    // Formula Kit personal formulas (user-authored fueling recipes)
+    PersonalFormulasTable,
+
     // Pairing codes for coach connections
     AthletePairingCodesTable,
     CoachPairingCodesTable,
@@ -160,6 +164,15 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
+  /// Schema version 10: adds `personal_formulas` — Formula Kit personal
+  /// formulas (user-authored fueling recipes, forked or from-scratch, tied to
+  /// a phase). Distinct table from personal_templates; soft-deleted via
+  /// is_deleted. Standalone createTable in the `from < 10` ladder step.
+  /// NOTE: the matching Supabase `app_config` schema version (read by
+  /// VersionCheckService) must be set to 10 when this ships, or v9 clients
+  /// won't migrate consistently. Apply the personal_formulas table SQL
+  /// (docs/database/apply_all.sql §4) to Supabase before/with that bump.
+  ///
   /// Schema version 9: Formula Kit local tables — a single consolidated bump
   /// from the last released schema (v8). Adds four tables that were developed
   /// across unreleased intermediate versions on the feat/formula-kit branch;
@@ -192,7 +205,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -272,6 +285,15 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(postWorkoutTemplatesTable);
           await m.createTable(formulaPinsTable);
         }
+
+        // v10: Formula Kit personal formulas — user-authored fueling recipes
+        // (forked from a system formula or built from scratch), tied to a
+        // phase. A distinct concept from personal_templates, so it gets its
+        // own table. Soft-deleted via is_deleted. No local FK references, so
+        // creation is standalone.
+        if (from < 10) {
+          await m.createTable(personalFormulasTable);
+        }
       },
 
       // Called when database is first created (version 0 -> current)
@@ -320,6 +342,14 @@ class AppDatabase extends _$AppDatabase {
 
         // Schema integrity validation - fail fast if schema is corrupted
         if (!details.wasCreated) {
+          // Repair the integrations.provider CHECK in place before validating.
+          // CHECK constraints are baked into the table at CREATE time, so
+          // adding 'vdot' to the Dart definition doesn't update tables that
+          // already exist on-device. We keep schemaVersion at 9, so this
+          // idempotent repair (not a version bump) is what fixes existing
+          // installs that reject `provider = 'vdot'` inserts.
+          await _ensureIntegrationsProviderCheck();
+
           await _validateSchemaIntegrity();
         }
 
@@ -393,6 +423,60 @@ class AppDatabase extends _$AppDatabase {
 
     if (kDebugMode) {
       print('✅ Schema validation passed (${allTables.length} tables verified)');
+    }
+  }
+
+  /// Ensure the `integrations.provider` CHECK constraint allows 'vdot'.
+  ///
+  /// SQLite stores CHECK constraints as part of the table's CREATE statement,
+  /// so editing the Dart table definition (which now lists 'vdot') does NOT
+  /// alter tables that were created before 'vdot' was added — those keep
+  /// rejecting `provider = 'vdot'` inserts with a CHECK failure (code 275).
+  /// Bumping schemaVersion would trigger a delete-and-resync, but we're
+  /// deliberately staying on v9, so instead we repair the constraint in place:
+  /// detect a stale CHECK and, if found, rebuild the table preserving its rows.
+  /// Idempotent — once the CHECK includes 'vdot' this is a no-op on open.
+  Future<void> _ensureIntegrationsProviderCheck() async {
+    final rows = await customSelect(
+      "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'integrations'",
+    ).get();
+    if (rows.isEmpty) return; // missing table is handled by schema validation
+    final createSql = rows.first.read<String?>('sql') ?? '';
+    if (createSql.contains("'vdot'")) return; // already up to date
+
+    if (kDebugMode) {
+      print('🔧 Rebuilding integrations table to add \'vdot\' to provider CHECK');
+    }
+
+    // FK toggling must happen outside a transaction; the rebuild itself is a
+    // standard SQLite table recreation (rename → create → copy → drop).
+    await customStatement('PRAGMA foreign_keys = OFF');
+    try {
+      // Clean up any half-finished rebuild from a prior interrupted open.
+      await customStatement('DROP TABLE IF EXISTS _integrations_legacy');
+      await customStatement(
+        'ALTER TABLE integrations RENAME TO _integrations_legacy',
+      );
+      // Recreate from the current Dart definition (includes the updated CHECK
+      // and the UNIQUE(user_id, provider) constraint).
+      await createMigrator().createTable(integrationsTable);
+      // Explicit column list — physical column order differs across installs
+      // (needs_upload was appended via ALTER on the v7→v8 path), so a bare
+      // `SELECT *` copy is unsafe.
+      const cols =
+          'id, user_id, provider, access_token, refresh_token, '
+          'token_expires_at, provider_athlete_id, provider_athlete_name, '
+          'provider_athlete_email, provider_athlete_weight_kg, '
+          'provider_athlete_birth_month, provider_athlete_gender, '
+          'provider_athlete_body_fat_pct, athlete_zones_json, is_active, '
+          'last_sync_at, last_sync_status, last_sync_error, needs_upload, '
+          'created_at, updated_at';
+      await customStatement(
+        'INSERT INTO integrations ($cols) SELECT $cols FROM _integrations_legacy',
+      );
+      await customStatement('DROP TABLE _integrations_legacy');
+    } finally {
+      await customStatement('PRAGMA foreign_keys = ON');
     }
   }
 
@@ -573,7 +657,7 @@ class AppDatabase extends _$AppDatabase {
 
 /// Database connection setup with seed database support.
 /// Implementation is platform-specific (see connection_native.dart / connection_web.dart).
-LazyDatabase _openConnection() => openNativeConnection();
+QueryExecutor _openConnection() => openNativeConnection();
 
 /// Exception thrown when database schema validation fails.
 ///

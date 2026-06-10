@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../activities/data/activities_repository.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
 import '../presentation/providers/connect_training_controller.dart';
@@ -209,6 +210,40 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
       await _setLastSyncTime(provider, DateTime.now());
       _lastFailedAttempt.remove(provider);
 
+      // Immediately push freshly-synced dirty activities to Supabase.
+      // Only applies to client-side-writing providers; Garmin is push-only
+      // and writes nothing locally.
+      if (provider == 'final_surge' ||
+          provider == 'training_peaks' ||
+          provider == 'vdot') {
+        try {
+          final uploadResult = await ref
+              .read(activitiesRepositoryProvider)
+              .uploadDirtyRecords(userId);
+          if (kDebugMode) {
+            if (uploadResult.success) {
+              print(
+                  '☁️  Integration sync uploaded ${uploadResult.count} dirty records for $provider');
+            } else {
+              print(
+                  '⚠️  Integration sync upload had no records or failed for $provider: ${uploadResult.error}');
+            }
+          }
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Post-sync upload of dirty activities failed for $provider (best-effort)',
+            context: 'INTEGRATION_SYNC',
+            error: e,
+            stackTrace: stackTrace,
+            data: {'userId': userId, 'provider': provider},
+          );
+          if (kDebugMode) {
+            print(
+                '⚠️  Integration sync upload failed for $provider (best-effort): $e');
+          }
+        }
+      }
+
       if (kDebugMode) {
         print('✅ Integration sync complete for $provider');
       }
@@ -230,6 +265,20 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
     } finally {
       _syncingNow.remove(provider);
     }
+  }
+
+  /// Record that [provider] was just synced through another path (e.g. the
+  /// manual "Sync Now" / connect flow in ConnectTrainingController, which calls
+  /// the sync service directly rather than going through this coordinator).
+  ///
+  /// Without this, a manual sync leaves the coordinator's staleness clock
+  /// untouched, so the very next `ensureIntegrationsSynced` (triggered when the
+  /// manual sync invalidates the calendar/activities providers and they
+  /// rebuild) sees the provider as stale and runs a full SECOND sync back to
+  /// back. Stamping the timestamp here makes that follow-up sync skip.
+  Future<void> markProviderSynced(String provider) async {
+    await _setLastSyncTime(provider, DateTime.now());
+    _lastFailedAttempt.remove(provider);
   }
 
   /// Get the last sync time from SharedPreferences

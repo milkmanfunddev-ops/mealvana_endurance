@@ -20,6 +20,7 @@ import '../../../events/presentation/providers/events_controller.dart'
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/garmin_oauth_service.dart';
+import '../../application/integration_sync_coordinator.dart';
 import '../../application/training_peaks_oauth_service.dart';
 import '../../application/training_peaks_sync_service.dart';
 import '../../application/vdot_oauth_service.dart';
@@ -209,12 +210,28 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Shared across both manual and automatic sync paths.
   final Set<String> _syncingProviders = {};
 
-  /// Session-scoped flag: have we already kicked a Garmin backfill on this
+  /// Instance-scoped flag: have we already kicked a Garmin backfill on this
   /// controller instance? Garmin's Health API is push-only, so on app open
   /// we proactively ask Garmin to re-push the last 90 days of body comp +
-  /// user metrics — but only once per session so we don't hammer their API
-  /// across every controller rebuild.
+  /// user metrics.
+  ///
+  /// This flag alone is NOT enough: this controller is `@riverpod`
+  /// (autoDispose), so every rebuild after disposal — and every hot restart —
+  /// creates a fresh instance with the flag reset to false. Left unguarded,
+  /// that fires a fresh backfill (2 Garmin requests) on each rebuild and trips
+  /// Garmin's "100 requests / minute" rate limit. The durable guard is the
+  /// persisted cooldown timestamp below ([_shouldTriggerGarminBackfill]).
   bool _garminBackfillTriggeredThisSession = false;
+
+  /// SharedPreferences key prefix (suffixed with the user ID) recording the
+  /// last time we auto-triggered a Garmin backfill. Survives controller
+  /// rebuilds and hot restarts so the cooldown actually holds.
+  static const _garminBackfillLastAtKeyPrefix = 'garmin_backfill_last_at_';
+
+  /// Minimum spacing between automatic Garmin backfills. Body comp / user
+  /// metrics change slowly and a 90-day backfill is heavy, so once every few
+  /// hours is plenty. The manual "refresh from Garmin" path is not throttled.
+  static const _garminBackfillCooldown = Duration(hours: 6);
 
   String? _currentUserId;
 
@@ -252,6 +269,25 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     final candidateRealUserId = user?.id ?? resolvedUserIdFromAuth;
     var useRealUserId = user?.onboardingCompleted == true;
 
+    // If the user already has a REAL (non-anonymous) Supabase session, use their
+    // real user id for onboarding data too — don't fall back to a throwaway temp
+    // id. The temp id is only meant for truly anonymous onboarding (no session),
+    // where the temp->real migration at sign-in later rebases the data. For an
+    // already-signed-in user that migration has already run, so temp-id data
+    // never gets rebased: integration upserts fail the `integrations` RLS/FK
+    // (user_id must equal auth.uid) and imported activities stay invisible
+    // because the rest of the app reads under the real id. (Root cause of the
+    // 42501 "violates row-level security" upload error + missing imported
+    // workouts during onboarding.)
+    final isAnonymousSession =
+        supabaseClient.auth.currentUser?.isAnonymous ?? false;
+    if (!useRealUserId &&
+        candidateRealUserId != null &&
+        currentAuthUserId != null &&
+        !isAnonymousSession) {
+      useRealUserId = true;
+    }
+
     // If onboarding flag is false/missing but integrations already exist for this
     // user, prefer real ID so connection state remains stable across sessions.
     if (!useRealUserId && candidateRealUserId != null) {
@@ -262,6 +298,21 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
     if (useRealUserId && candidateRealUserId != null) {
       _currentUserId = candidateRealUserId;
+      _isUsingTempUserId = false;
+    } else if (currentAuthUserId != null) {
+      // An (anonymous) Supabase session exists — onboarding before the profile
+      // is created/sign-up is completed. Use the anonymous auth.uid rather than
+      // a throwaway client-generated temp UUID. An anonymous session has a real
+      // auth.uid(), so:
+      //   - integration + activity uploads pass RLS (user_id == auth.uid), and
+      //   - the first-class anonymous->real migration at sign-in rebases the
+      //     data (vs. the brittle temp-UUID->real fallback path).
+      // A throwaway temp UUID can NEVER upload (RLS rejects it) and is only
+      // rebased by the temp->real migration, so anything written under it is
+      // invisible everywhere except this device until/unless that migration
+      // runs. Reserve the temp UUID strictly for the genuine no-session case
+      // below.
+      _currentUserId = currentAuthUserId;
       _isUsingTempUserId = false;
     } else {
       _currentUserId = await _getOrCreateTempUserId();
@@ -307,8 +358,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     // it because Garmin replies 202 and the data lands later via webhook.
     if (isGarminActive &&
         !_garminBackfillTriggeredThisSession &&
-        !_isUsingTempUserId) {
+        !_isUsingTempUserId &&
+        _shouldTriggerGarminBackfill()) {
       _garminBackfillTriggeredThisSession = true;
+      // Stamp the cooldown immediately (before the async work) so concurrent
+      // rebuilds and hot restarts within the window don't each fire again.
+      unawaited(_markGarminBackfillTriggered());
       Future<void>(() async {
         await triggerGarminBackfill();
       });
@@ -326,6 +381,32 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       isVdotConnected: vdotIntegration?.isActive ?? false,
       vdotAthleteName: vdotIntegration?.providerAthleteName,
       vdotLastSyncAt: vdotIntegration?.lastSyncAt,
+    );
+  }
+
+  /// Whether enough time has passed since the last automatic Garmin backfill
+  /// to fire another one. Backed by a persisted timestamp so the cooldown
+  /// survives controller disposal/rebuild and hot restarts (see
+  /// [_garminBackfillTriggeredThisSession] for why an in-memory flag isn't
+  /// sufficient).
+  bool _shouldTriggerGarminBackfill() {
+    final userId = _currentUserId;
+    if (userId == null) return false;
+    final prefs = ref.read(sharedPreferencesProvider);
+    final lastMs = prefs.getInt('$_garminBackfillLastAtKeyPrefix$userId');
+    if (lastMs == null) return true;
+    final last = DateTime.fromMillisecondsSinceEpoch(lastMs);
+    return DateTime.now().difference(last) >= _garminBackfillCooldown;
+  }
+
+  /// Persist the current time as the last automatic Garmin backfill timestamp.
+  Future<void> _markGarminBackfillTriggered() async {
+    final userId = _currentUserId;
+    if (userId == null) return;
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setInt(
+      '$_garminBackfillLastAtKeyPrefix$userId',
+      DateTime.now().millisecondsSinceEpoch,
     );
   }
 
@@ -552,6 +633,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             '[syncGarmin] backfill HTTP ${response.status}: ${response.data}',
           );
         }
+        if (_isTransientBackfillFailure(response.status, '${response.data}')) {
+          await _scheduleGarminBackfillRetrySoon();
+        }
         return false;
       }
 
@@ -583,11 +667,62 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
       return true;
     } catch (e, st) {
+      // Garmin's backfill API is frequently flaky: it returns 502 (Bad gateway)
+      // and 429-style "rate limit quota violation" responses that are transient
+      // and self-heal. Treat those calmly — they're expected, not a code fault —
+      // and let the next app session retry soon instead of blocking for the full
+      // cooldown (the data never got queued, so waiting 6h would needlessly delay
+      // the user's weight/body-fat backfill). Genuinely unexpected errors keep
+      // the full stack trace.
+      final transient = _isTransientBackfillFailure(null, '$e');
       if (kDebugMode) {
-        print('[syncGarmin] backfill invoke failed: $e\n$st');
+        if (transient) {
+          print(
+            '[syncGarmin] backfill temporarily unavailable '
+            '(Garmin 502/rate-limit) — will retry next session: $e',
+          );
+        } else {
+          print('[syncGarmin] backfill invoke failed: $e\n$st');
+        }
+      }
+      if (transient) {
+        await _scheduleGarminBackfillRetrySoon();
       }
       return false;
     }
+  }
+
+  /// Whether a failed Garmin backfill is a transient/server-side condition
+  /// (gateway 502, 503, or 429 rate-limit) worth retrying soon rather than a
+  /// hard failure. Matched on status when available, else the error text.
+  bool _isTransientBackfillFailure(int? status, String message) {
+    if (status == 502 || status == 503 || status == 429) return true;
+    final m = message.toLowerCase();
+    return m.contains('502') ||
+        m.contains('503') ||
+        m.contains('429') ||
+        m.contains('bad gateway') ||
+        m.contains('rate limit') ||
+        m.contains('too many request');
+  }
+
+  /// Roll the persisted backfill cooldown back so the next app session retries
+  /// after a short delay (~30 min) instead of waiting the full cooldown. Used
+  /// only on transient failures — the in-session guard
+  /// ([_garminBackfillTriggeredThisSession]) still prevents re-firing within
+  /// the current session, so this can't spam Garmin.
+  Future<void> _scheduleGarminBackfillRetrySoon() async {
+    final userId = _currentUserId;
+    if (userId == null) return;
+    const retryDelay = Duration(minutes: 30);
+    if (retryDelay >= _garminBackfillCooldown) return;
+    final prefs = ref.read(sharedPreferencesProvider);
+    final retryAt =
+        DateTime.now().subtract(_garminBackfillCooldown - retryDelay);
+    await prefs.setInt(
+      '$_garminBackfillLastAtKeyPrefix$userId',
+      retryAt.millisecondsSinceEpoch,
+    );
   }
 
   Future<bool> connectVdot() async {
@@ -704,10 +839,23 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
       // Upload dirty activities to Supabase immediately so duplicates don't
       // appear after logout/relogin/resync (same pattern as FS/TP).
-      if ((result.newWorkouts > 0 || result.updated > 0) && !_isUsingTempUserId) {
+      //
+      // Always attempt the upload for a real (non-temp) user — even when this
+      // sync produced no new/updated workouts. A *previous* sync may have
+      // inserted rows whose upload failed (network/RLS/missing-remote-user),
+      // leaving them dirty. Gating the upload on newWorkouts/updated would never
+      // retry those, stranding them local-only: visible on this device but
+      // missing from Supabase (and therefore from other devices / after a
+      // reinstall). uploadDirtyRecords() pushes ALL dirty rows, so it doubles as
+      // the retry path. (Temp users can't pass RLS, so they're skipped and rely
+      // on the post-sign-in migration + sync to upload.)
+      var uploadFailed = false;
+      if (!_isUsingTempUserId) {
         try {
           final uploadResult =
               await _activitiesRepo.uploadDirtyRecords(_currentUserId!);
+          // success covers both a real upload and "nothing to upload" (count 0).
+          uploadFailed = !uploadResult.success;
           if (kDebugMode) {
             if (uploadResult.success) {
               print('☁️ Uploaded ${uploadResult.count} synced VDOT activities');
@@ -716,10 +864,27 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             }
           }
         } catch (e) {
+          uploadFailed = true;
           if (kDebugMode) {
             print('⚠️ Failed to upload synced VDOT activities: $e');
           }
         }
+      }
+
+      // Record this manual sync in the coordinator's staleness clock BEFORE
+      // invalidating providers below — otherwise the activities controller
+      // rebuilds, calls ensureIntegrationsSynced, sees vdot as stale, and runs
+      // an immediate duplicate full sync.
+      //
+      // EXCEPTION: if the upload failed, deliberately do NOT stamp the clock.
+      // The rows are still dirty; leaving vdot "stale" lets the next
+      // ensureIntegrationsSynced re-run the sync and retry the upload promptly
+      // (instead of waiting out the full staleness window). The coordinator
+      // stamps its own clock once that retry completes, so this can't storm.
+      if (!uploadFailed) {
+        await ref
+            .read(integrationSyncCoordinatorProvider.notifier)
+            .markProviderSynced('vdot');
       }
 
       state = AsyncData(state.value!.copyWith(importProgress: 0.8));
@@ -732,7 +897,15 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           importProgress: 1.0,
           importedWorkoutsCount: result.newWorkouts,
           isNetworkError: false,
-          clearErrorMessage: true,
+          // Surface an upload failure instead of swallowing it: the workouts
+          // are saved locally but did NOT reach Supabase, so they'd silently go
+          // missing on other devices / after reinstall. Keep it non-alarming —
+          // the retry above will pick them up.
+          errorMessage: uploadFailed
+              ? 'Workouts saved, but syncing to your account didn\'t finish. '
+                  'We\'ll retry automatically.'
+              : null,
+          clearErrorMessage: !uploadFailed,
           vdotLastSyncAt: DateTime.now(),
         ),
       );
@@ -923,6 +1096,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       } else if (eventData != null && eventData.isNotEmpty) {
         savedEventsCount = await _saveTrainingPeaksEvents(eventData);
       }
+
+      // Record this manual sync in the coordinator's staleness clock BEFORE
+      // invalidating providers — otherwise the activities controller rebuilds,
+      // calls ensureIntegrationsSynced, sees this provider as stale, and runs
+      // an immediate duplicate full sync.
+      await ref
+          .read(integrationSyncCoordinatorProvider.notifier)
+          .markProviderSynced(providerId);
 
       // Invalidate calendar to refresh UI
       state = AsyncData(state.value!.copyWith(importProgress: 0.8));

@@ -22,13 +22,24 @@ export function buildPreferenceSet(values: string[] | undefined): Set<string> {
 }
 
 /**
- * Check if a food matches a preference set
- * Uses multiple matching strategies: ID, exact name, lowercase, partial match
+ * Check if a food matches a preference set.
+ *
+ * Matches by id or by exact (case-insensitive) name / display_name ONLY.
+ *
+ * NOTE: This intentionally does NOT do substring matching. A previous version
+ * matched bidirectionally with `includes()` (e.g. preference "protein_shake"
+ * would also match "plant_protein_shake_rtd", and a generic token like
+ * "electrolyte" would match every electrolyte product). That silently
+ * over-excluded foods when used for the disliked set and collapsed the
+ * candidate pool. Preference keys are canonical food names/ids, so exact
+ * matching is correct.
  */
 export function matchesPreference(
   food: { id?: string; name?: string; display_name?: string | null },
   preferenceSet: Set<string>
 ): boolean {
+  if (preferenceSet.size === 0) return false;
+
   const foodName = food.name?.toLowerCase();
   const displayName = food.display_name?.toLowerCase();
 
@@ -44,12 +55,7 @@ export function matchesPreference(
   // Check display name
   if (displayName && preferenceSet.has(displayName)) return true;
 
-  // Check partial match (any preference contains the food name)
-  return Array.from(preferenceSet).some(
-    (pref) =>
-      (foodName && pref.toLowerCase().includes(foodName)) ||
-      (foodName && foodName.includes(pref.toLowerCase()))
-  );
+  return false;
 }
 
 /**

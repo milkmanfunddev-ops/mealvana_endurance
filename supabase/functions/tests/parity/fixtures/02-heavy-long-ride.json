@@ -1,0 +1,33 @@
+{
+  "description": "Heavy athlete (95kg male) — long high-intensity 3-hour ride. High carb and sodium demand; tests upper-bound solver pressure.",
+  "athlete": {
+    "weight_kg": 95,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "cycling",
+    "duration_minutes": 180,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 120,
+      "sodium_mg": 1800,
+      "water_ml": 2000
+    },
+    "post_run": {
+      "carbs_g": 90,
+      "protein_g": 40,
+      "sodium_mg": 1200,
+      "water_ml": 1500
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": null
+}
