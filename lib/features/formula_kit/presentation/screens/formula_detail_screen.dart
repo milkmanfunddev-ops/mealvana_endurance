@@ -9,6 +9,7 @@ import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../application/formula_library_controller.dart';
 import '../../application/personal_formulas_controller.dart';
+import '../../domain/formula_macros.dart';
 import '../../domain/formula_phase.dart';
 import '../../domain/formula_pin.dart' show TemplateKind;
 import '../../domain/formula_view.dart';
@@ -200,9 +201,10 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     );
   }
 
-  /// Fork a system formula into an editable personal formula. Seeds name,
-  /// phase, scope, totals, and the polymorphic source reference; the user then
-  /// confirms / adjusts the components in the editor.
+  /// Fork a system formula into an editable personal formula. Copies the
+  /// source's component rows (each with snapshotted per-serving macros) plus
+  /// name / phase / scope / source reference, then opens the editor where the
+  /// user adjusts/swaps/deletes those rows.
   Future<void> _makeThisMine(
     BuildContext context,
     WidgetRef ref, {
@@ -214,75 +216,83 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     final userId = (await userRepo.getCurrentUser())?.id;
     if (userId == null) return;
     final now = DateTime.now();
-    PersonalFormula? draft;
+
+    // Resolve phase + source + scope from whichever view was supplied.
+    final FormulaPhase phase;
+    final String sourceId;
+    final TemplateKind sourceKind;
+    final String name;
+    String? subPhase;
+    String? digestSpeed;
+    List<String>? activities;
+    List<String>? durations;
+    String? travelFriendliness;
 
     if (before != null) {
-      draft = PersonalFormula(
-        id: '',
-        userId: userId,
-        name: before.name,
-        provenance: FormulaProvenance.forkedFormula,
-        phase: FormulaPhase.before,
-        sourceTemplateId: before.id,
-        sourceTemplateKind: TemplateKind.preSystem,
-        subPhase: before.subPhase?.storageValue,
-        digestSpeed: before.digestionSpeed.toLowerCase().isEmpty
-            ? null
-            : before.digestionSpeed.toLowerCase(),
-        totalCarbsG: before.totalCarbsG.round(),
-        totalProteinG: before.totalProteinG.round(),
-        totalFatG: before.totalFatG.round(),
-        totalSodiumMg: before.totalSodiumMg.round(),
-        totalFluidsMl: before.totalFluidMl.round(),
-        totalCalories: before.totalCalories,
-        createdAt: now,
-        updatedAt: now,
-      );
+      phase = FormulaPhase.before;
+      sourceId = before.id;
+      sourceKind = TemplateKind.preSystem;
+      name = before.name;
+      subPhase = before.subPhase?.storageValue;
+      digestSpeed = before.digestionSpeed.toLowerCase().isEmpty
+          ? null
+          : before.digestionSpeed.toLowerCase();
     } else if (during != null) {
-      draft = PersonalFormula(
-        id: '',
-        userId: userId,
-        name: during.name,
-        provenance: FormulaProvenance.forkedFormula,
-        phase: FormulaPhase.during,
-        sourceTemplateId: during.id,
-        sourceTemplateKind: TemplateKind.duringSystem,
-        activities: during.activityTypes,
-        durations: during.durationBrackets,
-        createdAt: now,
-        updatedAt: now,
-      );
+      phase = FormulaPhase.during;
+      sourceId = during.id;
+      sourceKind = TemplateKind.duringSystem;
+      name = during.name;
+      activities = during.activityTypes;
+      durations = during.durationBrackets;
     } else if (after != null) {
-      draft = PersonalFormula(
-        id: '',
-        userId: userId,
-        name: after.name,
-        provenance: FormulaProvenance.forkedFormula,
-        phase: FormulaPhase.after,
-        sourceTemplateId: after.id,
-        sourceTemplateKind: TemplateKind.postSystem,
-        activities: after.activityTypes,
-        travelFriendliness: after.travelFriendliness,
-        totalCarbsG: after.totalCarbsG.round(),
-        totalProteinG: after.totalProteinG.round(),
-        totalFatG: after.totalFatG.round(),
-        totalSodiumMg: after.totalSodiumMg.round(),
-        totalFluidsMl: after.totalFluidMl.round(),
-        totalCalories: after.totalCalories,
-        createdAt: now,
-        updatedAt: now,
-      );
+      phase = FormulaPhase.after;
+      sourceId = after.id;
+      sourceKind = TemplateKind.postSystem;
+      name = after.name;
+      activities = after.activityTypes;
+      travelFriendliness = after.travelFriendliness;
+    } else {
+      return;
     }
 
-    if (draft == null) return;
+    // Copy the source formula's component rows (with per-serving macros).
+    final components = await ref
+        .read(formulaLibraryControllerProvider.notifier)
+        .componentsForFork(sourceId, phase);
+    final totals = FormulaMacros.totalsFor(components);
+
+    final draft = PersonalFormula(
+      id: '',
+      userId: userId,
+      name: name,
+      provenance: FormulaProvenance.forkedFormula,
+      phase: phase,
+      sourceTemplateId: sourceId,
+      sourceTemplateKind: sourceKind,
+      subPhase: subPhase,
+      digestSpeed: digestSpeed,
+      activities: activities,
+      durations: durations,
+      travelFriendliness: travelFriendliness,
+      components: components,
+      totalCarbsG: totals.carbsG,
+      totalProteinG: totals.proteinG,
+      totalFatG: totals.fatG,
+      totalSodiumMg: totals.sodiumMg,
+      totalFluidsMl: totals.fluidsMl,
+      totalCalories: totals.calories,
+      createdAt: now,
+      updatedAt: now,
+    );
 
     final saved = await ref
         .read(personalFormulasControllerProvider.notifier)
         .createFormula(draft);
     if (saved == null || !context.mounted) return;
     MealvanaSnackbar.showSuccess(context, 'Added to Your Formulas');
+    // Open the editor directly (personal/:id IS the editor).
     context.push(
-      '/settings/food-preferences/formula-library/personal/${saved.id}/edit',
+      '/settings/food-preferences/formula-library/personal/${saved.id}',
     );
   }
 }

@@ -5,10 +5,11 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
 
-import '../../../nutrition_plan/domain/food.dart';
+import '../../../nutrition_plan/domain/food_item_data.dart';
+import '../../../nutrition_plan/domain/solver_food.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart'
     show SwapFoodSelection;
-import '../../../nutrition_plan/presentation/widgets/swap_food/selected_food_display_widget.dart';
+import '../../../nutrition_plan/presentation/widgets/activity_detail/dismissible_food_item.dart';
 import '../../application/formula_editor_controller.dart';
 import '../../domain/after_filter_options.dart';
 import '../../domain/before_sub_phase.dart';
@@ -55,11 +56,16 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
     super.dispose();
   }
 
-  String get _category => switch (widget.phase) {
+  String _categoryFor(FormulaPhase phase) => switch (phase) {
         FormulaPhase.before => 'before_run',
         FormulaPhase.during => 'during_run',
         FormulaPhase.after => 'after_run',
       };
+
+  /// The phase currently in the draft (editable), falling back to the route's
+  /// initial phase before the draft loads.
+  FormulaPhase get _currentPhase =>
+      ref.read(_provider).value?.phase ?? widget.phase;
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +101,6 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
             _notesController.text = draft.notes ?? '';
           }
           final notifier = ref.read(_provider.notifier);
-          final totals = draft.totals;
           return Stack(
             children: [
               AdaptiveScrollableBody(
@@ -120,38 +125,58 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
+                    // Editable phase (above the timing/scope chips).
+                    _Label('Phase'),
+                    const SizedBox(height: AppSpacing.xs),
+                    FilterChipRow<FormulaPhase>(
+                      options: FormulaPhase.values,
+                      labelOf: (p) => p.displayLabel,
+                      isSelected: (p) => draft.phase == p,
+                      onToggled: notifier.setPhase,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
                     _ScopeSection(
-                      phase: widget.phase,
+                      phase: draft.phase,
                       draft: draft,
                       notifier: notifier,
                     ),
-                    _Label('Components'),
-                    const SizedBox(height: AppSpacing.xs),
+                    // Formula total macros (no targets/ranges — formulas have
+                    // no per-plan targets).
+                    _MacroTotals(totals: draft.totals),
+                    const SizedBox(height: AppSpacing.md),
+                    // Quantity-less food rows reusing the activity-details
+                    // widgets: swipe right → swap, swipe left → delete, tap →
+                    // expand (Nutrition Facts + Remove). No +/- stepper.
                     if (draft.components.isEmpty)
-                      Text(
-                        'No foods yet — add one to start building.',
-                        style: AppTextStyles.bodyMedium
-                            .copyWith(color: scheme.onSurfaceVariant),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.md,
+                        ),
+                        child: Text(
+                          'No foods yet. Tap "Add Food" to build your formula.',
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(color: scheme.onSurfaceVariant),
+                        ),
                       )
                     else
-                      for (var i = 0; i < draft.components.length; i++) ...[
-                        if (i > 0) const SizedBox(height: AppSpacing.sm),
-                        _ComponentEditRow(
-                          food: _foodFromComponent(draft.components[i]),
-                          quantity:
-                              FormulaMacros.quantityOf(draft.components[i]),
-                          onQuantityChanged: (q) =>
-                              notifier.updateComponentQuantity(i, q),
-                          onRemove: () => notifier.removeComponent(i),
-                          onSwap: () => _swapComponent(i, draft.components[i]),
+                      for (var i = 0; i < draft.components.length; i++)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: DismissibleFoodItem(
+                            key: ValueKey('formula_kit.editor_row_$i'),
+                            food: _foodItemFromComponent(draft.components[i], i),
+                            category: _categoryFor(draft.phase),
+                            showQuantity: false,
+                            onSwap: () =>
+                                _swapComponent(i, draft.components[i]),
+                            onDelete: () => notifier.removeComponent(i),
+                            onQuantityChange: (_) {},
+                          ),
                         ),
-                      ],
                     const SizedBox(height: AppSpacing.sm),
-                    OutlinedButton.icon(
+                    KyleAddFoodButton(
                       key: const ValueKey('formula_kit.editor_add_food'),
                       onPressed: _addFood,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Food'),
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     _Label('Notes (optional)'),
@@ -165,14 +190,6 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                         hintText: 'When to use it, prep tips…',
                         border: OutlineInputBorder(),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    _TotalsBar(
-                      carbs: totals.carbsG,
-                      protein: totals.proteinG,
-                      fat: totals.fatG,
-                      sodium: totals.sodiumMg,
-                      calories: totals.calories,
                     ),
                   ],
                 ),
@@ -198,7 +215,7 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
   Future<void> _addFood() async {
     final result = await context.push<SwapFoodSelection>(
       '/swap-food',
-      extra: {'category': _category, 'returnSelection': true},
+      extra: {'category': _categoryFor(_currentPhase), 'returnSelection': true},
     );
     if (result == null || !mounted) return;
     ref.read(_provider.notifier).addComponent(
@@ -212,7 +229,7 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
     final result = await context.push<SwapFoodSelection>(
       '/swap-food',
       extra: {
-        'category': _category,
+        'category': _categoryFor(_currentPhase),
         'returnSelection': true,
         'foodToSwapId': component[FormulaMacros.kFoodId],
         'foodToSwapName': FormulaMacros.nameOf(component),
@@ -240,62 +257,42 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
     context.pop();
   }
 
-  /// Reconstruct a [Food] from a stored component so the shared
-  /// [SelectedFoodDisplayWidget] can render it (it only reads name + per-serving
-  /// macros + serving unit).
-  Food _foodFromComponent(Map<String, dynamic> c) {
-    double? d(Object? v) => v is num ? v.toDouble() : null;
-    int? i(Object? v) => v is num ? v.round() : null;
-    return Food(
-      id: (c[FormulaMacros.kFoodId] as String?) ?? '',
-      name: FormulaMacros.nameOf(c),
-      displayName: c[FormulaMacros.kFoodName] as String?,
-      servingUnit: c[FormulaMacros.kServingUnit] as String?,
-      carbsPerServing: d(c[FormulaMacros.kCarbsPerServing]),
-      proteinPerServing: d(c[FormulaMacros.kProteinPerServing]),
-      fatPerServing: d(c[FormulaMacros.kFatPerServing]),
-      sodiumMg: i(c[FormulaMacros.kSodiumMg]),
-      fluidMlPerServing: d(c[FormulaMacros.kFluidMlPerServing]),
-      caloriesPerServing: i(c[FormulaMacros.kCaloriesPerServing]),
-    );
-  }
-}
+  /// Map a stored component (at [index]) to the [FoodItemData] the reused
+  /// [DismissibleFoodItem] renders. The id encodes [index] to keep each
+  /// Dismissible key unique (handles duplicate foods).
+  FoodItemData _foodItemFromComponent(Map<String, dynamic> c, int index) {
+    double n(Object? v) => v is num ? v.toDouble() : 0.0;
+    final qty = FormulaMacros.quantityOf(c);
+    final name = FormulaMacros.nameOf(c);
+    final unit = c[FormulaMacros.kServingUnit] as String?;
+    final carbs = (n(c[FormulaMacros.kCarbsPerServing]) * qty).round();
+    final protein = (n(c[FormulaMacros.kProteinPerServing]) * qty).round();
+    final fat = (n(c[FormulaMacros.kFatPerServing]) * qty).round();
+    final sodium = (n(c[FormulaMacros.kSodiumMg]) * qty).round();
+    final fluids = n(c[FormulaMacros.kFluidMlPerServing]) * qty;
+    final calRaw = c[FormulaMacros.kCaloriesPerServing];
+    final calories = calRaw is num
+        ? (calRaw.toDouble() * qty).round()
+        : carbs * 4 + protein * 4 + fat * 9;
 
-class _ComponentEditRow extends StatelessWidget {
-  const _ComponentEditRow({
-    required this.food,
-    required this.quantity,
-    required this.onQuantityChanged,
-    required this.onRemove,
-    required this.onSwap,
-  });
-
-  final Food food;
-  final double quantity;
-  final ValueChanged<double> onQuantityChanged;
-  final VoidCallback onRemove;
-  final VoidCallback onSwap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SelectedFoodDisplayWidget(
-          food: food,
-          quantity: quantity,
-          onQuantityChanged: onQuantityChanged,
-          onClear: onRemove,
-        ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: onSwap,
-            icon: const Icon(Icons.swap_horiz, size: 18),
-            label: const Text('Swap'),
-          ),
-        ),
-      ],
+    return FoodItemData(
+      id: 'idx:$index',
+      name: name,
+      quantity: FoodItemData.buildDisplayQuantity(
+        rawQty: SolverFood.formatQuantity(qty),
+        servingUnit: unit,
+        displayName: name,
+      ),
+      nutritionalInfo: NutritionalInfo(
+        calories: calories,
+        carbs: carbs,
+        protein: protein,
+        fat: fat,
+        sodium: sodium,
+        fluids: fluids,
+      ),
+      displayName: name,
+      servingSize: unit,
     );
   }
 }
@@ -408,54 +405,44 @@ class _ScopeSection extends StatelessWidget {
   }
 }
 
-class _TotalsBar extends StatelessWidget {
-  const _TotalsBar({
-    required this.carbs,
-    required this.protein,
-    required this.fat,
-    required this.sodium,
-    required this.calories,
-  });
+/// Formula total macros — big numbers, no target ranges (formulas have no
+/// per-plan targets). Mirrors the activity-details macro readout style.
+class _MacroTotals extends StatelessWidget {
+  const _MacroTotals({required this.totals});
 
-  final int carbs;
-  final int protein;
-  final int fat;
-  final int sodium;
-  final int calories;
+  final FormulaTotals totals;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    Widget cell(String label, String value) => Column(
+    Widget cell(String value, String label) => Column(
           children: [
             Text(
               value,
               style: AppTextStyles.dataNumber.copyWith(
                 color: AppColors.electrolyte,
-                fontSize: 16,
+                fontSize: 20,
                 fontWeight: FontWeight.w700,
               ),
             ),
+            const SizedBox(height: 2),
             Text(
               label,
-              style: AppTextStyles.bodyMedium
-                  .copyWith(fontSize: 11, color: scheme.onSurfaceVariant),
+              style: AppTextStyles.smallLabel
+                  .copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         );
-    return BaseCard(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            cell('Cal', '$calories'),
-            cell('Carbs', '${carbs}g'),
-            cell('Protein', '${protein}g'),
-            cell('Fat', '${fat}g'),
-            cell('Na', '$sodium'),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          cell('${totals.carbsG}g', 'CARBS'),
+          cell('${totals.proteinG}g', 'PROTEIN'),
+          cell('${totals.fatG}g', 'FAT'),
+          cell('${totals.sodiumMg}', 'SODIUM'),
+        ],
       ),
     );
   }

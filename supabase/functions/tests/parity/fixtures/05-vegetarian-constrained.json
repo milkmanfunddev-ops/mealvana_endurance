@@ -1,0 +1,35 @@
+{
+  "description": "Average athlete (70kg) — vegetarian dietary preference. Tests solver under food-pool constraint pressure when meat-based foods are excluded.",
+  "knownFailure": true,
+  "knownFailureReason": "GENUINE ALGORITHM PARITY VIOLATION (sodium): Rule solver produces 220mg sodium vs 800mg target (72.5% miss). Root cause: the rule solver picks 2x gel + 1x sports drink as the carb backbone, exhausting its carb budget, then the electrolyte-fill pass fails to find an electrolyte food that 'improves the score'. The issue is the electrolyte selection logic's scoring function skips addition when there's no improvement, leaving a large sodium gap. In the full production flow (with DB foods), more high-sodium options are available; with the in-memory test catalog this surfaces a real solver gap. CARB issue: 2x gel + sports drink = 65g vs 55g target — the rule solver's minimum-carb selection (1 gel = 25g) + sports drink overshoots 55g with no way to deliver exactly 55g from indivisible servings. TODO: Electrolyte scoring logic should prioritize filling a sodium gap regardless of score improvement when deficit exceeds 30%.",
+  "athlete": {
+    "weight_kg": 70,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 90,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 55,
+      "sodium_mg": 800,
+      "water_ml": 900
+    },
+    "post_run": {
+      "carbs_g": 60,
+      "protein_g": 25,
+      "sodium_mg": 700,
+      "water_ml": 600
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "vegetarian"
+  },
+  "pins": null
+}

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../features/app_startup/application/app_startup_provider.dart';
 import '../services/app_external_deps.dart';
 import '../../main.dart' show sentryNavigatorKey;
@@ -41,7 +42,6 @@ import '../../features/formula_kit/domain/formula_phase.dart';
 import '../../features/formula_kit/presentation/screens/formula_detail_screen.dart';
 import '../../features/formula_kit/presentation/screens/formula_editor_screen.dart';
 import '../../features/formula_kit/presentation/screens/formula_library_screen.dart';
-import '../../features/formula_kit/presentation/screens/personal_formula_detail_screen.dart';
 import '../../features/settings/presentation/screens/sport_preferences_hub_screen.dart';
 import '../../features/settings/presentation/screens/help_feedback_screen.dart';
 import '../../features/personal_templates/presentation/screens/personal_templates_screen.dart';
@@ -94,6 +94,9 @@ class AppRouter {
       refreshListenable: authChangeNotifier,
       // Use Sentry navigator key for screenshot capture in feedback widget
       navigatorKey: sentryNavigatorKey,
+      // SentryNavigatorObserver records screen transitions as Sentry breadcrumbs
+      // and navigation spans for performance monitoring.
+      observers: [SentryNavigatorObserver()],
       // Redirect logic based on app startup state
       redirect: (context, state) {
         final currentPath = state.uri.path;
@@ -683,8 +686,10 @@ class AppRouter {
                 phase: FormulaPhase.after,
               ),
             ),
-            // Personal formulas (create / detail / edit). `create` is
-            // registered before `:id` so the literal segment wins the match.
+            // Personal formulas. `create` is registered before `:id` so the
+            // literal segment wins the match. Tapping a personal formula opens
+            // the editor directly (no read-only detail screen) — `personal/:id`
+            // IS the editor in edit mode.
             GoRoute(
               path: 'personal/create',
               name: 'settings-formula-personal-create',
@@ -697,22 +702,13 @@ class AppRouter {
             ),
             GoRoute(
               path: 'personal/:id',
-              name: 'settings-formula-personal-detail',
-              builder: (context, state) => PersonalFormulaDetailScreen(
-                id: state.pathParameters['id']!,
+              name: 'settings-formula-personal-edit',
+              builder: (context, state) => FormulaEditorScreen(
+                formulaId: state.pathParameters['id'],
+                // Phase is loaded from the existing formula in the editor
+                // controller; this default is unused for edit.
+                phase: FormulaPhase.before,
               ),
-              routes: [
-                GoRoute(
-                  path: 'edit',
-                  name: 'settings-formula-personal-edit',
-                  builder: (context, state) => FormulaEditorScreen(
-                    formulaId: state.pathParameters['id'],
-                    // Phase is loaded from the existing formula in the editor
-                    // controller; this default is unused for edit.
-                    phase: FormulaPhase.before,
-                  ),
-                ),
-              ],
             ),
           ],
         ),

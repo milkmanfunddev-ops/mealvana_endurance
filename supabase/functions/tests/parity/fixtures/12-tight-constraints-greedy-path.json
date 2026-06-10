@@ -1,0 +1,33 @@
+{
+  "description": "Intentionally tight constraints: gluten-free vegan with nut allergy AND high sodium/carb targets. The restricted food pool is designed to exercise the greedy fallback path.",
+  "athlete": {
+    "weight_kg": 80,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 150,
+    "gut_training_level": "high"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 80,
+      "sodium_mg": 1400,
+      "water_ml": 1800
+    },
+    "post_run": {
+      "carbs_g": 80,
+      "protein_g": 35,
+      "sodium_mg": 1200,
+      "water_ml": 1200
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": ["gluten", "nuts"],
+    "dietary_preference": "vegan"
+  },
+  "pins": null
+}

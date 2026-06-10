@@ -1,0 +1,105 @@
+{
+  "description": "NEW in-flight behavior: athlete has personal formulas pinned for all three phases (before full_meal, during running, after running). Tests simultaneous multi-phase personal formula honoring.",
+  "athlete": {
+    "weight_kg": 73,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 120,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 60,
+      "sodium_mg": 900,
+      "water_ml": 900
+    },
+    "post_run": {
+      "carbs_g": 60,
+      "protein_g": 25,
+      "sodium_mg": 700,
+      "water_ml": 600
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": {
+    "personalFormulas": [
+      {
+        "id": "pf-before-all",
+        "name": "Pre-Race Toast",
+        "phase": "before",
+        "activities": null,
+        "durations": null,
+        "subPhase": "full_meal",
+        "components": [
+          {
+            "food_id": "toast",
+            "food_name": "Toast with Jam",
+            "quantity": 2,
+            "serving_unit": "slice",
+            "source": "template",
+            "carbs_per_serving": 30,
+            "protein_per_serving": 3,
+            "fat_per_serving": 1,
+            "sodium_mg": 150,
+            "fluid_ml_per_serving": 10,
+            "calories_per_serving": 140
+          }
+        ]
+      },
+      {
+        "id": "pf-during-all",
+        "name": "Race-Day Gel",
+        "phase": "during",
+        "activities": ["running"],
+        "durations": ["90-150 min"],
+        "subPhase": null,
+        "components": [
+          {
+            "food_id": "energy-gel",
+            "food_name": "Energy Gel",
+            "quantity": 4,
+            "serving_unit": "gel",
+            "source": "template",
+            "carbs_per_serving": 25,
+            "protein_per_serving": 0,
+            "fat_per_serving": 0,
+            "sodium_mg": 55,
+            "fluid_ml_per_serving": 0,
+            "calories_per_serving": 100
+          }
+        ]
+      },
+      {
+        "id": "pf-after-all",
+        "name": "Recovery Banana Shake",
+        "phase": "after",
+        "activities": ["running"],
+        "durations": null,
+        "subPhase": null,
+        "components": [
+          {
+            "food_id": "protein-shake",
+            "food_name": "Protein Shake",
+            "quantity": 1,
+            "serving_unit": "scoop",
+            "source": "template",
+            "carbs_per_serving": 5,
+            "protein_per_serving": 25,
+            "fat_per_serving": 2,
+            "sodium_mg": 200,
+            "fluid_ml_per_serving": 350,
+            "calories_per_serving": 150
+          }
+        ]
+      }
+    ]
+  }
+}

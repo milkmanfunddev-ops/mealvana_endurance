@@ -27,6 +27,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { validateGarminRequest } from "../_shared/garmin/auth.ts";
 import {
   garminTimestampToDateString,
@@ -57,7 +58,10 @@ declare const EdgeRuntime: {
   waitUntil(promise: Promise<unknown>): void;
 } | undefined;
 
-serve(async (req: Request) => {
+// Initialise Sentry once per cold-start. No-op when SENTRY_DSN is not set.
+initSentry();
+
+serve(withSentry(async (req: Request) => {
   // Validate the request is from Garmin (header-only, synchronous)
   const validationError = validateGarminRequest(req, GARMIN_CLIENT_ID);
   if (validationError) {
@@ -109,7 +113,7 @@ serve(async (req: Request) => {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
-});
+}));
 
 /**
  * Optional fan-out: if `GARMIN_FANOUT_URL` is set, re-POST the inbound

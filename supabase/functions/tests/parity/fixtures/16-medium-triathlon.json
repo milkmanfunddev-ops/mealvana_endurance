@@ -1,0 +1,59 @@
+{
+  "description": "Medium triathlete (74kg) — 2.5-hour multisport workout. Tests triathlon activity type with moderate targets and personal formula that maps triathlon to sub-activities.",
+  "athlete": {
+    "weight_kg": 74,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "triathlon",
+    "duration_minutes": 150,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 75,
+      "sodium_mg": 1100,
+      "water_ml": 1200
+    },
+    "post_run": {
+      "carbs_g": 70,
+      "protein_g": 30,
+      "sodium_mg": 900,
+      "water_ml": 800
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": {
+    "personalFormulas": [
+      {
+        "id": "pf-triathlon-bike",
+        "name": "Tri Bike Nutrition",
+        "phase": "during",
+        "activities": ["triathlon_bike"],
+        "durations": null,
+        "subPhase": null,
+        "components": [
+          {
+            "food_id": "high-carb-mix",
+            "food_name": "High Carb Drink Mix",
+            "quantity": 1,
+            "serving_unit": "bottle",
+            "source": "template",
+            "carbs_per_serving": 45,
+            "protein_per_serving": 0,
+            "fat_per_serving": 0,
+            "sodium_mg": 200,
+            "fluid_ml_per_serving": 500,
+            "calories_per_serving": 180
+          }
+        ]
+      }
+    ]
+  }
+}

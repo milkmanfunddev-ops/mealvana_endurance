@@ -320,9 +320,47 @@ List<Widget> _yourFormulasSection(
   FormulaPhase phase,
 ) {
   final scheme = Theme.of(context).colorScheme;
+
+  // Apply the same active chip / pinned-only filters the system lists use, so
+  // "Your Formulas" filters in step with the rest of the screen.
+  final filter = ref.watch(formulaLibraryControllerProvider).value?.filter;
+  final pinIds = ref.watch(formulaPinControllerProvider).maybeWhen(
+        data: (s) => s.pinnedTemplateIds,
+        orElse: () => const <String>{},
+      );
+
+  bool matchesFilter(PersonalFormula f) {
+    if (filter == null) return true;
+    if (filter.pinnedOnly && !pinIds.contains(f.id)) return false;
+    switch (phase) {
+      case FormulaPhase.before:
+        final sp = filter.beforeSubPhase;
+        if (sp != null && f.subPhase != sp.storageValue) return false;
+        final ds = filter.beforeDigestionSpeed;
+        if (ds != null && f.digestSpeed != ds.storageValue) return false;
+      case FormulaPhase.during:
+        final a = filter.duringActivity;
+        if (a != null && !(f.activities?.contains(a.storageValue) ?? false)) {
+          return false;
+        }
+        final d = filter.duringDuration;
+        if (d != null && !(f.durations?.contains(d.storageValue) ?? false)) {
+          return false;
+        }
+        final g = filter.duringGutLevel;
+        if (g != null && f.gutTraining != g.storageValue) return false;
+      case FormulaPhase.after:
+        final t = filter.afterTravelFriendliness;
+        if (t != null && f.travelFriendliness != t.storageValue) return false;
+    }
+    return true;
+  }
+
   final personal = ref.watch(personalFormulasControllerProvider).maybeWhen(
-        data: (all) =>
-            all.where((f) => f.phase == phase).toList(growable: false),
+        data: (all) => all
+            .where((f) => f.phase == phase)
+            .where(matchesFilter)
+            .toList(growable: false),
         orElse: () => const <PersonalFormula>[],
       );
 
@@ -364,11 +402,46 @@ List<Widget> _yourFormulasSection(
       for (final f in personal)
         Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: PersonalFormulaCard(
-            key: ValueKey('formula_kit.personal_card_${f.id}'),
-            formula: f,
-            onTap: () => context.push(
-              '/settings/food-preferences/formula-library/personal/${f.id}',
+          // Swipe left to delete (with confirm). No overflow/hamburger menu —
+          // tapping the card opens the editor.
+          child: Dismissible(
+            key: ValueKey('formula_kit.personal_dismiss_${f.id}'),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: AppColors.dragonfruit,
+                borderRadius: AppRadius.cardRadius,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    'Delete',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  const Icon(Icons.delete_outline, color: Colors.white),
+                ],
+              ),
+            ),
+            // Confirm + delete via state rebuild; return false so the
+            // Dismissible itself never animates away (avoids double-removal).
+            confirmDismiss: (_) async {
+              await _confirmDeletePersonalFormula(context, ref, f);
+              return false;
+            },
+            child: PersonalFormulaCard(
+              key: ValueKey('formula_kit.personal_card_${f.id}'),
+              formula: f,
+              // Tap opens the editor directly (personal/:id IS the editor now).
+              onTap: () => context.push(
+                '/settings/food-preferences/formula-library/personal/${f.id}',
+              ),
             ),
           ),
         ),
@@ -379,6 +452,39 @@ List<Widget> _yourFormulasSection(
     ),
     const SizedBox(height: AppSpacing.xs),
   ];
+}
+
+/// Confirm + delete a personal formula from the Your Formulas list. Shared by
+/// the card overflow menu (and mirrors the detail-screen delete).
+Future<void> _confirmDeletePersonalFormula(
+  BuildContext context,
+  WidgetRef ref,
+  PersonalFormula formula,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Delete formula?'),
+      content: Text('"${formula.name}" will be removed from Your Formulas.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+  await ref
+      .read(personalFormulasControllerProvider.notifier)
+      .deleteFormula(formula.id);
+  if (context.mounted) {
+    MealvanaSnackbar.showSuccess(context, 'Formula deleted');
+  }
 }
 
 const _listPadding = EdgeInsets.fromLTRB(

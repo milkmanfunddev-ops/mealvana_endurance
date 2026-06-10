@@ -64,6 +64,7 @@ class FormulaDraft {
 
   FormulaDraft copyWith({
     String? name,
+    FormulaPhase? phase,
     List<Map<String, dynamic>>? components,
     String? notes,
     String? subPhase,
@@ -75,7 +76,7 @@ class FormulaDraft {
   }) {
     return FormulaDraft(
       name: name ?? this.name,
-      phase: phase,
+      phase: phase ?? this.phase,
       components: components ?? this.components,
       notes: notes ?? this.notes,
       subPhase: subPhase ?? this.subPhase,
@@ -130,6 +131,11 @@ class FormulaEditorController extends _$FormulaEditorController {
   // ── Field mutations ──────────────────────────────────────────────────────
 
   void setName(String name) => _patch((d) => d.copyWith(name: name));
+
+  /// Change the formula's phase (before / during / after). Scope fields for
+  /// other phases stay in state but are simply not read by the active phase's
+  /// scope chips (and not honored cross-phase), so no clearing is needed.
+  void setPhase(FormulaPhase phase) => _patch((d) => d.copyWith(phase: phase));
 
   void setNotes(String? notes) => _patch((d) => d.copyWith(notes: notes));
 

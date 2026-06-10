@@ -1,0 +1,36 @@
+{
+  "description": "Athlete (72kg) with a pinned system during-workout template. Tests that pin override fires and the pinned template's components appear in the plan.",
+  "athlete": {
+    "weight_kg": 72,
+    "sex": "male"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 120,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 60,
+      "sodium_mg": 900,
+      "water_ml": 900
+    },
+    "post_run": {
+      "carbs_g": 65,
+      "protein_g": 28,
+      "sodium_mg": 750,
+      "water_ml": 700
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": [],
+    "dietary_preference": "none"
+  },
+  "pins": {
+    "duringPinIds": ["mock-during-template-id-1"],
+    "personalFormulas": []
+  }
+}

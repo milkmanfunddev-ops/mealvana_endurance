@@ -20,6 +20,7 @@ class PlanSectionEditableWidget extends StatefulWidget {
     this.onSwapFood,
     this.onDeleteFood,
     this.onUpdateQuantity,
+    this.onAddFood,
   });
 
   final PlanSection section;
@@ -29,6 +30,12 @@ class PlanSectionEditableWidget extends StatefulWidget {
   final Function(String foodItemId, String foodName)? onSwapFood;
   final Function(String foodItemId)? onDeleteFood;
   final Function(String foodItemId, double newQuantity)? onUpdateQuantity;
+
+  /// Overrides the default "+ Add Food" action. When null, falls back to the
+  /// activity-plan behavior (navigate to /swap-food with the plan's activityId).
+  /// Callers without an activity (e.g. the personal-formula editor) inject their
+  /// own add flow here.
+  final VoidCallback? onAddFood;
   
   @override
   State<PlanSectionEditableWidget> createState() => _PlanSectionEditableWidgetState();
@@ -123,6 +130,11 @@ class _PlanSectionEditableWidgetState extends State<PlanSectionEditableWidget> {
           alignment: Alignment.centerLeft,
           child: AddFoodButton(
             onPressed: () {
+              // Caller-provided add flow (e.g. personal-formula editor) wins.
+              if (widget.onAddFood != null) {
+                widget.onAddFood!();
+                return;
+              }
               final activityId = widget.plan.activityId;
               if (activityId == null) {
                 return;

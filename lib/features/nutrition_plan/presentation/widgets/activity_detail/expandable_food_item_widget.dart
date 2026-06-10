@@ -19,6 +19,7 @@ class ExpandableFoodItemWidget extends StatefulWidget {
     this.showSwipeHint = false,
     this.useImperial = true,
     this.subtitleOverride,
+    this.showQuantity = true,
   });
 
   final FoodItemData food;
@@ -31,6 +32,11 @@ class ExpandableFoodItemWidget extends StatefulWidget {
   final bool showSwipeHint;
   final bool useImperial;
   final String? subtitleOverride;
+
+  /// When false, the row title drops the leading quantity (shows the food name
+  /// only) and the expanded view hides the +/- quantity stepper. Used by the
+  /// personal-formula editor — formulas are quantity-less lists of foods.
+  final bool showQuantity;
 
   @override
   State<ExpandableFoodItemWidget> createState() =>
@@ -246,7 +252,11 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _buildQuantityDescription(),
+                          widget.showQuantity
+                              ? _buildQuantityDescription()
+                              : (widget.food.displayName?.isNotEmpty == true
+                                  ? widget.food.displayName!
+                                  : widget.food.name),
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
@@ -289,83 +299,88 @@ class _ExpandableFoodItemWidgetState extends State<ExpandableFoodItemWidget>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Quantity controls
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Quantity',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  // Quantity controls (hidden for quantity-less contexts like
+                  // the personal-formula editor)
+                  if (widget.showQuantity) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Quantity',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.orange, width: 2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Decrease button
-                            IconButton(
-                              icon: FaIcon(
-                                FontAwesomeIcons.minus,
-                                size: AppIconSizes.controlIcon,
-                                color: AppColors.orange,
+                        Container(
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: AppColors.orange, width: 2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Decrease button
+                              IconButton(
+                                icon: FaIcon(
+                                  FontAwesomeIcons.minus,
+                                  size: AppIconSizes.controlIcon,
+                                  color: AppColors.orange,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    final step = widget.food.isIndivisible
+                                        ? 1.0
+                                        : 0.5;
+                                    if (_quantity > step) {
+                                      _quantity -= step;
+                                      final updated = widget.food.isIndivisible
+                                          ? _quantity.round().toDouble()
+                                          : _quantity;
+                                      widget.onQuantityChange?.call(updated);
+                                    }
+                                  });
+                                },
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  final step = widget.food.isIndivisible
-                                      ? 1.0
-                                      : 0.5;
-                                  if (_quantity > step) {
-                                    _quantity -= step;
+
+                              // Quantity display
+                              Text(
+                                food_utils.formatQuantity(_quantity),
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              // Increase button
+                              IconButton(
+                                icon: FaIcon(
+                                  FontAwesomeIcons.plus,
+                                  size: AppIconSizes.controlIcon,
+                                  color: AppColors.orange,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    final step = widget.food.isIndivisible
+                                        ? 1.0
+                                        : 0.5;
+                                    _quantity += step;
                                     final updated = widget.food.isIndivisible
                                         ? _quantity.round().toDouble()
                                         : _quantity;
                                     widget.onQuantityChange?.call(updated);
-                                  }
-                                });
-                              },
-                            ),
-
-                            // Quantity display
-                            Text(
-                              food_utils.formatQuantity(_quantity),
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
+                                  });
+                                },
                               ),
-                            ),
-
-                            // Increase button
-                            IconButton(
-                              icon: FaIcon(
-                                FontAwesomeIcons.plus,
-                                size: AppIconSizes.controlIcon,
-                                color: AppColors.orange,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  final step = widget.food.isIndivisible
-                                      ? 1.0
-                                      : 0.5;
-                                  _quantity += step;
-                                  final updated = widget.food.isIndivisible
-                                      ? _quantity.round().toDouble()
-                                      : _quantity;
-                                  widget.onQuantityChange?.call(updated);
-                                });
-                              },
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: AppSpacing.md),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
 
                   // Nutritional Facts
                   Text(

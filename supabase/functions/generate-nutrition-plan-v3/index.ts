@@ -31,6 +31,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
+import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { handleCors } from "../_shared/cors.ts";
 import {
   errorResponse,
@@ -86,7 +87,11 @@ async function timeAsync<T>(
 // Main Handler
 // ============================================================================
 
-serve(async (req) => {
+// Initialise Sentry once per cold-start. initSentry() is a no-op when
+// SENTRY_DSN is not configured so this never crashes the function.
+initSentry();
+
+serve(withSentry(async (req) => {
   const requestStart = performance.now();
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -426,4 +431,4 @@ serve(async (req) => {
     );
     return serverError(error, true);
   }
-});
+}));

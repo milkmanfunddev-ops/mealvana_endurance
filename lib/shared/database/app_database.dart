@@ -657,7 +657,7 @@ class AppDatabase extends _$AppDatabase {
 
 /// Database connection setup with seed database support.
 /// Implementation is platform-specific (see connection_native.dart / connection_web.dart).
-LazyDatabase _openConnection() => openNativeConnection();
+QueryExecutor _openConnection() => openNativeConnection();
 
 /// Exception thrown when database schema validation fails.
 ///

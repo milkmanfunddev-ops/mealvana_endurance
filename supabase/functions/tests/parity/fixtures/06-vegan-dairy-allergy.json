@@ -1,0 +1,33 @@
+{
+  "description": "Vegan athlete (62kg) with dairy and egg allergies. Tests double-constraint (diet + allergy) elimination of candidate pool; greedy fallback path candidate.",
+  "athlete": {
+    "weight_kg": 62,
+    "sex": "female"
+  },
+  "workout": {
+    "activity_type": "running",
+    "duration_minutes": 120,
+    "gut_training_level": "moderate"
+  },
+  "targets": {
+    "during_run": {
+      "carbs_g": 65,
+      "sodium_mg": 900,
+      "water_ml": 1000
+    },
+    "post_run": {
+      "carbs_g": 55,
+      "protein_g": 22,
+      "sodium_mg": 600,
+      "water_ml": 700
+    }
+  },
+  "preferences": {
+    "liked_foods": [],
+    "willing_to_try_foods": [],
+    "disliked_foods": [],
+    "allergies": ["dairy", "eggs"],
+    "dietary_preference": "vegan"
+  },
+  "pins": null
+}
