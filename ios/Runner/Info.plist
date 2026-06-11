@@ -54,7 +54,9 @@
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSCameraUsageDescription</key>
-		<string>This app needs camera access to scan QR codes and barcodes on food products to quickly add them to your nutrition plan.</string>
+		<string>This app needs camera access to scan barcodes on food products and to photograph meals so we can estimate their nutrition for your log.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>This app needs photo library access so you can log meals from photos you have already taken.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>This app uses your location to provide accurate weather forecasts for your upcoming activities, helping you plan your nutrition and hydration needs based on local conditions.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>

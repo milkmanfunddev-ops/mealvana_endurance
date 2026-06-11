@@ -18,6 +18,8 @@ import '../../../coach_mode/data/coach_repository.dart';
 import '../../../events/data/events_repository.dart';
 import '../../../feedback/data/feedback_repository.dart';
 import '../../../food_preferences/data/food_preferences_repository.dart';
+import '../../../meal_logging/data/meal_log_repository.dart';
+import '../../../meal_logging/data/saved_meals_repository.dart';
 import '../../../nutrition_plan/presentation/providers/macro_targets_controller.dart';
 import '../../domain/settings_state.dart';
 
@@ -692,6 +694,9 @@ class SettingsController extends _$SettingsController {
     );
     final userRepo = await ref.read(userRepositoryProvider.future);
 
+    final mealLogRepo = ref.read(mealLogRepositoryProvider);
+    final savedMealsRepo = ref.read(savedMealsRepositoryProvider);
+
     await Future.wait([
       activitiesRepo.uploadDirtyRecords(userId),
       eventsRepo.uploadDirtyRecords(userId),
@@ -699,6 +704,8 @@ class SettingsController extends _$SettingsController {
       feedbackRepo.uploadDirtyRecords(userId),
       foodPrefsRepo.uploadDirtyRecords(userId),
       userRepo.uploadDirtyRecords(userId),
+      mealLogRepo.uploadDirtyRecords(userId),
+      savedMealsRepo.uploadDirtyRecords(userId),
     ]);
   }
 

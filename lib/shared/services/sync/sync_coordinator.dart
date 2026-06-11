@@ -17,6 +17,8 @@ import '../../../features/feedback/data/feedback_repository.dart';
 import '../../../features/food_preferences/data/food_preferences_repository.dart';
 import '../../../features/auth/data/user_repository.dart';
 import '../../../features/user_foods/data/user_foods_repository.dart';
+import '../../../features/meal_logging/data/meal_log_repository.dart';
+import '../../../features/meal_logging/data/saved_meals_repository.dart';
 
 // Provider imports for invalidation
 import '../../../features/activities/presentation/providers/activities_controller.dart';
@@ -427,6 +429,8 @@ class SyncCoordinator extends _$SyncCoordinator {
         ),
         'users': await ref.read(userRepositoryProvider.future),
         'user_foods': await ref.read(userFoodsRepositoryProvider.future),
+        'meal_logs': ref.read(mealLogRepositoryProvider),
+        'saved_meals': ref.read(savedMealsRepositoryProvider),
       };
 
       final entries = repos.entries.toList();

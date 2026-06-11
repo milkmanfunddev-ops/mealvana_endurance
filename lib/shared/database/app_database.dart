@@ -42,6 +42,9 @@ import 'tables/athlete_pairing_codes_table.dart';
 import 'tables/coach_pairing_codes_table.dart';
 import 'tables/daily_macro_targets_table.dart';
 import 'tables/race_checklist_items_table.dart';
+import 'tables/meal_logs_table.dart';
+import 'tables/saved_meals_table.dart';
+import 'tables/recipes_table.dart';
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
@@ -136,6 +139,13 @@ part 'app_database.g.dart';
 
     // Daily macro targets cache
     DailyMacroTargetsTable,
+
+    // Meal logging (Daily Macros tab) + saved favorites
+    MealLogsTable,
+    SavedMealsTable,
+
+    // Curated recipe catalog (read-only mirror)
+    RecipesTable,
   ],
   daos: [
     UserDao,
@@ -164,6 +174,17 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
+  /// Schema version 11: meal logging + Jade groundwork. Adds three tables:
+  ///   • meal_logs   — logged meals on the Daily Macros tab (offline-first,
+  ///     soft-deleted via is_deleted, needs_upload dirty tracking)
+  ///   • saved_meals — explicit user favorites for one-tap re-logging
+  ///   • recipes     — read-only mirror of the curated recipe catalog
+  /// Jade chat tables (jade_conversations/jade_messages/jade_calls) are
+  /// online-only and have NO Drift mirror. Supabase schema:
+  /// docs/database/meal_logging_jade_schema.sql (applied dev + prod).
+  /// NOTE: the matching Supabase `app_config` schema version (read by
+  /// VersionCheckService) must be set to 11 when this ships.
+  ///
   /// Schema version 10: adds `personal_formulas` — Formula Kit personal
   /// formulas (user-authored fueling recipes, forked or from-scratch, tied to
   /// a phase). Distinct table from personal_templates; soft-deleted via
@@ -205,7 +226,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -293,6 +314,16 @@ class AppDatabase extends _$AppDatabase {
         // creation is standalone.
         if (from < 10) {
           await m.createTable(personalFormulasTable);
+        }
+
+        // v11: Meal logging + Jade groundwork — meal_logs (offline-first log
+        // entries), saved_meals (user favorites), recipes (read-only catalog
+        // mirror). No local FK references between them, so creation order is
+        // for readability only.
+        if (from < 11) {
+          await m.createTable(mealLogsTable);
+          await m.createTable(savedMealsTable);
+          await m.createTable(recipesTable);
         }
       },
 

@@ -1,34 +1,48 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../domain/recipe.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../data/repositories/recipe_repository.dart';
+import '../domain/recipe.dart';
 
-part 'recipe_service.g.dart';
-
-@riverpod
-RecipeService recipeService(Ref ref) {
-  final repository = ref.read(recipeRepositoryProvider);
-  return RecipeService(repository);
-}
-
+/// Application-layer service for the recipe catalog.
+///
+/// Thin facade over [RecipeRepository] that adds sorting / filtering helpers
+/// and drives on-demand cache hydration (ensureSynced) so the screen never
+/// calls Supabase directly.
 class RecipeService {
   const RecipeService(this._repository);
 
   final RecipeRepository _repository;
 
+  // ========================================================================
+  // Hydration
+  // ========================================================================
+
+  /// Ensure the local recipe cache is populated before first read.
+  ///
+  /// Call this once when the Recipes screen mounts. If the cache is fresh
+  /// the call is a no-op; if stale (> 24 h or empty) it fetches from Supabase.
+  Future<void> ensureSynced(String userId) async {
+    await _repository.ensureSynced(userId);
+  }
+
+  // ========================================================================
+  // Read Methods
+  // ========================================================================
+
   Future<List<Recipe>> getAllRecipes() async {
-    return await _repository.getAllRecipes();
+    return _repository.getAllRecipes();
   }
 
   Future<List<Recipe>> getRecipesByType(RecipeType type) async {
-    return await _repository.getRecipesByType(type);
+    return _repository.getRecipesByType(type);
   }
 
   Future<Recipe?> getRecipeById(String id) async {
-    return await _repository.getRecipeById(id);
+    return _repository.getRecipeById(id);
   }
 
   Future<List<Recipe>> getFavoriteRecipes() async {
-    return await _repository.getFavoriteRecipes();
+    return _repository.getFavoriteRecipes();
   }
 
   Future<void> toggleFavorite(String recipeId) async {
@@ -37,14 +51,17 @@ class RecipeService {
 
   Future<List<Recipe>> searchRecipes(String query) async {
     if (query.isEmpty) {
-      return await getAllRecipes();
+      return getAllRecipes();
     }
-    return await _repository.searchRecipes(query);
+    return _repository.searchRecipes(query);
   }
+
+  // ========================================================================
+  // Pure helpers (no I/O)
+  // ========================================================================
 
   List<Recipe> filterRecipesByTags(List<Recipe> recipes, List<String> tags) {
     if (tags.isEmpty) return recipes;
-    
     return recipes.where((recipe) {
       if (recipe.tags == null) return false;
       return tags.every((tag) => recipe.tags!.contains(tag));
@@ -53,17 +70,17 @@ class RecipeService {
 
   List<Recipe> sortRecipes(List<Recipe> recipes, RecipeSortOption sortOption) {
     final sortedRecipes = List<Recipe>.from(recipes);
-    
     switch (sortOption) {
       case RecipeSortOption.name:
         sortedRecipes.sort((a, b) => a.name.compareTo(b.name));
-        break;
       case RecipeSortOption.prepTime:
-        sortedRecipes.sort((a, b) => a.prepTimeMinutes.compareTo(b.prepTimeMinutes));
-        break;
+        sortedRecipes.sort(
+          (a, b) => a.prepTimeMinutes.compareTo(b.prepTimeMinutes),
+        );
       case RecipeSortOption.calories:
-        sortedRecipes.sort((a, b) => a.nutrition.calories.compareTo(b.nutrition.calories));
-        break;
+        sortedRecipes.sort(
+          (a, b) => a.nutrition.calories.compareTo(b.nutrition.calories),
+        );
       case RecipeSortOption.newest:
         sortedRecipes.sort((a, b) {
           if (a.createdAt == null && b.createdAt == null) return 0;
@@ -71,9 +88,7 @@ class RecipeService {
           if (b.createdAt == null) return -1;
           return b.createdAt!.compareTo(a.createdAt!);
         });
-        break;
     }
-    
     return sortedRecipes;
   }
 }
@@ -84,3 +99,12 @@ enum RecipeSortOption {
   calories,
   newest,
 }
+
+// ============================================================================
+// Riverpod Provider
+// ============================================================================
+
+final recipeServiceProvider = Provider<RecipeService>((ref) {
+  final repository = ref.watch(recipeRepositoryProvider);
+  return RecipeService(repository);
+});

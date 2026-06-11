@@ -71,6 +71,15 @@ import '../../features/coach_mode/presentation/screens/coach_directory_screen.da
 import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/coach_mode/application/coach_service.dart';
+// Jade AI coach
+import '../../features/jade/presentation/screens/jade_chat_screen.dart';
+// Meal logging screens
+import '../../features/meal_logging/presentation/screens/manual_log_screen.dart';
+import '../../features/meal_logging/presentation/screens/photo_capture_screen.dart';
+import '../../features/meal_logging/presentation/screens/describe_meal_screen.dart';
+import '../../features/meal_logging/presentation/screens/meal_review_screen.dart';
+import '../../features/meal_logging/presentation/screens/recent_saved_picker_screen.dart';
+import '../../features/meal_logging/presentation/screens/recipe_picker_screen.dart';
 
 /// Notifier that triggers GoRouter redirect re-evaluation on auth state changes.
 /// Used by AuthListenerService to signal sign-out/sign-in events.
@@ -892,6 +901,56 @@ class AppRouter {
             final relationshipId = state.pathParameters['relationshipId']!;
             return CoachChatScreen(relationshipId: relationshipId);
           },
+        ),
+
+        // ====================================================================
+        // MEAL LOGGING ROUTES
+        // ====================================================================
+
+        GoRoute(
+          path: '/meal-log/manual',
+          name: 'meal-log-manual',
+          builder: (context, state) => const ManualLogScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/photo',
+          name: 'meal-log-photo',
+          builder: (context, state) => const PhotoCaptureScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/describe',
+          name: 'meal-log-describe',
+          builder: (context, state) => const DescribeMealScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/review',
+          name: 'meal-log-review',
+          builder: (context, state) => const MealReviewScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/recent-saved',
+          name: 'meal-log-recent-saved',
+          builder: (context, state) => const RecentSavedPickerScreen(),
+        ),
+
+        GoRoute(
+          path: '/meal-log/recipe',
+          name: 'meal-log-recipe',
+          builder: (context, state) => const RecipePickerScreen(),
+        ),
+
+        // ====================================================================
+        // JADE AI COACH
+        // ====================================================================
+
+        GoRoute(
+          path: '/jade',
+          name: 'jade-chat',
+          builder: (context, state) => const JadeChatScreen(),
         ),
       ],
 

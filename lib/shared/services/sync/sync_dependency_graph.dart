@@ -28,6 +28,8 @@ class SyncDependencyGraph {
     'personal_templates': ['users'],
     'formula_pins': ['users'],
     'personal_formulas': ['users'],
+    'meal_logs': ['users'],
+    'saved_meals': ['users'],
   };
 
   static List<String> dependenciesFor(String repositoryKey) {

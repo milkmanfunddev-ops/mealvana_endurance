@@ -9,6 +9,7 @@ import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../../meal_logging/presentation/widgets/today_log_section.dart';
 import '../providers/daily_macros_controller.dart';
 import '../widgets/daily_summary_card.dart';
 import '../widgets/weekly_overview_chart.dart';
@@ -102,6 +103,10 @@ class DailyMacrosScreen extends ConsumerWidget {
               weeklyMacros: state.weeklyMacros,
               startOfWeek: _getStartOfWeek(state.selectedDate),
             ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // Today's meal log
+            TodayLogSection(selectedDate: state.selectedDate),
           ] else if (state.calculationError != null) ...[
             _buildCalculationErrorState(context, ref, state.calculationError!),
           ] else ...[

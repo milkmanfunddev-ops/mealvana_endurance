@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/recipe.dart';
+
+import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../application/recipe_service.dart';
-import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../domain/recipe.dart';
 
 class RecipesScreen extends ConsumerStatefulWidget {
   const RecipesScreen({super.key});
@@ -16,6 +18,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
   List<Recipe> _recipes = [];
   List<Recipe> _filteredRecipes = [];
   bool _isLoading = true;
+  String? _errorMessage;
   RecipeType? _selectedType;
 
   @override
@@ -31,16 +34,37 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
   }
 
   Future<void> _loadRecipes() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
-      final recipes = await ref.read(recipeServiceProvider).getAllRecipes();
+      final service = ref.read(recipeServiceProvider);
+
+      // Hydrate the local cache on-demand (no-op when already fresh).
+      // The user must be authenticated to reach this screen, so currentUser
+      // should never be null here; fall back to empty string to satisfy the
+      // interface — the cache-empty guard in the repository will still force a
+      // remote fetch, which will succeed as long as the Supabase session is
+      // active.
+      final userId =
+          ref.read(appExternalDepsProvider).supabaseClient.auth.currentUser?.id ??
+              '';
+      await service.ensureSynced(userId);
+
+      final recipes = await service.getAllRecipes();
+      if (!mounted) return;
       setState(() {
         _recipes = recipes;
         _filteredRecipes = recipes;
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Could not load recipes. Please try again.';
+      });
     }
   }
 
@@ -50,7 +74,8 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
       _filteredRecipes = _recipes.where((recipe) {
         final matchesSearch = recipe.name.toLowerCase().contains(query) ||
             recipe.description.toLowerCase().contains(query);
-        final matchesType = _selectedType == null || recipe.type == _selectedType;
+        final matchesType =
+            _selectedType == null || recipe.type == _selectedType;
         return matchesSearch && matchesType;
       }).toList();
     });
@@ -83,7 +108,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   onChanged: (_) => _filterRecipes(),
                 ),
                 const SizedBox(height: 16),
-                // Type filter
+                // Type filter chips
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -97,44 +122,79 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                         },
                       ),
                       const SizedBox(width: 8),
-                      ...RecipeType.values.map((type) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: _FilterChip(
-                          label: _getTypeDisplayName(type),
-                          isSelected: _selectedType == type,
-                          onSelected: () {
-                            setState(() => _selectedType = type);
-                            _filterRecipes();
-                          },
+                      ...RecipeType.values.map(
+                        (type) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _FilterChip(
+                            label: _getTypeDisplayName(type),
+                            isSelected: _selectedType == type,
+                            onSelected: () {
+                              setState(() => _selectedType = type);
+                              _filterRecipes();
+                            },
+                          ),
                         ),
-                      )),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          // Recipes list
+          // Recipes list / loading / error states
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredRecipes.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No recipes found',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _filteredRecipes.length,
-                        itemBuilder: (context, index) {
-                          final recipe = _filteredRecipes[index];
-                          return _RecipeCard(recipe: recipe);
-                        },
-                      ),
+            child: _buildBody(context),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _errorMessage!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.red[700],
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadRecipes,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_filteredRecipes.isEmpty) {
+      return const Center(
+        child: Text(
+          'No recipes found',
+          style: TextStyle(fontSize: 16),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadRecipes,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _filteredRecipes.length,
+        itemBuilder: (context, index) {
+          final recipe = _filteredRecipes[index];
+          return _RecipeCard(recipe: recipe);
+        },
       ),
     );
   }
@@ -203,16 +263,18 @@ class _RecipeCard extends StatelessWidget {
                       children: [
                         Text(
                           recipe.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           recipe.description,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                         ),
                       ],
                     ),
@@ -242,12 +304,14 @@ class _RecipeCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   _NutritionChip(
-                    label: '${recipe.nutrition.carbohydratesGrams.round()}g carbs',
+                    label:
+                        '${recipe.nutrition.carbohydratesGrams.round()}g carbs',
                     icon: Icons.grain,
                   ),
                   const SizedBox(width: 8),
                   _NutritionChip(
-                    label: '${recipe.nutrition.proteinGrams.round()}g protein',
+                    label:
+                        '${recipe.nutrition.proteinGrams.round()}g protein',
                     icon: Icons.fitness_center,
                   ),
                 ],
