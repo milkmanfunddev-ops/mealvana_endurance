@@ -21,8 +21,9 @@ class RecipeService {
   ///
   /// Call this once when the Recipes screen mounts. If the cache is fresh
   /// the call is a no-op; if stale (> 24 h or empty) it fetches from Supabase.
-  Future<void> ensureSynced(String userId) async {
-    await _repository.ensureSynced(userId);
+  /// Pass [force] (pull-to-refresh) to bypass the staleness window.
+  Future<void> ensureSynced(String userId, {bool force = false}) async {
+    await _repository.ensureSynced(userId, force: force);
   }
 
   // ========================================================================

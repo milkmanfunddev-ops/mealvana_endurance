@@ -42,7 +42,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
     super.dispose();
   }
 
-  Future<void> _loadRecipes() async {
+  Future<void> _loadRecipes({bool force = false}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -59,7 +59,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
       final userId =
           ref.read(appExternalDepsProvider).supabaseClient.auth.currentUser?.id ??
               '';
-      await service.ensureSynced(userId);
+      await service.ensureSynced(userId, force: force);
 
       final recipes = await service.getAllRecipes();
       if (!mounted) return;
@@ -196,7 +196,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadRecipes,
+      onRefresh: () => _loadRecipes(force: true),
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: _filteredRecipes.length,

@@ -60,6 +60,19 @@ class RecipeRepository with SyncableRepository {
       );
       return true;
     }
+    // Legacy-cache detection: rows whose type isn't a current wire value
+    // predate the category recategorization (preRun/duringRun/postRun/
+    // general → breakfast/mains/snacks/workout_fuel/recovery). Treat the
+    // whole cache as stale so the reseeded catalog is picked up immediately
+    // instead of after the 24 h window.
+    final knownTypes = RecipeType.values.map((t) => t.wireValue).toSet();
+    if (localRows.any((row) => !knownTypes.contains(row.type))) {
+      _logger.debug(
+        'Forcing sync — cached recipes use legacy category values',
+        context: 'RECIPE_REPO',
+      );
+      return true;
+    }
     // Custom 24-hour staleness check (override mixin's 1-hour default).
     final lastSync = await getLastSyncTime();
     if (lastSync == null) return true;
@@ -118,8 +131,12 @@ class RecipeRepository with SyncableRepository {
   /// [SyncableRepository] interface (Supabase RLS is `authenticated SELECT`
   /// so the auth session must be active, but the query itself is not
   /// user-scoped).
-  Future<void> ensureSynced(String userId) async {
-    if (await isStale()) {
+  ///
+  /// [force] bypasses the staleness window — used by pull-to-refresh so a
+  /// server-side catalog change (reseed, recategorization) is visible
+  /// immediately instead of after the 24h window lapses.
+  Future<void> ensureSynced(String userId, {bool force = false}) async {
+    if (force || await isStale()) {
       await syncFromRemote(userId);
     }
   }
