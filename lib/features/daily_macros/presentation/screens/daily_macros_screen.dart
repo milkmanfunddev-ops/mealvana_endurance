@@ -10,8 +10,9 @@ import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../meal_logging/presentation/widgets/today_log_section.dart';
+import '../../../integrations/presentation/widgets/garmin_connect_banner.dart';
 import '../providers/daily_macros_controller.dart';
-import '../widgets/daily_summary_card.dart';
+import '../widgets/today_hero_card.dart';
 import '../widgets/weekly_overview_chart.dart';
 
 class DailyMacrosScreen extends ConsumerWidget {
@@ -29,17 +30,45 @@ class DailyMacrosScreen extends ConsumerWidget {
       body: Column(
         children: [
           SizedBox(height: MediaQuery.of(context).padding.top + 12),
-          // Calendar toggle (centered) — matches Activities screen
-          CalendarViewToggle(
-            selectedMode: calendarMode,
-            onModeChanged: (mode) {
-              ref.read(calendarViewProvider.notifier).setView(mode);
-            },
+          // Calendar toggle + trends button row
+          Row(
+            children: [
+              Expanded(
+                child: CalendarViewToggle(
+                  selectedMode: calendarMode,
+                  onModeChanged: (mode) {
+                    ref.read(calendarViewProvider.notifier).setView(mode);
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  key: const ValueKey('nutrition_diary.trends_button'),
+                  icon: Icon(
+                    Icons.bar_chart,
+                    size: 20,
+                    color: isDark ? AppColors.cream : AppColors.blackberry,
+                  ),
+                  onPressed: () {
+                    final macrosState =
+                        ref.read(dailyMacrosControllerProvider).value;
+                    if (macrosState != null) {
+                      _showTrendsSheet(context, ref, macrosState);
+                    }
+                  },
+                  tooltip: 'Weekly Trends',
+                  padding: const EdgeInsets.all(12),
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           // Calendar widget (week or month) — shares state with Activities tab
           if (calendarMode == CalendarViewMode.week)
             CalendarWeekViewKyle(
+              compact: true,
               selectedDate: selectedDate,
               onDateSelected: (date) {
                 ref.read(calendarSelectedDateProvider.notifier).setDate(date);
@@ -93,16 +122,13 @@ class DailyMacrosScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
 
-          // Daily summary card
-          if (state.dailyMacros != null) ...[
-            DailySummaryCard(macros: state.dailyMacros!),
-            const SizedBox(height: AppSpacing.lg),
+          // Garmin connect banner (self-hides when dismissed or already connected)
+          const GarminConnectBanner(),
+          const SizedBox(height: AppSpacing.sm),
 
-            // Weekly overview chart
-            WeeklyOverviewChart(
-              weeklyMacros: state.weeklyMacros,
-              startOfWeek: _getStartOfWeek(state.selectedDate),
-            ),
+          // Daily hero card + meal log
+          if (state.dailyMacros != null) ...[
+            TodayHeroCard(macros: state.dailyMacros!),
             const SizedBox(height: AppSpacing.lg),
 
             // Today's meal log
@@ -239,6 +265,63 @@ class DailyMacrosScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showTrendsSheet(
+    BuildContext context,
+    WidgetRef ref,
+    DailyMacrosState state,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        final bg = isDark ? AppColors.blackberry : AppColors.cream;
+        final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+        return Container(
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.only(
+            left: AppSpacing.lg,
+            right: AppSpacing.lg,
+            top: AppSpacing.md,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.black12,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                'Weekly Trends',
+                style: AppTextStyles.pageTitle.copyWith(color: textColor),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              WeeklyOverviewChart(
+                weeklyMacros: state.weeklyMacros,
+                startOfWeek: _getStartOfWeek(state.selectedDate),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+          ),
+        );
+      },
     );
   }
 

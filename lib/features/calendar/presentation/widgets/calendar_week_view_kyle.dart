@@ -36,11 +36,15 @@ class CalendarWeekViewKyle extends StatefulWidget {
     required this.selectedDate,
     required this.onDateSelected,
     this.dayIndicators = const {},
+    this.compact = false,
   });
 
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateSelected;
   final Map<DateTime, Set<DayIndicatorType>> dayIndicators;
+
+  /// When true, reduces vertical padding and cell height to save ~38px total.
+  final bool compact;
 
   @override
   State<CalendarWeekViewKyle> createState() => _CalendarWeekViewKyleState();
@@ -80,7 +84,10 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
       children: [
         // Month/Year title with nav arrows and optional Today button
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          padding: EdgeInsets.symmetric(
+            vertical: widget.compact ? 10 : 16,
+            horizontal: 16,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -110,7 +117,9 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
                   behavior: HitTestBehavior.opaque,
                   onTap: () => _showDatePicker(context),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(
+                      vertical: widget.compact ? 8 : 12,
+                    ),
                     child: Text(
                       key: const ValueKey('calendar.month_label'),
                       _formatMonthYear(widget.selectedDate),
@@ -176,7 +185,7 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
 
         // Horizontally scrollable week view
         SizedBox(
-          height: 100, // Height for day abbreviations + day numbers
+          height: widget.compact ? 74 : 100,
           child: PageView.builder(
             controller: _pageController,
             onPageChanged: (index) {
@@ -246,7 +255,7 @@ class _CalendarWeekViewKyleState extends State<CalendarWeekViewKyle> {
                           ),
                           onTap: () => widget.onDateSelected(_normalize(date)),
                           child: Container(
-                            height: 60,
+                            height: widget.compact ? 45 : 60,
                             margin: const EdgeInsets.symmetric(horizontal: 2),
                             decoration: BoxDecoration(
                               color: isSelected

@@ -25,25 +25,59 @@ class TodayLogSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          isToday ? "Today's Log" : 'Meals on ${DateFormat('MMM d').format(selectedDate)}',
-          style: AppTextStyles.sectionTitle.copyWith(
-            color: textColor.withValues(alpha: 0.85),
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              isToday
+                  ? "Today's Log"
+                  : 'Meals on ${DateFormat('MMM d').format(selectedDate)}',
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: textColor.withValues(alpha: 0.85),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            _AddButton(
+              onPressed: () => _openLogSheet(context, ref, dateStr),
+            ),
+          ],
         ),
         const SizedBox(height: AppSpacing.sm),
         logsAsync.when(
           data: (logs) {
             if (logs.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                child: Center(
-                  child: Text(
-                    'No meals logged yet.',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: textColor.withValues(alpha: 0.5),
+              return GestureDetector(
+                onTap: () => _openLogSheet(context, ref, dateStr),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.lg,
+                    horizontal: AppSpacing.md,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: (isDark ? AppColors.cream : AppColors.blackberry)
+                          .withValues(alpha: 0.2),
+                      width: 1.5,
                     ),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_circle_outline,
+                        size: 20,
+                        color: textColor.withValues(alpha: 0.4),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'Log your first meal',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: textColor.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -67,11 +101,6 @@ class TodayLogSection extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const SizedBox.shrink(),
         ),
-        const SizedBox(height: AppSpacing.md),
-        KylePrimaryButton(
-          text: 'Log a meal',
-          onPressed: () => _openLogSheet(context, ref, dateStr),
-        ),
       ],
     );
   }
@@ -81,6 +110,44 @@ class TodayLogSection extends ConsumerWidget {
     return date.year == now.year &&
         date.month == now.month &&
         date.day == now.day;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Add button shown in the section header
+// ---------------------------------------------------------------------------
+
+class _AddButton extends StatelessWidget {
+  const _AddButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.orange, width: 1.5),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.add, size: 14, color: AppColors.orange),
+            const SizedBox(width: 4),
+            Text(
+              'Add',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.orange,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

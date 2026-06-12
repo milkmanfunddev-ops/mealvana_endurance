@@ -48,6 +48,20 @@ class PreferencesService {
     await _prefs.setBool(_keyTpWritebackPremiumBlocked, blocked);
   }
 
+  // ─── Garmin Connect Banner ───
+
+  static const String _keyGarminBannerDismissed = 'garmin_banner_dismissed';
+
+  /// Whether the user has permanently dismissed the Garmin Connect banner.
+  bool get garminBannerDismissed =>
+      _prefs.getBool(_keyGarminBannerDismissed) ?? false;
+
+  /// Persist banner dismissal. Once set, the banner never shows again
+  /// unless app data is cleared.
+  Future<void> dismissGarminBanner() async {
+    await _prefs.setBool(_keyGarminBannerDismissed, true);
+  }
+
   /// Clear all preferences (useful for testing or logout)
   Future<void> clearAll() async {
     await _prefs.clear();
