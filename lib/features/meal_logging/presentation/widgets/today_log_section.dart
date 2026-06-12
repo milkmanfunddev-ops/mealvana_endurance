@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../domain/meal_log.dart';
 import '../providers/meal_log_providers.dart';
 import 'meal_log_row.dart';
 
@@ -87,12 +88,15 @@ class TodayLogSection extends ConsumerWidget {
                   .map(
                     (log) => MealLogRow(
                       log: log,
-                      onDelete: () => ref
-                          .read(mealLogControllerProvider.notifier)
-                          .deleteLog(log.id),
+                      onDelete: () =>
+                          _deleteWithUndo(context, ref, log),
                       onSaveFavorite: (name) => ref
                           .read(mealLogControllerProvider.notifier)
                           .saveLogAsFavorite(log, customName: name),
+                      onEdit: () => context.push(
+                        '/meal-log/edit',
+                        extra: {'log': log},
+                      ),
                     ),
                   )
                   .toList(),
@@ -149,6 +153,22 @@ class _AddButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Soft-deletes [log] and shows an undo snackbar that restores the entry.
+///
+/// The delete is applied immediately (offline-first); the snackbar gives the
+/// user a brief window to undo before the tombstone propagates to Supabase.
+void _deleteWithUndo(BuildContext context, WidgetRef ref, MealLog log) {
+  ref.read(mealLogControllerProvider.notifier).deleteLog(log.id);
+
+  MealvanaSnackbar.showInfo(
+    context,
+    'Meal deleted',
+    actionLabel: 'Undo',
+    onAction: () =>
+        ref.read(mealLogControllerProvider.notifier).restoreLog(log.id),
+  );
 }
 
 /// Opens the meal log method selection sheet.

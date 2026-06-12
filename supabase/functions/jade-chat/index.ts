@@ -17,10 +17,22 @@
  *   }
  *
  * Response (200):
- *   - Content-Type: text/plain; charset=utf-8
+ *   - Content-Type: application/x-ndjson
  *   - Transfer-Encoding: chunked (streaming)
  *   - Header x-conversation-id: <UUID>   — new or echoed conversation id
  *   - Header Access-Control-Expose-Headers includes x-conversation-id
+ *
+ * NDJSON event protocol (one JSON object per line, LF-terminated):
+ *   {"type":"text","delta":"..."}
+ *     — incremental prose text chunk
+ *   {"type":"ui","part":{"kind":"meal_cards","meals":[...]}}
+ *     — meal suggestion cards (from showMealSuggestions tool)
+ *   {"type":"ui","part":{"kind":"choices","question":"...","options":[...]}}
+ *     — choice buttons (from askChoice tool)
+ *   {"type":"done"}
+ *     — stream complete
+ *   {"type":"error","message":"..."}
+ *     — error (stream then closes)
  *
  * New conversation: if conversation_id is absent, a jade_conversations row is
  * created whose title is the first ~60 characters of the user's message.
@@ -29,8 +41,8 @@
  * fed to the model as prior context.
  *
  * Persistence: the user's message is saved before the model is called; the
- * assistant's full reply is saved in onFinish. A jade_calls usage row is also
- * inserted in onFinish (fire-and-forget).
+ * assistant's full reply + collected ui_parts are saved in onFinish via
+ * EdgeRuntime.waitUntil. A jade_calls usage row is also inserted.
  *
  * Error responses:
  *   400 — missing/invalid body
@@ -73,6 +85,53 @@ const chatCorsHeaders: Record<string, string> = {
   ...corsHeaders,
   'Access-Control-Expose-Headers': 'x-conversation-id',
 };
+
+// ---------------------------------------------------------------------------
+// NDJSON helpers
+// ---------------------------------------------------------------------------
+
+// deno-lint-ignore no-explicit-any
+function ndjsonLine(obj: Record<string, any>): string {
+  return JSON.stringify(obj) + '\n';
+}
+
+// ---------------------------------------------------------------------------
+// UI part types (mirrors Dart domain)
+// ---------------------------------------------------------------------------
+
+interface MealComponent {
+  name: string;
+  portion?: string;
+  calories?: number;
+  carb_g?: number;
+  protein_g?: number;
+  fat_g?: number;
+  sodium_mg?: number;
+}
+
+interface MealSuggestion {
+  name: string;
+  description: string;
+  kcal: number;
+  carb_g: number;
+  protein_g: number;
+  fat_g: number;
+  slot: string;
+  components: MealComponent[];
+}
+
+interface MealCardsPart {
+  kind: 'meal_cards';
+  meals: MealSuggestion[];
+}
+
+interface ChoicesPart {
+  kind: 'choices';
+  question: string;
+  options: string[];
+}
+
+type JadeUiPart = MealCardsPart | ChoicesPart;
 
 // ---------------------------------------------------------------------------
 // Auth helper
@@ -307,7 +366,10 @@ serve(async (req: Request) => {
         `new=${isNewConversation} baseline=${baseline} model=${JADE_MODEL}`,
     );
 
-    // ── Stream the reply ────────────────────────────────────────────────────
+    // ── Collect ui parts for persistence ────────────────────────────────────
+    const collectedUiParts: JadeUiPart[] = [];
+
+    // ── Stream the reply via fullStream → NDJSON ────────────────────────────
     const result = streamText({
       model: JADE_MODEL,
       system: systemPrompt,
@@ -318,10 +380,12 @@ serve(async (req: Request) => {
       tools,
       stopWhen: stepCountIs(MAX_STEPS),
       onFinish: ({ text, usage }) => {
-        // The isolate can be torn down as soon as the response stream closes,
-        // so persistence must be registered with waitUntil — plain awaits in
-        // this callback race the shutdown and silently lose writes.
         const persist = (async () => {
+          // Build metadata: persist ui_parts so history re-renders widgets.
+          const metadata = collectedUiParts.length > 0
+            ? { ui_parts: collectedUiParts }
+            : null;
+
           const { error: assistantMsgError } = await serviceClient
             .from('jade_messages')
             .insert({
@@ -329,6 +393,7 @@ serve(async (req: Request) => {
               user_id: user.id,
               role: 'assistant',
               content: text,
+              ...(metadata !== null ? { metadata } : {}),
             });
 
           if (assistantMsgError) {
@@ -355,7 +420,8 @@ serve(async (req: Request) => {
 
           console.log(
             `[jade-chat] onFinish user=${user.id} conv=${resolvedConversationId} ` +
-              `in=${usage?.inputTokens ?? 0} out=${usage?.outputTokens ?? 0}`,
+              `in=${usage?.inputTokens ?? 0} out=${usage?.outputTokens ?? 0} ` +
+              `ui_parts=${collectedUiParts.length}`,
           );
         })();
 
@@ -364,24 +430,90 @@ serve(async (req: Request) => {
       },
     });
 
-    // ── Build streaming response with merged CORS + conversation-id headers ─
-    const streamResponse = result.toTextStreamResponse({
-      // Surface model/tool errors in function logs instead of silently
-      // closing the stream with an empty body.
-      onError: (error: unknown) => {
-        console.error('[jade-chat] stream error:', error);
-        return 'Sorry, I hit a snag answering that. Please try again.';
+    // ── Build NDJSON stream from fullStream ──────────────────────────────────
+    const encoder = new TextEncoder();
+
+    const ndjsonStream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const part of result.fullStream) {
+            if (part.type === 'text-delta') {
+              // AI SDK v6: text-delta part uses `text` field (not `textDelta`)
+              // deno-lint-ignore no-explicit-any
+              const textChunk = (part as any).text ?? (part as any).textDelta ?? '';
+              controller.enqueue(
+                encoder.encode(ndjsonLine({ type: 'text', delta: textChunk })),
+              );
+            } else if (part.type === 'tool-call') {
+              // A tool call has been fully assembled by the SDK.
+              // Emit a ui event for the two UI-rendering tools.
+              // AI SDK v6: tool-call part uses `input` field (not `args`)
+              const toolName = part.toolName;
+              // deno-lint-ignore no-explicit-any
+              const args = ((part as any).input ?? (part as any).args ?? {}) as Record<string, any>;
+
+              if (toolName === 'showMealSuggestions') {
+                const uiPart: MealCardsPart = {
+                  kind: 'meal_cards',
+                  meals: args.meals as MealSuggestion[],
+                };
+                collectedUiParts.push(uiPart);
+                controller.enqueue(
+                  encoder.encode(ndjsonLine({ type: 'ui', part: uiPart })),
+                );
+              } else if (toolName === 'askChoice') {
+                const uiPart: ChoicesPart = {
+                  kind: 'choices',
+                  question: args.question as string,
+                  options: args.options as string[],
+                };
+                collectedUiParts.push(uiPart);
+                controller.enqueue(
+                  encoder.encode(ndjsonLine({ type: 'ui', part: uiPart })),
+                );
+              }
+              // Other tool calls (data-fetching) are transparent to the client.
+            } else if (part.type === 'error') {
+              const errMsg =
+                part.error instanceof Error
+                  ? part.error.message
+                  : String(part.error ?? 'Unknown stream error');
+              console.error('[jade-chat] fullStream error part:', errMsg);
+              controller.enqueue(
+                encoder.encode(ndjsonLine({ type: 'error', message: errMsg })),
+              );
+            }
+            // step-start, step-finish, finish, tool-result parts are intentionally
+            // not forwarded — they carry no user-visible content.
+          }
+
+          controller.enqueue(encoder.encode(ndjsonLine({ type: 'done' })));
+          controller.close();
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          console.error('[jade-chat] stream consumer error:', errMsg);
+          try {
+            controller.enqueue(
+              encoder.encode(ndjsonLine({ type: 'error', message: errMsg })),
+            );
+          } catch {
+            // controller may already be closed
+          }
+          controller.close();
+        }
       },
     });
 
-    const responseHeaders = new Headers(streamResponse.headers);
-    for (const [key, value] of Object.entries(chatCorsHeaders)) {
-      responseHeaders.set(key, value);
-    }
+    // ── Build response with CORS + conversation-id headers ───────────────────
+    const responseHeaders = new Headers(chatCorsHeaders);
+    responseHeaders.set('Content-Type', 'application/x-ndjson');
     responseHeaders.set('x-conversation-id', resolvedConversationId);
+    // Suppress buffering in some reverse proxies
+    responseHeaders.set('X-Accel-Buffering', 'no');
+    responseHeaders.set('Cache-Control', 'no-cache');
 
-    return new Response(streamResponse.body, {
-      status: streamResponse.status,
+    return new Response(ndjsonStream, {
+      status: 200,
       headers: responseHeaders,
     });
 

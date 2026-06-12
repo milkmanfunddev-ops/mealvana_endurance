@@ -293,6 +293,49 @@ class MealLogController extends _$MealLogController {
     });
   }
 
+  /// Update an existing meal log entry.
+  ///
+  /// Passes the full updated [MealLog] to the service which recomputes totals
+  /// when components are present, then writes via the repository.
+  Future<void> updateLog(MealLog log) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await _service.updateLog(log);
+
+      _logger.info(
+        'Meal log updated',
+        context: 'MEAL_LOG_CONTROLLER',
+        data: {'logId': log.id},
+      );
+
+      await _trackEvent('meal_log_updated', {
+        'log_id': log.id,
+        'slot': log.slot.wireValue,
+      });
+    });
+  }
+
+  /// Restore a previously soft-deleted meal log entry (used by undo-delete).
+  Future<void> restoreLog(String logId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final userId = await _currentUserId();
+      if (userId == null) throw StateError('No authenticated user');
+
+      await ref
+          .read(mealLogRepositoryProvider)
+          .restoreLog(id: logId, userId: userId);
+
+      _logger.info(
+        'Meal log restored',
+        context: 'MEAL_LOG_CONTROLLER',
+        data: {'logId': logId},
+      );
+
+      await _trackEvent('meal_log_restored', {'log_id': logId});
+    });
+  }
+
   /// Soft-delete a meal log entry.
   Future<void> deleteLog(String logId) async {
     state = const AsyncLoading();

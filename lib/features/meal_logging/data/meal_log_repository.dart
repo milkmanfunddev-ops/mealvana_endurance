@@ -317,6 +317,50 @@ class MealLogRepository with SyncableRepository {
     return toSave;
   }
 
+  /// Restore a previously soft-deleted log entry.
+  ///
+  /// Clears [isDeleted], re-dirties for sync, and schedules an immediate upload
+  /// so the un-delete propagates across devices.  No-op if no row exists.
+  Future<void> restoreLog({
+    required String id,
+    required String userId,
+  }) async {
+    final row = await (_database.select(_database.mealLogsTable)
+          ..where((t) => t.id.equals(id) & t.userId.equals(userId))
+          ..limit(1))
+        .getSingleOrNull();
+    if (row == null) return;
+
+    final log = MealLog.fromDriftEntry(row);
+    if (log == null) return;
+
+    final now = DateTime.now();
+    await (_database.update(_database.mealLogsTable)
+          ..where((t) => t.id.equals(id)))
+        .write(
+      MealLogsTableCompanion(
+        isDeleted: const Value(false),
+        updatedAt: Value(now),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(now),
+      ),
+    );
+
+    _logger.info(
+      'Restored meal log',
+      context: 'MEAL_LOG_REPOSITORY',
+      data: {'logId': id},
+    );
+
+    final restored = log.copyWith(
+      isDeleted: false,
+      updatedAt: now,
+      needsUpload: true,
+      localUpdatedAt: now,
+    );
+    _scheduleImmediateUpload(restored, label: 'restore');
+  }
+
   /// Soft-delete a log entry by id. No-op if no active row exists.
   Future<void> softDeleteLog({
     required String id,

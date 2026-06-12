@@ -5,8 +5,11 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../features/content/application/content_service.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/jade_message.dart';
+import '../../domain/jade_ui_part.dart';
 import '../providers/jade_chat_controller.dart';
 import '../widgets/jade_avatar.dart';
+import '../widgets/jade_choice_buttons.dart';
+import '../widgets/jade_meal_card.dart';
 
 /// Full-screen chat interface for the Jade AI coach.
 ///
@@ -501,39 +504,95 @@ class _AssistantBubble extends StatelessWidget {
     final bubbleBg = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
+    final hasText = message.content.isNotEmpty;
+    final hasUiParts = message.uiParts.isNotEmpty;
+
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        JadeAvatar(size: 28, isPulsing: isStreaming),
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.xxs),
+          child: JadeAvatar(size: 28, isPulsing: isStreaming),
+        ),
         const SizedBox(width: AppSpacing.sm),
         Flexible(
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            decoration: BoxDecoration(
-              color: bubbleBg,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppRadius.xs),
-                topRight: Radius.circular(AppRadius.lg),
-                bottomLeft: Radius.circular(AppRadius.lg),
-                bottomRight: Radius.circular(AppRadius.lg),
-              ),
-            ),
-            child: isStreaming && message.content.isEmpty
-                ? _TypingIndicator(isDark: isDark)
-                : SelectableText(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Prose bubble ─────────────────────────────────────────────
+              if (isStreaming && !hasText && !hasUiParts)
+                // Waiting for first chunk — show typing indicator in a bubble
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: bubbleBg,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(AppRadius.xs),
+                      topRight: Radius.circular(AppRadius.lg),
+                      bottomLeft: Radius.circular(AppRadius.lg),
+                      bottomRight: Radius.circular(AppRadius.lg),
+                    ),
+                  ),
+                  child: _TypingIndicator(isDark: isDark),
+                )
+              else if (hasText)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: bubbleBg,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(AppRadius.xs),
+                      topRight: const Radius.circular(AppRadius.lg),
+                      bottomLeft: Radius.circular(
+                        hasUiParts ? AppRadius.xs : AppRadius.lg,
+                      ),
+                      bottomRight: const Radius.circular(AppRadius.lg),
+                    ),
+                  ),
+                  child: SelectableText(
                     message.content,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: textColor,
                       height: 1.6,
                     ),
                   ),
+                ),
+
+              // ── UI parts rendered below the prose ────────────────────────
+              if (hasUiParts) ...[
+                const SizedBox(height: AppSpacing.xs),
+                ..._buildUiParts(message.uiParts),
+              ],
+            ],
           ),
         ),
       ],
     );
+  }
+
+  List<Widget> _buildUiParts(List<JadeUiPart> parts) {
+    final widgets = <Widget>[];
+    for (int i = 0; i < parts.length; i++) {
+      final part = parts[i];
+      if (i > 0) widgets.add(const SizedBox(height: AppSpacing.xs));
+
+      switch (part) {
+        case JadeMealCardsPart(:final meals):
+          for (int j = 0; j < meals.length; j++) {
+            if (j > 0) widgets.add(const SizedBox(height: AppSpacing.xs));
+            widgets.add(JadeMealCard(suggestion: meals[j]));
+          }
+        case JadeChoicesPart():
+          widgets.add(JadeChoiceButtons(part: part));
+      }
+    }
+    return widgets;
   }
 }
 

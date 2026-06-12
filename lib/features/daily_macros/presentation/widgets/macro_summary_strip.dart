@@ -11,21 +11,23 @@ import 'today_hero_card.dart'
     show kMacroColorCarbs, kMacroColorProtein, kMacroColorFat;
 
 // ---------------------------------------------------------------------------
-// Fixed-extent pinned macro summary strip — "Eaten / Plan" parallel rows
+// Fixed-extent pinned macro summary strip — four color-tinted macro tiles
 // ---------------------------------------------------------------------------
 
 /// The permanent macro summary strip pinned at the top of the Daily Macros
 /// scroll.
 ///
-/// Two parallel facts, deliberately NOT framed as a quota — no bars, no
-/// rings, no "x / y" fractions, no remaining/over language:
+/// Four equal-width color-tinted tiles in a single row:
 ///
-///   Eaten   1,389 kcal   C 144 · P 89 · F 53
-///   Plan    2,530 kcal   C 305 · P 107 · F 98
+///   [kcal tile] [Carbs tile] [Protein tile] [Fat tile]
 ///
-/// "Eaten" is what the athlete logged (bold); "Plan" is what today's training
-/// calls for (subdued reference). The whole card taps through to the
-/// "Today's Fueling" detail sheet; the trends icon is its own tap target.
+/// Each tile shows:
+///   - Big bold eaten value (top, FittedBox-guarded)
+///   - Macro label (middle)
+///   - Subdued "plan …" reference caption (bottom)
+///
+/// The whole card taps through to the "Today's Fueling" detail sheet; the
+/// bar-chart icon in the top-right corner is its own isolated tap target.
 class MacroSummaryStrip extends ConsumerWidget {
   const MacroSummaryStrip({
     super.key,
@@ -55,7 +57,7 @@ class MacroSummaryStrip extends ConsumerWidget {
       orElse: () => const ConsumedTotals(),
     );
 
-    final targetCals = macros.totalCalories;
+    final fmt = NumberFormat('#,###');
 
     return Material(
       color: Colors.transparent,
@@ -63,50 +65,78 @@ class MacroSummaryStrip extends ConsumerWidget {
         onTap: onDetailPressed,
         borderRadius: AppRadius.cardRadius,
         child: BaseCard(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _FactRow(
-                      label: 'Eaten',
-                      kcal: consumed.calories.toDouble(),
-                      carbsG: consumed.carbsG,
-                      proteinG: consumed.proteinG,
-                      fatG: consumed.fatG,
-                      emphasized: true,
-                      textColor: textColor,
+              // ── Four macro tiles ─────────────────────────────────────────
+              Row(
+                children: [
+                  // Kcal tile — orange tint
+                  Expanded(
+                    child: _MacroTile(
+                      isDark: isDark,
+                      tintColor: AppColors.orange,
+                      bigText: fmt.format(consumed.calories.round()),
+                      label: 'kcal',
+                      planCaption: 'plan ${fmt.format(macros.totalCalories.round())}',
                     ),
-                    const SizedBox(height: 6),
-                    _FactRow(
-                      label: 'Plan',
-                      kcal: targetCals,
-                      carbsG: macros.carbG,
-                      proteinG: macros.protG,
-                      fatG: macros.fatG,
-                      emphasized: false,
-                      textColor: textColor,
+                  ),
+                  const SizedBox(width: 6),
+                  // Carbs tile
+                  Expanded(
+                    child: _MacroTile(
+                      isDark: isDark,
+                      tintColor: kMacroColorCarbs,
+                      bigText: '${consumed.carbsG.toStringAsFixed(0)}g',
+                      label: 'Carbs',
+                      planCaption: 'plan ${macros.carbG.toStringAsFixed(0)}',
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 6),
+                  // Protein tile
+                  Expanded(
+                    child: _MacroTile(
+                      isDark: isDark,
+                      tintColor: kMacroColorProtein,
+                      bigText: '${consumed.proteinG.toStringAsFixed(0)}g',
+                      label: 'Protein',
+                      planCaption: 'plan ${macros.protG.toStringAsFixed(0)}',
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  // Fat tile
+                  Expanded(
+                    child: _MacroTile(
+                      isDark: isDark,
+                      tintColor: kMacroColorFat,
+                      bigText: '${consumed.fatG.toStringAsFixed(0)}g',
+                      label: 'Fat',
+                      planCaption: 'plan ${macros.fatG.toStringAsFixed(0)}',
+                    ),
+                  ),
+                ],
               ),
-              // Trends icon — isolated tap area that does NOT bubble up to
-              // the card's InkWell.
-              GestureDetector(
-                onTap: onTrendsPressed,
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Icon(
-                    Icons.bar_chart,
-                    size: 18,
-                    color: textColor.withValues(alpha: 0.40),
+
+              // ── Trends icon — isolated tap area, top-right corner ─────────
+              Positioned(
+                top: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: onTrendsPressed,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.bar_chart,
+                      size: 16,
+                      color: textColor.withValues(alpha: 0.30),
+                    ),
                   ),
                 ),
               ),
@@ -119,114 +149,88 @@ class MacroSummaryStrip extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// One fact row: label · kcal · macro grams
+// Single color-tinted macro tile
 // ---------------------------------------------------------------------------
 
-class _FactRow extends StatelessWidget {
-  const _FactRow({
+class _MacroTile extends StatelessWidget {
+  const _MacroTile({
+    required this.isDark,
+    required this.tintColor,
+    required this.bigText,
     required this.label,
-    required this.kcal,
-    required this.carbsG,
-    required this.proteinG,
-    required this.fatG,
-    required this.emphasized,
-    required this.textColor,
+    required this.planCaption,
   });
 
+  final bool isDark;
+  final Color tintColor;
+  final String bigText;
   final String label;
-  final double kcal;
-  final double carbsG;
-  final double proteinG;
-  final double fatG;
-  final bool emphasized;
-  final Color textColor;
+  final String planCaption;
 
   @override
   Widget build(BuildContext context) {
-    // The Plan row reads as a subdued reference, never a quota.
-    final valueColor =
-        emphasized ? textColor : textColor.withValues(alpha: 0.55);
-    final macroAlpha = emphasized ? 1.0 : 0.55;
+    // 12–15 % alpha tint, dark/light aware.
+    final tintAlpha = isDark ? 0.18 : 0.13;
+    final tileTextColor = isDark ? AppColors.cream : AppColors.blackberry;
 
-    return Row(
-      children: [
-        SizedBox(
-          width: 44,
-          child: Text(
+    return Container(
+      // Explicit height keeps the row stable across font sizes.
+      height: 68,
+      decoration: BoxDecoration(
+        color: tintColor.withValues(alpha: tintAlpha),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Big eaten value — FittedBox guards against wide Ahem test font.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              bigText,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+                color: tileTextColor,
+                height: 1.1,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          // Macro label
+          Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.clip,
+            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
-              letterSpacing: 0.4,
-              color: textColor.withValues(alpha: 0.5),
+              letterSpacing: 0.3,
+              color: tintColor,
             ),
           ),
-        ),
-        SizedBox(
-          width: 86,
-          child: Text(
-            '${NumberFormat('#,###').format(kcal.round())} kcal',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: emphasized ? FontWeight.w700 : FontWeight.w500,
-              color: valueColor,
+          const SizedBox(height: 2),
+          // Plan reference caption
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              planCaption,
+              maxLines: 1,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w400,
+                color: tileTextColor.withValues(alpha: 0.45),
+                height: 1.1,
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text.rich(
-            TextSpan(
-              children: [
-                _macroSpan('C', carbsG, kMacroColorCarbs, macroAlpha),
-                TextSpan(
-                  text: ' · ',
-                  style: TextStyle(
-                    color: textColor.withValues(alpha: 0.3),
-                  ),
-                ),
-                _macroSpan('P', proteinG, kMacroColorProtein, macroAlpha),
-                TextSpan(
-                  text: ' · ',
-                  style: TextStyle(
-                    color: textColor.withValues(alpha: 0.3),
-                  ),
-                ),
-                _macroSpan('F', fatG, kMacroColorFat, macroAlpha),
-              ],
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-
-  TextSpan _macroSpan(String letter, double grams, Color color, double alpha) {
-    return TextSpan(
-      children: [
-        TextSpan(
-          text: letter,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: color.withValues(alpha: alpha),
-          ),
-        ),
-        TextSpan(
-          text: ' ${grams.toStringAsFixed(0)}',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: emphasized ? FontWeight.w600 : FontWeight.w500,
-            color: textColor.withValues(alpha: alpha == 1.0 ? 0.85 : 0.55),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

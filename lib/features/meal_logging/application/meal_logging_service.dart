@@ -221,6 +221,26 @@ class MealLoggingService {
     );
   }
 
+  /// Update an existing meal log entry in place.
+  ///
+  /// For component-based logs, totals are recomputed from [log.components].
+  /// For manual logs (empty component list), the caller's macro values on
+  /// [log] are used directly.
+  Future<MealLog> updateLog(MealLog log) {
+    if (log.components.isNotEmpty) {
+      final totals = _sumComponents(log.components);
+      final updated = log.copyWith(
+        calories: totals.calories,
+        carbsG: totals.carbsG,
+        proteinG: totals.proteinG,
+        fatG: totals.fatG,
+        sodiumMg: totals.sodiumMg,
+      );
+      return _mealLogRepo.updateLog(updated);
+    }
+    return _mealLogRepo.updateLog(log);
+  }
+
   /// Save a meal log entry as an explicit user favorite.
   ///
   /// [customName] overrides the log's display name (useful when the user wants

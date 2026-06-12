@@ -23,21 +23,33 @@ Color _slotColor(MealSlot slot) {
 /// Displays:
 /// - A leading photo thumbnail (if [log.photoPath] is set) or a food icon
 /// - Bold name with a small coloured slot chip
-/// - Calories and compact C/P/F macro text
-/// - A trailing [PopupMenuButton] for Delete and Save as Favorite
+/// - Calories and compact C/P/F macros in subtitle
+///
+/// Interaction:
+/// - Tapping the row invokes [onEdit] (opens the edit screen).
+/// - Swiping end-to-start triggers [onDelete] (soft delete with undo snackbar
+///   handled in the parent widget).
+/// - A trailing [PopupMenuButton] provides 'Save as Favorite'.
 class MealLogRow extends ConsumerWidget {
   const MealLogRow({
     super.key,
     required this.log,
     required this.onDelete,
     required this.onSaveFavorite,
+    required this.onEdit,
   });
 
   final MealLog log;
+
+  /// Called immediately when the dismiss gesture completes (soft delete already
+  /// applied; parent shows undo snackbar).
   final VoidCallback onDelete;
 
   /// Called with the name the user chose for saving (may differ from [log.name]).
   final ValueChanged<String> onSaveFavorite;
+
+  /// Called when the user taps the row to open the edit screen.
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -57,79 +69,85 @@ class MealLogRow extends ConsumerWidget {
       if (fatG != null) 'F ${fatG.toStringAsFixed(0)}g',
     ].join('  ');
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        leading: _LeadingPhoto(photoPath: log.photoPath),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                log.name,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(fontWeight: FontWeight.w600),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: _slotColor(log.slot).withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                log.slot.label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: _slotColor(log.slot),
-                  fontWeight: FontWeight.w600,
+    return Dismissible(
+      key: ValueKey(log.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => onDelete(),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF2D55), // dragonfruit
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 26),
+      ),
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        child: InkWell(
+          onTap: onEdit,
+          borderRadius: BorderRadius.circular(12),
+          child: ListTile(
+            leading: _LeadingPhoto(photoPath: log.photoPath),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    log.name,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _slotColor(log.slot).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    log.slot.label,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: _slotColor(log.slot),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        subtitle: Text(
-          [
-            if (calories != null) '$calories kcal',
-            if (macroText.isNotEmpty) macroText,
-          ].join('  ·  '),
-          style: theme.textTheme.bodySmall?.copyWith(color: subtitleColor),
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: PopupMenuButton<_MenuAction>(
-          onSelected: (action) {
-            switch (action) {
-              case _MenuAction.delete:
-                onDelete();
-                break;
-              case _MenuAction.saveFavorite:
-                _showSaveFavoriteDialog(context);
-                break;
-            }
-          },
-          itemBuilder: (_) => const [
-            PopupMenuItem(
-              value: _MenuAction.saveFavorite,
-              child: Row(
-                children: [
-                  Icon(Icons.bookmark_outline, size: 18),
-                  SizedBox(width: 8),
-                  Text('Save as Favorite'),
-                ],
-              ),
+            subtitle: Text(
+              [
+                if (calories != null) '$calories kcal',
+                if (macroText.isNotEmpty) macroText,
+              ].join('  ·  '),
+              style: theme.textTheme.bodySmall?.copyWith(color: subtitleColor),
+              overflow: TextOverflow.ellipsis,
             ),
-            PopupMenuItem(
-              value: _MenuAction.delete,
-              child: Row(
-                children: [
-                  Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Delete', style: TextStyle(color: Colors.red)),
-                ],
-              ),
+            trailing: PopupMenuButton<_MenuAction>(
+              onSelected: (action) {
+                switch (action) {
+                  case _MenuAction.saveFavorite:
+                    _showSaveFavoriteDialog(context);
+                    break;
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: _MenuAction.saveFavorite,
+                  child: Row(
+                    children: [
+                      Icon(Icons.bookmark_outline, size: 18),
+                      SizedBox(width: 8),
+                      Text('Save as Favorite'),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -168,7 +186,7 @@ class MealLogRow extends ConsumerWidget {
   }
 }
 
-enum _MenuAction { delete, saveFavorite }
+enum _MenuAction { saveFavorite }
 
 /// Displays a small meal photo thumbnail, or a food icon as a fallback.
 class _LeadingPhoto extends ConsumerWidget {

@@ -6,6 +6,7 @@ import '../../../../features/content/application/content_service.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../data/jade_chat_repository.dart';
 import '../../domain/jade_message.dart';
+import '../../domain/jade_ui_part.dart';
 
 part 'jade_chat_controller.g.dart';
 
@@ -28,7 +29,8 @@ class JadeChatState {
 
   /// All persisted messages plus any in-flight assistant message being
   /// streamed right now. The streaming message is always last and will have
-  /// role `assistant`; its [JadeMessage.content] grows as chunks arrive.
+  /// role `assistant`; its [JadeMessage.content] grows as chunks arrive and
+  /// [JadeMessage.uiParts] accumulates UI parts.
   final List<JadeMessage> messages;
 
   /// True while the assistant reply is streaming.
@@ -106,9 +108,13 @@ class JadeChatController extends _$JadeChatController {
   /// Sends [text] to Jade and streams the reply into state.
   ///
   /// Optimistically appends the user message, then streams the assistant
-  /// response chunk-by-chunk. On error the partial assistant message is
-  /// removed and [JadeChatState.errorMessage] is set so the screen can show
-  /// a snackbar.
+  /// response event-by-event:
+  ///   - [JadeTextDelta] events accumulate into [JadeMessage.content].
+  ///   - [JadeUiPartEvent] events append to [JadeMessage.uiParts].
+  ///   - [JadeDoneEvent] / stream close marks streaming complete.
+  ///
+  /// On error the partial assistant message is removed and
+  /// [JadeChatState.errorMessage] is set so the screen can show a snackbar.
   Future<void> send(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
@@ -159,25 +165,49 @@ class JadeChatController extends _$JadeChatController {
               : (currentState.conversationId ?? '');
 
       String accumulated = '';
+      final accumulatedUiParts = <JadeUiPart>[];
 
-      await for (final chunk in result.textStream) {
-        accumulated += chunk;
-
+      await for (final event in result.eventStream) {
         final current = state.value;
         if (current == null) break;
 
-        // Replace the last (streaming) message with the accumulated content.
-        final updatedMessages = List<JadeMessage>.from(current.messages);
-        if (updatedMessages.isNotEmpty) {
-          updatedMessages[updatedMessages.length - 1] =
-              updatedMessages.last.copyWithContent(accumulated);
-        }
+        if (event is JadeTextDelta) {
+          accumulated += event.delta;
 
-        state = AsyncData(current.copyWith(
-          conversationId: resolvedConversationId,
-          messages: updatedMessages,
-          isStreaming: true,
-        ));
+          final updatedMessages = List<JadeMessage>.from(current.messages);
+          if (updatedMessages.isNotEmpty) {
+            updatedMessages[updatedMessages.length - 1] =
+                updatedMessages.last.copyWithContent(accumulated);
+          }
+
+          state = AsyncData(current.copyWith(
+            conversationId: resolvedConversationId,
+            messages: updatedMessages,
+            isStreaming: true,
+          ));
+        } else if (event is JadeUiPartEvent) {
+          accumulatedUiParts.add(event.part);
+
+          final updatedMessages = List<JadeMessage>.from(current.messages);
+          if (updatedMessages.isNotEmpty) {
+            updatedMessages[updatedMessages.length - 1] =
+                updatedMessages.last.copyWithUiPart(event.part);
+          }
+
+          state = AsyncData(current.copyWith(
+            conversationId: resolvedConversationId,
+            messages: updatedMessages,
+            isStreaming: true,
+          ));
+        } else if (event is JadeStreamErrorEvent) {
+          _logger.error(
+            'JadeChatController: server stream error: ${event.message}',
+          );
+          // Surface as a snackbar but don't roll back the partial text.
+          // The done event will still arrive (or stream will close) after this.
+        } else if (event is JadeDoneEvent) {
+          break;
+        }
       }
 
       // Streaming complete — mark done.
@@ -190,7 +220,8 @@ class JadeChatController extends _$JadeChatController {
       }
 
       _logger.info(
-        'JadeChatController.send complete: conv=$resolvedConversationId',
+        'JadeChatController.send complete: conv=$resolvedConversationId '
+        'uiParts=${accumulatedUiParts.length}',
       );
     } on JadeChatOfflineError catch (e) {
       _logger.error(

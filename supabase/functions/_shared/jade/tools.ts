@@ -371,7 +371,82 @@ export function makeJadeTools(ctx: JadeToolContext) {
       },
     }),
 
-    // ── 9. logBaselineMeal ──────────────────────────────────────────────────
+    // ── 9. showMealSuggestions ─────────────────────────────────────────────
+
+    showMealSuggestions: tool({
+      description:
+        'Render 1–4 meal suggestion cards in the chat UI. ' +
+        'Use this tool WHENEVER you suggest a specific meal or food — ' +
+        'even a single suggestion. Cards show the meal name, a short description, ' +
+        'estimated kcal, macros (carbs/protein/fat in grams), the recommended meal ' +
+        'slot, and the individual food components. After calling this tool, write ' +
+        'ONE concise follow-up sentence at most (e.g. "These fit your carb targets " + ' +
+        '"for a long-run day."). Do NOT repeat the meal contents in prose.',
+      inputSchema: z.object({
+        meals: z
+          .array(
+            z.object({
+              name: z.string().describe('Short display name, e.g. "Rice bowl with salmon"'),
+              description: z
+                .string()
+                .describe('One sentence about why this meal works for the user right now'),
+              kcal: z.number().int().nonnegative().describe('Total calories'),
+              carb_g: z.number().nonnegative().describe('Total carbohydrate grams'),
+              protein_g: z.number().nonnegative().describe('Total protein grams'),
+              fat_g: z.number().nonnegative().describe('Total fat grams'),
+              slot: z
+                .enum(['breakfast', 'lunch', 'dinner', 'snack'])
+                .describe('Recommended meal slot'),
+              components: z
+                .array(
+                  z.object({
+                    name: z.string(),
+                    portion: z.string().optional(),
+                    calories: z.number().int().nonnegative().optional(),
+                    carb_g: z.number().nonnegative().optional(),
+                    protein_g: z.number().nonnegative().optional(),
+                    fat_g: z.number().nonnegative().optional(),
+                    sodium_mg: z.number().nonnegative().optional(),
+                  }),
+                )
+                .describe('Individual food items that make up the meal'),
+            }),
+          )
+          .min(1)
+          .max(4)
+          .describe('1–4 meal suggestions to render as UI cards'),
+      }),
+      execute: async ({ meals }) => {
+        // Server-side execute is a trivial ack — the UI event is emitted
+        // from the fullStream tool-call part in the main handler.
+        return { rendered: true, count: meals.length };
+      },
+    }),
+
+    // ── 10. askChoice ──────────────────────────────────────────────────────
+
+    askChoice: tool({
+      description:
+        'Render a multiple-choice prompt in the chat UI as tappable buttons. ' +
+        'Use when asking the user a question that has a small closed set of answers ' +
+        '(2–4 options). After calling this tool do NOT add more prose — the buttons ' +
+        'ARE the question; let the user respond.',
+      inputSchema: z.object({
+        question: z.string().describe('The question to display above the buttons'),
+        options: z
+          .array(z.string().describe('Short option label (≤ 40 characters)'))
+          .min(2)
+          .max(4)
+          .describe('2–4 answer choices'),
+      }),
+      execute: async ({ question, options }) => {
+        // Server-side execute is a trivial ack — the UI event is emitted
+        // from the fullStream tool-call part in the main handler.
+        return { rendered: true, question, option_count: options.length };
+      },
+    }),
+
+    // ── 11. logBaselineMeal ─────────────────────────────────────────────────
 
     logBaselineMeal: tool({
       description:
