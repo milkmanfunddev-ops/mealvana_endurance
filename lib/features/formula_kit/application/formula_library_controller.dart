@@ -580,7 +580,9 @@ class FormulaLibraryController extends _$FormulaLibraryController {
         if (e == null) return const [];
         names = _decodeStringArray(e.componentFoodNames);
         // During templates carry carb ratios, not serving counts — default to
-        // one serving per component; the user adjusts quantity in the editor.
+        // one serving per component. During formulas are intentionally
+        // quantity-less in the editor (the solver derives amounts), so this
+        // default is never user-visible.
       case FormulaPhase.after:
         final entries =
             await ref.read(postWorkoutTemplatesRepositoryProvider).getAll();

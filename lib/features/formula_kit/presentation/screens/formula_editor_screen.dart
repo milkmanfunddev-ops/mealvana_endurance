@@ -144,9 +144,12 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                     // no per-plan targets).
                     _MacroTotals(totals: draft.totals),
                     const SizedBox(height: AppSpacing.md),
-                    // Quantity-less food rows reusing the activity-details
-                    // widgets: swipe right → swap, swipe left → delete, tap →
-                    // expand (Nutrition Facts + Remove). No +/- stepper.
+                    // Food rows reusing the activity-details widgets: swipe
+                    // right → swap, swipe left → delete, tap → expand
+                    // (Nutrition Facts + Remove). Quantity semantics are
+                    // asymmetric by design: before/after formulas carry exact
+                    // quantities (the +/- stepper is shown), while during
+                    // formulas are quantity-less — the solver derives amounts.
                     if (draft.components.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(
@@ -166,11 +169,12 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                             key: ValueKey('formula_kit.editor_row_$i'),
                             food: _foodItemFromComponent(draft.components[i], i),
                             category: _categoryFor(draft.phase),
-                            showQuantity: false,
+                            showQuantity: draft.phase != FormulaPhase.during,
                             onSwap: () =>
                                 _swapComponent(i, draft.components[i]),
                             onDelete: () => notifier.removeComponent(i),
-                            onQuantityChange: (_) {},
+                            onQuantityChange: (q) =>
+                                notifier.updateComponentQuantity(i, q),
                           ),
                         ),
                     const SizedBox(height: AppSpacing.sm),

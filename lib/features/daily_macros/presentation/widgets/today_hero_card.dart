@@ -14,22 +14,53 @@ import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../domain/daily_macro_targets.dart';
 import 'energy_source_breakdown.dart';
 
+// ---------------------------------------------------------------------------
+// Public macro colour constants — reused by the collapsed slim bar delegate.
+// ---------------------------------------------------------------------------
+
+/// Colour used for the carbs macro indicator.
+const Color kMacroColorCarbs = Color(0xFF00C896);
+
+/// Colour used for the protein macro indicator.
+const Color kMacroColorProtein = Color(0xFF6B4FA0);
+
+/// Colour used for the fat macro indicator.
+const Color kMacroColorFat = Color(0xFFFF2D55);
+
+// ---------------------------------------------------------------------------
+// Hero card
+// ---------------------------------------------------------------------------
+
 /// Hero card for the Nutrition Diary screen.
 ///
-/// Displays a calorie ring (progress arc), remaining/over kcal, three
-/// macro progress bars (carbs/protein/fat), an expandable "How targets
-/// are set" section, and Garmin attribution when applicable.
+/// Displays a calorie ring, remaining/over kcal, three macro progress bars,
+/// and a "How these targets are set" row that opens a Kyle-styled bottom
+/// sheet containing [EnergySourceBreakdown] plus Garmin attribution when
+/// applicable.
+///
+/// [onTrendsPressed] is wired to the bar-chart icon in the top-right corner.
 class TodayHeroCard extends ConsumerWidget {
-  const TodayHeroCard({super.key, required this.macros});
+  const TodayHeroCard({
+    super.key,
+    required this.macros,
+    this.onTrendsPressed,
+    this.onBreakdownPressed,
+  });
 
   final DailyMacroTargets macros;
+
+  /// Called when the trends bar-chart icon is tapped.
+  final VoidCallback? onTrendsPressed;
+
+  /// Called when the "How these targets are set" row is tapped.
+  /// When null the row opens the breakdown sheet itself.
+  final VoidCallback? onBreakdownPressed;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
-    // Build dateStr from selected calendar date.
     final selectedDate = ref.watch(calendarSelectedDateProvider);
     final dateStr =
         '${selectedDate.year}-'
@@ -42,7 +73,7 @@ class TodayHeroCard extends ConsumerWidget {
       orElse: () => const ConsumedTotals(),
     );
 
-    // Garmin attribution logic (mirrors DailySummaryCard).
+    // Garmin attribution logic.
     final attributionFromFreshCalc = macros.sources?.anyFromGarmin ?? false;
     final attributionFromGarminHealthData =
         ref.watch(_garminAuthoritativeProvider).maybeWhen(
@@ -57,12 +88,24 @@ class TodayHeroCard extends ConsumerWidget {
         ? (consumed.calories / targetCals).clamp(0.0, 1.0)
         : 0.0;
 
+    void openBreakdown() {
+      if (onBreakdownPressed != null) {
+        onBreakdownPressed!();
+      } else {
+        showBreakdownSheet(
+          context,
+          macros: macros,
+          showAttribution: showAttribution,
+        );
+      }
+    }
+
     return BaseCard(
       key: const ValueKey('nutrition_diary.today_hero_card'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Top row: ring + remaining kcal ──────────────────────────────
+          // ── Top row: ring + remaining kcal + trends icon ────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -71,7 +114,7 @@ class TodayHeroCard extends ConsumerWidget {
                 width: 100,
                 height: 100,
                 child: CustomPaint(
-                  painter: _CalorieRingPainter(
+                  painter: CalorieRingPainter(
                     progress: progress,
                     trackColor: AppColors.orange.withValues(alpha: 0.15),
                     arcColor: AppColors.orange,
@@ -137,6 +180,20 @@ class TodayHeroCard extends ConsumerWidget {
                   ],
                 ),
               ),
+              // Trends icon — top-right of the expanded card.
+              if (onTrendsPressed != null)
+                IconButton(
+                  key: const ValueKey('nutrition_diary.trends_button'),
+                  icon: Icon(
+                    Icons.bar_chart,
+                    size: 20,
+                    color: textColor.withValues(alpha: 0.45),
+                  ),
+                  onPressed: onTrendsPressed,
+                  tooltip: 'Weekly Trends',
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(),
+                ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -148,36 +205,138 @@ class TodayHeroCard extends ConsumerWidget {
                 label: 'Carbs',
                 eaten: consumed.carbsG,
                 target: macros.carbG,
-                color: const Color(0xFF00C896),
+                color: kMacroColorCarbs,
               ),
               const SizedBox(height: AppSpacing.sm),
               _MacroBarRow(
                 label: 'Protein',
                 eaten: consumed.proteinG,
                 target: macros.protG,
-                color: const Color(0xFF6B4FA0),
+                color: kMacroColorProtein,
               ),
               const SizedBox(height: AppSpacing.sm),
               _MacroBarRow(
                 label: 'Fat',
                 eaten: consumed.fatG,
                 target: macros.fatG,
-                color: const Color(0xFFFF2D55),
+                color: kMacroColorFat,
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // ── Expandable "How these targets are set" ───────────────────────
-          _ExpandableBreakdown(macros: macros),
+          // ── "How these targets are set" trigger row ─────────────────────
+          _BreakdownTriggerRow(
+            onTap: openBreakdown,
+            textColor: textColor,
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-          // ── Garmin attribution ───────────────────────────────────────────
-          if (showAttribution) ...[
-            const SizedBox(height: AppSpacing.md),
-            const GarminAttributionMessage(
-              subject: 'Body composition and activity inputs',
+// ---------------------------------------------------------------------------
+// Breakdown bottom-sheet helper (public so the persistent header can call it)
+// ---------------------------------------------------------------------------
+
+/// Opens the "How these targets are set" bottom sheet containing
+/// [EnergySourceBreakdown] and, when applicable, Garmin attribution.
+void showBreakdownSheet(
+  BuildContext context, {
+  required DailyMacroTargets macros,
+  required bool showAttribution,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) {
+      final isDark = Theme.of(ctx).brightness == Brightness.dark;
+      final bg = isDark ? AppColors.blackberry : AppColors.cream;
+      final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+      return Container(
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: EdgeInsets.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          top: AppSpacing.md,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.black12,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                'How These Targets Are Set',
+                style: AppTextStyles.pageTitle.copyWith(color: textColor),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              EnergySourceBreakdown(macros: macros),
+              if (showAttribution) ...[
+                const SizedBox(height: AppSpacing.lg),
+                const GarminAttributionMessage(
+                  subject: 'Body composition and activity inputs',
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// "How these targets are set" trigger row
+// ---------------------------------------------------------------------------
+
+class _BreakdownTriggerRow extends StatelessWidget {
+  const _BreakdownTriggerRow({
+    required this.onTap,
+    required this.textColor,
+  });
+
+  final VoidCallback onTap;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          Icon(
+            Icons.keyboard_arrow_right,
+            size: 16,
+            color: textColor.withValues(alpha: 0.5),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'How these targets are set',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: textColor.withValues(alpha: 0.6),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -203,9 +362,7 @@ class _RemainingText extends StatelessWidget {
   Widget build(BuildContext context) {
     final exceeded = consumed > target;
     final amount = exceeded ? consumed - target : target - consumed;
-    final label = exceeded
-        ? '+$amount kcal over'
-        : '$amount kcal left';
+    final label = exceeded ? '+$amount kcal over' : '$amount kcal left';
     final color = exceeded ? AppColors.dragonfruit : textColor;
 
     return Text(
@@ -240,9 +397,7 @@ class _MacroBarRow extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
-    final ratio = target > 0
-        ? (eaten / target).clamp(0.0, 1.0)
-        : 0.0;
+    final ratio = target > 0 ? (eaten / target).clamp(0.0, 1.0) : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,89 +434,26 @@ class _MacroBarRow extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Expandable "How these targets are set" section
+// Calorie ring painter (public — reused by the collapsed slim-bar delegate)
 // ---------------------------------------------------------------------------
 
-class _ExpandableBreakdown extends StatefulWidget {
-  const _ExpandableBreakdown({required this.macros});
-
-  final DailyMacroTargets macros;
-
-  @override
-  State<_ExpandableBreakdown> createState() => _ExpandableBreakdownState();
-}
-
-class _ExpandableBreakdownState extends State<_ExpandableBreakdown> {
-  bool _isExpanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
-          behavior: HitTestBehavior.opaque,
-          child: Row(
-            children: [
-              Icon(
-                _isExpanded
-                    ? Icons.keyboard_arrow_down
-                    : Icons.keyboard_arrow_right,
-                size: 16,
-                color: textColor.withValues(alpha: 0.5),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'How these targets are set',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: textColor.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-        AnimatedCrossFade(
-          firstChild: const SizedBox.shrink(),
-          secondChild: Column(
-            children: [
-              const SizedBox(height: AppSpacing.sm),
-              EnergySourceBreakdown(macros: widget.macros),
-            ],
-          ),
-          crossFadeState: _isExpanded
-              ? CrossFadeState.showSecond
-              : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 200),
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Calorie ring painter
-// ---------------------------------------------------------------------------
-
-class _CalorieRingPainter extends CustomPainter {
-  const _CalorieRingPainter({
+class CalorieRingPainter extends CustomPainter {
+  const CalorieRingPainter({
     required this.progress,
     required this.trackColor,
     required this.arcColor,
+    this.strokeWidth = 8.0,
   });
 
   final double progress;
   final Color trackColor;
   final Color arcColor;
+  final double strokeWidth;
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.shortestSide / 2) - 5;
-    const strokeWidth = 8.0;
+    final radius = (size.shortestSide / 2) - strokeWidth / 2;
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
@@ -386,7 +478,10 @@ class _CalorieRingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_CalorieRingPainter old) => old.progress != progress;
+  bool shouldRepaint(CalorieRingPainter old) =>
+      old.progress != progress ||
+      old.trackColor != trackColor ||
+      old.arcColor != arcColor;
 }
 
 // ---------------------------------------------------------------------------
@@ -394,9 +489,7 @@ class _CalorieRingPainter extends CustomPainter {
 // ---------------------------------------------------------------------------
 
 /// True when Garmin body comp is currently authoritative for either the
-/// user's weight or body fat — same staleness/precedence rules the rest of
-/// the app uses. Returns false (no badge) on any error or when Garmin isn't
-/// connected.
+/// user's weight or body fat.
 final _garminAuthoritativeProvider = FutureProvider.autoDispose<bool>((
   ref,
 ) async {

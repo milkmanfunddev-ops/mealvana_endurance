@@ -35,7 +35,9 @@ class ExpandableFoodItemWidget extends StatefulWidget {
 
   /// When false, the row title drops the leading quantity (shows the food name
   /// only) and the expanded view hides the +/- quantity stepper. Used by the
-  /// personal-formula editor — formulas are quantity-less lists of foods.
+  /// personal-formula editor for during formulas, which are intentionally
+  /// quantity-less (the solver derives amounts); before/after formulas carry
+  /// exact quantities and keep the stepper.
   final bool showQuantity;
 
   @override

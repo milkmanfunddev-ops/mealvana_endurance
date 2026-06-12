@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 import '../../domain/after_filter_options.dart' show TravelFriendliness;
+import '../../domain/during_filter_options.dart' show DuringDuration;
 import '../../domain/formula_macros.dart';
 import '../../domain/formula_phase.dart';
 import '../../domain/personal_formula.dart';
@@ -20,30 +21,45 @@ class PersonalFormulaCard extends StatelessWidget {
   final PersonalFormula formula;
   final VoidCallback onTap;
 
-  /// The timing/scope badge shown like the system cards do — the before
-  /// timing window (e.g. "30-90 min"), the during duration bracket(s), or the
-  /// after travel label. Null when the formula has no scope set yet.
-  String? _scopeBadge() {
+  /// The timing/scope badges shown like the system cards do — the before
+  /// timing window (e.g. "30-90 min"), one badge per during duration bracket,
+  /// or the after travel label. Empty when the formula has no scope set yet.
+  List<String> _scopeBadges() {
     switch (formula.phase) {
       case FormulaPhase.before:
-        return switch (formula.subPhase) {
+        final label = switch (formula.subPhase) {
           'full_meal' => '1.5-3 hours',
           'snack' => '30-90 min',
           'top_up' => '< 30 min',
           _ => null,
         };
+        return [if (label != null) label];
       case FormulaPhase.during:
-        final d = formula.durations;
-        return (d != null && d.isNotEmpty) ? d.join(' · ') : null;
+        return [
+          for (final d in formula.durations ?? const <String>[])
+            _durationLabel(d),
+        ];
       case FormulaPhase.after:
-        return TravelFriendliness.fromStorageValue(formula.travelFriendliness)
-            ?.displayLabel;
+        final label =
+            TravelFriendliness.fromStorageValue(formula.travelFriendliness)
+                ?.displayLabel;
+        return [if (label != null) label];
     }
+  }
+
+  /// Durations are stored as [DuringDuration] storage values ("90-150 min");
+  /// show the matching display label ("90–150 min") like the editor chips do.
+  String _durationLabel(String storage) {
+    for (final v in DuringDuration.values) {
+      if (v.storageValue == storage) return v.displayLabel;
+    }
+    return storage;
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final badges = _scopeBadges();
     final componentNames = formula.components
         .map(FormulaMacros.nameOf)
         .where((n) => n.isNotEmpty)
@@ -68,9 +84,13 @@ class PersonalFormulaCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (_scopeBadge() case final badge?) ...[
+                  // A single scope badge sits in the header like the system
+                  // before/after cards. Multiple badges (during formulas with
+                  // several duration brackets) move to their own Wrap below —
+                  // one pill per bracket, never merged into one.
+                  if (badges.length == 1) ...[
                     _Pill(
-                      text: badge,
+                      text: badges.single,
                       bg: AppColors.electrolyte.withValues(alpha: 0.18),
                       fg: AppColors.electrolyte,
                     ),
@@ -96,6 +116,21 @@ class PersonalFormulaCard extends StatelessWidget {
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              if (badges.length > 1) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    for (final badge in badges)
+                      _Pill(
+                        text: badge,
+                        bg: AppColors.electrolyte.withValues(alpha: 0.18),
+                        fg: AppColors.electrolyte,
+                      ),
+                  ],
                 ),
               ],
               const SizedBox(height: AppSpacing.sm),
