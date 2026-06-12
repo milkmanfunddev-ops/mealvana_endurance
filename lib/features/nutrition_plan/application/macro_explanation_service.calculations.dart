@@ -662,22 +662,23 @@ extension _$CalculationsExt on MacroExplanationService {
     required int? fluidsLowMl,
     required int? fluidsHighMl,
     int? tier,
+    bool isGateFired = false,
   }) {
     final bool isTier3 = tier != null ? tier == 3 : fluidsMl == 0;
     final bool isTier2 =
         tier != null ? tier == 2 : (!isTier3 && fluidsMl <= 300);
 
-    // Tier 3 / gate — no structured intake, nothing numeric to show.
-    if (isTier3) {
+    // Gate-fired: short + mild workout → no plan needed.
+    if (isGateFired) {
       return [
         CalculationSection(
-          header: 'PRE-WORKOUT TIER',
+          header: 'PRE-WORKOUT HYDRATION',
           lines: const [
             FormulaLine([
               FormulaSegment('no structured intake ', style: SegmentStyle.accent),
               FormulaSegment('→ ', style: SegmentStyle.op),
               FormulaSegment(
-                'either gate fired (<60 min + <30°C) or <10 min pre-start',
+                'workout < 60 min + temp < 30°C → no protocol needed',
                 style: SegmentStyle.dim,
               ),
             ], stepNumber: '①'),
@@ -686,16 +687,35 @@ extension _$CalculationsExt on MacroExplanationService {
       ];
     }
 
-    // Tier 2 — fixed 250 ml top-up.
+    // Too late: < 10 min before start → fluid won't absorb.
+    if (isTier3) {
+      return [
+        CalculationSection(
+          header: 'PRE-WORKOUT HYDRATION',
+          lines: const [
+            FormulaLine([
+              FormulaSegment('no structured intake ', style: SegmentStyle.accent),
+              FormulaSegment('→ ', style: SegmentStyle.op),
+              FormulaSegment(
+                '< 10 min pre-start — fluid won\'t absorb in time',
+                style: SegmentStyle.dim,
+              ),
+            ], stepNumber: '①'),
+          ],
+        ),
+      ];
+    }
+
+    // Short window — fixed 250 ml top-up.
     if (isTier2) {
       return [
         CalculationSection(
-          header: 'PRE-WORKOUT TIER 2',
+          header: 'PRE-WORKOUT HYDRATION',
           lines: [
             const FormulaLine([
-              FormulaSegment('10 min ≤ time < 120 min ', style: SegmentStyle.accent),
+              FormulaSegment('10–120 min window ', style: SegmentStyle.accent),
               FormulaSegment('→ ', style: SegmentStyle.op),
-              FormulaSegment('Tier 2', style: SegmentStyle.accent),
+              FormulaSegment('fixed top-up', style: SegmentStyle.accent),
             ], stepNumber: '①'),
             FormulaLine([
               fAccent('fixed top-up '),
@@ -713,18 +733,18 @@ extension _$CalculationsExt on MacroExplanationService {
       ];
     }
 
-    // Tier 1 — body-weight scaled.
+    // Full ACSM protocol — body-weight scaled.
     final mlPerKg = bodyWeightKg > 0
         ? (fluidsMl / bodyWeightKg).toStringAsFixed(1)
         : '6.0';
     return [
       CalculationSection(
-        header: 'PRE-WORKOUT TIER 1',
+        header: 'PRE-WORKOUT HYDRATION',
         lines: [
           const FormulaLine([
-            FormulaSegment('time ≥ 120 min ', style: SegmentStyle.accent),
+            FormulaSegment('≥ 2 hr window ', style: SegmentStyle.accent),
             FormulaSegment('→ ', style: SegmentStyle.op),
-            FormulaSegment('Tier 1 (full ACSM protocol)', style: SegmentStyle.accent),
+            FormulaSegment('full ACSM protocol (body-weight scaled)', style: SegmentStyle.accent),
           ], stepNumber: '①'),
           FormulaLine([
             fAccent('body weight '),
@@ -740,49 +760,55 @@ extension _$CalculationsExt on MacroExplanationService {
     ];
   }
 
-  /// Pre-workout sodium tier math.
+  /// Pre-workout sodium time-window math. Uses time-window language, not
+  /// internal tier labels.
   List<CalculationSection> _buildPreWorkoutSodiumCalculationSections({
     required int sodiumMg,
     required int? sodiumLowMg,
     required int? sodiumHighMg,
+    bool isGateFired = false,
   }) {
     if (sodiumMg == 0) {
+      final reasonText = isGateFired
+          ? 'workout < 60 min + mild — drink-to-thirst with meals'
+          : '< 10 min pre-start — no sodium needed';
       return [
         CalculationSection(
           header: 'PRE-WORKOUT SODIUM',
-          lines: const [
+          lines: [
             FormulaLine([
-              FormulaSegment('no structured sodium ', style: SegmentStyle.accent),
-              FormulaSegment('→ ', style: SegmentStyle.op),
-              FormulaSegment('gate or Tier 3 — drink-to-thirst with meals',
-                  style: SegmentStyle.dim),
+              const FormulaSegment('no structured sodium ', style: SegmentStyle.accent),
+              const FormulaSegment('→ ', style: SegmentStyle.op),
+              FormulaSegment(reasonText, style: SegmentStyle.dim),
             ], stepNumber: '①'),
           ],
         ),
       ];
     }
 
-    // Tier 1 (~450 mg) vs Tier 2 (~150 mg): cutoff at 300 mg.
-    final isTier1 = sodiumMg >= 300;
-    final header = isTier1 ? 'PRE-WORKOUT SODIUM — TIER 1' : 'PRE-WORKOUT SODIUM — TIER 2';
+    // ≥ 2 hr window (~450 mg) vs 10–120 min window (~150 mg): cutoff at 300 mg.
+    final isFullProtocol = sodiumMg >= 300;
+    final windowLabel =
+        isFullProtocol ? '≥ 2 hr window' : '10–120 min window';
+    final header = 'PRE-WORKOUT SODIUM';
     return [
       CalculationSection(
         header: header,
         lines: [
           FormulaLine([
-            fAccent(isTier1 ? 'time ≥ 120 min ' : '10 min ≤ time < 120 min '),
+            fAccent('$windowLabel '),
             fOp('→ '),
-            fAccent(isTier1 ? 'Tier 1' : 'Tier 2'),
+            fAccent(isFullProtocol ? 'full ACSM protocol' : 'short-window top-up'),
           ], stepNumber: '①'),
           FormulaLine([
             fAccent('fixed sodium '),
             fOp('= '),
             fResult('$sodiumMg mg '),
-            fDim('[${sodiumLowMg ?? (isTier1 ? 300 : 100)}–${sodiumHighMg ?? (isTier1 ? 600 : 200)} mg]'),
+            fDim('[${sodiumLowMg ?? (isFullProtocol ? 300 : 100)}–${sodiumHighMg ?? (isFullProtocol ? 600 : 200)} mg]'),
           ], stepNumber: '②'),
           FormulaLine([
             fOp('→ '),
-            fDim(isTier1
+            fDim(isFullProtocol
                 ? 'retains consumed fluid; aligns with ACSM 300–600 mg window'
                 : 'keeps the 250 ml in your body until start'),
           ]),

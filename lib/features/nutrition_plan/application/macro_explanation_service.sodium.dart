@@ -315,46 +315,75 @@ extension _$SodiumExt on MacroExplanationService {
     final rangeHighMg =
         pre.sodiumHighMg?.round() ?? (sodiumMg * 1.2).round();
 
-    return NutrientTransparencyData(
-      nutrientLabel: 'Sodium',
-      nutrientColor: const Color(0xFFFF8C42), // orange
-      primaryUnit: 'mg',
-      phase: 'before',
-      tldrBody:
+    // Mirror the gate detection from the fluid card: short + mild workout.
+    final durationMin = macroTargets.metrics.durationMin;
+    final tempC = macroTargets.duringRun.tempC ?? 22.0;
+    final isGateFired = sodiumMg == 0 && durationMin < 60 && tempC < 30;
+
+    // Determine the time-window label for the formula line (no tier labels).
+    final isFullProtocol = sodiumMg >= 300;
+    final windowLabel =
+        isFullProtocol ? '≥ 2 hr window' : '10–120 min window';
+
+    final String tldrBody;
+    final List<FormulaLine> tldrLines;
+    if (isGateFired) {
+      tldrBody =
+          'No structured pre-hydration sodium needed — this workout is short '
+          'and mild. A small electrolyte drink or salty snack beforehand is '
+          'plenty.';
+      tldrLines = const [];
+    } else if (sodiumMg == 0) {
+      tldrBody =
+          'Too close to start for a meaningful sodium protocol. Focus on your '
+          'during-workout electrolyte plan instead.';
+      tldrLines = const [];
+    } else {
+      tldrBody =
           'Pre-workout sodium keeps the fluid you drink in your body rather '
           'than sending it straight to your bladder. Without sodium, much of '
-          'what you consume before exercise is excreted before you even start.',
+          'what you consume before exercise is excreted before you even start.';
       // Spec transparency_pre_sodium.md §Formula — multi-line TL;DR with
-      // tier midpoint, floor/ceiling, and range label.
-      tldrLines: [
+      // time-window midpoint, floor/ceiling, and range label.
+      tldrLines = [
         FormulaLine(
           [
-            fAccent('tier window '),
+            fAccent('$windowLabel '),
             fOp('→ '),
-            fResult('${sodiumMg} mg'),
+            fResult('$sodiumMg mg'),
             fOp(' (midpoint)'),
           ],
           stepNumber: '①',
         ),
         FormulaLine([
           fOp('↓ floor = '),
-          fDim('${rangeLowMg} mg'),
+          fDim('$rangeLowMg mg'),
         ]),
         FormulaLine([
           fOp('↑ ceiling = '),
-          fDim('${rangeHighMg} mg'),
+          fDim('$rangeHighMg mg'),
         ]),
         FormulaLine([
           fOp('range '),
           fOp('→ '),
-          fDim('${rangeLowMg}–${rangeHighMg} mg'),
+          fDim('$rangeLowMg–$rangeHighMg mg'),
           fOp(' sipped with fluid'),
         ]),
-      ],
+      ];
+    }
+
+    return NutrientTransparencyData(
+      nutrientLabel: 'Sodium',
+      nutrientColor: const Color(0xFFFF8C42), // orange
+      primaryUnit: 'mg',
+      phase: 'before',
+      tldrBody: tldrBody,
+      tldrLines: tldrLines,
       calculationSections: _buildPreWorkoutSodiumCalculationSections(
         sodiumMg: sodiumMg,
         sodiumLowMg: rangeLowMg,
         sodiumHighMg: rangeHighMg,
+        isGateFired: isGateFired,
       ),
       storySections: const [
         StorySection(

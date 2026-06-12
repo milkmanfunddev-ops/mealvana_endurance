@@ -35,10 +35,28 @@ extension _$FluidExt on MacroExplanationService {
     final isTier3 = tier != null ? tier == 3 : fluidsMl == 0;
     final isTier2 =
         tier != null ? tier == 2 : (!isTier3 && fluidsMl <= 300);
+
+    // When fluidsMl == 0, determine whether the gate fired (short + mild
+    // workout → no plan needed) or whether it's a too-late scenario
+    // (< 10 min before start → fluid won't absorb). The gate fires when
+    // duration < 60 min AND temp < 30°C. We use duringRun because that's
+    // where durationMin and tempC live; this mirrors the gate logic used
+    // in the during-workout card.
+    final durationMin = macroTargets.metrics.durationMin;
+    final tempC = macroTargets.duringRun.tempC ?? 22.0;
+    final isGateFired = isTier3 &&
+        durationMin < 60 &&
+        tempC < 30;
+
     final String blurb;
     final List<FormulaLine> tldrLines;
 
-    if (isTier3) {
+    if (isGateFired) {
+      blurb = 'No structured pre-hydration needed — this workout is short and '
+          'mild. **Drink to thirst** in the hours before. If you want a number, '
+          'keep it under 500 ml total.';
+      tldrLines = const [];
+    } else if (isTier3) {
       blurb = 'Too late for structured pre-hydration. A few small sips are fine '
           'for comfort, but fluid taken now won\'t absorb before exercise begins. '
           'Focus on the during-workout plan instead.';
@@ -68,14 +86,22 @@ extension _$FluidExt on MacroExplanationService {
     } else {
       // Tier 1 — full ACSM protocol. Spec uses 6 ml/kg midpoint, 5 ml/kg
       // floor, 7 ml/kg ceiling.
-      // C1: spec wants "With 3 hours available"; the actual
-      // timeBeforeWorkoutMin isn't currently plumbed through the
-      // transparency stack (would touch ~6 files). Tier 1 implies
-      // timeBeforeWorkoutMin >= 120 by construction, so we use the honest
-      // lower-bound phrase "2+ hours available" until the full plumb lands.
+      // Back-derive the approximate time before the workout from the carb
+      // prescription: preRun.carbsG / (bodyWeightKg * 1 g/kg/hr) gives hours.
+      // Clamped to 2–4 h since that's the Tier 1 window. When bodyWeightKg is
+      // unavailable fall back to "2+ hours".
+      final double derivedHours;
+      if (bodyWeightKg > 0 && pre.carbsG > 0) {
+        derivedHours = (pre.carbsG / bodyWeightKg).clamp(2.0, 4.0);
+      } else {
+        derivedHours = 2.0;
+      }
+      final hoursLabel = derivedHours == derivedHours.truncateToDouble()
+          ? '${derivedHours.toInt()} hours'
+          : '${derivedHours.toStringAsFixed(1)} hours';
       blurb = 'The goal before a workout is to start **euhydrated** — at your '
-          'normal baseline, not loaded or depleted. With 2+ hours available, '
-          'you have time for the full protocol: sip ${fluidsMl}mL gradually, let '
+          'normal baseline, not loaded or depleted. With $hoursLabel available, '
+          'you have time for the full protocol: sip $fluidsMl ml gradually, let '
           'it absorb, and aim for pale yellow urine before you head out.';
       // Bucket the derived ml/kg to the spec-exact integer (5/6/7) when it's
       // close, to avoid displaying e.g. "5.5 mL/kg" — which was the prior
@@ -122,8 +148,8 @@ extension _$FluidExt on MacroExplanationService {
     }
 
     // Spec `transparency_pre_hydration.md`: Tier 1 card shows the
-    // "pale yellow urine" tip as a callout below the formula. Tier 2 and
-    // Tier 3 get no tip (no time for urine colour to respond).
+    // "pale yellow urine" tip as a callout below the formula. Tier 2, gate,
+    // and too-late cards get no tip (no time for urine colour to respond).
     final String? tldrTip = (!isTier3 && !isTier2)
         ? 'If your urine is still dark at 2 hours before your workout, '
             'the ACSM recommends an additional **3–5 ml/kg**. Aim for pale '
@@ -145,6 +171,7 @@ extension _$FluidExt on MacroExplanationService {
         fluidsLowMl: rangeLowMl,
         fluidsHighMl: rangeHighMl,
         tier: tier,
+        isGateFired: isGateFired,
       ),
       videoTitle: 'Watch: Pre-Workout Hydration',
       targetGrams: _mlToDisplay(fluidsMl.toDouble(), useImperial),
@@ -174,7 +201,7 @@ extension _$FluidExt on MacroExplanationService {
       ),
       if (!isTier3)
         const StorySection(
-          question: 'Where does 5\u20137 mL/kg come from?',
+          question: 'Where does 5\u20137 ml/kg come from?',
           answer:
               'The ACSM recommends **5\u20137 mL/kg** of body weight as a '
               'pre-workout fluid protocol for the 2\u20134 hour window. This '
