@@ -40,6 +40,11 @@ import {
   matchPersonalFormulaPin,
   personalFormulaToFoodResults,
 } from "../_shared/nutrition/personal-formula-pins.ts";
+import {
+  backfillPinnedFluidsAndSodium,
+  fluidSodiumDeficits,
+} from "../_shared/nutrition/pin-backfill.ts";
+import { getEssentialFoods } from "../_shared/nutrition/food-queries.ts";
 import type { LPPhaseResult } from "./types.ts";
 import { validatePhaseResultAgainstTargets } from "./validation.ts";
 import { generateLPPhase } from "./lp-phase.ts";
@@ -398,11 +403,32 @@ export async function generateDuringPhase(
       // During formulas are quantity-less by design (decided 2026-06-11):
       // scale the components uniformly to the phase's carb target so the
       // amounts track workout duration, keeping the formula's composition.
-      const foods = personalFormulaToFoodResults(
+      let foods = personalFormulaToFoodResults(
         match,
         "Throughout activity",
         targets.carbs_g,
       );
+      // Failsafe: carb scaling alone can leave the plan under the phase's
+      // fluid/sodium targets (the pin path bypasses the solver's water and
+      // electrolyte fill steps). Backfill with the formula's own components
+      // or essential foods (water/salt) so targets are always met.
+      if (foods.length > 0) {
+        const deficits = fluidSodiumDeficits(foods, targets);
+        if (deficits.needsBackfill) {
+          const essentials = await getEssentialFoods(
+            supabase,
+            activityType,
+            "during",
+          );
+          foods = backfillPinnedFluidsAndSodium(
+            foods,
+            targets,
+            essentials,
+            "Throughout activity",
+            "[PLAN-V3] During",
+          );
+        }
+      }
       if (foods.length > 0) {
         console.log(
           `[PLAN-V3] During: honoring pinned personal formula "${match.name}" ` +

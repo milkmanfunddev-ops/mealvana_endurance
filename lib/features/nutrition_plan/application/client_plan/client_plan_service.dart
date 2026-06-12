@@ -187,6 +187,10 @@ class ClientPlanService {
       userId: userId,
       phase: FormulaPhase.before,
       activityType: activityType,
+      // All phases scale to their carb target (mirrors the edge honoring).
+      scaleToCarbsG: macroTargets.preRun.carbsG,
+      waterMlTarget: macroTargets.preRun.fluidsMl,
+      sodiumMgTarget: macroTargets.preRun.sodiumMg,
     );
     if (pinned != null && pinned.isNotEmpty) return pinned;
 
@@ -239,9 +243,10 @@ class ClientPlanService {
       userId: userId,
       phase: FormulaPhase.during,
       activityType: activityType,
-      // During formulas are quantity-less by design — scale their components
-      // uniformly to the workout's carb target (mirrors the edge honoring).
+      // All phases scale to their carb target (mirrors the edge honoring).
       scaleToCarbsG: macroTargets.duringRun.carbTotalG,
+      waterMlTarget: macroTargets.duringRun.fluidTotalMl,
+      sodiumMgTarget: macroTargets.duringRun.sodiumTotalMg,
     );
     if (pinned != null && pinned.isNotEmpty) return pinned;
 
@@ -268,6 +273,10 @@ class ClientPlanService {
       userId: userId,
       phase: FormulaPhase.after,
       activityType: activityType,
+      // All phases scale to their carb target (mirrors the edge honoring).
+      scaleToCarbsG: macroTargets.postRun.carbsG,
+      waterMlTarget: macroTargets.postRun.fluidsMl,
+      sodiumMgTarget: macroTargets.postRun.sodiumMg,
     );
     if (pinned != null && pinned.isNotEmpty) return pinned;
 
@@ -299,6 +308,8 @@ class ClientPlanService {
     required FormulaPhase phase,
     required ActivityType activityType,
     double? scaleToCarbsG,
+    double? waterMlTarget,
+    double? sodiumMgTarget,
   }) async {
     try {
       final pins = await _pinsRepo.getActivePinsForUser(
@@ -322,7 +333,25 @@ class ClientPlanService {
       }
       if (match == null) return null;
 
-      final items = _componentsToFoodItems(match, scaleToCarbsG: scaleToCarbsG);
+      final scaled = _scaleComponents(match, scaleToCarbsG: scaleToCarbsG);
+      if (scaled.isEmpty) return null;
+
+      // Failsafe (mirrors edge pin-backfill.ts): a formula scaled to its carb
+      // target can still sit under the phase's fluid/sodium targets because
+      // the pin path bypasses the solver's water/electrolyte fill steps.
+      final extras = await _backfillPinnedFluidsAndSodium(
+        scaled,
+        userId: userId,
+        phase: phase,
+        activityType: activityType,
+        waterMlTarget: waterMlTarget ?? 0,
+        sodiumMgTarget: sodiumMgTarget ?? 0,
+      );
+
+      final items = [
+        for (final s in scaled) _componentToFoodItem(match, s),
+        ...extras,
+      ];
       if (items.isEmpty) return null;
       _logger.info(
         'Client solver: honoring pinned personal formula "${match.name}" '
@@ -360,65 +389,220 @@ class ClientPlanService {
     return activityType.isMultiSport;
   }
 
-  /// Convert a personal formula's components into section food items, using the
-  /// per-serving macros snapshotted on each component (no food lookup needed).
+  /// Scale a personal formula's components to [scaleToCarbsG], returning
+  /// mutable (component, quantity) pairs so the fluid/sodium backfill can
+  /// adjust quantities before items are rendered.
   ///
-  /// [scaleToCarbsG] (during phase only): during formulas are quantity-less by
-  /// design — their stored quantities are placeholders. Scale every component
-  /// uniformly so total carbs hit the phase target, keeping the formula's
-  /// composition. Before/after formulas pass null and emit authored
-  /// quantities verbatim.
-  List<FoodItemData> _componentsToFoodItems(
+  /// All phases scale (decided 2026-06-12): authored quantities define the
+  /// formula's composition ratio. Null/zero target or a carb-free formula
+  /// keeps authored quantities verbatim.
+  List<_ScaledComponent> _scaleComponents(
     PersonalFormula formula, {
     double? scaleToCarbsG,
   }) {
-    double n(Object? v) => v is num ? v.toDouble() : 0.0;
     final k = scaleToCarbsG == null
         ? 1.0
         : FormulaMacros.carbScaleFactor(formula.components, scaleToCarbsG);
-    final items = <FoodItemData>[];
+    final scaled = <_ScaledComponent>[];
     for (final c in formula.components) {
       final authoredQty = FormulaMacros.quantityOf(c);
       if (authoredQty <= 0) continue;
       final qty =
           k == 1.0 ? authoredQty : FormulaMacros.scaledQuantity(authoredQty, k);
-      final name = FormulaMacros.nameOf(c);
-      final unit = c[FormulaMacros.kServingUnit] as String?;
-      final carbs = (n(c[FormulaMacros.kCarbsPerServing]) * qty).round();
-      final protein = (n(c[FormulaMacros.kProteinPerServing]) * qty).round();
-      final fat = (n(c[FormulaMacros.kFatPerServing]) * qty).round();
-      final sodium = (n(c[FormulaMacros.kSodiumMg]) * qty).round();
-      final fluids = n(c[FormulaMacros.kFluidMlPerServing]) * qty;
-      final calRaw = c[FormulaMacros.kCaloriesPerServing];
-      final calories = calRaw is num
-          ? (calRaw.toDouble() * qty).round()
-          : carbs * 4 + protein * 4 + fat * 9;
+      scaled.add(_ScaledComponent(c, qty));
+    }
+    return scaled;
+  }
 
-      final rawQty = SolverFood.formatQuantity(qty);
-      items.add(
-        FoodItemData(
-          id: (c[FormulaMacros.kFoodId] as String?) ?? name,
-          name: name,
-          quantity: FoodItemData.buildDisplayQuantity(
-            rawQty: rawQty,
-            servingUnit: unit,
-            displayName: name,
-          ),
-          nutritionalInfo: NutritionalInfo(
-            calories: calories,
-            carbs: carbs,
-            protein: protein,
-            fat: fat,
-            sodium: sodium,
-            fluids: fluids,
-          ),
-          displayName: name,
-          servingSize: unit,
-          templateId: formula.id,
-        ),
+  /// Render one scaled component into a section food item, using the
+  /// per-serving macros snapshotted on the component (no food lookup needed).
+  FoodItemData _componentToFoodItem(PersonalFormula formula, _ScaledComponent s) {
+    double n(Object? v) => v is num ? v.toDouble() : 0.0;
+    final c = s.component;
+    final qty = s.quantity;
+    final name = FormulaMacros.nameOf(c);
+    final unit = c[FormulaMacros.kServingUnit] as String?;
+    final carbs = (n(c[FormulaMacros.kCarbsPerServing]) * qty).round();
+    final protein = (n(c[FormulaMacros.kProteinPerServing]) * qty).round();
+    final fat = (n(c[FormulaMacros.kFatPerServing]) * qty).round();
+    final sodium = (n(c[FormulaMacros.kSodiumMg]) * qty).round();
+    final fluids = n(c[FormulaMacros.kFluidMlPerServing]) * qty;
+    final calRaw = c[FormulaMacros.kCaloriesPerServing];
+    final calories = calRaw is num
+        ? (calRaw.toDouble() * qty).round()
+        : carbs * 4 + protein * 4 + fat * 9;
+
+    final rawQty = SolverFood.formatQuantity(qty);
+    return FoodItemData(
+      id: (c[FormulaMacros.kFoodId] as String?) ?? name,
+      name: name,
+      quantity: FoodItemData.buildDisplayQuantity(
+        rawQty: rawQty,
+        servingUnit: unit,
+        displayName: name,
+      ),
+      nutritionalInfo: NutritionalInfo(
+        calories: calories,
+        carbs: carbs,
+        protein: protein,
+        fat: fat,
+        sodium: sodium,
+        fluids: fluids,
+      ),
+      displayName: name,
+      servingSize: unit,
+      templateId: formula.id,
+    );
+  }
+
+  /// Backfill a pinned formula's foods up to the phase fluid/sodium targets —
+  /// failsafe mirroring the edge `pin-backfill.ts` (keep in sync).
+  ///
+  /// Sodium first (its fluid counts toward the fluid target), then fluid.
+  /// Each prefers bumping one of the formula's own carb-free components in
+  /// [scaled] (mutated in place); otherwise appends an essential food
+  /// (water/salt) from the local pool. Water rounds UP in 0.5-serving steps —
+  /// the plan must never come in under the fluid target. Sodium additions cap
+  /// at 110% of target. Carbs are never touched.
+  Future<List<FoodItemData>> _backfillPinnedFluidsAndSodium(
+    List<_ScaledComponent> scaled, {
+    required String userId,
+    required FormulaPhase phase,
+    required ActivityType activityType,
+    required double waterMlTarget,
+    required double sodiumMgTarget,
+  }) async {
+    const fluidEpsilonMl = 25.0;
+    const sodiumEpsilonMg = 20.0;
+    const sodiumCapRatio = 1.1;
+    double n(Object? v) => v is num ? v.toDouble() : 0.0;
+    double perServingOf(_ScaledComponent s, String key) =>
+        n(s.component[key]);
+    double totalOf(String key) => scaled.fold(
+          0.0,
+          (sum, s) => sum + perServingOf(s, key) * s.quantity,
+        );
+    double ceilHalf(double v) => (v * 2).ceilToDouble() / 2;
+
+    var sodiumTotal = totalOf(FormulaMacros.kSodiumMg);
+    var fluidTotal = totalOf(FormulaMacros.kFluidMlPerServing);
+    final sodiumDeficit =
+        sodiumMgTarget > 0 ? max(0.0, sodiumMgTarget - sodiumTotal) : 0.0;
+    final fluidShort =
+        waterMlTarget > 0 && waterMlTarget - fluidTotal > fluidEpsilonMl;
+    if (sodiumDeficit <= sodiumEpsilonMg && !fluidShort) return const [];
+
+    final extras = <FoodItemData>[];
+
+    // Essential foods (water/salt) — fetched only when something is short.
+    List<SolverFood> essentials = const [];
+    try {
+      final pool = await _foodPool.getFoodsForPhase(
+        phase: phase.wireValue,
+        userId: userId,
+        activityType: activityType,
+      );
+      essentials = pool.where((f) => f.isEssential).toList();
+    } catch (e) {
+      _logger.warning(
+        'Pin backfill: essential foods unavailable',
+        context: 'CLIENT_PLAN_SERVICE',
+        error: e,
       );
     }
-    return items;
+
+    // ---- 1. Sodium ----
+    if (sodiumDeficit > sodiumEpsilonMg) {
+      final sodiumCap = sodiumMgTarget * sodiumCapRatio;
+      // Prefer the formula's own carb-free sodium component.
+      _ScaledComponent? best;
+      for (final s in scaled) {
+        if (perServingOf(s, FormulaMacros.kCarbsPerServing) > 0) continue;
+        final sodiumPer = perServingOf(s, FormulaMacros.kSodiumMg);
+        if (sodiumPer <= 0) continue;
+        if (best == null ||
+            sodiumPer > perServingOf(best, FormulaMacros.kSodiumMg)) {
+          best = s;
+        }
+      }
+      if (best != null) {
+        final sodiumPer = perServingOf(best, FormulaMacros.kSodiumMg);
+        final wanted = (sodiumDeficit / sodiumPer).ceilToDouble();
+        final maxForCap =
+            ((sodiumCap - sodiumTotal) / sodiumPer).floorToDouble();
+        final additional = min(wanted, max(0.0, maxForCap));
+        if (additional > 0) best.quantity += additional;
+      } else {
+        final salt = essentials
+            .where((f) => f.sodiumMg > 0 && f.carbsG <= 0)
+            .toList()
+          ..sort(
+            (a, b) => (b.sodiumMg / max(1.0, b.fluidMl))
+                .compareTo(a.sodiumMg / max(1.0, a.fluidMl)),
+          );
+        if (salt.isNotEmpty) {
+          final f = salt.first;
+          final wanted = (sodiumDeficit / f.sodiumMg).ceilToDouble();
+          final maxForCap =
+              ((sodiumCap - sodiumTotal) / f.sodiumMg).floorToDouble();
+          final servings = min(
+            min(wanted, max(0.0, maxForCap)),
+            f.maxServings.toDouble(),
+          );
+          if (servings > 0) extras.add(f.toFoodItemData(servings));
+        }
+      }
+    }
+
+    // ---- 2. Fluid (after sodium, so fluid carried by step 1 counts) ----
+    sodiumTotal = totalOf(FormulaMacros.kSodiumMg);
+    fluidTotal = totalOf(FormulaMacros.kFluidMlPerServing) +
+        extras.fold(0.0, (sum, e) => sum + (e.nutritionalInfo?.fluids ?? 0));
+    final fluidDeficit =
+        waterMlTarget > 0 ? max(0.0, waterMlTarget - fluidTotal) : 0.0;
+    if (fluidDeficit > fluidEpsilonMl) {
+      // Prefer the formula's own plain-water component.
+      _ScaledComponent? water;
+      for (final s in scaled) {
+        if (perServingOf(s, FormulaMacros.kCarbsPerServing) > 0) continue;
+        if (perServingOf(s, FormulaMacros.kSodiumMg) > 0) continue;
+        final fluidPer = perServingOf(s, FormulaMacros.kFluidMlPerServing);
+        if (fluidPer <= 0) continue;
+        if (water == null ||
+            fluidPer > perServingOf(water, FormulaMacros.kFluidMlPerServing)) {
+          water = s;
+        }
+      }
+      if (water != null) {
+        // Round UP — never leave the plan under the fluid target because a
+        // quantity rounded down (e.g. 4 cups where 5 are needed).
+        water.quantity += ceilHalf(
+          fluidDeficit /
+              perServingOf(water, FormulaMacros.kFluidMlPerServing),
+        );
+      } else {
+        final poolWater = essentials
+            .where((f) => f.fluidMl > 0 && f.carbsG <= 0 && f.sodiumMg <= 0)
+            .toList()
+          ..sort((a, b) => b.fluidMl.compareTo(a.fluidMl));
+        if (poolWater.isNotEmpty) {
+          final f = poolWater.first;
+          final servings = min(
+            ceilHalf(fluidDeficit / f.fluidMl),
+            f.maxServings.toDouble(),
+          );
+          extras.add(f.toFoodItemData(servings));
+        } else {
+          _logger.warning(
+            'Pin backfill: ${fluidDeficit.round()}ml fluid short but no '
+            'water source available',
+            context: 'CLIENT_PLAN_SERVICE',
+          );
+        }
+      }
+    }
+
+    return extras;
   }
 
   /// Run the greedy solver for a single phase.
@@ -684,6 +868,14 @@ class ClientPlanService {
     } catch (_) {}
     return [];
   }
+}
+
+/// Mutable (component, quantity) pair for pinned-formula rendering — the
+/// fluid/sodium backfill adjusts quantities in place before items render.
+class _ScaledComponent {
+  _ScaledComponent(this.component, this.quantity);
+  final Map<String, dynamic> component;
+  double quantity;
 }
 
 /// Provider for [ClientPlanService].

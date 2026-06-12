@@ -29,6 +29,11 @@ import {
   matchBeforePersonalFormulaForSlot,
   personalFormulaToFoodResults,
 } from "../_shared/nutrition/personal-formula-pins.ts";
+import {
+  backfillPinnedFluidsAndSodium,
+  fluidSodiumDeficits,
+} from "../_shared/nutrition/pin-backfill.ts";
+import { getEssentialFoods } from "../_shared/nutrition/food-queries.ts";
 
 import { fetchPreWorkoutTemplates, fetchTemplateFoodsByName } from "./before-phase-db.ts";
 import { fetchUserFoodsForBefore, findSubstitutions } from "./before-phase-substitution.ts";
@@ -303,15 +308,13 @@ export async function generateBeforePhaseV3(
   const personalPins = input.personal_formula_pins;
   if (personalPins && personalPins.length > 0) {
     const activeSlots = getActiveSubPhases(input.hours_before);
+    // Essential foods (water/salt) for the fluid/sodium backfill — fetched
+    // once, lazily, only when some slot's pinned formula runs short.
+    let essentialsPool: Awaited<ReturnType<typeof getEssentialFoods>> | null =
+      null;
     for (const slot of activeSlots) {
       const formula = matchBeforePersonalFormulaForSlot(personalPins, slot);
       if (!formula) continue;
-      const foods = personalFormulaToFoodResults(
-        formula,
-        getSubPhaseTimingLabel(slot, input.hours_before),
-      );
-      if (foods.length === 0) continue; // empty formula → keep algorithmic
-
       const slotTargets = phaseTargetsMap.get(slot) ?? {
         carbs_g: 0,
         protein_g: 0,
@@ -319,6 +322,32 @@ export async function generateBeforePhaseV3(
         sodium_mg: 0,
         water_ml: 0,
       };
+      // Scale the formula's components uniformly to the slot's carb target
+      // (decided 2026-06-12: all phases scale; authored quantities are the
+      // formula's composition ratio, not exact amounts).
+      let foods = personalFormulaToFoodResults(
+        formula,
+        getSubPhaseTimingLabel(slot, input.hours_before),
+        slotTargets.carbs_g,
+      );
+      if (foods.length === 0) continue; // empty formula → keep algorithmic
+
+      // Failsafe: backfill fluids/sodium up to the slot's targets — the
+      // overlay bypasses Algorithm C's fill steps (see pin-backfill.ts).
+      const deficits = fluidSodiumDeficits(foods, slotTargets);
+      if (deficits.needsBackfill) {
+        // Before phase has no activity axis — essential foods (water/salt)
+        // are activity-independent anyway.
+        essentialsPool ??= await getEssentialFoods(supabase, "running", "before");
+        foods = backfillPinnedFluidsAndSodium(
+          foods,
+          slotTargets,
+          essentialsPool,
+          getSubPhaseTimingLabel(slot, input.hours_before),
+          `[PLAN-V3] Before ${slot}`,
+        );
+      }
+
       const pinnedSubPhase: SubPhaseResult = {
         sub_phase_type: slot,
         targets: slotTargets,
@@ -340,7 +369,8 @@ export async function generateBeforePhaseV3(
 
       console.log(
         `[PLAN-V3] Before ${slot}: honoring pinned personal formula ` +
-          `"${formula.name}" (${foods.length} components), overlaying slot`,
+          `"${formula.name}" (${foods.length} components, scaled to ` +
+          `${slotTargets.carbs_g}g carbs), overlaying slot`,
       );
     }
   }

@@ -10,12 +10,12 @@
  * Fall through to normal selection only when no pin matches the workout's
  * scope.
  *
- * Quantity semantics (decided 2026-06-11): before/after formulas carry exact
- * authored quantities and are emitted verbatim. During formulas are
- * quantity-less by design — their stored quantities are placeholders — so the
- * during caller passes the phase's carb target and the components are scaled
- * uniformly to hit it (see [carbScaleFactor]), preserving the formula's
- * composition.
+ * Quantity semantics (decided 2026-06-12, supersedes the 2026-06-11
+ * asymmetry): ALL phases scale. Authored quantities define the formula's
+ * composition ratio; each caller passes its phase/slot carb target and the
+ * components are scaled uniformly to hit it (see [carbScaleFactor]). A
+ * missing/zero target or a carb-free formula falls back to authored
+ * quantities verbatim (factor 1).
  *
  * Scope:
  *   - before: phase match only (no activity/duration axis).
@@ -189,10 +189,9 @@ function roundHalf(v: number): number {
  * [FoodResult] list, using the per-serving macros snapshotted on each
  * component. No food-pool lookup.
  *
- * [scaleToCarbsG] (during phase only): scale quantities uniformly to the
- * phase carb target — during formulas are quantity-less by design, amounts
- * are derived here. Omit for before/after, which emit authored quantities
- * verbatim.
+ * [scaleToCarbsG]: scale quantities uniformly to the phase/slot carb target
+ * (all phases scale, decided 2026-06-12). When omitted, zero, or the formula
+ * has no carbs, authored quantities are emitted verbatim.
  */
 export function personalFormulaToFoodResults(
   pin: PersonalFormulaPin,

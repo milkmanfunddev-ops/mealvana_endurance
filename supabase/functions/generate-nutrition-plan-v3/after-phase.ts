@@ -41,6 +41,11 @@ import {
   matchPersonalFormulaPin,
   personalFormulaToFoodResults,
 } from "../_shared/nutrition/personal-formula-pins.ts";
+import {
+  backfillPinnedFluidsAndSodium,
+  fluidSodiumDeficits,
+} from "../_shared/nutrition/pin-backfill.ts";
+import { getEssentialFoods } from "../_shared/nutrition/food-queries.ts";
 import type { LPPhaseResult } from "./types.ts";
 import { generateLPPhase } from "./lp-phase.ts";
 
@@ -183,11 +188,38 @@ export async function generateAfterPhase(
       activityType,
     );
     if (match) {
-      const foods = personalFormulaToFoodResults(match, "Within 30 minutes");
+      // Scale the formula's components uniformly to the recovery carb target
+      // (decided 2026-06-12: all phases scale; authored quantities are the
+      // formula's composition ratio, not exact amounts).
+      let foods = personalFormulaToFoodResults(
+        match,
+        "Within 30 minutes",
+        targets.carbs_g,
+      );
+      // Failsafe: backfill fluids/sodium up to the recovery targets — the
+      // pin path bypasses all solver fill steps (see pin-backfill.ts).
+      if (foods.length > 0) {
+        const deficits = fluidSodiumDeficits(foods, targets);
+        if (deficits.needsBackfill) {
+          const essentials = await getEssentialFoods(
+            supabase,
+            activityType,
+            "after",
+          );
+          foods = backfillPinnedFluidsAndSodium(
+            foods,
+            targets,
+            essentials,
+            "Within 30 minutes",
+            "[PLAN-V3] After",
+          );
+        }
+      }
       if (foods.length > 0) {
         console.log(
           `[PLAN-V3] After: honoring pinned personal formula "${match.name}" ` +
-            `(${foods.length} components), bypassing template solver`,
+            `(${foods.length} components, scaled to ${targets.carbs_g}g ` +
+            `carbs), bypassing template solver`,
         );
         return {
           foods,
