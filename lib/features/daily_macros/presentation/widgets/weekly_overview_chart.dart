@@ -13,17 +13,23 @@ class WeeklyOverviewChart extends StatefulWidget {
     super.key,
     required this.weeklyMacros,
     required this.startOfWeek,
+    this.initiallyExpanded = false,
   });
 
   final List<DailyMacroTargets?> weeklyMacros;
   final DateTime startOfWeek;
+
+  /// Start with the chart open — used when the widget is hosted somewhere
+  /// already opened on demand (e.g. the Weekly Trends bottom sheet), where a
+  /// second collapsed-by-default toggle would read as an empty sheet.
+  final bool initiallyExpanded;
 
   @override
   State<WeeklyOverviewChart> createState() => _WeeklyOverviewChartState();
 }
 
 class _WeeklyOverviewChartState extends State<WeeklyOverviewChart> {
-  bool _isExpanded = false;
+  late bool _isExpanded = widget.initiallyExpanded;
 
   // Sunday-start day labels
   static const _dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];

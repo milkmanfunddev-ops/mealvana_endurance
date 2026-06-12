@@ -149,21 +149,14 @@ class TodayHeroCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (targetCals > 0) ...[
-                      _RemainingText(
+                      _FuelingText(
                         consumed: consumed.calories,
                         target: targetCals.round(),
                         textColor: textColor,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'of ${NumberFormat('#,###').format(targetCals.round())} kcal target',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: textColor.withValues(alpha: 0.55),
-                        ),
-                      ),
                     ] else ...[
                       Text(
-                        '0 kcal left',
+                        'No target yet',
                         style: AppTextStyles.bodyLarge.copyWith(
                           color: textColor,
                           fontWeight: FontWeight.w700,
@@ -344,11 +337,14 @@ class _BreakdownTriggerRow extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Remaining / over text widget
+// Fueling status text widget
 // ---------------------------------------------------------------------------
 
-class _RemainingText extends StatelessWidget {
-  const _RemainingText({
+/// Deliberately non-restrictive framing: shows the target and progress toward
+/// it as fueling information, never "left"/"over" diet language. Reaching the
+/// target reads as success (Electrolyte), not a warning.
+class _FuelingText extends StatelessWidget {
+  const _FuelingText({
     required this.consumed,
     required this.target,
     required this.textColor,
@@ -360,17 +356,31 @@ class _RemainingText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final exceeded = consumed > target;
-    final amount = exceeded ? consumed - target : target - consumed;
-    final label = exceeded ? '+$amount kcal over' : '$amount kcal left';
-    final color = exceeded ? AppColors.dragonfruit : textColor;
+    final reached = consumed >= target;
+    final pct = target > 0 ? ((consumed / target) * 100).round() : 0;
 
-    return Text(
-      label,
-      style: AppTextStyles.bodyLarge.copyWith(
-        color: color,
-        fontWeight: FontWeight.w700,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Target ${NumberFormat('#,###').format(target)} kcal',
+          style: AppTextStyles.bodyLarge.copyWith(
+            color: textColor,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          reached ? 'Target reached' : '$pct% fueled so far',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: reached
+                ? AppColors.electrolyte
+                : textColor.withValues(alpha: 0.55),
+            fontWeight: reached ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -26,7 +26,7 @@ import '../widgets/weekly_overview_chart.dart';
 /// Maximum height of the pinned macro summary header (expanded state).
 /// Ring (100) + md gap + 3 bars (≈78) + md gap + trigger row (20) +
 /// BaseCard padding top+bottom (16+16) + horizontal padding wrapper (sm*2).
-const double _kHeaderMaxExtent = 280.0;
+const double _kHeaderMaxExtent = 320.0;
 
 /// Minimum height of the slim collapsed bar (pinned under app's top edge).
 const double _kHeaderMinExtent = 60.0;
@@ -373,6 +373,7 @@ class DailyMacrosScreen extends ConsumerWidget {
               WeeklyOverviewChart(
                 weeklyMacros: state.weeklyMacros,
                 startOfWeek: _getStartOfWeek(state.selectedDate),
+                initiallyExpanded: true,
               ),
               const SizedBox(height: AppSpacing.lg),
             ],
@@ -424,9 +425,10 @@ final _garminAuthoritativeProviderForScreen =
 /// states:
 ///
 /// * **Expanded** (shrinkOffset near 0): Full [TodayHeroCard] layout — ring,
-///   kcal remaining, three macro bars, "How these targets are set" trigger.
+///   fueling target text, three macro bars, "How these targets are set"
+///   trigger.
 /// * **Collapsed** (shrinkOffset near maxExtent − minExtent): A slim 60 px
-///   bar showing a small ring dot, "X · Y left" text, three coloured
+///   bar showing a small ring dot, "X / Y kcal" text, three coloured
 ///   macro-gram labels, and the trends icon on the right.
 ///
 /// Interpolation: expanded content fades out and collapsed content fades in
@@ -512,15 +514,25 @@ class _MacroHeaderDelegate extends SliverPersistentHeaderDelegate {
       child: Stack(
         children: [
           // ── EXPANDED layout ───────────────────────────────────────────
+          // ClipRect + OverflowBox: while the header shrinks, the card keeps
+          // its intrinsic height and is clipped instead of overflowing (the
+          // sliver lays the child out at the *current* extent, which is
+          // smaller than the card for most of the collapse travel).
           if (expandedOpacity > 0.0)
             Opacity(
               opacity: expandedOpacity,
-              child: Padding(
-                padding: AppSpacing.screenPaddingHorizontal,
-                child: TodayHeroCard(
-                  macros: macros,
-                  onTrendsPressed: onTrendsPressed,
-                  onBreakdownPressed: onBreakdownPressed,
+              child: ClipRect(
+                child: OverflowBox(
+                  alignment: Alignment.topCenter,
+                  maxHeight: _kHeaderMaxExtent,
+                  child: Padding(
+                    padding: AppSpacing.screenPaddingHorizontal,
+                    child: TodayHeroCard(
+                      macros: macros,
+                      onTrendsPressed: onTrendsPressed,
+                      onBreakdownPressed: onBreakdownPressed,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -555,7 +567,7 @@ class _MacroHeaderDelegate extends SliverPersistentHeaderDelegate {
 
 /// The compact single-row bar shown when the macro header is fully collapsed.
 ///
-/// Layout:  [small ring] [X kcal · Y left]  [C 144  P 89  F 47]  [chart icon]
+/// Layout:  [small ring] [X / Y kcal]  [C 144  P 89  F 47]  [chart icon]
 class _SlimMacroBar extends StatelessWidget {
   const _SlimMacroBar({
     required this.consumed,
@@ -577,12 +589,6 @@ class _SlimMacroBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final targetCals = macros.totalCalories;
 
-    final exceeded = consumed.calories > targetCals.round();
-    final diff = exceeded
-        ? consumed.calories - targetCals.round()
-        : targetCals.round() - consumed.calories;
-    final leftLabel = exceeded ? '+$diff over' : '$diff left';
-
     return SizedBox(
       height: _kHeaderMinExtent,
       child: Row(
@@ -601,13 +607,11 @@ class _SlimMacroBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          // Consumed · remaining
+          // Consumed / target — neutral fueling framing, no "left"/"over".
           Text(
-            '${consumed.calories} · $leftLabel',
+            '${consumed.calories} / ${targetCals.round()} kcal',
             style: AppTextStyles.bodySmall.copyWith(
-              color: exceeded
-                  ? AppColors.dragonfruit
-                  : textColor,
+              color: textColor,
               fontWeight: FontWeight.w600,
               fontSize: 13,
             ),
