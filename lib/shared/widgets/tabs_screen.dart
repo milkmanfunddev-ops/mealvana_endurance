@@ -9,9 +9,7 @@ import '../../features/calendar/presentation/providers/calendar_selected_date_pr
 import '../../features/daily_macros/presentation/screens/daily_macros_screen.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
-import '../../features/jade/presentation/widgets/jade_avatar.dart';
 import '../../theme/kyle_design/app_colors.dart';
-import '../../theme/kyle_design/app_spacing.dart';
 import '../utils/responsive_breakpoints.dart';
 import 'kyle_design/navigation/floating_action_buttons_bar.dart';
 import 'sync_status_indicator.dart';
@@ -173,26 +171,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
             onLearnTap: () => _onTabSelected(_learnTabIndex),
             onPlusTap: _onPlusTap,
           ),
-          // Jade AI coach avatar button — visible only on the Nutrition tab.
-          // Positioned above the FAB bar (bottom: 76 = 16 FAB bottom + 43 bar
-          // height + 8 gap + ~9 centre offset) to avoid overlap.
-          if (_currentIndex == 1)
-            Positioned(
-              bottom: 76,
-              right: AppSpacing.md,
-              child: Semantics(
-                button: true,
-                label: 'Ask Jade, AI nutrition coach',
-                child: Tooltip(
-                  message: 'Ask Jade',
-                  child: GestureDetector(
-                    key: const ValueKey('jade.avatar_button'),
-                    onTap: () => context.push('/jade'),
-                    child: const JadeAvatar(size: 52),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );

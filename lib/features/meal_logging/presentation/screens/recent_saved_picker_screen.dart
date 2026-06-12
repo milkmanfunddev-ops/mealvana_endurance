@@ -3,13 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../domain/meal_component.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/meal_slot.dart';
 import '../../domain/saved_meal.dart';
 import '../providers/meal_log_providers.dart';
-import '../widgets/slot_chip_selector.dart';
+import '../widgets/log_sheet_helpers.dart' show syntheticFromLog, showSlotPickerSheet;
 
 /// Picker screen for re-logging a recent or saved meal.
 ///
@@ -71,7 +70,7 @@ class _RecentSavedPickerScreenState
   }
 
   Future<void> _logRecentMeal(MealLog log, MealSlot slot) async {
-    final component = _syntheticFromLog(log);
+    final component = syntheticFromLog(log);
     await ref.read(mealLogControllerProvider.notifier).logFromComponents(
           name: log.name,
           slot: slot,
@@ -93,79 +92,9 @@ class _RecentSavedPickerScreenState
     }
   }
 
-  MealComponent _syntheticFromLog(MealLog log) {
-    return MealComponent(
-      name: log.name,
-      portion: '1 serving',
-      calories: log.calories,
-      carbG: log.carbsG,
-      proteinG: log.proteinG,
-      fatG: log.fatG,
-      sodiumMg: log.sodiumMg,
-    );
-  }
-
-  void _showSlotPicker({
-    required void Function(MealSlot) onSelected,
-  }) {
-    MealSlot selected = MealSlot.breakfast;
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          final isDark = Theme.of(ctx).brightness == Brightness.dark;
-          return Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.blackberry : AppColors.cream,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            padding: EdgeInsets.only(
-              left: AppSpacing.lg,
-              right: AppSpacing.lg,
-              top: AppSpacing.md,
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.black12,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                Text(
-                  'Which meal?',
-                  style: AppTextStyles.subtitle,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SlotChipSelector(
-                  selectedSlot: selected,
-                  onSlotSelected: (s) => setModalState(() => selected = s),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                KylePrimaryButton(
-                  text: 'Log',
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    onSelected(selected);
-                  },
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
+  /// Delegates to the shared slot picker helper in [log_sheet_helpers.dart].
+  void _showSlotPicker({required void Function(MealSlot) onSelected}) {
+    showSlotPickerSheet(context, onSelected: onSelected);
   }
 
   @override

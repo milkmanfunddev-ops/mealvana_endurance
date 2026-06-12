@@ -97,6 +97,39 @@ class FormulaMacros {
     );
   }
 
+  /// Uniform multiplier that scales a during formula's authored quantities so
+  /// its total carbs hit [targetCarbsG], preserving the formula's composition
+  /// (every component scales by the same factor, water included). Returns 1
+  /// (no scaling) when the target is non-positive or the formula has no carbs
+  /// to scale (e.g. water + electrolytes only).
+  ///
+  /// During formulas are quantity-less by design (decided 2026-06-11) — their
+  /// stored quantities are placeholders, and plan generation derives amounts
+  /// from the phase's carb target. Mirrored in the edge function by
+  /// `carbScaleFactor` in `personal-formula-pins.ts` — keep in sync.
+  static double carbScaleFactor(
+    List<Map<String, dynamic>> components,
+    double targetCarbsG,
+  ) {
+    if (targetCarbsG <= 0) return 1;
+    var baseCarbs = 0.0;
+    for (final c in components) {
+      final q = quantityOf(c);
+      if (q <= 0) continue;
+      baseCarbs += _num(c[kCarbsPerServing]) * q;
+    }
+    if (baseCarbs <= 0) return 1;
+    return targetCarbsG / baseCarbs;
+  }
+
+  /// A scaled quantity rounded to user-meaningful 0.5 steps, floored at 0.5
+  /// so no component vanishes from the user's formula. Mirrors `roundHalf` in
+  /// `personal-formula-pins.ts` — keep in sync.
+  static double scaledQuantity(double authoredQuantity, double scaleFactor) {
+    final scaled = (authoredQuantity * scaleFactor * 2).round() / 2;
+    return scaled < 0.5 ? 0.5 : scaled;
+  }
+
   /// Aggregate macro totals across all [components]. Returned values are the
   /// denormalized `personal_formulas.total_*` columns (rounded ints).
   static FormulaTotals totalsFor(List<Map<String, dynamic>> components) {

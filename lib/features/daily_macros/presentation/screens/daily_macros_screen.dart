@@ -8,6 +8,7 @@ import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../../jade/presentation/widgets/jade_coach_banner.dart';
 import '../../../meal_logging/presentation/widgets/today_log_section.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../../meal_logging/domain/consumed_totals.dart';
@@ -119,6 +120,8 @@ class DailyMacrosScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.sm),
                 const GarminConnectBanner(),
                 const SizedBox(height: AppSpacing.sm),
+                const JadeCoachBanner(),
+                const SizedBox(height: AppSpacing.sm),
               ],
             ),
           ),
@@ -170,8 +173,8 @@ class DailyMacrosScreen extends ConsumerWidget {
           ),
         ],
 
-        // ── Bottom clearance for Jade avatar + nav pill ───────────────────
-        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        // ── Bottom clearance for nav pill ─────────────────────────────────
+        const SliverToBoxAdapter(child: SizedBox(height: 80)),
       ],
     );
   }

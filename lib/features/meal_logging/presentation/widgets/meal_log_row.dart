@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../features/daily_macros/presentation/widgets/today_hero_card.dart'
+    show kMacroColorCarbs, kMacroColorFat, kMacroColorProtein;
 import '../../domain/meal_log.dart';
 import '../../domain/meal_slot.dart';
 import '../providers/meal_log_providers.dart';
@@ -63,12 +65,6 @@ class MealLogRow extends ConsumerWidget {
     final proteinG = log.proteinG;
     final fatG = log.fatG;
 
-    final macroText = [
-      if (carbsG != null) 'C ${carbsG.toStringAsFixed(0)}g',
-      if (proteinG != null) 'P ${proteinG.toStringAsFixed(0)}g',
-      if (fatG != null) 'F ${fatG.toStringAsFixed(0)}g',
-    ].join('  ');
-
     return Dismissible(
       key: ValueKey(log.id),
       direction: DismissDirection.endToStart,
@@ -118,32 +114,40 @@ class MealLogRow extends ConsumerWidget {
                 ),
               ],
             ),
-            subtitle: Text(
-              [
-                if (calories != null) '$calories kcal',
-                if (macroText.isNotEmpty) macroText,
-              ].join('  ·  '),
-              style: theme.textTheme.bodySmall?.copyWith(color: subtitleColor),
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: PopupMenuButton<_MenuAction>(
-              onSelected: (action) {
-                switch (action) {
-                  case _MenuAction.saveFavorite:
-                    _showSaveFavoriteDialog(context);
-                    break;
-                }
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(
-                  value: _MenuAction.saveFavorite,
-                  child: Row(
-                    children: [
-                      Icon(Icons.bookmark_outline, size: 18),
-                      SizedBox(width: 8),
-                      Text('Save as Favorite'),
-                    ],
-                  ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Right-aligned macro column
+                _MacroTrailing(
+                  calories: calories,
+                  carbsG: carbsG,
+                  proteinG: proteinG,
+                  fatG: fatG,
+                  subtitleColor: subtitleColor,
+                  textColor: isDark
+                      ? Colors.white
+                      : theme.colorScheme.onSurface,
+                ),
+                PopupMenuButton<_MenuAction>(
+                  onSelected: (action) {
+                    switch (action) {
+                      case _MenuAction.saveFavorite:
+                        _showSaveFavoriteDialog(context);
+                        break;
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: _MenuAction.saveFavorite,
+                      child: Row(
+                        children: [
+                          Icon(Icons.bookmark_outline, size: 18),
+                          SizedBox(width: 8),
+                          Text('Save as Favorite'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -232,5 +236,135 @@ class _LeadingPhoto extends ConsumerWidget {
         child: Icon(Icons.restaurant_outlined, size: 20),
       ),
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Compact right-aligned macro trailing column
+// ---------------------------------------------------------------------------
+
+/// Right-aligned column showing kcal bold on top and a coloured C/P/F line below.
+///
+/// Imports macro colour constants from [today_hero_card.dart] so the colours
+/// stay in sync across the app.
+class _MacroTrailing extends StatelessWidget {
+  const _MacroTrailing({
+    required this.calories,
+    required this.carbsG,
+    required this.proteinG,
+    required this.fatG,
+    required this.subtitleColor,
+    required this.textColor,
+  });
+
+  final int? calories;
+  final double? carbsG;
+  final double? proteinG;
+  final double? fatG;
+  final Color subtitleColor;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasKcal = calories != null;
+    final hasMacros = carbsG != null || proteinG != null || fatG != null;
+
+    if (!hasKcal && !hasMacros) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (hasKcal)
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '$calories',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
+                TextSpan(
+                  text: ' kcal',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: subtitleColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (hasMacros) ...[
+          const SizedBox(height: 2),
+          _CompactMacroLine(
+            carbsG: carbsG,
+            proteinG: proteinG,
+            fatG: fatG,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Coloured '38C · 26P · 13F' text where each letter+number uses its macro colour.
+class _CompactMacroLine extends StatelessWidget {
+  const _CompactMacroLine({
+    required this.carbsG,
+    required this.proteinG,
+    required this.fatG,
+  });
+
+  final double? carbsG;
+  final double? proteinG;
+  final double? fatG;
+
+  @override
+  Widget build(BuildContext context) {
+    const sep = TextSpan(
+      text: ' · ',
+      style: TextStyle(fontSize: 11, color: Colors.grey),
+    );
+
+    final spans = <TextSpan>[];
+
+    if (carbsG != null) {
+      spans.add(TextSpan(
+        text: '${carbsG!.toStringAsFixed(0)}C',
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: kMacroColorCarbs,
+        ),
+      ));
+    }
+    if (proteinG != null) {
+      if (spans.isNotEmpty) spans.add(sep);
+      spans.add(TextSpan(
+        text: '${proteinG!.toStringAsFixed(0)}P',
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: kMacroColorProtein,
+        ),
+      ));
+    }
+    if (fatG != null) {
+      if (spans.isNotEmpty) spans.add(sep);
+      spans.add(TextSpan(
+        text: '${fatG!.toStringAsFixed(0)}F',
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: kMacroColorFat,
+        ),
+      ));
+    }
+
+    return RichText(text: TextSpan(children: spans));
   }
 }

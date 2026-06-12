@@ -239,6 +239,9 @@ class ClientPlanService {
       userId: userId,
       phase: FormulaPhase.during,
       activityType: activityType,
+      // During formulas are quantity-less by design — scale their components
+      // uniformly to the workout's carb target (mirrors the edge honoring).
+      scaleToCarbsG: macroTargets.duringRun.carbTotalG,
     );
     if (pinned != null && pinned.isNotEmpty) return pinned;
 
@@ -295,6 +298,7 @@ class ClientPlanService {
     required String userId,
     required FormulaPhase phase,
     required ActivityType activityType,
+    double? scaleToCarbsG,
   }) async {
     try {
       final pins = await _pinsRepo.getActivePinsForUser(
@@ -318,7 +322,7 @@ class ClientPlanService {
       }
       if (match == null) return null;
 
-      final items = _componentsToFoodItems(match);
+      final items = _componentsToFoodItems(match, scaleToCarbsG: scaleToCarbsG);
       if (items.isEmpty) return null;
       _logger.info(
         'Client solver: honoring pinned personal formula "${match.name}" '
@@ -358,11 +362,26 @@ class ClientPlanService {
 
   /// Convert a personal formula's components into section food items, using the
   /// per-serving macros snapshotted on each component (no food lookup needed).
-  List<FoodItemData> _componentsToFoodItems(PersonalFormula formula) {
+  ///
+  /// [scaleToCarbsG] (during phase only): during formulas are quantity-less by
+  /// design — their stored quantities are placeholders. Scale every component
+  /// uniformly so total carbs hit the phase target, keeping the formula's
+  /// composition. Before/after formulas pass null and emit authored
+  /// quantities verbatim.
+  List<FoodItemData> _componentsToFoodItems(
+    PersonalFormula formula, {
+    double? scaleToCarbsG,
+  }) {
     double n(Object? v) => v is num ? v.toDouble() : 0.0;
+    final k = scaleToCarbsG == null
+        ? 1.0
+        : FormulaMacros.carbScaleFactor(formula.components, scaleToCarbsG);
     final items = <FoodItemData>[];
     for (final c in formula.components) {
-      final qty = FormulaMacros.quantityOf(c);
+      final authoredQty = FormulaMacros.quantityOf(c);
+      if (authoredQty <= 0) continue;
+      final qty =
+          k == 1.0 ? authoredQty : FormulaMacros.scaledQuantity(authoredQty, k);
       final name = FormulaMacros.nameOf(c);
       final unit = c[FormulaMacros.kServingUnit] as String?;
       final carbs = (n(c[FormulaMacros.kCarbsPerServing]) * qty).round();

@@ -62,6 +62,21 @@ class PreferencesService {
     await _prefs.setBool(_keyGarminBannerDismissed, true);
   }
 
+  // ─── Jade Baseline Tip Banner ───
+
+  static const String _keyJadeBaselineTipDismissed = 'jade_baseline_tip_dismissed';
+
+  /// Whether the user has dismissed the one-time baseline-logging tutorial
+  /// copy on the Jade coach banner.  Once true, the banner shows the default
+  /// "has baseline" copy instead of the tutorial variant.
+  bool get jadeBaselineTipDismissed =>
+      _prefs.getBool(_keyJadeBaselineTipDismissed) ?? false;
+
+  /// Persist dismissal of the Jade baseline tutorial copy.
+  Future<void> dismissJadeBaselineTip() async {
+    await _prefs.setBool(_keyJadeBaselineTipDismissed, true);
+  }
+
   /// Clear all preferences (useful for testing or logout)
   Future<void> clearAll() async {
     await _prefs.clear();

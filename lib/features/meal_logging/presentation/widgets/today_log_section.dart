@@ -7,6 +7,7 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/meal_log.dart';
 import '../providers/meal_log_providers.dart';
 import 'meal_log_row.dart';
+import 'tabbed_log_sheet.dart';
 
 /// Displays the list of meal log entries for [selectedDate] and a button
 /// to open the log-method picker sheet.
@@ -88,8 +89,7 @@ class TodayLogSection extends ConsumerWidget {
                   .map(
                     (log) => MealLogRow(
                       log: log,
-                      onDelete: () =>
-                          _deleteWithUndo(context, ref, log),
+                      onDelete: () => _deleteWithUndo(context, ref, log),
                       onSaveFavorite: (name) => ref
                           .read(mealLogControllerProvider.notifier)
                           .saveLogAsFavorite(log, customName: name),
@@ -171,44 +171,18 @@ void _deleteWithUndo(BuildContext context, WidgetRef ref, MealLog log) {
   );
 }
 
-/// Opens the meal log method selection sheet.
+/// Opens the tabbed meal log sheet.
 void _openLogSheet(BuildContext context, WidgetRef ref, String dateStr) {
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => MealLogMethodSheet(
-      logDate: dateStr,
-      onMethodSelected: (method) {
-        Navigator.of(context).pop();
-        switch (method) {
-          case 'photo':
-            context.push('/meal-log/photo', extra: {'logDate': dateStr});
-            break;
-          case 'manual':
-            context.push('/meal-log/manual', extra: {'logDate': dateStr});
-            break;
-          case 'describe':
-            context.push('/meal-log/describe', extra: {'logDate': dateStr});
-            break;
-          case 'recent_saved':
-            context.push(
-                '/meal-log/recent-saved', extra: {'logDate': dateStr});
-            break;
-          case 'recipe':
-            context.push('/meal-log/recipe', extra: {'logDate': dateStr});
-            break;
-        }
-      },
-    ),
-  );
+  showTabbedLogSheet(context, logDate: dateStr);
 }
 
 // ---------------------------------------------------------------------------
-// Inline method sheet (avoids a separate import cycle)
+// Legacy MealLogMethodSheet — kept for the re-export in meal_log_method_sheet.dart
+// and for callers that navigate to it directly.  The default entry point from
+// TodayLogSection now opens [TabbedLogSheet] via [showTabbedLogSheet].
 // ---------------------------------------------------------------------------
 
-/// Bottom sheet presenting the five meal-logging entry methods.
+/// Bottom sheet presenting the five meal-logging entry methods (legacy).
 ///
 /// Declared here so [today_log_section.dart] stays self-contained.
 /// The separate file `meal_log_method_sheet.dart` re-exports this class.
@@ -336,7 +310,9 @@ class _MethodTile extends StatelessWidget {
           children: [
             Icon(icon,
                 size: 28,
-                color: isDark ? AppColors.electrolyte : AppColors.electrolyteDark),
+                color: isDark
+                    ? AppColors.electrolyte
+                    : AppColors.electrolyteDark),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(

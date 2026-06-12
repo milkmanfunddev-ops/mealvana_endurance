@@ -195,6 +195,23 @@ class MealLogRepository with SyncableRepository {
   // Query Methods
   // ========================================================================
 
+  /// Returns the count of non-deleted meal logs for [userId] with a
+  /// [createdAt] on or after [since].
+  ///
+  /// Used by [jadeHasBaselineProvider] to decide whether to show the
+  /// baseline-logging tutorial copy on the Jade coach banner.
+  Future<int> countLogsSince(String userId, DateTime since) async {
+    final result = await (_database.select(_database.mealLogsTable)
+          ..where(
+            (t) =>
+                t.userId.equals(userId) &
+                t.isDeleted.equals(false) &
+                t.createdAt.isBiggerOrEqualValue(since),
+          ))
+        .get();
+    return result.length;
+  }
+
   /// Watch non-deleted logs for a calendar day, ordered by [eatenAt] then
   /// [createdAt] (most-recent first within a slot).
   ///
