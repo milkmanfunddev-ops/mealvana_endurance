@@ -155,8 +155,8 @@ CREATE TABLE IF NOT EXISTS public.recipes (
   instructions       JSONB NOT NULL DEFAULT '[]'::jsonb,  -- array of strings
   prep_time_minutes  INT NOT NULL DEFAULT 0,
   servings           INT NOT NULL DEFAULT 1,
-  type               TEXT NOT NULL DEFAULT 'general'
-                       CHECK (type IN ('preRun', 'duringRun', 'postRun', 'general')),
+  type               TEXT NOT NULL DEFAULT 'mains'
+                       CHECK (type IN ('breakfast', 'mains', 'snacks', 'workout_fuel', 'recovery')),
 
   -- Per-serving nutrition.
   calories           NUMERIC NOT NULL DEFAULT 0,
@@ -300,6 +300,23 @@ CREATE POLICY "Users delete own meal photos"
     bucket_id = 'meal-photos'
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
+
+
+-- ── 7. recipe-images storage bucket ─────────────────────────────────────────
+-- Public bucket; objects are bare filenames (e.g. 'overnight-oats.jpg').
+-- Uploaded by us (service role) via the Supabase dashboard or CLI.
+-- Clients resolve filenames to public URLs via the Storage SDK — no auth
+-- required for reads.  No authenticated-write policy: uploads are service-role
+-- only.
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('recipe-images', 'recipe-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Public read recipe images" ON storage.objects;
+CREATE POLICY "Public read recipe images"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'recipe-images');
 
 
 -- ============================================================================

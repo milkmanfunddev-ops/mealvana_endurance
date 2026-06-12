@@ -21,6 +21,15 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
   String? _errorMessage;
   RecipeType? _selectedType;
 
+  /// Chip display order: All, Breakfast, Mains, Snacks, Workout Fuel, Recovery.
+  static const List<RecipeType> _chipOrder = [
+    RecipeType.breakfast,
+    RecipeType.mains,
+    RecipeType.snacks,
+    RecipeType.workoutFuel,
+    RecipeType.recovery,
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -108,7 +117,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   onChanged: (_) => _filterRecipes(),
                 ),
                 const SizedBox(height: 16),
-                // Type filter chips
+                // Type filter chips: All, Breakfast, Mains, Snacks, Workout Fuel, Recovery
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -122,11 +131,11 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                         },
                       ),
                       const SizedBox(width: 8),
-                      ...RecipeType.values.map(
+                      ..._chipOrder.map(
                         (type) => Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: _FilterChip(
-                            label: _getTypeDisplayName(type),
+                            label: type.displayLabel,
                             isSelected: _selectedType == type,
                             onSelected: () {
                               setState(() => _selectedType = type);
@@ -198,19 +207,6 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
       ),
     );
   }
-
-  String _getTypeDisplayName(RecipeType type) {
-    switch (type) {
-      case RecipeType.preRun:
-        return 'Pre-Run';
-      case RecipeType.duringRun:
-        return 'During Run';
-      case RecipeType.postRun:
-        return 'Post-Run';
-      case RecipeType.general:
-        return 'General';
-    }
-  }
 }
 
 class _FilterChip extends StatelessWidget {
@@ -256,7 +252,14 @@ class _RecipeCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Thumbnail image
+                  _RecipeThumbnail(
+                    imageUrl: recipe.imageUrl,
+                    type: recipe.type,
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,6 +278,8 @@ class _RecipeCard extends StatelessWidget {
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: Colors.grey[600],
                                   ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -325,15 +330,109 @@ class _RecipeCard extends StatelessWidget {
 
   IconData _getTypeIcon(RecipeType type) {
     switch (type) {
-      case RecipeType.preRun:
-        return Icons.schedule;
-      case RecipeType.duringRun:
-        return Icons.directions_run;
-      case RecipeType.postRun:
-        return Icons.restore;
-      case RecipeType.general:
+      case RecipeType.breakfast:
+        return Icons.free_breakfast;
+      case RecipeType.mains:
         return Icons.restaurant;
+      case RecipeType.snacks:
+        return Icons.cookie;
+      case RecipeType.workoutFuel:
+        return Icons.directions_run;
+      case RecipeType.recovery:
+        return Icons.restore;
     }
+  }
+}
+
+/// Small rounded thumbnail (~56 px) shown beside each recipe card row.
+///
+/// Falls back to a category-coloured icon if the image URL is null or fails
+/// to load.  Uses [Image.network] with an [errorBuilder] — no extra package
+/// required.
+class _RecipeThumbnail extends StatelessWidget {
+  const _RecipeThumbnail({
+    required this.imageUrl,
+    required this.type,
+  });
+
+  final String? imageUrl;
+  final RecipeType type;
+
+  static const double _size = 56;
+
+  Color _categoryColor(BuildContext context) {
+    switch (type) {
+      case RecipeType.breakfast:
+        return Colors.orange.shade300;
+      case RecipeType.mains:
+        return Colors.teal.shade300;
+      case RecipeType.snacks:
+        return Colors.amber.shade300;
+      case RecipeType.workoutFuel:
+        return Colors.blue.shade300;
+      case RecipeType.recovery:
+        return Colors.purple.shade300;
+    }
+  }
+
+  IconData _categoryIcon() {
+    switch (type) {
+      case RecipeType.breakfast:
+        return Icons.free_breakfast;
+      case RecipeType.mains:
+        return Icons.restaurant;
+      case RecipeType.snacks:
+        return Icons.cookie;
+      case RecipeType.workoutFuel:
+        return Icons.directions_run;
+      case RecipeType.recovery:
+        return Icons.restore;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _categoryColor(context);
+
+    final placeholder = Container(
+      width: _size,
+      height: _size,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(_categoryIcon(), color: color, size: 28),
+    );
+
+    if (imageUrl == null) {
+      return placeholder;
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.network(
+        imageUrl!,
+        width: _size,
+        height: _size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => placeholder,
+        loadingBuilder: (_, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: _size,
+            height: _size,
+            color: color.withValues(alpha: 0.15),
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 

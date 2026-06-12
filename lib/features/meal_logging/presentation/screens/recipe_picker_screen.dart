@@ -30,6 +30,15 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
   String? _logDate;
   bool _initialized = false;
 
+  /// Chip display order: All, Breakfast, Mains, Snacks, Workout Fuel, Recovery.
+  static const List<RecipeType> _chipOrder = [
+    RecipeType.breakfast,
+    RecipeType.mains,
+    RecipeType.snacks,
+    RecipeType.workoutFuel,
+    RecipeType.recovery,
+  ];
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -261,11 +270,11 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
                   onTap: () => _applyTypeFilter(null),
                 ),
                 const SizedBox(width: 8),
-                ...RecipeType.values.map(
+                ..._chipOrder.map(
                   (t) => Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: _TypeChip(
-                      label: _recipeTypeLabel(t),
+                      label: t.displayLabel,
                       selected: _selectedType == t,
                       onTap: () => _applyTypeFilter(t),
                     ),
@@ -288,6 +297,10 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 4),
                             child: ListTile(
+                              leading: _RecipePickerThumbnail(
+                                imageUrl: recipe.imageUrl,
+                                type: recipe.type,
+                              ),
                               title: Text(recipe.name,
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w600)),
@@ -311,17 +324,89 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
     );
   }
 
-  String _recipeTypeLabel(RecipeType type) {
+}
+
+/// Small rounded thumbnail (~48 px) shown in recipe list tile leading slot.
+///
+/// Falls back to a category-coloured icon when the URL is null or fails to
+/// load.  Uses plain [Image.network] — no extra dependency required.
+class _RecipePickerThumbnail extends StatelessWidget {
+  const _RecipePickerThumbnail({
+    required this.imageUrl,
+    required this.type,
+  });
+
+  final String? imageUrl;
+  final RecipeType type;
+
+  static const double _size = 48;
+
+  Color _categoryColor(BuildContext context) {
     switch (type) {
-      case RecipeType.preRun:
-        return 'Pre-Run';
-      case RecipeType.duringRun:
-        return 'During Run';
-      case RecipeType.postRun:
-        return 'Post-Run';
-      case RecipeType.general:
-        return 'General';
+      case RecipeType.breakfast:
+        return Colors.orange.shade300;
+      case RecipeType.mains:
+        return Colors.teal.shade300;
+      case RecipeType.snacks:
+        return Colors.amber.shade300;
+      case RecipeType.workoutFuel:
+        return Colors.blue.shade300;
+      case RecipeType.recovery:
+        return Colors.purple.shade300;
     }
+  }
+
+  IconData _categoryIcon() {
+    switch (type) {
+      case RecipeType.breakfast:
+        return Icons.free_breakfast;
+      case RecipeType.mains:
+        return Icons.restaurant;
+      case RecipeType.snacks:
+        return Icons.cookie;
+      case RecipeType.workoutFuel:
+        return Icons.directions_run;
+      case RecipeType.recovery:
+        return Icons.restore;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _categoryColor(context);
+
+    final placeholder = Container(
+      width: _size,
+      height: _size,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(_categoryIcon(), color: color, size: 24),
+    );
+
+    if (imageUrl == null) {
+      return placeholder;
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        imageUrl!,
+        width: _size,
+        height: _size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => placeholder,
+        loadingBuilder: (_, child, progress) {
+          if (progress == null) return child;
+          return Container(
+            width: _size,
+            height: _size,
+            color: color.withValues(alpha: 0.15),
+          );
+        },
+      ),
+    );
   }
 }
 

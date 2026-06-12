@@ -140,7 +140,7 @@ class RecipeRepository with SyncableRepository {
     final entries = await (_database.select(_database.recipesTable)
           ..where(
             (t) =>
-                t.isActive.equals(true) & t.type.equals(type.name),
+                t.isActive.equals(true) & t.type.equals(type.wireValue),
           )
           ..orderBy([(t) => OrderingTerm.asc(t.name)]))
         .get();
@@ -188,7 +188,22 @@ class RecipeRepository with SyncableRepository {
   // ========================================================================
 
   /// Map a Drift [RecipeEntry] to the domain [Recipe].
+  ///
+  /// Image URL resolution: the [imageUrl] column stores either a full https://
+  /// URL (passed through as-is) or a bare object filename (e.g.
+  /// 'overnight-oats.jpg') stored in the public 'recipe-images' Supabase
+  /// storage bucket.  In the latter case we resolve it to the public URL via
+  /// the Storage SDK so the seed file remains env-portable across dev/prod.
   Recipe _entryToRecipe(RecipeEntry entry) {
+    final rawImageUrl = entry.imageUrl;
+    final resolvedImageUrl = rawImageUrl == null
+        ? null
+        : (rawImageUrl.startsWith('http')
+            ? rawImageUrl
+            : _supabase.storage
+                .from('recipe-images')
+                .getPublicUrl(rawImageUrl));
+
     return Recipe(
       id: entry.id,
       name: entry.name,
@@ -197,10 +212,7 @@ class RecipeRepository with SyncableRepository {
       instructions: _decodeJsonStringList(entry.instructions),
       prepTimeMinutes: entry.prepTimeMinutes,
       servings: entry.servings,
-      type: RecipeType.values.firstWhere(
-        (e) => e.name == entry.type,
-        orElse: () => RecipeType.general,
-      ),
+      type: RecipeType.fromWire(entry.type),
       nutrition: RecipeNutrition(
         calories: entry.calories,
         carbohydratesGrams: entry.carbsG,
@@ -210,7 +222,7 @@ class RecipeRepository with SyncableRepository {
         sugarGrams: entry.sugarG,
         sodiumMilligrams: entry.sodiumMg,
       ),
-      imageUrl: entry.imageUrl,
+      imageUrl: resolvedImageUrl,
       tags: entry.tags != null ? _decodeJsonStringList(entry.tags!) : null,
       // isFavorite is always false in MVP; see getFavoriteRecipes().
       isFavorite: false,
@@ -249,7 +261,7 @@ class RecipeRepository with SyncableRepository {
         instructions: Value(_jsonbToString(json['instructions'])),
         prepTimeMinutes: Value((json['prep_time_minutes'] as num?)?.toInt() ?? 0),
         servings: Value((json['servings'] as num?)?.toInt() ?? 1),
-        type: Value(json['type'] as String? ?? 'general'),
+        type: Value(json['type'] as String? ?? 'mains'),
         calories: Value((json['calories'] as num?)?.toDouble() ?? 0),
         carbsG: Value((json['carbs_g'] as num?)?.toDouble() ?? 0),
         proteinG: Value((json['protein_g'] as num?)?.toDouble() ?? 0),
