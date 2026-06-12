@@ -395,14 +395,19 @@ export async function generateDuringPhase(
       durationMinutes,
     );
     if (match) {
+      // During formulas are quantity-less by design (decided 2026-06-11):
+      // scale the components uniformly to the phase's carb target so the
+      // amounts track workout duration, keeping the formula's composition.
       const foods = personalFormulaToFoodResults(
         match,
         "Throughout activity",
+        targets.carbs_g,
       );
       if (foods.length > 0) {
         console.log(
           `[PLAN-V3] During: honoring pinned personal formula "${match.name}" ` +
-            `(${foods.length} components), bypassing template solver`,
+            `(${foods.length} components, scaled to ${targets.carbs_g}g carbs), ` +
+            `bypassing template solver`,
         );
         return {
           foods,

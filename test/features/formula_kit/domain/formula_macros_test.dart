@@ -68,4 +68,46 @@ void main() {
       expect(t.calories, 0);
     });
   });
+
+  // During formulas are quantity-less by design (2026-06-11): plan generation
+  // scales components uniformly to the phase carb target. These helpers are
+  // mirrored in the edge function (personal-formula-pins.ts) — keep in sync.
+  group('during carb-target scaling', () {
+    test('carbScaleFactor scales formula carbs to the target', () {
+      final components = [
+        {FormulaMacros.kQuantity: 1, FormulaMacros.kCarbsPerServing: 25},
+        {FormulaMacros.kQuantity: 1, FormulaMacros.kCarbsPerServing: 0},
+      ];
+      expect(FormulaMacros.carbScaleFactor(components, 100), 4);
+    });
+
+    test('carbScaleFactor is 1 for non-positive target or carb-free formula',
+        () {
+      final carby = [
+        {FormulaMacros.kQuantity: 1, FormulaMacros.kCarbsPerServing: 25},
+      ];
+      expect(FormulaMacros.carbScaleFactor(carby, 0), 1);
+      expect(FormulaMacros.carbScaleFactor(carby, -5), 1);
+      final carbFree = [
+        {FormulaMacros.kQuantity: 2, FormulaMacros.kCarbsPerServing: 0},
+      ];
+      expect(FormulaMacros.carbScaleFactor(carbFree, 90), 1);
+    });
+
+    test('carbScaleFactor ignores zero-quantity components in the base', () {
+      final components = [
+        {FormulaMacros.kQuantity: 0, FormulaMacros.kCarbsPerServing: 100},
+        {FormulaMacros.kQuantity: 1, FormulaMacros.kCarbsPerServing: 25},
+      ];
+      expect(FormulaMacros.carbScaleFactor(components, 50), 2);
+    });
+
+    test('scaledQuantity rounds to 0.5 steps and floors at 0.5', () {
+      expect(FormulaMacros.scaledQuantity(1, 3), 3);
+      expect(FormulaMacros.scaledQuantity(1, 2.6), 2.5);
+      expect(FormulaMacros.scaledQuantity(1, 2.76), 3);
+      expect(FormulaMacros.scaledQuantity(1, 0.2), 0.5);
+      expect(FormulaMacros.scaledQuantity(2, 0.05), 0.5);
+    });
+  });
 }

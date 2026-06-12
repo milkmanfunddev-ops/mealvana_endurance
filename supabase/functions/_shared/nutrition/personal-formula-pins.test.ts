@@ -1,6 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.177.1/testing/asserts.ts";
 import {
   beforeSlotForSubPhase,
+  carbScaleFactor,
   matchBeforePersonalFormulaForSlot,
   matchPersonalFormulaPin,
   personalFormulaToFoodResults,
@@ -117,6 +118,72 @@ Deno.test("zero-quantity components are skipped", () => {
     components: [{ food_name: "Z", quantity: 0, carbs_per_serving: 10 }],
   });
   assertEquals(personalFormulaToFoodResults(f, "x").length, 0);
+});
+
+// ── During carb-target scaling (quantity-less by design, 2026-06-11) ──────
+
+Deno.test("carbScaleFactor scales formula carbs to the target", () => {
+  // 25g/serving gel × 1 + 0g water × 1 → 25g base; 100g target → k=4.
+  const components = [
+    { food_name: "Gel", quantity: 1, carbs_per_serving: 25 },
+    { food_name: "Water", quantity: 1, carbs_per_serving: 0 },
+  ];
+  assertEquals(carbScaleFactor(components, 100), 4);
+});
+
+Deno.test("carbScaleFactor is 1 when target missing or formula carb-free", () => {
+  const carby = [{ food_name: "Gel", quantity: 1, carbs_per_serving: 25 }];
+  assertEquals(carbScaleFactor(carby, undefined), 1);
+  assertEquals(carbScaleFactor(carby, 0), 1);
+  // Water + electrolytes only — nothing to scale.
+  const carbFree = [{ food_name: "Water", quantity: 2, carbs_per_serving: 0 }];
+  assertEquals(carbScaleFactor(carbFree, 90), 1);
+});
+
+Deno.test("during scaling multiplies all components uniformly", () => {
+  const f = pin({
+    components: [
+      { food_name: "Gel", quantity: 1, carbs_per_serving: 25, sodium_mg: 50 },
+      {
+        food_name: "Water",
+        quantity: 1,
+        carbs_per_serving: 0,
+        fluid_ml_per_serving: 500,
+      },
+    ],
+  });
+  // base 25g, target 75g → k=3: 3 gels + 3 waters.
+  const foods = personalFormulaToFoodResults(f, "Throughout activity", 75);
+  assertEquals(foods[0].quantity, 3);
+  assertEquals(foods[0].carbs_grams, 75);
+  assertEquals(foods[0].sodium_mg, 150);
+  assertEquals(foods[1].quantity, 3);
+  assertEquals(foods[1].fluids_ml, 1500);
+});
+
+Deno.test("scaled quantities round to 0.5 steps and floor at 0.5", () => {
+  const f = pin({
+    components: [
+      { food_name: "Drink mix", quantity: 1, carbs_per_serving: 90 },
+      { food_name: "Chews", quantity: 1, carbs_per_serving: 0.5 },
+    ],
+  });
+  // base 90.5g, target 60g → k≈0.663: 0.663 → 0.5 after rounding.
+  const foods = personalFormulaToFoodResults(f, "x", 60);
+  assertEquals(foods[0].quantity, 0.5);
+  assertEquals(foods[1].quantity, 0.5);
+});
+
+Deno.test("no scaling argument leaves authored quantities verbatim", () => {
+  const f = pin({
+    components: [
+      { food_name: "Bagel", quantity: 0.75, carbs_per_serving: 48 },
+    ],
+  });
+  // Before/after path: exact authored quantity, no 0.5 rounding.
+  const foods = personalFormulaToFoodResults(f, "x");
+  assertEquals(foods[0].quantity, 0.75);
+  assertEquals(foods[0].carbs_grams, 36);
 });
 
 // ── Before per-slot honoring ──────────────────────────────────────────────

@@ -6,9 +6,16 @@
  * macros, so it can be emitted as a phase's foods with NO food-pool lookup.
  *
  * Honor policy mirrors system-template pins (locked 2026-05-21): an in-scope
- * pin is honored unconditionally (bypasses allergen / diet / dislike filters
- * and scaling). Fall through to normal selection only when no pin matches the
- * workout's scope.
+ * pin is honored unconditionally (bypasses allergen / diet / dislike filters).
+ * Fall through to normal selection only when no pin matches the workout's
+ * scope.
+ *
+ * Quantity semantics (decided 2026-06-11): before/after formulas carry exact
+ * authored quantities and are emitted verbatim. During formulas are
+ * quantity-less by design — their stored quantities are placeholders — so the
+ * during caller passes the phase's carb target and the components are scaled
+ * uniformly to hit it (see [carbScaleFactor]), preserving the formula's
+ * composition.
  *
  * Scope:
  *   - before: phase match only (no activity/duration axis).
@@ -144,18 +151,60 @@ function r1(v: number): number {
 }
 
 /**
+ * Uniform multiplier that scales a during formula's authored quantities so
+ * its total carbs hit [targetCarbsG], preserving the formula's composition
+ * (every component scales by the same factor, water included). Returns 1
+ * (no scaling) when the target is missing/non-positive or the formula has
+ * no carbs to scale (e.g. water + electrolytes only).
+ *
+ * Mirrored in Flutter by `FormulaMacros.carbScaleFactor` — keep in sync.
+ */
+export function carbScaleFactor(
+  components: Array<Record<string, unknown>>,
+  targetCarbsG: number | undefined,
+): number {
+  if (targetCarbsG === undefined || targetCarbsG <= 0) return 1;
+  let baseCarbs = 0;
+  for (const c of components) {
+    const qty = typeof c.quantity === "number" ? c.quantity : 1;
+    if (qty <= 0) continue;
+    baseCarbs += num(c.carbs_per_serving) * qty;
+  }
+  if (baseCarbs <= 0) return 1;
+  return targetCarbsG / baseCarbs;
+}
+
+/**
+ * Round a scaled quantity to user-meaningful 0.5 steps, flooring at 0.5 so
+ * no component vanishes from the user's formula.
+ *
+ * Mirrored in Flutter by `FormulaMacros.scaledQuantity` — keep in sync.
+ */
+function roundHalf(v: number): number {
+  return Math.max(0.5, Math.round(v * 2) / 2);
+}
+
+/**
  * Render a pinned personal formula's components into the phase's
  * [FoodResult] list, using the per-serving macros snapshotted on each
  * component. No food-pool lookup.
+ *
+ * [scaleToCarbsG] (during phase only): scale quantities uniformly to the
+ * phase carb target — during formulas are quantity-less by design, amounts
+ * are derived here. Omit for before/after, which emit authored quantities
+ * verbatim.
  */
 export function personalFormulaToFoodResults(
   pin: PersonalFormulaPin,
   timing: string,
+  scaleToCarbsG?: number,
 ): FoodResult[] {
+  const k = carbScaleFactor(pin.components, scaleToCarbsG);
   const out: FoodResult[] = [];
   for (const c of pin.components) {
-    const qty = typeof c.quantity === "number" ? c.quantity : 1;
-    if (qty <= 0) continue;
+    const authoredQty = typeof c.quantity === "number" ? c.quantity : 1;
+    if (authoredQty <= 0) continue;
+    const qty = k === 1 ? authoredQty : roundHalf(authoredQty * k);
     const carbs = r1(num(c.carbs_per_serving) * qty);
     const protein = r1(num(c.protein_per_serving) * qty);
     const fat = r1(num(c.fat_per_serving) * qty);
