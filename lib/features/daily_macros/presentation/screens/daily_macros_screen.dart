@@ -444,8 +444,13 @@ class _FixedStripDelegate extends SliverPersistentHeaderDelegate {
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
+    // `alignment` makes the Container expand to the full header extent — a
+    // pinned SliverPersistentHeader child MUST fill maxExtent, otherwise the
+    // sliver reports paintExtent (child height) < layoutExtent (extent) and
+    // trips the SliverGeometry validity assert.
     return Container(
       color: bg,
+      alignment: Alignment.center,
       foregroundDecoration: overlapsContent
           ? BoxDecoration(
               border: Border(
