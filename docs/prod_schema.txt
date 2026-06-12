@@ -2267,6 +2267,60 @@ grant delete, insert, references, select, trigger, truncate, update on formula_p
 
 grant delete, insert, references, select, trigger, truncate, update on formula_pins to service_role;
 
+create table personal_formulas
+(
+    id                   uuid                     default gen_random_uuid() not null
+        primary key,
+    user_id              uuid                                               not null
+        references ??? ()
+        on delete cascade,
+    name                 text                                               not null,
+    provenance           text                                               not null
+        constraint personal_formulas_provenance_check
+            check (provenance = ANY (ARRAY ['forked_formula'::text, 'from_scratch_formula'::text])),
+    phase                text                                               not null
+        constraint personal_formulas_phase_check
+            check (phase = ANY (ARRAY ['before'::text, 'during'::text, 'after'::text])),
+    source_template_id   uuid,
+    source_template_kind text
+        constraint personal_formulas_source_template_kind_check
+            check ((source_template_kind IS NULL) OR (source_template_kind = ANY
+                                                      (ARRAY ['pre_system'::text, 'during_system'::text, 'post_system'::text]))),
+    sub_phase            text,
+    digest_speed         text,
+    activities           jsonb,
+    durations            jsonb,
+    gut_training         text,
+    travel_friendliness  text,
+    components           jsonb                    default '[]'::jsonb       not null,
+    notes                text,
+    total_carbs_g        integer,
+    total_protein_g      integer,
+    total_fat_g          integer,
+    total_sodium_mg      integer,
+    total_fluids_ml      integer,
+    total_calories       integer,
+    created_at           timestamp with time zone default now()             not null,
+    updated_at           timestamp with time zone default now()             not null,
+    is_deleted           boolean                  default false             not null,
+    constraint personal_formulas_forked_source_check
+        check ((provenance <> 'forked_formula'::text) OR
+               ((source_template_id IS NOT NULL) AND (source_template_kind IS NOT NULL)))
+);
+
+alter table personal_formulas
+    owner to postgres;
+
+create index personal_formulas_user_phase
+    on personal_formulas (user_id, phase)
+    where (NOT is_deleted);
+
+grant delete, insert, references, select, trigger, truncate, update on personal_formulas to anon;
+
+grant delete, insert, references, select, trigger, truncate, update on personal_formulas to authenticated;
+
+grant delete, insert, references, select, trigger, truncate, update on personal_formulas to service_role;
+
 create materialized view catalog_items as
 SELECT v.id,
        p.shopify_product_id,
@@ -3614,6 +3668,24 @@ grant execute on function custom_foods_set_updated_at() to anon;
 grant execute on function custom_foods_set_updated_at() to authenticated;
 
 grant execute on function custom_foods_set_updated_at() to service_role;
+
+create function personal_formulas_set_updated_at() returns trigger
+    language plpgsql
+as
+$$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+alter function personal_formulas_set_updated_at() owner to postgres;
+
+grant execute on function personal_formulas_set_updated_at() to anon;
+
+grant execute on function personal_formulas_set_updated_at() to authenticated;
+
+grant execute on function personal_formulas_set_updated_at() to service_role;
 
 create operator % (procedure = similarity_op, leftarg = text, rightarg = text, commutator = %, join = matchingjoinsel, restrict = matchingsel);
 
