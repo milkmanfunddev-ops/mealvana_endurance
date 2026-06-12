@@ -7,23 +7,25 @@ import '../../../calendar/presentation/providers/calendar_selected_date_provider
 import '../../../meal_logging/domain/consumed_totals.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../domain/daily_macro_targets.dart';
-import 'today_hero_card.dart' show kMacroColorCarbs, kMacroColorProtein, kMacroColorFat, CalorieRingPainter, showMacroDetailSheet;
+import 'today_hero_card.dart'
+    show kMacroColorCarbs, kMacroColorProtein, kMacroColorFat;
 
 // ---------------------------------------------------------------------------
-// Fixed-extent pinned macro summary strip (~88-96 px)
+// Fixed-extent pinned macro summary strip — "Eaten / Plan" parallel rows
 // ---------------------------------------------------------------------------
 
-/// The permanent two-line macro summary strip that lives as a pinned
-/// [SliverPersistentHeader] in the Daily Macros screen.
+/// The permanent macro summary strip pinned at the top of the Daily Macros
+/// scroll.
 ///
-/// Line 1: 32 px calorie ring + "X,XXX / Y,YYY kcal" (bold, neutral) +
-///         trends icon on the right (separate tap target).
+/// Two parallel facts, deliberately NOT framed as a quota — no bars, no
+/// rings, no "x / y" fractions, no remaining/over language:
 ///
-/// Line 2: Three inline micro-bars — C / P / F, each with a letter label,
-///         thin 4 px coloured progress bar, and "eaten/target" gram text.
+///   Eaten   1,389 kcal   C 144 · P 89 · F 53
+///   Plan    2,530 kcal   C 305 · P 107 · F 98
 ///
-/// The whole card tap opens [showMacroDetailSheet].
-/// The trends icon tap opens the trends sheet via [onTrendsPressed].
+/// "Eaten" is what the athlete logged (bold); "Plan" is what today's training
+/// calls for (subdued reference). The whole card taps through to the
+/// "Today's Fueling" detail sheet; the trends icon is its own tap target.
 class MacroSummaryStrip extends ConsumerWidget {
   const MacroSummaryStrip({
     super.key,
@@ -54,9 +56,6 @@ class MacroSummaryStrip extends ConsumerWidget {
     );
 
     final targetCals = macros.totalCalories;
-    final progress = targetCals > 0
-        ? (consumed.calories / targetCals).clamp(0.0, 1.0)
-        : 0.0;
 
     return Material(
       color: Colors.transparent,
@@ -68,86 +67,48 @@ class MacroSummaryStrip extends ConsumerWidget {
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // ── Line 1: ring + kcal text + trends icon ─────────────────
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // 32 px calorie ring, no center text
-                  SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: CustomPaint(
-                      painter: CalorieRingPainter(
-                        progress: progress,
-                        trackColor: AppColors.orange.withValues(alpha: 0.2),
-                        arcColor: AppColors.orange,
-                        strokeWidth: 4,
-                      ),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _FactRow(
+                      label: 'Eaten',
+                      kcal: consumed.calories.toDouble(),
+                      carbsG: consumed.carbsG,
+                      proteinG: consumed.proteinG,
+                      fatG: consumed.fatG,
+                      emphasized: true,
+                      textColor: textColor,
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  // "X,XXX / Y,YYY kcal" — neutral, no left/over language
-                  Expanded(
-                    child: Text(
-                      targetCals > 0
-                          ? '${NumberFormat('#,###').format(consumed.calories)} / '
-                              '${NumberFormat('#,###').format(targetCals.round())} kcal'
-                          : 'No target yet',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: textColor,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                    const SizedBox(height: 6),
+                    _FactRow(
+                      label: 'Plan',
+                      kcal: targetCals,
+                      carbsG: macros.carbG,
+                      proteinG: macros.protG,
+                      fatG: macros.fatG,
+                      emphasized: false,
+                      textColor: textColor,
                     ),
-                  ),
-                  // Trends icon — isolated tap area that does NOT bubble up
-                  // to the card's InkWell.
-                  GestureDetector(
-                    onTap: onTrendsPressed,
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: Icon(
-                        Icons.bar_chart,
-                        size: 18,
-                        color: textColor.withValues(alpha: 0.40),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-
-              // ── Line 2: three inline macro micro-bars ──────────────────
-              Row(
-                children: [
-                  _MicroMacroBar(
-                    letter: 'C',
-                    eatenG: consumed.carbsG,
-                    targetG: macros.carbG,
-                    color: kMacroColorCarbs,
-                    textColor: textColor,
+              // Trends icon — isolated tap area that does NOT bubble up to
+              // the card's InkWell.
+              GestureDetector(
+                onTap: onTrendsPressed,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Icon(
+                    Icons.bar_chart,
+                    size: 18,
+                    color: textColor.withValues(alpha: 0.40),
                   ),
-                  const SizedBox(width: 8),
-                  _MicroMacroBar(
-                    letter: 'P',
-                    eatenG: consumed.proteinG,
-                    targetG: macros.protG,
-                    color: kMacroColorProtein,
-                    textColor: textColor,
-                  ),
-                  const SizedBox(width: 8),
-                  _MicroMacroBar(
-                    letter: 'F',
-                    eatenG: consumed.fatG,
-                    targetG: macros.fatG,
-                    color: kMacroColorFat,
-                    textColor: textColor,
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -158,72 +119,114 @@ class MacroSummaryStrip extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Single inline macro micro-bar
+// One fact row: label · kcal · macro grams
 // ---------------------------------------------------------------------------
 
-/// One third of Line 2: letter label + thin coloured progress bar + gram text.
-///
-/// Layout (Expanded so the three bars share row width equally):
-///   [C] [═════░░░] 144/305g
-class _MicroMacroBar extends StatelessWidget {
-  const _MicroMacroBar({
-    required this.letter,
-    required this.eatenG,
-    required this.targetG,
-    required this.color,
+class _FactRow extends StatelessWidget {
+  const _FactRow({
+    required this.label,
+    required this.kcal,
+    required this.carbsG,
+    required this.proteinG,
+    required this.fatG,
+    required this.emphasized,
     required this.textColor,
   });
 
-  final String letter;
-  final double eatenG;
-  final double targetG;
-  final Color color;
+  final String label;
+  final double kcal;
+  final double carbsG;
+  final double proteinG;
+  final double fatG;
+  final bool emphasized;
   final Color textColor;
 
   @override
   Widget build(BuildContext context) {
-    final ratio = targetG > 0 ? (eatenG / targetG).clamp(0.0, 1.0) : 0.0;
-    final gramText = targetG > 0
-        ? '${eatenG.toStringAsFixed(0)}/${targetG.toStringAsFixed(0)}g'
-        : '${eatenG.toStringAsFixed(0)}g';
+    // The Plan row reads as a subdued reference, never a quota.
+    final valueColor =
+        emphasized ? textColor : textColor.withValues(alpha: 0.55);
+    final macroAlpha = emphasized ? 1.0 : 0.55;
 
-    return Expanded(
-      child: Row(
-        children: [
-          // Macro letter in its macro colour
-          Text(
-            letter,
+    return Row(
+      children: [
+        SizedBox(
+          width: 44,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.clip,
             style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: color,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
+              color: textColor.withValues(alpha: 0.5),
             ),
           ),
-          const SizedBox(width: 4),
-          // Thin 4 px rounded progress bar
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: ratio,
-                backgroundColor: color.withValues(alpha: 0.15),
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-                minHeight: 4,
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
-          // Gram text (subdued)
-          Text(
-            gramText,
+        ),
+        SizedBox(
+          width: 86,
+          child: Text(
+            '${NumberFormat('#,###').format(kcal.round())} kcal',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 10,
-              color: textColor.withValues(alpha: 0.55),
-              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              fontWeight: emphasized ? FontWeight.w700 : FontWeight.w500,
+              color: valueColor,
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              children: [
+                _macroSpan('C', carbsG, kMacroColorCarbs, macroAlpha),
+                TextSpan(
+                  text: ' · ',
+                  style: TextStyle(
+                    color: textColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                _macroSpan('P', proteinG, kMacroColorProtein, macroAlpha),
+                TextSpan(
+                  text: ' · ',
+                  style: TextStyle(
+                    color: textColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                _macroSpan('F', fatG, kMacroColorFat, macroAlpha),
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  TextSpan _macroSpan(String letter, double grams, Color color, double alpha) {
+    return TextSpan(
+      children: [
+        TextSpan(
+          text: letter,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: color.withValues(alpha: alpha),
+          ),
+        ),
+        TextSpan(
+          text: ' ${grams.toStringAsFixed(0)}',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: emphasized ? FontWeight.w600 : FontWeight.w500,
+            color: textColor.withValues(alpha: alpha == 1.0 ? 0.85 : 0.55),
+          ),
+        ),
+      ],
     );
   }
 }

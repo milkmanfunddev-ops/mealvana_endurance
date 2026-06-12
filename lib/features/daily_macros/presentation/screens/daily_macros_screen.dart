@@ -22,9 +22,10 @@ import '../widgets/weekly_overview_chart.dart';
 // ---------------------------------------------------------------------------
 
 /// Fixed height of the pinned macro summary strip (no collapse, no expand).
-/// Two lines: ring+kcal row (32 px ring + 12 sm + top/bottom padding) +
-/// micro-bar row (4 px bar + text) + BaseCard vertical padding (12+12).
-const double _kStripExtent = 92.0;
+/// Two compact "Eaten / Plan" fact rows + BaseCard vertical padding; the
+/// delegate centers the card inside this extent (the child must fill it —
+/// see _FixedStripDelegate.build).
+const double _kStripExtent = 76.0;
 
 // ---------------------------------------------------------------------------
 // DailyMacrosScreen
