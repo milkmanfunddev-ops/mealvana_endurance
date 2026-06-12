@@ -6,16 +6,14 @@ import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../auth/application/auth_service.dart';
-import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
 import '../../../meal_logging/domain/consumed_totals.dart';
-import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../domain/daily_macro_targets.dart';
 import 'energy_source_breakdown.dart';
 
 // ---------------------------------------------------------------------------
-// Public macro colour constants — reused by the collapsed slim bar delegate.
+// Public macro colour constants — reused by MacroSummaryStrip.
 // ---------------------------------------------------------------------------
 
 /// Colour used for the carbs macro indicator.
@@ -28,321 +26,215 @@ const Color kMacroColorProtein = Color(0xFF6B4FA0);
 const Color kMacroColorFat = Color(0xFFFF2D55);
 
 // ---------------------------------------------------------------------------
-// Hero card
+// Detail sheet (replaces the old card composition as the primary surface)
 // ---------------------------------------------------------------------------
 
-/// Hero card for the Nutrition Diary screen.
+/// Opens the "Today's Fueling" detail bottom sheet.
 ///
-/// Displays a calorie ring, remaining/over kcal, three macro progress bars,
-/// and a "How these targets are set" row that opens a Kyle-styled bottom
-/// sheet containing [EnergySourceBreakdown] plus Garmin attribution when
-/// applicable.
+/// Contains, top to bottom:
+///   - drag handle
+///   - title "Today's Fueling"
+///   - big calorie ring + [_FuelingText] row (same layout as the old hero card)
+///   - three full [_MacroBarRow] bars
+///   - divider
+///   - [EnergySourceBreakdown]
+///   - Garmin attribution when applicable
 ///
-/// [onTrendsPressed] is wired to the bar-chart icon in the top-right corner.
-class TodayHeroCard extends ConsumerWidget {
-  const TodayHeroCard({
-    super.key,
-    required this.macros,
-    this.onTrendsPressed,
-    this.onBreakdownPressed,
-  });
-
-  final DailyMacroTargets macros;
-
-  /// Called when the trends bar-chart icon is tapped.
-  final VoidCallback? onTrendsPressed;
-
-  /// Called when the "How these targets are set" row is tapped.
-  /// When null the row opens the breakdown sheet itself.
-  final VoidCallback? onBreakdownPressed;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-
-    final selectedDate = ref.watch(calendarSelectedDateProvider);
-    final dateStr =
-        '${selectedDate.year}-'
-        '${selectedDate.month.toString().padLeft(2, '0')}-'
-        '${selectedDate.day.toString().padLeft(2, '0')}';
-
-    final totalsAsync = ref.watch(consumedTotalsForDateProvider(dateStr));
-    final consumed = totalsAsync.maybeWhen(
-      data: (v) => v,
-      orElse: () => const ConsumedTotals(),
-    );
-
-    // Garmin attribution logic.
-    final attributionFromFreshCalc = macros.sources?.anyFromGarmin ?? false;
-    final attributionFromGarminHealthData =
-        ref.watch(_garminAuthoritativeProvider).maybeWhen(
-          data: (v) => v,
-          orElse: () => false,
-        );
-    final showAttribution =
-        attributionFromFreshCalc || attributionFromGarminHealthData;
-
-    final targetCals = macros.totalCalories;
-    final progress = targetCals > 0
-        ? (consumed.calories / targetCals).clamp(0.0, 1.0)
-        : 0.0;
-
-    void openBreakdown() {
-      if (onBreakdownPressed != null) {
-        onBreakdownPressed!();
-      } else {
-        showBreakdownSheet(
-          context,
-          macros: macros,
-          showAttribution: showAttribution,
-        );
-      }
-    }
-
-    return BaseCard(
-      key: const ValueKey('nutrition_diary.today_hero_card'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Top row: ring + remaining kcal + trends icon ────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Calorie ring
-              SizedBox(
-                width: 100,
-                height: 100,
-                child: CustomPaint(
-                  painter: CalorieRingPainter(
-                    progress: progress,
-                    trackColor: AppColors.orange.withValues(alpha: 0.15),
-                    arcColor: AppColors.orange,
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          consumed.calories.toString(),
-                          style: const TextStyle(
-                            fontFamily: 'Sansita',
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ).copyWith(color: textColor),
-                        ),
-                        Text(
-                          'kcal',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: textColor.withValues(alpha: 0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              // Remaining / over text
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (targetCals > 0) ...[
-                      _FuelingText(
-                        consumed: consumed.calories,
-                        target: targetCals.round(),
-                        textColor: textColor,
-                      ),
-                    ] else ...[
-                      Text(
-                        'No target yet',
-                        style: AppTextStyles.bodyLarge.copyWith(
-                          color: textColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Set up targets in Settings',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: textColor.withValues(alpha: 0.5),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              // Trends icon — top-right of the expanded card.
-              if (onTrendsPressed != null)
-                IconButton(
-                  key: const ValueKey('nutrition_diary.trends_button'),
-                  icon: Icon(
-                    Icons.bar_chart,
-                    size: 20,
-                    color: textColor.withValues(alpha: 0.45),
-                  ),
-                  onPressed: onTrendsPressed,
-                  tooltip: 'Weekly Trends',
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-
-          // ── Three macro bar rows ─────────────────────────────────────────
-          Column(
-            children: [
-              _MacroBarRow(
-                label: 'Carbs',
-                eaten: consumed.carbsG,
-                target: macros.carbG,
-                color: kMacroColorCarbs,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _MacroBarRow(
-                label: 'Protein',
-                eaten: consumed.proteinG,
-                target: macros.protG,
-                color: kMacroColorProtein,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _MacroBarRow(
-                label: 'Fat',
-                eaten: consumed.fatG,
-                target: macros.fatG,
-                color: kMacroColorFat,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-
-          // ── "How these targets are set" trigger row ─────────────────────
-          _BreakdownTriggerRow(
-            onTap: openBreakdown,
-            textColor: textColor,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Breakdown bottom-sheet helper (public so the persistent header can call it)
-// ---------------------------------------------------------------------------
-
-/// Opens the "How these targets are set" bottom sheet containing
-/// [EnergySourceBreakdown] and, when applicable, Garmin attribution.
-void showBreakdownSheet(
+/// Scrollable so it works on small screens.
+void showMacroDetailSheet(
   BuildContext context, {
   required DailyMacroTargets macros,
+  required ConsumedTotals consumed,
   required bool showAttribution,
 }) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (ctx) {
-      final isDark = Theme.of(ctx).brightness == Brightness.dark;
-      final bg = isDark ? AppColors.blackberry : AppColors.cream;
-      final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-      return Container(
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: EdgeInsets.only(
-          left: AppSpacing.lg,
-          right: AppSpacing.lg,
-          top: AppSpacing.md,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Drag handle
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white24 : Colors.black12,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Text(
-                'How These Targets Are Set',
-                style: AppTextStyles.pageTitle.copyWith(color: textColor),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              EnergySourceBreakdown(macros: macros),
-              if (showAttribution) ...[
-                const SizedBox(height: AppSpacing.lg),
-                const GarminAttributionMessage(
-                  subject: 'Body composition and activity inputs',
-                ),
-              ],
-              const SizedBox(height: AppSpacing.md),
-            ],
-          ),
-        ),
-      );
-    },
+    builder: (ctx) => _MacroDetailSheetContent(
+      macros: macros,
+      consumed: consumed,
+      showAttribution: showAttribution,
+    ),
   );
 }
 
-// ---------------------------------------------------------------------------
-// "How these targets are set" trigger row
-// ---------------------------------------------------------------------------
-
-class _BreakdownTriggerRow extends StatelessWidget {
-  const _BreakdownTriggerRow({
-    required this.onTap,
-    required this.textColor,
+class _MacroDetailSheetContent extends StatelessWidget {
+  const _MacroDetailSheetContent({
+    required this.macros,
+    required this.consumed,
+    required this.showAttribution,
   });
 
-  final VoidCallback onTap;
-  final Color textColor;
+  final DailyMacroTargets macros;
+  final ConsumedTotals consumed;
+  final bool showAttribution;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Row(
-        children: [
-          Icon(
-            Icons.keyboard_arrow_right,
-            size: 16,
-            color: textColor.withValues(alpha: 0.5),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'How these targets are set',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: textColor.withValues(alpha: 0.6),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.blackberry : AppColors.cream;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+
+    final targetCals = macros.totalCalories;
+    final progress = targetCals > 0
+        ? (consumed.calories / targetCals).clamp(0.0, 1.0)
+        : 0.0;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      // Account for keyboard + safe area bottom.
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).padding.bottom,
+      ),
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.65,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        builder: (ctx, scrollController) {
+          return SingleChildScrollView(
+            controller: scrollController,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Drag handle
+                const SizedBox(height: AppSpacing.md),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Title
+                Text(
+                  "Today's Fueling",
+                  style: AppTextStyles.pageTitle.copyWith(color: textColor),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // ── Big calorie ring + fueling text row ─────────────────
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      height: 100,
+                      child: CustomPaint(
+                        painter: CalorieRingPainter(
+                          progress: progress,
+                          trackColor: AppColors.orange.withValues(alpha: 0.15),
+                          arcColor: AppColors.orange,
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                consumed.calories.toString(),
+                                style: const TextStyle(
+                                  fontFamily: 'Sansita',
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ).copyWith(color: textColor),
+                              ),
+                              Text(
+                                'kcal',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: textColor.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: targetCals > 0
+                          ? _FuelingText(
+                              consumed: consumed.calories,
+                              target: targetCals.round(),
+                              textColor: textColor,
+                            )
+                          : Text(
+                              'No target yet',
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                color: textColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // ── Three full macro bar rows ────────────────────────────
+                _MacroBarRow(
+                  label: 'Carbs',
+                  eaten: consumed.carbsG,
+                  target: macros.carbG,
+                  color: kMacroColorCarbs,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _MacroBarRow(
+                  label: 'Protein',
+                  eaten: consumed.proteinG,
+                  target: macros.protG,
+                  color: kMacroColorProtein,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _MacroBarRow(
+                  label: 'Fat',
+                  eaten: consumed.fatG,
+                  target: macros.fatG,
+                  color: kMacroColorFat,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // ── Divider ──────────────────────────────────────────────
+                Divider(color: textColor.withValues(alpha: 0.12)),
+                const SizedBox(height: AppSpacing.lg),
+
+                // ── Energy source breakdown ──────────────────────────────
+                EnergySourceBreakdown(macros: macros),
+
+                // ── Garmin attribution ───────────────────────────────────
+                if (showAttribution) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  const GarminAttributionMessage(
+                    subject: 'Body composition and activity inputs',
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.xl),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Fueling status text widget
+// Fueling status text widget (reused in detail sheet)
 // ---------------------------------------------------------------------------
 
 /// Deliberately non-restrictive framing: shows the target and progress toward
-/// it as fueling information, never "left"/"over" diet language. Reaching the
-/// target reads as success (Electrolyte), not a warning.
+/// it as fueling information, never "left"/"over" diet language.
 class _FuelingText extends StatelessWidget {
   const _FuelingText({
     required this.consumed,
@@ -386,7 +278,7 @@ class _FuelingText extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Individual macro bar row
+// Individual macro bar row (reused in detail sheet)
 // ---------------------------------------------------------------------------
 
 class _MacroBarRow extends StatelessWidget {
@@ -444,7 +336,7 @@ class _MacroBarRow extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Calorie ring painter (public — reused by the collapsed slim-bar delegate)
+// Calorie ring painter (public — reused by MacroSummaryStrip)
 // ---------------------------------------------------------------------------
 
 class CalorieRingPainter extends CustomPainter {
@@ -500,9 +392,8 @@ class CalorieRingPainter extends CustomPainter {
 
 /// True when Garmin body comp is currently authoritative for either the
 /// user's weight or body fat.
-final _garminAuthoritativeProvider = FutureProvider.autoDispose<bool>((
-  ref,
-) async {
+final garminAuthoritativeForMacrosProvider =
+    FutureProvider.autoDispose<bool>((ref) async {
   final profile = await ref.watch(currentUserProvider.future);
   if (profile == null) return false;
 
