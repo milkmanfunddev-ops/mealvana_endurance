@@ -4,12 +4,8 @@ import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../auth/application/auth_service.dart';
-import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
-import '../../../meal_logging/domain/consumed_totals.dart';
-import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
-import '../../../meal_logging/presentation/widgets/consumed_progress_widget.dart';
 import '../../domain/daily_macro_targets.dart';
 import 'energy_source_breakdown.dart';
 import 'macro_breakdown_row.dart';
@@ -93,46 +89,7 @@ class DailySummaryCard extends ConsumerWidget {
               subject: 'Body composition and activity inputs',
             ),
           ],
-
-          // Consumed progress for the currently selected date
-          const SizedBox(height: AppSpacing.lg),
-          const Divider(),
-          const SizedBox(height: AppSpacing.sm),
-          _ConsumedSection(macros: macros),
         ],
-      ),
-    );
-  }
-}
-
-/// Watches the calendar's selected date and renders [ConsumedProgressWidget].
-class _ConsumedSection extends ConsumerWidget {
-  const _ConsumedSection({required this.macros});
-
-  final DailyMacroTargets macros;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selectedDate = ref.watch(calendarSelectedDateProvider);
-    final dateStr =
-        '${selectedDate.year}-'
-        '${selectedDate.month.toString().padLeft(2, '0')}-'
-        '${selectedDate.day.toString().padLeft(2, '0')}';
-
-    final totalsAsync = ref.watch(consumedTotalsForDateProvider(dateStr));
-
-    return totalsAsync.when(
-      data: (totals) => ConsumedProgressWidget(
-        consumed: totals,
-        targets: macros,
-      ),
-      loading: () => const ConsumedProgressWidget(
-        consumed: ConsumedTotals(),
-        targets: null,
-      ),
-      error: (_, __) => const ConsumedProgressWidget(
-        consumed: ConsumedTotals(),
-        targets: null,
       ),
     );
   }
