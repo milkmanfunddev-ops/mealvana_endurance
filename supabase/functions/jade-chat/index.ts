@@ -41,7 +41,8 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { streamText } from 'npm:ai';
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { stepCountIs, streamText } from 'npm:ai@6';
 import { corsHeaders } from '../_shared/cors.ts';
 import { errorResponse, validationError, serverError } from '../_shared/responses.ts';
 import { JADE_MODEL } from '../_shared/ai/model.ts';
@@ -102,7 +103,8 @@ async function requireUser(req: Request) {
 // Baseline check — any non-deleted meal_logs in the last 14 days?
 // ---------------------------------------------------------------------------
 
-async function hasBaseline(serviceClient: ReturnType<typeof createClient>, userId: string, today: string): Promise<boolean> {
+// deno-lint-ignore no-explicit-any
+async function hasBaseline(serviceClient: SupabaseClient<any, any, any>, userId: string, today: string): Promise<boolean> {
   const since = new Date(today);
   since.setDate(since.getDate() - 14);
   const sinceStr = since.toISOString().slice(0, 10);
@@ -307,63 +309,70 @@ serve(async (req: Request) => {
 
     // ── Stream the reply ────────────────────────────────────────────────────
     const result = streamText({
-      model: JADE_MODEL as Parameters<typeof streamText>[0]['model'],
-      apiKey: aiGatewayApiKey,
+      model: JADE_MODEL,
       system: systemPrompt,
       messages: [
         ...priorMessages,
         { role: 'user', content: message },
       ],
       tools,
-      maxSteps: MAX_STEPS,
-      onFinish: async ({ text, usage }) => {
-        // Persist assistant message
-        const { error: assistantMsgError } = await serviceClient
-          .from('jade_messages')
-          .insert({
-            conversation_id: resolvedConversationId,
-            user_id: user.id,
-            role: 'assistant',
-            content: text,
-          });
+      stopWhen: stepCountIs(MAX_STEPS),
+      onFinish: ({ text, usage }) => {
+        // The isolate can be torn down as soon as the response stream closes,
+        // so persistence must be registered with waitUntil — plain awaits in
+        // this callback race the shutdown and silently lose writes.
+        const persist = (async () => {
+          const { error: assistantMsgError } = await serviceClient
+            .from('jade_messages')
+            .insert({
+              conversation_id: resolvedConversationId,
+              user_id: user.id,
+              role: 'assistant',
+              content: text,
+            });
 
-        if (assistantMsgError) {
-          console.error('[jade-chat] assistant message persist error:', assistantMsgError);
-        }
+          if (assistantMsgError) {
+            console.error('[jade-chat] assistant message persist error:', assistantMsgError);
+          }
 
-        // Bump conversation updated_at (fire-and-forget)
-        serviceClient
-          .from('jade_conversations')
-          .update({ updated_at: new Date().toISOString() })
-          .eq('id', resolvedConversationId)
-          .then(({ error: bumpError }) => {
-            if (bumpError) console.error('[jade-chat] conversation bump error:', bumpError);
-          });
+          const { error: bumpError } = await serviceClient
+            .from('jade_conversations')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', resolvedConversationId);
+          if (bumpError) console.error('[jade-chat] conversation bump error:', bumpError);
 
-        // Log jade_calls usage (fire-and-forget)
-        serviceClient
-          .from('jade_calls')
-          .insert({
-            user_id: user.id,
-            conversation_id: resolvedConversationId,
-            function_name: 'jade-chat',
-            model: JADE_MODEL,
-            input_tokens: usage?.promptTokens ?? 0,
-            output_tokens: usage?.completionTokens ?? 0,
-          })
-          .then(({ error: logError }) => {
-            if (logError) console.error('[jade-chat] jade_calls log error:', logError);
-          });
+          const { error: logError } = await serviceClient
+            .from('jade_calls')
+            .insert({
+              user_id: user.id,
+              conversation_id: resolvedConversationId,
+              function_name: 'jade-chat',
+              model: JADE_MODEL,
+              input_tokens: usage?.inputTokens ?? 0,
+              output_tokens: usage?.outputTokens ?? 0,
+            });
+          if (logError) console.error('[jade-chat] jade_calls log error:', logError);
 
-        console.log(
-          `[jade-chat] onFinish user=${user.id} conv=${resolvedConversationId} ` +
-            `in=${usage?.promptTokens ?? 0} out=${usage?.completionTokens ?? 0}`,
-        );
+          console.log(
+            `[jade-chat] onFinish user=${user.id} conv=${resolvedConversationId} ` +
+              `in=${usage?.inputTokens ?? 0} out=${usage?.outputTokens ?? 0}`,
+          );
+        })();
+
+        // deno-lint-ignore no-explicit-any
+        (globalThis as any).EdgeRuntime?.waitUntil?.(persist);
       },
     });
 
     // ── Build streaming response with merged CORS + conversation-id headers ─
-    const streamResponse = result.toTextStreamResponse();
+    const streamResponse = result.toTextStreamResponse({
+      // Surface model/tool errors in function logs instead of silently
+      // closing the stream with an empty body.
+      onError: (error: unknown) => {
+        console.error('[jade-chat] stream error:', error);
+        return 'Sorry, I hit a snag answering that. Please try again.';
+      },
+    });
 
     const responseHeaders = new Headers(streamResponse.headers);
     for (const [key, value] of Object.entries(chatCorsHeaders)) {

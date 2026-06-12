@@ -5,7 +5,7 @@
  * output shape is identical regardless of input modality.
  */
 
-import { z } from 'npm:zod';
+import { z } from 'npm:zod@3';
 
 // ---------------------------------------------------------------------------
 // Per-item schema

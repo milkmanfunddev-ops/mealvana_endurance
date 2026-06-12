@@ -4,7 +4,7 @@
  * All tools are scoped to the authenticated user's id. Descriptions are kept
  * concise so the model picks the right tool without ambiguity.
  *
- * AI SDK v4 API (npm:ai): tool({ description, parameters, execute })
+ * AI SDK v6 API (npm:ai@6): tool({ description, inputSchema, execute })
  * Parameters use Zod schemas.
  *
  * Factory: makeJadeTools(ctx) closes over the service-role client, userId,
@@ -12,8 +12,8 @@
  * passing arguments through the AI SDK call.
  */
 
-import { tool } from 'npm:ai';
-import { z } from 'npm:zod';
+import { tool } from 'npm:ai@6';
+import { z } from 'npm:zod@3';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { getInSeasonProduce } from './in_season.ts';
 
@@ -67,7 +67,7 @@ export function makeJadeTools(ctx: JadeToolContext) {
         "age (birthday), dietary preference, allergies, gut training level, and " +
         "athletic performance markers (cycling FTP, swim CSS). Also fetches their " +
         "explicit food preferences (liked/disliked foods).",
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         const [profileRes, prefsRes] = await Promise.all([
           serviceClient
@@ -107,7 +107,7 @@ export function makeJadeTools(ctx: JadeToolContext) {
         "Fetch the user's calculated daily macro targets (carb_g, prot_g, fat_g, " +
         "tdee, session_kcal) for a date range. Use this to understand what the user " +
         "should be eating on specific days, especially around training.",
-      parameters: z.object({
+      inputSchema: z.object({
         start_date: z.string().describe('ISO date YYYY-MM-DD (inclusive)'),
         end_date: z.string().describe('ISO date YYYY-MM-DD (inclusive)'),
       }),
@@ -136,7 +136,7 @@ export function makeJadeTools(ctx: JadeToolContext) {
         'Use direction="upcoming" for future workouts (default) or direction="recent" ' +
         "for past workouts. Useful for fueling advice, recovery context, or referencing " +
         "what training is coming up.",
-      parameters: z.object({
+      inputSchema: z.object({
         direction: z
           .enum(['upcoming', 'recent'])
           .default('upcoming')
@@ -189,7 +189,7 @@ export function makeJadeTools(ctx: JadeToolContext) {
       description:
         "Fetch the user's upcoming races and events. Useful for race-day fueling " +
         "advice, taper nutrition, and carb-loading guidance.",
-      parameters: z.object({
+      inputSchema: z.object({
         days_ahead: z
           .number()
           .int()
@@ -230,7 +230,7 @@ export function makeJadeTools(ctx: JadeToolContext) {
         "macros (calories, carbs_g, protein_g, fat_g), source, and items breakdown. " +
         "Use this to review what the user has been eating, identify patterns, or " +
         "give feedback on a specific day.",
-      parameters: z.object({
+      inputSchema: z.object({
         start_date: z.string().describe('ISO date YYYY-MM-DD (inclusive)'),
         end_date: z.string().describe('ISO date YYYY-MM-DD (inclusive)'),
       }),
@@ -265,7 +265,7 @@ export function makeJadeTools(ctx: JadeToolContext) {
         "probability, and a hydration advisory when conditions warrant it. " +
         "Useful for heat/cold fueling adjustments. Returns { available: false } " +
         "if no location was provided in the request.",
-      parameters: z.object({
+      inputSchema: z.object({
         days: z
           .number()
           .int()
@@ -332,7 +332,7 @@ export function makeJadeTools(ctx: JadeToolContext) {
         "Returns produce items at peak quality and lowest cost this month " +
         "(northern hemisphere US default). Useful for budget-friendly meal suggestions, " +
         "grocery guidance, and whole-food fueling recommendations.",
-      parameters: z.object({
+      inputSchema: z.object({
         month: z
           .number()
           .int()
@@ -353,7 +353,7 @@ export function makeJadeTools(ctx: JadeToolContext) {
         "Checks for grocery store sales near the user's location relevant to " +
         "endurance fueling (produce, protein, carbs). Currently returns a stub — " +
         "use it to acknowledge the user asked, then offer other budget suggestions.",
-      parameters: z.object({
+      inputSchema: z.object({
         query: z
           .string()
           .optional()
@@ -379,7 +379,7 @@ export function makeJadeTools(ctx: JadeToolContext) {
         "in chat. Use source 'jade_baseline'. One call per meal slot. " +
         "Derive total calories/macros by summing item values when items are provided. " +
         "After inserting, confirm what you logged in one concise sentence.",
-      parameters: z.object({
+      inputSchema: z.object({
         name: z.string().describe('Short display title, e.g. "Oatmeal with banana and peanut butter"'),
         slot: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).describe('Meal slot'),
         log_date: z

@@ -21,7 +21,7 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { generateObject } from 'npm:ai';
+import { generateObject } from 'npm:ai@6';
 import { handleCors } from '../_shared/cors.ts';
 import {
   errorResponse,
@@ -121,7 +121,6 @@ serve(async (req: Request) => {
     // Call Claude via Vercel AI Gateway
     const result = await generateObject({
       model: JADE_MODEL as Parameters<typeof generateObject>[0]['model'],
-      apiKey: aiGatewayApiKey,
       schema: MealAnalysisSchema,
       messages: [
         {
@@ -150,21 +149,26 @@ Return your answer as structured JSON matching the requested schema.`,
 
     // Log usage to jade_calls (fire-and-forget)
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    serviceClient
-      .from('jade_calls')
-      .insert({
-        user_id: user.id,
-        conversation_id: null,
-        function_name: 'describe-meal',
-        model: JADE_MODEL,
-        input_tokens: usage?.promptTokens ?? 0,
-        output_tokens: usage?.completionTokens ?? 0,
-      })
-      .then(({ error: logError }) => {
-        if (logError) {
-          console.error('[describe-meal] Failed to log jade_call:', logError);
-        }
-      });
+    // Register with waitUntil so the insert survives isolate shutdown
+    // after the response is returned.
+    // deno-lint-ignore no-explicit-any
+    (globalThis as any).EdgeRuntime?.waitUntil?.(
+      serviceClient
+        .from('jade_calls')
+        .insert({
+          user_id: user.id,
+          conversation_id: null,
+          function_name: 'describe-meal',
+          model: JADE_MODEL,
+          input_tokens: usage?.inputTokens ?? 0,
+          output_tokens: usage?.outputTokens ?? 0,
+        })
+        .then(({ error: logError }) => {
+          if (logError) {
+            console.error('[describe-meal] Failed to log jade_call:', logError);
+          }
+        }),
+    );
 
     console.log(
       `[describe-meal] Success for user ${user.id}: "${analysis.name}", ` +

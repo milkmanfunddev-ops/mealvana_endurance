@@ -24,7 +24,7 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { generateObject } from 'npm:ai';
+import { generateObject } from 'npm:ai@6';
 import { handleCors } from '../_shared/cors.ts';
 import {
   errorResponse,
@@ -159,7 +159,6 @@ serve(async (req: Request) => {
     try {
       result = await generateObject({
         model: JADE_MODEL as Parameters<typeof generateObject>[0]['model'],
-        apiKey: aiGatewayApiKey,
         schema: MealAnalysisSchema,
         messages: [
           {
@@ -168,7 +167,7 @@ serve(async (req: Request) => {
               {
                 type: 'image',
                 image: base64Image,
-                mimeType,
+                mediaType: mimeType,
               },
               {
                 type: 'text',
@@ -208,21 +207,26 @@ Return your answer as structured JSON matching the requested schema.`,
     const usage = result.usage;
 
     // Log usage to jade_calls table (fire-and-forget; never fail the request)
-    serviceClient
-      .from('jade_calls')
-      .insert({
-        user_id: user.id,
-        conversation_id: null,
-        function_name: 'analyze-meal-photo',
-        model: JADE_MODEL,
-        input_tokens: usage?.promptTokens ?? 0,
-        output_tokens: usage?.completionTokens ?? 0,
-      })
-      .then(({ error: logError }) => {
-        if (logError) {
-          console.error('[analyze-meal-photo] Failed to log jade_call:', logError);
-        }
-      });
+    // Register with waitUntil so the insert survives isolate shutdown
+    // after the response is returned.
+    // deno-lint-ignore no-explicit-any
+    (globalThis as any).EdgeRuntime?.waitUntil?.(
+      serviceClient
+        .from('jade_calls')
+        .insert({
+          user_id: user.id,
+          conversation_id: null,
+          function_name: 'analyze-meal-photo',
+          model: JADE_MODEL,
+          input_tokens: usage?.inputTokens ?? 0,
+          output_tokens: usage?.outputTokens ?? 0,
+        })
+        .then(({ error: logError }) => {
+          if (logError) {
+            console.error('[analyze-meal-photo] Failed to log jade_call:', logError);
+          }
+        }),
+    );
 
     console.log(
       `[analyze-meal-photo] Success for user ${user.id}: "${analysis.name}", ` +
