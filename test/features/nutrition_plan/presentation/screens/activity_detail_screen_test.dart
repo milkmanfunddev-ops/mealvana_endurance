@@ -8,6 +8,8 @@ import 'package:mealvana_endurance/features/nutrition_plan/presentation/screens/
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/activity_detail_controller.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/activity_detail_state.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
+import 'package:mealvana_endurance/features/activities/domain/activity_completion.dart';
+import 'package:mealvana_endurance/features/coach_mode/presentation/providers/coach_activity_detail_controller.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
@@ -15,7 +17,7 @@ import 'package:mockito/annotations.dart';
 /// Unit tests for Activity Detail Screen actions
 ///
 /// Tests the following functionality:
-/// - Delete button visibility (shown for existing activities, hidden for new ones and coach view)
+/// - Delete button visibility (shown for existing activities and coach view, hidden for new ones)
 /// - Delete button triggers confirmation dialog
 /// - Complete button is present for non-completed activities
 /// - Completed state is displayed correctly
@@ -62,8 +64,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify delete button icon is present
-      expect(find.byIcon(FontAwesomeIcons.trash), findsOneWidget);
+      // Verify delete button icon is present.
+      // font_awesome_flutter v11 wraps IconData in FaIconData; FaIcon.icon
+      // exposes the underlying IconData via .data, so find.byIcon requires .data.
+      expect(find.byIcon(FontAwesomeIcons.trash.data), findsOneWidget);
     });
 
     testWidgets('Delete button is hidden for new activities', (tester) async {
@@ -106,11 +110,13 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify delete button is NOT present
-      expect(find.byIcon(FontAwesomeIcons.trash), findsNothing);
+      // Verify delete button is NOT present for new activities
+      expect(find.byIcon(FontAwesomeIcons.trash.data), findsNothing);
     });
 
-    testWidgets('Delete button is hidden in coach view', (tester) async {
+    testWidgets('Delete button is visible in coach view', (tester) async {
+      // The production AppBar shows delete for all existing activities,
+      // including in coach view (see comment "including coach view" in AppBar).
       final activity = Activity(
         id: 'test-activity-1',
         userId: 'test-user',
@@ -122,7 +128,11 @@ void main() {
         status: ActivityStatus.planned,
       );
 
-      final state = ActivityDetailState(
+      final activityDetailState = ActivityDetailState(
+        activity: activity,
+        scheduledDateTime: activity.scheduledDateTime,
+      );
+      final coachState = CoachActivityDetailState(
         activity: activity,
         scheduledDateTime: activity.scheduledDateTime,
       );
@@ -130,11 +140,10 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            activityDetailControllerProvider(
-              activityId: 'test-activity-1',
-              isNewActivity: false,
+            coachActivityDetailControllerProvider(
+              'test-activity-1',
             ).overrideWith(() {
-              return MockActivityDetailController(state);
+              return MockCoachActivityDetailController(coachState);
             }),
           ],
           child: const MaterialApp(
@@ -149,8 +158,9 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify delete button is NOT present in coach view
-      expect(find.byIcon(FontAwesomeIcons.trash), findsNothing);
+      // Delete button is present in coach view (production AppBar shows it for
+      // all existing activities regardless of coach/athlete mode).
+      expect(find.byIcon(FontAwesomeIcons.trash.data), findsOneWidget);
     });
   });
 
@@ -212,8 +222,18 @@ void main() {
         completedAt: completedAt,
       );
 
+      // ActivityDetailState.isCompleted is true when completion != null.
+      // A completion object must be provided to trigger the completed UI.
+      final completion = ActivityCompletion(
+        id: 1,
+        activityId: 1,
+        userId: 'test-user',
+        completedAt: completedAt,
+      );
+
       final state = ActivityDetailState(
         activity: activity,
+        completion: completion,
         scheduledDateTime: activity.scheduledDateTime,
       );
 
@@ -243,13 +263,13 @@ void main() {
       expect(find.text('Workout Completed'), findsOneWidget);
       // Complete button should NOT be present
       expect(find.text('Complete'), findsNothing);
-      // Verify checkmark icon is present
-      expect(find.byIcon(FontAwesomeIcons.circleCheck), findsOneWidget);
+      // Verify checkmark icon is present (FaIcon.icon returns .data; use .data for find.byIcon)
+      expect(find.byIcon(FontAwesomeIcons.circleCheck.data), findsOneWidget);
     });
   });
 }
 
-/// Mock controller for testing
+/// Mock controller for the regular (athlete) activity detail path
 class MockActivityDetailController extends ActivityDetailController {
   final ActivityDetailState _state;
 
@@ -260,6 +280,18 @@ class MockActivityDetailController extends ActivityDetailController {
     required String activityId,
     bool isNewActivity = false,
   }) async {
+    return _state;
+  }
+}
+
+/// Mock controller for the coach-view path
+class MockCoachActivityDetailController extends CoachActivityDetailController {
+  final CoachActivityDetailState _state;
+
+  MockCoachActivityDetailController(this._state);
+
+  @override
+  FutureOr<CoachActivityDetailState> build(String activityId) async {
     return _state;
   }
 }

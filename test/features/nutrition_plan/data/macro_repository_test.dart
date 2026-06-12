@@ -38,8 +38,12 @@ void main() {
       final legacyA = _sampleMacroTargets(id: 'legacy-a', carbRate: 30);
       await repository.saveMacroTargets(legacyA);
 
+      // Sport guard (issue #18): migration is refused when expectedActivityType
+      // is null to prevent silent cross-sport corruption.  Callers that know
+      // the activity's sport must pass it to trigger the one-time migration.
       final migratedX1 = await repository.getCachedMacroTargetsForActivity(
         'activity-x',
+        expectedActivityType: ActivityType.running,
       );
       expect(migratedX1?.id, 'legacy-a');
 
@@ -49,12 +53,14 @@ void main() {
       // activity-x remains pinned to the first migrated snapshot.
       final migratedX2 = await repository.getCachedMacroTargetsForActivity(
         'activity-x',
+        expectedActivityType: ActivityType.running,
       );
       expect(migratedX2?.id, 'legacy-a');
 
       // New activity migrates the current legacy snapshot once.
       final migratedY1 = await repository.getCachedMacroTargetsForActivity(
         'activity-y',
+        expectedActivityType: ActivityType.running,
       );
       expect(migratedY1?.id, 'legacy-b');
 
@@ -63,8 +69,33 @@ void main() {
 
       final migratedY2 = await repository.getCachedMacroTargetsForActivity(
         'activity-y',
+        expectedActivityType: ActivityType.running,
       );
       expect(migratedY2?.id, 'legacy-b');
+    });
+
+    test('skips legacy migration when expectedActivityType is null', () async {
+      final legacy = _sampleMacroTargets(id: 'legacy-a', carbRate: 30);
+      await repository.saveMacroTargets(legacy);
+
+      // No expectedActivityType → sport guard refuses the copy to prevent
+      // silent cross-sport template corruption (issue #18).
+      final result = await repository.getCachedMacroTargetsForActivity(
+        'activity-x',
+      );
+      expect(result, isNull);
+    });
+
+    test('skips legacy migration when sport does not match', () async {
+      final legacy = _sampleMacroTargets(id: 'legacy-a', carbRate: 30);
+      // Saved as running, but caller expects cycling — guard must refuse.
+      await repository.saveMacroTargets(legacy);
+
+      final result = await repository.getCachedMacroTargetsForActivity(
+        'activity-x',
+        expectedActivityType: ActivityType.cycling,
+      );
+      expect(result, isNull);
     });
   });
 }

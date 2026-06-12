@@ -44,21 +44,26 @@ void main() {
         expect(map, isNotNull);
         final data = map![Scenario.singleSport]!;
 
-        final headers =
-            data.calculationSections.map((s) => s.header).toList();
+        // Tier headers were replaced with user-facing window language
+        // (no internal "Tier n" terminology may leak — see
+        // pre_workout_windows_test). Discriminate tiers by their formula
+        // content instead: Tier 1 = full ACSM protocol / ≥ 2 hr window,
+        // Tier 2 = 10–120 min fixed top-up.
+        final formulaText = _allFormulaText(data.calculationSections);
         expect(
-          headers,
-          contains('PRE-WORKOUT TIER 1'),
+          formulaText,
+          contains('full ACSM protocol'),
           reason:
-              'Explicit hydrationTier=1 must drive Tier 1 calculation copy '
-              'even when fluidsMl ≤ 300 (the old fluid-magnitude heuristic).',
+              'Explicit hydrationTier=1 must drive the full-protocol '
+              'calculation copy even when fluidsMl ≤ 300 (the old '
+              'fluid-magnitude heuristic).',
         );
         expect(
-          headers,
-          isNot(contains('PRE-WORKOUT TIER 2')),
+          formulaText,
+          isNot(contains('10–120 min window')),
           reason:
-              'Tier 2 markup would mislabel a body-weight-scaled Tier 1 '
-              'recommendation for low-bodyweight athletes.',
+              'Short-window markup would mislabel a body-weight-scaled '
+              'full-protocol recommendation for low-bodyweight athletes.',
         );
       },
     );
@@ -85,11 +90,10 @@ void main() {
           bodyWeightKg: 70,
         )!;
 
-        final headers = map[Scenario.singleSport]!
-            .calculationSections
-            .map((s) => s.header)
-            .toList();
-        expect(headers, contains('PRE-WORKOUT TIER 2'));
+        final formulaText =
+            _allFormulaText(map[Scenario.singleSport]!.calculationSections);
+        expect(formulaText, contains('10–120 min window'));
+        expect(formulaText, isNot(contains('full ACSM protocol')));
       },
     );
 
@@ -117,15 +121,23 @@ void main() {
           bodyWeightKg: 70,
         )!;
 
-        final headers = map[Scenario.singleSport]!
-            .calculationSections
-            .map((s) => s.header)
-            .toList();
-        // 420 ml > 300 → legacy heuristic resolves to Tier 1.
-        expect(headers, contains('PRE-WORKOUT TIER 1'));
+        final formulaText =
+            _allFormulaText(map[Scenario.singleSport]!.calculationSections);
+        // 420 ml > 300 → legacy heuristic resolves to the full protocol.
+        expect(formulaText, contains('full ACSM protocol'));
       },
     );
   });
+}
+
+/// Flatten every formula segment across [sections] into one string so tests
+/// can discriminate which tier's calculation copy rendered by content.
+String _allFormulaText(List<CalculationSection> sections) {
+  return sections
+      .expand((s) => s.lines)
+      .expand((l) => l.segments)
+      .map((seg) => seg.text)
+      .join();
 }
 
 MacroTargets _sampleMacroTargetsWithPreRun({required PreRunMacros preRun}) {
