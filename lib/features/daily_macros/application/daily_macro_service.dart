@@ -339,7 +339,33 @@ class DailyMacroService {
     ).get();
 
     return results.map((row) {
-      final durationMinutes = row.readNullable<int>('duration_minutes') ?? 60;
+      var durationMinutes = row.readNullable<int>('duration_minutes') ?? 0;
+      final activityType = row.read<String>('activity_type');
+
+      if (durationMinutes == 0) {
+        final distanceMiles = row.readNullable<double>('distance_miles');
+        if (activityType == 'running') {
+          final pace = row.readNullable<double>('pace_target_minutes_per_mile');
+          if (distanceMiles != null && pace != null && pace > 0) {
+            durationMinutes = (distanceMiles * pace).round();
+          }
+        } else if (activityType == 'cycling') {
+          final speed = row.readNullable<double>('cycling_speed_mph');
+          if (distanceMiles != null && speed != null && speed > 0) {
+            durationMinutes = ((distanceMiles / speed) * 60).round();
+          }
+        } else if (activityType == 'swimming') {
+          final swimPace =
+              row.readNullable<int>('swimming_pace_per_100m_seconds');
+          if (distanceMiles != null && swimPace != null && swimPace > 0) {
+            final distanceMeters = distanceMiles * 1609.34;
+            durationMinutes =
+                ((distanceMeters / 100) * swimPace / 60).round();
+          }
+        }
+        if (durationMinutes == 0) durationMinutes = 60;
+      }
+
       final durationHr = durationMinutes / 60.0;
 
       // Convert intensity distribution percentages to 0-1 fractions
@@ -347,8 +373,6 @@ class DailyMacroService {
       final z3z4 = (row.readNullable<int>('intensity_z3_z4_pct') ?? 20) / 100.0;
       final z5 = (row.readNullable<int>('intensity_z5_pct') ?? 10) / 100.0;
 
-      // Map activity type
-      final activityType = row.read<String>('activity_type');
       String sport;
       switch (activityType) {
         case 'cycling':
