@@ -45,13 +45,15 @@ void showTabbedLogSheet(
 // Sheet tab enum
 // ---------------------------------------------------------------------------
 
-enum _LogTab { quick, search, describe, manual }
+enum _LogTab { recent, favorites, search, describe, manual }
 
 extension _LogTabLabel on _LogTab {
   String get label {
     switch (this) {
-      case _LogTab.quick:
-        return 'Quick';
+      case _LogTab.recent:
+        return 'Recent';
+      case _LogTab.favorites:
+        return 'Favorites';
       case _LogTab.search:
         return 'Search';
       case _LogTab.describe:
@@ -66,7 +68,8 @@ extension _LogTabLabel on _LogTab {
 // TabbedLogSheet
 // ---------------------------------------------------------------------------
 
-/// The four-tab DraggableScrollableSheet for meal logging.
+/// The DraggableScrollableSheet for meal logging
+/// (Recent · Favorites · Search · Describe · Manual).
 class TabbedLogSheet extends ConsumerStatefulWidget {
   const TabbedLogSheet({super.key, required this.logDate});
 
@@ -77,7 +80,7 @@ class TabbedLogSheet extends ConsumerStatefulWidget {
 }
 
 class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
-  _LogTab _activeTab = _LogTab.quick;
+  _LogTab _activeTab = _LogTab.recent;
   bool _recipesLoaded = false;
 
   void _selectTab(_LogTab tab) {
@@ -185,15 +188,22 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
     bool isDark,
   ) {
     switch (_activeTab) {
-      case _LogTab.quick:
-        return _QuickTab(
+      case _LogTab.recent:
+        return _RecentTab(
+          logDate: widget.logDate,
+          scrollController: scrollController,
+          onLogged: () => _onLogged(ctx),
+          onLogError: () => _onLogError(ctx),
+        );
+      case _LogTab.favorites:
+        return _FavoritesTab(
           logDate: widget.logDate,
           scrollController: scrollController,
           onLogged: () => _onLogged(ctx),
           onLogError: () => _onLogError(ctx),
         );
       case _LogTab.search:
-        return _RecipesTab(
+        return _SearchTab(
           logDate: widget.logDate,
           scrollController: scrollController,
           shouldLoad: _recipesLoaded,
@@ -256,17 +266,27 @@ class _TabBar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(17),
                 ),
                 child: Center(
-                  child: Text(
-                    tab.label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected
-                          ? (isDark ? AppColors.blackberry : AppColors.cream)
-                          : (isDark
-                              ? AppColors.cream.withValues(alpha: 0.7)
-                              : AppColors.blackberry.withValues(alpha: 0.6)),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        tab.label,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected
+                              ? (isDark
+                                  ? AppColors.blackberry
+                                  : AppColors.cream)
+                              : (isDark
+                                  ? AppColors.cream.withValues(alpha: 0.7)
+                                  : AppColors.blackberry
+                                      .withValues(alpha: 0.6)),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -280,11 +300,11 @@ class _TabBar extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Quick tab — quick-add assemblies, then saved + recent for fast re-logging
+// Recent tab — re-log a recently eaten meal
 // ---------------------------------------------------------------------------
 
-class _QuickTab extends ConsumerWidget {
-  const _QuickTab({
+class _RecentTab extends ConsumerWidget {
+  const _RecentTab({
     required this.logDate,
     required this.scrollController,
     required this.onLogged,
@@ -295,38 +315,6 @@ class _QuickTab extends ConsumerWidget {
   final ScrollController scrollController;
   final VoidCallback onLogged;
   final VoidCallback onLogError;
-
-  void _logAssembly(
-    BuildContext context,
-    WidgetRef ref,
-    QuickAssembly assembly,
-  ) {
-    showSlotPickerSheet(context, onSelected: (slot) async {
-      await ref.read(mealLogControllerProvider.notifier).logFromComponents(
-            name: assembly.name,
-            slot: slot,
-            logDate: logDate,
-            source: MealLogSource.manual,
-            components: assembly.components,
-          );
-      if (!context.mounted) return;
-      final s = ref.read(mealLogControllerProvider);
-      s is AsyncData ? onLogged() : onLogError();
-    });
-  }
-
-  void _logSaved(BuildContext context, WidgetRef ref, SavedMeal meal) {
-    showSlotPickerSheet(context, onSelected: (slot) async {
-      await ref.read(mealLogControllerProvider.notifier).logSavedMeal(
-            savedMeal: meal,
-            slot: slot,
-            logDate: logDate,
-          );
-      if (!context.mounted) return;
-      final s = ref.read(mealLogControllerProvider);
-      s is AsyncData ? onLogged() : onLogError();
-    });
-  }
 
   void _logRecent(BuildContext context, WidgetRef ref, MealLog log) {
     showSlotPickerSheet(context, onSelected: (slot) async {
@@ -346,121 +334,137 @@ class _QuickTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final savedAsync = ref.watch(savedMealsProvider);
     final recentAsync = ref.watch(recentMealsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
-    return ListView(
-      controller: scrollController,
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-      children: [
-        // Quick add — preset assemblies for one-tap logging.
-        _SectionHeader(label: 'Quick add', textColor: textColor),
-        const SizedBox(height: AppSpacing.xs),
-        ...kQuickAssemblies.map(
-          (assembly) => Card(
-            margin: const EdgeInsets.symmetric(vertical: 3),
-            child: ListTile(
-              dense: true,
-              leading: Container(
-                width: 36,
-                height: 36,
-                alignment: Alignment.center,
-                child: Text(assembly.emoji,
-                    style: const TextStyle(fontSize: 22)),
-              ),
-              title: Text(
-                assembly.name,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 14),
-              ),
-              subtitle: _macroLine(
-                context,
-                assembly.totalCalories,
-                assembly.totalCarbsG,
-                assembly.totalProteinG,
-                assembly.totalFatG,
-              ),
-              trailing: const Icon(Icons.chevron_right, size: 18),
-              onTap: () => _logAssembly(context, ref, assembly),
+    return recentAsync.when(
+      data: (logs) {
+        if (logs.isEmpty) {
+          return _EmptyTabMessage(
+            icon: Icons.history,
+            message: 'No recent meals yet.\nMeals you log will show up here.',
+            textColor: textColor,
+          );
+        }
+        return ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          children: logs
+              .map((log) => _RecentMealRow(
+                    log: log,
+                    onTap: () => _logRecent(context, ref, log),
+                    isDark: isDark,
+                  ))
+              .toList(),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Favorites tab — re-log a meal saved as a favorite
+// ---------------------------------------------------------------------------
+
+class _FavoritesTab extends ConsumerWidget {
+  const _FavoritesTab({
+    required this.logDate,
+    required this.scrollController,
+    required this.onLogged,
+    required this.onLogError,
+  });
+
+  final String logDate;
+  final ScrollController scrollController;
+  final VoidCallback onLogged;
+  final VoidCallback onLogError;
+
+  void _logFavorite(BuildContext context, WidgetRef ref, SavedMeal meal) {
+    showSlotPickerSheet(context, onSelected: (slot) async {
+      await ref.read(mealLogControllerProvider.notifier).logSavedMeal(
+            savedMeal: meal,
+            slot: slot,
+            logDate: logDate,
+          );
+      if (!context.mounted) return;
+      final s = ref.read(mealLogControllerProvider);
+      s is AsyncData ? onLogged() : onLogError();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final favoritesAsync = ref.watch(savedMealsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+
+    return favoritesAsync.when(
+      data: (meals) {
+        if (meals.isEmpty) {
+          return _EmptyTabMessage(
+            icon: Icons.star_outline,
+            message:
+                'No favorites yet.\nTap the ☆ on a logged meal to save it here.',
+            textColor: textColor,
+          );
+        }
+        return ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          children: meals
+              .map((meal) => _SavedMealRow(
+                    meal: meal,
+                    onTap: () => _logFavorite(context, ref, meal),
+                    onDelete: () => ref
+                        .read(mealLogControllerProvider.notifier)
+                        .deleteSavedMeal(meal.id),
+                    isDark: isDark,
+                  ))
+              .toList(),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// Centered icon + message shown when a tab has no items to list.
+class _EmptyTabMessage extends StatelessWidget {
+  const _EmptyTabMessage({
+    required this.icon,
+    required this.message,
+    required this.textColor,
+  });
+
+  final IconData icon;
+  final String message;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 36, color: textColor.withValues(alpha: 0.3)),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium
+                  .copyWith(color: textColor.withValues(alpha: 0.5)),
             ),
-          ),
+          ],
         ),
-
-        const SizedBox(height: AppSpacing.md),
-
-        // Saved section
-        _SectionHeader(label: 'Saved', textColor: textColor),
-        const SizedBox(height: AppSpacing.xs),
-        savedAsync.when(
-          data: (meals) {
-            if (meals.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                child: Text(
-                  'Save a meal to see it here.',
-                  style: AppTextStyles.bodySmall
-                      .copyWith(color: textColor.withValues(alpha: 0.5)),
-                ),
-              );
-            }
-            return Column(
-              children: meals
-                  .map((meal) => _SavedMealRow(
-                        meal: meal,
-                        onTap: () => _logSaved(context, ref, meal),
-                        onDelete: () => ref
-                            .read(mealLogControllerProvider.notifier)
-                            .deleteSavedMeal(meal.id),
-                        isDark: isDark,
-                      ))
-                  .toList(),
-            );
-          },
-          loading: () => const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            child: LinearProgressIndicator(),
-          ),
-          error: (_, __) => const SizedBox.shrink(),
-        ),
-
-        const SizedBox(height: AppSpacing.md),
-
-        // Recent section
-        _SectionHeader(label: 'Recent', textColor: textColor),
-        const SizedBox(height: AppSpacing.xs),
-        recentAsync.when(
-          data: (logs) {
-            if (logs.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                child: Text(
-                  'No recent meals yet.',
-                  style: AppTextStyles.bodySmall
-                      .copyWith(color: textColor.withValues(alpha: 0.5)),
-                ),
-              );
-            }
-            return Column(
-              children: logs
-                  .map((log) => _RecentMealRow(
-                        log: log,
-                        onTap: () => _logRecent(context, ref, log),
-                        isDark: isDark,
-                      ))
-                  .toList(),
-            );
-          },
-          loading: () => const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            child: LinearProgressIndicator(),
-          ),
-          error: (_, __) => const SizedBox.shrink(),
-        ),
-        const SizedBox(height: AppSpacing.xl),
-      ],
+      ),
     );
   }
 }
@@ -533,7 +537,7 @@ class _SavedMealRow extends StatelessWidget {
         dense: true,
         leading: CircleAvatar(
           radius: 16,
-          child: const Icon(Icons.bookmark_outlined, size: 16),
+          child: const Icon(Icons.star_outline, size: 16),
         ),
         title: Text(
           meal.name,
@@ -618,8 +622,8 @@ Widget? _macroLine(
 // Recipes tab
 // ---------------------------------------------------------------------------
 
-class _RecipesTab extends ConsumerStatefulWidget {
-  const _RecipesTab({
+class _SearchTab extends ConsumerStatefulWidget {
+  const _SearchTab({
     required this.logDate,
     required this.scrollController,
     required this.shouldLoad,
@@ -634,10 +638,10 @@ class _RecipesTab extends ConsumerStatefulWidget {
   final VoidCallback onLogError;
 
   @override
-  ConsumerState<_RecipesTab> createState() => _RecipesTabState();
+  ConsumerState<_SearchTab> createState() => _SearchTabState();
 }
 
-class _RecipesTabState extends ConsumerState<_RecipesTab> {
+class _SearchTabState extends ConsumerState<_SearchTab> {
   List<Recipe> _recipes = [];
   List<Recipe> _filtered = [];
   RecipeType? _selectedType;
@@ -653,7 +657,7 @@ class _RecipesTabState extends ConsumerState<_RecipesTab> {
   ];
 
   @override
-  void didUpdateWidget(_RecipesTab oldWidget) {
+  void didUpdateWidget(_SearchTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.shouldLoad && !_loadStarted) {
       _loadStarted = true;
@@ -846,9 +850,29 @@ class _RecipesTabState extends ConsumerState<_RecipesTab> {
     }
   }
 
+  void _logAssembly(QuickAssembly assembly) {
+    showSlotPickerSheet(context, onSelected: (slot) async {
+      await ref.read(mealLogControllerProvider.notifier).logFromComponents(
+            name: assembly.name,
+            slot: slot,
+            logDate: widget.logDate,
+            source: MealLogSource.manual,
+            components: assembly.components,
+          );
+      if (!mounted) return;
+      final s = ref.read(mealLogControllerProvider);
+      if (s is AsyncData) {
+        widget.onLogged();
+      } else {
+        widget.onLogError();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
     if (!widget.shouldLoad || (_isLoading && _recipes.isEmpty)) {
       return const Center(child: CircularProgressIndicator());
@@ -886,52 +910,93 @@ class _RecipesTabState extends ConsumerState<_RecipesTab> {
           ),
         ),
         Expanded(
-          child: _filtered.isEmpty
-              ? Center(
-                  child: Text(
-                    'No recipes found.',
-                    style: AppTextStyles.bodyMedium,
+          child: ListView(
+            controller: widget.scrollController,
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+            children: [
+              // Quick add — preset assemblies, only on the unfiltered view.
+              if (_selectedType == null) ...[
+                _SectionHeader(label: 'Quick add', textColor: textColor),
+                const SizedBox(height: AppSpacing.xs),
+                ...kQuickAssemblies.map(
+                  (assembly) => Card(
+                    margin: const EdgeInsets.symmetric(vertical: 3),
+                    child: ListTile(
+                      dense: true,
+                      leading: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Center(
+                          child: Text(assembly.emoji,
+                              style: const TextStyle(fontSize: 22)),
+                        ),
+                      ),
+                      title: Text(
+                        assembly.name,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
+                      subtitle: _macroLine(
+                        context,
+                        assembly.totalCalories,
+                        assembly.totalCarbsG,
+                        assembly.totalProteinG,
+                        assembly.totalFatG,
+                      ),
+                      trailing: const Icon(Icons.chevron_right, size: 18),
+                      onTap: () => _logAssembly(assembly),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _SectionHeader(label: 'Recipes', textColor: textColor),
+                const SizedBox(height: AppSpacing.xs),
+              ],
+              if (_filtered.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                  child: Center(
+                    child: Text('No recipes found.',
+                        style: AppTextStyles.bodyMedium),
                   ),
                 )
-              : ListView.builder(
-                  controller: widget.scrollController,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                  itemCount: _filtered.length,
-                  itemBuilder: (_, i) {
-                    final recipe = _filtered[i];
-                    final cal = recipe.nutrition.calories.round();
-                    final carb =
-                        recipe.nutrition.carbohydratesGrams.toStringAsFixed(0);
-                    final prot = recipe.nutrition.proteinGrams.toStringAsFixed(0);
-                    final fat = recipe.nutrition.fatGrams.toStringAsFixed(0);
+              else
+                ..._filtered.map((recipe) {
+                  final cal = recipe.nutrition.calories.round();
+                  final carb =
+                      recipe.nutrition.carbohydratesGrams.toStringAsFixed(0);
+                  final prot = recipe.nutrition.proteinGrams.toStringAsFixed(0);
+                  final fat = recipe.nutrition.fatGrams.toStringAsFixed(0);
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 3),
-                      child: ListTile(
-                        dense: true,
-                        leading: _RecipeThumbnail(
-                          imageUrl: recipe.imageUrl,
-                          type: recipe.type,
-                          size: 40,
-                        ),
-                        title: Text(
-                          recipe.name,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 14),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          '$cal kcal  ·  C ${carb}g  P ${prot}g  F ${fat}g',
-                          style: Theme.of(context).textTheme.bodySmall,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: const Icon(Icons.chevron_right, size: 18),
-                        onTap: () => _showLogSheet(recipe),
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 3),
+                    child: ListTile(
+                      dense: true,
+                      leading: _RecipeThumbnail(
+                        imageUrl: recipe.imageUrl,
+                        type: recipe.type,
+                        size: 40,
                       ),
-                    );
-                  },
-                ),
+                      title: Text(
+                        recipe.name,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        '$cal kcal  ·  C ${carb}g  P ${prot}g  F ${fat}g',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: const Icon(Icons.chevron_right, size: 18),
+                      onTap: () => _showLogSheet(recipe),
+                    ),
+                  );
+                }),
+              const SizedBox(height: AppSpacing.xl),
+            ],
+          ),
         ),
       ],
     );
