@@ -18,6 +18,7 @@ import '../../domain/quick_assembly.dart';
 import '../../domain/saved_meal.dart';
 import '../providers/meal_log_providers.dart';
 import 'log_sheet_helpers.dart';
+import 'manual_log_form.dart';
 import 'slot_chip_selector.dart';
 
 // ---------------------------------------------------------------------------
@@ -44,19 +45,19 @@ void showTabbedLogSheet(
 // Sheet tab enum
 // ---------------------------------------------------------------------------
 
-enum _LogTab { yours, recipes, ai, quick }
+enum _LogTab { quick, search, describe, manual }
 
 extension _LogTabLabel on _LogTab {
   String get label {
     switch (this) {
-      case _LogTab.yours:
-        return 'Yours';
-      case _LogTab.recipes:
-        return 'Recipes';
-      case _LogTab.ai:
-        return 'AI';
       case _LogTab.quick:
         return 'Quick';
+      case _LogTab.search:
+        return 'Search';
+      case _LogTab.describe:
+        return 'Describe';
+      case _LogTab.manual:
+        return 'Manual';
     }
   }
 }
@@ -76,12 +77,12 @@ class TabbedLogSheet extends ConsumerStatefulWidget {
 }
 
 class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
-  _LogTab _activeTab = _LogTab.yours;
+  _LogTab _activeTab = _LogTab.quick;
   bool _recipesLoaded = false;
 
   void _selectTab(_LogTab tab) {
     setState(() => _activeTab = tab);
-    if (tab == _LogTab.recipes && !_recipesLoaded) {
+    if (tab == _LogTab.search && !_recipesLoaded) {
       setState(() => _recipesLoaded = true);
     }
   }
@@ -184,15 +185,14 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
     bool isDark,
   ) {
     switch (_activeTab) {
-      case _LogTab.yours:
-        return _YoursTab(
+      case _LogTab.quick:
+        return _QuickTab(
           logDate: widget.logDate,
           scrollController: scrollController,
           onLogged: () => _onLogged(ctx),
           onLogError: () => _onLogError(ctx),
-          onNavigateAway: () => Navigator.of(ctx).pop(),
         );
-      case _LogTab.recipes:
+      case _LogTab.search:
         return _RecipesTab(
           logDate: widget.logDate,
           scrollController: scrollController,
@@ -200,14 +200,14 @@ class _TabbedLogSheetState extends ConsumerState<TabbedLogSheet> {
           onLogged: () => _onLogged(ctx),
           onLogError: () => _onLogError(ctx),
         );
-      case _LogTab.ai:
+      case _LogTab.describe:
         return _AiTab(
           logDate: widget.logDate,
           scrollController: scrollController,
           onNavigateAway: () => Navigator.of(ctx).pop(),
         );
-      case _LogTab.quick:
-        return _QuickTab(
+      case _LogTab.manual:
+        return _ManualTab(
           logDate: widget.logDate,
           scrollController: scrollController,
           onLogged: () => _onLogged(ctx),
@@ -280,29 +280,42 @@ class _TabBar extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Yours tab — saved + recent sections, pinned manual row
+// Quick tab — quick-add assemblies, then saved + recent for fast re-logging
 // ---------------------------------------------------------------------------
 
-class _YoursTab extends ConsumerWidget {
-  const _YoursTab({
+class _QuickTab extends ConsumerWidget {
+  const _QuickTab({
     required this.logDate,
     required this.scrollController,
     required this.onLogged,
     required this.onLogError,
-    required this.onNavigateAway,
   });
 
   final String logDate;
   final ScrollController scrollController;
   final VoidCallback onLogged;
   final VoidCallback onLogError;
-  final VoidCallback onNavigateAway;
 
-  void _logSaved(
+  void _logAssembly(
     BuildContext context,
     WidgetRef ref,
-    SavedMeal meal,
+    QuickAssembly assembly,
   ) {
+    showSlotPickerSheet(context, onSelected: (slot) async {
+      await ref.read(mealLogControllerProvider.notifier).logFromComponents(
+            name: assembly.name,
+            slot: slot,
+            logDate: logDate,
+            source: MealLogSource.manual,
+            components: assembly.components,
+          );
+      if (!context.mounted) return;
+      final s = ref.read(mealLogControllerProvider);
+      s is AsyncData ? onLogged() : onLogError();
+    });
+  }
+
+  void _logSaved(BuildContext context, WidgetRef ref, SavedMeal meal) {
     showSlotPickerSheet(context, onSelected: (slot) async {
       await ref.read(mealLogControllerProvider.notifier).logSavedMeal(
             savedMeal: meal,
@@ -311,11 +324,7 @@ class _YoursTab extends ConsumerWidget {
           );
       if (!context.mounted) return;
       final s = ref.read(mealLogControllerProvider);
-      if (s is AsyncData) {
-        onLogged();
-      } else {
-        onLogError();
-      }
+      s is AsyncData ? onLogged() : onLogError();
     });
   }
 
@@ -331,11 +340,7 @@ class _YoursTab extends ConsumerWidget {
           );
       if (!context.mounted) return;
       final s = ref.read(mealLogControllerProvider);
-      if (s is AsyncData) {
-        onLogged();
-      } else {
-        onLogError();
-      }
+      s is AsyncData ? onLogged() : onLogError();
     });
   }
 
@@ -351,19 +356,39 @@ class _YoursTab extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       children: [
-        // Pinned manual entry row
-        _ManualEntryRow(
-          onTap: () {
-            onNavigateAway();
-            // Push manual screen after sheet is dismissed
-            Future.microtask(() {
-              if (context.mounted) {
-                context.push('/meal-log/manual', extra: {'logDate': logDate});
-              }
-            });
-          },
-          isDark: isDark,
+        // Quick add — preset assemblies for one-tap logging.
+        _SectionHeader(label: 'Quick add', textColor: textColor),
+        const SizedBox(height: AppSpacing.xs),
+        ...kQuickAssemblies.map(
+          (assembly) => Card(
+            margin: const EdgeInsets.symmetric(vertical: 3),
+            child: ListTile(
+              dense: true,
+              leading: Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                child: Text(assembly.emoji,
+                    style: const TextStyle(fontSize: 22)),
+              ),
+              title: Text(
+                assembly.name,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w600, fontSize: 14),
+              ),
+              subtitle: _macroLine(
+                context,
+                assembly.totalCalories,
+                assembly.totalCarbsG,
+                assembly.totalProteinG,
+                assembly.totalFatG,
+              ),
+              trailing: const Icon(Icons.chevron_right, size: 18),
+              onTap: () => _logAssembly(context, ref, assembly),
+            ),
+          ),
         ),
+
         const SizedBox(height: AppSpacing.md),
 
         // Saved section
@@ -440,51 +465,30 @@ class _YoursTab extends ConsumerWidget {
   }
 }
 
-class _ManualEntryRow extends StatelessWidget {
-  const _ManualEntryRow({required this.onTap, required this.isDark});
+// ---------------------------------------------------------------------------
+// Manual tab — inline manual macro entry form
+// ---------------------------------------------------------------------------
 
-  final VoidCallback onTap;
-  final bool isDark;
+class _ManualTab extends StatelessWidget {
+  const _ManualTab({
+    required this.logDate,
+    required this.scrollController,
+    required this.onLogged,
+    required this.onLogError,
+  });
+
+  final String logDate;
+  final ScrollController scrollController;
+  final VoidCallback onLogged;
+  final VoidCallback onLogError;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: isDark ? Colors.white12 : Colors.black12,
-          ),
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.edit_outlined,
-              size: 22,
-              color:
-                  isDark ? AppColors.electrolyte : AppColors.electrolyteDark,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              'Enter manually',
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.cream : AppColors.blackberry,
-              ),
-            ),
-            const Spacer(),
-            Icon(
-              Icons.chevron_right,
-              color: isDark ? Colors.white38 : Colors.black26,
-              size: 20,
-            ),
-          ],
-        ),
-      ),
+    return ManualLogForm(
+      logDate: logDate,
+      scrollController: scrollController,
+      onLogged: onLogged,
+      onLogError: onLogError,
     );
   }
 }
@@ -1314,78 +1318,3 @@ class _OutlineButton extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Quick tab
-// ---------------------------------------------------------------------------
-
-class _QuickTab extends ConsumerWidget {
-  const _QuickTab({
-    required this.logDate,
-    required this.scrollController,
-    required this.onLogged,
-    required this.onLogError,
-  });
-
-  final String logDate;
-  final ScrollController scrollController;
-  final VoidCallback onLogged;
-  final VoidCallback onLogError;
-
-  void _log(BuildContext context, WidgetRef ref, QuickAssembly assembly) {
-    showSlotPickerSheet(context, onSelected: (slot) async {
-      await ref.read(mealLogControllerProvider.notifier).logFromComponents(
-            name: assembly.name,
-            slot: slot,
-            logDate: logDate,
-            source: MealLogSource.manual,
-            components: assembly.components,
-          );
-      if (!context.mounted) return;
-      final s = ref.read(mealLogControllerProvider);
-      if (s is AsyncData) {
-        onLogged();
-      } else {
-        onLogError();
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ListView.builder(
-      controller: scrollController,
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-      itemCount: kQuickAssemblies.length,
-      itemBuilder: (_, i) {
-        final assembly = kQuickAssemblies[i];
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 3),
-          child: ListTile(
-            dense: true,
-            leading: Container(
-              width: 36,
-              height: 36,
-              alignment: Alignment.center,
-              child: Text(assembly.emoji,
-                  style: const TextStyle(fontSize: 22)),
-            ),
-            title: Text(
-              assembly.name,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-            ),
-            subtitle: _macroLine(
-              context,
-              assembly.totalCalories,
-              assembly.totalCarbsG,
-              assembly.totalProteinG,
-              assembly.totalFatG,
-            ),
-            trailing: const Icon(Icons.chevron_right, size: 18),
-            onTap: () => _log(context, ref, assembly),
-          ),
-        );
-      },
-    );
-  }
-}

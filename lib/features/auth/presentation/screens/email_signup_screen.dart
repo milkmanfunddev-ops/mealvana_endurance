@@ -208,6 +208,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
               // Title
               Text(
+                key: const ValueKey('signup_email.title'),
                 contentService.getValue(
                   'auth.email_signup.title',
                   defaultValue: 'Sign Up with Email',
@@ -223,6 +224,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
               // Subtitle
               Text(
+                key: const ValueKey('signup_email.subtitle'),
                 contentService.getValue(
                   'auth.email_signup.subtitle',
                   defaultValue: 'Create your account to get started',
@@ -237,6 +239,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
               // Email field
               TextFormField(
+                key: const ValueKey('signup_email.email_field'),
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
@@ -270,6 +273,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
               // Password field
               TextFormField(
+                key: const ValueKey('signup_email.password_field'),
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 autocorrect: false,
@@ -288,6 +292,9 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   suffixIcon: IconButton(
+                    key: const ValueKey(
+                      'signup_email.password_visibility_button',
+                    ),
                     icon: Icon(
                       _obscurePassword
                           ? FontAwesomeIcons.eye.data
@@ -314,6 +321,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
               // Confirm password field
               TextFormField(
+                key: const ValueKey('signup_email.confirm_password_field'),
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirmPassword,
                 autocorrect: false,
@@ -332,6 +340,9 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   suffixIcon: IconButton(
+                    key: const ValueKey(
+                      'signup_email.confirm_password_visibility_button',
+                    ),
                     icon: Icon(
                       _obscureConfirmPassword
                           ? FontAwesomeIcons.eye.data
@@ -364,6 +375,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
               // Create account button
               KylePrimaryButton(
+                key: const ValueKey('signup_email.create_account_button'),
                 text: contentService.getValue(
                   asyncState.isLoading
                       ? 'auth.email_signup.creating_button'
@@ -379,6 +391,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
 
               // Back button
               KyleSecondaryButton(
+                key: const ValueKey('signup_email.back_button'),
                 text: contentService.getValue(
                   'auth.email_signup.back_button',
                   defaultValue: 'Back',
@@ -404,6 +417,7 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
         children: [
           // Custom back button
           CustomAppBarBackButton(
+            key: const ValueKey('signup_email.back_button_appbar'),
             onPressed: () => context.pop(),
             margin: EdgeInsets.zero,
             iconColor: Theme.of(context).colorScheme.onSurface,

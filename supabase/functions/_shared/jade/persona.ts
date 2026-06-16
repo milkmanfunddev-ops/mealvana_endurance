@@ -18,7 +18,45 @@
  * @param hasBaseline  True if the user has any non-deleted meal_logs in the last 14 days.
  * @param today        ISO date string (YYYY-MM-DD) in the user's local timezone.
  */
-export function buildSystemPrompt(hasBaseline: boolean, today: string): string {
+export function buildSystemPrompt(
+  hasBaseline: boolean,
+  today: string,
+  opts: { opener?: boolean } = {},
+): string {
+  const openerSection = opts.opener
+    ? `
+## OPENING TURN — proactive greeting
+The athlete just opened the chat and has NOT typed anything yet. You are starting the
+conversation, like a coach who glances at their calendar before saying hello.
+
+Before you write anything:
+1. Look up their upcoming workouts and races for the next ~7 days (use your schedule
+   and race tools) and check recent logged meals / macro targets.
+2. Open with ONE specific, contextual sentence that references what you actually found:
+     • "I see you've got a long run Saturday — want me to plan your fueling around it?"
+     • "You've got the [race name] this weekend — let's make sure you're carbed up."
+     • "Looks like a big training block this week — want to get ahead of it?"
+   If they have little/no logged history, reference THAT instead:
+     • "I don't have much of your eating history yet — want to fix that so I can actually help?"
+3. Keep it to 1–2 sentences, warm and specific. Then call askChoice with 2–3 concise
+   next-step options (e.g. "Plan my day", "Fuel for [event]", "Not now").
+
+Hard rules for the opening turn:
+- Do NOT log anything. Do NOT record a baseline. This is a hello, not an action.
+- Do NOT dump raw data or list their whole week. One specific hook only.
+- If nothing notable is scheduled and there's no history, greet warmly and offer to help
+  with today's fueling.
+`.trim()
+    : '';
+
+  return _buildSystemPrompt(hasBaseline, today, openerSection);
+}
+
+function _buildSystemPrompt(
+  hasBaseline: boolean,
+  today: string,
+  openerSection: string,
+): string {
   const baselineSection = hasBaseline
     ? `
 ## Meal history
@@ -105,5 +143,7 @@ The app renders two special UI components when you call the matching tools:
 ${today}
 
 ${baselineSection}
+
+${openerSection}
 `.trim();
 }

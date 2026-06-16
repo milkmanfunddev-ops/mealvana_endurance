@@ -1,24 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../features/daily_macros/presentation/widgets/today_hero_card.dart'
+import '../../../../features/daily_macros/presentation/widgets/macro_palette.dart'
     show kMacroColorCarbs, kMacroColorFat, kMacroColorProtein;
+import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_slot.dart';
 import '../providers/meal_log_providers.dart';
-
-Color _slotColor(MealSlot slot) {
-  switch (slot) {
-    case MealSlot.breakfast:
-      return const Color(0xFFFF9500);
-    case MealSlot.lunch:
-      return const Color(0xFF00C896);
-    case MealSlot.dinner:
-      return const Color(0xFF6B4FA0);
-    case MealSlot.snack:
-      return const Color(0xFFFF2D55);
-  }
-}
+import 'slot_palette.dart';
 
 /// A single row representing a [MealLog] entry in the daily log list.
 ///
@@ -74,7 +63,7 @@ class MealLogRow extends ConsumerWidget {
         padding: const EdgeInsets.only(right: 20),
         margin: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFFFF2D55), // dragonfruit
+          color: AppColors.dragonfruit,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Icon(Icons.delete_outline, color: Colors.white, size: 26),
@@ -84,49 +73,49 @@ class MealLogRow extends ConsumerWidget {
         child: InkWell(
           onTap: onEdit,
           borderRadius: BorderRadius.circular(12),
-          child: ListTile(
-            leading: _LeadingPhoto(photoPath: log.photoPath),
-            title: Row(
+          // Custom flex layout (not ListTile): the name + macros live in an
+          // Expanded column so they always get the leftover width and reflow
+          // gracefully, while only the menu button is fixed-width trailing.
+          // ListTile's title/trailing tug-of-war could starve the title to a
+          // few px on narrow phones and overflow.
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                _LeadingPhoto(photoPath: log.photoPath),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    log.name,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              log.name,
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _SlotChip(slot: log.slot),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      _MacroSummaryLine(
+                        calories: calories,
+                        carbsG: carbsG,
+                        proteinG: proteinG,
+                        fatG: fatG,
+                        subtitleColor: subtitleColor,
+                        textColor:
+                            isDark ? Colors.white : theme.colorScheme.onSurface,
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: _slotColor(log.slot).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    log.slot.label,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: _slotColor(log.slot),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Right-aligned macro column
-                _MacroTrailing(
-                  calories: calories,
-                  carbsG: carbsG,
-                  proteinG: proteinG,
-                  fatG: fatG,
-                  subtitleColor: subtitleColor,
-                  textColor: isDark
-                      ? Colors.white
-                      : theme.colorScheme.onSurface,
                 ),
                 PopupMenuButton<_MenuAction>(
                   onSelected: (action) {
@@ -239,16 +228,44 @@ class _LeadingPhoto extends ConsumerWidget {
   }
 }
 
+/// Small coloured slot chip (Breakfast / Lunch / Dinner / Snack).
+class _SlotChip extends StatelessWidget {
+  const _SlotChip({required this.slot});
+
+  final MealSlot slot;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = slotColor(slot);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        slot.label,
+        style: AppTextStyles.bodySmall.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
-// Compact right-aligned macro trailing column
+// Macro summary line
 // ---------------------------------------------------------------------------
 
-/// Right-aligned column showing kcal bold on top and a coloured C/P/F line below.
+/// Single wrapping line: '640 kcal · 72C · 45P · 18F', where the kcal value is
+/// bold in the text colour and each macro uses its canonical accent.
 ///
-/// Imports macro colour constants from [today_hero_card.dart] so the colours
-/// stay in sync across the app.
-class _MacroTrailing extends StatelessWidget {
-  const _MacroTrailing({
+/// Lives inside an [Expanded] column, so the [RichText] has a bounded width and
+/// reflows to a second line rather than overflowing on narrow rows.
+class _MacroSummaryLine extends StatelessWidget {
+  const _MacroSummaryLine({
     required this.calories,
     required this.carbsG,
     required this.proteinG,
@@ -266,104 +283,48 @@ class _MacroTrailing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasKcal = calories != null;
-    final hasMacros = carbsG != null || proteinG != null || fatG != null;
+    final spans = <InlineSpan>[];
 
-    if (!hasKcal && !hasMacros) return const SizedBox.shrink();
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (hasKcal)
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: '$calories',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: textColor,
-                  ),
-                ),
-                TextSpan(
-                  text: ' kcal',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: subtitleColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (hasMacros) ...[
-          const SizedBox(height: 2),
-          _CompactMacroLine(
-            carbsG: carbsG,
-            proteinG: proteinG,
-            fatG: fatG,
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// Coloured '38C · 26P · 13F' text where each letter+number uses its macro colour.
-class _CompactMacroLine extends StatelessWidget {
-  const _CompactMacroLine({
-    required this.carbsG,
-    required this.proteinG,
-    required this.fatG,
-  });
-
-  final double? carbsG;
-  final double? proteinG;
-  final double? fatG;
-
-  @override
-  Widget build(BuildContext context) {
-    const sep = TextSpan(
-      text: ' · ',
-      style: TextStyle(fontSize: 11, color: Colors.grey),
+    final sep = TextSpan(
+      text: '  ·  ',
+      style: TextStyle(fontSize: 12, color: subtitleColor),
     );
 
-    final spans = <TextSpan>[];
+    if (calories != null) {
+      spans.add(TextSpan(children: [
+        TextSpan(
+          text: '$calories',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: textColor,
+          ),
+        ),
+        TextSpan(
+          text: ' kcal',
+          style: TextStyle(fontSize: 12, color: subtitleColor),
+        ),
+      ]));
+    }
 
-    if (carbsG != null) {
-      spans.add(TextSpan(
-        text: '${carbsG!.toStringAsFixed(0)}C',
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: kMacroColorCarbs,
-        ),
-      ));
-    }
-    if (proteinG != null) {
+    void addMacro(double? value, String suffix, Color color) {
+      if (value == null) return;
       if (spans.isNotEmpty) spans.add(sep);
       spans.add(TextSpan(
-        text: '${proteinG!.toStringAsFixed(0)}P',
-        style: const TextStyle(
-          fontSize: 11,
+        text: '${value.toStringAsFixed(0)}$suffix',
+        style: TextStyle(
+          fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: kMacroColorProtein,
+          color: color,
         ),
       ));
     }
-    if (fatG != null) {
-      if (spans.isNotEmpty) spans.add(sep);
-      spans.add(TextSpan(
-        text: '${fatG!.toStringAsFixed(0)}F',
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: kMacroColorFat,
-        ),
-      ));
-    }
+
+    addMacro(carbsG, 'C', kMacroColorCarbs);
+    addMacro(proteinG, 'P', kMacroColorProtein);
+    addMacro(fatG, 'F', kMacroColorFat);
+
+    if (spans.isEmpty) return const SizedBox.shrink();
 
     return RichText(text: TextSpan(children: spans));
   }

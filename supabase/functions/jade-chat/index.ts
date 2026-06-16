@@ -227,6 +227,7 @@ serve(async (req: Request) => {
       conversation_id?: unknown;
       timezone?: unknown;
       location?: unknown;
+      opener?: unknown;
     };
     try {
       body = await req.json();
@@ -234,14 +235,22 @@ serve(async (req: Request) => {
       return validationError('Invalid JSON body');
     }
 
-    const rawMessage = body.message;
-    if (typeof rawMessage !== 'string' || rawMessage.trim().length === 0) {
-      return validationError('message is required and must be a non-empty string');
+    // Opener mode: Jade proactively greets the athlete before they type. No
+    // user message is sent, nothing is persisted — it's an ephemeral hello
+    // regenerated each time the chat is opened fresh.
+    const isOpener = body.opener === true;
+
+    let message = '';
+    if (!isOpener) {
+      const rawMessage = body.message;
+      if (typeof rawMessage !== 'string' || rawMessage.trim().length === 0) {
+        return validationError('message is required and must be a non-empty string');
+      }
+      if (rawMessage.length > MAX_MESSAGE_LENGTH) {
+        return validationError(`message is too long (max ${MAX_MESSAGE_LENGTH} characters)`);
+      }
+      message = rawMessage.trim();
     }
-    if (rawMessage.length > MAX_MESSAGE_LENGTH) {
-      return validationError(`message is too long (max ${MAX_MESSAGE_LENGTH} characters)`);
-    }
-    const message = rawMessage.trim();
 
     const rawConversationId = body.conversation_id;
     const conversationId =
@@ -270,9 +279,13 @@ serve(async (req: Request) => {
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // ── Resolve or create conversation ──────────────────────────────────────
-    let resolvedConversationId: string;
+    // Opener mode skips all of this: no conversation row, no persistence, no
+    // history — Jade just greets using live tool lookups.
+    let resolvedConversationId = '';
     let isNewConversation = false;
+    let priorMessages: { role: 'user' | 'assistant'; content: string }[] = [];
 
+    if (!isOpener) {
     if (conversationId) {
       // Verify it belongs to this user and is not deleted
       const { data: conv, error: convError } = await serviceClient
@@ -346,17 +359,18 @@ serve(async (req: Request) => {
 
     // Reverse to chronological order; exclude the message we just inserted
     // (we'll pass it as the last user turn, not in history, to avoid double-counting)
-    const priorMessages = (historyRows ?? [])
+    priorMessages = (historyRows ?? [])
       .reverse()
       .slice(0, -1) // drop the last element (the turn we just inserted)
       .map((row) => ({
         role: row.role as 'user' | 'assistant',
         content: row.content as string,
       }));
+    } // end if (!isOpener)
 
     // ── Build system prompt ─────────────────────────────────────────────────
     const baseline = await hasBaseline(serviceClient, user.id, today);
-    const systemPrompt = buildSystemPrompt(baseline, today);
+    const systemPrompt = buildSystemPrompt(baseline, today, { opener: isOpener });
 
     // ── Build tools ─────────────────────────────────────────────────────────
     const tools = makeJadeTools({ serviceClient, userId: user.id, timezone, location });
@@ -370,16 +384,32 @@ serve(async (req: Request) => {
     const collectedUiParts: JadeUiPart[] = [];
 
     // ── Stream the reply via fullStream → NDJSON ────────────────────────────
+    // In opener mode there is no real user turn — feed a short internal
+    // instruction so the model produces the proactive greeting per the
+    // OPENING TURN section of the system prompt.
+    const turnMessages = isOpener
+      ? [
+          {
+            role: 'user' as const,
+            content:
+              'The athlete just opened the chat without typing anything. ' +
+              'Greet them now following the OPENING TURN instructions.',
+          },
+        ]
+      : [
+          ...priorMessages,
+          { role: 'user' as const, content: message },
+        ];
+
     const result = streamText({
       model: JADE_MODEL,
       system: systemPrompt,
-      messages: [
-        ...priorMessages,
-        { role: 'user', content: message },
-      ],
+      messages: turnMessages,
       tools,
       stopWhen: stepCountIs(MAX_STEPS),
       onFinish: ({ text, usage }) => {
+        // Opener replies are ephemeral — nothing is persisted.
+        if (isOpener) return;
         const persist = (async () => {
           // Build metadata: persist ui_parts so history re-renders widgets.
           const metadata = collectedUiParts.length > 0

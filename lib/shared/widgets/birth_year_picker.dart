@@ -97,6 +97,7 @@ class _BirthYearPickerSheetState extends State<_BirthYearPickerSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 TextButton(
+                  key: const ValueKey('profile.birth_year_cancel_button'),
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     'Cancel',
@@ -112,6 +113,7 @@ class _BirthYearPickerSheetState extends State<_BirthYearPickerSheet> {
                   ),
                 ),
                 TextButton(
+                  key: const ValueKey('profile.birth_year_done_button'),
                   onPressed: () => Navigator.pop(context, _selectedYear),
                   child: Text(
                     'Done',

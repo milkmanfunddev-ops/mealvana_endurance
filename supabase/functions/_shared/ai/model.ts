@@ -12,3 +12,14 @@
  */
 export const JADE_MODEL: string =
   Deno.env.get('JADE_MODEL') ?? 'anthropic/claude-sonnet-4.6';
+
+/**
+ * Model for short, latency-sensitive, low-stakes copy — currently the Formula
+ * Kit coach-insight one-liner (`ai-coach`). Haiku keeps it fast and cheap; the
+ * output is ~15-28 words so a frontier model would be wasted spend.
+ *
+ * Override at deploy time with the COACH_INSIGHT_MODEL secret:
+ *   supabase secrets set COACH_INSIGHT_MODEL=anthropic/claude-haiku-4 ...
+ */
+export const COACH_INSIGHT_MODEL: string =
+  Deno.env.get('COACH_INSIGHT_MODEL') ?? 'anthropic/claude-haiku-4.5';

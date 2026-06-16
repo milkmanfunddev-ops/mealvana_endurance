@@ -450,7 +450,7 @@ final class MealLogControllerProvider
   MealLogController create() => MealLogController();
 }
 
-String _$mealLogControllerHash() => r'9388ba218b3c629c0175bd2537daabbd95dca088';
+String _$mealLogControllerHash() => r'b2e3143d32de95b9d6a68e60b44fce829e11f4f9';
 
 /// Controller for meal log mutations.
 ///

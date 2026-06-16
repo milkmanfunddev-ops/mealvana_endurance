@@ -272,6 +272,82 @@ class JadeChatController extends _$JadeChatController {
     ));
   }
 
+  // ── Proactive opener ────────────────────────────────────────────────────────
+
+  /// Streams Jade's proactive opening greeting into state when the conversation
+  /// is empty and idle.
+  ///
+  /// The opener is *ephemeral* — the server persists nothing, so it regenerates
+  /// each time the chat is opened fresh (always contextual to current training).
+  /// On any failure it silently restores the empty state; the screen then shows
+  /// its static greeting. An opener is a nicety, never an error to surface.
+  Future<void> loadOpener() async {
+    final currentState = state.value ?? const JadeChatState();
+    if (currentState.messages.isNotEmpty || currentState.isStreaming) return;
+
+    final streamingMsg = JadeMessage(
+      id: 'opener_${DateTime.now().millisecondsSinceEpoch}',
+      conversationId: '',
+      role: JadeMessageRole.assistant,
+      content: '',
+      createdAt: DateTime.now(),
+    );
+
+    state = AsyncData(currentState.copyWith(
+      messages: [streamingMsg],
+      isStreaming: true,
+      clearError: true,
+    ));
+
+    try {
+      final result = await _repository.requestOpener(
+        timezone: _resolveTimezone(),
+      );
+
+      String accumulated = '';
+      await for (final event in result.eventStream) {
+        final current = state.value;
+        if (current == null) break;
+
+        if (event is JadeTextDelta) {
+          accumulated += event.delta;
+          final msgs = List<JadeMessage>.from(current.messages);
+          if (msgs.isNotEmpty) {
+            msgs[msgs.length - 1] = msgs.last.copyWithContent(accumulated);
+          }
+          state = AsyncData(current.copyWith(messages: msgs, isStreaming: true));
+        } else if (event is JadeUiPartEvent) {
+          final msgs = List<JadeMessage>.from(current.messages);
+          if (msgs.isNotEmpty) {
+            msgs[msgs.length - 1] = msgs.last.copyWithUiPart(event.part);
+          }
+          state = AsyncData(current.copyWith(messages: msgs, isStreaming: true));
+        } else if (event is JadeDoneEvent) {
+          break;
+        }
+        // JadeStreamErrorEvent is ignored — the empty-opener guard below cleans
+        // up if nothing streamed.
+      }
+
+      final finalState = state.value;
+      if (finalState != null) {
+        // If the opener produced no content, drop the placeholder so the
+        // static empty state shows instead of an empty bubble.
+        final last =
+            finalState.messages.isNotEmpty ? finalState.messages.last : null;
+        final emptyOpener =
+            last != null && last.content.isEmpty && last.uiParts.isEmpty;
+        state = AsyncData(finalState.copyWith(
+          messages: emptyOpener ? const [] : finalState.messages,
+          isStreaming: false,
+        ));
+      }
+    } catch (e) {
+      _logger.error('JadeChatController.loadOpener failed (non-fatal)', error: e);
+      state = const AsyncData(JadeChatState());
+    }
+  }
+
   // ── New Chat ──────────────────────────────────────────────────────────────
 
   /// Clears the current conversation so the user can start fresh.

@@ -30,11 +30,56 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
   final _scrollController = ScrollController();
   bool _hasShownError = false;
 
+  /// Tracks whether the input is empty so the persistent prompt-chip strip can
+  /// hide itself while the user is composing.
+  bool _inputEmpty = true;
+
+  /// Guards the one-shot proactive-opener request so it fires once per empty
+  /// conversation (reset when the user starts a new chat).
+  bool _openerRequested = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController.addListener(_onInputChanged);
+  }
+
+  void _onInputChanged() {
+    final isEmpty = _textController.text.trim().isEmpty;
+    if (isEmpty != _inputEmpty) {
+      setState(() => _inputEmpty = isEmpty);
+    }
+  }
+
   @override
   void dispose() {
+    _textController.removeListener(_onInputChanged);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// The suggested prompt labels, resolved from content with sensible defaults.
+  /// Shared by the first-run empty state and the persistent chip strip.
+  List<String> _suggestedPrompts(ContentService contentService) {
+    return [
+      contentService.getValue(
+        'jade.suggested_prompt_plan_day',
+        defaultValue: 'Plan my day',
+      ),
+      contentService.getValue(
+        'jade.suggested_prompt_1',
+        defaultValue: 'Help me set up my meal baseline',
+      ),
+      contentService.getValue(
+        'jade.suggested_prompt_2',
+        defaultValue: "What should I eat before tomorrow's workout?",
+      ),
+      contentService.getValue(
+        'jade.suggested_prompt_3',
+        defaultValue: 'How much carbs do I need for a long run?',
+      ),
+    ];
   }
 
   void _scrollToBottom({bool animated = true}) {
@@ -100,6 +145,10 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
                 error: (_, __) => _buildLoadError(context),
               ),
             ),
+            // Persistent quick-prompt strip — visible on every visit (not only
+            // the first-run empty state), hidden while composing or streaming so
+            // it never competes with the keyboard.
+            _buildPromptStrip(context, chatAsync.value, contentService),
             _buildInputRow(context, chatAsync.value, isDark, contentService),
           ],
         ),
@@ -150,6 +199,8 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
           tooltip: 'New chat',
           onPressed: () {
             ref.read(jadeChatControllerProvider.notifier).newChat();
+            // Allow the proactive opener to fire again for the fresh chat.
+            setState(() => _openerRequested = false);
           },
         ),
         const SizedBox(width: AppSpacing.xs),
@@ -165,9 +216,22 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
     ContentService contentService,
   ) {
     if (state.messages.isEmpty && !state.isStreaming) {
+      // Ask Jade to open proactively (once). Until her first chunk arrives the
+      // static greeting shows; if the opener fails it stays — graceful either
+      // way.
+      _maybeRequestOpener();
       return _buildEmptyState(context, contentService);
     }
     return _buildMessageList(context, state);
+  }
+
+  void _maybeRequestOpener() {
+    if (_openerRequested) return;
+    _openerRequested = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(jadeChatControllerProvider.notifier).loadOpener();
+    });
   }
 
   Widget _buildMessageList(BuildContext context, JadeChatState state) {
@@ -203,18 +267,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
           "Hi! I'm Jade, your AI endurance nutrition coach. I can help you build a fueling strategy, answer questions about your nutrition plan, and help you establish a solid meal baseline.",
     );
 
-    final chip1 = contentService.getValue(
-      'jade.suggested_prompt_1',
-      defaultValue: 'Help me set up my meal baseline',
-    );
-    final chip2 = contentService.getValue(
-      'jade.suggested_prompt_2',
-      defaultValue: "What should I eat before tomorrow's workout?",
-    );
-    final chip3 = contentService.getValue(
-      'jade.suggested_prompt_3',
-      defaultValue: 'How much carbs do I need for a long run?',
-    );
+    final prompts = _suggestedPrompts(contentService);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -261,7 +314,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             alignment: WrapAlignment.center,
-            children: [chip1, chip2, chip3].map((prompt) {
+            children: prompts.map((prompt) {
               return _PromptChip(
                 label: prompt,
                 onTap: () => _sendMessage(prompt),
@@ -299,6 +352,46 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
                 ref.invalidate(jadeChatControllerProvider),
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Persistent prompt strip ──────────────────────────────────────────────
+
+  /// Horizontally scrollable chip strip shown directly above the input. Gives
+  /// the user prompts to start from on every visit — addressing the "no prompts
+  /// anywhere" gap where chips previously only existed on the empty screen.
+  ///
+  /// Hidden when the conversation is empty (the empty state already shows the
+  /// chips centered), while a reply is streaming, or while the user is typing.
+  Widget _buildPromptStrip(
+    BuildContext context,
+    JadeChatState? state,
+    ContentService contentService,
+  ) {
+    final isStreaming = state?.isStreaming ?? false;
+    final hasMessages = (state?.messages.isNotEmpty) ?? false;
+
+    if (!hasMessages || isStreaming || !_inputEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final prompts = _suggestedPrompts(contentService);
+
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
+        itemCount: prompts.length,
+        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (_, i) => _PromptChip(
+          label: prompts[i],
+          onTap: () => _sendMessage(prompts[i]),
+        ),
       ),
     );
   }

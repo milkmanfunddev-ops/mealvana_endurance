@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../auth/application/auth_service.dart';
+import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
-import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
+import '../../../meal_logging/domain/consumed_totals.dart';
+import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../domain/daily_macro_targets.dart';
-import 'energy_source_breakdown.dart';
-import 'macro_breakdown_row.dart';
+import 'macro_comparison_table.dart';
+import 'today_hero_card.dart' show showMacroDetailSheet;
 
-/// Card showing daily macro summary:
-/// Row 1: "1,130 cal" (left) | "Daily Total" (right)
-/// Row 2: colored macro breakdown (carbs/protein/fat with dot indicators)
+/// Card showing the daily macro summary:
+/// - Header eyebrow + tappable "Details" affordance
+/// - Planned vs. Eaten vs. Left comparison table
+/// - Energy source breakdown (RMR / NEAT / Workout)
+/// - Garmin attribution when applicable
+///
+/// Tapping anywhere opens the "Today's Fueling" detail sheet (Eaten | Plan
+/// tabs) for the per-meal drill-down.
 class DailySummaryCard extends ConsumerWidget {
   const DailySummaryCard({super.key, required this.macros});
 
@@ -23,10 +29,20 @@ class DailySummaryCard extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
-    // Fresh edge calc populates `sources`; cached reads don't.
-    // For cached reads, fall back to the same Garmin-authoritative check the
-    // rest of the app uses (preferences/profile/onboarding), so the
-    // attribution doesn't disappear once the row is cached locally.
+    // Eaten totals for the date currently selected in the calendar.
+    final selectedDate = ref.watch(calendarSelectedDateProvider);
+    final dateStr =
+        '${selectedDate.year}-'
+        '${selectedDate.month.toString().padLeft(2, '0')}-'
+        '${selectedDate.day.toString().padLeft(2, '0')}';
+    final consumed = ref.watch(consumedTotalsForDateProvider(dateStr)).maybeWhen(
+          data: (v) => v,
+          orElse: () => const ConsumedTotals(),
+        );
+
+    // Fresh edge calc populates `sources`; cached reads don't. For cached
+    // reads, fall back to the same Garmin-authoritative check the rest of the
+    // app uses so attribution doesn't disappear once the row is cached.
     final attributionFromFreshCalc = macros.sources?.anyFromGarmin ?? false;
     final attributionFromGarminHealthData =
         ref.watch(_garminAuthoritativeProvider).maybeWhen(
@@ -38,57 +54,57 @@ class DailySummaryCard extends ConsumerWidget {
 
     return BaseCard(
       key: const ValueKey('nutrition_diary.daily_total_card'),
+      onTap: () => showMacroDetailSheet(
+        context,
+        macros: macros,
+        consumed: consumed,
+        showAttribution: showAttribution,
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Compact header row: calories left, "Daily Total" right
+          // Header row: eyebrow left, tappable "Details" affordance right.
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                '${NumberFormat('#,###').format(macros.totalCalories.round())} cal',
-                style: AppTextStyles.pageTitle.copyWith(
+                'Daily Total',
+                style: AppTextStyles.sectionTitle.copyWith(
                   color: textColor,
-                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
                 ),
               ),
-              Text(
-                'Daily Total',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: textColor.withValues(alpha: 0.5),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Details',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.orange,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: AppColors.orange,
+                  ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // Macro breakdown with colored dots
-          MacroBreakdownRow(
-            carbG: macros.carbG,
-            protG: macros.protG,
-            fatG: macros.fatG,
-            textColor: textColor,
-          ),
-
-          // Energy breakdown (RMR / NEAT / Workout) with Garmin attribution
-          // for any line that came from Garmin Connect data.
-          const SizedBox(height: AppSpacing.lg),
-          EnergySourceBreakdown(macros: macros),
-
-          // Card-level Garmin attribution (Garmin Developer API Brand
-          // Guidelines require attribution on every screen surfacing
-          // Garmin-derived data). Shown whenever any input — RMR, NEAT,
-          // weight, body fat, or session kcal/duration — came from Garmin,
-          // OR whenever Garmin body comp is currently authoritative for the
-          // user's weight/body fat (covers cached macro reads where the
-          // per-calc `sources` blob was dropped on persist).
-          if (showAttribution) ...[
-            const SizedBox(height: AppSpacing.md),
-            const GarminAttributionMessage(
-              subject: 'Body composition and activity inputs',
-            ),
-          ],
+          // Planned vs. Eaten vs. Left comparison table. This is the always-on
+          // headline: eaten + remaining are visible at a glance without a tap.
+          //
+          // The energy-source breakdown (RMR / NEAT / Workout) and Garmin
+          // attribution — "how this target was computed" reference data — now
+          // live behind the Details sheet's Plan tab so this card stays compact
+          // and the day's log isn't pushed below the fold.
+          MacroComparisonTable(planned: macros, consumed: consumed),
         ],
       ),
     );

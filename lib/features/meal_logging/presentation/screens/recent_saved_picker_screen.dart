@@ -177,7 +177,7 @@ class _SavedTab extends ConsumerWidget {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.delete_outline,
-                          size: 20, color: Colors.red),
+                          size: 20, color: AppColors.dragonfruit),
                       onPressed: () => onDelete(meal.id),
                     ),
                     const Icon(Icons.chevron_right),

@@ -13,9 +13,11 @@ import '../../../nutrition_plan/presentation/widgets/activity_detail/dismissible
 import '../../application/formula_editor_controller.dart';
 import '../../domain/after_filter_options.dart';
 import '../../domain/before_sub_phase.dart';
+import '../../domain/coach_insight.dart';
 import '../../domain/during_filter_options.dart';
 import '../../domain/formula_macros.dart';
 import '../../domain/formula_phase.dart';
+import '../widgets/coach_insight_panel.dart';
 import '../widgets/filter_chip_row.dart';
 
 /// Create / edit screen for a personal formula. State-driven by
@@ -182,6 +184,14 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                       key: const ValueKey('formula_kit.editor_add_food'),
                       onPressed: _addFood,
                     ),
+                    // Coach insight — only meaningful once the formula has at
+                    // least one component (the edge function requires it).
+                    if (draft.components.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.lg),
+                      CoachInsightPanel(
+                        insightContext: _insightContextFor(draft),
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.lg),
                     _Label('Notes (optional)'),
                     const SizedBox(height: AppSpacing.xs),
@@ -259,6 +269,19 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
     }
     MealvanaSnackbar.showSuccess(context, 'Formula saved');
     context.pop();
+  }
+
+  /// Build the live coach-insight context from the current [draft]. Only the
+  /// scope fields meaningful to the draft's phase are populated.
+  CoachInsightContext _insightContextFor(FormulaDraft draft) {
+    return CoachInsightContext(
+      phase: draft.phase,
+      components: draft.components,
+      name: draft.name,
+      subPhase: draft.phase == FormulaPhase.before ? draft.subPhase : null,
+      durations: draft.phase == FormulaPhase.during ? draft.durations : null,
+      activities: draft.phase == FormulaPhase.before ? null : draft.activities,
+    );
   }
 
   /// Map a stored component (at [index]) to the [FoodItemData] the reused

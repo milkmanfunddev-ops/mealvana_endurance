@@ -210,15 +210,6 @@ class JadeChatRepository {
     double? latitude,
     double? longitude,
   }) async {
-    final session = _supabase.auth.currentSession;
-    if (session == null) {
-      throw const JadeChatServerError(401, 'No active session');
-    }
-
-    final uri = Uri.parse(
-      '${_config.supabaseUrl}/functions/v1/jade-chat',
-    );
-
     final bodyMap = <String, dynamic>{'message': message};
     if (conversationId != null && conversationId.isNotEmpty) {
       bodyMap['conversation_id'] = conversationId;
@@ -230,20 +221,64 @@ class JadeChatRepository {
       bodyMap['location'] = {'latitude': latitude, 'longitude': longitude};
     }
 
+    return _streamRequest(bodyMap, fallbackConversationId: conversationId);
+  }
+
+  // ── Opener (proactive greeting) ────────────────────────────────────────────
+
+  /// Requests Jade's proactive opening greeting — the server generates a
+  /// contextual hello (referencing upcoming workouts/races and recent logs)
+  /// without a user turn. Nothing is persisted server-side: the opener is
+  /// ephemeral and regenerated each time the chat is opened fresh, so the
+  /// returned [JadeSendResult.conversationId] is empty.
+  ///
+  /// Throws the same [JadeChatError] subtypes as [sendMessage]; callers should
+  /// treat failure as "no opener" and fall back to the static empty state.
+  Future<JadeSendResult> requestOpener({
+    String? timezone,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final bodyMap = <String, dynamic>{'opener': true};
+    if (timezone != null && timezone.isNotEmpty) {
+      bodyMap['timezone'] = timezone;
+    }
+    if (latitude != null && longitude != null) {
+      bodyMap['location'] = {'latitude': latitude, 'longitude': longitude};
+    }
+
+    return _streamRequest(bodyMap, fallbackConversationId: null);
+  }
+
+  // ── Shared streaming POST ──────────────────────────────────────────────────
+
+  /// POSTs [bodyMap] to the jade-chat edge function and returns a
+  /// [JadeSendResult]. Shared by [sendMessage] and [requestOpener].
+  Future<JadeSendResult> _streamRequest(
+    Map<String, dynamic> bodyMap, {
+    required String? fallbackConversationId,
+  }) async {
+    final session = _supabase.auth.currentSession;
+    if (session == null) {
+      throw const JadeChatServerError(401, 'No active session');
+    }
+
+    final uri = Uri.parse('${_config.supabaseUrl}/functions/v1/jade-chat');
+
     final request = http.Request('POST', uri)
       ..headers['Authorization'] = 'Bearer ${session.accessToken}'
       ..headers['apikey'] = _config.supabaseAnonKey
       ..headers['Content-Type'] = 'application/json'
       ..body = jsonEncode(bodyMap);
 
-    _logger.info('JadeChatRepository.sendMessage → $uri');
+    _logger.info('JadeChatRepository._streamRequest → $uri');
 
     http.StreamedResponse streamed;
     try {
       streamed = await http.Client().send(request);
     } catch (e, st) {
       _logger.error(
-        'JadeChatRepository.sendMessage network error',
+        'JadeChatRepository._streamRequest network error',
         error: e,
         stackTrace: st,
       );
@@ -253,7 +288,7 @@ class JadeChatRepository {
     if (streamed.statusCode != 200) {
       final responseBody = await streamed.stream.bytesToString();
       _logger.error(
-        'JadeChatRepository.sendMessage HTTP ${streamed.statusCode}: $responseBody',
+        'JadeChatRepository._streamRequest HTTP ${streamed.statusCode}: $responseBody',
       );
       throw JadeChatServerError(streamed.statusCode, responseBody);
     }
@@ -261,17 +296,15 @@ class JadeChatRepository {
     // The conversation id is sent in a response header (even for new
     // conversations the server sets it before streaming begins).
     final resolvedConversationId =
-        streamed.headers['x-conversation-id'] ?? conversationId ?? '';
+        streamed.headers['x-conversation-id'] ?? fallbackConversationId ?? '';
 
     _logger.info(
-      'JadeChatRepository.sendMessage: conv=$resolvedConversationId streaming NDJSON',
+      'JadeChatRepository._streamRequest: conv=$resolvedConversationId streaming NDJSON',
     );
-
-    final eventStream = _parseNdjsonStream(streamed.stream);
 
     return JadeSendResult(
       conversationId: resolvedConversationId,
-      eventStream: eventStream,
+      eventStream: _parseNdjsonStream(streamed.stream),
     );
   }
 

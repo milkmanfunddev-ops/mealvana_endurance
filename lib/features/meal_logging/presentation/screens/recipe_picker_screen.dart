@@ -344,15 +344,15 @@ class _RecipePickerThumbnail extends StatelessWidget {
   Color _categoryColor(BuildContext context) {
     switch (type) {
       case RecipeType.breakfast:
-        return Colors.orange.shade300;
+        return AppColors.orange;
       case RecipeType.mains:
-        return Colors.teal.shade300;
+        return AppColors.electrolyteDark;
       case RecipeType.snacks:
-        return Colors.amber.shade300;
+        return AppColors.dragonfruit;
       case RecipeType.workoutFuel:
-        return Colors.blue.shade300;
+        return const Color(0xFF8E6FD8); // brand violet
       case RecipeType.recovery:
-        return Colors.purple.shade300;
+        return AppColors.electrolyte;
     }
   }
 
