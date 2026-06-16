@@ -69,38 +69,15 @@ class JadeChatController extends _$JadeChatController {
   AppLogger get _logger => ref.read(appLoggerProvider);
 
   @override
-  FutureOr<JadeChatState> build() async {
-    // On first build, load the most-recent conversation.
-    return _loadMostRecentConversation();
-  }
-
-  // ── Init ──────────────────────────────────────────────────────────────────
-
-  /// Loads the most-recent non-deleted conversation's messages into state.
-  ///
-  /// If the user has no conversations yet, returns an empty state so the
-  /// first-time empty screen is displayed.
-  Future<JadeChatState> _loadMostRecentConversation() async {
-    try {
-      final conversations = await _repository.fetchConversations();
-      if (conversations.isEmpty) {
-        return const JadeChatState();
-      }
-      final latest = conversations.first;
-      final messages = await _repository.fetchMessages(latest.id);
-      return JadeChatState(
-        conversationId: latest.id,
-        messages: messages,
-      );
-    } catch (e, st) {
-      _logger.error(
-        'JadeChatController._loadMostRecentConversation failed',
-        error: e,
-        stackTrace: st,
-      );
-      // Return empty state — user can still start a new chat.
-      return const JadeChatState();
-    }
+  FutureOr<JadeChatState> build() {
+    // Open fresh every time so Jade greets proactively — the screen calls
+    // [loadOpener] on this empty state. We intentionally do NOT auto-resume the
+    // most-recent conversation: returning users were landing back inside an old
+    // thread (e.g. one whose first message was a tapped "What should I eat
+    // before tomorrow's workout?" prompt) instead of getting a contextual
+    // hello. Past conversations remain in the DB (jade_conversations) for a
+    // future "history" affordance; resuming is no longer the default.
+    return const JadeChatState();
   }
 
   // ── Send ──────────────────────────────────────────────────────────────────
