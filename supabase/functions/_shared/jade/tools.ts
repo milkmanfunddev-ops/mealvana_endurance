@@ -256,6 +256,44 @@ export function makeJadeTools(ctx: JadeToolContext) {
       },
     }),
 
+    // ── 5b. getSavedMeals ─────────────────────────────────────────────────────
+
+    getSavedMeals: tool({
+      description:
+        "Fetch the user's saved / favorite meals — meals they explicitly kept to " +
+        "re-log. Returns name, macros (calories, carbs_g, protein_g, fat_g), the food " +
+        "items, and last_used_at (most-recently-used first). PREFER these when planning " +
+        "a day or week so the plan reuses meals the athlete already likes and eats, " +
+        "rather than inventing new ones. Combine with getLoggedMeals to also see their " +
+        "recent real meals.",
+      inputSchema: z.object({
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(50)
+          .default(25)
+          .describe('Max saved meals to return (most recently used first)'),
+      }),
+      execute: async ({ limit }) => {
+        const { data, error } = await serviceClient
+          .from('saved_meals')
+          .select(
+            'id, name, calories, carbs_g, protein_g, fat_g, sodium_mg, items, last_used_at',
+          )
+          .eq('user_id', userId)
+          .eq('is_deleted', false)
+          .order('last_used_at', { ascending: false, nullsFirst: false })
+          .limit(limit);
+
+        if (error) {
+          console.error('[jade-chat/getSavedMeals] error:', error);
+          return { error: error.message, data: [] };
+        }
+        return { data: data ?? [] };
+      },
+    }),
+
     // ── 6. getWeather ───────────────────────────────────────────────────────
 
     getWeather: tool({

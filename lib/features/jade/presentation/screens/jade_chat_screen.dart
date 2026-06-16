@@ -68,6 +68,10 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
         defaultValue: 'Plan my day',
       ),
       contentService.getValue(
+        'jade.suggested_prompt_plan_week',
+        defaultValue: 'Plan my week',
+      ),
+      contentService.getValue(
         'jade.suggested_prompt_1',
         defaultValue: 'Help me set up my meal baseline',
       ),
