@@ -30,30 +30,12 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
   final _scrollController = ScrollController();
   bool _hasShownError = false;
 
-  /// Tracks whether the input is empty so the persistent prompt-chip strip can
-  /// hide itself while the user is composing.
-  bool _inputEmpty = true;
-
   /// Guards the one-shot proactive-opener request so it fires once per empty
   /// conversation (reset when the user starts a new chat).
   bool _openerRequested = false;
 
   @override
-  void initState() {
-    super.initState();
-    _textController.addListener(_onInputChanged);
-  }
-
-  void _onInputChanged() {
-    final isEmpty = _textController.text.trim().isEmpty;
-    if (isEmpty != _inputEmpty) {
-      setState(() => _inputEmpty = isEmpty);
-    }
-  }
-
-  @override
   void dispose() {
-    _textController.removeListener(_onInputChanged);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -149,10 +131,6 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
                 error: (_, __) => _buildLoadError(context),
               ),
             ),
-            // Persistent quick-prompt strip — visible on every visit (not only
-            // the first-run empty state), hidden while composing or streaming so
-            // it never competes with the keyboard.
-            _buildPromptStrip(context, chatAsync.value, contentService),
             _buildInputRow(context, chatAsync.value, isDark, contentService),
           ],
         ),
@@ -356,46 +334,6 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
                 ref.invalidate(jadeChatControllerProvider),
           ),
         ],
-      ),
-    );
-  }
-
-  // ── Persistent prompt strip ──────────────────────────────────────────────
-
-  /// Horizontally scrollable chip strip shown directly above the input. Gives
-  /// the user prompts to start from on every visit — addressing the "no prompts
-  /// anywhere" gap where chips previously only existed on the empty screen.
-  ///
-  /// Hidden when the conversation is empty (the empty state already shows the
-  /// chips centered), while a reply is streaming, or while the user is typing.
-  Widget _buildPromptStrip(
-    BuildContext context,
-    JadeChatState? state,
-    ContentService contentService,
-  ) {
-    final isStreaming = state?.isStreaming ?? false;
-    final hasMessages = (state?.messages.isNotEmpty) ?? false;
-
-    if (!hasMessages || isStreaming || !_inputEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final prompts = _suggestedPrompts(contentService);
-
-    return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
-        ),
-        itemCount: prompts.length,
-        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-        itemBuilder: (_, i) => _PromptChip(
-          label: prompts[i],
-          onTap: () => _sendMessage(prompts[i]),
-        ),
       ),
     );
   }
