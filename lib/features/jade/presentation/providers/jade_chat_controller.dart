@@ -145,6 +145,9 @@ class JadeChatController extends _$JadeChatController {
       final accumulatedUiParts = <JadeUiPart>[];
 
       await for (final event in result.eventStream) {
+        // Screen may have been popped mid-stream (auto-dispose); bail before
+        // touching state/ref to avoid UnmountedRefException.
+        if (!ref.mounted) return;
         final current = state.value;
         if (current == null) break;
 
@@ -188,6 +191,7 @@ class JadeChatController extends _$JadeChatController {
       }
 
       // Streaming complete — mark done.
+      if (!ref.mounted) return;
       final finalState = state.value;
       if (finalState != null) {
         state = AsyncData(finalState.copyWith(
@@ -201,6 +205,7 @@ class JadeChatController extends _$JadeChatController {
         'uiParts=${accumulatedUiParts.length}',
       );
     } on JadeChatOfflineError catch (e) {
+      if (!ref.mounted) return;
       _logger.error(
         'JadeChatController.send offline',
         error: e,
@@ -210,6 +215,7 @@ class JadeChatController extends _$JadeChatController {
         defaultValue: 'No connection. Check your network and try again.',
       ));
     } on JadeChatServerError catch (e) {
+      if (!ref.mounted) return;
       _logger.error(
         'JadeChatController.send server error',
         error: e,
@@ -225,6 +231,7 @@ class JadeChatController extends _$JadeChatController {
             );
       _handleSendError(currentState, msg);
     } catch (e, st) {
+      if (!ref.mounted) return;
       _logger.error('JadeChatController.send unexpected', error: e, stackTrace: st);
       _handleSendError(
         currentState,
@@ -283,6 +290,9 @@ class JadeChatController extends _$JadeChatController {
 
       String accumulated = '';
       await for (final event in result.eventStream) {
+        // The screen may have been popped mid-stream (auto-dispose); bail before
+        // touching state/ref to avoid UnmountedRefException.
+        if (!ref.mounted) return;
         final current = state.value;
         if (current == null) break;
 
@@ -306,6 +316,7 @@ class JadeChatController extends _$JadeChatController {
         // up if nothing streamed.
       }
 
+      if (!ref.mounted) return;
       final finalState = state.value;
       if (finalState != null) {
         // If the opener produced no content, drop the placeholder so the
@@ -320,6 +331,9 @@ class JadeChatController extends _$JadeChatController {
         ));
       }
     } catch (e) {
+      // Opener is optional; if the provider is gone there's nothing to restore
+      // and nothing safe to log against a disposed ref.
+      if (!ref.mounted) return;
       _logger.error('JadeChatController.loadOpener failed (non-fatal)', error: e);
       state = const AsyncData(JadeChatState());
     }
