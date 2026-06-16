@@ -27,18 +27,20 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
+import 'package:patrol/patrol.dart';
 import 'package:mealvana_endurance/main_dev.dart' as app;
 
 const _testEmail = 'test@test.com';
 const _testPassword = 'test';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
-  testWidgets(
+  // NOTE: test@test.com / test is a PROD account. Run this against a prod build,
+  // or repoint at a dev-seeded account. For the dev smoke test prefer
+  // onboarding_signup_flow_test.dart, which creates a fresh dev user.
+  patrolTest(
     'login as test@test.com lands on calendar',
-    (tester) async {
+    ($) async {
+      final tester = $.tester;
       await app.main();
       await tester.pumpAndSettle(const Duration(seconds: 30));
 

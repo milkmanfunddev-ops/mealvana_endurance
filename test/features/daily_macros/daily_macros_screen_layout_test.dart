@@ -1,6 +1,10 @@
-// Regression test for the pinned macro-strip SliverGeometry assert: pumps the
-// real DailyMacrosScreen with fake data — the pinned header child must fill
-// its fixed extent or layoutExtent exceeds paintExtent (see docs/logs.txt).
+// Layout + re-integration test for the Nutrition Diary (Daily Macros) screen.
+//
+// Pumps the real DailyMacrosScreen with fake targets + consumed totals and
+// asserts:
+//   • it lays out without exceptions, and
+//   • the re-integrated meal-planning surface is present: the planned-vs-eaten
+//     comparison table, the Jade coach banner, and the Today's Log section.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,38 +46,62 @@ class _FakeDailyMacrosController extends DailyMacrosController {
   }
 }
 
+Future<void> _pumpScreen(WidgetTester tester) async {
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        dailyMacrosControllerProvider
+            .overrideWith(_FakeDailyMacrosController.new),
+        mealLogsForDateProvider
+            .overrideWith((ref, date) => Stream.value(const <MealLog>[])),
+        consumedTotalsForDateProvider.overrideWith(
+          (ref, date) => Stream.value(const ConsumedTotals(
+            calories: 939,
+            carbsG: 106,
+            proteinG: 47,
+            fatG: 53,
+            sodiumMg: 800,
+          )),
+        ),
+        preferencesServiceProvider
+            .overrideWith((ref) => PreferencesService(prefs)),
+        currentUserProvider.overrideWith((ref) async => null),
+      ],
+      child: const MaterialApp(home: DailyMacrosScreen()),
+    ),
+  );
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
+
 void main() {
-  testWidgets('DailyMacrosScreen lays out without sliver geometry errors',
+  testWidgets('DailyMacrosScreen lays out without exceptions',
       (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          dailyMacrosControllerProvider
-              .overrideWith(_FakeDailyMacrosController.new),
-          mealLogsForDateProvider
-              .overrideWith((ref, date) => Stream.value(const <MealLog>[])),
-          consumedTotalsForDateProvider.overrideWith(
-            (ref, date) => Stream.value(const ConsumedTotals(
-              calories: 939,
-              carbsG: 106,
-              proteinG: 47,
-              fatG: 53,
-              sodiumMg: 800,
-            )),
-          ),
-          preferencesServiceProvider
-              .overrideWith((ref) => PreferencesService(prefs)),
-          currentUserProvider.overrideWith((ref) async => null),
-        ],
-        child: const MaterialApp(home: DailyMacrosScreen()),
-      ),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
+    await _pumpScreen(tester);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shows the eaten-only macro summary (no "Left")',
+      (tester) async {
+    await _pumpScreen(tester);
+
+    // The card now surfaces only what's been eaten; planned/weekly live behind
+    // the Details sheet, and "Left" is gone entirely.
+    expect(find.byKey(const ValueKey('nutrition_diary.daily_total_card')),
+        findsOneWidget);
+    expect(find.text('Eaten today'), findsOneWidget);
+    expect(find.text('Calories'), findsOneWidget);
+    expect(find.text('Left'), findsNothing);
+  });
+
+  testWidgets('re-integrates the Jade banner and Today\'s Log section',
+      (tester) async {
+    await _pumpScreen(tester);
+
+    expect(find.byKey(const ValueKey('jade.coach_banner')), findsOneWidget);
+    expect(find.text("Today's Log"), findsOneWidget);
   });
 }

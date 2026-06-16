@@ -30,11 +30,42 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
   final _scrollController = ScrollController();
   bool _hasShownError = false;
 
+  /// Guards the one-shot proactive-opener request so it fires once per empty
+  /// conversation (reset when the user starts a new chat).
+  bool _openerRequested = false;
+
   @override
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// The suggested prompt labels, resolved from content with sensible defaults.
+  /// Shared by the first-run empty state and the persistent chip strip.
+  List<String> _suggestedPrompts(ContentService contentService) {
+    return [
+      contentService.getValue(
+        'jade.suggested_prompt_plan_day',
+        defaultValue: 'Plan my day',
+      ),
+      contentService.getValue(
+        'jade.suggested_prompt_plan_week',
+        defaultValue: 'Plan my week',
+      ),
+      contentService.getValue(
+        'jade.suggested_prompt_1',
+        defaultValue: 'Help me set up my meal baseline',
+      ),
+      contentService.getValue(
+        'jade.suggested_prompt_2',
+        defaultValue: "What should I eat before tomorrow's workout?",
+      ),
+      contentService.getValue(
+        'jade.suggested_prompt_3',
+        defaultValue: 'How much carbs do I need for a long run?',
+      ),
+    ];
   }
 
   void _scrollToBottom({bool animated = true}) {
@@ -150,6 +181,8 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
           tooltip: 'New chat',
           onPressed: () {
             ref.read(jadeChatControllerProvider.notifier).newChat();
+            // Allow the proactive opener to fire again for the fresh chat.
+            setState(() => _openerRequested = false);
           },
         ),
         const SizedBox(width: AppSpacing.xs),
@@ -165,9 +198,22 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
     ContentService contentService,
   ) {
     if (state.messages.isEmpty && !state.isStreaming) {
+      // Ask Jade to open proactively (once). Until her first chunk arrives the
+      // static greeting shows; if the opener fails it stays — graceful either
+      // way.
+      _maybeRequestOpener();
       return _buildEmptyState(context, contentService);
     }
     return _buildMessageList(context, state);
+  }
+
+  void _maybeRequestOpener() {
+    if (_openerRequested) return;
+    _openerRequested = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(jadeChatControllerProvider.notifier).loadOpener();
+    });
   }
 
   Widget _buildMessageList(BuildContext context, JadeChatState state) {
@@ -203,18 +249,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
           "Hi! I'm Jade, your AI endurance nutrition coach. I can help you build a fueling strategy, answer questions about your nutrition plan, and help you establish a solid meal baseline.",
     );
 
-    final chip1 = contentService.getValue(
-      'jade.suggested_prompt_1',
-      defaultValue: 'Help me set up my meal baseline',
-    );
-    final chip2 = contentService.getValue(
-      'jade.suggested_prompt_2',
-      defaultValue: "What should I eat before tomorrow's workout?",
-    );
-    final chip3 = contentService.getValue(
-      'jade.suggested_prompt_3',
-      defaultValue: 'How much carbs do I need for a long run?',
-    );
+    final prompts = _suggestedPrompts(contentService);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -261,7 +296,7 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             alignment: WrapAlignment.center,
-            children: [chip1, chip2, chip3].map((prompt) {
+            children: prompts.map((prompt) {
               return _PromptChip(
                 label: prompt,
                 onTap: () => _sendMessage(prompt),

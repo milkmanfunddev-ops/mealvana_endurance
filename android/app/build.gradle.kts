@@ -36,6 +36,14 @@ android {
 
         // Enable MultiDex for notification library (may exceed 64K method limit)
         multiDexEnabled = true
+
+        // Patrol integration testing
+        testInstrumentationRunner = "pl.leancode.patrol.PatrolJUnitRunner"
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
+    }
+
+    testOptions {
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
     }
 
     // Signing configurations - defined before flavors and buildTypes
@@ -100,6 +108,9 @@ android {
 dependencies {
     // Core library desugaring for java.time APIs on older Android versions
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
+    // Patrol integration testing — Android Test Orchestrator
+    androidTestUtil("androidx.test:orchestrator:1.5.1")
 }
 
 flutter {

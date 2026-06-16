@@ -190,13 +190,17 @@ class _MealItemsEditorState extends State<MealItemsEditor> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Total', style: theme.textTheme.labelLarge),
-              Text(
-                '$_totalCalories kcal  '
-                'C ${_totalCarbG.toStringAsFixed(0)}g  '
-                'P ${_totalProteinG.toStringAsFixed(0)}g  '
-                'F ${_totalFatG.toStringAsFixed(0)}g',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '$_totalCalories kcal  '
+                  'C ${_totalCarbG.toStringAsFixed(0)}g  '
+                  'P ${_totalProteinG.toStringAsFixed(0)}g  '
+                  'F ${_totalFatG.toStringAsFixed(0)}g',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                  textAlign: TextAlign.right,
+                ),
               ),
             ],
           ),

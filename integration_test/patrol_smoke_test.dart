@@ -19,12 +19,19 @@ import 'package:mealvana_endurance/main_dev.dart' as app;
 void main() {
   patrolTest(
     'app launches and renders at least one widget',
-    framePolicy: LiveTestWidgetsFlutterBindingFramePolicy.fullyLive,
     ($) async {
       await app.main();
-      await $.pumpAndSettle(timeout: const Duration(seconds: 30));
+      await $.pump(const Duration(seconds: 5));
 
-      expect(find.byType(Widget), findsWidgets);
+      // Assert *some* widget rendered. NOTE: `find.byType(Widget)` is wrong —
+      // byType matches the EXACT runtime type, and `Widget` is abstract, so it
+      // always finds 0. Match every widget via a predicate instead.
+      expect(find.byWidgetPredicate((_) => true), findsWidgets);
     },
+    framePolicy: LiveTestWidgetsFlutterBindingFramePolicy.fullyLive,
+    // Fail fast: without this, a lost native-automation handshake (seen on the
+    // iOS 26.2 simulator) leaves the run hanging until the ~2h xcodebuild test
+    // timeout. Cap the Dart side aggressively.
+    timeout: const Timeout(Duration(minutes: 3)),
   );
 }

@@ -139,13 +139,18 @@ class _MacroRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    // Wrap (not Row) so the macro labels reflow to a second line on narrow
+    // cards or at large text scale instead of overflowing.
+    return Wrap(
+      spacing: AppSpacing.md,
+      runSpacing: AppSpacing.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         // kcal with a small fire icon
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(FontAwesomeIcons.fire, size: 10, color: AppColors.electrolyte),
+            FaIcon(FontAwesomeIcons.fire, size: 11, color: AppColors.electrolyte),
             const SizedBox(width: 3),
             _MacroLabel(
               label: '${suggestion.kcal} kcal',
@@ -153,11 +158,8 @@ class _MacroRow extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(width: AppSpacing.md),
         _MacroLabel(label: '${suggestion.carbG.round()}g C', textColor: textColor),
-        const SizedBox(width: AppSpacing.xs),
         _MacroLabel(label: '${suggestion.proteinG.round()}g P', textColor: textColor),
-        const SizedBox(width: AppSpacing.xs),
         _MacroLabel(label: '${suggestion.fatG.round()}g F', textColor: textColor),
       ],
     );

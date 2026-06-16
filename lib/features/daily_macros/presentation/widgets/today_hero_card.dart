@@ -13,20 +13,15 @@ import '../../../meal_logging/domain/consumed_totals.dart';
 import '../../../meal_logging/domain/meal_log.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../domain/daily_macro_targets.dart';
+import '../providers/daily_macros_controller.dart';
 import 'energy_source_breakdown.dart';
+import 'macro_palette.dart';
+import 'weekly_overview_chart.dart';
 
-// ---------------------------------------------------------------------------
-// Public macro colour constants — reused by MacroSummaryStrip.
-// ---------------------------------------------------------------------------
-
-/// Colour used for the carbs macro indicator.
-const Color kMacroColorCarbs = Color(0xFF00C896);
-
-/// Colour used for the protein macro indicator.
-const Color kMacroColorProtein = Color(0xFF6B4FA0);
-
-/// Colour used for the fat macro indicator.
-const Color kMacroColorFat = Color(0xFFFF2D55);
+// Canonical macro colours live in macro_palette.dart. Re-exported here so the
+// long-standing `today_hero_card.dart show kMacroColor*` imports keep working.
+export 'macro_palette.dart'
+    show kMacroColorCalories, kMacroColorCarbs, kMacroColorProtein, kMacroColorFat;
 
 // ---------------------------------------------------------------------------
 // Detail sheet (replaces the old card composition as the primary surface)
@@ -66,15 +61,17 @@ void showMacroDetailSheet(
 // Sheet tab enum
 // ---------------------------------------------------------------------------
 
-enum _DetailTab { eaten, plan }
+enum _DetailTab { planned, eaten, weekly }
 
 extension _DetailTabLabel on _DetailTab {
   String get label {
     switch (this) {
+      case _DetailTab.planned:
+        return 'Planned';
       case _DetailTab.eaten:
         return 'Eaten';
-      case _DetailTab.plan:
-        return 'Plan';
+      case _DetailTab.weekly:
+        return 'Weekly';
     }
   }
 }
@@ -173,20 +170,22 @@ class _MacroDetailSheetContentState
                   controller: scrollController,
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.lg),
-                  child: _activeTab == _DetailTab.eaten
-                      ? _EatenTabBody(
-                          macros: widget.macros,
-                          consumed: widget.consumed,
-                          logsAsync: logsAsync,
-                          textColor: textColor,
-                          isDark: isDark,
-                        )
-                      : _PlanTabBody(
-                          macros: widget.macros,
-                          showAttribution: widget.showAttribution,
-                          textColor: textColor,
-                          isDark: isDark,
-                        ),
+                  child: switch (_activeTab) {
+                    _DetailTab.planned => _PlanTabBody(
+                        macros: widget.macros,
+                        showAttribution: widget.showAttribution,
+                        textColor: textColor,
+                        isDark: isDark,
+                      ),
+                    _DetailTab.eaten => _EatenTabBody(
+                        macros: widget.macros,
+                        consumed: widget.consumed,
+                        logsAsync: logsAsync,
+                        textColor: textColor,
+                        isDark: isDark,
+                      ),
+                    _DetailTab.weekly => _WeeklyTabBody(textColor: textColor),
+                  },
                 ),
               ),
             ],
@@ -579,29 +578,6 @@ class _PlanTabBody extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
 
-        // ── Three full macro bar rows ────────────────────────────
-        _MacroBarRow(
-          label: 'Carbs',
-          eaten: macros.carbG,
-          target: macros.carbG,
-          color: kMacroColorCarbs,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        _MacroBarRow(
-          label: 'Protein',
-          eaten: macros.protG,
-          target: macros.protG,
-          color: kMacroColorProtein,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        _MacroBarRow(
-          label: 'Fat',
-          eaten: macros.fatG,
-          target: macros.fatG,
-          color: kMacroColorFat,
-        ),
-        const SizedBox(height: AppSpacing.lg),
-
         // ── Divider ──────────────────────────────────────────────
         Divider(color: textColor.withValues(alpha: 0.12)),
         const SizedBox(height: AppSpacing.lg),
@@ -623,59 +599,37 @@ class _PlanTabBody extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Individual macro bar row (reused in detail sheet)
+// Weekly tab body — hosts the 7-day overview chart
 // ---------------------------------------------------------------------------
 
-class _MacroBarRow extends StatelessWidget {
-  const _MacroBarRow({
-    required this.label,
-    required this.eaten,
-    required this.target,
-    required this.color,
-  });
+class _WeeklyTabBody extends ConsumerWidget {
+  const _WeeklyTabBody({required this.textColor});
 
-  final String label;
-  final double eaten;
-  final double target;
-  final Color color;
+  final Color textColor;
+
+  /// Sunday-start week containing [date] (matches calendar_week_view_kyle.dart).
+  static DateTime _startOfWeek(DateTime date) {
+    final d = DateTime(date.year, date.month, date.day);
+    return d.subtract(Duration(days: d.weekday % 7));
+  }
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final macrosAsync = ref.watch(dailyMacrosControllerProvider);
 
-    final ratio = target > 0 ? (eaten / target).clamp(0.0, 1.0) : 0.0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: AppTextStyles.bodySmall.copyWith(color: textColor),
-            ),
-            Text(
-              '${eaten.toStringAsFixed(0)} / ${target > 0 ? target.toStringAsFixed(0) : '—'}g',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: textColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: macrosAsync.maybeWhen(
+        data: (state) => WeeklyOverviewChart(
+          weeklyMacros: state.weeklyMacros,
+          startOfWeek: _startOfWeek(state.selectedDate),
+          initiallyExpanded: true,
         ),
-        const SizedBox(height: 3),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(3),
-          child: LinearProgressIndicator(
-            value: ratio,
-            backgroundColor: color.withValues(alpha: 0.15),
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 5,
-          ),
+        orElse: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Center(child: CircularProgressIndicator()),
         ),
-      ],
+      ),
     );
   }
 }

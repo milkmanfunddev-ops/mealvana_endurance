@@ -9,9 +9,11 @@ import '../../../calendar/presentation/widgets/calendar_view_toggle.dart';
 import '../../../calendar/presentation/widgets/calendar_week_view_kyle.dart';
 import '../../../calendar/presentation/widgets/calendar_month_view_kyle.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../../integrations/presentation/widgets/garmin_connect_banner.dart';
+import '../../../jade/presentation/widgets/jade_coach_banner.dart';
+import '../../../meal_logging/presentation/widgets/today_log_section.dart';
 import '../providers/daily_macros_controller.dart';
 import '../widgets/daily_summary_card.dart';
-import '../widgets/weekly_overview_chart.dart';
 
 class DailyMacrosScreen extends ConsumerWidget {
   const DailyMacrosScreen({super.key});
@@ -71,9 +73,6 @@ class DailyMacrosScreen extends ConsumerWidget {
     WidgetRef ref,
     DailyMacrosState state,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-
     return SingleChildScrollView(
       padding: AppSpacing.screenPaddingHorizontal,
       child: Column(
@@ -81,27 +80,24 @@ class DailyMacrosScreen extends ConsumerWidget {
         children: [
           const SizedBox(height: AppSpacing.md),
 
-          // Page title (below calendar, in scrollable area)
-          Text(
-            key: const ValueKey('nutrition_diary.heading'),
-            'Nutrition Diary',
-            style: AppTextStyles.sectionTitle.copyWith(
-              color: textColor.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          // Connect-your-watch prompt (hides itself once Garmin is connected).
+          const GarminConnectBanner(),
           const SizedBox(height: AppSpacing.sm),
 
-          // Daily summary card
+          // Jade — persistent coaching entry point.
+          const JadeCoachBanner(),
+          const SizedBox(height: AppSpacing.md),
+
           if (state.dailyMacros != null) ...[
+            // Compact daily total: planned/eaten/left at a glance. The energy
+            // breakdown explainer now lives behind its Details sheet.
             DailySummaryCard(macros: state.dailyMacros!),
             const SizedBox(height: AppSpacing.lg),
 
-            // Weekly overview chart
-            WeeklyOverviewChart(
-              weeklyMacros: state.weeklyMacros,
-              startOfWeek: _getStartOfWeek(state.selectedDate),
-            ),
+            // Meal log for the selected day — the page's primary job. The
+            // weekly overview now lives behind the daily card's Details sheet
+            // (Weekly tab), so the day's log stays front-and-centre here.
+            TodayLogSection(selectedDate: state.selectedDate),
           ] else if (state.calculationError != null) ...[
             _buildCalculationErrorState(context, ref, state.calculationError!),
           ] else ...[
@@ -235,14 +231,5 @@ class DailyMacrosScreen extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  DateTime _getStartOfWeek(DateTime date) {
-    // Sunday-start (matches calendar_week_view_kyle.dart)
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-    ).subtract(Duration(days: date.weekday % 7));
   }
 }

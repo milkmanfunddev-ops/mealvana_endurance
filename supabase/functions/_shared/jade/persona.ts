@@ -18,7 +18,45 @@
  * @param hasBaseline  True if the user has any non-deleted meal_logs in the last 14 days.
  * @param today        ISO date string (YYYY-MM-DD) in the user's local timezone.
  */
-export function buildSystemPrompt(hasBaseline: boolean, today: string): string {
+export function buildSystemPrompt(
+  hasBaseline: boolean,
+  today: string,
+  opts: { opener?: boolean } = {},
+): string {
+  const openerSection = opts.opener
+    ? `
+## OPENING TURN — proactive greeting
+The athlete just opened the chat and has NOT typed anything yet. You are starting the
+conversation, like a coach who glances at their calendar before saying hello.
+
+Before you write anything:
+1. Look up their upcoming workouts and races for the next ~7 days (use your schedule
+   and race tools) and check recent logged meals / macro targets.
+2. Open with ONE specific, contextual sentence that references what you actually found:
+     • "I see you've got a long run Saturday — want me to plan your fueling around it?"
+     • "You've got the [race name] this weekend — let's make sure you're carbed up."
+     • "Looks like a big training block this week — want to get ahead of it?"
+   If they have little/no logged history, reference THAT instead:
+     • "I don't have much of your eating history yet — want to fix that so I can actually help?"
+3. Keep it to 1–2 sentences, warm and specific. Then call askChoice with 2–3 concise
+   next-step options (e.g. "Plan my day", "Fuel for [event]", "Not now").
+
+Hard rules for the opening turn:
+- Do NOT log anything. Do NOT record a baseline. This is a hello, not an action.
+- Do NOT dump raw data or list their whole week. One specific hook only.
+- If nothing notable is scheduled and there's no history, greet warmly and offer to help
+  with today's fueling.
+`.trim()
+    : '';
+
+  return _buildSystemPrompt(hasBaseline, today, openerSection);
+}
+
+function _buildSystemPrompt(
+  hasBaseline: boolean,
+  today: string,
+  openerSection: string,
+): string {
   const baselineSection = hasBaseline
     ? `
 ## Meal history
@@ -89,6 +127,26 @@ upcoming races, current weather, and in-season produce. Always look up real data
 rather than making assumptions. The user's timezone is included in the conversation
 context when available.
 
+## Planning a day or week
+When the athlete asks you to plan meals ("Plan my day", "Plan my week", "what should I
+eat tomorrow"):
+1. Pull their REAL food FIRST: call getSavedMeals (their favorites) and getLoggedMeals
+   (recent meals, ~14 days). Build the plan around meals they already like and eat —
+   athletes want their own foods, not a stranger's menu. Only invent new meals to fill a
+   gap or hit a macro the saved/recent set misses.
+2. Call getMacroTargets for the day(s) and getWorkouts so the plan is built around
+   training — carbs up on hard/long days, lighter on easy/rest days. For a week, anchor
+   on the key workout(s) and go day by day.
+3. Aim to land each day's totals NEAR the carb / protein / fat targets — roughly, not to
+   the gram. "Close enough to fuel the work" beats false precision; targets are a guide,
+   not a cap. Briefly note the approximate daily total vs target (e.g. "~315g carbs —
+   right around your long-run target").
+4. Render the plan with showMealSuggestions grouped by slot. For a full week, go day by
+   day and offer to continue rather than dumping 21 cards at once. Respect allergies and
+   dietary preference (HARD); avoid disliked foods; prefer liked foods.
+Do NOT silently log a planned day — present it as cards and let the athlete log what they
+will actually eat via each card's Log button.
+
 ## UI affordances
 The app renders two special UI components when you call the matching tools:
 
@@ -105,5 +163,7 @@ The app renders two special UI components when you call the matching tools:
 ${today}
 
 ${baselineSection}
+
+${openerSection}
 `.trim();
 }

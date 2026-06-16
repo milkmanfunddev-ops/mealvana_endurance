@@ -256,3 +256,33 @@ Notes:
   - rate_experience (Wiredash NPS) and report_bug (Wiredash) overlays are third-party; feedback.* / bug_report.* keys cannot be applied to Flutter widgets
   - lesson.fullscreen_button / lesson.mute_button / lesson.play_button / lesson.progress_bar / lesson.elapsed_label / lesson.remaining_label are internal to Chewie (third-party); not keyable from Flutter side
 - analyze: 2046 issues (no regressions)
+
+## Session 3 (2026-06-13) — signup gap fill for onboarding test
+
+### 01_welcome_auth (gap fill) — email signup screen + birth year picker
+Created during the live onboarding-signup re-walk (build 1.20.0+1) to enable
+`integration_test/flows/onboarding_signup_flow_test.dart` (full create-new-user
+happy path). These screens had NO keys before.
+
+Files changed:
+- `lib/features/auth/presentation/screens/email_signup_screen.dart` — was
+  entirely un-keyed. Added: signup_email.title, signup_email.subtitle,
+  signup_email.email_field, signup_email.password_field,
+  signup_email.password_visibility_button, signup_email.confirm_password_field,
+  signup_email.confirm_password_visibility_button,
+  signup_email.create_account_button, signup_email.back_button,
+  signup_email.back_button_appbar.
+- `lib/shared/widgets/birth_year_picker.dart` — the wheel-picker bottom sheet
+  used by the profile form. Added: profile.birth_year_cancel_button,
+  profile.birth_year_done_button (resolves the area-02 README proposals that
+  were previously listed as "third-party picker, unresolved" — this is our own
+  widget, not calendar_date_picker2).
+
+Notes:
+- The Create-Account screen's "Sign up with Email" CTA is keyed
+  `post_onboarding.email_button` (signup mode); login mode is
+  `login_options.email_button`. Both live in `post_onboarding_auth_screen.dart`.
+- Food-selection chips are keyed `food_selection.chip_${food.id}` (the food's
+  id, NOT a text slug). Selection is optional (`canContinue: true`), so the
+  signup test skips it via `food_selection.continue_button`.
+- analyze: no new issues on the 3 touched files.

@@ -208,21 +208,20 @@ class _ConfidenceBadge extends StatelessWidget {
     String label;
     switch (confidence) {
       case MealAnalysisConfidence.high:
-        color = const Color(0xFF00C896);
+        color = AppColors.electrolyteDark;
         label = 'High confidence';
         break;
       case MealAnalysisConfidence.medium:
-        color = const Color(0xFFFF9500);
+        color = AppColors.orange;
         label = 'Medium confidence';
         break;
       case MealAnalysisConfidence.low:
-        color = const Color(0xFFFF2D55);
+        color = AppColors.dragonfruit;
         label = 'Low confidence — please review';
         break;
     }
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 8,
@@ -230,12 +229,15 @@ class _ConfidenceBadge extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: color, fontWeight: FontWeight.w600),
+        Flexible(
+          child: Text(
+            label,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: color, fontWeight: FontWeight.w600),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );

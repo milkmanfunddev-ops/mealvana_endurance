@@ -135,7 +135,7 @@ dev_dependencies:
 
   # Testing
   mocktail: ^1.0.4
-  patrol: ^4.3.0
+  patrol: ^4.5.0
   
   # Code Generation
   build_runner: ^2.6.0
@@ -275,6 +275,10 @@ flutter_native_splash:
 
 patrol:
   app_name: Mealvana Endurance
+  # Our Patrol tests live in integration_test/ (patrol_cli >= 4.3 defaults this
+  # to patrol_test/; without this override the generated test_bundle.dart import
+  # path is malformed and the iOS build fails with xcodebuild code 65).
+  test_directory: integration_test
   android:
     package_name: com.milkman.mealvanaendurance
   ios:

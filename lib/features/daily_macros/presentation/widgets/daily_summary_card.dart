@@ -4,15 +4,22 @@ import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../auth/application/auth_service.dart';
+import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
-import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
+import '../../../meal_logging/domain/consumed_totals.dart';
+import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../domain/daily_macro_targets.dart';
-import 'energy_source_breakdown.dart';
-import 'macro_breakdown_row.dart';
+import 'macro_palette.dart';
+import 'today_hero_card.dart' show showMacroDetailSheet;
 
-/// Card showing daily macro summary:
-/// Row 1: "1,130 cal" (left) | "Daily Total" (right)
-/// Row 2: colored macro breakdown (carbs/protein/fat with dot indicators)
+/// Card showing the daily macro summary:
+/// - Header eyebrow + tappable "Details" affordance
+/// - Planned vs. Eaten vs. Left comparison table
+/// - Energy source breakdown (RMR / NEAT / Workout)
+/// - Garmin attribution when applicable
+///
+/// Tapping anywhere opens the "Today's Fueling" detail sheet (Eaten | Plan
+/// tabs) for the per-meal drill-down.
 class DailySummaryCard extends ConsumerWidget {
   const DailySummaryCard({super.key, required this.macros});
 
@@ -22,11 +29,22 @@ class DailySummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final fmt = NumberFormat('#,###');
 
-    // Fresh edge calc populates `sources`; cached reads don't.
-    // For cached reads, fall back to the same Garmin-authoritative check the
-    // rest of the app uses (preferences/profile/onboarding), so the
-    // attribution doesn't disappear once the row is cached locally.
+    // Eaten totals for the date currently selected in the calendar.
+    final selectedDate = ref.watch(calendarSelectedDateProvider);
+    final dateStr =
+        '${selectedDate.year}-'
+        '${selectedDate.month.toString().padLeft(2, '0')}-'
+        '${selectedDate.day.toString().padLeft(2, '0')}';
+    final consumed = ref.watch(consumedTotalsForDateProvider(dateStr)).maybeWhen(
+          data: (v) => v,
+          orElse: () => const ConsumedTotals(),
+        );
+
+    // Fresh edge calc populates `sources`; cached reads don't. For cached
+    // reads, fall back to the same Garmin-authoritative check the rest of the
+    // app uses so attribution doesn't disappear once the row is cached.
     final attributionFromFreshCalc = macros.sources?.anyFromGarmin ?? false;
     final attributionFromGarminHealthData =
         ref.watch(_garminAuthoritativeProvider).maybeWhen(
@@ -38,59 +56,147 @@ class DailySummaryCard extends ConsumerWidget {
 
     return BaseCard(
       key: const ValueKey('nutrition_diary.daily_total_card'),
+      onTap: () => showMacroDetailSheet(
+        context,
+        macros: macros,
+        consumed: consumed,
+        showAttribution: showAttribution,
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Compact header row: calories left, "Daily Total" right
+          // Header row: eyebrow left, tappable "Details" affordance right.
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                '${NumberFormat('#,###').format(macros.totalCalories.round())} cal',
-                style: AppTextStyles.pageTitle.copyWith(
+                'Eaten today',
+                style: AppTextStyles.sectionTitle.copyWith(
                   color: textColor,
-                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17,
                 ),
               ),
-              Text(
-                'Daily Total',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: textColor.withValues(alpha: 0.5),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Details',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.orange,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: AppColors.orange,
+                  ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // Macro breakdown with colored dots
-          MacroBreakdownRow(
-            carbG: macros.carbG,
-            protG: macros.protG,
-            fatG: macros.fatG,
-            textColor: textColor,
+          // Clean "eaten today" row — calories + carbs/protein/fat consumed so
+          // far, in the unified macro colours. No targets, bars, or "left" here:
+          // the planned numbers and the weekly trend live behind the Details
+          // sheet (Planned / Eaten / Weekly tabs).
+          Row(
+            children: [
+              Expanded(
+                child: _EatenStat(
+                  label: 'Calories',
+                  value: fmt.format(consumed.calories),
+                  color: kMacroColorCalories,
+                  textColor: textColor,
+                ),
+              ),
+              Expanded(
+                child: _EatenStat(
+                  label: 'Carbs',
+                  value: '${consumed.carbsG.round()}g',
+                  color: kMacroColorCarbs,
+                  textColor: textColor,
+                ),
+              ),
+              Expanded(
+                child: _EatenStat(
+                  label: 'Protein',
+                  value: '${consumed.proteinG.round()}g',
+                  color: kMacroColorProtein,
+                  textColor: textColor,
+                ),
+              ),
+              Expanded(
+                child: _EatenStat(
+                  label: 'Fat',
+                  value: '${consumed.fatG.round()}g',
+                  color: kMacroColorFat,
+                  textColor: textColor,
+                ),
+              ),
+            ],
           ),
-
-          // Energy breakdown (RMR / NEAT / Workout) with Garmin attribution
-          // for any line that came from Garmin Connect data.
-          const SizedBox(height: AppSpacing.lg),
-          EnergySourceBreakdown(macros: macros),
-
-          // Card-level Garmin attribution (Garmin Developer API Brand
-          // Guidelines require attribution on every screen surfacing
-          // Garmin-derived data). Shown whenever any input — RMR, NEAT,
-          // weight, body fat, or session kcal/duration — came from Garmin,
-          // OR whenever Garmin body comp is currently authoritative for the
-          // user's weight/body fat (covers cached macro reads where the
-          // per-calc `sources` blob was dropped on persist).
-          if (showAttribution) ...[
-            const SizedBox(height: AppSpacing.md),
-            const GarminAttributionMessage(
-              subject: 'Body composition and activity inputs',
-            ),
-          ],
         ],
       ),
+    );
+  }
+}
+
+/// One eaten-macro stat: big colour-accented value over a dotted label.
+/// Used in the [DailySummaryCard] "eaten today" row.
+class _EatenStat extends StatelessWidget {
+  const _EatenStat({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.textColor,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: TextStyle(
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: textColor.withValues(alpha: 0.6),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
