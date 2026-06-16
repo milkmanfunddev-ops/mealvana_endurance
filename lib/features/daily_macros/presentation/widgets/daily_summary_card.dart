@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../auth/application/auth_service.dart';
@@ -8,7 +9,7 @@ import '../../../integrations/presentation/providers/integrations_providers.dart
 import '../../../meal_logging/domain/consumed_totals.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../domain/daily_macro_targets.dart';
-import 'macro_comparison_table.dart';
+import 'macro_palette.dart';
 import 'today_hero_card.dart' show showMacroDetailSheet;
 
 /// Card showing the daily macro summary:
@@ -28,6 +29,7 @@ class DailySummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final fmt = NumberFormat('#,###');
 
     // Eaten totals for the date currently selected in the calendar.
     final selectedDate = ref.watch(calendarSelectedDateProvider);
@@ -69,7 +71,7 @@ class DailySummaryCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                'Daily Total',
+                'Eaten today',
                 style: AppTextStyles.sectionTitle.copyWith(
                   color: textColor,
                   fontWeight: FontWeight.w700,
@@ -97,16 +99,104 @@ class DailySummaryCard extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // Planned vs. Eaten vs. Left comparison table. This is the always-on
-          // headline: eaten + remaining are visible at a glance without a tap.
-          //
-          // The energy-source breakdown (RMR / NEAT / Workout) and Garmin
-          // attribution — "how this target was computed" reference data — now
-          // live behind the Details sheet's Plan tab so this card stays compact
-          // and the day's log isn't pushed below the fold.
-          MacroComparisonTable(planned: macros, consumed: consumed),
+          // Clean "eaten today" row — calories + carbs/protein/fat consumed so
+          // far, in the unified macro colours. No targets, bars, or "left" here:
+          // the planned numbers and the weekly trend live behind the Details
+          // sheet (Planned / Eaten / Weekly tabs).
+          Row(
+            children: [
+              Expanded(
+                child: _EatenStat(
+                  label: 'Calories',
+                  value: fmt.format(consumed.calories),
+                  color: kMacroColorCalories,
+                  textColor: textColor,
+                ),
+              ),
+              Expanded(
+                child: _EatenStat(
+                  label: 'Carbs',
+                  value: '${consumed.carbsG.round()}g',
+                  color: kMacroColorCarbs,
+                  textColor: textColor,
+                ),
+              ),
+              Expanded(
+                child: _EatenStat(
+                  label: 'Protein',
+                  value: '${consumed.proteinG.round()}g',
+                  color: kMacroColorProtein,
+                  textColor: textColor,
+                ),
+              ),
+              Expanded(
+                child: _EatenStat(
+                  label: 'Fat',
+                  value: '${consumed.fatG.round()}g',
+                  color: kMacroColorFat,
+                  textColor: textColor,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// One eaten-macro stat: big colour-accented value over a dotted label.
+/// Used in the [DailySummaryCard] "eaten today" row.
+class _EatenStat extends StatelessWidget {
+  const _EatenStat({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.textColor,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: TextStyle(
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: textColor.withValues(alpha: 0.6),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

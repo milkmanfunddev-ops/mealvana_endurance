@@ -84,14 +84,17 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('shows the planned-vs-eaten comparison rows', (tester) async {
+  testWidgets('shows the eaten-only macro summary (no "Left")',
+      (tester) async {
     await _pumpScreen(tester);
 
-    expect(find.text('Planned'), findsOneWidget);
-    expect(find.text('Eaten'), findsOneWidget);
-    expect(find.text('Left'), findsOneWidget);
+    // The card now surfaces only what's been eaten; planned/weekly live behind
+    // the Details sheet, and "Left" is gone entirely.
     expect(find.byKey(const ValueKey('nutrition_diary.daily_total_card')),
         findsOneWidget);
+    expect(find.text('Eaten today'), findsOneWidget);
+    expect(find.text('Calories'), findsOneWidget);
+    expect(find.text('Left'), findsNothing);
   });
 
   testWidgets('re-integrates the Jade banner and Today\'s Log section',

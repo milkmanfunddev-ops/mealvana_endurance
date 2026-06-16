@@ -13,8 +13,10 @@ import '../../../meal_logging/domain/consumed_totals.dart';
 import '../../../meal_logging/domain/meal_log.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../domain/daily_macro_targets.dart';
+import '../providers/daily_macros_controller.dart';
 import 'energy_source_breakdown.dart';
 import 'macro_palette.dart';
+import 'weekly_overview_chart.dart';
 
 // Canonical macro colours live in macro_palette.dart. Re-exported here so the
 // long-standing `today_hero_card.dart show kMacroColor*` imports keep working.
@@ -59,15 +61,17 @@ void showMacroDetailSheet(
 // Sheet tab enum
 // ---------------------------------------------------------------------------
 
-enum _DetailTab { eaten, plan }
+enum _DetailTab { planned, eaten, weekly }
 
 extension _DetailTabLabel on _DetailTab {
   String get label {
     switch (this) {
+      case _DetailTab.planned:
+        return 'Planned';
       case _DetailTab.eaten:
         return 'Eaten';
-      case _DetailTab.plan:
-        return 'Plan';
+      case _DetailTab.weekly:
+        return 'Weekly';
     }
   }
 }
@@ -166,20 +170,22 @@ class _MacroDetailSheetContentState
                   controller: scrollController,
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.lg),
-                  child: _activeTab == _DetailTab.eaten
-                      ? _EatenTabBody(
-                          macros: widget.macros,
-                          consumed: widget.consumed,
-                          logsAsync: logsAsync,
-                          textColor: textColor,
-                          isDark: isDark,
-                        )
-                      : _PlanTabBody(
-                          macros: widget.macros,
-                          showAttribution: widget.showAttribution,
-                          textColor: textColor,
-                          isDark: isDark,
-                        ),
+                  child: switch (_activeTab) {
+                    _DetailTab.planned => _PlanTabBody(
+                        macros: widget.macros,
+                        showAttribution: widget.showAttribution,
+                        textColor: textColor,
+                        isDark: isDark,
+                      ),
+                    _DetailTab.eaten => _EatenTabBody(
+                        macros: widget.macros,
+                        consumed: widget.consumed,
+                        logsAsync: logsAsync,
+                        textColor: textColor,
+                        isDark: isDark,
+                      ),
+                    _DetailTab.weekly => _WeeklyTabBody(textColor: textColor),
+                  },
                 ),
               ),
             ],
@@ -588,6 +594,42 @@ class _PlanTabBody extends StatelessWidget {
         ],
         const SizedBox(height: AppSpacing.xl),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Weekly tab body — hosts the 7-day overview chart
+// ---------------------------------------------------------------------------
+
+class _WeeklyTabBody extends ConsumerWidget {
+  const _WeeklyTabBody({required this.textColor});
+
+  final Color textColor;
+
+  /// Sunday-start week containing [date] (matches calendar_week_view_kyle.dart).
+  static DateTime _startOfWeek(DateTime date) {
+    final d = DateTime(date.year, date.month, date.day);
+    return d.subtract(Duration(days: d.weekday % 7));
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final macrosAsync = ref.watch(dailyMacrosControllerProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: macrosAsync.maybeWhen(
+        data: (state) => WeeklyOverviewChart(
+          weeklyMacros: state.weeklyMacros,
+          startOfWeek: _startOfWeek(state.selectedDate),
+          initiallyExpanded: true,
+        ),
+        orElse: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
     );
   }
 }

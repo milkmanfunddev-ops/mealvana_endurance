@@ -14,7 +14,6 @@ import '../../../jade/presentation/widgets/jade_coach_banner.dart';
 import '../../../meal_logging/presentation/widgets/today_log_section.dart';
 import '../providers/daily_macros_controller.dart';
 import '../widgets/daily_summary_card.dart';
-import '../widgets/weekly_overview_chart.dart';
 
 class DailyMacrosScreen extends ConsumerWidget {
   const DailyMacrosScreen({super.key});
@@ -95,16 +94,10 @@ class DailyMacrosScreen extends ConsumerWidget {
             DailySummaryCard(macros: state.dailyMacros!),
             const SizedBox(height: AppSpacing.lg),
 
-            // Meal log for the selected day — promoted above the weekly chart
-            // because logging/reviewing today is the page's primary job.
+            // Meal log for the selected day — the page's primary job. The
+            // weekly overview now lives behind the daily card's Details sheet
+            // (Weekly tab), so the day's log stays front-and-centre here.
             TodayLogSection(selectedDate: state.selectedDate),
-            const SizedBox(height: AppSpacing.lg),
-
-            // Weekly overview chart (collapsed by default — a "zoom out").
-            WeeklyOverviewChart(
-              weeklyMacros: state.weeklyMacros,
-              startOfWeek: _getStartOfWeek(state.selectedDate),
-            ),
           ] else if (state.calculationError != null) ...[
             _buildCalculationErrorState(context, ref, state.calculationError!),
           ] else ...[
@@ -238,14 +231,5 @@ class DailyMacrosScreen extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  DateTime _getStartOfWeek(DateTime date) {
-    // Sunday-start (matches calendar_week_view_kyle.dart)
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-    ).subtract(Duration(days: date.weekday % 7));
   }
 }
