@@ -19,17 +19,25 @@ import '../../domain/coach_insight.dart';
 ///   - insight (current)   → guidance text
 ///   - insight (outdated)  → dimmed guidance + "Outdated — refresh"
 class CoachInsightPanel extends ConsumerWidget {
-  const CoachInsightPanel({super.key, required this.insightContext});
+  const CoachInsightPanel({
+    super.key,
+    required this.insightContext,
+    required this.formulaId,
+  });
 
   /// The live draft context. Its [CoachInsightContext.staleMarker] determines
   /// whether a previously fetched insight is still current.
   final CoachInsightContext insightContext;
 
+  /// The formula id for the family provider (null for new formulas).
+  final String? formulaId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    final async = ref.watch(coachInsightControllerProvider);
-    final notifier = ref.read(coachInsightControllerProvider.notifier);
+    final async = ref.watch(coachInsightControllerProvider(formulaId));
+    final notifier =
+        ref.read(coachInsightControllerProvider(formulaId).notifier);
 
     final liveMarker = insightContext.staleMarker;
     final insight = async.value;

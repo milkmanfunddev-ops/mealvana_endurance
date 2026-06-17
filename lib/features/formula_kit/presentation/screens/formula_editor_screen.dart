@@ -190,6 +190,7 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                       const SizedBox(height: AppSpacing.lg),
                       CoachInsightPanel(
                         insightContext: _insightContextFor(draft),
+                        formulaId: widget.formulaId,
                       ),
                     ],
                     const SizedBox(height: AppSpacing.lg),

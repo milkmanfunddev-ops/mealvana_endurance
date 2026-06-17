@@ -8,6 +8,7 @@ import '../data/personal_formulas_repository.dart';
 import '../domain/formula_macros.dart';
 import '../domain/formula_phase.dart';
 import '../domain/personal_formula.dart';
+import 'coach_insight_controller.dart';
 import 'personal_formulas_controller.dart';
 
 part 'formula_editor_controller.g.dart';
@@ -216,6 +217,9 @@ class FormulaEditorController extends _$FormulaEditorController {
     final now = DateTime.now();
     final original = draft.original;
 
+    final currentInsight =
+        ref.read(coachInsightControllerProvider(formulaId)).valueOrNull;
+
     final formula = PersonalFormula(
       id: original?.id ?? '',
       userId: userId,
@@ -232,6 +236,9 @@ class FormulaEditorController extends _$FormulaEditorController {
       travelFriendliness: draft.travelFriendliness,
       components: draft.components,
       notes: draft.notes,
+      coachInsightText: currentInsight?.insight ?? original?.coachInsightText,
+      coachInsightMarker:
+          currentInsight?.staleMarker ?? original?.coachInsightMarker,
       totalCarbsG: totals.carbsG,
       totalProteinG: totals.proteinG,
       totalFatG: totals.fatG,

@@ -63,6 +63,8 @@ class PersonalFormula {
     this.travelFriendliness,
     this.components = const [],
     this.notes,
+    this.coachInsightText,
+    this.coachInsightMarker,
     this.totalCarbsG,
     this.totalProteinG,
     this.totalFatG,
@@ -98,6 +100,13 @@ class PersonalFormula {
   final List<Map<String, dynamic>> components;
 
   final String? notes;
+
+  /// Persisted coach AI insight text (persist-unless-edited).
+  final String? coachInsightText;
+
+  /// FNV-1a hash of the draft state when the insight was generated.
+  final String? coachInsightMarker;
+
   final int? totalCarbsG;
   final int? totalProteinG;
   final int? totalFatG;
@@ -143,6 +152,8 @@ class PersonalFormula {
       travelFriendliness: entry.travelFriendliness,
       components: _decodeComponents(entry.components),
       notes: entry.notes,
+      coachInsightText: entry.coachInsightText,
+      coachInsightMarker: entry.coachInsightMarker,
       totalCarbsG: entry.totalCarbsG,
       totalProteinG: entry.totalProteinG,
       totalFatG: entry.totalFatG,
@@ -174,6 +185,8 @@ class PersonalFormula {
       travelFriendliness: Value(travelFriendliness),
       components: Value(jsonEncode(components)),
       notes: Value(notes),
+      coachInsightText: Value(coachInsightText),
+      coachInsightMarker: Value(coachInsightMarker),
       totalCarbsG: Value(totalCarbsG),
       totalProteinG: Value(totalProteinG),
       totalFatG: Value(totalFatG),
@@ -209,6 +222,8 @@ class PersonalFormula {
       'travel_friendliness': travelFriendliness,
       'components': components,
       'notes': notes,
+      'coach_insight_text': coachInsightText,
+      'coach_insight_marker': coachInsightMarker,
       'total_carbs_g': totalCarbsG,
       'total_protein_g': totalProteinG,
       'total_fat_g': totalFatG,
@@ -249,6 +264,8 @@ class PersonalFormula {
       travelFriendliness: json['travel_friendliness'] as String?,
       components: _coerceComponents(json['components']),
       notes: json['notes'] as String?,
+      coachInsightText: json['coach_insight_text'] as String?,
+      coachInsightMarker: json['coach_insight_marker'] as String?,
       totalCarbsG: (json['total_carbs_g'] as num?)?.toInt(),
       totalProteinG: (json['total_protein_g'] as num?)?.toInt(),
       totalFatG: (json['total_fat_g'] as num?)?.toInt(),
@@ -260,6 +277,8 @@ class PersonalFormula {
       isDeleted: json['is_deleted'] as bool? ?? false,
     );
   }
+
+  static const _sentinel = Object();
 
   PersonalFormula copyWith({
     String? id,
@@ -277,6 +296,8 @@ class PersonalFormula {
     String? travelFriendliness,
     List<Map<String, dynamic>>? components,
     String? notes,
+    Object? coachInsightText = _sentinel,
+    Object? coachInsightMarker = _sentinel,
     int? totalCarbsG,
     int? totalProteinG,
     int? totalFatG,
@@ -305,6 +326,12 @@ class PersonalFormula {
       travelFriendliness: travelFriendliness ?? this.travelFriendliness,
       components: components ?? this.components,
       notes: notes ?? this.notes,
+      coachInsightText: coachInsightText == _sentinel
+          ? this.coachInsightText
+          : coachInsightText as String?,
+      coachInsightMarker: coachInsightMarker == _sentinel
+          ? this.coachInsightMarker
+          : coachInsightMarker as String?,
       totalCarbsG: totalCarbsG ?? this.totalCarbsG,
       totalProteinG: totalProteinG ?? this.totalProteinG,
       totalFatG: totalFatG ?? this.totalFatG,

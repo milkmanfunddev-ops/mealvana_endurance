@@ -57,6 +57,12 @@ class PersonalFormulasTable extends Table {
 
   TextColumn get notes => text().nullable()();
 
+  // Coach AI insight persistence (persist-unless-edited).
+  TextColumn get coachInsightText =>
+      text().nullable().named('coach_insight_text')();
+  TextColumn get coachInsightMarker =>
+      text().nullable().named('coach_insight_marker')();
+
   // Denormalized macro totals for list/detail display.
   IntColumn get totalCarbsG => integer().nullable().named('total_carbs_g')();
   IntColumn get totalProteinG =>

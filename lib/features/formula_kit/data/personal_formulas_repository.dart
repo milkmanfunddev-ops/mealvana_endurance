@@ -456,6 +456,23 @@ class PersonalFormulasRepository with SyncableRepository {
     _scheduleImmediateUpload(tombstone, label: 'delete');
   }
 
+  /// Persist a coach insight to the formula's row without a full formula
+  /// rewrite. Marks the row dirty so the next sync uploads it to Supabase.
+  Future<void> persistInsight({
+    required String formulaId,
+    required String insightText,
+    required String marker,
+  }) async {
+    await (_database.update(_database.personalFormulasTable)
+          ..where((tbl) => tbl.id.equals(formulaId)))
+        .write(PersonalFormulasTableCompanion(
+      coachInsightText: Value(insightText),
+      coachInsightMarker: Value(marker),
+      needsUpload: const Value(true),
+      localUpdatedAt: Value(DateTime.now()),
+    ));
+  }
+
   // ========================================================================
   // Private Helpers
   // ========================================================================
