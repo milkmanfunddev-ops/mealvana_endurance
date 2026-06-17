@@ -21,6 +21,7 @@ class JadeChatState {
     this.messages = const [],
     this.isStreaming = false,
     this.errorMessage,
+    this.hasHistory = false,
   });
 
   /// The current conversation UUID, or null when no conversation has been
@@ -40,11 +41,18 @@ class JadeChatState {
   /// screen (the controller sets this, the screen consumes and clears it).
   final String? errorMessage;
 
+  /// True when `build()` found at least one prior conversation in the DB.
+  /// The screen uses this to distinguish "still loading" from "genuinely new
+  /// user with no conversations" so the proactive opener only fires for the
+  /// latter.
+  final bool hasHistory;
+
   JadeChatState copyWith({
     String? conversationId,
     List<JadeMessage>? messages,
     bool? isStreaming,
     String? errorMessage,
+    bool? hasHistory,
     bool clearError = false,
     bool clearConversationId = false,
   }) {
@@ -54,6 +62,7 @@ class JadeChatState {
       messages: messages ?? this.messages,
       isStreaming: isStreaming ?? this.isStreaming,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      hasHistory: hasHistory ?? this.hasHistory,
     );
   }
 }
@@ -69,14 +78,24 @@ class JadeChatController extends _$JadeChatController {
   AppLogger get _logger => ref.read(appLoggerProvider);
 
   @override
-  FutureOr<JadeChatState> build() {
-    // Open fresh every time so Jade greets proactively — the screen calls
-    // [loadOpener] on this empty state. We intentionally do NOT auto-resume the
-    // most-recent conversation: returning users were landing back inside an old
-    // thread (e.g. one whose first message was a tapped "What should I eat
-    // before tomorrow's workout?" prompt) instead of getting a contextual
-    // hello. Past conversations remain in the DB (jade_conversations) for a
-    // future "history" affordance; resuming is no longer the default.
+  FutureOr<JadeChatState> build() async {
+    try {
+      final conversations = await _repository.fetchConversations();
+      if (conversations.isNotEmpty) {
+        final latest = conversations.first;
+        final messages = await _repository.fetchMessages(latest.id);
+        return JadeChatState(
+          conversationId: latest.id,
+          messages: messages,
+          hasHistory: true,
+        );
+      }
+    } catch (e) {
+      _logger.error(
+        'JadeChatController.build: failed to resume conversation',
+        error: e,
+      );
+    }
     return const JadeChatState();
   }
 
