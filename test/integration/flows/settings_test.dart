@@ -11,8 +11,6 @@ import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart'
-    show GutTrainingLevel;
 
 import '../../helpers/fakes/recording_analytics_tracker.dart';
 import '../../helpers/fakes/recording_sentry_reporter.dart';
@@ -109,25 +107,27 @@ void main() {
         ),
       );
 
-      final updatedProfile = await database.userDao.getCurrentUserProfile();
+      final updatedProfile = await (database.select(database.userProfilesTable)
+            ..where((t) => t.id.equals(userId)))
+          .getSingle();
 
-      logTestResult('weight_pounds', updatedProfile?.weightPounds);
-      logTestResult('runs_with_water_bottle', updatedProfile?.runsWithWaterBottle);
+      logTestResult('weight_pounds', updatedProfile.weightPounds);
+      logTestResult('runs_with_water_bottle', updatedProfile.runsWithWaterBottle);
 
       logAssertion(
         'Weight updated',
-        passed: updatedProfile?.weightPounds == 175.0,
+        passed: updatedProfile.weightPounds == 175.0,
         reason: 'Profile weight should be updatable',
       );
 
       logAssertion(
         'Water bottle preference updated',
-        passed: updatedProfile?.runsWithWaterBottle == true,
+        passed: updatedProfile.runsWithWaterBottle == true,
         reason: 'Water bottle preference should be updatable',
       );
 
-      expect(updatedProfile?.weightPounds, equals(175.0));
-      expect(updatedProfile?.runsWithWaterBottle, isTrue);
+      expect(updatedProfile.weightPounds, equals(175.0));
+      expect(updatedProfile.runsWithWaterBottle, isTrue);
 
       logTestPass('Profile updated successfully');
     });
@@ -178,10 +178,12 @@ void main() {
         ),
       );
 
-      var profile = await database.userDao.getCurrentUserProfile();
-      logTestResult('gut_training_level', profile?.gutTrainingLevel);
+      var profile = await (database.select(database.userProfilesTable)
+            ..where((t) => t.id.equals(userId)))
+          .getSingle();
+      logTestResult('gut_training_level', profile.gutTrainingLevel);
 
-      expect(profile?.gutTrainingLevel, equals(GutTrainingLevel.moderate));
+      expect(profile.gutTrainingLevel, equals('moderate'));
 
       logSection('Updating to high');
 
@@ -195,16 +197,18 @@ void main() {
         ),
       );
 
-      profile = await database.userDao.getCurrentUserProfile();
-      logTestResult('gut_training_level', profile?.gutTrainingLevel);
+      profile = await (database.select(database.userProfilesTable)
+            ..where((t) => t.id.equals(userId)))
+          .getSingle();
+      logTestResult('gut_training_level', profile.gutTrainingLevel);
 
       logAssertion(
         'Gut training level updated to high',
-        passed: profile?.gutTrainingLevel == GutTrainingLevel.high,
+        passed: profile.gutTrainingLevel == 'high',
         reason: 'Users should be able to progress gut training levels',
       );
 
-      expect(profile?.gutTrainingLevel, equals(GutTrainingLevel.high));
+      expect(profile.gutTrainingLevel, equals('high'));
 
       logTestPass('Gut training level progression verified');
     });
@@ -232,7 +236,7 @@ void main() {
               gutTrainingLevel: const Value('moderate'),
               onboardingCompleted: const Value(true),
               preferredDistanceUnit: const Value('miles'),
-              preferredPaceUnit: const Value('min_per_mile'),
+              preferredPaceUnit: const Value('minPerMile'),
               appVersion: const Value('1.0.0'),
               createdAt: Value(DateTime.now()),
               updatedAt: Value(DateTime.now()),
@@ -242,9 +246,9 @@ void main() {
       logTestSetup({
         'user_id': userId,
         'initial_distance_unit': 'miles',
-        'initial_pace_unit': 'min_per_mile',
+        'initial_pace_unit': 'minPerMile',
         'updated_distance_unit': 'kilometers',
-        'updated_pace_unit': 'min_per_km',
+        'updated_pace_unit': 'minPerKm',
       });
 
       logSection('Updating to metric units');
@@ -255,7 +259,7 @@ void main() {
           .write(
         UserProfilesTableCompanion(
           preferredDistanceUnit: const Value('kilometers'),
-          preferredPaceUnit: const Value('min_per_km'),
+          preferredPaceUnit: const Value('minPerKm'),
           updatedAt: Value(DateTime.now()),
         ),
       );
@@ -275,13 +279,13 @@ void main() {
       );
 
       logAssertion(
-        'Pace unit updated to min_per_km',
-        passed: profile.preferredPaceUnit == 'min_per_km',
+        'Pace unit updated to minPerKm',
+        passed: profile.preferredPaceUnit == 'minPerKm',
         reason: 'Pace unit should match distance unit',
       );
 
       expect(profile.preferredDistanceUnit, equals('kilometers'));
-      expect(profile.preferredPaceUnit, equals('min_per_km'));
+      expect(profile.preferredPaceUnit, equals('minPerKm'));
 
       logTestPass('Unit preferences updated successfully');
     });
@@ -525,7 +529,7 @@ void main() {
           weightPounds: const Value(180.0),
           gutTrainingLevel: const Value('moderate'),
           preferredDistanceUnit: const Value('kilometers'),
-          preferredPaceUnit: const Value('min_per_km'),
+          preferredPaceUnit: const Value('minPerKm'),
           notificationsEnabled: const Value(true),
           runsWithWaterBottle: const Value(true),
           updatedAt: Value(DateTime.now()),
@@ -556,7 +560,7 @@ void main() {
       expect(profile.weightPounds, equals(180.0));
       expect(profile.gutTrainingLevel, equals('moderate'));
       expect(profile.preferredDistanceUnit, equals('kilometers'));
-      expect(profile.preferredPaceUnit, equals('min_per_km'));
+      expect(profile.preferredPaceUnit, equals('minPerKm'));
       expect(profile.notificationsEnabled, isTrue);
       expect(profile.runsWithWaterBottle, isTrue);
 

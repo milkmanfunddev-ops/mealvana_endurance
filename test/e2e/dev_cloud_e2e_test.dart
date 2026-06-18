@@ -4,7 +4,8 @@
 /// IMPORTANT: These tests run against the actual dev Supabase instance
 /// and make real network calls. They should be run sparingly.
 ///
-/// Run with: flutter test test/e2e/dev_cloud_e2e_test.dart
+/// Run with: flutter test test/e2e/dev_cloud_e2e_test.dart --tags e2e
+@Tags(['e2e'])
 library;
 
 import 'dart:convert';

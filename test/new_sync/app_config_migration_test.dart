@@ -5,7 +5,7 @@ void main() {
   group('app_config migration', () {
     test('migration file exists', () {
       final migrationFile = File(
-        'supabase/migrations/20260118_create_app_config_table.sql',
+        'supabase/migrations/_archived/20260118_create_app_config_table.sql',
       );
       expect(migrationFile.existsSync(), isTrue,
           reason: 'Migration file should exist');
@@ -13,7 +13,7 @@ void main() {
 
     test('migration contains required SQL statements', () {
       final migrationFile = File(
-        'supabase/migrations/20260118_create_app_config_table.sql',
+        'supabase/migrations/_archived/20260118_create_app_config_table.sql',
       );
       final content = migrationFile.readAsStringSync();
 
@@ -47,7 +47,7 @@ void main() {
 
     test('migration has valid initial values', () {
       final migrationFile = File(
-        'supabase/migrations/20260118_create_app_config_table.sql',
+        'supabase/migrations/_archived/20260118_create_app_config_table.sql',
       );
       final content = migrationFile.readAsStringSync();
 
@@ -62,7 +62,7 @@ void main() {
 
     test('migration uses best practices', () {
       final migrationFile = File(
-        'supabase/migrations/20260118_create_app_config_table.sql',
+        'supabase/migrations/_archived/20260118_create_app_config_table.sql',
       );
       final content = migrationFile.readAsStringSync();
 

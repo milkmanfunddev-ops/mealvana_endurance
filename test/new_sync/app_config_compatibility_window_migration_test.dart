@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('app_config compatibility window migration', () {
     const migrationPath =
-        'supabase/migrations/20260310153000_add_schema_compatibility_window_config.sql';
+        'supabase/migrations/_archived/20260310153000_add_schema_compatibility_window_config.sql';
 
     test('migration file exists', () {
       final migrationFile = File(migrationPath);

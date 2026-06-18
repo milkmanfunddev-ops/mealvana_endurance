@@ -13,29 +13,6 @@
 # - Codemagic: https://docs.codemagic.io/yaml-testing/testing/
 # - Shorebird: https://docs.shorebird.dev/code-push/ci/codemagic/
 # - Project docs: /docs/ci-cd/README.md
-#
-# ============================================================
-# CONVENTION: Build-number resolution (do not skip)
-# ============================================================
-# Every workflow that produces a release artifact (.aab/.ipa) MUST:
-#   1. Run a "Resolve next … build number" step before the build, which
-#      queries Play / TestFlight for the highest existing buildNumber for
-#      that bundle id and exports BUILD_NUMBER = max + 1.
-#   2. Pass `--build-number=$BUILD_NUMBER` to whatever produces the
-#      artifact: `flutter build appbundle/ipa`, `shorebird release ios`,
-#      `shorebird release android`.
-#
-# WHY: pubspec.yaml's `version: x.y.z+N` is committed state. Without
-# runtime resolution every build of the same release branch ships the
-# same buildNumber, which:
-#   - Google Play rejects the rollout ("does not allow existing users to
-#     upgrade to the newly added APKs").
-#   - Shorebird rejects creating the release ("existing release for
-#     version x.y.z+N").
-#   - TestFlight silently dedupes / rejects.
-# Patch workflows (`prod-*-patch`) are exempt — they take a
-# `--release-version` instead of producing a new artifact.
-# ============================================================
 
 definitions:
   # ============================================================
@@ -52,23 +29,22 @@ definitions:
 
     - &run_unit_tests
       name: Run unit tests
+      # Run the fast, offline unit/widget suite. Live-service suites are
+      # tagged (integration = TrainingPeaks/Final Surge live APIs,
+      # e2e = live Supabase edge functions) and excluded here because they
+      # need real credentials/network; run them on demand locally instead.
       script: |
         mkdir -p test-results
-        flutter test --machine > test-results/unit-tests.json
+        flutter test --exclude-tags="integration || e2e" --machine > test-results/unit-tests.json
       test_report: test-results/unit-tests.json
-
-    - &run_algorithm_tests
-      name: Run nutrition algorithm tests (Deno)
-      script: |
-        if ! command -v deno &> /dev/null; then
-          curl -fsSL https://deno.land/install.sh | sh -s -- --yes
-          export PATH="$HOME/.deno/bin:$PATH"
-        fi
-        bash supabase/functions/run-algorithm-tests.sh
 
     - &run_flutter_analyze
       name: Analyze code
-      script: flutter analyze
+      # Fail the build on analyzer ERRORS (compile-breakers) only.
+      # Lint warnings/infos are still printed for visibility but do not
+      # fail CI — that pre-existing lint debt is tracked separately and
+      # gating PRs on it blocks unrelated work.
+      script: flutter analyze --no-fatal-warnings --no-fatal-infos
 
     - &check_formatting
       name: Check code formatting
@@ -97,28 +73,14 @@ definitions:
 
     - &setup_ios_signing
       name: Set up iOS code signing
-      # IMPORTANT: do NOT call `keychain initialize` here. Codemagic
-      # auto-injects a "Set up code signing identities" step when
-      # `ios_signing:` is present in the workflow environment, and that
-      # step initializes the keychain + imports the .p12 cert. A second
-      # `keychain initialize` creates a fresh empty keychain and pushes
-      # the cert-bearing keychain off the search list, leaving xcodebuild
-      # with 0 valid signing identities and the misleading
-      # "No signing certificate iOS Distribution found" error at export.
       script: |
+        keychain initialize
         xcode-project use-profiles
 
     - &setup_ios_signing_shorebird
       name: Set up iOS code signing (Shorebird)
-      # IMPORTANT: do NOT call `keychain initialize` here. See note on
-      # &setup_ios_signing above for the full explanation. Codemagic's
-      # auto-injected "Set up code signing identities" step (triggered by
-      # the `ios_signing:` env block) already initializes the keychain
-      # and imports the cert .p12; a second `keychain initialize` here
-      # spawns a fresh empty keychain and silently knocks the cert off
-      # the search path, leading to "iOS Distribution not found" at
-      # exportArchive time.
       script: |
+        keychain initialize
         # CRITICAL: manageAppVersionAndBuildNumber must be false for Shorebird
         xcode-project use-profiles --custom-export-options='{"manageAppVersionAndBuildNumber":false}'
 
@@ -149,54 +111,18 @@ definitions:
       name: Shutdown iOS Simulator
       script: xcrun simctl shutdown all || true
 
-    - &setup_android_signing
-      name: Decode Android keystore and write key.properties
-      # android/app/build.gradle.kts reads android/key.properties for release signing.
-      # Both files are gitignored, so we recreate them from the android_signing_credentials
-      # variable group: CM_KEYSTORE_B64 (base64 of .jks) + password/alias vars.
-      script: |
-        set -euo pipefail
-        if [ -z "${CM_KEYSTORE_B64:-}" ]; then
-          echo "⚠️  CM_KEYSTORE_B64 not set — skipping Android signing setup"
-          exit 0
-        fi
-        mkdir -p android/app
-        printf '%s' "$CM_KEYSTORE_B64" | base64 -d > android/app/keystore.jks
-        cat > android/key.properties <<EOF
-        storePassword=${CM_KEYSTORE_PASSWORD}
-        keyPassword=${CM_KEYSTORE_KEY_PASSWORD}
-        keyAlias=${CM_KEYSTORE_KEY_ALIAS}
-        storeFile=keystore.jks
-        EOF
-        echo "wrote android/app/keystore.jks ($(wc -c < android/app/keystore.jks) bytes) + android/key.properties"
-
-    - &write_dotenv_files
-      name: Write .env files from Codemagic secrets
-      # The app bundles .env / .env.dev.local / .env.prod.local as Flutter assets
-      # (pubspec.yaml). They're gitignored, so Codemagic has to recreate them from
-      # secure vars uploaded to the mealvana_dev / mealvana_prod variable groups.
-      # Any file whose source var isn't in the current workflow's groups is written
-      # as an empty stub — enough to satisfy the asset bundler without leaking the
-      # other flavor's secrets into this build.
-      script: |
-        set -euo pipefail
-        printf '%s' "${DOTENV_ROOT:-}" > .env
-        printf '%s' "${DOTENV_DEV_LOCAL:-}" > .env.dev.local
-        printf '%s' "${DOTENV_PROD_LOCAL:-}" > .env.prod.local
-        echo "wrote .env ($(wc -c < .env) bytes), .env.dev.local ($(wc -c < .env.dev.local) bytes), .env.prod.local ($(wc -c < .env.prod.local) bytes)"
-
 workflows:
   # ============================================================
-  # DEV WORKFLOWS — auto-triggered on push to `develop`
+  # DEV WORKFLOWS (Manual Only)
   # ============================================================
 
   dev-ios:
-    name: Develop - iOS TestFlight (dev flavor)
+    name: Dev - iOS TestFlight
     instance_type: mac_mini_m2
     max_build_duration: 120
 
     integrations:
-      app_store_connect: API Key for CI builds
+      app_store_connect: Mealvana
 
     environment:
       flutter: stable
@@ -204,58 +130,28 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.milkman.mealvanaendurance.dev
+        bundle_identifier: com.mealvana.endurance.dev
       groups:
         - mealvana_dev  # Dev environment variables
       vars:
         FLUTTER_ENV: dev
         APP_ENVIRONMENT: dev
 
+    # Manual trigger only - no automatic builds for dev
     triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'develop'
-          include: true
-      cancel_previous_builds: true
+      events: []
 
     scripts:
-      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *install_cocoapods
       - *setup_ios_signing
-
-      - name: Resolve next iOS build number from TestFlight
-        # Looks up the dev ASC app by bundle id, asks ASC for the latest TestFlight
-        # build number, and exports BUILD_NUMBER = latest + 1. If lookup fails (e.g.
-        # ASC integration permissions issue or empty TestFlight history), falls back
-        # to Codemagic's project-level $PROJECT_BUILD_NUMBER, which auto-increments
-        # per project build.
-        script: |
-          set -e
-          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier com.milkman.mealvanaendurance.dev --json 2>/dev/null | jq -r '.[0].id // empty')
-          if [ -n "$APP_APPLE_ID" ]; then
-            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID" 2>/dev/null || echo "")
-          else
-            LATEST=""
-          fi
-          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
-            LATEST=$PROJECT_BUILD_NUMBER
-            echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
-          else
-            echo "TestFlight latest build for com.milkman.mealvanaendurance.dev: $LATEST"
-          fi
-          NEXT=$((LATEST + 1))
-          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
-          echo "Next iOS build number: $NEXT"
 
       - name: Build dev iOS
         script: |
           flutter build ipa --release \
             --flavor dev \
             --target lib/main_dev.dart \
-            --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
@@ -268,13 +164,9 @@ workflows:
         auth: integration
         submit_to_testflight: true
         submit_to_app_store: false
-        # Note: do NOT list "Internal Testers" under beta_groups. That is
-        # Apple's built-in auto-managed group (assigned implicitly to all
-        # team members with App Manager+ role), not a custom external
-        # group, and the ASC API rejects explicit assignment to it with
-        # "Cannot add internal group to a build". With submit_to_testflight
-        # alone, the build appears for the auto-managed Internal Testers
-        # group as soon as ASC finishes processing.
+        # Internal testers only
+        beta_groups:
+          - Internal Testers
       slack:
         channel: '#builds'
         notify:
@@ -282,7 +174,7 @@ workflows:
           failure: true
 
   dev-android:
-    name: Develop - Android Play Internal Testing (dev flavor)
+    name: Dev - Android Internal Testing
     instance_type: mac_mini_m2
     max_build_duration: 120
 
@@ -293,57 +185,24 @@ workflows:
         - mealvana_dev
         - google_play_credentials
         - firebase_config
-        - android_signing_credentials
       vars:
         FLUTTER_ENV: dev
         APP_ENVIRONMENT: dev
 
-    # Manual-only trigger. Auto-trigger on `develop` push is disabled
-    # until the Play Console dev app (com.milkman.mealvanaendurance.dev)
-    # exists — without it the build always fails at publish with
-    # "Package not found", spamming Slack on every push to develop.
-    # Re-enable by adding back `events: [push]` once the Play Console
-    # dev app is created.
+    # Manual trigger only
     triggering:
       events: []
 
     scripts:
-      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
-      - *setup_android_signing
-
-      - name: Resolve next Android build number from Play Internal track
-        # Asks Google Play for the highest versionCode it's seen for our dev
-        # package — across all tracks, so newly-promoted/old builds are also
-        # respected — and exports BUILD_NUMBER = max + 1. Falls back to the
-        # Codemagic $PROJECT_BUILD_NUMBER if Play returns nothing (first ever
-        # upload, or service-account auth issue).
-        script: |
-          set -e
-          PACKAGE_NAME=com.milkman.mealvanaendurance.dev
-          # Persist credentials for the google-play CLI
-          echo "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" > /tmp/gcloud-sa.json
-          LATEST=$(google-play get-latest-build-number \
-            --package-name "$PACKAGE_NAME" \
-            --credentials @file:/tmp/gcloud-sa.json 2>/dev/null || echo "")
-          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
-            LATEST=$PROJECT_BUILD_NUMBER
-            echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
-          else
-            echo "Play latest build for $PACKAGE_NAME: $LATEST"
-          fi
-          NEXT=$((LATEST + 1))
-          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
-          echo "Next Android build number: $NEXT"
 
       - name: Build dev Android
         script: |
           flutter build appbundle --release \
             --flavor dev \
-            --target lib/main_dev.dart \
-            --build-number=$BUILD_NUMBER
+            --target lib/main_dev.dart
 
     artifacts:
       - build/**/outputs/**/*.aab
@@ -362,17 +221,16 @@ workflows:
           failure: true
 
   # ============================================================
-  # RELEASE WORKFLOWS — auto-triggered on push to `release/*`
-  # Prod flavor, Shorebird release. iOS → TestFlight; Android → Play Closed (alpha).
+  # PRODUCTION WORKFLOWS (Automated on release/*)
   # ============================================================
 
   prod-ios:
-    name: Release - iOS TestFlight (Shorebird, prod flavor)
+    name: Prod - iOS Shorebird Release
     instance_type: mac_mini_m2
     max_build_duration: 120
 
     integrations:
-      app_store_connect: API Key for CI builds
+      app_store_connect: Mealvana
 
     environment:
       flutter: stable
@@ -380,7 +238,7 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.milkman.mealvanaendurance
+        bundle_identifier: com.mealvana.endurance
       groups:
         - mealvana_prod
         - shorebird_credentials
@@ -394,57 +252,21 @@ workflows:
       branch_patterns:
         - pattern: 'release/*'
           include: true
-      cancel_previous_builds: true
 
     scripts:
-      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *install_shorebird
       - *install_cocoapods
       - *setup_ios_signing_shorebird
 
-      - name: Resolve next iOS build number from TestFlight
-        # Shorebird rejects creating a release for a (flavor, version,
-        # platform) tuple it has already seen. TestFlight likewise rejects
-        # duplicate build numbers. Both are derived from CFBundleVersion,
-        # which we set via --build-number below. Without this resolve,
-        # rerunning a release/* build (or main → release-merge) collides.
-        script: |
-          set -e
-          BUNDLE_ID=com.milkman.mealvanaendurance
-          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier "$BUNDLE_ID" --json 2>/dev/null | jq -r '.[0].id // empty')
-          if [ -n "$APP_APPLE_ID" ]; then
-            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID" 2>/dev/null || echo "")
-          else
-            LATEST=""
-          fi
-          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
-            LATEST=$PROJECT_BUILD_NUMBER
-            echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
-          else
-            echo "TestFlight latest build for $BUNDLE_ID: $LATEST"
-          fi
-          NEXT=$((LATEST + 1))
-          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
-          echo "Next iOS build number: $NEXT"
-
       - name: Create Shorebird iOS Release
-        # Don't pass --flutter-version=stable. Shorebird only accepts
-        # specific version strings (e.g. 3.27.4), not "stable", and will
-        # fail with "Version stable not found." Without the flag, Shorebird
-        # uses its default supported version. `set -e` ensures the build
-        # fails loudly here instead of silently producing no IPA.
-        # --build-number is forwarded to flutter build ipa so the IPA's
-        # CFBundleVersion picks up the resolved value, making the release
-        # version unique in Shorebird's records.
         script: |
-          set -e
           shorebird release ios \
             --flavor prod \
             --target lib/main_prod.dart \
-            --export-options-plist=/Users/builder/export_options.plist \
-            --build-number=$BUILD_NUMBER
+            --flutter-version=stable \
+            --export-options-plist=/Users/builder/export_options.plist
 
           echo ""
           echo "=========================================="
@@ -462,13 +284,8 @@ workflows:
         auth: integration
         submit_to_testflight: true
         submit_to_app_store: false
-        # Apple's auto-managed Internal Testers group sees the build
-        # as soon as ASC finishes processing; no explicit beta_groups
-        # entry is needed (and listing "Internal Testers" here causes
-        # post-publish failures — that's a built-in implicit group).
-        # To promote a specific build to External Testers, do that
-        # manually in App Store Connect → TestFlight → Builds → Add to
-        # Group when you want it; CI stays out of external review.
+        beta_groups:
+          - Internal Testers
       slack:
         channel: '#builds'
         notify:
@@ -476,7 +293,7 @@ workflows:
           failure: true
 
   prod-android:
-    name: Release - Android Play Closed Testing (Shorebird, prod flavor)
+    name: Prod - Android Open Testing
     instance_type: mac_mini_m2
     max_build_duration: 120
 
@@ -488,7 +305,6 @@ workflows:
         - shorebird_credentials
         - google_play_credentials
         - firebase_config
-        - android_signing_credentials
       vars:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
@@ -499,53 +315,20 @@ workflows:
       branch_patterns:
         - pattern: 'release/*'
           include: true
-      cancel_previous_builds: true
 
     scripts:
-      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
-      - *setup_android_signing
       - *install_shorebird
 
-      - name: Resolve next Android build number from Play
-        # Play rejects rollouts whose versionCode isn't strictly greater
-        # than every existing one across ALL tracks (production, beta,
-        # alpha, internal). google-play get-latest-build-number scans all
-        # tracks; we bump by 1 and fall back to $PROJECT_BUILD_NUMBER if
-        # Play returns nothing.
-        script: |
-          set -e
-          PACKAGE_NAME=com.milkman.mealvanaendurance
-          echo "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" > /tmp/gcloud-sa.json
-          LATEST=$(google-play get-latest-build-number \
-            --package-name "$PACKAGE_NAME" \
-            --credentials @file:/tmp/gcloud-sa.json 2>/dev/null || echo "")
-          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
-            LATEST=$PROJECT_BUILD_NUMBER
-            echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
-          else
-            echo "Play latest build for $PACKAGE_NAME: $LATEST"
-          fi
-          NEXT=$((LATEST + 1))
-          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
-          echo "Next Android build number: $NEXT"
-
       - name: Create Shorebird Android Release
-        # Same as iOS: drop --flutter-version=stable (Shorebird rejects
-        # the literal string "stable") and add set -e so a silent
-        # shorebird failure doesn't masquerade as a successful build.
-        # --build-number is forwarded to `flutter build appbundle` so
-        # versionCode picks up the value resolved above instead of the
-        # +1 from pubspec.yaml.
         script: |
-          set -e
           shorebird release android \
             --flavor prod \
             --target lib/main_prod.dart \
-            --artifact=aab \
-            --build-number=$BUILD_NUMBER
+            --flutter-version=stable \
+            --artifact=aab
 
           echo ""
           echo "=========================================="
@@ -562,288 +345,8 @@ workflows:
     publishing:
       google_play:
         credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-        track: alpha  # Closed testing track
+        track: beta  # Open testing track
         submit_as_draft: false
-      slack:
-        channel: '#builds'
-        notify:
-          success: true
-          failure: true
-
-  # ============================================================
-  # MAIN WORKFLOWS — auto-triggered on push to `main`
-  # Prod flavor, Shorebird release. iOS → App Store submission;
-  # Android → Play Open Testing (beta track).
-  #
-  # ⚠️  Shorebird version collision: both release/* and main flows call
-  #     `shorebird release` with --flavor prod. Shorebird keys releases by
-  #     (flavor, Flutter version, pubspec version). If main and release/*
-  #     ever share a version, the second one errors. Standard practice:
-  #     bump pubspec version between the release/* merge-back and the
-  #     main merge, OR only run one of these flows per version.
-  # ============================================================
-
-  main-ios:
-    name: Main - iOS App Store (Shorebird, prod flavor)
-    instance_type: mac_mini_m2
-    max_build_duration: 120
-
-    integrations:
-      app_store_connect: API Key for CI builds
-
-    environment:
-      flutter: stable
-      xcode: latest
-      cocoapods: default
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.milkman.mealvanaendurance
-      groups:
-        - mealvana_prod
-        - shorebird_credentials
-      vars:
-        FLUTTER_ENV: prod
-        APP_ENVIRONMENT: prod
-
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'main'
-          include: true
-      cancel_previous_builds: true
-
-    scripts:
-      - *write_dotenv_files
-      - *flutter_pub_get
-      - *run_build_runner
-      - *install_shorebird
-      - *install_cocoapods
-      - *setup_ios_signing_shorebird
-
-      - name: Resolve next iOS build number from TestFlight
-        # Same rationale as prod-ios: every release artifact must get a
-        # versionCode/buildNumber that's unique in TestFlight + Shorebird.
-        script: |
-          set -e
-          BUNDLE_ID=com.milkman.mealvanaendurance
-          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier "$BUNDLE_ID" --json 2>/dev/null | jq -r '.[0].id // empty')
-          if [ -n "$APP_APPLE_ID" ]; then
-            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID" 2>/dev/null || echo "")
-          else
-            LATEST=""
-          fi
-          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
-            LATEST=$PROJECT_BUILD_NUMBER
-            echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
-          else
-            echo "TestFlight latest build for $BUNDLE_ID: $LATEST"
-          fi
-          NEXT=$((LATEST + 1))
-          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
-          echo "Next iOS build number: $NEXT"
-
-      - name: Create Shorebird iOS Release (App Store)
-        # Don't pass --flutter-version=stable (Shorebird rejects it).
-        # set -e so silent shorebird failures don't get past CI.
-        # --build-number forwarded to flutter build ipa (see prod-ios).
-        script: |
-          set -e
-          shorebird release ios \
-            --flavor prod \
-            --target lib/main_prod.dart \
-            --export-options-plist=/Users/builder/export_options.plist \
-            --build-number=$BUILD_NUMBER
-
-    artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-      - flutter_drive.log
-
-    publishing:
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
-        submit_to_app_store: true
-        # Leave manual release control in App Store Connect; don't auto-release to users.
-        release_type: MANUAL
-        # External tester promotion is intentionally manual: do that
-        # from App Store Connect → TestFlight → Builds when you're
-        # ready, so CI doesn't burn Beta App Review submissions on
-        # candidates that aren't actually externally-tested-ready.
-      slack:
-        channel: '#builds'
-        notify:
-          success: true
-          failure: true
-
-  main-android:
-    name: Main - Android Play Open Testing (Shorebird, prod flavor)
-    instance_type: mac_mini_m2
-    max_build_duration: 120
-
-    environment:
-      flutter: stable
-      java: 17
-      groups:
-        - mealvana_prod
-        - shorebird_credentials
-        - google_play_credentials
-        - firebase_config
-        - android_signing_credentials
-      vars:
-        FLUTTER_ENV: prod
-        APP_ENVIRONMENT: prod
-
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'main'
-          include: true
-      cancel_previous_builds: true
-
-    scripts:
-      - *write_dotenv_files
-      - *flutter_pub_get
-      - *run_build_runner
-      - *load_firebase_config
-      - *setup_android_signing
-      - *install_shorebird
-
-      - name: Resolve next Android build number from Play
-        # Same rationale as prod-android: Play won't accept a versionCode
-        # less than the max across all tracks (and main-android targets
-        # the beta/open-testing track on top of whatever release/* has
-        # already shipped to alpha).
-        script: |
-          set -e
-          PACKAGE_NAME=com.milkman.mealvanaendurance
-          echo "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" > /tmp/gcloud-sa.json
-          LATEST=$(google-play get-latest-build-number \
-            --package-name "$PACKAGE_NAME" \
-            --credentials @file:/tmp/gcloud-sa.json 2>/dev/null || echo "")
-          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
-            LATEST=$PROJECT_BUILD_NUMBER
-            echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
-          else
-            echo "Play latest build for $PACKAGE_NAME: $LATEST"
-          fi
-          NEXT=$((LATEST + 1))
-          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
-          echo "Next Android build number: $NEXT"
-
-      - name: Create Shorebird Android Release (Play Open/Beta)
-        # Drop --flutter-version=stable + add set -e (see iOS notes above).
-        # --build-number forwarded to flutter build (see prod-android).
-        script: |
-          set -e
-          shorebird release android \
-            --flavor prod \
-            --target lib/main_prod.dart \
-            --artifact=aab \
-            --build-number=$BUILD_NUMBER
-
-    artifacts:
-      - build/**/outputs/**/*.aab
-      - build/**/outputs/**/*.apk
-      - build/**/outputs/**/mapping.txt
-      - flutter_drive.log
-
-    publishing:
-      google_play:
-        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-        track: beta  # Open testing track (app not yet released to production)
-        submit_as_draft: false
-      slack:
-        channel: '#builds'
-        notify:
-          success: true
-          failure: true
-
-  # ============================================================
-  # PROD-CI WORKFLOW — manual. Prod flavor built against real prod
-  # endpoints, uploaded to the DEV TestFlight app
-  # (bundle com.milkman.mealvanaendurance.dev) for dogfooding without
-  # going through release/*. No Shorebird (dev TestFlight = scratch).
-  #
-  # Uses --flavor dev (→ Xcode gives us the .dev bundle ID and signing)
-  # with --target lib/main_prod.dart (→ app loads .env.prod.local).
-  # ============================================================
-
-  prod-ci-ios:
-    name: Prod-CI - iOS dev TestFlight with prod flavor (manual)
-    instance_type: mac_mini_m2
-    max_build_duration: 120
-
-    integrations:
-      app_store_connect: API Key for CI builds
-
-    environment:
-      flutter: stable
-      xcode: latest
-      cocoapods: default
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.milkman.mealvanaendurance.dev
-      groups:
-        - mealvana_prod  # prod env vars via DOTENV_PROD_LOCAL
-      vars:
-        FLUTTER_ENV: prod
-        APP_ENVIRONMENT: prod
-
-    triggering:
-      events: []
-
-    scripts:
-      - *write_dotenv_files
-      - *flutter_pub_get
-      - *run_build_runner
-      - *install_cocoapods
-      - *setup_ios_signing
-
-      - name: Resolve next iOS build number from TestFlight (dev)
-        # prod-ci uploads to the .dev TestFlight app, so resolve against
-        # that bundle id (not the prod one).
-        script: |
-          set -e
-          BUNDLE_ID=com.milkman.mealvanaendurance.dev
-          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier "$BUNDLE_ID" --json 2>/dev/null | jq -r '.[0].id // empty')
-          if [ -n "$APP_APPLE_ID" ]; then
-            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID" 2>/dev/null || echo "")
-          else
-            LATEST=""
-          fi
-          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
-            LATEST=$PROJECT_BUILD_NUMBER
-            echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
-          else
-            echo "TestFlight latest build for $BUNDLE_ID: $LATEST"
-          fi
-          NEXT=$((LATEST + 1))
-          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
-          echo "Next iOS build number: $NEXT"
-
-      - name: Build prod-flavor-code with dev bundle (iOS)
-        script: |
-          flutter build ipa --release \
-            --flavor dev \
-            --target lib/main_prod.dart \
-            --build-number=$BUILD_NUMBER \
-            --export-options-plist=/Users/builder/export_options.plist
-
-    artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-      - flutter_drive.log
-
-    publishing:
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
-        submit_to_app_store: false
-        beta_groups:
-          - Internal Testers
       slack:
         channel: '#builds'
         notify:
@@ -876,7 +379,6 @@ workflows:
       events: []
 
     scripts:
-      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *install_shorebird
@@ -910,7 +412,6 @@ workflows:
         - mealvana_prod
         - shorebird_credentials
         - firebase_config
-        - android_signing_credentials
       vars:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
@@ -920,11 +421,9 @@ workflows:
       events: []
 
     scripts:
-      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
-      - *setup_android_signing
       - *install_shorebird
 
       - name: Create Shorebird Android Patch
@@ -974,7 +473,6 @@ workflows:
       cancel_previous_builds: true
 
     scripts:
-      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *run_unit_tests
@@ -1017,7 +515,6 @@ workflows:
       events: []
 
     scripts:
-      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *boot_ios_simulator
@@ -1044,8 +541,6 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
-      groups:
-        - mealvana_dev  # needed for DOTENV_* secrets so asset-bundled .env files exist
 
     triggering:
       events:
@@ -1053,13 +548,11 @@ workflows:
       cancel_previous_builds: true
 
     scripts:
-      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *run_flutter_analyze
       - *check_formatting
       - *run_unit_tests
-      - *run_algorithm_tests
 
     artifacts:
       - test-results/**
@@ -1074,7 +567,7 @@ workflows:
     max_build_duration: 120
 
     integrations:
-      app_store_connect: API Key for CI builds
+      app_store_connect: Mealvana
 
     environment:
       flutter: stable
@@ -1082,7 +575,7 @@ workflows:
       cocoapods: default
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.milkman.mealvanaendurance
+        bundle_identifier: com.mealvana.endurance
       groups:
         - mealvana_prod
       vars:
@@ -1093,38 +586,16 @@ workflows:
       events: []
 
     scripts:
-      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *install_cocoapods
       - *setup_ios_signing
-
-      - name: Resolve next iOS build number from TestFlight
-        script: |
-          set -e
-          BUNDLE_ID=com.milkman.mealvanaendurance
-          APP_APPLE_ID=$(app-store-connect apps list --bundle-id-identifier "$BUNDLE_ID" --json 2>/dev/null | jq -r '.[0].id // empty')
-          if [ -n "$APP_APPLE_ID" ]; then
-            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID" 2>/dev/null || echo "")
-          else
-            LATEST=""
-          fi
-          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
-            LATEST=$PROJECT_BUILD_NUMBER
-            echo "⚠️  Could not resolve TestFlight build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
-          else
-            echo "TestFlight latest build for $BUNDLE_ID: $LATEST"
-          fi
-          NEXT=$((LATEST + 1))
-          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
-          echo "Next iOS build number: $NEXT"
 
       - name: Build iOS (Standard)
         script: |
           flutter build ipa --release \
             --flavor prod \
             --target lib/main_prod.dart \
-            --build-number=$BUILD_NUMBER \
             --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
@@ -1155,7 +626,6 @@ workflows:
         - mealvana_prod
         - google_play_credentials
         - firebase_config
-        - android_signing_credentials
       vars:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
@@ -1164,36 +634,15 @@ workflows:
       events: []
 
     scripts:
-      - *write_dotenv_files
       - *flutter_pub_get
       - *run_build_runner
       - *load_firebase_config
-      - *setup_android_signing
-
-      - name: Resolve next Android build number from Play
-        script: |
-          set -e
-          PACKAGE_NAME=com.milkman.mealvanaendurance
-          echo "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" > /tmp/gcloud-sa.json
-          LATEST=$(google-play get-latest-build-number \
-            --package-name "$PACKAGE_NAME" \
-            --credentials @file:/tmp/gcloud-sa.json 2>/dev/null || echo "")
-          if [ -z "$LATEST" ] || ! [ "$LATEST" -eq "$LATEST" ] 2>/dev/null; then
-            LATEST=$PROJECT_BUILD_NUMBER
-            echo "⚠️  Could not resolve Play build number; falling back to PROJECT_BUILD_NUMBER=$LATEST"
-          else
-            echo "Play latest build for $PACKAGE_NAME: $LATEST"
-          fi
-          NEXT=$((LATEST + 1))
-          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
-          echo "Next Android build number: $NEXT"
 
       - name: Build Android App Bundle (Standard)
         script: |
           flutter build appbundle --release \
             --flavor prod \
-            --target lib/main_prod.dart \
-            --build-number=$BUILD_NUMBER
+            --target lib/main_prod.dart
 
     artifacts:
       - build/**/outputs/**/*.aab

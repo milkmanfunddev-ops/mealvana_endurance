@@ -11,8 +11,6 @@ import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:mealvana_endurance/shared/services/analytics/analytics_tracker.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
-import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart'
-    show Gender, GutTraining, GutTrainingLevel;
 
 import '../../helpers/fakes/recording_analytics_tracker.dart';
 import '../../helpers/fakes/recording_sentry_reporter.dart';
@@ -98,7 +96,9 @@ void main() {
 
       logSection('Verifying user profile in database');
 
-      final userProfile = await database.userDao.getCurrentUserProfile();
+      final userProfile = await (database.select(database.userProfilesTable)
+            ..where((t) => t.id.equals(testId)))
+          .getSingleOrNull();
 
       logTestResult('user_id', userProfile?.id);
       logTestResult('gender', userProfile?.gender);
@@ -114,7 +114,7 @@ void main() {
 
       logAssertion(
         'Gender matches',
-        passed: userProfile?.gender == Gender.female,
+        passed: userProfile?.gender == 'female',
         reason: 'User-provided gender should be stored',
       );
 
@@ -126,15 +126,15 @@ void main() {
 
       logAssertion(
         'Gut training level matches',
-        passed: userProfile?.gutTrainingLevel == GutTrainingLevel.low,
+        passed: userProfile?.gutTrainingLevel == 'low',
         reason: 'User-selected gut training level should be stored',
       );
 
       expect(userProfile, isNotNull);
       expect(userProfile?.id, equals(testId));
-      expect(userProfile?.gender, equals(Gender.female));
+      expect(userProfile?.gender, equals('female'));
       expect(userProfile?.weightPounds, equals(140.0));
-      expect(userProfile?.gutTrainingLevel, equals(GutTrainingLevel.low));
+      expect(userProfile?.gutTrainingLevel, equals('low'));
       expect(userProfile?.onboardingCompleted, isFalse);
 
       logTestPass('User profile saved successfully');
@@ -185,17 +185,19 @@ void main() {
         ),
       );
 
-      final updatedProfile = await database.userDao.getCurrentUserProfile();
+      final updatedProfile = await (database.select(database.userProfilesTable)
+            ..where((t) => t.id.equals(testId)))
+          .getSingleOrNull();
 
       logTestResult('gut_training_level', updatedProfile?.gutTrainingLevel);
 
       logAssertion(
         'Gut training level updated',
-        passed: updatedProfile?.gutTrainingLevel == GutTrainingLevel.high,
+        passed: updatedProfile?.gutTrainingLevel == 'high',
         reason: 'Sport preference should be updatable',
       );
 
-      expect(updatedProfile?.gutTrainingLevel, equals(GutTrainingLevel.high));
+      expect(updatedProfile?.gutTrainingLevel, equals('high'));
 
       logTestPass('Sport preferences saved successfully');
     });
@@ -359,7 +361,9 @@ void main() {
         ),
       );
 
-      final completedProfile = await database.userDao.getCurrentUserProfile();
+      final completedProfile = await (database.select(database.userProfilesTable)
+            ..where((t) => t.id.equals(userId)))
+          .getSingleOrNull();
 
       logTestResult('onboarding_completed', completedProfile?.onboardingCompleted);
 

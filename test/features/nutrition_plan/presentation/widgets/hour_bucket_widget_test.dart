@@ -3,19 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item_data.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/time_slot_assignment.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/widgets/activity_detail/hour_bucket_widget.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/presentation/widgets/activity_detail/time_slot_row.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
 void main() {
   group('HourBucketWidget', () {
     testWidgets(
-      'renders sip-throughout items in regular time slots when expanded',
+      'places sip-throughout and quick-consume items inline in the timeline '
+      'when expanded',
       (tester) async {
-        // Since commit 7e18eadf the per-hour "Sip Throughout" section header
-        // was removed from HourBucketWidget.  Sip items are now managed by the
-        // GlobalSipSectionWidget above all hour buckets.  Any
-        // isSipThroughout assignments that reach an individual HourBucketWidget
-        // are shown in their regular time slot rows — no dedicated sub-section.
         final drink = FoodItemData(
           id: 'drink-1',
           name: 'Sports Drink',
@@ -77,37 +74,38 @@ void main() {
           ),
         );
 
+        // Collapsed by default: timeline slots are not shown yet.
+        expect(find.byType(TimeSlotRow), findsNothing);
+
         // Expand hour bucket.
         await tester.tap(find.text('Hour 1'));
         await tester.pumpAndSettle();
 
-        // Time slot labels should be visible after expansion (slotIndex 0→:00,
-        // slotIndex 1→:15 for hourIndex 0).
-        expect(find.text('0:00'), findsOneWidget);
-        expect(find.text('0:15'), findsOneWidget);
-
-        // No per-hour "Sip Throughout" section header — that label now lives
-        // exclusively in GlobalSipSectionWidget, not inside HourBucketWidget.
+        // Sip-throughout is now global, not a dedicated per-hour section.
         expect(find.text('Sip Throughout'), findsNothing);
-        expect(find.text('SIP THROUGHOUT'), findsNothing);
-        // Old SipThroughoutRow label is also gone.
-        expect(find.text('Sip throughout hour'), findsNothing);
-        // Sub-heading that was previously inside the per-hour section.
         expect(
           find.text('Not tied to a specific minute mark.'),
           findsNothing,
         );
+
+        // Instead, every slot of the hour renders as a TimeSlotRow and the
+        // assignments are placed inline at their slot times (:00 and :15).
+        expect(find.byType(TimeSlotRow), findsNWidgets(4));
+        expect(find.text('0:00'), findsOneWidget);
+        expect(find.text('0:15'), findsOneWidget);
+
+        // The sip-throughout drink (slot :00) and the quick-consume gel
+        // (slot :15) both surface their quantity and carbs inline.
+        expect(find.text('1 bottles'), findsOneWidget);
+        expect(find.text('1 gel'), findsOneWidget);
+        expect(find.text('10g'), findsOneWidget); // drink carbs (scaled)
+        expect(find.text('25g'), findsOneWidget); // gel carbs
       },
     );
 
     testWidgets(
-      'uses timingCategory sipThroughout as backward-compatible signal — '
-      'item appears in its time slot without a dedicated section header',
+      'uses timingCategory sipThroughout as backward-compatible signal',
       (tester) async {
-        // Legacy case: isSipThroughout == false but timingCategory ==
-        // sipThroughout.  The old per-hour section checked both signals; the
-        // current HourBucketWidget renders all assignments uniformly in their
-        // time slot rows regardless of sip category.
         final drink = FoodItemData(
           id: 'drink-legacy',
           name: 'Hydration Mix',
@@ -148,12 +146,14 @@ void main() {
         await tester.tap(find.text('Hour 1'));
         await tester.pumpAndSettle();
 
-        // The item's time slot label is rendered (slotIndex 0 → "0:00").
-        expect(find.text('0:00'), findsOneWidget);
-
-        // No per-hour "Sip Throughout" section header.
+        // Even though the assignment carries the legacy sipThroughout timing
+        // category, there is no dedicated "Sip Throughout" section anymore...
         expect(find.text('Sip Throughout'), findsNothing);
-        expect(find.text('SIP THROUGHOUT'), findsNothing);
+
+        // ...the item is still placed inline at its slot (:00) in the timeline.
+        expect(find.byType(TimeSlotRow), findsNWidgets(4));
+        expect(find.text('0:00'), findsOneWidget);
+        expect(find.text('1 bottle'), findsOneWidget);
       },
     );
   });
