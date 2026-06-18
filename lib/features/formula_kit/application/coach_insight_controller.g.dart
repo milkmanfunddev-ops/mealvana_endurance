@@ -76,7 +76,7 @@ final class CoachInsightControllerProvider
 }
 
 String _$coachInsightControllerHash() =>
-    r'a1b2c3d4e5f6789012345678901234567890abcd';
+    r'e07a234e2113bdc1a8e09c5e1ef4a0a4f4f9cf44';
 
 /// Single source of truth for the Formula Kit coach-insight panel.
 ///
@@ -115,10 +115,7 @@ final class CoachInsightControllerFamily extends $Family
   /// survives navigating away and back without an explicit Save.
 
   CoachInsightControllerProvider call(String? formulaId) =>
-      CoachInsightControllerProvider._(
-        argument: formulaId,
-        from: this,
-      );
+      CoachInsightControllerProvider._(argument: formulaId, from: this);
 
   @override
   String toString() => r'coachInsightControllerProvider';

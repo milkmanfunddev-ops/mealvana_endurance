@@ -33992,17 +33992,17 @@ class $PersonalFormulasTableTable extends PersonalFormulasTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _coachInsightTextMeta =
-      const VerificationMeta('coachInsightText');
+  static const VerificationMeta _coachInsightTextMeta = const VerificationMeta(
+    'coachInsightText',
+  );
   @override
-  late final GeneratedColumn<String> coachInsightText =
-      GeneratedColumn<String>(
-        'coach_insight_text',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-      );
+  late final GeneratedColumn<String> coachInsightText = GeneratedColumn<String>(
+    'coach_insight_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _coachInsightMarkerMeta =
       const VerificationMeta('coachInsightMarker');
   @override
@@ -35222,7 +35222,8 @@ class PersonalFormulasTableCompanion
       if (components != null) 'components': components,
       if (notes != null) 'notes': notes,
       if (coachInsightText != null) 'coach_insight_text': coachInsightText,
-      if (coachInsightMarker != null) 'coach_insight_marker': coachInsightMarker,
+      if (coachInsightMarker != null)
+        'coach_insight_marker': coachInsightMarker,
       if (totalCarbsG != null) 'total_carbs_g': totalCarbsG,
       if (totalProteinG != null) 'total_protein_g': totalProteinG,
       if (totalFatG != null) 'total_fat_g': totalFatG,
@@ -55581,6 +55582,8 @@ typedef $$PersonalFormulasTableTableCreateCompanionBuilder =
       Value<String?> travelFriendliness,
       Value<String> components,
       Value<String?> notes,
+      Value<String?> coachInsightText,
+      Value<String?> coachInsightMarker,
       Value<int?> totalCarbsG,
       Value<int?> totalProteinG,
       Value<int?> totalFatG,
@@ -55611,6 +55614,8 @@ typedef $$PersonalFormulasTableTableUpdateCompanionBuilder =
       Value<String?> travelFriendliness,
       Value<String> components,
       Value<String?> notes,
+      Value<String?> coachInsightText,
+      Value<String?> coachInsightMarker,
       Value<int?> totalCarbsG,
       Value<int?> totalProteinG,
       Value<int?> totalFatG,
@@ -55706,6 +55711,16 @@ class $$PersonalFormulasTableTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coachInsightText => $composableBuilder(
+    column: $table.coachInsightText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coachInsightMarker => $composableBuilder(
+    column: $table.coachInsightMarker,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -55849,6 +55864,16 @@ class $$PersonalFormulasTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get coachInsightText => $composableBuilder(
+    column: $table.coachInsightText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coachInsightMarker => $composableBuilder(
+    column: $table.coachInsightMarker,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get totalCarbsG => $composableBuilder(
     column: $table.totalCarbsG,
     builder: (column) => ColumnOrderings(column),
@@ -55975,6 +56000,16 @@ class $$PersonalFormulasTableTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<String> get coachInsightText => $composableBuilder(
+    column: $table.coachInsightText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get coachInsightMarker => $composableBuilder(
+    column: $table.coachInsightMarker,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get totalCarbsG => $composableBuilder(
     column: $table.totalCarbsG,
     builder: (column) => column,
@@ -56084,6 +56119,8 @@ class $$PersonalFormulasTableTableTableManager
                 Value<String?> travelFriendliness = const Value.absent(),
                 Value<String> components = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> coachInsightText = const Value.absent(),
+                Value<String?> coachInsightMarker = const Value.absent(),
                 Value<int?> totalCarbsG = const Value.absent(),
                 Value<int?> totalProteinG = const Value.absent(),
                 Value<int?> totalFatG = const Value.absent(),
@@ -56112,6 +56149,8 @@ class $$PersonalFormulasTableTableTableManager
                 travelFriendliness: travelFriendliness,
                 components: components,
                 notes: notes,
+                coachInsightText: coachInsightText,
+                coachInsightMarker: coachInsightMarker,
                 totalCarbsG: totalCarbsG,
                 totalProteinG: totalProteinG,
                 totalFatG: totalFatG,
@@ -56142,6 +56181,8 @@ class $$PersonalFormulasTableTableTableManager
                 Value<String?> travelFriendliness = const Value.absent(),
                 Value<String> components = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> coachInsightText = const Value.absent(),
+                Value<String?> coachInsightMarker = const Value.absent(),
                 Value<int?> totalCarbsG = const Value.absent(),
                 Value<int?> totalProteinG = const Value.absent(),
                 Value<int?> totalFatG = const Value.absent(),
@@ -56170,6 +56211,8 @@ class $$PersonalFormulasTableTableTableManager
                 travelFriendliness: travelFriendliness,
                 components: components,
                 notes: notes,
+                coachInsightText: coachInsightText,
+                coachInsightMarker: coachInsightMarker,
                 totalCarbsG: totalCarbsG,
                 totalProteinG: totalProteinG,
                 totalFatG: totalFatG,

@@ -218,7 +218,7 @@ class FormulaEditorController extends _$FormulaEditorController {
     final original = draft.original;
 
     final currentInsight =
-        ref.read(coachInsightControllerProvider(formulaId)).valueOrNull;
+        ref.read(coachInsightControllerProvider(formulaId)).value;
 
     final formula = PersonalFormula(
       id: original?.id ?? '',

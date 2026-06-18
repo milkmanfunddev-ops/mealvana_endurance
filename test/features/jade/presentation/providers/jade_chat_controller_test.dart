@@ -13,16 +13,28 @@ import 'package:mealvana_endurance/shared/services/logging_service.dart';
 
 class _FakeLogger extends Fake implements AppLogger {
   @override
-  void info(String message, {Object? error, StackTrace? stackTrace}) {}
+  void info(String message, {String? context, Map<String, dynamic>? data}) {}
   @override
-  void error(String message, {Object? error, StackTrace? stackTrace}) {}
+  void error(
+    String message, {
+    String? context,
+    Map<String, dynamic>? data,
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {}
   @override
-  void warning(String message, {Object? error, StackTrace? stackTrace}) {}
+  void warning(
+    String message, {
+    String? context,
+    Map<String, dynamic>? data,
+    dynamic error,
+    StackTrace? stackTrace,
+  }) {}
 }
 
 class _FakeContentService extends Fake implements ContentService {
   @override
-  String getValue(String key, {String defaultValue = ''}) => defaultValue;
+  String getValue(String key, {String? defaultValue = ''}) => defaultValue ?? '';
 }
 
 class _MockRepository extends Fake implements JadeChatRepository {

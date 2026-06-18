@@ -2,9 +2,12 @@
 //
 // Pumps the real DailyMacrosScreen with fake targets + consumed totals and
 // asserts:
-//   • it lays out without exceptions, and
-//   • the re-integrated meal-planning surface is present: the planned-vs-eaten
-//     comparison table, the Jade coach banner, and the Today's Log section.
+//   • it lays out without exceptions,
+//   • the daily summary card shows its "Planned today" face (with a "Show
+//     plan" expander) when the day has no logged meals yet, and flips to the
+//     "Eaten today" face once a meal is logged, and
+//   • the re-integrated meal-planning surface is present: the Jade coach
+//     banner and the Today's Log section.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,8 +19,30 @@ import 'package:mealvana_endurance/features/daily_macros/presentation/providers/
 import 'package:mealvana_endurance/features/daily_macros/presentation/screens/daily_macros_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/consumed_totals.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
+import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
 import 'package:mealvana_endurance/shared/services/preferences_service.dart';
+
+MealLog _sampleLog() {
+  final now = DateTime.now();
+  return MealLog(
+    id: 'log1',
+    userId: 'u1',
+    logDate:
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
+    slot: MealSlot.breakfast,
+    name: 'Oatmeal',
+    source: MealLogSource.manual,
+    components: const [],
+    calories: 350,
+    carbsG: 60,
+    proteinG: 12,
+    fatG: 6,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
 
 class _FakeDailyMacrosController extends DailyMacrosController {
   @override
@@ -46,7 +71,10 @@ class _FakeDailyMacrosController extends DailyMacrosController {
   }
 }
 
-Future<void> _pumpScreen(WidgetTester tester) async {
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  List<MealLog> logs = const <MealLog>[],
+}) async {
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
 
@@ -56,7 +84,7 @@ Future<void> _pumpScreen(WidgetTester tester) async {
         dailyMacrosControllerProvider
             .overrideWith(_FakeDailyMacrosController.new),
         mealLogsForDateProvider
-            .overrideWith((ref, date) => Stream.value(const <MealLog>[])),
+            .overrideWith((ref, date) => Stream.value(logs)),
         consumedTotalsForDateProvider.overrideWith(
           (ref, date) => Stream.value(const ConsumedTotals(
             calories: 939,
@@ -84,16 +112,34 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('shows the eaten-only macro summary (no "Left")',
+  testWidgets('shows the planned face when nothing is logged yet',
       (tester) async {
     await _pumpScreen(tester);
 
-    // The card now surfaces only what's been eaten; planned/weekly live behind
-    // the Details sheet, and "Left" is gone entirely.
+    // No logs for the day → the card surfaces the plan: planned targets in the
+    // same compact row plus an inline "Show plan" expander. "Left" is gone.
     expect(find.byKey(const ValueKey('nutrition_diary.daily_total_card')),
         findsOneWidget);
-    expect(find.text('Eaten today'), findsOneWidget);
+    expect(find.text('Planned today'), findsOneWidget);
+    expect(find.text('Eaten today'), findsNothing);
     expect(find.text('Calories'), findsOneWidget);
+    // Planned calories = 305*4 + 107*4 + 98*9 = 2,530.
+    expect(find.text('2,530'), findsOneWidget);
+    expect(find.text('Show plan'), findsOneWidget);
+    expect(find.text('Left'), findsNothing);
+  });
+
+  testWidgets('flips to the eaten face once a meal is logged',
+      (tester) async {
+    await _pumpScreen(tester, logs: [_sampleLog()]);
+
+    // With at least one logged meal the card shows what's been eaten and drops
+    // the planned expander.
+    expect(find.text('Eaten today'), findsOneWidget);
+    expect(find.text('Planned today'), findsNothing);
+    expect(find.text('Show plan'), findsNothing);
+    // Consumed calories from the override (939).
+    expect(find.text('939'), findsOneWidget);
     expect(find.text('Left'), findsNothing);
   });
 

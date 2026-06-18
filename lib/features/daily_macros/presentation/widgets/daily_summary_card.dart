@@ -62,8 +62,7 @@ class _DailySummaryCardState extends ConsumerState<DailySummaryCard> {
     // Has the user logged anything for this day yet? Until the stream resolves
     // we treat the day as "not yet logged" and show the planned face.
     final hasLogs =
-        ref.watch(mealLogsForDateProvider(dateStr)).valueOrNull?.isNotEmpty ??
-            false;
+        ref.watch(mealLogsForDateProvider(dateStr)).value?.isNotEmpty ?? false;
 
     // Fresh edge calc populates `sources`; cached reads don't. For cached
     // reads, fall back to the same Garmin-authoritative check the rest of the
