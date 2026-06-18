@@ -230,6 +230,21 @@ CREATE TRIGGER personal_formulas_updated_at_trigger
   FOR EACH ROW EXECUTE FUNCTION public.personal_formulas_set_updated_at();
 
 
+-- ── 5. Add coach-insight persistence columns to personal_formulas ──────────
+-- DEV + PROD: safe to apply now (additive nullable columns, no dependents).
+--
+-- Bug: the Coach AI insight does not persist — it is stored only in an
+-- auto-disposing Riverpod provider with no backing column. These two columns
+-- let the client persist the insight text and its FNV-1a stale marker so the
+-- insight survives navigation and only regenerates when the formula is edited.
+
+ALTER TABLE public.personal_formulas
+  ADD COLUMN IF NOT EXISTS coach_insight_text TEXT;
+
+ALTER TABLE public.personal_formulas
+  ADD COLUMN IF NOT EXISTS coach_insight_marker TEXT;
+
+
 -- ============================================================================
 -- END
 -- ============================================================================

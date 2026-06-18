@@ -5,25 +5,35 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/app_external_deps.dart';
 import '../data/ai_coach_client.dart';
+import '../data/personal_formulas_repository.dart';
 import '../domain/coach_insight.dart';
 
 part 'coach_insight_controller.g.dart';
 
 /// Single source of truth for the Formula Kit coach-insight panel.
 ///
-/// State is the most recently fetched [CoachInsight] (or `null` before the
-/// first fetch). The panel computes the live draft's [CoachInsightContext.staleMarker]
-/// and compares it with `state.value?.staleMarker` to decide whether the shown
-/// insight is current or outdated. Cached hits never re-call the edge function,
-/// so each [generate] is one billable model call.
+/// Family provider keyed by [formulaId]. For existing formulas, [build] hydrates
+/// the persisted insight from the Drift row so it survives navigation. For new
+/// formulas ([formulaId] == null), starts blank.
 ///
-/// Auto-disposes with the editor screen that hosts it.
+/// On [generate], the insight is auto-persisted to the formula's row so it
+/// survives navigating away and back without an explicit Save.
 @riverpod
 class CoachInsightController extends _$CoachInsightController {
   @override
-  FutureOr<CoachInsight?> build() => null;
+  FutureOr<CoachInsight?> build(String? formulaId) async {
+    if (formulaId == null) return null;
+    final repo = ref.read(personalFormulasRepositoryProvider);
+    final formula = await repo.getById(formulaId);
+    if (formula == null || formula.coachInsightText == null) return null;
+    return CoachInsight(
+      insight: formula.coachInsightText!,
+      staleMarker: formula.coachInsightMarker ?? '',
+    );
+  }
 
-  /// Fetch an insight for [context] and store it. Fires the
+  /// Fetch an insight for [context] and store it. Auto-persists to the
+  /// formula's Drift row for existing formulas. Fires the
   /// `coach_insight_generated` analytics event on success.
   Future<void> generate(CoachInsightContext context) async {
     state = const AsyncLoading<CoachInsight?>();
@@ -41,6 +51,22 @@ class CoachInsightController extends _$CoachInsightController {
         'input_tokens': insight.inputTokens,
         'output_tokens': insight.outputTokens,
       });
+
+      if (formulaId != null) {
+        try {
+          final repo = ref.read(personalFormulasRepositoryProvider);
+          await repo.persistInsight(
+            formulaId: formulaId!,
+            insightText: insight.insight,
+            marker: insight.staleMarker,
+          );
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('[CoachInsightController] auto-persist failed: $e');
+          }
+        }
+      }
+
       return insight;
     });
   }

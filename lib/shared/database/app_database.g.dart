@@ -33992,6 +33992,28 @@ class $PersonalFormulasTableTable extends PersonalFormulasTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _coachInsightTextMeta =
+      const VerificationMeta('coachInsightText');
+  @override
+  late final GeneratedColumn<String> coachInsightText =
+      GeneratedColumn<String>(
+        'coach_insight_text',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _coachInsightMarkerMeta =
+      const VerificationMeta('coachInsightMarker');
+  @override
+  late final GeneratedColumn<String> coachInsightMarker =
+      GeneratedColumn<String>(
+        'coach_insight_marker',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _totalCarbsGMeta = const VerificationMeta(
     'totalCarbsG',
   );
@@ -34138,6 +34160,8 @@ class $PersonalFormulasTableTable extends PersonalFormulasTable
     travelFriendliness,
     components,
     notes,
+    coachInsightText,
+    coachInsightMarker,
     totalCarbsG,
     totalProteinG,
     totalFatG,
@@ -34270,6 +34294,24 @@ class $PersonalFormulasTableTable extends PersonalFormulasTable
       context.handle(
         _notesMeta,
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('coach_insight_text')) {
+      context.handle(
+        _coachInsightTextMeta,
+        coachInsightText.isAcceptableOrUnknown(
+          data['coach_insight_text']!,
+          _coachInsightTextMeta,
+        ),
+      );
+    }
+    if (data.containsKey('coach_insight_marker')) {
+      context.handle(
+        _coachInsightMarkerMeta,
+        coachInsightMarker.isAcceptableOrUnknown(
+          data['coach_insight_marker']!,
+          _coachInsightMarkerMeta,
+        ),
       );
     }
     if (data.containsKey('total_carbs_g')) {
@@ -34432,6 +34474,14 @@ class $PersonalFormulasTableTable extends PersonalFormulasTable
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      coachInsightText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coach_insight_text'],
+      ),
+      coachInsightMarker: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}coach_insight_marker'],
+      ),
       totalCarbsG: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}total_carbs_g'],
@@ -34516,6 +34566,8 @@ class PersonalFormulaEntry extends DataClass
   /// The formula body: JSON-encoded array of component objects.
   final String components;
   final String? notes;
+  final String? coachInsightText;
+  final String? coachInsightMarker;
   final int? totalCarbsG;
   final int? totalProteinG;
   final int? totalFatG;
@@ -34543,6 +34595,8 @@ class PersonalFormulaEntry extends DataClass
     this.travelFriendliness,
     required this.components,
     this.notes,
+    this.coachInsightText,
+    this.coachInsightMarker,
     this.totalCarbsG,
     this.totalProteinG,
     this.totalFatG,
@@ -34590,6 +34644,12 @@ class PersonalFormulaEntry extends DataClass
     map['components'] = Variable<String>(components);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || coachInsightText != null) {
+      map['coach_insight_text'] = Variable<String>(coachInsightText);
+    }
+    if (!nullToAbsent || coachInsightMarker != null) {
+      map['coach_insight_marker'] = Variable<String>(coachInsightMarker);
     }
     if (!nullToAbsent || totalCarbsG != null) {
       map['total_carbs_g'] = Variable<int>(totalCarbsG);
@@ -34656,6 +34716,12 @@ class PersonalFormulaEntry extends DataClass
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      coachInsightText: coachInsightText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachInsightText),
+      coachInsightMarker: coachInsightMarker == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coachInsightMarker),
       totalCarbsG: totalCarbsG == null && nullToAbsent
           ? const Value.absent()
           : Value(totalCarbsG),
@@ -34711,6 +34777,10 @@ class PersonalFormulaEntry extends DataClass
       ),
       components: serializer.fromJson<String>(json['components']),
       notes: serializer.fromJson<String?>(json['notes']),
+      coachInsightText: serializer.fromJson<String?>(json['coachInsightText']),
+      coachInsightMarker: serializer.fromJson<String?>(
+        json['coachInsightMarker'],
+      ),
       totalCarbsG: serializer.fromJson<int?>(json['totalCarbsG']),
       totalProteinG: serializer.fromJson<int?>(json['totalProteinG']),
       totalFatG: serializer.fromJson<int?>(json['totalFatG']),
@@ -34743,6 +34813,8 @@ class PersonalFormulaEntry extends DataClass
       'travelFriendliness': serializer.toJson<String?>(travelFriendliness),
       'components': serializer.toJson<String>(components),
       'notes': serializer.toJson<String?>(notes),
+      'coachInsightText': serializer.toJson<String?>(coachInsightText),
+      'coachInsightMarker': serializer.toJson<String?>(coachInsightMarker),
       'totalCarbsG': serializer.toJson<int?>(totalCarbsG),
       'totalProteinG': serializer.toJson<int?>(totalProteinG),
       'totalFatG': serializer.toJson<int?>(totalFatG),
@@ -34773,6 +34845,8 @@ class PersonalFormulaEntry extends DataClass
     Value<String?> travelFriendliness = const Value.absent(),
     String? components,
     Value<String?> notes = const Value.absent(),
+    Value<String?> coachInsightText = const Value.absent(),
+    Value<String?> coachInsightMarker = const Value.absent(),
     Value<int?> totalCarbsG = const Value.absent(),
     Value<int?> totalProteinG = const Value.absent(),
     Value<int?> totalFatG = const Value.absent(),
@@ -34806,6 +34880,12 @@ class PersonalFormulaEntry extends DataClass
         : this.travelFriendliness,
     components: components ?? this.components,
     notes: notes.present ? notes.value : this.notes,
+    coachInsightText: coachInsightText.present
+        ? coachInsightText.value
+        : this.coachInsightText,
+    coachInsightMarker: coachInsightMarker.present
+        ? coachInsightMarker.value
+        : this.coachInsightMarker,
     totalCarbsG: totalCarbsG.present ? totalCarbsG.value : this.totalCarbsG,
     totalProteinG: totalProteinG.present
         ? totalProteinG.value
@@ -34861,6 +34941,12 @@ class PersonalFormulaEntry extends DataClass
           ? data.components.value
           : this.components,
       notes: data.notes.present ? data.notes.value : this.notes,
+      coachInsightText: data.coachInsightText.present
+          ? data.coachInsightText.value
+          : this.coachInsightText,
+      coachInsightMarker: data.coachInsightMarker.present
+          ? data.coachInsightMarker.value
+          : this.coachInsightMarker,
       totalCarbsG: data.totalCarbsG.present
           ? data.totalCarbsG.value
           : this.totalCarbsG,
@@ -34907,6 +34993,8 @@ class PersonalFormulaEntry extends DataClass
           ..write('travelFriendliness: $travelFriendliness, ')
           ..write('components: $components, ')
           ..write('notes: $notes, ')
+          ..write('coachInsightText: $coachInsightText, ')
+          ..write('coachInsightMarker: $coachInsightMarker, ')
           ..write('totalCarbsG: $totalCarbsG, ')
           ..write('totalProteinG: $totalProteinG, ')
           ..write('totalFatG: $totalFatG, ')
@@ -34939,6 +35027,8 @@ class PersonalFormulaEntry extends DataClass
     travelFriendliness,
     components,
     notes,
+    coachInsightText,
+    coachInsightMarker,
     totalCarbsG,
     totalProteinG,
     totalFatG,
@@ -34970,6 +35060,8 @@ class PersonalFormulaEntry extends DataClass
           other.travelFriendliness == this.travelFriendliness &&
           other.components == this.components &&
           other.notes == this.notes &&
+          other.coachInsightText == this.coachInsightText &&
+          other.coachInsightMarker == this.coachInsightMarker &&
           other.totalCarbsG == this.totalCarbsG &&
           other.totalProteinG == this.totalProteinG &&
           other.totalFatG == this.totalFatG &&
@@ -35000,6 +35092,8 @@ class PersonalFormulasTableCompanion
   final Value<String?> travelFriendliness;
   final Value<String> components;
   final Value<String?> notes;
+  final Value<String?> coachInsightText;
+  final Value<String?> coachInsightMarker;
   final Value<int?> totalCarbsG;
   final Value<int?> totalProteinG;
   final Value<int?> totalFatG;
@@ -35028,6 +35122,8 @@ class PersonalFormulasTableCompanion
     this.travelFriendliness = const Value.absent(),
     this.components = const Value.absent(),
     this.notes = const Value.absent(),
+    this.coachInsightText = const Value.absent(),
+    this.coachInsightMarker = const Value.absent(),
     this.totalCarbsG = const Value.absent(),
     this.totalProteinG = const Value.absent(),
     this.totalFatG = const Value.absent(),
@@ -35057,6 +35153,8 @@ class PersonalFormulasTableCompanion
     this.travelFriendliness = const Value.absent(),
     this.components = const Value.absent(),
     this.notes = const Value.absent(),
+    this.coachInsightText = const Value.absent(),
+    this.coachInsightMarker = const Value.absent(),
     this.totalCarbsG = const Value.absent(),
     this.totalProteinG = const Value.absent(),
     this.totalFatG = const Value.absent(),
@@ -35091,6 +35189,8 @@ class PersonalFormulasTableCompanion
     Expression<String>? travelFriendliness,
     Expression<String>? components,
     Expression<String>? notes,
+    Expression<String>? coachInsightText,
+    Expression<String>? coachInsightMarker,
     Expression<int>? totalCarbsG,
     Expression<int>? totalProteinG,
     Expression<int>? totalFatG,
@@ -35121,6 +35221,8 @@ class PersonalFormulasTableCompanion
       if (travelFriendliness != null) 'travel_friendliness': travelFriendliness,
       if (components != null) 'components': components,
       if (notes != null) 'notes': notes,
+      if (coachInsightText != null) 'coach_insight_text': coachInsightText,
+      if (coachInsightMarker != null) 'coach_insight_marker': coachInsightMarker,
       if (totalCarbsG != null) 'total_carbs_g': totalCarbsG,
       if (totalProteinG != null) 'total_protein_g': totalProteinG,
       if (totalFatG != null) 'total_fat_g': totalFatG,
@@ -35152,6 +35254,8 @@ class PersonalFormulasTableCompanion
     Value<String?>? travelFriendliness,
     Value<String>? components,
     Value<String?>? notes,
+    Value<String?>? coachInsightText,
+    Value<String?>? coachInsightMarker,
     Value<int?>? totalCarbsG,
     Value<int?>? totalProteinG,
     Value<int?>? totalFatG,
@@ -35181,6 +35285,8 @@ class PersonalFormulasTableCompanion
       travelFriendliness: travelFriendliness ?? this.travelFriendliness,
       components: components ?? this.components,
       notes: notes ?? this.notes,
+      coachInsightText: coachInsightText ?? this.coachInsightText,
+      coachInsightMarker: coachInsightMarker ?? this.coachInsightMarker,
       totalCarbsG: totalCarbsG ?? this.totalCarbsG,
       totalProteinG: totalProteinG ?? this.totalProteinG,
       totalFatG: totalFatG ?? this.totalFatG,
@@ -35244,6 +35350,12 @@ class PersonalFormulasTableCompanion
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (coachInsightText.present) {
+      map['coach_insight_text'] = Variable<String>(coachInsightText.value);
+    }
+    if (coachInsightMarker.present) {
+      map['coach_insight_marker'] = Variable<String>(coachInsightMarker.value);
+    }
     if (totalCarbsG.present) {
       map['total_carbs_g'] = Variable<int>(totalCarbsG.value);
     }
@@ -35301,6 +35413,8 @@ class PersonalFormulasTableCompanion
           ..write('travelFriendliness: $travelFriendliness, ')
           ..write('components: $components, ')
           ..write('notes: $notes, ')
+          ..write('coachInsightText: $coachInsightText, ')
+          ..write('coachInsightMarker: $coachInsightMarker, ')
           ..write('totalCarbsG: $totalCarbsG, ')
           ..write('totalProteinG: $totalProteinG, ')
           ..write('totalFatG: $totalFatG, ')

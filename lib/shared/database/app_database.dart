@@ -226,7 +226,7 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -324,6 +324,17 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(mealLogsTable);
           await m.createTable(savedMealsTable);
           await m.createTable(recipesTable);
+        }
+
+        // v12: Coach AI insight persistence — two nullable TEXT columns on
+        // personal_formulas so the generated insight survives navigation.
+        if (from < 12) {
+          await customStatement(
+            'ALTER TABLE personal_formulas ADD COLUMN coach_insight_text TEXT',
+          );
+          await customStatement(
+            'ALTER TABLE personal_formulas ADD COLUMN coach_insight_marker TEXT',
+          );
         }
       },
 
