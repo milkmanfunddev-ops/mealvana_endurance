@@ -198,10 +198,9 @@ class _JadeChatScreenState extends ConsumerState<JadeChatScreen> {
     ContentService contentService,
   ) {
     if (state.messages.isEmpty && !state.isStreaming) {
-      // Ask Jade to open proactively (once). Until her first chunk arrives the
-      // static greeting shows; if the opener fails it stays — graceful either
-      // way.
-      _maybeRequestOpener();
+      if (!state.hasHistory) {
+        _maybeRequestOpener();
+      }
       return _buildEmptyState(context, contentService);
     }
     return _buildMessageList(context, state);
