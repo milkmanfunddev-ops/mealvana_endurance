@@ -92,8 +92,8 @@ run_test \
 
 run_test \
   "1e. Pre-Workout Algorithm C (unit tests)" \
-  "$SCRIPT_DIR/generate-macros-v4/pre-workout.test.ts" \
-  --allow-write
+  "$SCRIPT_DIR/generate-macros-v4/pre-workout-invariants.test.ts" \
+  --allow-write --node-modules-dir=none
 
 run_test \
   "1f. During Template Solver (unit tests)" \
@@ -107,7 +107,7 @@ run_test \
 run_test \
   "1g. Corpus-Driven Parity Harness (scenario × plan-solver)" \
   "$SCRIPT_DIR/tests/parity/parity.test.ts" \
-  --allow-read --allow-write
+  --allow-read --allow-write --node-modules-dir=none
 
 # ─── Section 2: E2E Tests (optional) ───────────────────────────────────────
 
