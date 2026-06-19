@@ -31,7 +31,10 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Run Flutter tests
-        run: flutter test --coverage --reporter expanded
+        # Exclude live-service suites (TrainingPeaks/Final Surge live APIs and
+        # live Supabase edge-function e2e). They need real credentials/network
+        # and run on demand or via the scheduled edge-integration job below.
+        run: flutter test --exclude-tags="integration || e2e" --coverage --reporter expanded
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

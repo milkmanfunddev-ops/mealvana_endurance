@@ -68,22 +68,28 @@ void main() {
   });
 
   group('#23: getLikedFoods / getDislikedFoods Drift-first fallback', () {
-    test('returns Drift-stored disliked foods without hitting Supabase', () async {
+    test('returns Drift-stored disliked foods (remote reconcile is best-effort)',
+        () async {
       await database.foodPreferencesDao.saveFoodPreferences(testUserId, {
         'baked_potato': FoodPreference.dislike,
         'cream_cheese': FoodPreference.dislike,
         'oatmeal': FoodPreference.like,
       });
 
+      // The read returns Drift data directly. A TTL-gated background reconcile
+      // (_reconcileFoodPreferencesIfStale) may fire against Supabase, but it is
+      // best-effort: even though mockSupabase has no stubs (so the fetch
+      // throws), the returned data still comes from Drift and the read does not
+      // throw. (The old contract asserted Supabase was never consulted; the
+      // reconcile-if-stale behaviour intentionally superseded that.)
       final dislikes = await repository.getDislikedFoods(testUserId);
 
       expect(dislikes, containsAll(['baked_potato', 'cream_cheese']));
       expect(dislikes, hasLength(2));
-      // Drift had data → Supabase fallback should never have been consulted.
-      verifyNever(() => mockSupabase.from(any()));
     });
 
-    test('returns Drift-stored liked foods without hitting Supabase', () async {
+    test('returns Drift-stored liked foods (remote reconcile is best-effort)',
+        () async {
       await database.foodPreferencesDao.saveFoodPreferences(testUserId, {
         'oatmeal': FoodPreference.like,
         'bagel': FoodPreference.like,
@@ -94,7 +100,6 @@ void main() {
 
       expect(likes, containsAll(['oatmeal', 'bagel']));
       expect(likes, hasLength(2));
-      verifyNever(() => mockSupabase.from(any()));
     });
 
     test('returns [] safely when Drift is empty AND Supabase fallback throws', () async {
