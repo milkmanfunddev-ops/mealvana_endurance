@@ -24,6 +24,15 @@ jobs:
           flutter-version: '3.35.5'
           channel: 'stable'
 
+      - name: Create env asset placeholders
+        # pubspec.yaml lists .env, .env.dev.local and .env.prod.local as assets,
+        # but they are gitignored (real values live only on dev machines / in
+        # secrets). Without them `flutter test` fails at "Failed to build asset
+        # bundle / No file or variants found for asset: .env". Create empty
+        # placeholders so the asset bundle builds.
+        run: |
+          touch .env .env.dev.local .env.prod.local
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -55,8 +64,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: test/local_edge_functions/package-lock.json
+          # No npm cache: the harness package has no dependencies and its
+          # package-lock.json is gitignored, so caching on it fails the step
+          # ("Some specified paths were not resolved, unable to cache").
 
       - name: Setup Deno
         uses: denoland/setup-deno@v2
@@ -94,6 +104,15 @@ jobs:
         with:
           flutter-version: '3.35.5'
           channel: 'stable'
+
+      - name: Create env asset placeholders
+        # pubspec.yaml lists .env, .env.dev.local and .env.prod.local as assets,
+        # but they are gitignored (real values live only on dev machines / in
+        # secrets). Without them `flutter test` fails at "Failed to build asset
+        # bundle / No file or variants found for asset: .env". Create empty
+        # placeholders so the asset bundle builds.
+        run: |
+          touch .env .env.dev.local .env.prod.local
 
       - name: Install dependencies
         run: flutter pub get
