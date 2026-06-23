@@ -996,6 +996,31 @@ class ActivitiesRepository with SyncableRepository {
           final merged = _mergeProviderUpdate(existing, activity);
           return await updateActivityFromProvider(merged);
         }
+
+        // Cross-origin dedup: no provider-keyed row exists, but the user may
+        // have created this same run in-app (which has no provider linkage).
+        // Reconcile the provider import onto that row instead of inserting a
+        // duplicate (Bug 385e3fdb).
+        final fingerprintMatch = await findActivityByFingerprint(
+          userId: activity.userId,
+          activityType: activity.activityType,
+          scheduledDate: activity.scheduledDateTime,
+          distanceMiles: activity.distanceMiles,
+        );
+        if (fingerprintMatch != null) {
+          final merged = _mergeProviderUpdate(fingerprintMatch, activity);
+          _logger.info(
+            'Reconciled provider workout onto user-created activity '
+            '(cross-origin dedup)',
+            context: 'ACTIVITIES_REPOSITORY',
+            data: {
+              'localActivityId': fingerprintMatch.id,
+              'provider': provider,
+              'providerWorkoutId': providerWorkoutId,
+            },
+          );
+          return await updateActivityFromProvider(merged);
+        }
       }
 
       // No existing provider workout found: create a new row
@@ -1087,6 +1112,75 @@ class ActivitiesRepository with SyncableRepository {
     return bestMatch != null ? _mapper.fromDriftRow(bestMatch) : null;
   }
 
+  /// Find an existing *user-created* activity (no provider linkage) that matches
+  /// an incoming provider workout by fingerprint: same activity type, scheduled
+  /// within ±1 day, and distance within 10%.
+  ///
+  /// This powers cross-origin deduplication: a run created in-app has
+  /// `synced_from_provider`/`provider_workout_id` both null, so when the same
+  /// physical run is later completed and synced back from Garmin/Final Surge it
+  /// would otherwise be inserted as a second row. The provider-key lookup
+  /// ([_findActivityByProviderKey]) can't catch this because the in-app row has
+  /// no provider key. We only ever match rows that have NO provider linkage —
+  /// provider-synced rows are reconciled via the provider-key path, never by
+  /// fingerprint — so this can't accidentally collapse two distinct provider
+  /// imports together.
+  ///
+  /// The scheduled-time window is computed tz-naively (local day bounds), matching
+  /// how `scheduled_date_time` is stored (tz-naive) elsewhere in the codebase.
+  Future<domain.Activity?> findActivityByFingerprint({
+    required String userId,
+    required ActivityType activityType,
+    required DateTime scheduledDate,
+    double? distanceMiles,
+  }) async {
+    final day = DateTime(
+      scheduledDate.year,
+      scheduledDate.month,
+      scheduledDate.day,
+    );
+    final lowerBound = day.subtract(const Duration(days: 1));
+    // Exclusive upper bound covering the whole of scheduledDate + 1 day.
+    final upperBound = day.add(const Duration(days: 2));
+
+    final query = _database.select(_database.activitiesTable)
+      ..where(
+        (tbl) =>
+            tbl.userId.lower().equals(userId.toLowerCase()) &
+            tbl.activityType.equals(activityType.name) &
+            tbl.deletedAt.isNull() &
+            tbl.scheduledDateTime.isBiggerOrEqualValue(lowerBound) &
+            tbl.scheduledDateTime.isSmallerThanValue(upperBound),
+      )
+      ..orderBy([(tbl) => OrderingTerm.desc(tbl.scheduledDateTime)]);
+
+    final rows = await query.get();
+    for (final row in rows) {
+      // Only match user-created rows (no provider linkage).
+      final hasProviderLink =
+          row.providerWorkoutId != null && row.providerWorkoutId!.isNotEmpty;
+      if (hasProviderLink) {
+        continue;
+      }
+
+      // If both distances are known, require them within 10%.
+      if (distanceMiles != null && distanceMiles > 0) {
+        final localDistance = row.distanceMiles;
+        if (localDistance == null || localDistance <= 0) {
+          continue;
+        }
+        final pctDiff = (localDistance - distanceMiles).abs() / distanceMiles;
+        if (pctDiff > 0.10) {
+          continue;
+        }
+      }
+
+      return _mapper.fromDriftRow(row);
+    }
+
+    return null;
+  }
+
   /// Merge latest provider data into an existing activity while preserving
   /// local-only fields (nutrition plan, completion, reminders, brick metadata).
   domain.Activity _mergeProviderUpdate(
@@ -1128,6 +1222,14 @@ class ActivitiesRepository with SyncableRepository {
       actualDistanceMiles: existing.actualDistanceMiles,
       actualDurationMinutes: existing.actualDurationMinutes,
       nutritionPlanData: existing.nutritionPlanData,
+      // Preserve the locally-logged fuel data; provider imports never carry it.
+      fuelLogData: existing.fuelLogData,
+
+      // Adopt provider device/summary identifiers so the surviving row shows
+      // the device badge (Activity.hasGarminData), falling back to whatever the
+      // existing row already had.
+      garminSummaryId: incoming.garminSummaryId ?? existing.garminSummaryId,
+      garminDeviceName: incoming.garminDeviceName ?? existing.garminDeviceName,
 
       // preserve local metadata
       createdAt: existing.createdAt,
