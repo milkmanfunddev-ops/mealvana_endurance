@@ -93,26 +93,54 @@ Weekly (rollover scan is cheap; discovery rotates buckets). Tunable.
 
 ## 4. Routine B — Feed (`catalog_products` / `catalog_variants`)
 
-The pipeline already exists (`scripts/update_catalog.js`): Shopify Storefront
-GraphQL → food-only filter → FDA FoodData Central nutrition enrichment → upsert on
-`shopify_product_id`/`shopify_variant_id` → logs to `catalog_sync_runs`. It is
-already idempotent. The routine mostly **schedules it and adds a Claude review of
-the diff.**
+The pipeline exists (`scripts/update_catalog.js`): Shopify Storefront GraphQL →
+food-only filter → FDA nutrition enrichment (in-run) → write products+variants →
+logs to `catalog_sync_runs`. BUT a code read (2026-06-23) found two behaviours that
+make "just schedule it" unsafe — the routine must address them first:
 
-### Flow
-1. Run `update_catalog.js` against **dev** (writes go to dev catalog).
-2. Claude reads the resulting `catalog_sync_runs` row + diff and curates:
-   - **New products** → classify activity types (`classify_catalog_products.js`),
-     sanity-check nutrition enrichment.
-   - **Changed** → price / availability / nutrition deltas (accept).
-   - **Disappeared from feed** → mark `is_active = false` (soft, never hard-delete)
-     — **but only if the diff is plausible** (see §5).
-3. Promote to **prod** (run the same pipeline against prod, or copy the vetted
-   dev rows — to be finalized in build).
-4. Audit summary to the run log.
+### ⚠️ Findings that reshape this routine
+1. **The importer is destructive to classification.** For every fetched product it
+   does `DELETE FROM catalog_products WHERE shopify_product_id IN (...)` then
+   `INSERT` fresh (`update_catalog.js:332`). The re-insert writes only Shopify
+   fields (title/brand/tags/image/ingredients) — it **omits** `product_type_id`,
+   `categories`, `allergens`, `is_electrolyte`, `activity_types`,
+   `classification_source`. So **every run wipes all product classification** (and
+   CASCADE-drops/reinserts variants). Today that's masked because classification is
+   re-applied afterward by `classify_catalog_products.js` — i.e. it's really a
+   multi-step pipeline, not a one-shot. A naive scheduled run would leave the
+   catalog unclassified until re-classification ran.
+2. **Removed products are never handled.** Only products *present in the fetch* are
+   touched; products that have left TheFeed are left as stale rows forever (no
+   deactivation). (Upside: a partial/empty Shopify response can't mass-wipe the
+   catalog — it only ever touches fetched products. So the §5 "anti-wipeout" rail is
+   less critical here than for a true full-replace, but stale-accumulation is the
+   real problem to solve.)
+
+### Build approach (recommended): make the importer non-destructive, then orchestrate
+- **B0 (foundation):** change the product write from delete+insert to a **true
+  UPSERT on `shopify_product_id`** that updates only Shopify-sourced columns and
+  **leaves classification columns untouched**. Same for variants on
+  `shopify_variant_id` (preserve nutrition unless re-enriching). This makes re-runs
+  safe and cheap and stops the classification wipe. (Analogous to events Phase 0 —
+  fix the write semantics before automating.)
+- **B1 removed-product handling:** after a successful fetch, mark products/variants
+  **not seen in this run** as `available_for_sale = false` (soft) — guarded by the
+  §5 anti-wipeout threshold.
+- **B2 classify new only:** run `classify_catalog_products.js` against just the
+  newly-added/unclassified products (cheap, since B0 preserves existing
+  classification).
+
+### Flow (per scheduled run)
+1. Snapshot dev catalog counts (products, variants, active, classified).
+2. `node scripts/update_catalog.js` against **dev** (now non-destructive via B0).
+3. B1: deactivate products/variants not seen this run (anti-wipeout guarded).
+4. B2: classify any new/unclassified products; spot-check nutrition.
+5. Claude reviews the computed before/after diff (added / changed / deactivated).
+6. Promote to **prod**: re-run the pipeline against prod creds (decided: run twice).
+7. Audit summary → `catalog_sync_runs` + Notion.
 
 ### Cadence
-Weekly or nightly (it's API-backed and cheap). Tunable.
+Weekly or nightly (API-backed, cheap). Tunable.
 
 ## 5. Guardrails & safety rails
 
