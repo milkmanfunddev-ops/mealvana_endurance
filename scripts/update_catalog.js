@@ -454,6 +454,56 @@ async function upsertProductBatch(products, enrichedVariants, globalSeenBarcodes
 }
 
 // ---------------------------------------------------------------------------
+// D2. Deactivate products no longer in the feed (B1)
+// ---------------------------------------------------------------------------
+
+// Fraction of the catalog that, if "not seen" in a run, is treated as a bad or
+// partial fetch rather than genuine removals — deactivation is skipped above it.
+const ANTI_WIPEOUT_PCT = 0.1;
+
+// Marks variants of products NOT seen in this run as unavailable, so items that
+// left TheFeed stop surfacing. Returns counts for logging (kept OUT of `stats`,
+// which is spread into catalog_sync_runs and must only contain known columns).
+async function deactivateRemovedProducts(seenProductIds) {
+  const existing = await supabaseRequest("catalog_products", {
+    query: { select: "id,shopify_product_id" },
+  });
+  if (!Array.isArray(existing) || existing.length === 0) {
+    return { detected: 0, deactivated: 0, skipped: 0 };
+  }
+
+  const removed = existing.filter(
+    (p) => !seenProductIds.has(p.shopify_product_id),
+  );
+  if (removed.length === 0) {
+    console.log("   Removed products: none");
+    return { detected: 0, deactivated: 0, skipped: 0 };
+  }
+
+  const pct = removed.length / existing.length;
+  if (pct > ANTI_WIPEOUT_PCT) {
+    console.error(
+      `   ⚠️  ANTI-WIPEOUT: ${removed.length}/${existing.length} (${(pct * 100).toFixed(1)}%) products not seen this run — exceeds ${(ANTI_WIPEOUT_PCT * 100).toFixed(0)}% threshold. Skipping deactivation (likely a bad/partial fetch).`,
+    );
+    return { detected: removed.length, deactivated: 0, skipped: removed.length };
+  }
+
+  const removedIds = removed.map((p) => p.id);
+  const CHUNK = 50;
+  for (let i = 0; i < removedIds.length; i += CHUNK) {
+    const chunk = removedIds.slice(i, i + CHUNK);
+    await supabaseRequest("catalog_variants", {
+      method: "PATCH",
+      query: { catalog_product_id: `in.(${chunk.join(",")})` },
+      body: { available_for_sale: false, updated_at: new Date().toISOString() },
+      prefer: "return=minimal",
+    });
+  }
+  console.log(`   Removed products deactivated: ${removed.length}`);
+  return { detected: removed.length, deactivated: removed.length, skipped: 0 };
+}
+
+// ---------------------------------------------------------------------------
 // E. Sync run logging
 // ---------------------------------------------------------------------------
 
@@ -535,6 +585,11 @@ async function main() {
     const expanded = foodProducts.map(expandProduct);
     const totalVariants = expanded.reduce((sum, e) => sum + e.variantData.length, 0);
     console.log(`   Total variants: ${totalVariants}`);
+
+    // Set of products present in THIS fetch — used by B1 to deactivate the rest.
+    const seenProductIds = new Set(
+      expanded.map((e) => e.productData.shopify_product_id),
+    );
 
     // D. Enrich nutrition + upsert in batches
     const BATCH_SIZE = 20; // Products per batch (smaller because each has multiple variants)
@@ -647,6 +702,10 @@ async function main() {
       }
     }
 
+    // D2. Deactivate products that are no longer in the feed (B1).
+    console.log("\n🧹 Checking for removed products...");
+    const removal = await deactivateRemovedProducts(seenProductIds);
+
     // E. Update sync run as completed
     await updateSyncRun(syncRun.id, {
       status: "completed",
@@ -656,6 +715,9 @@ async function main() {
     });
 
     console.log("\n✅ Import complete!");
+    console.log(
+      `   Removed products: detected ${removal.detected}, deactivated ${removal.deactivated}, skipped ${removal.skipped}`,
+    );
     console.log(`   Products fetched: ${stats.total_products_fetched}`);
     console.log(`   Variants imported: ${stats.variants_imported}`);
     console.log(`   Variants skipped: ${stats.variants_skipped}`);
