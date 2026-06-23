@@ -348,6 +348,43 @@ WHERE event_name = 'Rocket City Half Marathon'
   AND event_date = '2026-12-13';
 
 
+-- ── 8. public_events dedup + canonical natural key (refresh-routine Phase 0) ─
+-- DEV + PROD: applied 2026-06-23.
+--
+-- Establishes (lower(event_name), event_date, lower(city)) as the canonical
+-- uniqueness key so an automated race-catalog refresh routine can UPSERT
+-- without creating duplicates. The existing partial (source, external_id) index
+-- can't catch real dups (same race ingested from different sources with
+-- different external_id formats; many manual rows have NULL external_id) — 90+
+-- duplicate groups existed. De-dupes (keep one row per canonical key, preferring
+-- one with an external_id then lowest id), backfills external_id (name-city-date
+-- slug), and adds the unique index. City keeps same-name/same-date races in
+-- different cities distinct (verified no dup group spans >1 city). Idempotent.
+
+DELETE FROM public.public_events pe
+USING (
+  SELECT id,
+         row_number() OVER (
+           PARTITION BY lower(event_name), event_date, lower(coalesce(city, ''))
+           ORDER BY (external_id IS NULL), id
+         ) AS rn
+  FROM public.public_events
+) ranked
+WHERE pe.id = ranked.id
+  AND ranked.rn > 1;
+
+UPDATE public.public_events
+SET external_id =
+      lower(regexp_replace(event_name, '[^a-zA-Z0-9]+', '-', 'g'))
+      || '-' || lower(regexp_replace(coalesce(city, 'na'), '[^a-zA-Z0-9]+', '-', 'g'))
+      || '-' || to_char(event_date, 'YYYY-MM-DD')
+WHERE external_id IS NULL
+  AND event_date IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS public_events_canonical_key_uniq
+  ON public.public_events (lower(event_name), event_date, lower(coalesce(city, '')));
+
+
 -- ============================================================================
 -- END
 -- ============================================================================
