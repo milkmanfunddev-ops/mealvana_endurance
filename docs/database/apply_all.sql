@@ -325,6 +325,29 @@ WHERE NOT EXISTS (
 );
 
 
+-- ── 7. Fix 2026 Rocket City Half Marathon data quality ──────────────────────
+-- DEV + PROD: applied 2026-06-23.
+--
+-- Follow-up to §6 / 387e3fdb. The 2026 half (seeded by 20260302110000) existed
+-- as TWO duplicate rows, both at a 07:00 start. The official Rocket City FAQ
+-- confirms the half runs Sunday 2026-12-13 at 9:00 AM. De-dupe (keep earliest
+-- id) + correct the time. Idempotent.
+
+DELETE FROM public.public_events
+WHERE event_name = 'Rocket City Half Marathon'
+  AND event_date = '2026-12-13'
+  AND id > (
+    SELECT min(id) FROM public.public_events
+    WHERE event_name = 'Rocket City Half Marathon'
+      AND event_date = '2026-12-13'
+  );
+
+UPDATE public.public_events
+SET start_time = '09:00:00'
+WHERE event_name = 'Rocket City Half Marathon'
+  AND event_date = '2026-12-13';
+
+
 -- ============================================================================
 -- END
 -- ============================================================================
