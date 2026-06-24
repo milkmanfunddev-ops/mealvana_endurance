@@ -202,15 +202,33 @@ enabled on the account.
   enable nutrition backfill, provide `FDA_API_KEY` (or `USDA_API_KEY`) wherever the
   routine runs; otherwise the routine still works, just without enrichment.
 
-## 9. Rollout plan
+## 9. Rollout status
 
-1. **Feed routine first** (lower risk — pipeline exists): feed Phase 0 audit →
-   schedule `update_catalog.js` + Claude diff-review + anti-wipeout guard + Notion
-   summary. *(Build order TBD with Lee — Lee leaned "design both first.")*
-2. **Events routine:** generalize `/populate-events` → `refresh-events` skill
-   (rollover scan + bucket-rotation discovery + confidence gate) → `events_coverage`
-   + `events_refresh_runs` tables → schedule.
-3. Tune cadence + bucket size from the first few real runs.
+### Feed routine — BUILT + RUN on dev + prod (2026-06-23/24)
+- B0 non-destructive importer, B1 removed-product deactivation (10% anti-wipeout
+  guard), B2 classify-new (`scripts/classify_unclassified_by_type.sql`, deterministic,
+  preserves existing 'claude' classifications). All committed.
+- Executed on **dev and prod**: both 689 products, 0 unclassified, 646 'claude'
+  preserved, 38 removed products deactivated, catalog refreshed (prod was 3 months
+  stale). 0 errors.
+- **Key realization:** with the SQL classification fallback, the feed routine is
+  **fully deterministic — no Claude-in-the-loop needed** for the happy path. So the
+  right scheduler is plain CI, not a Claude routine. Claude is only needed to handle
+  flags (anti-wipeout abort; a novel Shopify product_type the SQL can't map).
+- **Scheduler:** `.github/workflows/refresh-feed.yml` (weekly cron; manual-trigger
+  by default, inert until secrets added + `schedule:` uncommented). Skill:
+  `.claude/commands/refresh-feed.md`.
+- **Substrate note:** the in-session `CronCreate` tool is session-bound (only fires
+  while this REPL runs; recurring jobs expire after 7 days) — too janky for an
+  always-on routine. GitHub Actions (or Codemagic scheduled / Supabase pg_cron) is
+  the always-on home. Pick one and add the secrets in §8.
+
+### Events routine — NOT built (Phase 0 done)
+- Phase 0 (dedup + canonical key) done. Still to build: generalize `/populate-events`
+  → `refresh-events` (rollover staleness scan + bucket-rotation web-search discovery
+  + confidence gate) → `events_coverage` + `events_refresh_runs` tables → schedule.
+- Unlike the feed, events discovery **does** need Claude (web research), so its
+  scheduler is a cloud Claude routine or GitHub-Actions-headless-Claude.
 
 ---
 *Related: [[supabase-schema-via-datagrip]] (apply method), [[project_data_refresh_routine]] (memory).*
