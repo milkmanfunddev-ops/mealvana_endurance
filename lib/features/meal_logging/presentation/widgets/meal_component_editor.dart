@@ -187,6 +187,10 @@ class _MealComponentEditorState extends State<MealComponentEditor> {
                 onPressed: () => _editItem(i),
                 tooltip: 'Edit item',
               ),
+              // Tapping anywhere on the row opens the edit dialog, matching
+              // MealLogRow's tap-the-row pattern. Previously only the small
+              // trailing icon worked, so the row felt un-editable (38ee3fdb).
+              onTap: () => _editItem(i),
             ),
           );
         }),
