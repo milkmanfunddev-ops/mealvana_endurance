@@ -86,8 +86,13 @@ definitions:
       # Upload debug symbols / source maps to Sentry so stack traces are
       # de-obfuscated in the Sentry dashboard.
       #
-      # REQUIRED: Add SENTRY_AUTH_TOKEN to the Codemagic variable group
-      # (mealvana_dev and/or mealvana_prod) before this step will succeed.
+      # OPTIONAL / NON-BLOCKING: this is observability, not a release gate.
+      # Symbol upload must NEVER fail a build or block TestFlight delivery.
+      # If SENTRY_AUTH_TOKEN is missing or the upload errors, we warn and
+      # continue so the IPA still publishes.
+      #
+      # To enable actual symbol upload: add SENTRY_AUTH_TOKEN to the
+      # Codemagic variable group (mealvana_dev and/or mealvana_prod).
       # Create the token at https://sentry.io/settings/account/api/auth-tokens/
       # with scopes: project:releases, org:read. Then in Codemagic:
       #   Team Settings → Environment variables → add SENTRY_AUTH_TOKEN
@@ -97,7 +102,12 @@ definitions:
       # project: mealvana-endurance configured for the plugin.
       name: Upload debug symbols to Sentry
       script: |
-        dart run sentry_dart_plugin
+        if [ -z "$SENTRY_AUTH_TOKEN" ]; then
+          echo "⚠️  SENTRY_AUTH_TOKEN not set — skipping Sentry symbol upload (non-blocking)."
+          exit 0
+        fi
+        dart run sentry_dart_plugin || \
+          echo "⚠️  Sentry symbol upload failed — continuing anyway (non-blocking)."
 
     - &install_cocoapods
       name: Install CocoaPods dependencies
