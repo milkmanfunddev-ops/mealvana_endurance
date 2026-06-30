@@ -130,17 +130,30 @@ class DailyMacrosController extends _$DailyMacrosController {
 
     final link = ref.keepAlive();
 
+    // Snapshot how many days are already cached so we can tell whether the
+    // background call actually made progress.
+    final priorCachedCount = weekMacros.where((e) => e != null).length;
+
     Future(() async {
       // Single edge function call for all uncached days
-      await service.calculateWeek(userId, selectedDate, profile);
+      final result = await service.calculateWeek(userId, selectedDate, profile);
 
-      // Refresh UI with newly cached data
-      try {
-        ref.invalidateSelf();
-      } catch (e) {
-        if (kDebugMode) {
-          print('DailyMacrosController: background invalidation skipped: $e');
+      // Only refresh when the call actually cached new days. Invalidating
+      // unconditionally caused an infinite rebuild loop on web: when the edge
+      // call fails it caches nothing, so build() -> calculateWeek (fails) ->
+      // invalidateSelf() -> build() (still uncached) -> ... forever. Gating on
+      // real progress also stops the loop once every day that *can* resolve has.
+      final newCachedCount = result.where((e) => e != null).length;
+      if (newCachedCount > priorCachedCount) {
+        try {
+          ref.invalidateSelf();
+        } catch (e) {
+          if (kDebugMode) {
+            print('DailyMacrosController: background invalidation skipped: $e');
+          }
         }
+      } else if (kDebugMode) {
+        print('DailyMacrosController: week calc made no progress; not re-invalidating.');
       }
       link.close();
     });
