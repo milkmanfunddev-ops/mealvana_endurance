@@ -18,8 +18,9 @@ describe("garmin activity completion helpers", () => {
     });
 
     assertEquals(bounds.scheduledDate, "2024-03-27");
-    assertEquals(bounds.startOfDayIso, "2024-03-27T05:00:00.000Z");
-    assertEquals(bounds.endOfDayIso, "2024-03-28T04:59:59.999Z");
+    assertEquals(bounds.nextDate, "2024-03-28");
+    assertEquals(bounds.startOfDayNaive, "2024-03-27 00:00:00");
+    assertEquals(bounds.endOfDayNaiveExclusive, "2024-03-28 00:00:00");
   });
 
   it("builds completion update fields including completed_at and actual metrics", () => {
@@ -51,5 +52,32 @@ describe("garmin activity completion helpers", () => {
     assertEquals(update.calories_burned, 380);
     assertExists(update.updated_at);
     assertExists(update.last_synced_at);
+  });
+
+  it("propagates zero distance/duration so an abandoned run overwrites the plan", () => {
+    // Regression for bug 38ee3fdb: once the mapper preserves real zeros, the
+    // completion update must include them (not skip via typeof/!== null) so a
+    // 0.0-mi run replaces the planned 14-mi distance.
+    const update = buildGarminCompletionUpdate(
+      {
+        startTimeInSeconds: 1711612800,
+        startTimeOffsetInSeconds: -18000,
+        durationInSeconds: 0,
+      },
+      {
+        duration_minutes: 0,
+        distance_meters: 0,
+        distance_miles: 0,
+        average_heart_rate: null,
+        max_heart_rate: null,
+        calories_burned: 0,
+      },
+    );
+
+    assertEquals(update.duration_minutes, 0);
+    assertEquals(update.actual_duration_minutes, 0);
+    assertEquals(update.distance_meters, 0);
+    assertEquals(update.distance_miles, 0);
+    assertEquals(update.actual_distance_miles, 0);
   });
 });

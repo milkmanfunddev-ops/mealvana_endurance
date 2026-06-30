@@ -663,12 +663,42 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             distance_meters: activityRow.distance_meters,
           };
 
-          if (activityRow.average_pace_minutes_per_mile !== undefined) {
+          // Mirror the actual_* and sport-specific fields that
+          // buildGarminCompletionUpdate writes on first completion, so a
+          // later manual Garmin edit overwrites the same metrics. Zero is a
+          // valid value, so guard with typeof === "number", not truthiness.
+          if (typeof activityRow.duration_minutes === "number") {
+            updateFields.actual_duration_minutes = activityRow.duration_minutes;
+          }
+          const manualDistanceMiles =
+            typeof activityRow.distance_miles === "number"
+              ? activityRow.distance_miles
+              : typeof activityRow.distance_meters === "number"
+              ? activityRow.distance_meters / 1609.34
+              : null;
+          if (manualDistanceMiles !== null) {
+            updateFields.actual_distance_miles = manualDistanceMiles;
+          }
+          if (typeof activityRow.average_pace_minutes_per_mile === "number") {
             updateFields.average_pace_minutes_per_mile =
               activityRow.average_pace_minutes_per_mile;
           }
-          if (activityRow.distance_miles !== undefined) {
+          if (typeof activityRow.distance_miles === "number") {
             updateFields.distance_miles = activityRow.distance_miles;
+          }
+          if (typeof activityRow.cycling_power_watts === "number") {
+            updateFields.cycling_power_watts = activityRow.cycling_power_watts;
+          }
+          if (typeof activityRow.cycling_speed_mph === "number") {
+            updateFields.cycling_speed_mph = activityRow.cycling_speed_mph;
+          }
+          if (typeof activityRow.cycling_elevation_gain_ft === "number") {
+            updateFields.cycling_elevation_gain_ft =
+              activityRow.cycling_elevation_gain_ft;
+          }
+          if (typeof activityRow.swimming_pace_per_100m_seconds === "number") {
+            updateFields.swimming_pace_per_100m_seconds =
+              activityRow.swimming_pace_per_100m_seconds;
           }
 
           const { error } = await supabase
